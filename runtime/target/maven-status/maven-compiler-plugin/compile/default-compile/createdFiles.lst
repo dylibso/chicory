@@ -1,0 +1,12 @@
+com/dylibso/chicory/runtime/WasmFunctionHandle.class
+com/dylibso/chicory/runtime/ExportFunction.class
+com/dylibso/chicory/runtime/ChicoryException.class
+com/dylibso/chicory/runtime/Memory.class
+com/dylibso/chicory/runtime/Machine$1.class
+com/dylibso/chicory/runtime/HostFunction.class
+com/dylibso/chicory/runtime/TrapException.class
+com/dylibso/chicory/runtime/StackFrame.class
+com/dylibso/chicory/runtime/MStack.class
+com/dylibso/chicory/runtime/Instance.class
+com/dylibso/chicory/runtime/Machine.class
+com/dylibso/chicory/runtime/Module.class

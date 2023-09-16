@@ -1,0 +1,177 @@
+unreachable 	$00
+nop 	$01
+block <varuint>	$02
+loop <varuint>  	$03
+if <varuint>	    $04
+else 	$05 		can only be used with if. Only single else is allowed per if
+end 	$0B 		end can only close block or loop clocks
+br <varuint> 	$0C labelidx
+br_if <varuint> 	$0D labelidx
+br_table vec(<varuint>) <varuint> 	$0E
+return   	   $0F
+call <varuint>    	   $10
+call_indirect <varuint> 	$11
+drop 	$1A 	[t]→[]
+select 	$1B 	[t t i32]→[t]
+local.get <varuint> 	$20
+local.set <varuint> 	$21
+local.tee <varuint> 	$22
+global.get <varuint> 	$23
+global.set <varuint> 	$24
+i32.load <varuint> <varuint> 	$28
+i64.load <varuint> <varuint> 	$29
+f32.load <varuint> <varuint> 	$2A
+f64.load <varuint> <varuint> 	$2B
+i32.load8_s <varuint> <varuint> 	$2C
+i32.load8_u <varuint> <varuint> 	$2D
+i32.load16_s <varuint> <varuint> 	$2E
+i32.load16_u <varuint> <varuint> 	$2F
+i64.load8_s <varuint> <varuint> 	$30
+i64.load8_u <varuint> <varuint> 	$31
+i64.load16_s <varuint> <varuint> 	$32
+i64.load16_u <varuint> <varuint> 	$33
+i64.load32_s <varuint> <varuint> 	$34
+i64.load32_u <varuint> <varuint> 	$35
+i32.store <varuint> <varuint> 	$36
+i64.store <varuint> <varuint> 	$37
+f32.store <varuint> <varuint> 	$38
+f64.store <varuint> <varuint> 	$39
+i32.store8 <varuint> <varuint> 	$3A
+i32.store16 <varuint> <varuint> 	$3B
+i64.store8 <varuint> <varuint> 	$3C
+i64.store16 <varuint> <varuint> 	$3D
+i64.store32 <varuint> <varuint> 	$3E
+memory.size 	$3F
+memory.grow 	$40
+i32.const <varsint32> 	$41
+i64.const <varsint64> 	$42
+f32.const <float32> 	$43
+f64.const <float64> 	$44
+i32.eqz 	$45 		Return 1 if i is zero, 0 otherwise.
+i32.eq 	$46 		Return 1 if i1 equals i2, 0 otherwise.
+i32.ne 	$47 		Return 1 if i1 does not equal i2, 0 otherwise.
+i32.lt_s 	$48 		Let j1 be the signed interpretation of i1.
+i32.lt_u 	$49 		Return 1 if i1 is less than i2, 0 otherwise.
+i32.gt_s 	$4A
+i32.gt_u 	$4B
+i32.le_s 	$4C
+i32.le_u 	$4D
+i32.ge_s 	$4E
+i32.ge_u 	$4F
+i64.eqz 	$50 		Return 1 if i is zero, 0 otherwise.
+i64.eq 	$51 		Return 1 if i1 equals i2, 0 otherwise.
+i64.ne 	$52 		Return 1 if i1 does not equal i2, 0 otherwise.
+i64.lt_s 	$53 		Let j1 be the signed interpretation of i1.
+i64.lt_u 	$54 		Return 1 if i1 is less than i2, 0 otherwise.
+i64.gt_s 	$55
+i64.gt_u 	$56
+i64.le_s 	$57
+i64.le_u 	$58
+i64.ge_s 	$59
+i64.ge_u 	$5A
+f32.eq 	$5B 		Return 1 if i1 equals i2, 0 otherwise.
+f32.ne 	$5C 		Return 1 if i1 does not equal i2, 0 otherwise.
+f32.lt 	$5D
+f32.gt 	$5E
+f32.le 	$5F
+f32.ge 	$60
+f64.eq 	$61 		Return 1 if i1 equals i2, 0 otherwise.
+f64.ne 	$62 		Return 1 if i1 does not equal i2, 0 otherwise.
+f64.lt 	$63
+f64.gt 	$64
+f64.le 	$65
+f64.ge 	$66
+i32.clz 	$67
+i32.ctz 	$68
+i32.popcnt 	$69
+i32.add 	$6A
+i32.sub 	$6B
+i32.mul 	$6C
+i32.div_s 	$6D
+i32.div_u 	$6E
+i32.rem_s 	$6F
+i32.rem_u 	$70
+i32.and 	$71
+i32.or 	$72
+i32.xor 	$73
+i32.shl 	$74
+i32.shr_s 	$75
+i32.shr_u 	$76
+i32.rotl 	$77
+i32.rotr 	$78
+i64.clz 	$79
+i64.ctz 	$7A
+i64.popcnt 	$7B
+i64.add 	$7C
+i64.sub 	$7D
+i64.mul 	$7E
+i64.div_s 	$7F
+i64.div_u 	$80
+i64.rem_s 	$81
+i64.rem_u 	$82
+i64.and 	$83
+i64.or  	$84
+i64.xor 	$85
+i64.shl 	$86
+i64.shr_s 	$87
+i64.shr_u 	$88
+i64.rotl 	$89
+i64.rotr 	$8A
+f32.abs 	$8B
+f32.neg 	$8C
+f32.ceil 	$8D
+f32.floor 	$8E
+f32.trunc 	$8F
+f32.nearest 	$90
+f32.sqrt 	$91
+f32.add 	$92
+f32.sub 	$93
+f32.mul 	$94
+f32.div 	$95
+f32.min 	$96
+f32.max 	$97
+f32.copysign 	$98
+f64.abs 	$99
+f64.neg 	$9A
+f64.ceil 	$9B
+f64.floor 	$9C
+f64.trunc 	$9D
+f64.nearest 	$9E
+f64.sqrt 	$9F
+f64.add 	$A0
+f64.sub 	$A1
+f64.mul 	$A2
+f64.div 	$A3
+f64.min 	$A4
+f64.max 	$A5
+f64.copysign 	$A6
+i32.wrap_i64 	$A7
+i32.trunc_f32_s 	$A8
+i32.trunc_f32_u 	$A9
+i32.trunc_f64_s 	$AA
+i32.trunc_f64_u 	$AB
+i64.extend_i32_s 	$AC
+i64.extend_i32_u 	$AD
+i64.trunc_f32_s 	$AE
+i64.trunc_f32_u 	$AF
+i64.trunc_f64_s 	$B0
+i64.trunc_f64_u 	$B1
+f32.convert_i32_s 	$B2
+f32.convert_i32_u 	$B3
+f32.convert_i64_s 	$B4
+f32.convert_i64_u 	$B5
+f32.demote_f64 	$B6
+f64.convert_i32_s 	$B7
+f64.convert_i32_u 	$B8
+f64.convert_i64_s 	$B9
+f64.convert_i64_u 	$BA
+f64.promote_f32 	$BB
+i32.reinterpret_f32 	$BC
+i64.reinterpret_f64 	$BD
+f32.reinterpret_i32 	$BE
+f64.reinterpret_i64 	$BF
+i32.extend_8_s      	$C0
+i32.extend_16_s      	$C1
+i64.extend_8_s      	$C2
+i64.extend_16_s      	$C3
+i64.extend_32_s      	$C3
