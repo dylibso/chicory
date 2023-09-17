@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        version: [11, 17]
+        version: [17]
         rust:
           - stable
     steps:
