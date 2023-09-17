@@ -67,29 +67,29 @@ public class Machine {
                     frame.blockDepth++;
                     var pred = this.stack.pop().asInt();
                     if (pred == 0) {
-                        frame.pc = instruction.labelFalse;
+                        frame.pc = instruction.getLabelFalse();
                     } else {
-                        frame.pc = instruction.labelTrue;
+                        frame.pc = instruction.getLabelTrue();
                     }
                 }
                 case ELSE, BR -> {
-                    frame.pc = instruction.labelTrue;
+                    frame.pc = instruction.getLabelTrue();
                 }
                 case BR_IF -> {
                     var pred = this.stack.pop().asInt();
                     if (pred == 0) {
-                        frame.pc = instruction.labelFalse;
+                        frame.pc = instruction.getLabelFalse();
                     } else {
-                        frame.pc = instruction.labelTrue;
+                        frame.pc = instruction.getLabelTrue();
                     }
                 }
                 case BR_TABLE -> {
                     var pred = this.stack.pop().asInt();
-                    if (pred < 0 || pred >= instruction.labelTable.length - 1) {
+                    if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
                         // choose default
-                        frame.pc = instruction.labelTable[instruction.labelTable.length - 1];
+                        frame.pc = instruction.getLabelTable()[instruction.getLabelTable().length - 1];
                     } else {
-                        frame.pc = instruction.labelTable[pred];
+                        frame.pc = instruction.getLabelTable()[pred];
                     }
                 }
                 case RETURN -> shouldReturn = true;

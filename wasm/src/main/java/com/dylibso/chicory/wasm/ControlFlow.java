@@ -56,55 +56,55 @@ public class ControlFlow {
             var instr = instructions.get(i);
             switch (instr.getOpcode()) {
                 case IF -> {
-                    instr.labelTrue = clamp.apply(i + 1);
+                    instr.setLabelTrue(clamp.apply(i + 1));
                     // find the matching ELSE (which is optional)
-                    var next = findNext(instructions, OpCode.ELSE, instr.depth, clamp.apply(i + 1));
+                    var next = findNext(instructions, OpCode.ELSE, instr.getDepth(), clamp.apply(i + 1));
                     if (next != null) {
                         // point to instruction after the ELSE
-                        instr.labelFalse = clamp.apply(next + 1);
+                        instr.setLabelFalse(clamp.apply(next + 1));
                     } else {
-                        var end = findNext(instructions, OpCode.END, instr.depth, clamp.apply(i + 1));
-                        instr.labelFalse = clamp.apply(end + 1);
+                        var end = findNext(instructions, OpCode.END, instr.getDepth(), clamp.apply(i + 1));
+                        instr.setLabelFalse(clamp.apply(end + 1));
                     }
                 }
                 case ELSE -> {
-                    var end = findNext(instructions, OpCode.END, instr.depth, clamp.apply(i + 1));
-                    instr.labelTrue = clamp.apply(end + 1);
+                    var end = findNext(instructions, OpCode.END, instr.getDepth(), clamp.apply(i + 1));
+                    instr.setLabelTrue(clamp.apply(end + 1));
                 }
                 case BR -> {
                     var d = (int) instr.getOperands()[0];
-                    var end = findNext(instructions, OpCode.END, instr.depth - d, clamp.apply(i + 1));
+                    var end = findNext(instructions, OpCode.END, instr.getDepth() - d, clamp.apply(i + 1));
                     var endI = instructions.get(end);
-                    if (endI.scope == OpCode.LOOP) {
-                        var loop = findLast(instructions, OpCode.LOOP, instr.depth - d, i);
-                        instr.labelTrue = loop + 1;
+                    if (endI.getScope() == OpCode.LOOP) {
+                        var loop = findLast(instructions, OpCode.LOOP, instr.getDepth() - d, i);
+                        instr.setLabelTrue(loop + 1);
                     } else {
-                        instr.labelTrue = clamp.apply(end + 1);
+                        instr.setLabelTrue(clamp.apply(end + 1));
                     }
                 }
                 case BR_IF -> {
-                    instr.labelFalse = clamp.apply(i + 1);
+                    instr.setLabelFalse(clamp.apply(i + 1));
                     var d = (int) instr.getOperands()[0];
-                    var end = findNext(instructions, OpCode.END, instr.depth - d, clamp.apply(i + 1));
+                    var end = findNext(instructions, OpCode.END, instr.getDepth() - d, clamp.apply(i + 1));
                     var endI = instructions.get(end);
-                    if (endI.scope == OpCode.LOOP) {
-                        var loop = findLast(instructions, OpCode.LOOP, instr.depth - d, i);
-                        instr.labelTrue = loop + 1;
+                    if (endI.getScope() == OpCode.LOOP) {
+                        var loop = findLast(instructions, OpCode.LOOP, instr.getDepth() - d, i);
+                        instr.setLabelTrue(loop + 1);
                     } else {
-                        instr.labelTrue = clamp.apply(end + 1);
+                        instr.setLabelTrue(clamp.apply(end + 1));
                     }
                 }
                 case BR_TABLE -> {
-                    instr.labelTable = new int[instr.getOperands().length];
-                    for (var idx = 0; idx < instr.labelTable.length; idx++) {
+                    instr.setLabelTable(new int[instr.getOperands().length]);
+                    for (var idx = 0; idx < instr.getLabelTable().length; idx++) {
                         var d = (int) instr.getOperands()[idx];
-                        var end = findNext(instructions, OpCode.END, instr.depth - d, clamp.apply(i + 1));
+                        var end = findNext(instructions, OpCode.END, instr.getDepth() - d, clamp.apply(i + 1));
                         var endI = instructions.get(end);
-                        if (endI.scope == OpCode.LOOP) {
-                            var loop = findLast(instructions, OpCode.LOOP, instr.depth - d, i);
-                            instr.labelTable[idx] = loop + 1;
+                        if (endI.getScope() == OpCode.LOOP) {
+                            var loop = findLast(instructions, OpCode.LOOP, instr.getDepth() - d, i);
+                            instr.getLabelTable()[idx] = loop + 1;
                         } else {
-                            instr.labelTable[idx] = clamp.apply(end + 1);
+                            instr.getLabelTable()[idx] = clamp.apply(end + 1);
                         }
                     }
                 }
@@ -120,7 +120,7 @@ public class ControlFlow {
     static Integer findNext(List<Instruction> instructions, OpCode opcode, int depth, int start) {
         for (var i = start; i < instructions.size(); i++) {
             var instr = instructions.get(i);
-            if (instr.getOpcode() == opcode && instr.depth == depth) {
+            if (instr.getOpcode() == opcode && instr.getDepth() == depth) {
                 return i;
             }
         }
@@ -135,7 +135,7 @@ public class ControlFlow {
     static Integer findLast(List<Instruction> instructions, OpCode opcode, int depth, int start) {
         for (var i = start; i >= 0; i--) {
             var instr = instructions.get(i);
-            if (instr.getOpcode() == opcode && instr.depth == depth) {
+            if (instr.getOpcode() == opcode && instr.getDepth() == depth) {
                 return i;
             }
         }

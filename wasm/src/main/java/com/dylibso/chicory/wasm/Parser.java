@@ -337,21 +337,21 @@ public class Parser {
                 var instruction = parseInstruction(buffer);
                 switch (instruction.getOpcode()) {
                     case BLOCK, LOOP, IF -> {
-                        instruction.depth = ++depth;
+                        instruction.setDepth(++depth);
                         blockScope.push(instruction.getOpcode());
-                        instruction.scope = blockScope.peek();
+                        instruction.setScope(blockScope.peek());
                     }
                     case END -> {
-                        instruction.depth = depth;
+                        instruction.setDepth(depth);
                         depth--;
                         if (blockScope.isEmpty()) {
-                            instruction.scope = OpCode.END;
+                            instruction.setScope(OpCode.END);
                         } else {
-                            instruction.scope = blockScope.pop();
+                            instruction.setScope(blockScope.pop());
                         }
                     }
                     default -> {
-                        instruction.depth = depth;
+                        instruction.setDepth(depth);
                     }
                 }
                 instructions.add(instruction);

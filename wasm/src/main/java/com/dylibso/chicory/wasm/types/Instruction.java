@@ -10,11 +10,11 @@ public class Instruction {
     private CodeBlock block;
 
     // metadata fields
-    public Integer labelTrue;
-    public Integer labelFalse;
-    public int[] labelTable;
-    public Integer depth;
-    public OpCode scope;
+    private Integer labelTrue;
+    private Integer labelFalse;
+    private int[] labelTable;
+    private Integer depth;
+    private OpCode scope;
 
     public Instruction(int address, OpCode opcode, long[] operands) {
         this.address = address;
@@ -47,5 +47,45 @@ public class Instruction {
 
     public int getAddress() {
         return address;
+    }
+
+    public Integer getLabelTrue() {
+        return labelTrue;
+    }
+
+    public void setLabelTrue(Integer labelTrue) {
+        this.labelTrue = labelTrue;
+    }
+
+    public Integer getLabelFalse() {
+        return labelFalse;
+    }
+
+    public void setLabelFalse(Integer labelFalse) {
+        this.labelFalse = labelFalse;
+    }
+
+    public int[] getLabelTable() {
+        return labelTable;
+    }
+
+    public void setLabelTable(int[] labelTable) {
+        this.labelTable = labelTable;
+    }
+
+    public Integer getDepth() {
+        return depth;
+    }
+
+    public void setDepth(Integer depth) {
+        this.depth = depth;
+    }
+
+    public OpCode getScope() {
+        return scope;
+    }
+
+    public void setScope(OpCode scope) {
+        this.scope = scope;
     }
 }
