@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.dylibso.chicory.runtime.ModuleTest
 -------------------------------------------------------------------------------
-Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.524 s - in com.dylibso.chicory.runtime.ModuleTest
+Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.521 s - in com.dylibso.chicory.runtime.ModuleTest
