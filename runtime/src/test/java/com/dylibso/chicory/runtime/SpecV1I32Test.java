@@ -1,16 +1,16 @@
 
-package com.dylibso.chicory.runtime;
+  package com.dylibso.chicory.runtime;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValueType;
-import org.junit.Test;
+  import static org.junit.Assert.assertEquals;
+  import static org.junit.Assert.assertThrows;
+  import com.dylibso.chicory.wasm.types.Value;
+  import com.dylibso.chicory.wasm.types.ValueType;
+  import org.junit.Test;
 
-public class SpecV1I32Test {
+  public class SpecV1I32Test {
 
 	@Test
-	public void testFunc() {
+	public void testI320Wasm() {
 		var instance = Module.build("src/test/resources/wasm/specv1/i32.0.wasm").instantiate();
 		var add = instance.getExport("add");
 		assertEquals((int)(2L & 0xFFFFFFFFL), add.apply(Value.i32(1L & 0xFFFFFFFFL), Value.i32(1L & 0xFFFFFFFFL)).asInt());
@@ -407,5 +407,337 @@ public class SpecV1I32Test {
 		assertEquals((int)(1L & 0xFFFFFFFFL), geu.apply(Value.i32(4294967295L & 0xFFFFFFFFL), Value.i32(2147483648L & 0xFFFFFFFFL)).asInt());
 		assertEquals((int)(1L & 0xFFFFFFFFL), geu.apply(Value.i32(2147483648L & 0xFFFFFFFFL), Value.i32(2147483647L & 0xFFFFFFFFL)).asInt());
 		assertEquals((int)(0L & 0xFFFFFFFFL), geu.apply(Value.i32(2147483647L & 0xFFFFFFFFL), Value.i32(2147483648L & 0xFFFFFFFFL)).asInt());
+	}
+	@Test
+	public void testI321Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.1.wasm").instantiate();
+	}
+	@Test
+	public void testI322Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.2.wasm").instantiate();
+	}
+	@Test
+	public void testI323Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.3.wasm").instantiate();
+	}
+	@Test
+	public void testI324Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.4.wasm").instantiate();
+	}
+	@Test
+	public void testI325Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.5.wasm").instantiate();
+	}
+	@Test
+	public void testI326Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.6.wasm").instantiate();
+	}
+	@Test
+	public void testI327Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.7.wasm").instantiate();
+	}
+	@Test
+	public void testI328Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.8.wasm").instantiate();
+	}
+	@Test
+	public void testI329Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.9.wasm").instantiate();
+	}
+	@Test
+	public void testI3210Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.10.wasm").instantiate();
+	}
+	@Test
+	public void testI3211Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.11.wasm").instantiate();
+	}
+	@Test
+	public void testI3212Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.12.wasm").instantiate();
+	}
+	@Test
+	public void testI3213Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.13.wasm").instantiate();
+	}
+	@Test
+	public void testI3214Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.14.wasm").instantiate();
+	}
+	@Test
+	public void testI3215Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.15.wasm").instantiate();
+	}
+	@Test
+	public void testI3216Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.16.wasm").instantiate();
+	}
+	@Test
+	public void testI3217Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.17.wasm").instantiate();
+	}
+	@Test
+	public void testI3218Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.18.wasm").instantiate();
+	}
+	@Test
+	public void testI3219Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.19.wasm").instantiate();
+	}
+	@Test
+	public void testI3220Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.20.wasm").instantiate();
+	}
+	@Test
+	public void testI3221Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.21.wasm").instantiate();
+	}
+	@Test
+	public void testI3222Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.22.wasm").instantiate();
+	}
+	@Test
+	public void testI3223Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.23.wasm").instantiate();
+	}
+	@Test
+	public void testI3224Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.24.wasm").instantiate();
+	}
+	@Test
+	public void testI3225Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.25.wasm").instantiate();
+	}
+	@Test
+	public void testI3226Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.26.wasm").instantiate();
+	}
+	@Test
+	public void testI3227Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.27.wasm").instantiate();
+	}
+	@Test
+	public void testI3228Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.28.wasm").instantiate();
+	}
+	@Test
+	public void testI3229Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.29.wasm").instantiate();
+	}
+	@Test
+	public void testI3230Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.30.wasm").instantiate();
+	}
+	@Test
+	public void testI3231Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.31.wasm").instantiate();
+	}
+	@Test
+	public void testI3232Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.32.wasm").instantiate();
+	}
+	@Test
+	public void testI3233Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.33.wasm").instantiate();
+	}
+	@Test
+	public void testI3234Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.34.wasm").instantiate();
+	}
+	@Test
+	public void testI3235Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.35.wasm").instantiate();
+	}
+	@Test
+	public void testI3236Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.36.wasm").instantiate();
+	}
+	@Test
+	public void testI3237Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.37.wasm").instantiate();
+	}
+	@Test
+	public void testI3238Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.38.wasm").instantiate();
+	}
+	@Test
+	public void testI3239Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.39.wasm").instantiate();
+	}
+	@Test
+	public void testI3240Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.40.wasm").instantiate();
+	}
+	@Test
+	public void testI3241Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.41.wasm").instantiate();
+	}
+	@Test
+	public void testI3242Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.42.wasm").instantiate();
+	}
+	@Test
+	public void testI3243Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.43.wasm").instantiate();
+	}
+	@Test
+	public void testI3244Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.44.wasm").instantiate();
+	}
+	@Test
+	public void testI3245Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.45.wasm").instantiate();
+	}
+	@Test
+	public void testI3246Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.46.wasm").instantiate();
+	}
+	@Test
+	public void testI3247Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.47.wasm").instantiate();
+	}
+	@Test
+	public void testI3248Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.48.wasm").instantiate();
+	}
+	@Test
+	public void testI3249Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.49.wasm").instantiate();
+	}
+	@Test
+	public void testI3250Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.50.wasm").instantiate();
+	}
+	@Test
+	public void testI3251Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.51.wasm").instantiate();
+	}
+	@Test
+	public void testI3252Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.52.wasm").instantiate();
+	}
+	@Test
+	public void testI3253Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.53.wasm").instantiate();
+	}
+	@Test
+	public void testI3254Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.54.wasm").instantiate();
+	}
+	@Test
+	public void testI3255Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.55.wasm").instantiate();
+	}
+	@Test
+	public void testI3256Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.56.wasm").instantiate();
+	}
+	@Test
+	public void testI3257Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.57.wasm").instantiate();
+	}
+	@Test
+	public void testI3258Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.58.wasm").instantiate();
+	}
+	@Test
+	public void testI3259Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.59.wasm").instantiate();
+	}
+	@Test
+	public void testI3260Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.60.wasm").instantiate();
+	}
+	@Test
+	public void testI3261Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.61.wasm").instantiate();
+	}
+	@Test
+	public void testI3262Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.62.wasm").instantiate();
+	}
+	@Test
+	public void testI3263Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.63.wasm").instantiate();
+	}
+	@Test
+	public void testI3264Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.64.wasm").instantiate();
+	}
+	@Test
+	public void testI3265Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.65.wasm").instantiate();
+	}
+	@Test
+	public void testI3266Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.66.wasm").instantiate();
+	}
+	@Test
+	public void testI3267Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.67.wasm").instantiate();
+	}
+	@Test
+	public void testI3268Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.68.wasm").instantiate();
+	}
+	@Test
+	public void testI3269Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.69.wasm").instantiate();
+	}
+	@Test
+	public void testI3270Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.70.wasm").instantiate();
+	}
+	@Test
+	public void testI3271Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.71.wasm").instantiate();
+	}
+	@Test
+	public void testI3272Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.72.wasm").instantiate();
+	}
+	@Test
+	public void testI3273Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.73.wasm").instantiate();
+	}
+	@Test
+	public void testI3274Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.74.wasm").instantiate();
+	}
+	@Test
+	public void testI3275Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.75.wasm").instantiate();
+	}
+	@Test
+	public void testI3276Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.76.wasm").instantiate();
+	}
+	@Test
+	public void testI3277Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.77.wasm").instantiate();
+	}
+	@Test
+	public void testI3278Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.78.wasm").instantiate();
+	}
+	@Test
+	public void testI3279Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.79.wasm").instantiate();
+	}
+	@Test
+	public void testI3280Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.80.wasm").instantiate();
+	}
+	@Test
+	public void testI3281Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.81.wasm").instantiate();
+	}
+	@Test
+	public void testI3282Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.82.wasm").instantiate();
+	}
+	@Test
+	public void testI3283Wasm() {
+		var instance = Module.build("src/test/resources/wasm/specv1/i32.83.wasm").instantiate();
 	}
 }

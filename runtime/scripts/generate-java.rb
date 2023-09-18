@@ -1,74 +1,97 @@
 require 'json'
 
 def java_header(class_name)
-<<-HEADER
+  <<-HEADER
 
-package com.dylibso.chicory.runtime;
+  package com.dylibso.chicory.runtime;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValueType;
-import org.junit.Test;
+  import static org.junit.Assert.assertEquals;
+  import static org.junit.Assert.assertThrows;
+  import com.dylibso.chicory.wasm.types.Value;
+  import com.dylibso.chicory.wasm.types.ValueType;
+  import org.junit.Test;
 
-public class #{class_name} {
+  public class #{class_name} {
 
-HEADER
+  HEADER
 end
 
+# snake, kebab, and dot case to camel case
 def camelize(str)
-  str.split(/_|-/).map(&:capitalize).join
+  str.split(/_|-|\./).map(&:capitalize).join
+end
+
+# parse the flat list of commands into a list of
+# modules with their assertions
+def parse(ast)
+  mods = {}
+  current_filename = nil
+  ast['commands'].map do |c|
+    current_filename = c['filename'] ||= current_filename
+    current_mod = mods[current_filename] ||= { 'asserts' => [], 'filename' => current_filename }
+    next if c['type'] == 'module'
+
+    current_mod['asserts'] << c
+  end
+  mods.values
 end
 
 def generate_test(inputs)
-    inputs.each do |input_file|
-        file_name = File.basename(input_file)
-        base_name = file_name.split(".").first
-        spec_name = camelize(base_name)
-        class_name = "SpecV1#{spec_name}Test"
-        wasm_file = "src/test/resources/wasm/specv1/#{base_name}.0.wasm"
+  inputs.each do |input_file|
+    file_name = File.basename(input_file)
+    base_name = file_name.split('.').first
+    spec_name = camelize(base_name)
+    class_name = "SpecV1#{spec_name}Test"
 
-        File.open("src/test/java/com/dylibso/chicory/runtime/#{class_name}.java", "w") do |out|
-            out.puts java_header(class_name)
-            out.puts "\t@Test"
-            out.puts "\tpublic void testFunc() {"
-            out.puts "\t\tvar instance = Module.build(\"#{wasm_file}\").instantiate();"
-            ast = JSON.parse(IO.read(input_file))
-            exports = Set.new
+    File.open("src/test/java/com/dylibso/chicory/runtime/#{class_name}.java", 'w') do |out|
+      out.puts java_header(class_name)
+      ast = JSON.parse(IO.read(input_file))
+      mods = parse(ast)
 
-            ast['commands'].each do |c|
-              next unless c['type'] == 'assert_return'
+      mods.each do |mod|
+        test_name = camelize(mod['filename'])
+        next unless mod['filename'].downcase.end_with? '.wasm'
 
-              action = c['action']
-              next unless action['type'] == 'invoke'
+        out.puts "\t@Test"
+        out.puts "\tpublic void test#{test_name}() {"
 
-              field = action['field']
+        exports = Set.new
+        wasm_file = "src/test/resources/wasm/specv1/#{mod['filename']}"
+        out.puts "\t\tvar instance = Module.build(\"#{wasm_file}\").instantiate();"
+        mod['asserts'].each do |assertion|
+          # TODO: fix when we support other types of assertions
+          next unless assertion['type'] == 'assert_return'
 
-              unless exports.include?(field)
-                var_name = field.gsub(/-|_|\./, '')
-                # put an "x" at the beginning of the var to make it valid java
-                var_name = "x#{var_name}" if var_name[0] =~ /\d/
-                out.puts "\t\tvar #{var_name} = instance.getExport(\"#{field}\");"
-                exports << field
-              end
+          action = assertion['action']
+          next unless action['type'] == 'invoke'
 
-              args = action['args'].map { |a| "Value.#{a['type']}(#{a['value']}L & 0xFFFFFFFFL)" }
+          field = action['field']
+          unless exports.include?(field)
+            var_name = field.gsub(/-|_|\./, '')
+            # put an "x" at the beginning of the var to make it valid java
+            var_name = "x#{var_name}" if var_name[0] =~ /\d/
+            out.puts "\t\tvar #{var_name} = instance.getExport(\"#{field}\");"
+            exports << field
+          end
 
-              expected = c['expected'].first
-              expected = expected ? "(int)(#{expected['value']}L & 0xFFFFFFFFL)" : 'null'
+          args = action['args'].map { |a| "Value.#{a['type']}(#{a['value']}L & 0xFFFFFFFFL)" }
 
-              var_name = field.gsub(/_|-|\./, '')
-              # put an "x" at the beginning of the var to make it valid java
-              var_name = "x#{var_name}" if var_name[0] =~ /\d/
-              out.puts "\t\tassertEquals(#{expected}, #{var_name}.apply(#{args.join(', ')}).asInt());"
-            end
-            out.puts "\t}"
-          out.puts "}"
+          expected = assertion['expected'].first
+          expected = expected ? "(int)(#{expected['value']}L & 0xFFFFFFFFL)" : 'null'
+
+          var_name = field.gsub(/_|-|\./, '')
+          # put an "x" at the beginning of the var to make it valid java
+          var_name = "x#{var_name}" if var_name[0] =~ /\d/
+          out.puts "\t\tassertEquals(#{expected}, #{var_name}.apply(#{args.join(', ')}).asInt());"
         end
+        out.puts "\t}"
+      end
+      out.puts '}'
     end
+  end
 end
 
 dir = File.expand_path(File.dirname(File.dirname(__FILE__)))
-#inputs = Dir.glob(File.join(dir, "src/test/resources/wasm/specv1", "*.json"))
-#generate_test(inputs)
-generate_test(["src/test/resources/wasm/specv1/i32.json"])
+# inputs = Dir.glob(File.join(dir, "src/test/resources/wasm/specv1", "*.json"))
+# generate_test(inputs)
+generate_test(['src/test/resources/wasm/specv1/i32.json'])
