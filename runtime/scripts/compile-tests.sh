@@ -16,6 +16,7 @@ done
 #  rustc $w --target=wasm32-unknown-unknown --crate-type=cdylib -C opt-level=3 -C debuginfo=0 -o $w.wasm
 #done
 #
+
 CS="./src/test/resources/wasm/*.c"
 for w in $CS
 do

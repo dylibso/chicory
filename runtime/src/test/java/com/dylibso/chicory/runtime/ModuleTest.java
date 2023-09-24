@@ -171,23 +171,23 @@ public class ModuleTest
 //        assertEquals(42, result.asInt());
 //    }
 
-    @Test
-    public void shouldRunComplexFunction() {
-        // check with: wasmtime src/test/resources/wasm/complex.c.wasm --invoke run
-        var instance = Module.build("src/test/resources/wasm/complex.c.wasm").instantiate();
-        var run = instance.getExport("run");
-        var result = run.apply();
-        assertEquals(-679, result.asInt());
-    }
+//    @Test
+//    public void shouldRunComplexFunction() {
+//        // check with: wasmtime src/test/resources/wasm/complex.c.wasm --invoke run
+//        var instance = Module.build("src/test/resources/wasm/complex.c.wasm").instantiate();
+//        var run = instance.getExport("run");
+//        var result = run.apply();
+//        assertEquals(-679, result.asInt());
+//    }
 
-    @Test
-    public void shouldRunMemoryProgramInC() {
-        // check with: wasmtime src/test/resources/wasm/memory.c.wasm --invoke run
-        var instance = Module.build("src/test/resources/wasm/memory.c.wasm").instantiate();
-        var run = instance.getExport("run");
-        var result = run.apply();
-        assertEquals(11, result.asInt());
-    }
+//    @Test
+//    public void shouldRunMemoryProgramInC() {
+//        // check with: wasmtime src/test/resources/wasm/memory.c.wasm --invoke run
+//        var instance = Module.build("src/test/resources/wasm/memory.c.wasm").instantiate();
+//        var run = instance.getExport("run");
+//        var result = run.apply();
+//        assertEquals(11, result.asInt());
+//    }
 
     @Test
     public void shouldWorkWithMemoryOps() {

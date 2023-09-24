@@ -93,6 +93,10 @@ This contains the actual Chicory runtime. There are a few scripts we use here to
 ```bash
 cd runtime
 
+# Recompiles all the wasm modules we use in the tests
+# Only needs to be run if the code for the test wasm modules are changes
+sh scripts/compile-tests.sh
+
 # This pulls down the wasm-testsuite in /tmp and copies over some needed
 # files to our src/test/resources directory. We only need to run
 # this is if we need to update the v1 spec data 
