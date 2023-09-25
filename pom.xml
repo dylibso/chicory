@@ -17,6 +17,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
     <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
+    <spotless.version>2.39.0</spotless.version>
   </properties>
 
   <modules>
@@ -58,6 +59,45 @@
             <jna.library.path>../target/release</jna.library.path>
           </systemPropertyVariables>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+        <version>${spotless.version}</version>
+        <configuration>
+          <formats>
+            <format>
+              <includes>
+                <include>**/src/main/java/**/*.java</include>
+                <include>**/src/test/java/**/*.java</include>
+              </includes>
+              <trimTrailingWhitespace/>
+              <endWithNewline/>
+              <indent>
+                <spaces>true</spaces>
+                <spacesPerTab>2</spacesPerTab>
+              </indent>
+            </format>
+          </formats>
+          <java>
+            <includes>
+              <include>**/src/main/java/**/*.java</include>
+              <include>**/src/test/java/**/*.java</include>
+            </includes>
+            <importOrder />
+            <removeUnusedImports />
+          </java>
+        </configuration>
+        <executions>
+          <execution>
+            <id>format</id>
+            <phase>process-sources</phase>
+            <goals>
+              <goal>check</goal>
+              <goal>apply</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
