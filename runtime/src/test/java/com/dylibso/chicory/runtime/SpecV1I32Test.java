@@ -14,9 +14,9 @@
       return new BigInteger(v).longValue();
     }
 
-	public static float floatVal(String s) {
+    public static float floatVal(String s) {
       return Float.intBitsToFloat(Integer.parseInt(s));
-	}
+    }
 
     public static double doubleVal(String s) {
       return Double.longBitsToDouble(longVal(s));
