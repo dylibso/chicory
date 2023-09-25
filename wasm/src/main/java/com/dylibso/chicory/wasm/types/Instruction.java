@@ -39,10 +39,11 @@ public class Instruction {
     }
 
     public String toString() {
+        var result = String.format("0x%08X", address) + ": ";
         if (operands.length > 0) {
-            return opcode + " " + Arrays.toString(operands);
+            return result + opcode + " " + Arrays.toString(operands);
         }
-        return opcode.toString();
+        return result + opcode.toString();
     }
 
     public int getAddress() {
