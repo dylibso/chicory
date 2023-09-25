@@ -2,7 +2,9 @@ package com.dylibso.chicory.wasm.types;
 
 import com.dylibso.chicory.wasm.Encoding;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 public class Value {
     private final ValueType type;
@@ -71,13 +73,21 @@ public class Value {
 
     // TODO memoize these
     public int asInt() {
-        return ByteBuffer.wrap(this.data).getInt();
+        return switch (type) {
+            case I32 -> ByteBuffer.wrap(this.data).getInt();
+            case I64 -> ByteBuffer.wrap(this.data, 4, 4).getInt();
+            default -> throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to an int");
+        };
     }
 
     // The unsigned representation of the int, stored in a long
     // so there are enough bits
     public long asUInt() {
-        return ByteBuffer.wrap(this.data).getInt() & 0xFFFFFFFFL;
+        return switch (type) {
+            case I32 -> ByteBuffer.wrap(this.data).getInt() & 0xFFFFFFFFL;
+            case I64 -> ByteBuffer.wrap(this.data, 4, 4).getInt() & 0xFFFFFFFFL;
+            default -> throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a uint");
+        };
     }
 
     // TODO memoize these
@@ -85,9 +95,25 @@ public class Value {
         return ByteBuffer.wrap(this.data).getLong();
     }
 
+    public BigInteger asULong() {
+        var b = new BigInteger(this.data);
+        if (b.signum() < 0) {
+            return b.add(new BigInteger("2").pow(64));
+        }
+        return b;
+    }
+
     // TODO memoize these
     public byte asByte() {
         return this.data[this.data.length - 1]; // this the right byte?
+    }
+
+    public short asShort() {
+        return switch (type) {
+            case I32 -> ByteBuffer.wrap(this.data).getShort();
+            case I64 -> ByteBuffer.wrap(this.data, 6, 2).getShort();
+            default -> throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a short");
+        };
     }
 
     public float asFloat() {
@@ -96,58 +122,6 @@ public class Value {
 
     public double asDouble() {
         return Encoding.bytesToDouble(this.data);
-    }
-
-    public int i32CLZ() {
-        int count = 0;
-        for (byte b : this.data) {
-            if (b == 0x00) {
-                count += 8;
-            } else {
-                for (int j = 7; j >= 0; j--) {
-                    if ((b & (1 << j)) == 0) {
-                        count++;
-                    } else {
-                        return count;
-                    }
-                }
-            }
-        }
-        return count;
-    }
-
-    public int i32CTZ() {
-        int count = 0;
-        for (int i = this.data.length - 1; i >= 0; i--) {
-            byte b = this.data[i];
-            if (b == 0x00) {
-                count += 8;
-            } else {
-                for (int j = 0; j <= 7; j++) {
-                    if ((b & (1 << j)) == 0) {
-                        count++;
-                    } else {
-                        return count;
-                    }
-                }
-            }
-        }
-        return count;
-    }
-
-    /**
-     * TODO is there not a more optimized way to do this from the CPU?
-     */
-    public int popCount() {
-        int count = 0;
-        for (byte b : data) {
-            for (int j = 0; j < 8; j++) {
-                if ((b & (1 << j)) != 0) {
-                    count++;
-                }
-            }
-        }
-        return count;
     }
 
     public String toString() {

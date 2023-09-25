@@ -238,11 +238,15 @@ public class Machine {
                     var a = this.stack.pop().asUInt();
                     this.stack.push(a < b ? Value.TRUE : Value.FALSE);
                 }
-                // TODO split
-                case I64_LT_S, I64_LT_U -> {
+                case I64_LT_S -> {
                     var b = this.stack.pop().asLong();
                     var a = this.stack.pop().asLong();
                     this.stack.push(a < b ? Value.TRUE : Value.FALSE);
+                }
+                case I64_LT_U -> {
+                    var b = this.stack.pop().asULong();
+                    var a = this.stack.pop().asULong();
+                    this.stack.push(a.compareTo(b) < 0 ? Value.TRUE : Value.FALSE);
                 }
                 case I32_GT_S -> {
                     var b = this.stack.pop().asInt();
@@ -254,11 +258,15 @@ public class Machine {
                     var a = this.stack.pop().asUInt();
                     this.stack.push(a > b ? Value.TRUE : Value.FALSE);
                 }
-                // TODO split
-                case I64_GT_S, I64_GT_U -> {
+                case I64_GT_S -> {
                     var b = this.stack.pop().asLong();
                     var a = this.stack.pop().asLong();
                     this.stack.push(a > b ? Value.TRUE : Value.FALSE);
+                }
+                case I64_GT_U -> {
+                    var b = this.stack.pop().asULong();
+                    var a = this.stack.pop().asULong();
+                    this.stack.push(a.compareTo(b) > 0 ? Value.TRUE : Value.FALSE);
                 }
                 case I32_GE_S -> {
                     var b = this.stack.pop().asInt();
@@ -270,8 +278,12 @@ public class Machine {
                     var a = this.stack.pop().asUInt();
                     this.stack.push(a >= b ? Value.TRUE : Value.FALSE);
                 }
-                // TODO split
-                case I64_GE_U, I64_GE_S -> {
+                case I64_GE_U -> {
+                    var b = this.stack.pop().asULong();
+                    var a = this.stack.pop().asULong();
+                    this.stack.push(a.compareTo(b) >= 0 ? Value.TRUE : Value.FALSE);
+                }
+                case I64_GE_S -> {
                     var b = this.stack.pop().asLong();
                     var a = this.stack.pop().asLong();
                     this.stack.push(a >= b ? Value.TRUE : Value.FALSE);
@@ -286,21 +298,29 @@ public class Machine {
                     var a = this.stack.pop().asUInt();
                     this.stack.push(a <= b ? Value.TRUE : Value.FALSE);
                 }
-                case I64_LE_U, I64_LE_S -> {
+                case I64_LE_S -> {
                     var b = this.stack.pop().asLong();
                     var a = this.stack.pop().asLong();
                     this.stack.push(a <= b ? Value.TRUE : Value.FALSE);
                 }
+                case I64_LE_U -> {
+                    var b = this.stack.pop().asULong();
+                    var a = this.stack.pop().asULong();
+                    this.stack.push(a.compareTo(b) <= 0 ? Value.TRUE : Value.FALSE);
+                }
                 case I32_CLZ -> {
-                    var count = this.stack.pop().i32CLZ();
+                    var tos = this.stack.pop().asInt();
+                    var count = Integer.numberOfLeadingZeros(tos);
                     this.stack.push(Value.i32(count));
                 }
                 case I32_CTZ -> {
-                    var count = this.stack.pop().i32CTZ();
+                    var tos = this.stack.pop().asInt();
+                    var count = Integer.numberOfTrailingZeros(tos);
                     this.stack.push(Value.i32(count));
                 }
                 case I32_POPCNT -> {
-                    var count = this.stack.pop().popCount();
+                    var tos = this.stack.pop().asInt();
+                    var count = Integer.bitCount(tos);
                     this.stack.push(Value.i32(count));
                 }
                 case I32_ADD -> {
@@ -343,11 +363,15 @@ public class Machine {
                     var a = this.stack.pop().asUInt();
                     this.stack.push(Value.i32(a / b));
                 }
-                // TODO split up
-                case I64_DIV_S, I64_DIV_U -> {
+                case I64_DIV_S -> {
                     var b = this.stack.pop().asLong();
                     var a = this.stack.pop().asLong();
                     this.stack.push(Value.i64(a / b));
+                }
+                case I64_DIV_U -> {
+                    var b = this.stack.pop().asLong();
+                    var a = this.stack.pop().asLong();
+                    this.stack.push(Value.i64(Long.divideUnsigned(a, b)));
                 }
                 case I32_REM_S -> {
                     var b = this.stack.pop().asInt();
@@ -360,25 +384,71 @@ public class Machine {
                     this.stack.push(Value.i32(a % b));
                 }
                 case I64_AND -> {
-                    var a = this.stack.pop().asInt();
-                    var b = this.stack.pop().asInt();
+                    var a = this.stack.pop().asLong();
+                    var b = this.stack.pop().asLong();
                     this.stack.push(Value.i64(a & b));
                 }
                 case I64_OR -> {
-                    var a = this.stack.pop().asInt();
-                    var b = this.stack.pop().asInt();
+                    var a = this.stack.pop().asLong();
+                    var b = this.stack.pop().asLong();
                     this.stack.push(Value.i64(a | b));
                 }
                 case I64_XOR -> {
-                    var a = this.stack.pop().asInt();
-                    var b = this.stack.pop().asInt();
+                    var a = this.stack.pop().asLong();
+                    var b = this.stack.pop().asLong();
                     this.stack.push(Value.i64(a ^ b));
                 }
-                // TODO split up
-                case I64_REM_S, I64_REM_U -> {
+                case I64_SHL -> {
+                    var c = this.stack.pop().asLong();
+                    var v = this.stack.pop().asLong();
+                    this.stack.push(Value.i64(v << c));
+                }
+                case I64_SHR_S -> {
+                    var c = this.stack.pop().asLong();
+                    var v = this.stack.pop().asLong();
+                    this.stack.push(Value.i64(v >> c));
+                }
+                case I64_SHR_U -> {
+                    var c = this.stack.pop().asLong();
+                    var v = this.stack.pop().asLong();
+                    this.stack.push(Value.i64(v >>> c));
+                }
+                case I64_REM_S -> {
                     var b = this.stack.pop().asLong();
                     var a = this.stack.pop().asLong();
                     this.stack.push(Value.i64(a % b));
+                }
+                case I64_REM_U -> {
+                    var b = this.stack.pop().asLong();
+                    var a = this.stack.pop().asLong();
+                    this.stack.push(Value.i64(Long.remainderUnsigned(a, b)));
+                }
+                case I64_ROTL -> {
+                    var c = this.stack.pop().asLong();
+                    var v = this.stack.pop().asLong();
+                    var z = (v << c) | (v >>> (64 - c));
+                    this.stack.push(Value.i64(z));
+                }
+                case I64_ROTR -> {
+                    var c = this.stack.pop().asLong();
+                    var v = this.stack.pop().asLong();
+                    var z = (v >>> c) | (v << (64 - c));
+                    this.stack.push(Value.i64(z));
+                }
+                case I64_CLZ -> {
+                    var tos = this.stack.pop();
+                    var count = Long.numberOfLeadingZeros(tos.asLong());
+                    this.stack.push(Value.i64(count));
+                }
+                case I64_CTZ -> {
+                    var tos = this.stack.pop();
+                    var count = Long.numberOfTrailingZeros(tos.asLong());
+                    this.stack.push(Value.i64(count));
+                }
+                case I64_POPCNT -> {
+                    var tos = this.stack.pop().asLong();
+                    var count = Long.bitCount(tos);
+                    this.stack.push(Value.i64(count));
                 }
                 case CALL -> {
                     var funcId = (int) operands[0];
@@ -431,15 +501,29 @@ public class Machine {
                     var z = (v >>> c) | (v << (32 - c));
                     this.stack.push(Value.i32(z));
                 }
+                // For the extend_* operations, note that java
+                // automatically does this when casting from
+                // smaller to larger primitives
                 case I32_EXTEND_8_S -> {
-                    int tos = this.stack.pop().asInt();
-                    int result = tos << 24 >> 24;
-                    this.stack.push(Value.i32(result));
+                    var tos = this.stack.pop().asByte();
+                    this.stack.push(Value.i32(tos));
                 }
                 case I32_EXTEND_16_S -> {
-                    int original = this.stack.pop().asInt() & 0xFFFF;
+                    var original = this.stack.pop().asInt() & 0xFFFF;
                     if ((original & 0x8000) != 0) original |= 0xFFFF0000;
                     this.stack.push(Value.i32(original & 0xFFFFFFFFL));
+                }
+                case I64_EXTEND_8_S -> {
+                    var tos = this.stack.pop().asByte();
+                    this.stack.push(Value.i64(tos));
+                }
+                case I64_EXTEND_16_S -> {
+                    var tos = this.stack.pop().asShort();
+                    this.stack.push(Value.i64(tos));
+                }
+                case I64_EXTEND_32_S -> {
+                    var tos = this.stack.pop().asInt();
+                    this.stack.push(Value.i64(tos));
                 }
                 default -> throw new RuntimeException("Machine doesn't recognize Instruction " + instruction);
             }

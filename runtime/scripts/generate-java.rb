@@ -14,6 +14,10 @@ def java_header(class_name)
 
   public class #{class_name} {
 
+    public static long longVal(String v) {
+      return new BigInteger(v).longValue();
+    }
+
   HEADER
 end
 
@@ -36,7 +40,7 @@ def val_to_java_value(val)
   when 'i32'
     "(int)(#{val['value']}L & 0xFFFFFFFFL)"
   when 'i64'
-    "new BigInteger(\"#{val['value']}\").longValue()"
+    "longVal(\"#{val['value']}\")"
   end
 end
 
@@ -123,4 +127,5 @@ dir = File.expand_path(File.dirname(File.dirname(__FILE__)))
 # generate_test(inputs)
 generate_test([
     'src/test/resources/wasm/specv1/i32.json',
+    'src/test/resources/wasm/specv1/i64.json',
 ])

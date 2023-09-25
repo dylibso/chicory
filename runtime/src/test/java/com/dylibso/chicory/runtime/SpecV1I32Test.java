@@ -10,6 +10,10 @@
 
   public class SpecV1I32Test {
 
+    public static long longVal(String v) {
+      return new BigInteger(v).longValue();
+    }
+
 	@Test
 	public void testI320Wasm() {
 		var instance = Module.build("src/test/resources/wasm/specv1/i32.0.wasm").instantiate();
