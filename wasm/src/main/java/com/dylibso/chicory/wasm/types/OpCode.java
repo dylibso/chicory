@@ -183,7 +183,7 @@ public enum OpCode {
 	I32_EXTEND_16_S(0xC1), // i32.extend_16_s
 	I64_EXTEND_8_S(0xC2), // i64.extend_8_s
 	I64_EXTEND_16_S(0xC3), // i64.extend_16_s
-	I64_EXTEND_32_S(0xC3); // i64.extend_32_s
+	I64_EXTEND_32_S(0xC4); // i64.extend_32_s
 
     private final int opcode;
 

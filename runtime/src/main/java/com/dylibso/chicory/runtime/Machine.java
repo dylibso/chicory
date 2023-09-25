@@ -359,6 +359,21 @@ public class Machine {
                     var a = this.stack.pop().asUInt();
                     this.stack.push(Value.i32(a % b));
                 }
+                case I64_AND -> {
+                    var a = this.stack.pop().asInt();
+                    var b = this.stack.pop().asInt();
+                    this.stack.push(Value.i64(a & b));
+                }
+                case I64_OR -> {
+                    var a = this.stack.pop().asInt();
+                    var b = this.stack.pop().asInt();
+                    this.stack.push(Value.i64(a | b));
+                }
+                case I64_XOR -> {
+                    var a = this.stack.pop().asInt();
+                    var b = this.stack.pop().asInt();
+                    this.stack.push(Value.i64(a ^ b));
+                }
                 // TODO split up
                 case I64_REM_S, I64_REM_U -> {
                     var b = this.stack.pop().asLong();

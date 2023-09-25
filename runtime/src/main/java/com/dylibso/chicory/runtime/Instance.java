@@ -2,6 +2,8 @@ package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.*;
 
+import java.util.Arrays;
+
 public class Instance {
     private Module module;
     private Machine machine;
@@ -37,6 +39,7 @@ public class Instance {
         var export = module.getExport(name);
         var funcId = (int) export.getDesc().getIndex();
         return (args) -> {
+            //System.out.println("Args: " + Arrays.toString(args));
             try {
                 return machine.call(funcId, args, true);
             } catch (Exception e) {

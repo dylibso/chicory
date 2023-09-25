@@ -5,6 +5,7 @@ def java_header(class_name)
 
   package com.dylibso.chicory.runtime;
 
+  import java.math.BigInteger;
   import static org.junit.Assert.assertEquals;
   import static org.junit.Assert.assertThrows;
   import com.dylibso.chicory.wasm.types.Value;
@@ -19,6 +20,33 @@ end
 # snake, kebab, and dot case to camel case
 def camelize(str)
   str.split(/_|-|\./).map(&:capitalize).join
+end
+
+def val_to_value(val)
+  case val['type']
+  when 'i32'
+    "Value.i32(#{val_to_java_value(val)})"
+  when 'i64'
+    "Value.i64(#{val_to_java_value(val)})"
+  end
+end
+
+def val_to_java_value(val)
+  case val['type']
+  when 'i32'
+    "(int)(#{val['value']}L & 0xFFFFFFFFL)"
+  when 'i64'
+    "new BigInteger(\"#{val['value']}\").longValue()"
+  end
+end
+
+def cast(val)
+  case val['type']
+  when 'i32'
+    "asInt()"
+  when 'i64'
+    "asLong()"
+  end
 end
 
 # parse the flat list of commands into a list of
@@ -74,15 +102,14 @@ def generate_test(inputs)
             exports << field
           end
 
-          args = action['args'].map { |a| "Value.#{a['type']}(#{a['value']}L & 0xFFFFFFFFL)" }
-
-          expected = assertion['expected'].first
-          expected = expected ? "(int)(#{expected['value']}L & 0xFFFFFFFFL)" : 'null'
+          args = action['args'].map { |v| val_to_value(v) }
+          expected_val = assertion['expected'].first
+          expected = expected_val ? val_to_java_value(expected_val) : 'null'
 
           var_name = field.gsub(/_|-|\./, '')
           # put an "x" at the beginning of the var to make it valid java
           var_name = "x#{var_name}" if var_name[0] =~ /\d/
-          out.puts "\t\tassertEquals(#{expected}, #{var_name}.apply(#{args.join(', ')}).asInt());"
+          out.puts "\t\tassertEquals(#{expected}, #{var_name}.apply(#{args.join(', ')}).#{cast(expected_val)});"
         end
         out.puts "\t}"
       end
@@ -94,4 +121,6 @@ end
 dir = File.expand_path(File.dirname(File.dirname(__FILE__)))
 # inputs = Dir.glob(File.join(dir, "src/test/resources/wasm/specv1", "*.json"))
 # generate_test(inputs)
-generate_test(['src/test/resources/wasm/specv1/i32.json'])
+generate_test([
+    'src/test/resources/wasm/specv1/i32.json',
+])
