@@ -77,7 +77,7 @@ public class ParserTest {
         var instructions = func.getInstructions();
         assertEquals(3, instructions.size());
 
-        assertEquals("I32_CONST [42]", instructions.get(0).toString());
+        assertEquals("0x00000032: I32_CONST [42]", instructions.get(0).toString());
         assertEquals(OpCode.I32_CONST, instructions.get(0).getOpcode());
         assertEquals(42L, (long)instructions.get(0).getOperands()[0]);
         assertEquals(OpCode.CALL, instructions.get(1).getOpcode());
