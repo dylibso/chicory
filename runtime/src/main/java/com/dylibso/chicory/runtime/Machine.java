@@ -154,6 +154,16 @@ public class Machine {
                     var val = instance.getMemory().getI64(ptr);
                     this.stack.push(val);
                 }
+                case F32_LOAD -> {
+                    var ptr = (int) (operands[0] + this.stack.pop().asInt());
+                    var val = instance.getMemory().getF32(ptr);
+                    this.stack.push(val);
+                }
+                case F64_LOAD -> {
+                    var ptr = (int) (operands[0] + this.stack.pop().asInt());
+                    var val = instance.getMemory().getF64(ptr);
+                    this.stack.push(val);
+                }
                 case I32_LOAD8_S -> {
                     var ptr = (int) (operands[0] + this.stack.pop().asInt());
                     var val = instance.getMemory().getI8(ptr);
@@ -165,16 +175,24 @@ public class Machine {
                     this.stack.push(val);
                 }
                 case I32_LOAD16_S -> {
-                    // TODO why though
-                    // we add 2 because the bytes we want are at the end
                     var ptr = (int) (operands[0] + this.stack.pop().asInt());
                     var val = instance.getMemory().getI16(ptr);
+                    this.stack.push(val);
+                }
+                case I32_LOAD16_U -> {
+                    var ptr = (int) (operands[0] + this.stack.pop().asInt());
+                    var val = instance.getMemory().getU16(ptr);
                     this.stack.push(val);
                 }
                 case I32_STORE -> {
                     var value = this.stack.pop().asInt();
                     var ptr = (int) (operands[0] + this.stack.pop().asInt());
                     instance.getMemory().putI32(ptr, value);
+                }
+                case I32_STORE16 -> {
+                    var value = this.stack.pop().asShort();
+                    var ptr = (int) (operands[0] + this.stack.pop().asInt());
+                    instance.getMemory().putShort(ptr, value);
                 }
                 case I64_STORE -> {
                     var value = this.stack.pop().asLong();
@@ -313,6 +331,16 @@ public class Machine {
                     var b = this.stack.pop().asULong();
                     var a = this.stack.pop().asULong();
                     this.stack.push(a.compareTo(b) <= 0 ? Value.TRUE : Value.FALSE);
+                }
+                case F32_EQ -> {
+                    var a = this.stack.pop().asFloat();
+                    var b = this.stack.pop().asFloat();
+                    this.stack.push(a == b ? Value.TRUE : Value.FALSE);
+                }
+                case F64_EQ -> {
+                    var a = this.stack.pop().asDouble();
+                    var b = this.stack.pop().asDouble();
+                    this.stack.push(a == b ? Value.TRUE : Value.FALSE);
                 }
                 case I32_CLZ -> {
                     var tos = this.stack.pop().asInt();
@@ -559,6 +587,10 @@ public class Machine {
                 case F64_PROMOTE_F32 -> {
                     var tos = this.stack.pop();
                     this.stack.push(Value.f64(tos.asUInt()));
+                }
+                case F64_REINTERPRET_I64 -> {
+                    var tos = this.stack.pop();
+                    this.stack.push(Value.i64(tos.asLong()));
                 }
                 default -> throw new RuntimeException("Machine doesn't recognize Instruction " + instruction);
             }

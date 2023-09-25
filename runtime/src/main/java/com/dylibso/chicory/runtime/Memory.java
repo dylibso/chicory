@@ -96,8 +96,13 @@ public class Memory {
         this.buffer.putInt(offset, data);
     }
 
+    public void putShort(int offset, short data) {
+        System.out.println("mem-write@" + offset + " " + data);
+        this.buffer.putShort(offset, data);
+    }
+
     public void putI64(int offset, long data) {
-        //System.out.println("mem-write@" + offset + " " + data);
+        System.out.println("mem-write@" + offset + " " + data);
         this.buffer.putLong(offset, data);
     }
 
@@ -126,6 +131,11 @@ public class Memory {
         return Value.i32(this.buffer.getShort(offset));
     }
 
+    public Value getU16(int offset) {
+        //System.out.println("mem-read@" + offset);
+        return Value.i32(this.buffer.getInt(offset) & 0xffff);
+    }
+
     public Value getI8U(int offset) {
         //System.out.println("mem-read@" + offset);
         return Value.i32(this.buffer.get(offset) & 0xff);
@@ -134,6 +144,16 @@ public class Memory {
     public Value getI8(int offset) {
         //System.out.println("mem-read@" + offset);
         return Value.i32(this.buffer.get(offset));
+    }
+
+    public Value getF32(int offset) {
+        //System.out.println("mem-read@" + offset);
+        return Value.f32(this.buffer.getInt(offset));
+    }
+
+    public Value getF64(int offset) {
+        System.out.println("mem-read@" + offset);
+        return Value.f64(this.buffer.getLong(offset));
     }
 
     public void zero() {

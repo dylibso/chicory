@@ -119,7 +119,7 @@ public class Value {
 
     public short asShort() {
         return switch (type) {
-            case I32 -> ByteBuffer.wrap(this.data).getShort();
+            case I32 -> ByteBuffer.wrap(this.data, 2, 2).getShort();
             case I64 -> ByteBuffer.wrap(this.data, 6, 2).getShort();
             default -> throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a short");
         };
