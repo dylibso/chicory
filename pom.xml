@@ -22,6 +22,7 @@
     <maven-surefire-plugin.version>3.1.2</maven-surefire-plugin.version>
     <junit.version>4.13.2</junit.version>
     <spotless.version>2.39.0</spotless.version>
+    <junit.version>4.13.1</junit.version>
   </properties>
 
   <modules>
