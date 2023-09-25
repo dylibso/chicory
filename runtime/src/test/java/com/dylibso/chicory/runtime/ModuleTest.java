@@ -1,18 +1,33 @@
 package com.dylibso.chicory.runtime;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.mockito.Mockito.*;
-
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import org.junit.Test;
 
 import java.util.List;
 
+import static org.junit.Assert.*;
+
 class Printer {
+
+    private int count = 0;
+    private final String expected;
+
+    Printer() {
+        this.expected = null;
+    }
+    Printer(String expected) {
+        this.expected = expected;
+    }
     public void println(String msg) {
+        if (expected == null || expected.equals(msg)) {
+            count++;
+        }
         System.out.println(msg);
+    }
+
+    public int times() {
+        return count;
     }
 }
 
@@ -70,7 +85,7 @@ public class ModuleTest
 
     @Test
     public void shouldConsoleLogWithString() {
-        var printer = mock(Printer.class);
+        var printer = new Printer("Hello, World!");
         var func = new HostFunction(
                 (Memory memory, Value... args) -> {
                     var offset = args[0].asInt();
@@ -88,7 +103,7 @@ public class ModuleTest
         var instance = Module.build("src/test/resources/wasm/host-function.wat.wasm").instantiate(funcs);
         var logIt = instance.getExport("logIt");
         logIt.apply();
-        verify(printer, times(10)).println("Hello, World!");
+        assertEquals(10, printer.times());
     }
 
 
@@ -116,7 +131,7 @@ public class ModuleTest
 
     @Test
     public void shouldWorkWithStartFunction() {
-        var printer = mock(Printer.class);
+        var printer = new Printer("gotit 42");
         var func = new HostFunction(
                 (Memory memory, Value... args) -> {
                     var val = args[0];
@@ -132,7 +147,7 @@ public class ModuleTest
         var module = Module.build("src/test/resources/wasm/start.wat.wasm").instantiate(funcs);
         var start = module.getExport("_start");
         start.apply();
-        verify(printer, atLeastOnce()).println("gotit 42");
+        assertTrue(printer.times() > 0);
     }
 
 
