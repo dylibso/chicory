@@ -50,7 +50,12 @@ public class StackFrame {
     }
 
     public Value getLocal(int i) {
-        return this.locals.get(i);
+        var l = this.locals.get(i);
+        // TODO is this right?
+        if (l == null) {
+            return Value.i64(0L);
+        }
+        return l;
     }
 
     public String toString() {

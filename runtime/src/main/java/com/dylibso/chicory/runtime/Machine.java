@@ -515,6 +515,11 @@ public class Machine {
                     var z = (v >>> c) | (v << (32 - c));
                     this.stack.push(Value.i32(z));
                 }
+                case F64_ADD -> {
+                    var a = this.stack.pop().asDouble();
+                    var b = this.stack.pop().asDouble();
+                    this.stack.push(Value.fromDouble(a + b));
+                }
                 // For the extend_* operations, note that java
                 // automatically does this when casting from
                 // smaller to larger primitives
