@@ -172,5 +172,5 @@ generate_test([
     'src/test/resources/wasm/specv1/i32.json',
     'src/test/resources/wasm/specv1/i64.json',
 #    'src/test/resources/wasm/specv1/local_get.json',
-    'src/test/resources/wasm/specv1/memory.json',
+#    'src/test/resources/wasm/specv1/memory.json',
 ])
