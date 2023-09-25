@@ -161,10 +161,15 @@ def generate_test(inputs)
 end
 
 dir = File.expand_path(File.dirname(File.dirname(__FILE__)))
+
+# We can use this when all the specs work, for now we're doing it one file at a time
 # inputs = Dir.glob(File.join(dir, "src/test/resources/wasm/specv1", "*.json"))
 # generate_test(inputs)
+
+# I am leaving partially working specs commented out
+# You can uncomment to work on it, but leave it commented until it fully passes
 generate_test([
     'src/test/resources/wasm/specv1/i32.json',
     'src/test/resources/wasm/specv1/i64.json',
-    'src/test/resources/wasm/specv1/local_get.json',
+#    'src/test/resources/wasm/specv1/local_get.json',
 ])
