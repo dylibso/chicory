@@ -67,28 +67,42 @@ public class Memory {
             var data = segment.getData();
             var offset = (int) offsetInstr.getOperands()[0];
             System.out.println("Writing data segment " + offset + " " + new String(data));
-            this.buffer.put(offset, data);
+            for (int i = 0, j = offset; i < data.length; i++, j++) {
+                this.buffer.put(j, data[i]);
+            }
         }
     }
 
     public String getString(int offset, int len) {
         var data = new byte[len];
-        this.buffer.get(offset, data);
+        for (int i = 0, j = offset; i < len; i++, j++) {
+            data[i] = this.buffer.get(j);
+        }
+
         return new String(data);
     }
 
     public void put(int offset, String data) {
         var bytes = data.getBytes(StandardCharsets.UTF_8);
-        this.buffer.put(offset, bytes);
+        for (int i = 0, j = offset; i < bytes.length; i++, j++) {
+            byte b = bytes[i];
+            this.buffer.put(j, b);
+        }
     }
 
     public void put(int offset, byte[] data) {
         //System.out.println("mem-write@" + offset + " " + data);
-        this.buffer.put(offset, data);
+        for (int i = 0, j = offset; i < data.length; i++, j++) {
+            byte b = data[i];
+            this.buffer.put(j, b);
+        }
     }
 
     public void put(int offset, Value data) {
-        this.buffer.put(offset, data.getData());
+        var bytes = data.getData();
+        for (int i = 0, j = offset; i < bytes.length; i++, j++) {
+            this.buffer.put(j, bytes[i]);
+        }
     }
 
     public void putI32(int offset, int data) {

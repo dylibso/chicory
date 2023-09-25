@@ -34,10 +34,18 @@ public class StackFrame {
             // TODO need a cleaner way to initialize?
             // there are footguns to using the raw Value constructor
             switch (type) {
-                case I32 -> this.setLocal(i, Value.i32(0));
-                case F32 -> this.setLocal(i, Value.f32(0));
-                case I64 -> this.setLocal(i, Value.i64(0));
-                case F64 -> this.setLocal(i, Value.f64(0));
+                case I32:
+                    this.setLocal(i, Value.i32(0));
+                    break;
+                case F32:
+                    this.setLocal(i, Value.f32(0));
+                    break;
+                case I64:
+                    this.setLocal(i, Value.i64(0));
+                    break;
+                case F64:
+                    this.setLocal(i, Value.f64(0));
+                    break;
             }
         }
         // set values from args

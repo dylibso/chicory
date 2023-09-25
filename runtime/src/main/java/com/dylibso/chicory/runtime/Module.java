@@ -124,7 +124,7 @@ public class Module {
         for (var f : hostFunctions) {
             Integer foundId = null;
             for (var i : imports) {
-                if (i.getModuleName().equals(f.moduleName()) && i.getFieldName().equals(f.fieldName())) {
+                if (i.getModuleName().equals(f.getModuleName()) && i.getFieldName().equals(f.getFieldName())) {
                     foundId = (int) i.getDesc().getIndex();
                     break;
                 }
