@@ -85,30 +85,30 @@
 //	public void testMemory13Wasm() {
 //		var instance = Module.build("src/test/resources/wasm/specv1/memory.13.wasm").instantiate();
 //	}
-	@Test
-	public void testMemory14Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.14.wasm").instantiate();
-	}
-	@Test
-	public void testMemory15Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.15.wasm").instantiate();
-	}
-	@Test
-	public void testMemory16Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.16.wasm").instantiate();
-	}
-	@Test
-	public void testMemory17Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.17.wasm").instantiate();
-	}
-	@Test
-	public void testMemory18Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.18.wasm").instantiate();
-	}
-	@Test
-	public void testMemory19Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.19.wasm").instantiate();
-	}
+  @Test
+  public void testMemory14Wasm() {
+    var instance = Module.build("src/test/resources/wasm/specv1/memory.14.wasm").instantiate();
+  }
+  @Test
+  public void testMemory15Wasm() {
+    var instance = Module.build("src/test/resources/wasm/specv1/memory.15.wasm").instantiate();
+  }
+  @Test
+  public void testMemory16Wasm() {
+    var instance = Module.build("src/test/resources/wasm/specv1/memory.16.wasm").instantiate();
+  }
+  @Test
+  public void testMemory17Wasm() {
+    var instance = Module.build("src/test/resources/wasm/specv1/memory.17.wasm").instantiate();
+  }
+  @Test
+  public void testMemory18Wasm() {
+    var instance = Module.build("src/test/resources/wasm/specv1/memory.18.wasm").instantiate();
+  }
+  @Test
+  public void testMemory19Wasm() {
+    var instance = Module.build("src/test/resources/wasm/specv1/memory.19.wasm").instantiate();
+  }
 //	@Test
 //	public void testMemory20Wasm() {
 //		var instance = Module.build("src/test/resources/wasm/specv1/memory.20.wasm").instantiate();
@@ -137,62 +137,62 @@
 //	public void testMemory26Wasm() {
 //		var instance = Module.build("src/test/resources/wasm/specv1/memory.26.wasm").instantiate();
 //	}
-	@Test
-	public void testMemory30Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.30.wasm").instantiate();
-		var data = instance.getExport("data");
-		assertEquals((int)(1L & 0xFFFFFFFFL), data.apply().asInt());
-		var cast = instance.getExport("cast");
-		assertEquals(doubleVal("4631107791820423168"), cast.apply().asDouble(), 0.0);
-		var i32load8s = instance.getExport("i32_load8_s");
-		assertEquals((int)(4294967295L & 0xFFFFFFFFL), i32load8s.apply(Value.i32((int)(4294967295L & 0xFFFFFFFFL))).asInt());
-		var i32load8u = instance.getExport("i32_load8_u");
-		assertEquals((int)(255L & 0xFFFFFFFFL), i32load8u.apply(Value.i32((int)(4294967295L & 0xFFFFFFFFL))).asInt());
-		var i32load16s = instance.getExport("i32_load16_s");
-		assertEquals((int)(4294967295L & 0xFFFFFFFFL), i32load16s.apply(Value.i32((int)(4294967295L & 0xFFFFFFFFL))).asInt());
-		var i32load16u = instance.getExport("i32_load16_u");
-		assertEquals((int)(65535L & 0xFFFFFFFFL), i32load16u.apply(Value.i32((int)(4294967295L & 0xFFFFFFFFL))).asInt());
-		assertEquals((int)(100L & 0xFFFFFFFFL), i32load8s.apply(Value.i32((int)(100L & 0xFFFFFFFFL))).asInt());
-		assertEquals((int)(200L & 0xFFFFFFFFL), i32load8u.apply(Value.i32((int)(200L & 0xFFFFFFFFL))).asInt());
-		assertEquals((int)(20000L & 0xFFFFFFFFL), i32load16s.apply(Value.i32((int)(20000L & 0xFFFFFFFFL))).asInt());
-		assertEquals((int)(40000L & 0xFFFFFFFFL), i32load16u.apply(Value.i32((int)(40000L & 0xFFFFFFFFL))).asInt());
-		assertEquals((int)(67L & 0xFFFFFFFFL), i32load8s.apply(Value.i32((int)(4275856707L & 0xFFFFFFFFL))).asInt());
-		assertEquals((int)(4294967279L & 0xFFFFFFFFL), i32load8s.apply(Value.i32((int)(878104047L & 0xFFFFFFFFL))).asInt());
-		assertEquals((int)(67L & 0xFFFFFFFFL), i32load8u.apply(Value.i32((int)(4275856707L & 0xFFFFFFFFL))).asInt());
-		assertEquals((int)(239L & 0xFFFFFFFFL), i32load8u.apply(Value.i32((int)(878104047L & 0xFFFFFFFFL))).asInt());
-		assertEquals((int)(25923L & 0xFFFFFFFFL), i32load16s.apply(Value.i32((int)(4275856707L & 0xFFFFFFFFL))).asInt());
-		assertEquals((int)(4294954479L & 0xFFFFFFFFL), i32load16s.apply(Value.i32((int)(878104047L & 0xFFFFFFFFL))).asInt());
-		assertEquals((int)(25923L & 0xFFFFFFFFL), i32load16u.apply(Value.i32((int)(4275856707L & 0xFFFFFFFFL))).asInt());
-		assertEquals((int)(52719L & 0xFFFFFFFFL), i32load16u.apply(Value.i32((int)(878104047L & 0xFFFFFFFFL))).asInt());
-		var i64load8s = instance.getExport("i64_load8_s");
-		assertEquals(longVal("18446744073709551615"), i64load8s.apply(Value.i64(longVal("18446744073709551615"))).asLong());
-		var i64load8u = instance.getExport("i64_load8_u");
-		assertEquals(longVal("255"), i64load8u.apply(Value.i64(longVal("18446744073709551615"))).asLong());
-		var i64load16s = instance.getExport("i64_load16_s");
-		assertEquals(longVal("18446744073709551615"), i64load16s.apply(Value.i64(longVal("18446744073709551615"))).asLong());
-		var i64load16u = instance.getExport("i64_load16_u");
-		assertEquals(longVal("65535"), i64load16u.apply(Value.i64(longVal("18446744073709551615"))).asLong());
-		var i64load32s = instance.getExport("i64_load32_s");
-		assertEquals(longVal("18446744073709551615"), i64load32s.apply(Value.i64(longVal("18446744073709551615"))).asLong());
-		var i64load32u = instance.getExport("i64_load32_u");
-		assertEquals(longVal("4294967295"), i64load32u.apply(Value.i64(longVal("18446744073709551615"))).asLong());
-		assertEquals(longVal("100"), i64load8s.apply(Value.i64(longVal("100"))).asLong());
-		assertEquals(longVal("200"), i64load8u.apply(Value.i64(longVal("200"))).asLong());
-		assertEquals(longVal("20000"), i64load16s.apply(Value.i64(longVal("20000"))).asLong());
-		assertEquals(longVal("40000"), i64load16u.apply(Value.i64(longVal("40000"))).asLong());
-		assertEquals(longVal("20000"), i64load32s.apply(Value.i64(longVal("20000"))).asLong());
-		assertEquals(longVal("40000"), i64load32u.apply(Value.i64(longVal("40000"))).asLong());
-		assertEquals(longVal("67"), i64load8s.apply(Value.i64(longVal("18364758543954109763"))).asLong());
-		assertEquals(longVal("18446744073709551599"), i64load8s.apply(Value.i64(longVal("3771275841602506223"))).asLong());
-		assertEquals(longVal("67"), i64load8u.apply(Value.i64(longVal("18364758543954109763"))).asLong());
-		assertEquals(longVal("239"), i64load8u.apply(Value.i64(longVal("3771275841602506223"))).asLong());
-		assertEquals(longVal("25923"), i64load16s.apply(Value.i64(longVal("18364758543954109763"))).asLong());
-		assertEquals(longVal("18446744073709538799"), i64load16s.apply(Value.i64(longVal("3771275841602506223"))).asLong());
-		assertEquals(longVal("25923"), i64load16u.apply(Value.i64(longVal("18364758543954109763"))).asLong());
-		assertEquals(longVal("52719"), i64load16u.apply(Value.i64(longVal("3771275841602506223"))).asLong());
-		assertEquals(longVal("1446274371"), i64load32s.apply(Value.i64(longVal("18364758543954109763"))).asLong());
-		assertEquals(longVal("18446744071976963567"), i64load32s.apply(Value.i64(longVal("3771275841602506223"))).asLong());
-		assertEquals(longVal("1446274371"), i64load32u.apply(Value.i64(longVal("18364758543954109763"))).asLong());
-		assertEquals(longVal("2562379247"), i64load32u.apply(Value.i64(longVal("3771275841602506223"))).asLong());
-	}
+  @Test
+  public void testMemory30Wasm() {
+    var instance = Module.build("src/test/resources/wasm/specv1/memory.30.wasm").instantiate();
+    var data = instance.getExport("data");
+    assertEquals((int)(1L & 0xFFFFFFFFL), data.apply().asInt());
+    var cast = instance.getExport("cast");
+    assertEquals(doubleVal("4631107791820423168"), cast.apply().asDouble(), 0.0);
+    var i32load8s = instance.getExport("i32_load8_s");
+    assertEquals((int)(4294967295L & 0xFFFFFFFFL), i32load8s.apply(Value.i32((int)(4294967295L & 0xFFFFFFFFL))).asInt());
+    var i32load8u = instance.getExport("i32_load8_u");
+    assertEquals((int)(255L & 0xFFFFFFFFL), i32load8u.apply(Value.i32((int)(4294967295L & 0xFFFFFFFFL))).asInt());
+    var i32load16s = instance.getExport("i32_load16_s");
+    assertEquals((int)(4294967295L & 0xFFFFFFFFL), i32load16s.apply(Value.i32((int)(4294967295L & 0xFFFFFFFFL))).asInt());
+    var i32load16u = instance.getExport("i32_load16_u");
+    assertEquals((int)(65535L & 0xFFFFFFFFL), i32load16u.apply(Value.i32((int)(4294967295L & 0xFFFFFFFFL))).asInt());
+    assertEquals((int)(100L & 0xFFFFFFFFL), i32load8s.apply(Value.i32((int)(100L & 0xFFFFFFFFL))).asInt());
+    assertEquals((int)(200L & 0xFFFFFFFFL), i32load8u.apply(Value.i32((int)(200L & 0xFFFFFFFFL))).asInt());
+    assertEquals((int)(20000L & 0xFFFFFFFFL), i32load16s.apply(Value.i32((int)(20000L & 0xFFFFFFFFL))).asInt());
+    assertEquals((int)(40000L & 0xFFFFFFFFL), i32load16u.apply(Value.i32((int)(40000L & 0xFFFFFFFFL))).asInt());
+    assertEquals((int)(67L & 0xFFFFFFFFL), i32load8s.apply(Value.i32((int)(4275856707L & 0xFFFFFFFFL))).asInt());
+    assertEquals((int)(4294967279L & 0xFFFFFFFFL), i32load8s.apply(Value.i32((int)(878104047L & 0xFFFFFFFFL))).asInt());
+    assertEquals((int)(67L & 0xFFFFFFFFL), i32load8u.apply(Value.i32((int)(4275856707L & 0xFFFFFFFFL))).asInt());
+    assertEquals((int)(239L & 0xFFFFFFFFL), i32load8u.apply(Value.i32((int)(878104047L & 0xFFFFFFFFL))).asInt());
+    assertEquals((int)(25923L & 0xFFFFFFFFL), i32load16s.apply(Value.i32((int)(4275856707L & 0xFFFFFFFFL))).asInt());
+    assertEquals((int)(4294954479L & 0xFFFFFFFFL), i32load16s.apply(Value.i32((int)(878104047L & 0xFFFFFFFFL))).asInt());
+    assertEquals((int)(25923L & 0xFFFFFFFFL), i32load16u.apply(Value.i32((int)(4275856707L & 0xFFFFFFFFL))).asInt());
+    assertEquals((int)(52719L & 0xFFFFFFFFL), i32load16u.apply(Value.i32((int)(878104047L & 0xFFFFFFFFL))).asInt());
+    var i64load8s = instance.getExport("i64_load8_s");
+    assertEquals(longVal("18446744073709551615"), i64load8s.apply(Value.i64(longVal("18446744073709551615"))).asLong());
+    var i64load8u = instance.getExport("i64_load8_u");
+    assertEquals(longVal("255"), i64load8u.apply(Value.i64(longVal("18446744073709551615"))).asLong());
+    var i64load16s = instance.getExport("i64_load16_s");
+    assertEquals(longVal("18446744073709551615"), i64load16s.apply(Value.i64(longVal("18446744073709551615"))).asLong());
+    var i64load16u = instance.getExport("i64_load16_u");
+    assertEquals(longVal("65535"), i64load16u.apply(Value.i64(longVal("18446744073709551615"))).asLong());
+    var i64load32s = instance.getExport("i64_load32_s");
+    assertEquals(longVal("18446744073709551615"), i64load32s.apply(Value.i64(longVal("18446744073709551615"))).asLong());
+    var i64load32u = instance.getExport("i64_load32_u");
+    assertEquals(longVal("4294967295"), i64load32u.apply(Value.i64(longVal("18446744073709551615"))).asLong());
+    assertEquals(longVal("100"), i64load8s.apply(Value.i64(longVal("100"))).asLong());
+    assertEquals(longVal("200"), i64load8u.apply(Value.i64(longVal("200"))).asLong());
+    assertEquals(longVal("20000"), i64load16s.apply(Value.i64(longVal("20000"))).asLong());
+    assertEquals(longVal("40000"), i64load16u.apply(Value.i64(longVal("40000"))).asLong());
+    assertEquals(longVal("20000"), i64load32s.apply(Value.i64(longVal("20000"))).asLong());
+    assertEquals(longVal("40000"), i64load32u.apply(Value.i64(longVal("40000"))).asLong());
+    assertEquals(longVal("67"), i64load8s.apply(Value.i64(longVal("18364758543954109763"))).asLong());
+    assertEquals(longVal("18446744073709551599"), i64load8s.apply(Value.i64(longVal("3771275841602506223"))).asLong());
+    assertEquals(longVal("67"), i64load8u.apply(Value.i64(longVal("18364758543954109763"))).asLong());
+    assertEquals(longVal("239"), i64load8u.apply(Value.i64(longVal("3771275841602506223"))).asLong());
+    assertEquals(longVal("25923"), i64load16s.apply(Value.i64(longVal("18364758543954109763"))).asLong());
+    assertEquals(longVal("18446744073709538799"), i64load16s.apply(Value.i64(longVal("3771275841602506223"))).asLong());
+    assertEquals(longVal("25923"), i64load16u.apply(Value.i64(longVal("18364758543954109763"))).asLong());
+    assertEquals(longVal("52719"), i64load16u.apply(Value.i64(longVal("3771275841602506223"))).asLong());
+    assertEquals(longVal("1446274371"), i64load32s.apply(Value.i64(longVal("18364758543954109763"))).asLong());
+    assertEquals(longVal("18446744071976963567"), i64load32s.apply(Value.i64(longVal("3771275841602506223"))).asLong());
+    assertEquals(longVal("1446274371"), i64load32u.apply(Value.i64(longVal("18364758543954109763"))).asLong());
+    assertEquals(longVal("2562379247"), i64load32u.apply(Value.i64(longVal("3771275841602506223"))).asLong());
+  }
 }

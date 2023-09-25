@@ -21,4 +21,3 @@ public enum MutabilityType {
     }
     public static MutabilityType byId(long id) { return byId.get(id); }
 }
-

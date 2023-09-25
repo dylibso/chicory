@@ -161,4 +161,3 @@ public class Value {
         return type.equals(other.type) && data.equals(other.data);
     }
 }
-
