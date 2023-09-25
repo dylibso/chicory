@@ -200,6 +200,12 @@ public class Machine {
                 case I64_CONST -> {
                     this.stack.push(Value.i64(operands[0]));
                 }
+                case F32_CONST -> {
+                    this.stack.push(Value.f32(operands[0]));
+                }
+                case F64_CONST -> {
+                    this.stack.push(Value.f64(operands[0]));
+                }
                 case I32_EQ -> {
                     var a = stack.pop().asInt();
                     var b = stack.pop().asInt();
@@ -450,6 +456,14 @@ public class Machine {
                     var count = Long.bitCount(tos);
                     this.stack.push(Value.i64(count));
                 }
+                case F32_NEG -> {
+                    var tos = this.stack.pop().asFloat();
+                    this.stack.push(Value.fromFloat(-1.0f * tos));
+                }
+                case F64_NEG -> {
+                    var tos = this.stack.pop().asDouble();
+                    this.stack.push(Value.fromDouble(-1.0d * tos));
+                }
                 case CALL -> {
                     var funcId = (int) operands[0];
                     var typeId = instance.getFunctionTypes()[funcId];
@@ -524,6 +538,22 @@ public class Machine {
                 case I64_EXTEND_32_S -> {
                     var tos = this.stack.pop().asInt();
                     this.stack.push(Value.i64(tos));
+                }
+                case F64_CONVERT_I64_U -> {
+                    var tos = this.stack.pop();
+                    this.stack.push(Value.i64(tos.asLong()));
+                }
+                case F64_CONVERT_I32_U -> {
+                    var tos = this.stack.pop();
+                    this.stack.push(Value.i32(tos.asUInt()));
+                }
+                case F64_CONVERT_I32_S -> {
+                    var tos = this.stack.pop();
+                    this.stack.push(Value.i32(tos.asInt()));
+                }
+                case F64_PROMOTE_F32 -> {
+                    var tos = this.stack.pop();
+                    this.stack.push(Value.f64(tos.asUInt()));
                 }
                 default -> throw new RuntimeException("Machine doesn't recognize Instruction " + instruction);
             }

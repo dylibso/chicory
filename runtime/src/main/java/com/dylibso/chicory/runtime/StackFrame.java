@@ -23,14 +23,22 @@ public class StackFrame {
     public HashMap<Integer, Value> locals;
     public int blockDepth;
 
-    public StackFrame(int funcId, int pc, Value[] args, List<Value> locals) {
+    public StackFrame(int funcId, int pc, Value[] args, List<Value> initLocals) {
         this.funcId = funcId;
         this.pc = pc;
         this.locals = new HashMap<>();
         // pre-initialize everything to 0
-        for (var i = 0; i < locals.size(); i++) {
-            var type = locals.get(i).getType() == null ? ValueType.I32 : locals.get(i).getType();
-            this.setLocal(i, new Value(type, 0));
+        for (var i = 0; i < initLocals.size(); i++) {
+            var l = initLocals.get(i);
+            var type = l.getType() == null ? ValueType.I32 : l.getType();
+            // TODO need a cleaner way to initialize?
+            // there are footguns to using the raw Value constructor
+            switch (type) {
+                case I32 -> this.setLocal(i, Value.i32(0));
+                case F32 -> this.setLocal(i, Value.f32(0));
+                case I64 -> this.setLocal(i, Value.i64(0));
+                case F64 -> this.setLocal(i, Value.f64(0));
+            }
         }
         // set values from args
         for (var i = 0; i < args.length; i++) this.setLocal(i, args[i]);

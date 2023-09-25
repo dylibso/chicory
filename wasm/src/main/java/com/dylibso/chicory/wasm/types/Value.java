@@ -16,6 +16,14 @@ public class Value {
         FALSE = Value.i32(0);
     }
 
+    public static Value fromFloat(float data) {
+        return Value.f32(Float.floatToIntBits(data));
+    }
+
+    public static Value fromDouble(double data) {
+        return Value.f64(Double.doubleToLongBits(data));
+    }
+
     public static Value i32(long data) {
         return new Value(ValueType.I32, data);
     }
@@ -42,6 +50,9 @@ public class Value {
     }
 
     public Value(ValueType type, int data) {
+        if (type != ValueType.I32 || type != ValueType.F32) {
+            throw new IllegalArgumentException("Only use this constructor for 32 bit vals");
+        }
         this.type = type;
         this.data = ByteBuffer.allocate(4).putInt(data).array();
     }
@@ -74,9 +85,8 @@ public class Value {
     // TODO memoize these
     public int asInt() {
         return switch (type) {
-            case I32 -> ByteBuffer.wrap(this.data).getInt();
-            case I64 -> ByteBuffer.wrap(this.data, 4, 4).getInt();
-            default -> throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to an int");
+            case I32, F32 -> ByteBuffer.wrap(this.data).getInt();
+            case I64, F64 -> ByteBuffer.wrap(this.data, 4, 4).getInt();
         };
     }
 
@@ -84,9 +94,8 @@ public class Value {
     // so there are enough bits
     public long asUInt() {
         return switch (type) {
-            case I32 -> ByteBuffer.wrap(this.data).getInt() & 0xFFFFFFFFL;
-            case I64 -> ByteBuffer.wrap(this.data, 4, 4).getInt() & 0xFFFFFFFFL;
-            default -> throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a uint");
+            case I32, F32 -> ByteBuffer.wrap(this.data).getInt() & 0xFFFFFFFFL;
+            case I64, F64 -> ByteBuffer.wrap(this.data, 4, 4).getInt() & 0xFFFFFFFFL;
         };
     }
 
@@ -117,11 +126,11 @@ public class Value {
     }
 
     public float asFloat() {
-        return Encoding.bytesToFloat(this.data);
+        return Float.intBitsToFloat(asInt());
     }
 
     public double asDouble() {
-        return Encoding.bytesToDouble(this.data);
+        return Double.longBitsToDouble(asLong());
     }
 
     public String toString() {

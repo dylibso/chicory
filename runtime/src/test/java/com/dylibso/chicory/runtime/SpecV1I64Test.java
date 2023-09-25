@@ -14,6 +14,14 @@
       return new BigInteger(v).longValue();
     }
 
+	public static float floatVal(String s) {
+      return Float.intBitsToFloat(Integer.parseInt(s));
+	}
+
+    public static double doubleVal(String s) {
+      return Double.longBitsToDouble(longVal(s));
+    }
+
 	@Test
 	public void testI640Wasm() {
 		var instance = Module.build("src/test/resources/wasm/specv1/i64.0.wasm").instantiate();
@@ -113,6 +121,7 @@
 		var and = instance.getExport("and");
 		assertEquals(longVal("0"), and.apply(Value.i64(longVal("1")), Value.i64(longVal("0"))).asLong());
 		assertEquals(longVal("0"), and.apply(Value.i64(longVal("0")), Value.i64(longVal("1"))).asLong());
+		assertEquals(longVal("1"), and.apply(Value.i64(longVal("1")), Value.i64(longVal("1"))).asLong());
 		assertEquals(longVal("0"), and.apply(Value.i64(longVal("0")), Value.i64(longVal("0"))).asLong());
 		assertEquals(longVal("0"), and.apply(Value.i64(longVal("9223372036854775807")), Value.i64(longVal("9223372036854775808"))).asLong());
 		assertEquals(longVal("9223372036854775807"), and.apply(Value.i64(longVal("9223372036854775807")), Value.i64(longVal("18446744073709551615"))).asLong());

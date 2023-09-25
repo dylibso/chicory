@@ -18,6 +18,14 @@ def java_header(class_name)
       return new BigInteger(v).longValue();
     }
 
+	public static float floatVal(String s) {
+      return Float.intBitsToFloat(Integer.parseInt(s));
+	}
+
+    public static double doubleVal(String s) {
+      return Double.longBitsToDouble(longVal(s));
+    }
+
   HEADER
 end
 
@@ -32,6 +40,12 @@ def val_to_value(val)
     "Value.i32(#{val_to_java_value(val)})"
   when 'i64'
     "Value.i64(#{val_to_java_value(val)})"
+  when 'f32'
+    "Value.f32(longVal(\"#{val['value']}\"))"
+  when 'f64'
+    "Value.f64(longVal(\"#{val['value']}\"))"
+  else
+    raise ArgumentError, "Unknown type for val #{val}"
   end
 end
 
@@ -41,15 +55,31 @@ def val_to_java_value(val)
     "(int)(#{val['value']}L & 0xFFFFFFFFL)"
   when 'i64'
     "longVal(\"#{val['value']}\")"
+  when 'f32'
+    "floatVal(\"#{val['value']}\")"
+  when 'f64'
+    "doubleVal(\"#{val['value']}\")"
+  else
+    raise ArgumentError, "Unknown type for val #{val}"
   end
 end
 
+
+
 def cast(val)
+  return "" if val.nil?
+
   case val['type']
   when 'i32'
-    "asInt()"
+    ".asInt()"
   when 'i64'
-    "asLong()"
+    ".asLong()"
+  when 'f32'
+    ".asFloat()"
+  when 'f64'
+    ".asDouble()"
+  else
+    raise ArgumentError, "Unknown type for val #{val}"
   end
 end
 
@@ -113,7 +143,15 @@ def generate_test(inputs)
           var_name = field.gsub(/_|-|\./, '')
           # put an "x" at the beginning of the var to make it valid java
           var_name = "x#{var_name}" if var_name[0] =~ /\d/
-          out.puts "\t\tassertEquals(#{expected}, #{var_name}.apply(#{args.join(', ')}).#{cast(expected_val)});"
+          case expected_val && expected_val['type']
+          when 'i32', 'i64', nil
+            out.puts "\t\tassertEquals(#{expected}, #{var_name}.apply(#{args.join(', ')})#{cast(expected_val)});"
+          when 'f32', 'f64'
+            out.puts "\t\tassertEquals(#{expected}, #{var_name}.apply(#{args.join(', ')})#{cast(expected_val)}, 0.0);"
+          else
+            raise ArgumentError, "Can't generate an assertion for expected val: #{expected_val}"
+          end
+
         end
         out.puts "\t}"
       end
@@ -128,4 +166,5 @@ dir = File.expand_path(File.dirname(File.dirname(__FILE__)))
 generate_test([
     'src/test/resources/wasm/specv1/i32.json',
     'src/test/resources/wasm/specv1/i64.json',
+    'src/test/resources/wasm/specv1/local_get.json',
 ])

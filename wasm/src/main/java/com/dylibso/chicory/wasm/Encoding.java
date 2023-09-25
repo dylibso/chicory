@@ -96,18 +96,10 @@ public final class Encoding {
         return buffer.getFloat();
     }
 
-    public static float bytesToFloat(byte[] data) {
-        return ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getFloat();
-    }
-
     public static double longToDouble(long x) {
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES).order(ByteOrder.LITTLE_ENDIAN);
         buffer.putLong(x);
         buffer.rewind();
         return buffer.getDouble();
-    }
-
-    public static double bytesToDouble(byte[] data) {
-        return ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN).getDouble();
     }
 }
