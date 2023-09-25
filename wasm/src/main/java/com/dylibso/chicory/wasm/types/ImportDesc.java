@@ -18,11 +18,27 @@ public class ImportDesc {
     }
 
     public String toString() {
-        return switch (type) {
-            case FuncIdx -> "func["+index+"]";
-            case TableIdx -> "table["+index+"]";
-            case MemIdx -> "memory["+index+"]";
-            case GlobalIdx -> "global["+index+"]";
-        };
+        switch (type) {
+            case FuncIdx:
+                return "func["+index+"]";
+            case TableIdx:
+                return "table["+index+"]";
+            case MemIdx:
+                return "memory["+index+"]";
+            case GlobalIdx:
+                return "global["+index+"]";
+            default:
+                return "unknown["+index+"]";
+        }
+        // if (type instanceof FuncIdx) {
+        //     return "func["+index+"]";
+        // } else if (type instanceof TableIdx) {
+        //     return "table["+index+"]";
+        // } else if (type instanceof MemIdx) {
+        //     return "memory["+index+"]";
+        // } else if (type instanceof GlobalIdx) {
+        //     return "global["+index+"]";
+        // }
+
     }
 }

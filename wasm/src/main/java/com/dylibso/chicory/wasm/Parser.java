@@ -79,57 +79,70 @@ public class Parser {
             if (shouldParseSection(sectionId)) {
                 // Process different section types based on the sectionId
                 switch (sectionId) {
-                    case SectionId.CUSTOM -> {
+                    case SectionId.CUSTOM: {
                         var customSection = parseCustomSection(buffer, sectionId, sectionSize);
                         listener.onSection(customSection);
+                        break;
                     }
-                    case SectionId.TYPE -> {
+                    case SectionId.TYPE: {
                         var typeSection = parseTypeSection(buffer, sectionId, sectionSize);
                         listener.onSection(typeSection);
+                        break;
                     }
-                    case SectionId.IMPORT -> {
+                    case SectionId.IMPORT: {
                         var importSection = parseImportSection(buffer, sectionId, sectionSize);
                         listener.onSection(importSection);
+                        break;
                     }
-                    case SectionId.FUNCTION -> {
+                    case SectionId.FUNCTION: {
                         var funcSection = parseFunctionSection(buffer, sectionId, sectionSize);
                         listener.onSection(funcSection);
+                        break;
                     }
-                    case SectionId.TABLE-> {
+                    case SectionId.TABLE: {
                         var tableSection = parseTableSection(buffer, sectionId, sectionSize);
                         listener.onSection(tableSection);
+                        break;
                     }
-                    case SectionId.MEMORY -> {
+                    case SectionId.MEMORY: {
                         var memorySection = parseMemorySection(buffer, sectionId, sectionSize);
                         listener.onSection(memorySection);
+                        break;
                     }
-                    case SectionId.GLOBAL -> {
+                    case SectionId.GLOBAL: {
                         var globalSection = parseGlobalSection(buffer, sectionId, sectionSize);
                         listener.onSection(globalSection);
+                        break;
                     }
-                    case SectionId.EXPORT -> {
+                    case SectionId.EXPORT: {
                         var exportSection = parseExportSection(buffer, sectionId, sectionSize);
                         listener.onSection(exportSection);
+                        break;
                     }
-                    case SectionId.START -> {
+                    case SectionId.START: {
                         var startSection = parseStartSection(buffer, sectionId, sectionSize);
                         listener.onSection(startSection);
+                        break;
                     }
-                    case SectionId.ELEMENT -> {
+                    case SectionId.ELEMENT: {
                         var elementSection = parseElementSection(buffer, sectionId, sectionSize);
                         listener.onSection(elementSection);
+                        break;
                     }
-                    case SectionId.CODE -> {
+                    case SectionId.CODE: {
                         var codeSection = parseCodeSection(buffer, sectionId, sectionSize);
                         listener.onSection(codeSection);
+                        break;
                     }
-                    case SectionId.DATA -> {
+                    case SectionId.DATA: {
                         var dataSection = parseDataSection(buffer, sectionId, sectionSize);
                         listener.onSection(dataSection);
+                        break;
                     }
-                    default -> {
+                    default: {
                         System.out.println("Skipping Unknown Section with ID: " + sectionId);
                         buffer.position((int) (buffer.position() + sectionSize));
+                        break;
                     }
                 }
             } else {
@@ -336,12 +349,15 @@ public class Parser {
             do {
                 var instruction = parseInstruction(buffer);
                 switch (instruction.getOpcode()) {
-                    case BLOCK, LOOP, IF -> {
+                    case BLOCK:
+                    case LOOP:
+                    case IF: {
                         instruction.setDepth(++depth);
                         blockScope.push(instruction.getOpcode());
                         instruction.setScope(blockScope.peek());
+                        break;
                     }
-                    case END -> {
+                    case END: {
                         instruction.setDepth(depth);
                         depth--;
                         if (blockScope.isEmpty()) {
@@ -349,9 +365,11 @@ public class Parser {
                         } else {
                             instruction.setScope(blockScope.pop());
                         }
+                        break;
                     }
-                    default -> {
+                    default: {
                         instruction.setDepth(depth);
+                        break;
                     }
                 }
                 instructions.add(instruction);
@@ -399,16 +417,27 @@ public class Parser {
         var operands = new ArrayList<Long>();
         for (var sig : signature) {
             switch (sig) {
-                case VARUINT -> operands.add(readVarUInt32(buffer));
-                case VARSINT32 -> operands.add(readVarSInt32(buffer));
-                case VARSINT64 -> operands.add(readVarSInt64(buffer));
-                case FLOAT64 -> operands.add(readFloat64(buffer));
-                case FLOAT32 ->operands.add(readFloat32(buffer));
-                case VEC_VARUINT -> {
+                case VARUINT:
+                    operands.add(readVarUInt32(buffer));
+                    break;
+                case VARSINT32:
+                    operands.add(readVarSInt32(buffer));
+                    break;
+                case VARSINT64:
+                    operands.add(readVarSInt64(buffer));
+                    break;
+                case FLOAT64:
+                    operands.add(readFloat64(buffer));
+                    break;
+                case FLOAT32:
+                    operands.add(readFloat32(buffer));
+                    break;
+                case VEC_VARUINT: {
                     var vcount = (int) readVarUInt32(buffer);
                     for (var j = 0; j < vcount; j++) {
                         operands.add(readVarUInt32(buffer));
                     }
+                    break;
                 }
             }
         }

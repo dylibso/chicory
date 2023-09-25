@@ -55,7 +55,7 @@ public class ControlFlow {
         for (int i = 0; i  < instructions.size(); i++) {
             var instr = instructions.get(i);
             switch (instr.getOpcode()) {
-                case IF -> {
+                case IF: {
                     instr.setLabelTrue(clamp.apply(i + 1));
                     // find the matching ELSE (which is optional)
                     var next = findNext(instructions, OpCode.ELSE, instr.getDepth(), clamp.apply(i + 1));
@@ -66,12 +66,14 @@ public class ControlFlow {
                         var end = findNext(instructions, OpCode.END, instr.getDepth(), clamp.apply(i + 1));
                         instr.setLabelFalse(clamp.apply(end + 1));
                     }
+                    break;
                 }
-                case ELSE -> {
+                case ELSE: {
                     var end = findNext(instructions, OpCode.END, instr.getDepth(), clamp.apply(i + 1));
                     instr.setLabelTrue(clamp.apply(end + 1));
+                    break;
                 }
-                case BR -> {
+                case BR: {
                     var d = (int) instr.getOperands()[0];
                     var end = findNext(instructions, OpCode.END, instr.getDepth() - d, clamp.apply(i + 1));
                     var endI = instructions.get(end);
@@ -81,8 +83,9 @@ public class ControlFlow {
                     } else {
                         instr.setLabelTrue(clamp.apply(end + 1));
                     }
+                    break;
                 }
-                case BR_IF -> {
+                case BR_IF: {
                     instr.setLabelFalse(clamp.apply(i + 1));
                     var d = (int) instr.getOperands()[0];
                     var end = findNext(instructions, OpCode.END, instr.getDepth() - d, clamp.apply(i + 1));
@@ -93,8 +96,9 @@ public class ControlFlow {
                     } else {
                         instr.setLabelTrue(clamp.apply(end + 1));
                     }
+                    break;
                 }
-                case BR_TABLE -> {
+                case BR_TABLE: {
                     instr.setLabelTable(new int[instr.getOperands().length]);
                     for (var idx = 0; idx < instr.getLabelTable().length; idx++) {
                         var d = (int) instr.getOperands()[idx];
@@ -107,6 +111,7 @@ public class ControlFlow {
                             instr.getLabelTable()[idx] = clamp.apply(end + 1);
                         }
                     }
+                    break;
                 }
             }
         }

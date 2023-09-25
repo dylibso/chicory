@@ -60,14 +60,17 @@ public class Value {
     public Value(ValueType type, long data) {
         this.type = type;
         switch (type) {
-            case I32, F32 -> {
+            case I32:
+            case F32: {
                 this.data = new byte[4];
                 this.data[0] = (byte) (data >> 24);
                 this.data[1] = (byte) (data >> 16);
                 this.data[2] = (byte) (data >> 8);
                 this.data[3] = (byte) data;
+                break;
             }
-            case I64, F64 -> {
+            case I64:
+            case F64: {
                 this.data = new byte[8];
                 this.data[0] = (byte) (data >> 56);
                 this.data[1] = (byte) (data >> 48);
@@ -77,26 +80,39 @@ public class Value {
                 this.data[5] = (byte) (data >> 16);
                 this.data[6] = (byte) (data >> 8);
                 this.data[7] = (byte) data;
+                break;
             }
-            default -> this.data = new byte[]{};
+            default:
+                this.data = new byte[]{};
+                break;
         }
     }
 
     // TODO memoize these
     public int asInt() {
-        return switch (type) {
-            case I32, F32 -> ByteBuffer.wrap(this.data).getInt();
-            case I64, F64 -> ByteBuffer.wrap(this.data, 4, 4).getInt();
+        switch (type) {
+            case I32:
+            case F32:
+                return ByteBuffer.wrap(this.data).getInt();
+            case I64:
+            case F64:
+                return ByteBuffer.wrap(this.data, 4, 4).getInt();
         };
+        throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a int");
     }
 
     // The unsigned representation of the int, stored in a long
     // so there are enough bits
     public long asUInt() {
-        return switch (type) {
-            case I32, F32 -> ByteBuffer.wrap(this.data).getInt() & 0xFFFFFFFFL;
-            case I64, F64 -> ByteBuffer.wrap(this.data, 4, 4).getInt() & 0xFFFFFFFFL;
+        switch (type) {
+            case I32:
+            case F32:
+                return ByteBuffer.wrap(this.data).getInt() & 0xFFFFFFFFL;
+            case I64:
+            case F64:
+                return ByteBuffer.wrap(this.data, 4, 4).getInt() & 0xFFFFFFFFL;
         };
+        throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a uint");
     }
 
     // TODO memoize these
@@ -118,11 +134,13 @@ public class Value {
     }
 
     public short asShort() {
-        return switch (type) {
-            case I32 -> ByteBuffer.wrap(this.data, 2, 2).getShort();
-            case I64 -> ByteBuffer.wrap(this.data, 6, 2).getShort();
-            default -> throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a short");
+        switch (type) {
+            case I32:
+                return ByteBuffer.wrap(this.data, 2, 2).getShort();
+            case I64:
+                return ByteBuffer.wrap(this.data, 6, 2).getShort();
         };
+        throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a short");
     }
 
     public float asFloat() {
@@ -135,19 +153,19 @@ public class Value {
 
     public String toString() {
         switch (this.type) {
-            case I32 -> {
+            case I32: {
                 return this.asInt() + "@i32";
             }
-            case I64 -> {
+            case I64: {
                 return this.asLong() + "@i64";
             }
-            case F32 -> {
+            case F32: {
                 return this.asFloat() + "@f32";
             }
-            case F64 -> {
+            case F64: {
                 return this.asDouble() + "@f64";
             }
-            default -> throw new RuntimeException("TODO handle float");
+            default: throw new RuntimeException("TODO handle float");
         }
     }
 

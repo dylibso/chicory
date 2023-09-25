@@ -20,23 +20,26 @@ public class Ast {
     public void addInstruction(Instruction i) {
         var current = peek();
         switch (i.getOpcode()) {
-            case BLOCK -> {
+            case BLOCK: {
                 current.addInstruction(i);
                 var next = new CodeBlock(BlockType.BLOCK);
                 i.setCodeBlock(next);
                 push(next);
+                break;
             }
-            case LOOP -> {
+            case LOOP: {
                 current.addInstruction(i);
                 var next = new CodeBlock(BlockType.LOOP);
                 i.setCodeBlock(next);
                 push(next);
+                break;
             }
-            case END -> {
+            case END: {
                 current.addInstruction(i);
                 pop();
+                break;
             }
-            default -> current.addInstruction(i);
+            default: current.addInstruction(i);
         }
     }
 
