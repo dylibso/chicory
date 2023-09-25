@@ -121,6 +121,11 @@ public class Memory {
         return Value.i32(this.buffer.getInt(offset));
     }
 
+    public Value getU32(int offset) {
+        //System.out.println("mem-read@" + offset);
+        return Value.i64(this.buffer.getLong(offset) & 0xffffffffL);
+    }
+
     public Value getI64(int offset) {
         //System.out.println("mem-read@" + offset);
         return Value.i64(this.buffer.getLong(offset));

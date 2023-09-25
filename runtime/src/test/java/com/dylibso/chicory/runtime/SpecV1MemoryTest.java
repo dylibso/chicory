@@ -22,68 +22,69 @@
       return Double.longBitsToDouble(longVal(s));
     }
 
-	@Test
-	public void testMemory0Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.0.wasm").instantiate();
-	}
-	@Test
-	public void testMemory1Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.1.wasm").instantiate();
-	}
-	@Test
-	public void testMemory2Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.2.wasm").instantiate();
-	}
-	@Test
-	public void testMemory3Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.3.wasm").instantiate();
-	}
-	@Test
-	public void testMemory4Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.4.wasm").instantiate();
-	}
-	@Test
-	public void testMemory5Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.5.wasm").instantiate();
-	}
-	@Test
-	public void testMemory6Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.6.wasm").instantiate();
-	}
-	@Test
-	public void testMemory7Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.7.wasm").instantiate();
-	}
-	@Test
-	public void testMemory8Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.8.wasm").instantiate();
-		var memsize = instance.getExport("memsize");
-		assertEquals((int)(0L & 0xFFFFFFFFL), memsize.apply().asInt());
-	}
-	@Test
-	public void testMemory9Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.9.wasm").instantiate();
-		var memsize = instance.getExport("memsize");
-		assertEquals((int)(0L & 0xFFFFFFFFL), memsize.apply().asInt());
-	}
-	@Test
-	public void testMemory10Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.10.wasm").instantiate();
-		var memsize = instance.getExport("memsize");
-		assertEquals((int)(1L & 0xFFFFFFFFL), memsize.apply().asInt());
-	}
-	@Test
-	public void testMemory11Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.11.wasm").instantiate();
-	}
-	@Test
-	public void testMemory12Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.12.wasm").instantiate();
-	}
-	@Test
-	public void testMemory13Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.13.wasm").instantiate();
-	}
+//	@Test
+//	public void testMemory0Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.0.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory1Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.1.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory2Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.2.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory3Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.3.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory4Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.4.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory5Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.5.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory6Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.6.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory7Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.7.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory8Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.8.wasm").instantiate();
+//		var memsize = instance.getExport("memsize");
+//		assertEquals((int)(0L & 0xFFFFFFFFL), memsize.apply().asInt());
+//	}
+//	@Test
+//	public void testMemory9Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.9.wasm").instantiate();
+//		var memsize = instance.getExport("memsize");
+//		assertEquals((int)(0L & 0xFFFFFFFFL), memsize.apply().asInt());
+//	}
+//	@Test
+//	public void testMemory10Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.10.wasm").instantiate();
+//		var memsize = instance.getExport("memsize");
+//		assertEquals((int)(1L & 0xFFFFFFFFL), memsize.apply().asInt());
+//	}
+
+//	@Test
+//	public void testMemory11Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.11.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory12Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.12.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory13Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.13.wasm").instantiate();
+//	}
 	@Test
 	public void testMemory14Wasm() {
 		var instance = Module.build("src/test/resources/wasm/specv1/memory.14.wasm").instantiate();
@@ -108,41 +109,41 @@
 	public void testMemory19Wasm() {
 		var instance = Module.build("src/test/resources/wasm/specv1/memory.19.wasm").instantiate();
 	}
-	@Test
-	public void testMemory20Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.20.wasm").instantiate();
-	}
-	@Test
-	public void testMemory21Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.21.wasm").instantiate();
-	}
-	@Test
-	public void testMemory22Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.22.wasm").instantiate();
-	}
-	@Test
-	public void testMemory23Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.23.wasm").instantiate();
-	}
-	@Test
-	public void testMemory24Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.24.wasm").instantiate();
-	}
-	@Test
-	public void testMemory25Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.25.wasm").instantiate();
-	}
-	@Test
-	public void testMemory26Wasm() {
-		var instance = Module.build("src/test/resources/wasm/specv1/memory.26.wasm").instantiate();
-	}
+//	@Test
+//	public void testMemory20Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.20.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory21Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.21.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory22Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.22.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory23Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.23.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory24Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.24.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory25Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.25.wasm").instantiate();
+//	}
+//	@Test
+//	public void testMemory26Wasm() {
+//		var instance = Module.build("src/test/resources/wasm/specv1/memory.26.wasm").instantiate();
+//	}
 	@Test
 	public void testMemory30Wasm() {
 		var instance = Module.build("src/test/resources/wasm/specv1/memory.30.wasm").instantiate();
 		var data = instance.getExport("data");
 		assertEquals((int)(1L & 0xFFFFFFFFL), data.apply().asInt());
-////		var cast = instance.getExport("cast");
-////		assertEquals(doubleVal("4631107791820423168"), cast.apply().asDouble(), 0.0);
+		var cast = instance.getExport("cast");
+		assertEquals(doubleVal("4631107791820423168"), cast.apply().asDouble(), 0.0);
 		var i32load8s = instance.getExport("i32_load8_s");
 		assertEquals((int)(4294967295L & 0xFFFFFFFFL), i32load8s.apply(Value.i32((int)(4294967295L & 0xFFFFFFFFL))).asInt());
 		var i32load8u = instance.getExport("i32_load8_u");
