@@ -10,7 +10,7 @@ public class Module {
     private com.dylibso.chicory.wasm.Module module;
     private HashMap<String, Export> exports;
 
-    static Module build(String wasmFile) {
+    public static Module build(String wasmFile) {
         var parser = new Parser(wasmFile);
         return new Module(parser.parseModule());
     }
