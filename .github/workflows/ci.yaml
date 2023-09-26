@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
+        with:
+          submodules: 'true'
       - name: Set up Java
         uses: actions/setup-java@v3
         with:
