@@ -764,7 +764,7 @@ public class Machine {
                 }
             }
         } catch (ArithmeticException e) {
-            if (e.getMessage().toLowerCase().equals("/ by zero")) {
+            if (e.getMessage().equalsIgnoreCase("/ by zero")) {
                 throw new WASMRuntimeException("integer divide by zero");
             }
             throw new WASMRuntimeException(e.getMessage());
