@@ -39,6 +39,9 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <wastToProcess>i32.wast,i64.wast,local_get.wast,memory.wast,return.wast</wastToProcess>
+        </configuration>
       </plugin>
     </plugins>
   </build>

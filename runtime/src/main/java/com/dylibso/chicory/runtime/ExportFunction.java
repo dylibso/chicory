@@ -1,5 +1,6 @@
 package com.dylibso.chicory.runtime;
 
+import com.dylibso.chicory.runtime.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.Value;
 
 /**

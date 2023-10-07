@@ -3,25 +3,17 @@ package com.dylibso.chicory.maven;
 import com.dylibso.chicory.maven.wast.Command;
 import com.dylibso.chicory.maven.wast.CommandType;
 import com.dylibso.chicory.maven.wast.Wast;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.expr.AssignExpr;
+import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.TypeExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
-import com.github.javaparser.ast.stmt.AssertStmt;
-import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.EmptyStmt;
-import com.github.javaparser.ast.stmt.ExpressionStmt;
-import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.utils.SourceRoot;
+import com.github.javaparser.utils.StringEscapeUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -40,8 +32,10 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -85,7 +79,7 @@ public class TestGenMojo extends AbstractMojo {
     @Parameter(required = true, defaultValue = "${project.build.directory}/wabt")
     private File downloadTargetFolder;
 
-    @Parameter(required = true, defaultValue = "return.wast")
+    @Parameter(required = true)
     private List<String> wastToProcess;
 
     /**
@@ -216,6 +210,8 @@ public class TestGenMojo extends AbstractMojo {
         return targetFolder;
     }
 
+    private String INSTANCE_NAME = "instance";
+
     private void generateJava(File specFile, File targetFolder) {
         Wast wast;
         try {
@@ -227,43 +223,61 @@ public class TestGenMojo extends AbstractMojo {
         final SourceRoot dest = new SourceRoot(sourceDestinationFolder.toPath());
         var cu = new CompilationUnit("com.dylibso.chicory.test.gen");
         var name = specFile.toPath().getParent().toFile().getName();
-        var testName = name.substring(0, 1).toUpperCase() + name.substring(1) + "Test";
+        var testName = "SpecV1" + capitalize(escapedCamelCase(name)) + "Test";
         cu.setStorage(sourceDestinationFolder.toPath().resolve(testName + ".java"));
 
-        // default imports
+        // all the imports
         cu.addImport("org.junit.Test");
+
+        cu.addImport("com.dylibso.chicory.runtime.exceptions.InvalidException");
+        cu.addImport("com.dylibso.chicory.runtime.exceptions.MalformedException");
+        cu.addImport("com.dylibso.chicory.runtime.exceptions.WASMRuntimeException");
+        cu.addImport("com.dylibso.chicory.runtime.ExportFunction");
         cu.addImport("com.dylibso.chicory.runtime.Instance");
         cu.addImport("com.dylibso.chicory.runtime.Module");
+        cu.addImport("com.dylibso.chicory.runtime.ModuleType");
+
+        cu.addImport("com.dylibso.chicory.wasm.types.Value");
+
         cu.addImport("org.junit.Assert.assertEquals", true, false);
+        cu.addImport("org.junit.Assert.assertThrows", true, false);
 
         var testClass = cu.addClass(testName);
 
-        Expression moduleInstantiation = null;
         MethodDeclaration method = null;
         int testNumber = 0;
+        int moduleInstantiationNumber = 0;
         for (var cmd: wast.getCommands()) {
-            log.error("****");
-            log.error(cmd.toString());
             switch (cmd.getType()) {
                 case MODULE:
-                    moduleInstantiation = generateModuleInstantiation(cmd, targetFolder);
-                    method = testClass.addMethod("test" + testNumber++, Modifier.Keyword.PUBLIC);
-                    method.addAnnotation("Test");
+                    testClass.addFieldWithInitializer(
+                            new ClassOrInterfaceType("Instance"),
+                            INSTANCE_NAME + moduleInstantiationNumber++,
+                            generateModuleInstantiation(cmd, targetFolder));
                     break;
                 case ASSERT_RETURN:
-                    if (moduleInstantiation != null) {
-                        // initialize
-                        method.setBody(new BlockStmt().addStatement(
-                                new AssignExpr(
-                                        new VariableDeclarationExpr(
-                                                new ClassOrInterfaceType("Instance"), "instance"), moduleInstantiation, AssignExpr.Operator.ASSIGN)));
-                        moduleInstantiation = null;
+                case ASSERT_TRAP:
+                    method = testClass.addMethod("test" + testNumber++, Modifier.Keyword.PUBLIC);
+                    method.addAnnotation("Test");
+
+                    var varName = escapedCamelCase(cmd.getAction().getField());
+                    var fieldExport = generateFieldExport(varName, cmd, (moduleInstantiationNumber - 1));
+                    if (fieldExport.isPresent()) {
+                        method.getBody().get().addStatement(fieldExport.get());
                     }
 
-                    method.getBody().get().addStatement(generateAssert(cmd));
+                    for (var expr: generateAssert(varName, cmd)) {
+                        method.getBody().get().addStatement(expr);
+                    }
                     break;
                 case ASSERT_INVALID:
-                    // TODO: generate assertThrows
+                case ASSERT_MALFORMED:
+                    method = testClass.addMethod("test" + testNumber++, Modifier.Keyword.PUBLIC);
+                    method.addAnnotation("Test");
+
+                    for (var expr: generateAssertThrows(cmd, targetFolder)) {
+                        method.getBody().get().addStatement(expr);
+                    }
                     break;
             }
         }
@@ -272,28 +286,86 @@ public class TestGenMojo extends AbstractMojo {
         dest.saveAll();
     }
 
-    private Statement generateAssert(Command cmd) {
-        assert(cmd.getType() == CommandType.ASSERT_RETURN);
-        // TODO: implement me
+    private String capitalize(String in) {
+        return in.substring(0, 1).toUpperCase() + in.substring(1);
+    }
+
+    private String escapedCamelCase(String in) {
+        var escaped = StringEscapeUtils.escapeJava(in);
+        var sb = new StringBuffer();
+        var capitalize = false;
+        for (var i = 0; i < escaped.length(); i++) {
+            var character = escaped.charAt(i);
+
+            if (Character.isDigit(character)) {
+                sb.append(character);
+            } else if (Character.isAlphabetic(character)) {
+                if (capitalize) {
+                    sb.append(Character.toUpperCase(character));
+                    capitalize = false;
+                } else {
+                    sb.append(character);
+                }
+            } else {
+                capitalize = true;
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private Optional<Expression> generateFieldExport(String varName, Command cmd, int instanceNumber) {
+        if (cmd.getAction() != null && cmd.getAction().getField() != null) {
+            var declarator = new VariableDeclarator()
+                    .setName(varName)
+                    .setType(new ClassOrInterfaceType("ExportFunction"))
+                    .setInitializer(new NameExpr(INSTANCE_NAME + instanceNumber + ".getExport(\"" + cmd.getAction().getField() + "\")"));
+            Expression varDecl = new VariableDeclarationExpr(declarator);
+            return Optional.of(varDecl);
+        } else {
+            return Optional.empty();
+        }
+    }
+
+    private List<Expression> generateAssert(String varName, Command cmd) {
+        assert(cmd.getType() == CommandType.ASSERT_RETURN || cmd.getType() == CommandType.ASSERT_TRAP);
 
         var returnVar = "null";
+        var typeConversion = "";
+        var deltaParam = "";
         if (cmd.getExpected() != null && cmd.getExpected().length > 0) {
-            // TODO: emit the correct value
             if (cmd.getExpected().length == 1) {
-                var value = cmd.getExpected()[0];
-                // TODO: go on from here unnwrapping primitive types
+                var expected = cmd.getExpected()[0];
+                returnVar = expected.toJavaValue();
+                typeConversion = expected.extractType();
+                deltaParam = expected.getDelta();
             } else {
-                throw new RuntimeException("Not implemented yet");
+                throw new RuntimeException("Multiple expected return, implement me!");
             }
         }
 
         String invocationMethod = null;
         switch (cmd.getAction().getType()) {
             case INVOKE:
-                invocationMethod = ".apply()";
+                var args = Arrays.stream(cmd.getAction().getArgs()).map(arg -> arg.toWasmValue()).collect(Collectors.joining(", "));
+                invocationMethod = ".apply(" + args + ")";
                 break;
         }
-        return new ExpressionStmt(new NameExpr("assertEquals(" + returnVar + ", instance.getExport(\"" + cmd.getAction().getField() +"\")" + invocationMethod + ")"));
+
+        switch (cmd.getType()) {
+            case ASSERT_RETURN:
+                return List.of(new NameExpr("assertEquals(" + returnVar + ", "+ varName + invocationMethod + typeConversion + deltaParam + ")"));
+            case ASSERT_TRAP:
+                var assertDecl = new NameExpr("var exception = assertThrows(WASMRuntimeException.class, () -> "+ varName + invocationMethod + typeConversion + ")");
+                if (cmd.getText() != null) {
+                    var messageMatch = new NameExpr("assertEquals(\"" + cmd.getText() + "\", exception.getMessage())");
+                    return List.of(assertDecl, messageMatch);
+                } else {
+                    return List.of(assertDecl);
+                }
+        }
+
+        throw new RuntimeException("Unreachable");
     }
 
     private Expression generateModuleInstantiation(Command cmd, File folder) {
@@ -302,7 +374,33 @@ public class TestGenMojo extends AbstractMojo {
         var relativeFile = folder.toPath().resolve(cmd.getFilename()).toFile().getAbsolutePath()
                 .replaceFirst(project.getBasedir().getAbsolutePath() + "/", "");
 
-        return new NameExpr("Module.build(\"" + relativeFile + "\").instantiate()");
+        var additionalParam = "";
+        if (cmd.getModuleType() != null) {
+            additionalParam = ", ModuleType." + cmd.getModuleType().toUpperCase();
+        }
+        return new NameExpr("Module.build(\"" + relativeFile + "\"" + additionalParam + ").instantiate()");
+    }
+
+    private List<Expression> generateAssertThrows(Command cmd, File targetFolder) {
+        assert(cmd.getType() == CommandType.ASSERT_INVALID || cmd.getType() == CommandType.ASSERT_MALFORMED);
+
+        var exceptionType = "";
+        if (cmd.getType() == CommandType.ASSERT_INVALID) {
+            exceptionType = "InvalidException";
+        } else if (cmd.getType() == CommandType.ASSERT_MALFORMED) {
+            exceptionType = "MalformedException";
+        }
+
+        var assignementStmt = (cmd.getText() != null) ? "var exception = " : "";
+
+        var assertThrows = new NameExpr(assignementStmt + "assertThrows(" + exceptionType + ".class, () -> " + generateModuleInstantiation(cmd, targetFolder) + ")");
+
+        if (cmd.getText() != null) {
+            var messageMatch = new NameExpr("assertEquals(\"" + cmd.getText() + "\", exception.getMessage())");
+            return List.of(assertThrows, messageMatch);
+        } else {
+            return List.of(assertThrows);
+        }
     }
 
     private void generateTests(File testsuiteFolder, File sourceDestinationFolder) throws Exception {
@@ -312,6 +410,10 @@ public class TestGenMojo extends AbstractMojo {
         sourceDestinationFolder.mkdirs();
 
         for (var spec: wastToProcess) {
+            var wastFile = testsuiteFolder.toPath().resolve(spec).toFile();
+            if (!wastFile.exists()) {
+                throw new IllegalArgumentException("Wast file " + wastFile.getAbsolutePath() + " not found");
+            }
             var destFolder = executeWast2Json(wast2JsonBinary, testsuiteFolder.toPath().resolve(spec).toFile());
             generateJava(destFolder.toPath().resolve(SPEC_JSON).toFile(), destFolder);
         }
