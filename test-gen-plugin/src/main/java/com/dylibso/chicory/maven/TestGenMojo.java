@@ -204,6 +204,8 @@ public class TestGenMojo extends AbstractMojo {
         }
 
         if (ps.exitValue() != 0) {
+            System.err.println("wast2json exiting with:"+ ps.exitValue());
+            System.err.println(ps.getErrorStream().toString());
             throw new RuntimeException("Failed to execute wast2json program.");
         }
 
