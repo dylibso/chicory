@@ -25,4 +25,4 @@ jobs:
           distribution: 'temurin'
           java-version: '${{ matrix.version }}'
       - name: Test Java
-        run: mvn -B verify
+        run: mvn -B install
