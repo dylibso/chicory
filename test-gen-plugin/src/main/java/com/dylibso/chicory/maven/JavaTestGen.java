@@ -6,6 +6,7 @@ import com.dylibso.chicory.maven.wast.Wast;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.Expression;
@@ -40,7 +41,7 @@ public class JavaTestGen {
 
     private String INSTANCE_NAME = "instance";
 
-    public void generate(File specFile, File wasmFilesFolder) {
+    public void generate(File specFile, File wasmFilesFolder, List<String> excludedTests) {
         Wast wast;
         try {
             wast = mapper.readValue(specFile, Wast.class);
@@ -56,6 +57,7 @@ public class JavaTestGen {
 
         // all the imports
         // junit imports
+        cu.addImport("org.junit.Ignore");
         cu.addImport("org.junit.Test");
         cu.addImport("org.junit.Assert.assertEquals", true, false);
         cu.addImport("org.junit.Assert.assertThrows", true, false);
@@ -79,6 +81,8 @@ public class JavaTestGen {
         int testNumber = 0;
         int moduleInstantiationNumber = 0;
         for (var cmd: wast.getCommands()) {
+            var excludedMethods = excludedTests.stream().filter(t -> t.startsWith(testName)).map(t -> t.replace(testName + ".", "")).collect(Collectors.toList());
+
             switch (cmd.getType()) {
                 case MODULE:
                     testClass.addFieldWithInitializer(
@@ -88,8 +92,7 @@ public class JavaTestGen {
                     break;
                 case ASSERT_RETURN:
                 case ASSERT_TRAP:
-                    method = testClass.addMethod("test" + testNumber++, Modifier.Keyword.PUBLIC);
-                    method.addAnnotation("Test");
+                    method = createTestMethod(testClass, testNumber++, excludedMethods);
 
                     var varName = escapedCamelCase(cmd.getAction().getField());
                     var fieldExport = generateFieldExport(varName, cmd, (moduleInstantiationNumber - 1));
@@ -103,8 +106,7 @@ public class JavaTestGen {
                     break;
                 case ASSERT_INVALID:
                 case ASSERT_MALFORMED:
-                    method = testClass.addMethod("test" + testNumber++, Modifier.Keyword.PUBLIC);
-                    method.addAnnotation("Test");
+                    method = createTestMethod(testClass, testNumber++, excludedMethods);
 
                     for (var expr: generateAssertThrows(cmd, wasmFilesFolder)) {
                         method.getBody().get().addStatement(expr);
@@ -115,6 +117,17 @@ public class JavaTestGen {
 
         dest.add(cu);
         dest.saveAll();
+    }
+
+    private MethodDeclaration createTestMethod(ClassOrInterfaceDeclaration testClass, int testNumber, List<String> excludedTests) {
+        var methodName = "test" + testNumber;
+        var method = testClass.addMethod("test" + testNumber, Modifier.Keyword.PUBLIC);
+        if (excludedTests.contains(methodName)) {
+            method.addAnnotation("Ignore");
+        }
+        method.addAnnotation("Test");
+
+        return method;
     }
 
     private Optional<Expression> generateFieldExport(String varName, Command cmd, int instanceNumber) {

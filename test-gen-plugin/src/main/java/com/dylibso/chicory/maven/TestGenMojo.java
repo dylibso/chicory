@@ -11,6 +11,7 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.dylibso.chicory.maven.Constants.SPEC_JSON;
 
@@ -72,10 +73,20 @@ public class TestGenMojo extends AbstractMojo {
     private List<String> wastToProcess;
 
     /**
+     * Exclude list for tests that are still failing.
+     */
+    @Parameter(required = false, defaultValue = "[]")
+    private List<String> excludedTests;
+
+    /**
      * The current Maven project.
      */
     @Parameter(property = "project", required = true, readonly = true)
     private MavenProject project;
+
+    private List<String> clean(List<String> in) {
+        return in.stream().map(t -> t.replace("\n", "").replace("\r", "").trim()).collect(Collectors.toList());
+    }
 
     @Override
     public void execute() throws MojoExecutionException {
@@ -95,14 +106,14 @@ public class TestGenMojo extends AbstractMojo {
             wast2Json.fetch();
 
             // generate the tests
-            for (var spec: wastToProcess) {
+            for (var spec: clean(wastToProcess)) {
                 log.debug("TestGen processing " + spec);
                 var wastFile = testsuiteFolder.toPath().resolve(spec).toFile();
                 if (!wastFile.exists()) {
                     throw new IllegalArgumentException("Wast file " + wastFile.getAbsolutePath() + " not found");
                 }
                 var wasmFilesFolder = wast2Json.execute(testsuiteFolder.toPath().resolve(spec).toFile());
-                testGen.generate(wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile(), wasmFilesFolder);
+                testGen.generate(wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile(), wasmFilesFolder, clean(excludedTests));
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

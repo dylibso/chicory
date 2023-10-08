@@ -40,7 +40,18 @@
           </execution>
         </executions>
         <configuration>
-          <wastToProcess>i32.wast,i64.wast</wastToProcess>
+          <wastToProcess>
+            i32.wast,
+            i64.wast,
+            return.wast
+          </wastToProcess>
+          <excludedTests>
+            SpecV1ReturnTest.test6,
+            SpecV1ReturnTest.test7,
+            SpecV1ReturnTest.test9,
+            SpecV1ReturnTest.test49,
+            SpecV1ReturnTest.test55
+          </excludedTests>
         </configuration>
       </plugin>
     </plugins>
