@@ -192,7 +192,8 @@ public class JavaTestGen {
         assert(cmd.getType() == CommandType.MODULE);
 
         var relativeFile = folder.toPath().resolve(cmd.getFilename()).toFile().getAbsolutePath()
-                .replaceFirst(baseDir.getAbsolutePath() + "/", "");
+                .replaceFirst(baseDir.getAbsolutePath() + File.pathSeparator, "")
+                .replace("\\", "\\\\"); // Win compat
 
         var additionalParam = "";
         if (cmd.getModuleType() != null) {
