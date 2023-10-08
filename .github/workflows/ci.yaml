@@ -26,3 +26,6 @@ jobs:
           java-version: '${{ matrix.version }}'
       - name: Test Java
         run: mvn -B install
+      - name: Debug
+        if: always()
+        run: cat runtime/target/generated-test-sources/test-gen/SpecV1ReturnTest.java
