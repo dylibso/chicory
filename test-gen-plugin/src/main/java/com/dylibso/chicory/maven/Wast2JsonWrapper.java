@@ -64,7 +64,7 @@ public class Wast2JsonWrapper {
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(new File("."));
         pb.inheritIO();
-        Process ps = null;
+        Process ps;
         try {
             ps = pb.start();
             ps.waitFor(10, TimeUnit.SECONDS);
@@ -83,14 +83,13 @@ public class Wast2JsonWrapper {
         return targetFolder;
     }
 
-    private File downloadAndExtract(URL url) {
+    private void downloadAndExtract(URL url) {
         wabtDownloadTargetFolder.mkdirs();
         final File finalDestination = new File(wabtDownloadTargetFolder, new File(url.getFile()).getName());
 
         try (ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
              FileOutputStream fileOutputStream = new FileOutputStream(finalDestination)) {
             fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-            return finalDestination;
         } catch (IOException e) {
             throw new IllegalArgumentException("Error downloading : " + url, e);
         }

@@ -94,7 +94,7 @@ public class TestGenMojo extends AbstractMojo {
         // Instantiate the utilities
         var testSuiteDownloader = new TestSuiteDownloader(log);
         var wast2Json = new Wast2JsonWrapper(log, wabtDownloadTargetFolder, wabtReleasesURL, wabtVersion, osName, compiledWastTargetFolder);
-        var testGen = new JavaTestGen(log, project.getBasedir(), sourceDestinationFolder);
+        var testGen = new JavaTestGen(log, project.getBasedir(), sourceDestinationFolder, clean(excludedTests));
 
         // Create destination folders
         compiledWastTargetFolder.mkdirs();
@@ -113,7 +113,7 @@ public class TestGenMojo extends AbstractMojo {
                     throw new IllegalArgumentException("Wast file " + wastFile.getAbsolutePath() + " not found");
                 }
                 var wasmFilesFolder = wast2Json.execute(testsuiteFolder.toPath().resolve(spec).toFile());
-                testGen.generate(wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile(), wasmFilesFolder, clean(excludedTests));
+                testGen.generate(wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile(), wasmFilesFolder);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

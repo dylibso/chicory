@@ -10,7 +10,7 @@ public class StringUtils {
 
     public static String escapedCamelCase(String in) {
         var escaped = StringEscapeUtils.escapeJava(in);
-        var sb = new StringBuffer();
+        var sb = new StringBuilder();
         var capitalize = false;
         for (var i = 0; i < escaped.length(); i++) {
             var character = escaped.charAt(i);

@@ -2,6 +2,7 @@ package com.dylibso.chicory.maven;
 
 import com.dylibso.chicory.maven.wast.Command;
 import com.dylibso.chicory.maven.wast.CommandType;
+import com.dylibso.chicory.maven.wast.WasmValue;
 import com.dylibso.chicory.maven.wast.Wast;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.ast.CompilationUnit;
@@ -24,6 +25,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.dylibso.chicory.maven.StringUtils.*;
+import static com.dylibso.chicory.maven.wast.ActionType.INVOKE;
+import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 
 public class JavaTestGen {
 
@@ -32,16 +35,18 @@ public class JavaTestGen {
     private final Log log;
     private final File baseDir;
     private final File sourceTargetFolder;
+    private final List<String> excludedTests;
 
-    public JavaTestGen(Log log, File baseDir, File sourceTargetFolder) {
+    public JavaTestGen(Log log, File baseDir, File sourceTargetFolder, List<String> excludedTests) {
         this.log = log;
         this.baseDir = baseDir;
         this.sourceTargetFolder = sourceTargetFolder;
+        this.excludedTests = excludedTests;
     }
 
-    private String INSTANCE_NAME = "instance";
+    private static final String INSTANCE_NAME = "instance";
 
-    public void generate(File specFile, File wasmFilesFolder, List<String> excludedTests) {
+    public void generate(File specFile, File wasmFilesFolder) {
         Wast wast;
         try {
             wast = mapper.readValue(specFile, Wast.class);
@@ -77,7 +82,7 @@ public class JavaTestGen {
 
         var testClass = cu.addClass(testName);
 
-        MethodDeclaration method = null;
+        MethodDeclaration method;
         int testNumber = 0;
         int moduleInstantiationNumber = 0;
         for (var cmd: wast.getCommands()) {
@@ -86,7 +91,7 @@ public class JavaTestGen {
             switch (cmd.getType()) {
                 case MODULE:
                     testClass.addFieldWithInitializer(
-                            new ClassOrInterfaceType("Instance"),
+                            parseClassOrInterfaceType("Instance"),
                             INSTANCE_NAME + moduleInstantiationNumber++,
                             generateModuleInstantiation(cmd, wasmFilesFolder));
                     break;
@@ -134,7 +139,7 @@ public class JavaTestGen {
         if (cmd.getAction() != null && cmd.getAction().getField() != null) {
             var declarator = new VariableDeclarator()
                     .setName(varName)
-                    .setType(new ClassOrInterfaceType("ExportFunction"))
+                    .setType(parseClassOrInterfaceType("ExportFunction"))
                     .setInitializer(new NameExpr(INSTANCE_NAME + instanceNumber + ".getExport(\"" + cmd.getAction().getField() + "\")"));
             Expression varDecl = new VariableDeclarationExpr(declarator);
             return Optional.of(varDecl);
@@ -160,12 +165,12 @@ public class JavaTestGen {
             }
         }
 
-        String invocationMethod = null;
-        switch (cmd.getAction().getType()) {
-            case INVOKE:
-                var args = Arrays.stream(cmd.getAction().getArgs()).map(arg -> arg.toWasmValue()).collect(Collectors.joining(", "));
-                invocationMethod = ".apply(" + args + ")";
-                break;
+        String invocationMethod;
+        if (cmd.getAction().getType() == INVOKE) {
+            var args = Arrays.stream(cmd.getAction().getArgs()).map(WasmValue::toWasmValue).collect(Collectors.joining(", "));
+            invocationMethod = ".apply(" + args + ")";
+        } else {
+            throw new IllegalArgumentException("Unhandled action type " + cmd.getAction().getType());
         }
 
         switch (cmd.getType()) {

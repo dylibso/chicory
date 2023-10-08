@@ -5,6 +5,7 @@ import org.eclipse.jgit.api.Git;
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Comparator;
 
 import static java.util.Collections.singleton;
@@ -22,7 +23,7 @@ public class TestSuiteDownloader {
             log.warn("Testsuite folder exists but looks corrupted, replacing.");
             Files.walk(testSuiteFolder.toPath())
                     .sorted(Comparator.reverseOrder())
-                    .map(x -> x.toFile())
+                    .map(Path::toFile)
                     .forEach(File::delete);
         } else {
             log.debug("Testsuite detected, using the cached version.");
