@@ -763,6 +763,9 @@ public class Machine {
                         throw new RuntimeException("Machine doesn't recognize Instruction " + instruction);
                 }
             }
+        } catch (ChicoryException e) {
+            // propagate ChicoryExceptions
+            throw e;
         } catch (ArithmeticException e) {
             if (e.getMessage().equalsIgnoreCase("/ by zero")) {
                 throw new WASMRuntimeException("integer divide by zero");
