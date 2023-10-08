@@ -179,8 +179,7 @@ public class JavaTestGen {
             case ASSERT_TRAP:
                 var assertDecl = new NameExpr("var exception = assertThrows(WASMRuntimeException.class, () -> "+ varName + invocationMethod + typeConversion + ")");
                 if (cmd.getText() != null) {
-                    var messageMatch = new NameExpr("assertTrue(exception.getMessage().contains(\"" + cmd.getText() + "\"))");
-                    return List.of(assertDecl, messageMatch);
+                    return List.of(assertDecl, exceptionMessageMatch(cmd.getText()));
                 } else {
                     return List.of(assertDecl);
                 }
@@ -217,10 +216,13 @@ public class JavaTestGen {
         var assertThrows = new NameExpr(assignementStmt + "assertThrows(" + exceptionType + ".class, () -> " + generateModuleInstantiation(cmd, wasmFilesFolder) + ")");
 
         if (cmd.getText() != null) {
-            var messageMatch = new NameExpr("assertTrue(exception.getMessage().contains(\"" + cmd.getText() + "\"))");
-            return List.of(assertThrows, messageMatch);
+            return List.of(assertThrows, exceptionMessageMatch(cmd.getText()));
         } else {
             return List.of(assertThrows);
         }
+    }
+
+    private Expression exceptionMessageMatch(String text) {
+        return new NameExpr("assertTrue(\"'\" + exception.getMessage() + \"' doesn't contains: '" + text + "'\", exception.getMessage().contains(\"" + text + "\"))");
     }
 }
