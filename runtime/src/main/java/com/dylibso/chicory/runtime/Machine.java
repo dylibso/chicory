@@ -773,7 +773,8 @@ public class Machine {
             // propagate ChicoryExceptions
             throw e;
         } catch (ArithmeticException e) {
-            if (e.getMessage().equalsIgnoreCase("/ by zero")) {
+            if (e.getMessage().equalsIgnoreCase("/ by zero") ||
+                    e.getMessage().contains("divide by zero")) { // On Linux i64 throws "BigInteger divide by zero"
                 throw new WASMRuntimeException("integer divide by zero: " + e.getMessage(), e);
             }
             throw new WASMRuntimeException(e.getMessage(), e);
