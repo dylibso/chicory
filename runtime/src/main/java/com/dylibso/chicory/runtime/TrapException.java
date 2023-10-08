@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.runtime.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 
 import java.util.List;
 import java.util.Stack;

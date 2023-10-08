@@ -1,4 +1,4 @@
-package com.dylibso.chicory.runtime.exceptions;
+package com.dylibso.chicory.wasm.exceptions;
 
 public class ChicoryException extends RuntimeException {
     public ChicoryException(String msg) {

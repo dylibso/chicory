@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.runtime.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.types.*;
 
@@ -516,6 +516,9 @@ public class Machine {
                     case I32_DIV_S: {
                         var b = this.stack.pop().asInt();
                         var a = this.stack.pop().asInt();
+                        if (a == Integer.MIN_VALUE && b == -1) {
+                            throw new WASMRuntimeException("integer overflow");
+                        }
                         this.stack.push(Value.i32(a / b));
                         break;
                     }
@@ -528,6 +531,9 @@ public class Machine {
                     case I64_DIV_S: {
                         var b = this.stack.pop().asLong();
                         var a = this.stack.pop().asLong();
+                        if (a == Long.MIN_VALUE && b == -1L) {
+                            throw new WASMRuntimeException("integer overflow");
+                        }
                         this.stack.push(Value.i64(a / b));
                         break;
                     }
@@ -768,11 +774,11 @@ public class Machine {
             throw e;
         } catch (ArithmeticException e) {
             if (e.getMessage().equalsIgnoreCase("/ by zero")) {
-                throw new WASMRuntimeException("integer divide by zero");
+                throw new WASMRuntimeException("integer divide by zero: " + e.getMessage(), e);
             }
-            throw new WASMRuntimeException(e.getMessage());
+            throw new WASMRuntimeException(e.getMessage(), e);
         } catch (Exception e) {
-            throw new WASMRuntimeException(e.getMessage());
+            throw new WASMRuntimeException(e.getMessage(), e);
         }
     }
 

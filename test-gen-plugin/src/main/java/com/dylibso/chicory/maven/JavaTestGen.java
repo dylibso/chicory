@@ -55,20 +55,23 @@ public class JavaTestGen {
         cu.setStorage(sourceTargetFolder.toPath().resolve(testName + ".java"));
 
         // all the imports
+        // junit imports
         cu.addImport("org.junit.Test");
+        cu.addImport("org.junit.Assert.assertEquals", true, false);
+        cu.addImport("org.junit.Assert.assertThrows", true, false);
+        cu.addImport("org.junit.Assert.assertTrue", true, false);
 
-        cu.addImport("com.dylibso.chicory.runtime.exceptions.InvalidException");
-        cu.addImport("com.dylibso.chicory.runtime.exceptions.MalformedException");
+        // runtime imports
         cu.addImport("com.dylibso.chicory.runtime.exceptions.WASMRuntimeException");
         cu.addImport("com.dylibso.chicory.runtime.ExportFunction");
         cu.addImport("com.dylibso.chicory.runtime.Instance");
         cu.addImport("com.dylibso.chicory.runtime.Module");
         cu.addImport("com.dylibso.chicory.runtime.ModuleType");
 
+        // base imports
+        cu.addImport("com.dylibso.chicory.wasm.exceptions.InvalidException");
+        cu.addImport("com.dylibso.chicory.wasm.exceptions.MalformedException");
         cu.addImport("com.dylibso.chicory.wasm.types.Value");
-
-        cu.addImport("org.junit.Assert.assertEquals", true, false);
-        cu.addImport("org.junit.Assert.assertThrows", true, false);
 
         var testClass = cu.addClass(testName);
 
@@ -158,7 +161,7 @@ public class JavaTestGen {
             case ASSERT_TRAP:
                 var assertDecl = new NameExpr("var exception = assertThrows(WASMRuntimeException.class, () -> "+ varName + invocationMethod + typeConversion + ")");
                 if (cmd.getText() != null) {
-                    var messageMatch = new NameExpr("assertEquals(\"" + cmd.getText() + "\", exception.getMessage())");
+                    var messageMatch = new NameExpr("assertTrue(exception.getMessage().contains(\"" + cmd.getText() + "\"))");
                     return List.of(assertDecl, messageMatch);
                 } else {
                     return List.of(assertDecl);
@@ -196,7 +199,7 @@ public class JavaTestGen {
         var assertThrows = new NameExpr(assignementStmt + "assertThrows(" + exceptionType + ".class, () -> " + generateModuleInstantiation(cmd, wasmFilesFolder) + ")");
 
         if (cmd.getText() != null) {
-            var messageMatch = new NameExpr("assertEquals(\"" + cmd.getText() + "\", exception.getMessage())");
+            var messageMatch = new NameExpr("assertTrue(exception.getMessage().contains(\"" + cmd.getText() + "\"))");
             return List.of(assertThrows, messageMatch);
         } else {
             return List.of(assertThrows);

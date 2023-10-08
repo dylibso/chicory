@@ -1,7 +1,7 @@
 package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.runtime.exceptions.ChicoryException;
-import com.dylibso.chicory.runtime.exceptions.InvalidException;
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.*;
 

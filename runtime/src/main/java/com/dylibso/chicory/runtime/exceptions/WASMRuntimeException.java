@@ -1,5 +1,7 @@
 package com.dylibso.chicory.runtime.exceptions;
 
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+
 public class WASMRuntimeException extends ChicoryException {
     public WASMRuntimeException(String msg) {
         super(msg);
