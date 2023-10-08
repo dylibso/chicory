@@ -22,22 +22,29 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+
+import static java.util.Collections.singleton;
 
 /**
  * This plugin should generate the testsuite out of wast files
@@ -54,6 +61,18 @@ public class TestGenMojo extends AbstractMojo {
      */
     @Parameter(defaultValue = "${os.name}")
     private String osName;
+
+    /**
+     * Repository of the testsuite.
+     */
+    @Parameter(required = true, defaultValue = "https://github.com/WebAssembly/testsuite")
+    private String testSuiteRepo;
+
+    /**
+     * Repository of the testsuite.
+     */
+    @Parameter(required = true, defaultValue = "main")
+    private String testSuiteRepoRef;
 
     /**
      * Location for the source wast files.
@@ -94,9 +113,29 @@ public class TestGenMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException {
         JavaParserMavenUtils.makeJavaParserLogToMavenOutput(getLog());
         try {
+            downloadTestsuite(testSuiteRepo, testSuiteRepoRef, testsuiteFolder);
             generateTests(testsuiteFolder, sourceDestinationFolder);
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public void downloadTestsuite(String testSuiteRepo, String testSuiteRepoRef, File testSuiteFolder) throws Exception {
+        if (testSuiteFolder.exists() && testSuiteFolder.list((dir, name) -> name.endsWith(".wast")).length == 0) {
+            log.warn("Testsuite folder exists but looks corrupted, replacing.");
+            Files.walk(testSuiteFolder.toPath())
+                    .sorted(Comparator.reverseOrder())
+                    .map(x -> x.toFile())
+                    .forEach(File::delete);
+        }
+        if (!testSuiteFolder.exists()) {
+            log.warn("Cloning the testsuite.");
+            Git.cloneRepository()
+                    .setURI(testSuiteRepo)
+                    .setDirectory(testSuiteFolder)
+                    .setBranchesToClone(singleton("refs/heads/" + testSuiteRepoRef))
+                    .setBranch("refs/heads/" + testSuiteRepoRef)
+                    .call();
         }
     }
 

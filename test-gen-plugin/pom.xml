@@ -32,6 +32,11 @@
             <version>2.4.4</version>
         </dependency>
         <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>6.7.0.202309050840-r</version>
+        </dependency>
+        <dependency>
           <groupId>org.apache.maven</groupId>
           <artifactId>maven-plugin-api</artifactId>
           <version>3.6.3</version>
