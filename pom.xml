@@ -1,16 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.dylibso.chickory</groupId>
   <artifactId>chicory</artifactId>
   <version>1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
   <name>chicory</name>
   <url>http://www.example.com</url>
-  <packaging>pom</packaging>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -54,9 +51,9 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${maven-compiler-plugin.version}</version>
         <configuration>
-            <source>${maven.compiler.source}</source>
-            <target>${maven.compiler.target}</target>
-            <release>${maven.compiler.target}</release>
+          <source>${maven.compiler.source}</source>
+          <target>${maven.compiler.target}</target>
+          <release>${maven.compiler.target}</release>
         </configuration>
       </plugin>
       <plugin>
@@ -77,11 +74,11 @@
           <formats>
             <format>
               <includes>
-                <include>**/src/main/java/**/*.java</include>
-                <include>**/src/test/java/**/*.java</include>
+                <include>*.md</include>
+                <include>.gitignore</include>
               </includes>
-              <trimTrailingWhitespace/>
-              <endWithNewline/>
+              <trimTrailingWhitespace></trimTrailingWhitespace>
+              <endWithNewline></endWithNewline>
               <indent>
                 <spaces>true</spaces>
                 <spacesPerTab>2</spacesPerTab>
@@ -93,18 +90,29 @@
               <include>**/src/main/java/**/*.java</include>
               <include>**/src/test/java/**/*.java</include>
             </includes>
-            <importOrder />
-            <removeUnusedImports />
+            <googleJavaFormat>
+              <version>1.18.1</version>
+              <style>AOSP</style>
+              <reflowLongStrings>true</reflowLongStrings>
+              <formatJavadoc>false</formatJavadoc>
+            </googleJavaFormat>
+            <importOrder></importOrder>
+            <removeUnusedImports></removeUnusedImports>
           </java>
+          <pom>
+            <includes>
+              <include>**/pom.xml</include>
+            </includes>
+            <sortPom></sortPom>
+          </pom>
         </configuration>
         <executions>
           <execution>
             <id>format</id>
-            <phase>process-sources</phase>
             <goals>
               <goal>check</goal>
-              <goal>apply</goal>
             </goals>
+            <phase>process-sources</phase>
           </execution>
         </executions>
       </plugin>
