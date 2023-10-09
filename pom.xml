@@ -9,6 +9,12 @@
   <name>chicory</name>
   <url>http://www.example.com</url>
 
+  <modules>
+    <module>test-gen-plugin</module>
+    <module>wasm</module>
+    <module>runtime</module>
+  </modules>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -20,12 +26,6 @@
     <junit.version>4.13.2</junit.version>
     <spotless.version>2.40.0</spotless.version>
   </properties>
-
-  <modules>
-    <module>test-gen-plugin</module>
-    <module>wasm</module>
-    <module>runtime</module>
-  </modules>
 
   <dependencyManagement>
     <dependencies>

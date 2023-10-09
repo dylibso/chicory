@@ -28,7 +28,7 @@ var parser = new Parser("/tmp/code.wasm");
 parser.includeSection(SectionId.CUSTOM);
 // parser.includeSection(SectionId.CODE); // call for each section you want
 
-// implement the listener        
+// implement the listener
 parser.setListener(section -> {
     if (section.getSectionId() == SectionId.CUSTOM) {
         var customSection = (CustomSection) section;
@@ -42,4 +42,3 @@ parser.setListener(section -> {
 // call parse() instead of parseModule()
 parser.parse();
 ```
-

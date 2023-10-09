@@ -4,8 +4,8 @@ public class ExportSection extends Section {
     private Export[] exports;
 
     public ExportSection(long id, long size, Export[] exports) {
-       super(id, size);
-       this.exports = exports;
+        super(id, size);
+        this.exports = exports;
     }
 
     public Export[] getExports() {

@@ -8,6 +8,7 @@ public enum ActionType {
     INVOKE("invoke");
 
     private String value;
+
     ActionType(String value) {
         this.value = value;
     }

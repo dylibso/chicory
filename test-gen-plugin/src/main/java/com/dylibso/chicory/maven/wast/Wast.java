@@ -1,9 +1,7 @@
 package com.dylibso.chicory.maven.wast;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.io.File;
-import java.util.Set;
 
 public class Wast {
 

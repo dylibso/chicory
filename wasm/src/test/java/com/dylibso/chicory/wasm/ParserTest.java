@@ -1,21 +1,17 @@
 package com.dylibso.chicory.wasm;
 
-import com.dylibso.chicory.wasm.types.CustomSection;
-import com.dylibso.chicory.wasm.types.OpCode;
-import com.dylibso.chicory.wasm.types.SectionId;
-import com.dylibso.chicory.wasm.Encoding;
-import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.types.ValueType;
-import org.junit.Test;
-
-import java.io.File;
-
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.fail;
+
+import com.dylibso.chicory.wasm.types.CustomSection;
+import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.SectionId;
+import com.dylibso.chicory.wasm.types.ValueType;
+import java.io.File;
+import org.junit.Test;
 
 public class ParserTest {
 
@@ -44,7 +40,7 @@ public class ParserTest {
         var segment = dataSegments[0];
         assertEquals(0, segment.getIdx());
         assertEquals(OpCode.I32_CONST, segment.getOffset()[0].getOpcode());
-        assertArrayEquals(new byte[]{0x00,0x01,0x02,0x03}, segment.getData());
+        assertArrayEquals(new byte[] {0x00, 0x01, 0x02, 0x03}, segment.getData());
 
         // check start section
         var startSection = module.getStartSection();
@@ -54,12 +50,12 @@ public class ParserTest {
         var funcSection = module.getFunctionSection();
         var typeIndices = funcSection.getTypeIndices();
         assertEquals(1, typeIndices.length);
-        assertEquals(1L, (long)typeIndices[0]);
+        assertEquals(1L, (long) typeIndices[0]);
 
         // check export section
-//        var exportSection = module.getExportSection();
-//        var exports = exportSection.getExports();
-//        assertEquals(1, exports.size());
+        //        var exportSection = module.getExportSection();
+        //        var exports = exportSection.getExports();
+        //        assertEquals(1, exports.size());
 
         // check memory section
         var memorySection = module.getMemorySection();
@@ -79,9 +75,9 @@ public class ParserTest {
 
         assertEquals("0x00000032: I32_CONST [42]", instructions.get(0).toString());
         assertEquals(OpCode.I32_CONST, instructions.get(0).getOpcode());
-        assertEquals(42L, (long)instructions.get(0).getOperands()[0]);
+        assertEquals(42L, (long) instructions.get(0).getOperands()[0]);
         assertEquals(OpCode.CALL, instructions.get(1).getOpcode());
-        assertEquals(0L, (long)instructions.get(1).getOperands()[0]);
+        assertEquals(0L, (long) instructions.get(1).getOperands()[0]);
         assertEquals(OpCode.END, instructions.get(2).getOpcode());
     }
 
@@ -100,7 +96,7 @@ public class ParserTest {
         var funcSection = module.getFunctionSection();
         var typeIndices = funcSection.getTypeIndices();
         assertEquals(1, typeIndices.length);
-        assertEquals(0L, (long)typeIndices[0]);
+        assertEquals(0L, (long) typeIndices[0]);
 
         var codeSection = module.getCodeSection();
         var functionBodies = codeSection.getFunctionBodies();
@@ -127,27 +123,28 @@ public class ParserTest {
     public void shouldSupportCustomListener() {
         var parser = new Parser("src/test/resources/wasm/code.wasm");
         parser.includeSection(SectionId.CUSTOM);
-        parser.setListener(s -> {
-            if (s.getSectionId() == SectionId.CUSTOM) {
-                var customSection = (CustomSection) s;
-                var name = customSection.getName();
-                assertTrue(name.length() > 0);
-            } else {
-                fail("Should not have received section with id: " + s.getSectionId());
-            }
-        });
+        parser.setListener(
+                s -> {
+                    if (s.getSectionId() == SectionId.CUSTOM) {
+                        var customSection = (CustomSection) s;
+                        var name = customSection.getName();
+                        assertTrue(name.length() > 0);
+                    } else {
+                        fail("Should not have received section with id: " + s.getSectionId());
+                    }
+                });
         parser.parse();
     }
 
-//    @Test
-//    public void shouldParseAst() {
-//        var parser = new Parser("src/test/resources/wasm/code.wasm");
-//        var module = parser.parseModule();
-//        var codeSection = module.getCodeSection();
-//        var fbody = codeSection.getFunctionBodies()[0];
-//        var ast = fbody.getAst();
-//        ast.print();
-//    }
+    //    @Test
+    //    public void shouldParseAst() {
+    //        var parser = new Parser("src/test/resources/wasm/code.wasm");
+    //        var module = parser.parseModule();
+    //        var codeSection = module.getCodeSection();
+    //        var fbody = codeSection.getFunctionBodies()[0];
+    //        var ast = fbody.getAst();
+    //        ast.print();
+    //    }
 
     @Test
     public void shouldParseFloats() {
@@ -160,7 +157,6 @@ public class ParserTest {
         var f64 = Encoding.longToDouble(fbody.getInstructions().get(1).getOperands()[0]);
         assertEquals(0.123456789012345d, f64, 0.00000000000001d);
     }
-
 
     @Test
     public void shouldProperlyParseSignedValue() {

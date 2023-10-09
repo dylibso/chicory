@@ -1,14 +1,13 @@
 package com.dylibso.chicory.maven;
 
-import org.apache.maven.plugin.logging.Log;
-import org.eclipse.jgit.api.Git;
+import static java.util.Collections.singleton;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Comparator;
-
-import static java.util.Collections.singleton;
+import org.apache.maven.plugin.logging.Log;
+import org.eclipse.jgit.api.Git;
 
 public class TestSuiteDownloader {
 
@@ -18,8 +17,10 @@ public class TestSuiteDownloader {
         this.log = log;
     }
 
-    public void downloadTestsuite(String testSuiteRepo, String testSuiteRepoRef, File testSuiteFolder) throws Exception {
-        if (testSuiteFolder.exists() && testSuiteFolder.list((dir, name) -> name.endsWith(".wast")).length == 0) {
+    public void downloadTestsuite(
+            String testSuiteRepo, String testSuiteRepoRef, File testSuiteFolder) throws Exception {
+        if (testSuiteFolder.exists()
+                && testSuiteFolder.list((dir, name) -> name.endsWith(".wast")).length == 0) {
             log.warn("Testsuite folder exists but looks corrupted, replacing.");
             Files.walk(testSuiteFolder.toPath())
                     .sorted(Comparator.reverseOrder())
@@ -39,5 +40,4 @@ public class TestSuiteDownloader {
                     .call();
         }
     }
-
 }

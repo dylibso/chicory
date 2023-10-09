@@ -16,6 +16,7 @@ public enum CommandType {
     ASSERT_MALFORMED("assert_malformed");
 
     private String value;
+
     CommandType(String value) {
         this.value = value;
     }

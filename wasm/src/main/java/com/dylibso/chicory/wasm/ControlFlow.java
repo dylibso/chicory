@@ -2,7 +2,6 @@ package com.dylibso.chicory.wasm;
 
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
-
 import java.util.List;
 import java.util.function.Function;
 
@@ -52,67 +51,104 @@ public class ControlFlow {
     public static void labelBranches(List<Instruction> instructions) {
         Function<Integer, Integer> clamp = (i) -> Math.min(i, instructions.size());
 
-        for (int i = 0; i  < instructions.size(); i++) {
+        for (int i = 0; i < instructions.size(); i++) {
             var instr = instructions.get(i);
             switch (instr.getOpcode()) {
-                case IF: {
-                    instr.setLabelTrue(clamp.apply(i + 1));
-                    // find the matching ELSE (which is optional)
-                    var next = findNext(instructions, OpCode.ELSE, instr.getDepth(), clamp.apply(i + 1));
-                    if (next != null) {
-                        // point to instruction after the ELSE
-                        instr.setLabelFalse(clamp.apply(next + 1));
-                    } else {
-                        var end = findNext(instructions, OpCode.END, instr.getDepth(), clamp.apply(i + 1));
-                        instr.setLabelFalse(clamp.apply(end + 1));
+                case IF:
+                    {
+                        instr.setLabelTrue(clamp.apply(i + 1));
+                        // find the matching ELSE (which is optional)
+                        var next =
+                                findNext(
+                                        instructions,
+                                        OpCode.ELSE,
+                                        instr.getDepth(),
+                                        clamp.apply(i + 1));
+                        if (next != null) {
+                            // point to instruction after the ELSE
+                            instr.setLabelFalse(clamp.apply(next + 1));
+                        } else {
+                            var end =
+                                    findNext(
+                                            instructions,
+                                            OpCode.END,
+                                            instr.getDepth(),
+                                            clamp.apply(i + 1));
+                            instr.setLabelFalse(clamp.apply(end + 1));
+                        }
+                        break;
                     }
-                    break;
-                }
-                case ELSE: {
-                    var end = findNext(instructions, OpCode.END, instr.getDepth(), clamp.apply(i + 1));
-                    instr.setLabelTrue(clamp.apply(end + 1));
-                    break;
-                }
-                case BR: {
-                    var d = (int) instr.getOperands()[0];
-                    var end = findNext(instructions, OpCode.END, instr.getDepth() - d, clamp.apply(i + 1));
-                    var endI = instructions.get(end);
-                    if (endI.getScope() == OpCode.LOOP) {
-                        var loop = findLast(instructions, OpCode.LOOP, instr.getDepth() - d, i);
-                        instr.setLabelTrue(loop + 1);
-                    } else {
+                case ELSE:
+                    {
+                        var end =
+                                findNext(
+                                        instructions,
+                                        OpCode.END,
+                                        instr.getDepth(),
+                                        clamp.apply(i + 1));
                         instr.setLabelTrue(clamp.apply(end + 1));
+                        break;
                     }
-                    break;
-                }
-                case BR_IF: {
-                    instr.setLabelFalse(clamp.apply(i + 1));
-                    var d = (int) instr.getOperands()[0];
-                    var end = findNext(instructions, OpCode.END, instr.getDepth() - d, clamp.apply(i + 1));
-                    var endI = instructions.get(end);
-                    if (endI.getScope() == OpCode.LOOP) {
-                        var loop = findLast(instructions, OpCode.LOOP, instr.getDepth() - d, i);
-                        instr.setLabelTrue(loop + 1);
-                    } else {
-                        instr.setLabelTrue(clamp.apply(end + 1));
-                    }
-                    break;
-                }
-                case BR_TABLE: {
-                    instr.setLabelTable(new int[instr.getOperands().length]);
-                    for (var idx = 0; idx < instr.getLabelTable().length; idx++) {
-                        var d = (int) instr.getOperands()[idx];
-                        var end = findNext(instructions, OpCode.END, instr.getDepth() - d, clamp.apply(i + 1));
+                case BR:
+                    {
+                        var d = (int) instr.getOperands()[0];
+                        var end =
+                                findNext(
+                                        instructions,
+                                        OpCode.END,
+                                        instr.getDepth() - d,
+                                        clamp.apply(i + 1));
                         var endI = instructions.get(end);
                         if (endI.getScope() == OpCode.LOOP) {
                             var loop = findLast(instructions, OpCode.LOOP, instr.getDepth() - d, i);
-                            instr.getLabelTable()[idx] = loop + 1;
+                            instr.setLabelTrue(loop + 1);
                         } else {
-                            instr.getLabelTable()[idx] = clamp.apply(end + 1);
+                            instr.setLabelTrue(clamp.apply(end + 1));
                         }
+                        break;
                     }
-                    break;
-                }
+                case BR_IF:
+                    {
+                        instr.setLabelFalse(clamp.apply(i + 1));
+                        var d = (int) instr.getOperands()[0];
+                        var end =
+                                findNext(
+                                        instructions,
+                                        OpCode.END,
+                                        instr.getDepth() - d,
+                                        clamp.apply(i + 1));
+                        var endI = instructions.get(end);
+                        if (endI.getScope() == OpCode.LOOP) {
+                            var loop = findLast(instructions, OpCode.LOOP, instr.getDepth() - d, i);
+                            instr.setLabelTrue(loop + 1);
+                        } else {
+                            instr.setLabelTrue(clamp.apply(end + 1));
+                        }
+                        break;
+                    }
+                case BR_TABLE:
+                    {
+                        instr.setLabelTable(new int[instr.getOperands().length]);
+                        for (var idx = 0; idx < instr.getLabelTable().length; idx++) {
+                            var d = (int) instr.getOperands()[idx];
+                            var end =
+                                    findNext(
+                                            instructions,
+                                            OpCode.END,
+                                            instr.getDepth() - d,
+                                            clamp.apply(i + 1));
+                            var endI = instructions.get(end);
+                            if (endI.getScope() == OpCode.LOOP) {
+                                var loop =
+                                        findLast(
+                                                instructions, OpCode.LOOP, instr.getDepth() - d, i);
+                                instr.getLabelTable()[idx] = loop + 1;
+                            } else {
+                                instr.getLabelTable()[idx] = clamp.apply(end + 1);
+                            }
+                        }
+                        break;
+                    }
             }
         }
     }
@@ -146,6 +182,4 @@ public class ControlFlow {
         }
         return null;
     }
-
-
 }

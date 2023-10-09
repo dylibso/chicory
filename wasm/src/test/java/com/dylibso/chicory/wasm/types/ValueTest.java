@@ -1,9 +1,8 @@
 package com.dylibso.chicory.wasm.types;
 
-import com.dylibso.chicory.wasm.types.Value;
-import org.junit.Test;
-
 import static org.junit.Assert.*;
+
+import org.junit.Test;
 
 public class ValueTest {
     @Test

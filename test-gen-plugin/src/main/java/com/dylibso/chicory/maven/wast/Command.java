@@ -2,7 +2,6 @@ package com.dylibso.chicory.maven.wast;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Arrays;
 
 @JsonIgnoreProperties
@@ -18,15 +17,25 @@ public class Command {
 
     @Override
     public String toString() {
-        return "Command{" +
-                "type=" + type +
-                ", line=" + line +
-                ", filename='" + filename + '\'' +
-                ", action=" + action +
-                ", expected=" + Arrays.toString(expected) +
-                ", text='" + text + '\'' +
-                ", moduleType='" + moduleType + '\'' +
-                '}';
+        return "Command{"
+                + "type="
+                + type
+                + ", line="
+                + line
+                + ", filename='"
+                + filename
+                + '\''
+                + ", action="
+                + action
+                + ", expected="
+                + Arrays.toString(expected)
+                + ", text='"
+                + text
+                + '\''
+                + ", moduleType='"
+                + moduleType
+                + '\''
+                + '}';
     }
 
     @JsonProperty("action")

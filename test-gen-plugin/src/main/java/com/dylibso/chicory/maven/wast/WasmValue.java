@@ -20,10 +20,14 @@ public class WasmValue {
 
     public String toJavaValue() {
         switch (type) {
-            case I32: return "Integer.parseUnsignedInt(\"" + value + "\")";
-            case I64: return "Long.parseUnsignedLong(\"" + value + "\")";
-            case F32: return "Float.parseFloat(\"" + value + "\")";
-            case F64: return "Double.parseDouble(\"" + value + "\")";
+            case I32:
+                return "Integer.parseUnsignedInt(\"" + value + "\")";
+            case I64:
+                return "Long.parseUnsignedLong(\"" + value + "\")";
+            case F32:
+                return "Float.parseFloat(\"" + value + "\")";
+            case F64:
+                return "Double.parseDouble(\"" + value + "\")";
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
@@ -31,10 +35,14 @@ public class WasmValue {
 
     public String toWasmValue() {
         switch (type) {
-            case I32: return "Value.i32(Integer.parseUnsignedInt(\"" + value + "\"))";
-            case I64: return "Value.i64(Long.parseUnsignedLong(\"" + value + "\"))";
-            case F32: return "Value.fromFloat(Float.parseFloat(\"" + value + "\"))";
-            case F64: return "Value.fromDouble(Double.parseDouble(\"" + value + "\"))";
+            case I32:
+                return "Value.i32(Integer.parseUnsignedInt(\"" + value + "\"))";
+            case I64:
+                return "Value.i64(Long.parseUnsignedLong(\"" + value + "\"))";
+            case F32:
+                return "Value.fromFloat(Float.parseFloat(\"" + value + "\"))";
+            case F64:
+                return "Value.fromDouble(Double.parseDouble(\"" + value + "\"))";
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }

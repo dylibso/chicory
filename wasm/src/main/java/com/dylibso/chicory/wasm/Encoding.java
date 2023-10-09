@@ -54,7 +54,6 @@ public final class Encoding {
         return result;
     }
 
-
     public static long readSigned64Leb128(ByteBuffer byteBuffer) {
         long result = 0;
         int shift = 0;
@@ -91,7 +90,7 @@ public final class Encoding {
 
     public static float longToFloat(long x) {
         ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES).order(ByteOrder.LITTLE_ENDIAN);
-        buffer.putInt((int)x);
+        buffer.putInt((int) x);
         buffer.rewind();
         return buffer.getFloat();
     }

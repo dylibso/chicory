@@ -1,6 +1,6 @@
 package com.dylibso.chicory.maven;
 
-import org.apache.maven.plugin.logging.Log;
+import static com.dylibso.chicory.maven.Constants.SPEC_JSON;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,8 +15,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static com.dylibso.chicory.maven.Constants.SPEC_JSON;
+import org.apache.maven.plugin.logging.Log;
 
 public class Wast2JsonWrapper {
 
@@ -30,7 +29,13 @@ public class Wast2JsonWrapper {
 
     private String wast2JsonCmd = WAST2JSON;
 
-    public Wast2JsonWrapper(Log log, File wabtDownloadTargetFolder, String wabtReleasesURL, String wabtVersion, String osName, File compiledWastTargetFolder) {
+    public Wast2JsonWrapper(
+            Log log,
+            File wabtDownloadTargetFolder,
+            String wabtReleasesURL,
+            String wabtVersion,
+            String osName,
+            File compiledWastTargetFolder) {
         this.log = log;
         this.wabtDownloadTargetFolder = wabtDownloadTargetFolder;
         this.wabtReleasesURL = wabtReleasesURL;
@@ -54,11 +59,8 @@ public class Wast2JsonWrapper {
 
         targetFolder.mkdirs();
 
-        var command = List.of(
-                wast2JsonCmd,
-                wastFile.getAbsolutePath(),
-                "-o",
-                destFile.getAbsolutePath());
+        var command =
+                List.of(wast2JsonCmd, wastFile.getAbsolutePath(), "-o", destFile.getAbsolutePath());
         log.info("Going to execute command: " + command.stream().collect(Collectors.joining(" ")));
 
         ProcessBuilder pb = new ProcessBuilder(command);
@@ -75,7 +77,7 @@ public class Wast2JsonWrapper {
         }
 
         if (ps.exitValue() != 0) {
-            System.err.println("wast2json exiting with:"+ ps.exitValue());
+            System.err.println("wast2json exiting with:" + ps.exitValue());
             System.err.println(ps.getErrorStream().toString());
             throw new RuntimeException("Failed to execute wast2json program.");
         }
@@ -85,10 +87,11 @@ public class Wast2JsonWrapper {
 
     private void downloadAndExtract(URL url) {
         wabtDownloadTargetFolder.mkdirs();
-        final File finalDestination = new File(wabtDownloadTargetFolder, new File(url.getFile()).getName());
+        final File finalDestination =
+                new File(wabtDownloadTargetFolder, new File(url.getFile()).getName());
 
         try (ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
-             FileOutputStream fileOutputStream = new FileOutputStream(finalDestination)) {
+                FileOutputStream fileOutputStream = new FileOutputStream(finalDestination)) {
             fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
         } catch (IOException e) {
             throw new IllegalArgumentException("Error downloading : " + url, e);
@@ -115,10 +118,17 @@ public class Wast2JsonWrapper {
         }
 
         // Downloading locally WABT
-        var binary = wabtDownloadTargetFolder.toPath().resolve("wabt-" + wabtVersion).resolve("bin").resolve(WAST2JSON);
+        var binary =
+                wabtDownloadTargetFolder
+                        .toPath()
+                        .resolve("wabt-" + wabtVersion)
+                        .resolve("bin")
+                        .resolve(WAST2JSON);
 
         if (binary.toFile().exists()) {
-            log.warn("cached `wast2json` exists trying to use it, please run `mvn clean` if this doesn't succeed");
+            log.warn(
+                    "cached `wast2json` exists trying to use it, please run `mvn clean` if this"
+                            + " doesn't succeed");
             return binary.toFile().getAbsolutePath();
         }
 
@@ -132,7 +142,13 @@ public class Wast2JsonWrapper {
             throw new RuntimeException(e);
         }
 
-        try (FileInputStream fis = new FileInputStream(wabtDownloadTargetFolder.toPath().resolve(fileName).toFile().getAbsolutePath())) {
+        try (FileInputStream fis =
+                new FileInputStream(
+                        wabtDownloadTargetFolder
+                                .toPath()
+                                .resolve(fileName)
+                                .toFile()
+                                .getAbsolutePath())) {
             new TarExtractor(fis, wabtDownloadTargetFolder.toPath()).untar();
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);

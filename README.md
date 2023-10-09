@@ -99,7 +99,7 @@ sh scripts/compile-tests.sh
 
 # This pulls down the wasm-testsuite in /tmp and copies over some needed
 # files to our src/test/resources directory. We only need to run
-# this is if we need to update the v1 spec data 
+# this is if we need to update the v1 spec data
 sh scripts/sync-test-suite.sh
 
 # This takes the wasm test suite data and generates Junit tests
@@ -107,4 +107,3 @@ sh scripts/sync-test-suite.sh
 # If we are updating the specs or changing the code generator
 ruby scripts/generate-java.rb
 ```
-

@@ -11,15 +11,21 @@ public enum ValueType {
 
     private final long id;
 
-    ValueType(long id) { this.id = id; }
+    ValueType(long id) {
+        this.id = id;
+    }
 
-    public long id() { return id; }
+    public long id() {
+        return id;
+    }
 
     private static final Map<Long, ValueType> byId = new HashMap<>(4);
 
     static {
-        for (ValueType e : ValueType.values())
-            byId.put(e.id(), e);
+        for (ValueType e : ValueType.values()) byId.put(e.id(), e);
     }
-    public static ValueType byId(long id) { return byId.get(id); }
+
+    public static ValueType byId(long id) {
+        return byId.get(id);
+    }
 }
