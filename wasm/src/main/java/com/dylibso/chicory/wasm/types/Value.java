@@ -1,16 +1,14 @@
 package com.dylibso.chicory.wasm.types;
 
-import com.dylibso.chicory.wasm.Encoding;
-
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 public class Value {
     private final ValueType type;
     private final byte[] data;
     public static Value TRUE;
     public static Value FALSE;
+
     static {
         TRUE = Value.i32(1);
         FALSE = Value.i32(0);
@@ -40,9 +38,13 @@ public class Value {
         return new Value(ValueType.F64, data);
     }
 
-    public ValueType getType() { return this.type; }
+    public ValueType getType() {
+        return this.type;
+    }
 
-    public byte[] getData() { return this.data; }
+    public byte[] getData() {
+        return this.data;
+    }
 
     public Value(ValueType type, byte[] data) {
         this.type = type;
@@ -61,29 +63,31 @@ public class Value {
         this.type = type;
         switch (type) {
             case I32:
-            case F32: {
-                this.data = new byte[4];
-                this.data[0] = (byte) (data >> 24);
-                this.data[1] = (byte) (data >> 16);
-                this.data[2] = (byte) (data >> 8);
-                this.data[3] = (byte) data;
-                break;
-            }
+            case F32:
+                {
+                    this.data = new byte[4];
+                    this.data[0] = (byte) (data >> 24);
+                    this.data[1] = (byte) (data >> 16);
+                    this.data[2] = (byte) (data >> 8);
+                    this.data[3] = (byte) data;
+                    break;
+                }
             case I64:
-            case F64: {
-                this.data = new byte[8];
-                this.data[0] = (byte) (data >> 56);
-                this.data[1] = (byte) (data >> 48);
-                this.data[2] = (byte) (data >> 40);
-                this.data[3] = (byte) (data >> 32);
-                this.data[4] = (byte) (data >> 24);
-                this.data[5] = (byte) (data >> 16);
-                this.data[6] = (byte) (data >> 8);
-                this.data[7] = (byte) data;
-                break;
-            }
+            case F64:
+                {
+                    this.data = new byte[8];
+                    this.data[0] = (byte) (data >> 56);
+                    this.data[1] = (byte) (data >> 48);
+                    this.data[2] = (byte) (data >> 40);
+                    this.data[3] = (byte) (data >> 32);
+                    this.data[4] = (byte) (data >> 24);
+                    this.data[5] = (byte) (data >> 16);
+                    this.data[6] = (byte) (data >> 8);
+                    this.data[7] = (byte) data;
+                    break;
+                }
             default:
-                this.data = new byte[]{};
+                this.data = new byte[] {};
                 break;
         }
     }
@@ -97,7 +101,8 @@ public class Value {
             case I64:
             case F64:
                 return ByteBuffer.wrap(this.data, 4, 4).getInt();
-        };
+        }
+        ;
         throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a int");
     }
 
@@ -111,7 +116,8 @@ public class Value {
             case I64:
             case F64:
                 return ByteBuffer.wrap(this.data, 4, 4).getInt() & 0xFFFFFFFFL;
-        };
+        }
+        ;
         throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a uint");
     }
 
@@ -139,7 +145,8 @@ public class Value {
                 return ByteBuffer.wrap(this.data, 2, 2).getShort();
             case I64:
                 return ByteBuffer.wrap(this.data, 6, 2).getShort();
-        };
+        }
+        ;
         throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a short");
     }
 
@@ -153,29 +160,32 @@ public class Value {
 
     public String toString() {
         switch (this.type) {
-            case I32: {
-                return this.asInt() + "@i32";
-            }
-            case I64: {
-                return this.asLong() + "@i64";
-            }
-            case F32: {
-                return this.asFloat() + "@f32";
-            }
-            case F64: {
-                return this.asDouble() + "@f64";
-            }
-            default: throw new RuntimeException("TODO handle float");
+            case I32:
+                {
+                    return this.asInt() + "@i32";
+                }
+            case I64:
+                {
+                    return this.asLong() + "@i64";
+                }
+            case F32:
+                {
+                    return this.asFloat() + "@f32";
+                }
+            case F64:
+                {
+                    return this.asDouble() + "@f64";
+                }
+            default:
+                throw new RuntimeException("TODO handle float");
         }
     }
 
     @Override
     public boolean equals(Object v) {
-        if (v == this)
-            return true;
-        if (!(v instanceof Value))
-            return false;
-        Value other = (Value)v;
+        if (v == this) return true;
+        if (!(v instanceof Value)) return false;
+        Value other = (Value) v;
         return type.equals(other.type) && data.equals(other.data);
     }
 }

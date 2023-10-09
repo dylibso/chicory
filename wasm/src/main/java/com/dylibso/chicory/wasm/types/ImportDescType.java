@@ -10,15 +10,22 @@ public enum ImportDescType {
     GlobalIdx(0x03);
 
     private final long id;
-    ImportDescType(long id) { this.id = id; }
 
-    public long id() { return id; }
+    ImportDescType(long id) {
+        this.id = id;
+    }
+
+    public long id() {
+        return id;
+    }
 
     private static final Map<Long, ImportDescType> byId = new HashMap<Long, ImportDescType>(4);
 
     static {
-        for (ImportDescType e : ImportDescType.values())
-            byId.put(e.id(), e);
+        for (ImportDescType e : ImportDescType.values()) byId.put(e.id(), e);
     }
-    public static ImportDescType byId(long id) { return byId.get(id); }
+
+    public static ImportDescType byId(long id) {
+        return byId.get(id);
+    }
 }

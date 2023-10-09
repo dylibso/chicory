@@ -1,10 +1,9 @@
 package com.dylibso.chicory.runtime;
 
+import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
-import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.*;
-
 import java.util.HashMap;
 
 public class Module {
@@ -41,18 +40,20 @@ public class Module {
     }
 
     public Instance instantiate(HostFunction[] hostFunctions) {
-        var globalInitializers = new Global[]{};
+        var globalInitializers = new Global[] {};
         if (this.module.getGlobalSection() != null) {
             globalInitializers = this.module.getGlobalSection().getGlobals();
         }
         var globals = new Value[globalInitializers.length];
         for (var i = 0; i < globalInitializers.length; i++) {
             var g = globalInitializers[i];
-            if (g.getInit().length > 2) throw new RuntimeException("We don't support this global initializer");
+            if (g.getInit().length > 2)
+                throw new RuntimeException("We don't support this global initializer");
             var instr = g.getInit()[0];
             // TODO we're assuming this is a const value, do we need to eval it?
             if (instr.getOpcode() != OpCode.I32_CONST && instr.getOpcode() != OpCode.I64_CONST) {
-                throw new RuntimeException("We only support I32_CONST and I64_CONST on global initializers right now");
+                throw new RuntimeException(
+                        "We only support I32_CONST and I64_CONST on global initializers right now");
             }
             if (instr.getOpcode() == OpCode.I32_CONST) {
                 globals[i] = Value.i32(instr.getOperands()[0]);
@@ -98,7 +99,8 @@ public class Module {
         if (module.getImportSection() != null) {
             imports = new Import[module.getImportSection().getImports().length];
             for (var imprt : module.getImportSection().getImports()) {
-                if (imprt.getDesc().getType() != ImportDescType.FuncIdx) throw new ChicoryException("We don't support non-function imports yet");
+                if (imprt.getDesc().getType() != ImportDescType.FuncIdx)
+                    throw new ChicoryException("We don't support non-function imports yet");
                 var type = (int) imprt.getDesc().getIndex();
                 functionTypes[funcId] = type;
                 // The global function id increases on this table
@@ -127,7 +129,15 @@ public class Module {
             exports.put("_start", export);
         }
 
-        return new Instance(this, globalInitializers, globals, memory, functions, types, functionTypes, hostFuncs);
+        return new Instance(
+                this,
+                globalInitializers,
+                globals,
+                memory,
+                functions,
+                types,
+                functionTypes,
+                hostFuncs);
     }
 
     private HostFunction[] mapHostFunctions(Import[] imports, HostFunction[] hostFunctions) {
@@ -135,11 +145,11 @@ public class Module {
         for (var f : hostFunctions) {
             Integer foundId = null;
             for (var i : imports) {
-                if (i.getModuleName().equals(f.getModuleName()) && i.getFieldName().equals(f.getFieldName())) {
+                if (i.getModuleName().equals(f.getModuleName())
+                        && i.getFieldName().equals(f.getFieldName())) {
                     foundId = (int) i.getDesc().getIndex();
                     break;
                 }
-
             }
             if (foundId == null) throw new RuntimeException("Couldn't map import to function");
             hostImports[foundId] = f;

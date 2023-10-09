@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -18,13 +15,12 @@
       <groupId>com.dylibso.chickory</groupId>
       <artifactId>wasm</artifactId>
     </dependency>
-    
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
     </dependency>
   </dependencies>
-
 
   <build>
     <plugins>
@@ -32,6 +28,16 @@
         <groupId>com.dylibso.chickory</groupId>
         <artifactId>test-gen-plugin</artifactId>
         <version>${project.version}</version>
+        <configuration>
+          <wastToProcess>i32.wast,
+            i64.wast,
+            return.wast</wastToProcess>
+          <excludedTests>SpecV1ReturnTest.test6,
+            SpecV1ReturnTest.test7,
+            SpecV1ReturnTest.test9,
+            SpecV1ReturnTest.test49,
+            SpecV1ReturnTest.test55</excludedTests>
+        </configuration>
         <executions>
           <execution>
             <goals>
@@ -39,20 +45,6 @@
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <wastToProcess>
-            i32.wast,
-            i64.wast,
-            return.wast
-          </wastToProcess>
-          <excludedTests>
-            SpecV1ReturnTest.test6,
-            SpecV1ReturnTest.test7,
-            SpecV1ReturnTest.test9,
-            SpecV1ReturnTest.test49,
-            SpecV1ReturnTest.test55
-          </excludedTests>
-        </configuration>
       </plugin>
     </plugins>
   </build>

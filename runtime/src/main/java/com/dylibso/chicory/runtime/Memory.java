@@ -1,14 +1,10 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.*;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-
 
 /**
  * Represents the linear memory in the Wasm program. Can be shared
@@ -24,7 +20,8 @@ public class Memory {
 
     public Memory(MemoryLimits limits) {
         this.limits = limits;
-        this.buffer = ByteBuffer.allocate(PAGE_SIZE * limits.getInitial()).order(ByteOrder.LITTLE_ENDIAN);
+        this.buffer =
+                ByteBuffer.allocate(PAGE_SIZE * limits.getInitial()).order(ByteOrder.LITTLE_ENDIAN);
         this.nPages = limits.getInitial();
     }
 
@@ -36,7 +33,8 @@ public class Memory {
 
     public void grow() {
         // TODO if max is null then we just let it grow as much as it wants?
-        if (limits.getMaximum() != null && this.nPages > limits.getMaximum()) throw new RuntimeException("Program exceeded max pages: " + limits.getMaximum());
+        if (limits.getMaximum() != null && this.nPages > limits.getMaximum())
+            throw new RuntimeException("Program exceeded max pages: " + limits.getMaximum());
         var capacity = this.buffer.capacity() + PAGE_SIZE;
         var result = ByteBuffer.allocate(capacity).order(ByteOrder.LITTLE_ENDIAN);
         var position = this.buffer.position();
@@ -62,7 +60,8 @@ public class Memory {
             var offsetInstr = offsetExpr[0];
             // TODO how flexible can this be? Do we need to dynamically eval the expression?
             if (offsetInstr.getOpcode() != OpCode.I32_CONST) {
-                throw new RuntimeException("Don't support data segment expressions other than i32.const yet");
+                throw new RuntimeException(
+                        "Don't support data segment expressions other than i32.const yet");
             }
             var data = segment.getData();
             var offset = (int) offsetInstr.getOperands()[0];
@@ -91,7 +90,7 @@ public class Memory {
     }
 
     public void put(int offset, byte[] data) {
-        //System.out.println("mem-write@" + offset + " " + data);
+        // System.out.println("mem-write@" + offset + " " + data);
         for (int i = 0, j = offset; i < data.length; i++, j++) {
             byte b = data[i];
             this.buffer.put(j, b);
@@ -121,52 +120,52 @@ public class Memory {
     }
 
     public void putByte(int offset, byte data) {
-        //System.out.println("mem-write@" + offset + " " + data);
+        // System.out.println("mem-write@" + offset + " " + data);
         this.buffer.put(offset, data);
     }
 
     public byte get(int offset) {
-        //System.out.println("mem-read@" + offset);
+        // System.out.println("mem-read@" + offset);
         return this.buffer.get(offset);
     }
 
     public Value getI32(int offset) {
-        //System.out.println("mem-read@" + offset);
+        // System.out.println("mem-read@" + offset);
         return Value.i32(this.buffer.getInt(offset));
     }
 
     public Value getU32(int offset) {
-        //System.out.println("mem-read@" + offset);
+        // System.out.println("mem-read@" + offset);
         return Value.i64(this.buffer.getLong(offset) & 0xffffffffL);
     }
 
     public Value getI64(int offset) {
-        //System.out.println("mem-read@" + offset);
+        // System.out.println("mem-read@" + offset);
         return Value.i64(this.buffer.getLong(offset));
     }
 
     public Value getI16(int offset) {
-        //System.out.println("mem-read@" + offset);
+        // System.out.println("mem-read@" + offset);
         return Value.i32(this.buffer.getShort(offset));
     }
 
     public Value getU16(int offset) {
-        //System.out.println("mem-read@" + offset);
+        // System.out.println("mem-read@" + offset);
         return Value.i32(this.buffer.getInt(offset) & 0xffff);
     }
 
     public Value getI8U(int offset) {
-        //System.out.println("mem-read@" + offset);
+        // System.out.println("mem-read@" + offset);
         return Value.i32(this.buffer.get(offset) & 0xff);
     }
 
     public Value getI8(int offset) {
-        //System.out.println("mem-read@" + offset);
+        // System.out.println("mem-read@" + offset);
         return Value.i32(this.buffer.get(offset));
     }
 
     public Value getF32(int offset) {
-        //System.out.println("mem-read@" + offset);
+        // System.out.println("mem-read@" + offset);
         return Value.f32(this.buffer.getInt(offset));
     }
 
@@ -176,7 +175,7 @@ public class Memory {
     }
 
     public void zero() {
-        Arrays.fill(this.buffer.array(), (byte)0);
+        Arrays.fill(this.buffer.array(), (byte) 0);
         this.buffer.position(0);
     }
 }

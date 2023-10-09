@@ -1,7 +1,6 @@
 package com.dylibso.chicory.wasm;
 
 import com.dylibso.chicory.wasm.types.*;
-
 import java.util.ArrayList;
 import java.util.List;
 

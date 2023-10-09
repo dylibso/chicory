@@ -8,16 +8,21 @@ public enum ElementType {
 
     private final long id;
 
-    ElementType(long id) { this.id = id; }
+    ElementType(long id) {
+        this.id = id;
+    }
 
-    public long id() { return id; }
+    public long id() {
+        return id;
+    }
 
     private static final Map<Long, ElementType> byId = new HashMap<>(1);
 
     static {
-        for (ElementType e : ElementType.values())
-            byId.put(e.id(), e);
+        for (ElementType e : ElementType.values()) byId.put(e.id(), e);
     }
 
-    public static ElementType byId(long id) { return byId.get(id); }
+    public static ElementType byId(long id) {
+        return byId.get(id);
+    }
 }

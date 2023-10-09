@@ -1,12 +1,8 @@
 package com.dylibso.chicory.maven.wast;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonIgnoreType;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Arrays;
-import java.util.Optional;
-import java.util.Set;
 
 @JsonIgnoreProperties
 public class Action {
@@ -19,8 +15,7 @@ public class Action {
     @JsonProperty("args")
     WasmValue[] args;
 
-    public Action() {
-    }
+    public Action() {}
 
     public ActionType getType() {
 
@@ -37,10 +32,14 @@ public class Action {
 
     @Override
     public String toString() {
-        return "Action{" +
-                "type=" + type +
-                ", field='" + field + '\'' +
-                ", args=" + Arrays.toString(args) +
-                '}';
+        return "Action{"
+                + "type="
+                + type
+                + ", field='"
+                + field
+                + '\''
+                + ", args="
+                + Arrays.toString(args)
+                + '}';
     }
 }

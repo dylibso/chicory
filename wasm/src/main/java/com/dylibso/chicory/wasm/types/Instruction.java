@@ -1,7 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
 import java.util.Arrays;
-import java.util.List;
 
 public class Instruction {
     private int address;

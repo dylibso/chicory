@@ -6,7 +6,7 @@ public class CustomSection extends Section {
     private byte[] bytes;
 
     public CustomSection(long id, long size) {
-       super(id, size);
+        super(id, size);
     }
 
     public String getName() {

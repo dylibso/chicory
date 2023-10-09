@@ -4,8 +4,8 @@ public class TypeSection extends Section {
     private FunctionType[] types;
 
     public TypeSection(long id, long size, FunctionType[] types) {
-       super(id, size);
-       this.types = types;
+        super(id, size);
+        this.types = types;
     }
 
     public FunctionType[] getTypes() {

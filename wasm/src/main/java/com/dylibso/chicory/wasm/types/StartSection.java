@@ -4,7 +4,7 @@ public class StartSection extends Section {
     private long startIndex;
 
     public StartSection(long id, long size) {
-       super(id, size);
+        super(id, size);
     }
 
     public long getStartIndex() {

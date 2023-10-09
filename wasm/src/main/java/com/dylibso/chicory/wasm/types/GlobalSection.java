@@ -4,8 +4,8 @@ public class GlobalSection extends Section {
     private Global[] globals;
 
     public GlobalSection(long id, long size, Global[] globals) {
-       super(id, size);
-       this.globals = globals;
+        super(id, size);
+        this.globals = globals;
     }
 
     public Global[] getGlobals() {

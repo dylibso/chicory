@@ -2,8 +2,6 @@ package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.*;
 
-import java.util.Arrays;
-
 public class Instance {
     private Module module;
     private Machine machine;
@@ -13,17 +11,17 @@ public class Instance {
     private Value[] globals;
     private FunctionType[] types;
     private int[] functionTypes;
-    private HostFunction[]  imports;
+    private HostFunction[] imports;
 
-    public Instance(Module module,
-                    Global[] globalInitalizers,
-                    Value[] globals,
-                    Memory memory,
-                    FunctionBody[] functions,
-                    FunctionType[] types,
-                    int[] functionTypes,
-                    HostFunction[]  imports
-    ) {
+    public Instance(
+            Module module,
+            Global[] globalInitalizers,
+            Value[] globals,
+            Memory memory,
+            FunctionBody[] functions,
+            FunctionType[] types,
+            int[] functionTypes,
+            HostFunction[] imports) {
         this.module = module;
         this.globalInitalizers = globalInitalizers;
         this.globals = globals;
@@ -39,7 +37,7 @@ public class Instance {
         var export = module.getExport(name);
         var funcId = (int) export.getDesc().getIndex();
         return (args) -> {
-            //System.out.println("Args: " + Arrays.toString(args));
+            // System.out.println("Args: " + Arrays.toString(args));
             try {
                 return machine.call(funcId, args, true);
             } catch (Exception e) {

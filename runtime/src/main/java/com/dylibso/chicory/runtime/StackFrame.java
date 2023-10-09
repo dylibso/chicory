@@ -2,7 +2,6 @@ package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -67,13 +66,13 @@ public class StackFrame {
     }
 
     public String toString() {
-        return "func=" +
-                funcId +
-                " " +
-                "pc=" +
-                pc +
-                " " +
-                "locals=" +
-                Arrays.toString(locals.values().toArray());
+        return "func="
+                + funcId
+                + " "
+                + "pc="
+                + pc
+                + " "
+                + "locals="
+                + Arrays.toString(locals.values().toArray());
     }
 }

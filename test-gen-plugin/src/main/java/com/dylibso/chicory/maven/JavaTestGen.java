@@ -1,5 +1,9 @@
 package com.dylibso.chicory.maven;
 
+import static com.dylibso.chicory.maven.StringUtils.*;
+import static com.dylibso.chicory.maven.wast.ActionType.INVOKE;
+import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
+
 import com.dylibso.chicory.maven.wast.Command;
 import com.dylibso.chicory.maven.wast.CommandType;
 import com.dylibso.chicory.maven.wast.WasmValue;
@@ -13,20 +17,14 @@ import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.utils.SourceRoot;
-import org.apache.maven.plugin.logging.Log;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-
-import static com.dylibso.chicory.maven.StringUtils.*;
-import static com.dylibso.chicory.maven.wast.ActionType.INVOKE;
-import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
+import org.apache.maven.plugin.logging.Log;
 
 public class JavaTestGen {
 
@@ -85,8 +83,12 @@ public class JavaTestGen {
         MethodDeclaration method;
         int testNumber = 0;
         int moduleInstantiationNumber = 0;
-        for (var cmd: wast.getCommands()) {
-            var excludedMethods = excludedTests.stream().filter(t -> t.startsWith(testName)).map(t -> t.replace(testName + ".", "")).collect(Collectors.toList());
+        for (var cmd : wast.getCommands()) {
+            var excludedMethods =
+                    excludedTests.stream()
+                            .filter(t -> t.startsWith(testName))
+                            .map(t -> t.replace(testName + ".", ""))
+                            .collect(Collectors.toList());
 
             switch (cmd.getType()) {
                 case MODULE:
@@ -100,12 +102,13 @@ public class JavaTestGen {
                     method = createTestMethod(testClass, testNumber++, excludedMethods);
 
                     var varName = escapedCamelCase(cmd.getAction().getField());
-                    var fieldExport = generateFieldExport(varName, cmd, (moduleInstantiationNumber - 1));
+                    var fieldExport =
+                            generateFieldExport(varName, cmd, (moduleInstantiationNumber - 1));
                     if (fieldExport.isPresent()) {
                         method.getBody().get().addStatement(fieldExport.get());
                     }
 
-                    for (var expr: generateAssert(varName, cmd)) {
+                    for (var expr : generateAssert(varName, cmd)) {
                         method.getBody().get().addStatement(expr);
                     }
                     break;
@@ -113,7 +116,7 @@ public class JavaTestGen {
                 case ASSERT_MALFORMED:
                     method = createTestMethod(testClass, testNumber++, excludedMethods);
 
-                    for (var expr: generateAssertThrows(cmd, wasmFilesFolder)) {
+                    for (var expr : generateAssertThrows(cmd, wasmFilesFolder)) {
                         method.getBody().get().addStatement(expr);
                     }
                     break;
@@ -124,7 +127,8 @@ public class JavaTestGen {
         dest.saveAll();
     }
 
-    private MethodDeclaration createTestMethod(ClassOrInterfaceDeclaration testClass, int testNumber, List<String> excludedTests) {
+    private MethodDeclaration createTestMethod(
+            ClassOrInterfaceDeclaration testClass, int testNumber, List<String> excludedTests) {
         var methodName = "test" + testNumber;
         var method = testClass.addMethod("test" + testNumber, Modifier.Keyword.PUBLIC);
         if (excludedTests.contains(methodName)) {
@@ -135,12 +139,20 @@ public class JavaTestGen {
         return method;
     }
 
-    private Optional<Expression> generateFieldExport(String varName, Command cmd, int instanceNumber) {
+    private Optional<Expression> generateFieldExport(
+            String varName, Command cmd, int instanceNumber) {
         if (cmd.getAction() != null && cmd.getAction().getField() != null) {
-            var declarator = new VariableDeclarator()
-                    .setName(varName)
-                    .setType(parseClassOrInterfaceType("ExportFunction"))
-                    .setInitializer(new NameExpr(INSTANCE_NAME + instanceNumber + ".getExport(\"" + cmd.getAction().getField() + "\")"));
+            var declarator =
+                    new VariableDeclarator()
+                            .setName(varName)
+                            .setType(parseClassOrInterfaceType("ExportFunction"))
+                            .setInitializer(
+                                    new NameExpr(
+                                            INSTANCE_NAME
+                                                    + instanceNumber
+                                                    + ".getExport(\""
+                                                    + cmd.getAction().getField()
+                                                    + "\")"));
             Expression varDecl = new VariableDeclarationExpr(declarator);
             return Optional.of(varDecl);
         } else {
@@ -149,7 +161,8 @@ public class JavaTestGen {
     }
 
     private List<Expression> generateAssert(String varName, Command cmd) {
-        assert(cmd.getType() == CommandType.ASSERT_RETURN || cmd.getType() == CommandType.ASSERT_TRAP);
+        assert (cmd.getType() == CommandType.ASSERT_RETURN
+                || cmd.getType() == CommandType.ASSERT_TRAP);
 
         var returnVar = "null";
         var typeConversion = "";
@@ -167,17 +180,36 @@ public class JavaTestGen {
 
         String invocationMethod;
         if (cmd.getAction().getType() == INVOKE) {
-            var args = Arrays.stream(cmd.getAction().getArgs()).map(WasmValue::toWasmValue).collect(Collectors.joining(", "));
+            var args =
+                    Arrays.stream(cmd.getAction().getArgs())
+                            .map(WasmValue::toWasmValue)
+                            .collect(Collectors.joining(", "));
             invocationMethod = ".apply(" + args + ")";
         } else {
-            throw new IllegalArgumentException("Unhandled action type " + cmd.getAction().getType());
+            throw new IllegalArgumentException(
+                    "Unhandled action type " + cmd.getAction().getType());
         }
 
         switch (cmd.getType()) {
             case ASSERT_RETURN:
-                return List.of(new NameExpr("assertEquals(" + returnVar + ", "+ varName + invocationMethod + typeConversion + deltaParam + ")"));
+                return List.of(
+                        new NameExpr(
+                                "assertEquals("
+                                        + returnVar
+                                        + ", "
+                                        + varName
+                                        + invocationMethod
+                                        + typeConversion
+                                        + deltaParam
+                                        + ")"));
             case ASSERT_TRAP:
-                var assertDecl = new NameExpr("var exception = assertThrows(WASMRuntimeException.class, () -> "+ varName + invocationMethod + typeConversion + ")");
+                var assertDecl =
+                        new NameExpr(
+                                "var exception = assertThrows(WASMRuntimeException.class, () -> "
+                                        + varName
+                                        + invocationMethod
+                                        + typeConversion
+                                        + ")");
                 if (cmd.getText() != null) {
                     return List.of(assertDecl, exceptionMessageMatch(cmd.getText()));
                 } else {
@@ -189,21 +221,27 @@ public class JavaTestGen {
     }
 
     private Expression generateModuleInstantiation(Command cmd, File folder) {
-        assert(cmd.getType() == CommandType.MODULE);
+        assert (cmd.getType() == CommandType.MODULE);
 
-        var relativeFile = folder.toPath().resolve(cmd.getFilename()).toFile().getAbsolutePath()
-                .replaceFirst(baseDir.getAbsolutePath() + File.pathSeparator, "")
-                .replace("\\", "\\\\"); // Win compat
+        var relativeFile =
+                folder.toPath()
+                        .resolve(cmd.getFilename())
+                        .toFile()
+                        .getAbsolutePath()
+                        .replaceFirst(baseDir.getAbsolutePath() + File.pathSeparator, "")
+                        .replace("\\", "\\\\"); // Win compat
 
         var additionalParam = "";
         if (cmd.getModuleType() != null) {
             additionalParam = ", ModuleType." + cmd.getModuleType().toUpperCase();
         }
-        return new NameExpr("Module.build(\"" + relativeFile + "\"" + additionalParam + ").instantiate()");
+        return new NameExpr(
+                "Module.build(\"" + relativeFile + "\"" + additionalParam + ").instantiate()");
     }
 
     private List<Expression> generateAssertThrows(Command cmd, File wasmFilesFolder) {
-        assert(cmd.getType() == CommandType.ASSERT_INVALID || cmd.getType() == CommandType.ASSERT_MALFORMED);
+        assert (cmd.getType() == CommandType.ASSERT_INVALID
+                || cmd.getType() == CommandType.ASSERT_MALFORMED);
 
         var exceptionType = "";
         if (cmd.getType() == CommandType.ASSERT_INVALID) {
@@ -214,7 +252,14 @@ public class JavaTestGen {
 
         var assignementStmt = (cmd.getText() != null) ? "var exception = " : "";
 
-        var assertThrows = new NameExpr(assignementStmt + "assertThrows(" + exceptionType + ".class, () -> " + generateModuleInstantiation(cmd, wasmFilesFolder) + ")");
+        var assertThrows =
+                new NameExpr(
+                        assignementStmt
+                                + "assertThrows("
+                                + exceptionType
+                                + ".class, () -> "
+                                + generateModuleInstantiation(cmd, wasmFilesFolder)
+                                + ")");
 
         if (cmd.getText() != null) {
             return List.of(assertThrows, exceptionMessageMatch(cmd.getText()));
@@ -224,6 +269,11 @@ public class JavaTestGen {
     }
 
     private Expression exceptionMessageMatch(String text) {
-        return new NameExpr("assertTrue(\"'\" + exception.getMessage() + \"' doesn't contains: '" + text + "'\", exception.getMessage().contains(\"" + text + "\"))");
+        return new NameExpr(
+                "assertTrue(\"'\" + exception.getMessage() + \"' doesn't contains: '"
+                        + text
+                        + "'\", exception.getMessage().contains(\""
+                        + text
+                        + "\"))");
     }
 }

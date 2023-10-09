@@ -10,15 +10,22 @@ public enum ExportDescType {
     GlobalIdx(0x03);
 
     private final long id;
-    ExportDescType(long id) { this.id = id; }
 
-    public long id() { return id; }
+    ExportDescType(long id) {
+        this.id = id;
+    }
+
+    public long id() {
+        return id;
+    }
 
     private static final Map<Long, ExportDescType> byId = new HashMap<Long, ExportDescType>(4);
 
     static {
-        for (ExportDescType e : ExportDescType.values())
-            byId.put(e.id(), e);
+        for (ExportDescType e : ExportDescType.values()) byId.put(e.id(), e);
     }
-    public static ExportDescType byId(long id) { return byId.get(id); }
+
+    public static ExportDescType byId(long id) {
+        return byId.get(id);
+    }
 }

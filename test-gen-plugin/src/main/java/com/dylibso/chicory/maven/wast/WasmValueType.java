@@ -14,6 +14,7 @@ public enum WasmValueType {
     F64("f64");
 
     private String value;
+
     WasmValueType(String value) {
         this.value = value;
     }

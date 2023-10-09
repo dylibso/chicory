@@ -9,7 +9,9 @@ class ModuleBuilder implements ParserListener {
         this.module = new Module();
     }
 
-    public Module getModule() { return module; }
+    public Module getModule() {
+        return module;
+    }
 
     @Override
     public void onSection(Section s) {

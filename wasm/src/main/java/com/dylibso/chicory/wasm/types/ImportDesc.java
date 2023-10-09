@@ -20,15 +20,15 @@ public class ImportDesc {
     public String toString() {
         switch (type) {
             case FuncIdx:
-                return "func["+index+"]";
+                return "func[" + index + "]";
             case TableIdx:
-                return "table["+index+"]";
+                return "table[" + index + "]";
             case MemIdx:
-                return "memory["+index+"]";
+                return "memory[" + index + "]";
             case GlobalIdx:
-                return "global["+index+"]";
+                return "global[" + index + "]";
             default:
-                return "unknown["+index+"]";
+                return "unknown[" + index + "]";
         }
         // if (type instanceof FuncIdx) {
         //     return "func["+index+"]";

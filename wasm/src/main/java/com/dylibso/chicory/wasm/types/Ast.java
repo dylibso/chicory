@@ -5,7 +5,8 @@ import java.util.Stack;
 public class Ast {
     private CodeBlock root;
     private Stack<CodeBlock> stack;
-    //private List<Instruction> instructions;
+
+    // private List<Instruction> instructions;
 
     public Ast() {
         this.root = new CodeBlock(BlockType.BLOCK);
@@ -20,26 +21,30 @@ public class Ast {
     public void addInstruction(Instruction i) {
         var current = peek();
         switch (i.getOpcode()) {
-            case BLOCK: {
+            case BLOCK:
+                {
+                    current.addInstruction(i);
+                    var next = new CodeBlock(BlockType.BLOCK);
+                    i.setCodeBlock(next);
+                    push(next);
+                    break;
+                }
+            case LOOP:
+                {
+                    current.addInstruction(i);
+                    var next = new CodeBlock(BlockType.LOOP);
+                    i.setCodeBlock(next);
+                    push(next);
+                    break;
+                }
+            case END:
+                {
+                    current.addInstruction(i);
+                    pop();
+                    break;
+                }
+            default:
                 current.addInstruction(i);
-                var next = new CodeBlock(BlockType.BLOCK);
-                i.setCodeBlock(next);
-                push(next);
-                break;
-            }
-            case LOOP: {
-                current.addInstruction(i);
-                var next = new CodeBlock(BlockType.LOOP);
-                i.setCodeBlock(next);
-                push(next);
-                break;
-            }
-            case END: {
-                current.addInstruction(i);
-                pop();
-                break;
-            }
-            default: current.addInstruction(i);
         }
     }
 
@@ -61,12 +66,15 @@ public class Ast {
 
     private void printAst(CodeBlock block, int depth) {
         for (var i : block.getInstructions()) {
-            System.out.println("0x" + Integer.toHexString(i.getAddress()) + " | " + "\t".repeat(depth) + i.toString());
+            System.out.println(
+                    "0x"
+                            + Integer.toHexString(i.getAddress())
+                            + " | "
+                            + "\t".repeat(depth)
+                            + i.toString());
             if (i.getCodeBlock() != null) {
                 printAst(i.getCodeBlock(), depth + 1);
             }
         }
     }
-
-
 }

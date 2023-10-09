@@ -1,8 +1,7 @@
 package com.dylibso.chicory.runtime;
+
 import com.dylibso.chicory.wasm.types.Value;
-
 import java.util.Stack;
-
 
 /**
  * A temporary class that gives us a little more control over the interface.

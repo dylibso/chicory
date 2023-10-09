@@ -4,9 +4,11 @@ public class CodeSection extends Section {
     private FunctionBody[] functionBodies;
 
     public CodeSection(long id, long size, FunctionBody[] functionBodies) {
-       super(id, size);
-       this.functionBodies = functionBodies;
+        super(id, size);
+        this.functionBodies = functionBodies;
     }
 
-    public FunctionBody[] getFunctionBodies() { return functionBodies; }
+    public FunctionBody[] getFunctionBodies() {
+        return functionBodies;
+    }
 }
