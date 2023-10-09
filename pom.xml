@@ -25,6 +25,7 @@
   </properties>
 
   <modules>
+    <module>test-gen-plugin</module>
     <module>wasm</module>
     <module>runtime</module>
   </modules>

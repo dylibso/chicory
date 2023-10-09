@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasm;
 
+import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.*;
 
 import java.io.FileInputStream;
@@ -68,9 +69,13 @@ public class Parser {
         var buffer = readByteBuffer();
 
         int magicNumber = buffer.getInt();
-        assert magicNumber == MAGIC_BYTES;
+        if (magicNumber != MAGIC_BYTES) {
+            throw new MalformedException("unexpected token: magic number mismatch, found: " + magicNumber + " expected: " + MAGIC_BYTES);
+        }
         int version = buffer.getInt();
-        assert version == 1;
+        if (version != 1) {
+            throw new MalformedException("unexpected token: unsupported version, found: " + version + " expected: " + 1);
+        }
 
         while (buffer.hasRemaining()) {
             var sectionId = (int) readVarUInt32(buffer);

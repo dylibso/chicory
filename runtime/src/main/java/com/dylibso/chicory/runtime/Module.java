@@ -1,18 +1,29 @@
 package com.dylibso.chicory.runtime;
 
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.*;
 
 import java.util.HashMap;
-import java.util.Map;
 
 public class Module {
     private com.dylibso.chicory.wasm.Module module;
     private HashMap<String, Export> exports;
 
-    static Module build(String wasmFile) {
+    public static Module build(String wasmFile) {
         var parser = new Parser(wasmFile);
         return new Module(parser.parseModule());
+    }
+
+    public static Module build(String wasmFile, ModuleType type) {
+        switch (type) {
+            case TEXT:
+                return build(wasmFile);
+            default:
+                // TODO: implement me
+                throw new InvalidException("type mismatch");
+        }
     }
 
     protected Module(com.dylibso.chicory.wasm.Module module) {

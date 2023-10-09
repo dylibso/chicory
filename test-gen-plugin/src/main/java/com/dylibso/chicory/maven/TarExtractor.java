@@ -1,0 +1,39 @@
+package com.dylibso.chicory.maven;
+
+import org.apache.commons.compress.archivers.ArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
+
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+public class TarExtractor {
+
+    private final InputStream tarStream;
+    private final Path destination;
+
+    public TarExtractor(InputStream in, Path destination) throws IOException {
+        this.tarStream = in;
+        this.destination = destination;
+
+        Files.createDirectories(destination);
+    }
+
+    public void untar() throws IOException {
+        try (BufferedInputStream inputStream = new BufferedInputStream(this.tarStream);
+             TarArchiveInputStream tar = new TarArchiveInputStream(new GzipCompressorInputStream(inputStream))) {
+            ArchiveEntry entry;
+            while ((entry = tar.getNextEntry()) != null) {
+                Path extractTo = this.destination.resolve(entry.getName());
+                if (entry.isDirectory()) {
+                    Files.createDirectories(extractTo);
+                } else {
+                    Files.copy(tar, extractTo);
+                }
+            }
+        }
+    }
+}

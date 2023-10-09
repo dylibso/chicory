@@ -1,0 +1,71 @@
+package com.dylibso.chicory.maven.wast;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public class WasmValue {
+
+    @JsonProperty("type")
+    WasmValueType type;
+
+    @JsonProperty("value")
+    String value;
+
+    public WasmValueType getType() {
+        return type;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public String toJavaValue() {
+        switch (type) {
+            case I32: return "Integer.parseUnsignedInt(\"" + value + "\")";
+            case I64: return "Long.parseUnsignedLong(\"" + value + "\")";
+            case F32: return "Float.parseFloat(\"" + value + "\")";
+            case F64: return "Double.parseDouble(\"" + value + "\")";
+            default:
+                throw new IllegalArgumentException("Type not recognized " + type);
+        }
+    }
+
+    public String toWasmValue() {
+        switch (type) {
+            case I32: return "Value.i32(Integer.parseUnsignedInt(\"" + value + "\"))";
+            case I64: return "Value.i64(Long.parseUnsignedLong(\"" + value + "\"))";
+            case F32: return "Value.fromFloat(Float.parseFloat(\"" + value + "\"))";
+            case F64: return "Value.fromDouble(Double.parseDouble(\"" + value + "\"))";
+            default:
+                throw new IllegalArgumentException("Type not recognized " + type);
+        }
+    }
+
+    public String extractType() {
+        if (value == null || value.equals("null")) {
+            return "";
+        } else {
+            switch (type) {
+                case I32:
+                    return ".asInt()";
+                case I64:
+                    return ".asLong()";
+                case F32:
+                    return ".asFloat()";
+                case F64:
+                    return ".asDouble()";
+                default:
+                    throw new IllegalArgumentException("Type not recognized " + type);
+            }
+        }
+    }
+
+    public String getDelta() {
+        switch (type) {
+            case F32:
+            case F64:
+                return ", 0.0";
+            default:
+                return "";
+        }
+    }
+}

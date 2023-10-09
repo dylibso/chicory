@@ -24,4 +24,37 @@
       <artifactId>junit</artifactId>
     </dependency>
   </dependencies>
+
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.dylibso.chickory</groupId>
+        <artifactId>test-gen-plugin</artifactId>
+        <version>${project.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>wasm-test-gen</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <wastToProcess>
+            i32.wast,
+            i64.wast,
+            return.wast
+          </wastToProcess>
+          <excludedTests>
+            SpecV1ReturnTest.test6,
+            SpecV1ReturnTest.test7,
+            SpecV1ReturnTest.test9,
+            SpecV1ReturnTest.test49,
+            SpecV1ReturnTest.test55
+          </excludedTests>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>
