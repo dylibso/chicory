@@ -120,6 +120,11 @@ public class JavaTestGen {
                         method.getBody().get().addStatement(expr);
                     }
                     break;
+                default:
+                    log.info("command type not yet supported " + cmd.getType());
+                    //                    throw new IllegalArgumentException(
+                    //                            "command type not yet supported " +
+                    // cmd.getType());
             }
         }
 
