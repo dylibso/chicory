@@ -40,11 +40,6 @@
             return.wast</wastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
-            SpecV1ReturnTest.test6,
-            SpecV1ReturnTest.test7,
-            SpecV1ReturnTest.test9,
-            SpecV1ReturnTest.test49,
-            SpecV1ReturnTest.test55,
             SpecV1LocalGetTest.test18,
             SpecV1LocalSetTest.test18,
             SpecV1LocalTeeTest.test6,

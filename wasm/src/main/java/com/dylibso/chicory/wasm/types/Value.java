@@ -15,11 +15,11 @@ public class Value {
     }
 
     public static Value fromFloat(float data) {
-        return Value.f32(Float.floatToIntBits(data));
+        return Value.f32((int) data);
     }
 
     public static Value fromDouble(double data) {
-        return Value.f64(Double.doubleToLongBits(data));
+        return Value.f64((long) data);
     }
 
     public static Value i32(long data) {
@@ -151,11 +151,11 @@ public class Value {
     }
 
     public float asFloat() {
-        return Float.intBitsToFloat(asInt());
+        return (float) asInt();
     }
 
     public double asDouble() {
-        return Double.longBitsToDouble(asLong());
+        return (double) asLong();
     }
 
     public String toString() {
