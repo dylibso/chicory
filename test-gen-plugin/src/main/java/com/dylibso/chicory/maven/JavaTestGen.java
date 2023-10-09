@@ -238,7 +238,7 @@ public class JavaTestGen {
                         .resolve(cmd.getFilename())
                         .toFile()
                         .getAbsolutePath()
-                        .replaceFirst(baseDir.getAbsolutePath() + File.pathSeparator, "")
+                        .replace(baseDir.getAbsolutePath() + File.separator, "")
                         .replace("\\", "\\\\"); // Win compat
 
         var additionalParam = "";
