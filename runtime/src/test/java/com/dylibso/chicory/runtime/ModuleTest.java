@@ -163,26 +163,26 @@ public class ModuleTest {
         assertEquals(42, result.asInt());
     }
 
-    //    @Test
-    //    public void shouldCountVowels() {
-    //        var instance =
+    //        @Test
+    //        public void shouldCountVowels() {
+    //            var instance =
     // Module.build("src/test/resources/wasm/count_vowels.rs.wasm").instantiate();
-    //        var countVowels = instance.getExport("count_vowels");
-    //        //var memory = module.getMemory();
-    //        //memory.put(60000, "Hello World!");
-    //        //var result = countVowels.apply(Value.i32(60000));
-    //        var result = countVowels.apply();
-    //        assertEquals(3, result.asInt());
-    //    }
+    //            var countVowels = instance.getExport("count_vowels");
+    ////            var memory = instance.getMemory();
+    ////            memory.put(0, "Hello World!");
+    ////            var result = countVowels.apply(Value.i32(0));
+    //            var result = countVowels.apply();
+    //            assertEquals(3, result.asInt());
+    //        }
 
-    //    @Test
-    //    public void shouldRunBasicCProgram() {
-    //        // check with: wasmtime src/test/resources/wasm/basic.c.wasm --invoke run
-    //        var instance = Module.build("src/test/resources/wasm/basic.c.wasm").instantiate();
-    //        var run = instance.getExport("run");
-    //        var result = run.apply();
-    //        assertEquals(42, result.asInt());
-    //    }
+    @Test
+    public void shouldRunBasicCProgram() {
+        // check with: wasmtime src/test/resources/wasm/basic.c.wasm --invoke run
+        var instance = Module.build("src/test/resources/wasm/basic.c.wasm").instantiate();
+        var run = instance.getExport("run");
+        var result = run.apply();
+        assertEquals(42, result.asInt());
+    }
 
     //    @Test
     //    public void shouldRunComplexFunction() {
