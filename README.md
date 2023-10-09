@@ -94,7 +94,7 @@ The [test-gen-plugin](test-gen-plugin/) package is a maven plugin that handles t
 
 ### runtime package
 
-This contains the actual Chicory runtime. There are a few scripts we use here too:
+The [runtime](runtime/) packages contains the actual Chicory runtime. There are a few scripts we use here too:
 
 ```bash
 cd runtime
