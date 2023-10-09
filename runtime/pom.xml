@@ -37,7 +37,8 @@
             local_tee.wast,
             memory.wast,
             nop.wast,
-            return.wast</wastToProcess>
+            return.wast,
+          names.wast</wastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
             SpecV1ReturnTest.test6,
@@ -68,6 +69,7 @@
             SpecV1MemoryTest.test2,
             SpecV1MemoryTest.test3,
             SpecV1MemoryTest.test4,
+            SpecV1NamesTest.test481,
             SpecV1NopTest.test59,
             SpecV1NopTest.test60,
             SpecV1NopTest.test61,

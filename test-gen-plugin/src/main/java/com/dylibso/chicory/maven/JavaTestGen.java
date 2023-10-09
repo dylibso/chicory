@@ -18,6 +18,7 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.utils.SourceRoot;
+import com.github.javaparser.utils.StringEscapeUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -83,6 +84,7 @@ public class JavaTestGen {
         MethodDeclaration method;
         int testNumber = 0;
         int moduleInstantiationNumber = 0;
+        int fallbackVarNumber = 0;
         for (var cmd : wast.getCommands()) {
             var excludedMethods =
                     excludedTests.stream()
@@ -101,7 +103,9 @@ public class JavaTestGen {
                 case ASSERT_TRAP:
                     method = createTestMethod(testClass, testNumber++, excludedMethods);
 
-                    var varName = escapedCamelCase(cmd.getAction().getField());
+                    var baseVarName = escapedCamelCase(cmd.getAction().getField());
+                    var varNum = fallbackVarNumber++;
+                    var varName = "var" + ((baseVarName.length() == 0) ? varNum : baseVarName);
                     var fieldExport =
                             generateFieldExport(varName, cmd, (moduleInstantiationNumber - 1));
                     if (fieldExport.isPresent()) {
@@ -156,7 +160,8 @@ public class JavaTestGen {
                                             INSTANCE_NAME
                                                     + instanceNumber
                                                     + ".getExport(\""
-                                                    + cmd.getAction().getField()
+                                                    + StringEscapeUtils.escapeJava(
+                                                            cmd.getAction().getField())
                                                     + "\")"));
             Expression varDecl = new VariableDeclarationExpr(declarator);
             return Optional.of(varDecl);
