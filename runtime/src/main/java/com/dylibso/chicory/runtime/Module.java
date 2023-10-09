@@ -85,12 +85,21 @@ public class Module {
             types = module.getTypeSection().getTypes();
         }
 
-        var numFuncTypes = module.getFunctionSection().getTypeIndices().length;
-        if (module.getImportSection() != null) {
-            numFuncTypes += module.getImportSection().getImports().length;
+        var numFuncTypes = 0;
+        var funcSecton = module.getFunctionSection();
+        if (funcSecton != null) {
+            numFuncTypes = funcSecton.getTypeIndices().length;
+            if (module.getImportSection() != null) {
+                numFuncTypes += module.getImportSection().getImports().length;
+            }
         }
 
-        var functions = module.getCodeSection().getFunctionBodies();
+        FunctionBody[] functions = new FunctionBody[0];
+        var codeSection = module.getCodeSection();
+        if (codeSection != null) {
+            functions = module.getCodeSection().getFunctionBodies();
+        }
+
         int funcId = 0;
         Integer startFuncId = null;
         var functionTypes = new int[numFuncTypes];

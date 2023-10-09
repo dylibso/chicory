@@ -13,7 +13,11 @@ public enum CommandType {
     @JsonProperty("assert_invalid")
     ASSERT_INVALID("assert_invalid"),
     @JsonProperty("assert_malformed")
-    ASSERT_MALFORMED("assert_malformed");
+    ASSERT_MALFORMED("assert_malformed"),
+    @JsonProperty("assert_uninstantiable")
+    ASSERT_UNINSTANTIABLE("assert_uninstantiable"),
+    @JsonProperty("action")
+    ACTION("action");
 
     private String value;
 
