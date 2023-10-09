@@ -24,5 +24,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '${{ matrix.version }}'
+          cache: maven
       - name: Test Java
         run: mvn -B install
