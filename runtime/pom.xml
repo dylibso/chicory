@@ -31,6 +31,8 @@
         <configuration>
           <wastToProcess>i32.wast,
             i64.wast,
+            f32.wast,
+            f64.wast,
             return.wast,
             local_get.wast,
             local_set.wast,

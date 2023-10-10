@@ -814,11 +814,183 @@ public class Machine {
                             this.stack.push(Value.i32(z));
                             break;
                         }
+                    case F32_ADD:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+                            this.stack.push(Value.fromFloat(a + b));
+                            break;
+                        }
                     case F64_ADD:
                         {
                             var a = this.stack.pop().asDouble();
                             var b = this.stack.pop().asDouble();
                             this.stack.push(Value.fromDouble(a + b));
+                            break;
+                        }
+                    case F32_SUB:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+                            this.stack.push(Value.fromFloat(b - a));
+                            break;
+                        }
+                    case F64_SUB:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(b - a));
+                            break;
+                        }
+                    case F32_MUL:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+                            this.stack.push(Value.fromFloat(b * a));
+                            break;
+                        }
+                    case F64_MUL:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(b * a));
+                            break;
+                        }
+                    case F32_DIV:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+                            this.stack.push(Value.fromFloat(b / a));
+                            break;
+                        }
+                    case F64_DIV:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(b / a));
+                            break;
+                        }
+                    case F32_MIN:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+                            this.stack.push(Value.fromFloat(Math.min(a, b)));
+                            break;
+                        }
+                    case F64_MIN:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(Math.min(a, b)));
+                            break;
+                        }
+                    case F32_MAX:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+                            this.stack.push(Value.fromFloat(Math.max(a, b)));
+                            break;
+                        }
+                    case F64_MAX:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(Math.max(a, b)));
+                            break;
+                        }
+                    case F32_SQRT:
+                        {
+                            var val = this.stack.pop().asFloat();
+                            this.stack.push(
+                                    Value.fromFloat(
+                                            Double.valueOf(
+                                                            Math.sqrt(
+                                                                    Float.valueOf(val)
+                                                                            .doubleValue()))
+                                                    .floatValue()));
+                            break;
+                        }
+                    case F64_SQRT:
+                        {
+                            var val = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(Math.sqrt(val)));
+                            break;
+                        }
+                    case F32_FLOOR:
+                        {
+                            var val = this.stack.pop().asFloat();
+                            this.stack.push(
+                                    Value.fromFloat(
+                                            Double.valueOf(
+                                                            Math.floor(
+                                                                    Float.valueOf(val)
+                                                                            .doubleValue()))
+                                                    .floatValue()));
+                            break;
+                        }
+                    case F64_FLOOR:
+                        {
+                            var val = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(Math.floor(val)));
+                            break;
+                        }
+                    case F32_CEIL:
+                        {
+                            var val = this.stack.pop().asFloat();
+                            this.stack.push(
+                                    Value.fromFloat(
+                                            Double.valueOf(
+                                                            Math.ceil(
+                                                                    Float.valueOf(val)
+                                                                            .doubleValue()))
+                                                    .floatValue()));
+                            break;
+                        }
+                    case F64_CEIL:
+                        {
+                            var val = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(Math.ceil(val)));
+                            break;
+                        }
+                    case F32_TRUNC:
+                        {
+                            var val = this.stack.pop().asFloat();
+                            this.stack.push(
+                                    Value.fromFloat(
+                                            Double.valueOf(
+                                                            (val < 0)
+                                                                    ? Math.ceil(
+                                                                            Float.valueOf(val)
+                                                                                    .doubleValue())
+                                                                    : Math.floor(
+                                                                            Float.valueOf(val)
+                                                                                    .doubleValue()))
+                                                    .floatValue()));
+                            break;
+                        }
+                    case F64_TRUNC:
+                        {
+                            var val = this.stack.pop().asDouble();
+                            this.stack.push(
+                                    Value.fromDouble((val < 0) ? Math.ceil(val) : Math.floor(val)));
+                            break;
+                        }
+                    case F32_NEAREST:
+                        {
+                            var val = this.stack.pop().asFloat();
+                            this.stack.push(
+                                    Value.fromFloat(
+                                            Double.valueOf(
+                                                            Math.rint(
+                                                                    Float.valueOf(val)
+                                                                            .doubleValue()))
+                                                    .floatValue()));
+                            break;
+                        }
+                    case F64_NEAREST:
+                        {
+                            var val = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(Math.rint(val)));
                             break;
                         }
                         // For the extend_* operations, note that java
