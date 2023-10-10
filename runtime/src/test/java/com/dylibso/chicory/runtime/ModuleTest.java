@@ -163,17 +163,16 @@ public class ModuleTest {
         assertEquals(42, result.asInt());
     }
 
-    //        @Test
-    //        public void shouldCountVowels() {
-    //            var instance =
-    // Module.build("src/test/resources/wasm/count_vowels.rs.wasm").instantiate();
-    //            var countVowels = instance.getExport("count_vowels");
-    ////            var memory = instance.getMemory();
-    ////            memory.put(0, "Hello World!");
-    ////            var result = countVowels.apply(Value.i32(0));
-    //            var result = countVowels.apply();
-    //            assertEquals(3, result.asInt());
-    //        }
+    @Test
+    public void shouldCountVowels() {
+        var instance = Module.build("src/test/resources/wasm/count_vowels.rs.wasm").instantiate();
+        var countVowels = instance.getExport("count_vowels");
+//            var memory = instance.getMemory();
+//            memory.put(0, "Hello World!");
+//            var result = countVowels.apply(Value.i32(0));
+        var result = countVowels.apply();
+        assertEquals(3, result.asInt());
+    }
 
     @Test
     public void shouldRunBasicCProgram() {

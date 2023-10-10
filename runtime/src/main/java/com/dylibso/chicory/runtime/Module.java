@@ -8,6 +8,8 @@ import java.util.HashMap;
 
 public class Module {
     private com.dylibso.chicory.wasm.Module module;
+    private NameSection nameSec;
+
     private HashMap<String, Export> exports;
 
     public static Module build(String wasmFile) {
@@ -170,5 +172,11 @@ public class Module {
         var e = this.exports.get(name);
         if (e == null) throw new ChicoryException("Unknown export with name " + name);
         return e;
+    }
+
+    public NameSection getNameSection() {
+        if (nameSec != null) return nameSec;
+        nameSec = this.module.getNameSection();
+        return nameSec;
     }
 }

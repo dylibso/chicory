@@ -87,4 +87,8 @@ public class Instance {
     public HostFunction[] getImports() {
         return imports;
     }
+
+    public Module getModule() {
+        return module;
+    }
 }

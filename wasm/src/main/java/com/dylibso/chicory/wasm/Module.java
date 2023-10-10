@@ -2,10 +2,11 @@ package com.dylibso.chicory.wasm;
 
 import com.dylibso.chicory.wasm.types.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class Module {
-    private List<CustomSection> customSections;
+    private HashMap<String, CustomSection> customSections;
     private TypeSection typeSection;
     private ImportSection importSection;
     private FunctionSection functionSection;
@@ -19,7 +20,7 @@ public class Module {
     private DataSection dataSection;
 
     public Module() {
-        this.customSections = new ArrayList<>();
+        this.customSections = new HashMap<>();
     }
 
     public void setTypeSection(TypeSection typeSection) {
@@ -103,11 +104,21 @@ public class Module {
     }
 
     public void addCustomSection(CustomSection customSection) {
-        this.customSections.add(customSection);
+        this.customSections.put(customSection.getName(), customSection);
     }
 
     public List<CustomSection> getCustomSections() {
-        return customSections;
+        return new ArrayList<>(customSections.values());
+    }
+
+    public CustomSection getCustomSection(String name) {
+        return customSections.get(name);
+    }
+
+    public NameSection getNameSection() {
+        var customSec = customSections.get("name");
+        if (customSec == null) return null;
+        return new NameSection(customSec);
     }
 
     public ElementSection getElementSection() {

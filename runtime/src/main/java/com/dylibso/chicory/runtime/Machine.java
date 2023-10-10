@@ -22,10 +22,10 @@ public class Machine {
     public Value call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
         var func = instance.getFunction(funcId);
         if (func != null) {
-            this.callStack.push(new StackFrame(funcId, 0, args, func.getLocals()));
+            this.callStack.push(new StackFrame(instance, funcId, 0, args, func.getLocals()));
             eval(func.getInstructions());
         } else {
-            this.callStack.push(new StackFrame(funcId, 0, args, List.of()));
+            this.callStack.push(new StackFrame(instance, funcId, 0, args, List.of()));
             var imprt = instance.getImports()[funcId];
             var hostFunc = imprt.getHandle();
             var results = hostFunc.apply(this.instance.getMemory(), args);
