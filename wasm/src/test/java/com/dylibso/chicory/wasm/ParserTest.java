@@ -152,9 +152,9 @@ public class ParserTest {
         var module = parser.parseModule();
         var codeSection = module.getCodeSection();
         var fbody = codeSection.getFunctionBodies()[0];
-        var f32 = Encoding.longToFloat(fbody.getInstructions().get(0).getOperands()[0]);
+        var f32 = Float.intBitsToFloat((int) fbody.getInstructions().get(0).getOperands()[0]);
         assertEquals(0.12345678f, f32, 0.0);
-        var f64 = Encoding.longToDouble(fbody.getInstructions().get(1).getOperands()[0]);
+        var f64 = Double.longBitsToDouble(fbody.getInstructions().get(1).getOperands()[0]);
         assertEquals(0.123456789012345d, f64, 0.0);
     }
 
