@@ -45,7 +45,7 @@ public class JavaTestGen {
 
     private static final String INSTANCE_NAME = "instance";
 
-    public void generate(File specFile, File wasmFilesFolder) {
+    public CompilationUnit generate(SourceRoot dest, File specFile, File wasmFilesFolder) {
         Wast wast;
         try {
             wast = mapper.readValue(specFile, Wast.class);
@@ -53,7 +53,6 @@ public class JavaTestGen {
             throw new RuntimeException(e);
         }
 
-        final SourceRoot dest = new SourceRoot(sourceTargetFolder.toPath());
         var cu = new CompilationUnit("com.dylibso.chicory.test.gen");
         var name = specFile.toPath().getParent().toFile().getName();
         var testName = "SpecV1" + capitalize(escapedCamelCase(name)) + "Test";
@@ -132,8 +131,7 @@ public class JavaTestGen {
             }
         }
 
-        dest.add(cu);
-        dest.saveAll();
+        return cu;
     }
 
     private MethodDeclaration createTestMethod(

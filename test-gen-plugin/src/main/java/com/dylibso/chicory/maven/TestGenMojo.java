@@ -2,6 +2,7 @@ package com.dylibso.chicory.maven;
 
 import static com.dylibso.chicory.maven.Constants.SPEC_JSON;
 
+import com.github.javaparser.utils.SourceRoot;
 import java.io.File;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -121,18 +122,33 @@ public class TestGenMojo extends AbstractMojo {
             wast2Json.fetch();
 
             // generate the tests
-            for (var spec : clean(wastToProcess)) {
-                log.debug("TestGen processing " + spec);
-                var wastFile = testsuiteFolder.toPath().resolve(spec).toFile();
-                if (!wastFile.exists()) {
-                    throw new IllegalArgumentException(
-                            "Wast file " + wastFile.getAbsolutePath() + " not found");
-                }
-                var wasmFilesFolder =
-                        wast2Json.execute(testsuiteFolder.toPath().resolve(spec).toFile());
-                testGen.generate(
-                        wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile(), wasmFilesFolder);
-            }
+            final SourceRoot dest = new SourceRoot(sourceDestinationFolder.toPath());
+            clean(wastToProcess).stream()
+                    .parallel()
+                    .forEach(
+                            spec -> {
+                                log.debug("TestGen processing " + spec);
+                                var wastFile = testsuiteFolder.toPath().resolve(spec).toFile();
+                                if (!wastFile.exists()) {
+                                    throw new IllegalArgumentException(
+                                            "Wast file "
+                                                    + wastFile.getAbsolutePath()
+                                                    + " not found");
+                                }
+                                var wasmFilesFolder =
+                                        wast2Json.execute(
+                                                testsuiteFolder.toPath().resolve(spec).toFile());
+                                var cu =
+                                        testGen.generate(
+                                                dest,
+                                                wasmFilesFolder
+                                                        .toPath()
+                                                        .resolve(SPEC_JSON)
+                                                        .toFile(),
+                                                wasmFilesFolder);
+                                dest.add(cu);
+                            });
+            dest.saveAll();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
