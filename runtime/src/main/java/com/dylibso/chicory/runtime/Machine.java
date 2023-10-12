@@ -123,22 +123,27 @@ public class Machine {
                     case RETURN:
                         shouldReturn = true;
                         break;
-//                    case CALL_INDIRECT:
-//                        {
-//                            //                    var index = this.stack.pop().asInt();
-//                            //                    var funcId =
-//                            // instance.getTable().getFuncRef(index);
-//                            //                    var typeId =
-//                            // instance.getFunctionTypes().get(funcId);
-//                            //                    var type = instance.getTypes().get(typeId);
-//                            //                    // given a list of param types, let's pop those
-//                            // params off the stack
-//                            //                    // and pass as args to the function call
-//                            //                    var args =
-//                            // extractArgsForParams(type.paramTypes());
-//                            //                    call(funcId, args, false);
-//                            break;
-//                        }
+                        //                    case CALL_INDIRECT:
+                        //                        {
+                        //                            //                    var index =
+                        // this.stack.pop().asInt();
+                        //                            //                    var funcId =
+                        //                            // instance.getTable().getFuncRef(index);
+                        //                            //                    var typeId =
+                        //                            // instance.getFunctionTypes().get(funcId);
+                        //                            //                    var type =
+                        // instance.getTypes().get(typeId);
+                        //                            //                    // given a list of param
+                        // types, let's pop those
+                        //                            // params off the stack
+                        //                            //                    // and pass as args to
+                        // the function call
+                        //                            //                    var args =
+                        //                            // extractArgsForParams(type.paramTypes());
+                        //                            //                    call(funcId, args,
+                        // false);
+                        //                            break;
+                        //                        }
                     case DROP:
                         this.stack.pop();
                         break;
