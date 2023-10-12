@@ -45,8 +45,6 @@
             address.wast</wastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
-            SpecV1LocalGetTest.test18,
-            SpecV1LocalSetTest.test18,
             <!-- Errors -->
             SpecV1LocalTeeTest.test31,
             SpecV1LocalTeeTest.test32,

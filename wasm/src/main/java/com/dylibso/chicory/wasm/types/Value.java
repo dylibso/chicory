@@ -123,7 +123,7 @@ public class Value {
 
     // TODO memoize these
     public long asLong() {
-        return ByteBuffer.wrap(this.data).getLong();
+        return new BigInteger(this.data).longValue();
     }
 
     public BigInteger asULong() {

@@ -59,8 +59,15 @@ public class Machine {
                 var instruction = code.get(frame.pc++);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
-                // System.out.println("func="+frame.funcId + "@"+frame.pc + ": " + instruction +
-                // "stack=" + this.stack);
+//                System.out.println(
+//                        "func="
+//                                + frame.funcId
+//                                + "@"
+//                                + frame.pc
+//                                + ": "
+//                                + instruction
+//                                + "stack="
+//                                + this.stack);
                 switch (opcode) {
                     case UNREACHABLE:
                         throw new TrapException("Trapped on unreachable instruction", callStack);
@@ -1030,31 +1037,41 @@ public class Machine {
                     case F64_CONVERT_I64_U:
                         {
                             var tos = this.stack.pop();
-                            this.stack.push(Value.i64(tos.asLong()));
+                            this.stack.push(
+                                    Value.fromDouble(Long.valueOf(tos.asLong()).doubleValue()));
                             break;
                         }
                     case F64_CONVERT_I32_U:
                         {
                             var tos = this.stack.pop();
-                            this.stack.push(Value.i32(tos.asUInt()));
+                            this.stack.push(
+                                    Value.fromDouble(Long.valueOf(tos.asUInt()).doubleValue()));
                             break;
                         }
                     case F64_CONVERT_I32_S:
                         {
                             var tos = this.stack.pop();
-                            this.stack.push(Value.i32(tos.asInt()));
+                            this.stack.push(
+                                    Value.fromDouble(Long.valueOf(tos.asInt()).doubleValue()));
                             break;
                         }
                     case F64_PROMOTE_F32:
                         {
                             var tos = this.stack.pop();
-                            this.stack.push(Value.f64(tos.asUInt()));
+                            this.stack.push(
+                                    Value.fromDouble(Float.valueOf(tos.asFloat()).doubleValue()));
                             break;
                         }
                     case F64_REINTERPRET_I64:
                         {
                             var tos = this.stack.pop();
                             this.stack.push(Value.i64(tos.asLong()));
+                            break;
+                        }
+                    case I64_TRUNC_F64_S:
+                        {
+                            var tos = this.stack.pop();
+                            this.stack.push(Value.i64(Double.valueOf(tos.asDouble()).longValue()));
                             break;
                         }
                     default:
