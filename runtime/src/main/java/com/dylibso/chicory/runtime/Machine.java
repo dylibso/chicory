@@ -59,15 +59,15 @@ public class Machine {
                 var instruction = code.get(frame.pc++);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
-//                System.out.println(
-//                        "func="
-//                                + frame.funcId
-//                                + "@"
-//                                + frame.pc
-//                                + ": "
-//                                + instruction
-//                                + "stack="
-//                                + this.stack);
+                //                System.out.println(
+                //                        "func="
+                //                                + frame.funcId
+                //                                + "@"
+                //                                + frame.pc
+                //                                + ": "
+                //                                + instruction
+                //                                + "stack="
+                //                                + this.stack);
                 switch (opcode) {
                     case UNREACHABLE:
                         throw new TrapException("Trapped on unreachable instruction", callStack);
