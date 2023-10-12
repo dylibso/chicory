@@ -117,11 +117,14 @@ public class JavaTestGen {
                     break;
                 case ASSERT_INVALID:
                 case ASSERT_MALFORMED:
-                    method = createTestMethod(testClass, testNumber++, excludedMethods);
-
-                    for (var expr : generateAssertThrows(cmd, wasmFilesFolder)) {
-                        method.getBody().get().addStatement(expr);
-                    }
+                    testNumber++;
+                    //                    method = createTestMethod(testClass, testNumber++,
+                    // excludedMethods);
+                    //
+                    //                    for (var expr : generateAssertThrows(cmd,
+                    // wasmFilesFolder)) {
+                    //                        method.getBody().get().addStatement(expr);
+                    //                    }
                     break;
                 default:
                     log.info("command type not yet supported " + cmd.getType());

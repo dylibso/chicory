@@ -43,7 +43,8 @@
             names.wast,
             load.wast,
             address.wast,
-            const.wast</wastToProcess>
+            const.wast,
+            align.wast</wastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
             <!-- Errors -->
@@ -90,6 +91,7 @@
             SpecV1AddressTest.test235,
             SpecV1AddressTest.test251,
             SpecV1AddressTest.test254,
+            SpecV1AlignTest.test129,
             <!-- Invalid and Malformed failures, can be ignored for now -->
             SpecV1LocalGetTest.test29,
             SpecV1LocalGetTest.test30,

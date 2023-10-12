@@ -328,6 +328,20 @@ public class Machine {
                             instance.getMemory().putI64(ptr, value);
                             break;
                         }
+                    case F32_STORE:
+                        {
+                            var value = this.stack.pop().asFloat();
+                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
+                            instance.getMemory().putF32(ptr, value);
+                            break;
+                        }
+                    case F64_STORE:
+                        {
+                            var value = this.stack.pop().asDouble();
+                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
+                            instance.getMemory().putF64(ptr, value);
+                            break;
+                        }
                     case MEMORY_GROW:
                         {
                             instance.getMemory().grow();
@@ -1096,6 +1110,7 @@ public class Machine {
             }
             throw new WASMRuntimeException(e.getMessage(), e);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new WASMRuntimeException("An underlying Java exception occurred", e);
         }
     }

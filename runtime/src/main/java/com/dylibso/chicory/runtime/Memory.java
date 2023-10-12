@@ -105,22 +105,26 @@ public class Memory {
     }
 
     public void putI32(int offset, int data) {
-        System.out.println("mem-write@" + offset + " " + data);
         this.buffer.putInt(offset, data);
     }
 
+    public void putF32(int offset, float data) {
+        this.buffer.putFloat(offset, data);
+    }
+
+    public void putF64(int offset, double data) {
+        this.buffer.putDouble(offset, data);
+    }
+
     public void putShort(int offset, short data) {
-        System.out.println("mem-write@" + offset + " " + data);
         this.buffer.putShort(offset, data);
     }
 
     public void putI64(int offset, long data) {
-        System.out.println("mem-write@" + offset + " " + data);
         this.buffer.putLong(offset, data);
     }
 
     public void putByte(int offset, byte data) {
-        // System.out.println("mem-write@" + offset + " " + data);
         this.buffer.put(offset, data);
     }
 
