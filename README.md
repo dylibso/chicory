@@ -58,7 +58,7 @@ logIt.apply();
 
 ## Development
 
-* `mvn clean test` to run all of the project's tests.
+* `mvn clean install` to run all of the project's tests and install the library in your local repo
 * `mvn spotless:apply` to autoformat the code
 
 ## Modules
