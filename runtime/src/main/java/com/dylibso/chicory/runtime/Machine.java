@@ -59,8 +59,8 @@ public class Machine {
                 var instruction = code.get(frame.pc++);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
-                // System.out.println("func="+frame.funcId + "@"+frame.pc + ": " + instruction + "
-                // stack="+this.stack);
+                // System.out.println("func="+frame.funcId + "@"+frame.pc + ": " + instruction +
+                // "stack=" + this.stack);
                 switch (opcode) {
                     case UNREACHABLE:
                         throw new TrapException("Trapped on unreachable instruction", callStack);
@@ -1088,13 +1088,13 @@ public class Machine {
     Value[] extractArgsForParams(ValueType[] params) {
         if (params == null) return new Value[] {};
         var args = new Value[params.length];
-        for (var i = 0; i < params.length; i++) {
+        for (var i = params.length; i > 0; i--) {
             var p = this.stack.pop();
-            var t = params[i];
+            var t = params[i - 1];
             if (p.getType() != t) {
                 throw new RuntimeException("Type error when extracting args.");
             }
-            args[i] = p;
+            args[i - 1] = p;
         }
         return args;
     }
