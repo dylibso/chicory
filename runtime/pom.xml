@@ -46,7 +46,8 @@
             const.wast,
             align.wast,
             int_literals.wast,
-            int_exprs.wast</wastToProcess>
+            int_exprs.wast,
+            endianness.wast</wastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
             <!-- Errors -->

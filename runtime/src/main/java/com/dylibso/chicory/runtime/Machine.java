@@ -1084,7 +1084,7 @@ public class Machine {
                     case F64_REINTERPRET_I64:
                         {
                             var tos = this.stack.pop();
-                            this.stack.push(Value.i64(tos.asLong()));
+                            this.stack.push(Value.f64(tos.asLong()));
                             break;
                         }
                     case I64_TRUNC_F64_S:
@@ -1109,6 +1109,24 @@ public class Machine {
                         {
                             var tos = this.stack.pop();
                             this.stack.push(Value.i64(tos.asUInt()));
+                            break;
+                        }
+                    case I32_REINTERPRET_F32:
+                        {
+                            var tos = this.stack.pop();
+                            this.stack.push(Value.i32(tos.asInt()));
+                            break;
+                        }
+                    case I64_REINTERPRET_F64:
+                        {
+                            var tos = this.stack.pop();
+                            this.stack.push(Value.i64(tos.asLong()));
+                            break;
+                        }
+                    case F32_REINTERPRET_I32:
+                        {
+                            var tos = this.stack.pop();
+                            this.stack.push(Value.f32(tos.asInt()));
                             break;
                         }
                     default:
