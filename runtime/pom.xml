@@ -44,7 +44,9 @@
             load.wast,
             address.wast,
             const.wast,
-            align.wast</wastToProcess>
+            align.wast
+            memory_grow.wast,
+            memory_size.wast</wastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
             <!-- Errors -->

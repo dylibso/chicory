@@ -78,6 +78,12 @@ public class TestGenMojo extends AbstractMojo {
     private List<String> wastToProcess;
 
     /**
+     * Include list for the wast files that should generate an ordered spec.
+     */
+    @Parameter(required = true)
+    private List<String> orderedWastToProcess;
+
+    /**
      * Exclude list for tests that are still failing.
      */
     @Parameter(required = false, defaultValue = "[]")
