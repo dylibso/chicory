@@ -40,7 +40,8 @@ public class Memory {
     }
 
     public int grow(int size) {
-        int numPages = this.nPages + size;
+        var prevPages = nPages;
+        var numPages = nPages + size;
         // TODO if max is null then we just let it grow as much as it wants?
         if (limits.getMaximum() != null && numPages >= limits.getMaximum())
             throw new RuntimeException("Program exceeded max pages: " + limits.getMaximum());
@@ -52,7 +53,7 @@ public class Memory {
         result.position(position);
         buffer = result;
         nPages = numPages;
-        return nPages;
+        return prevPages;
     }
 
     public int getInitialSize() {
