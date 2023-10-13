@@ -14,11 +14,7 @@ import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
-import com.github.javaparser.ast.expr.ClassExpr;
-import com.github.javaparser.ast.expr.Expression;
-import com.github.javaparser.ast.expr.IntegerLiteralExpr;
-import com.github.javaparser.ast.expr.NameExpr;
-import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.expr.*;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.utils.SourceRoot;
 import com.github.javaparser.utils.StringEscapeUtils;
@@ -70,6 +66,7 @@ public class JavaTestGen {
             cu.addImport("org.junit.jupiter.api.MethodOrderer");
             cu.addImport("org.junit.jupiter.api.TestMethodOrder");
             cu.addImport("org.junit.jupiter.api.Order");
+            cu.addImport("org.junit.jupiter.api.TestInstance");
         }
         cu.addImport("org.junit.jupiter.api.Assertions.assertEquals", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertThrows", true, false);
@@ -92,6 +89,11 @@ public class JavaTestGen {
             testClass.addSingleMemberAnnotation(
                     "TestMethodOrder",
                     new ClassExpr(new ClassOrInterfaceType("MethodOrderer.OrderAnnotation")));
+            testClass.addSingleMemberAnnotation(
+                    "TestInstance",
+                    new FieldAccessExpr(
+                            new FieldAccessExpr(new NameExpr("TestInstance"), "Lifecycle"),
+                            "PER_CLASS"));
         }
 
         MethodDeclaration method;
