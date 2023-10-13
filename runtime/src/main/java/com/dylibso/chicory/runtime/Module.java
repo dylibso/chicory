@@ -85,9 +85,9 @@ public class Module {
         }
 
         var numFuncTypes = 0;
-        var funcSecton = module.getFunctionSection();
-        if (funcSecton != null) {
-            numFuncTypes = funcSecton.getTypeIndices().length;
+        var funcSection = module.getFunctionSection();
+        if (funcSection != null) {
+            numFuncTypes = funcSection.getTypeIndices().length;
             if (module.getImportSection() != null) {
                 numFuncTypes += module.getImportSection().getImports().length;
             }
