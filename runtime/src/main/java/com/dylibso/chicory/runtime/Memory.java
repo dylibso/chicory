@@ -31,27 +31,18 @@ public class Memory {
         this.reinstantiate();
     }
 
-    /**
-     * Gets the size of the memory in number of pages
-     */
-    public int getSize() {
-        return nPages;
-    }
-
-    public int grow(int size) {
-        int numPages = this.nPages + size;
+    public void grow() {
         // TODO if max is null then we just let it grow as much as it wants?
-        if (limits.getMaximum() != null && numPages >= limits.getMaximum())
+        if (limits.getMaximum() != null && this.nPages > limits.getMaximum())
             throw new RuntimeException("Program exceeded max pages: " + limits.getMaximum());
-        var capacity = buffer.capacity() + (PAGE_SIZE * size);
+        var capacity = this.buffer.capacity() + PAGE_SIZE;
         var result = ByteBuffer.allocate(capacity).order(ByteOrder.LITTLE_ENDIAN);
-        var position = buffer.position();
-        buffer.rewind();
-        result.put(buffer);
+        var position = this.buffer.position();
+        this.buffer.rewind();
+        result.put(this.buffer);
         result.position(position);
-        buffer = result;
-        nPages = numPages;
-        return nPages;
+        this.buffer = result;
+        this.nPages++;
     }
 
     public int getInitialSize() {

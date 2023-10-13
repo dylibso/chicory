@@ -344,10 +344,7 @@ public class Machine {
                         }
                     case MEMORY_GROW:
                         {
-                            var size = stack.pop().asInt();
-                            var nPages = instance.getMemory().grow(size);
-                            // TODO add -1 to stack if memory is exhausted
-                            stack.push(Value.i32(nPages));
+                            instance.getMemory().grow();
                             break;
                         }
                     case I32_STORE8:
@@ -367,7 +364,7 @@ public class Machine {
                         }
                     case MEMORY_SIZE:
                         {
-                            var sz = instance.getMemory().getSize();
+                            var sz = instance.getMemory().getInitialSize();
                             this.stack.push(Value.i32(sz));
                             break;
                         }
