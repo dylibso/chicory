@@ -12,6 +12,7 @@ public class Instance {
     private FunctionType[] types;
     private int[] functionTypes;
     private HostFunction[] imports;
+    private Table table;
 
     public Instance(
             Module module,
@@ -21,7 +22,8 @@ public class Instance {
             FunctionBody[] functions,
             FunctionType[] types,
             int[] functionTypes,
-            HostFunction[] imports) {
+            HostFunction[] imports,
+            Table table) {
         this.module = module;
         this.globalInitalizers = globalInitalizers;
         this.globals = globals;
@@ -31,6 +33,7 @@ public class Instance {
         this.functionTypes = functionTypes;
         this.imports = imports;
         this.machine = new Machine(this);
+        this.table = table;
     }
 
     public ExportFunction getExport(String name) {
@@ -86,5 +89,9 @@ public class Instance {
 
     public HostFunction[] getImports() {
         return imports;
+    }
+
+    public Table getTable() {
+        return table;
     }
 }
