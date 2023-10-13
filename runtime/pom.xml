@@ -17,8 +17,8 @@
     </dependency>
 
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
     </dependency>
   </dependencies>
 
@@ -44,9 +44,9 @@
             load.wast,
             address.wast,
             const.wast,
-            align.wast
-            memory_grow.wast,
-            memory_size.wast</wastToProcess>
+            align.wast</wastToProcess>
+          <orderedWastToProcess>memory_grow.wast,
+            memory_size.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
             <!-- Errors -->

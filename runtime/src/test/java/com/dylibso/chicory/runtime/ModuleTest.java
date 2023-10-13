@@ -1,11 +1,11 @@
 package com.dylibso.chicory.runtime;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 class Printer {
 
