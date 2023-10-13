@@ -1,8 +1,8 @@
 package com.dylibso.chicory.wasm.types;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class ValueTest {
     @Test

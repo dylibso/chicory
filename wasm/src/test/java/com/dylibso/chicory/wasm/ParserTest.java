@@ -1,18 +1,17 @@
 package com.dylibso.chicory.wasm;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.File;
-import org.junit.Test;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class ParserTest {
 
     @Test
@@ -62,7 +61,7 @@ public class ParserTest {
         var memories = memorySection.getMemories();
         assertEquals(1, memories.length);
         assertEquals(1, memories[0].getMemoryLimits().getInitial());
-        assertNull(memories[0].getMemoryLimits().getMaximum());
+        assertEquals(65536, memories[0].getMemoryLimits().getMaximum());
 
         var codeSection = module.getCodeSection();
         var functionBodies = codeSection.getFunctionBodies();

@@ -17,8 +17,8 @@
     </dependency>
 
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
     </dependency>
   </dependencies>
 
@@ -48,8 +48,15 @@
             int_literals.wast,
             int_exprs.wast,
             endianness.wast</wastToProcess>
+          <orderedWastToProcess>memory_grow.wast,
+            memory_size.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
+            SpecV1MemoryGrowTest.test67,
+            <!-- call indirect failures -->
+            SpecV1MemoryGrowTest.test64,
+            SpecV1MemoryGrowTest.test65,
+            SpecV1MemoryGrowTest.test66,
             <!-- Errors -->
             SpecV1LocalTeeTest.test31,
             SpecV1LocalTeeTest.test32,

@@ -4,6 +4,7 @@ import static com.dylibso.chicory.maven.Constants.SPEC_JSON;
 
 import com.github.javaparser.utils.SourceRoot;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.maven.plugin.AbstractMojo;
@@ -78,6 +79,12 @@ public class TestGenMojo extends AbstractMojo {
     private List<String> wastToProcess;
 
     /**
+     * Include list for the wast files that should generate an ordered spec.
+     */
+    @Parameter(required = true)
+    private List<String> orderedWastToProcess;
+
+    /**
      * Exclude list for tests that are still failing.
      */
     @Parameter(required = false, defaultValue = "[]")
@@ -121,13 +128,22 @@ public class TestGenMojo extends AbstractMojo {
             testSuiteDownloader.downloadTestsuite(testSuiteRepo, testSuiteRepoRef, testsuiteFolder);
             wast2Json.fetch();
 
+            var allWasts = new ArrayList<String>();
+            allWasts.addAll(clean(wastToProcess));
+            var cleanedOrderedWasts = clean(orderedWastToProcess);
+            allWasts.addAll(cleanedOrderedWasts);
+
             // generate the tests
             final SourceRoot dest = new SourceRoot(sourceDestinationFolder.toPath());
-            clean(wastToProcess).stream()
+            clean(allWasts).stream()
                     .parallel()
                     .forEach(
                             spec -> {
-                                log.debug("TestGen processing " + spec);
+                                log.debug(
+                                        "TestGen processing "
+                                                + spec
+                                                + " ordered: "
+                                                + cleanedOrderedWasts.contains(spec));
                                 var wastFile = testsuiteFolder.toPath().resolve(spec).toFile();
                                 if (!wastFile.exists()) {
                                     throw new IllegalArgumentException(
@@ -145,7 +161,8 @@ public class TestGenMojo extends AbstractMojo {
                                                         .toPath()
                                                         .resolve(SPEC_JSON)
                                                         .toFile(),
-                                                wasmFilesFolder);
+                                                wasmFilesFolder,
+                                                cleanedOrderedWasts.contains(spec));
                                 dest.add(cu);
                             });
             dest.saveAll();

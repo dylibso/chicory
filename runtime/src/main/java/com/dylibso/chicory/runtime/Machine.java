@@ -346,7 +346,6 @@ public class Machine {
                         {
                             var size = stack.pop().asInt();
                             var nPages = instance.getMemory().grow(size);
-                            // TODO add -1 to stack if memory is exhausted
                             stack.push(Value.i32(nPages));
                             break;
                         }
