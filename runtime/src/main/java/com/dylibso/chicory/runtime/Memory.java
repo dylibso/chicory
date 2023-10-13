@@ -14,6 +14,7 @@ import java.util.Arrays;
 public class Memory {
     // 64KiB = 65,536
     public static int PAGE_SIZE = (int) Math.pow(2, 16);
+    public static int MAX_PAGES = (int) Math.pow(2, 16);
     private ByteBuffer buffer;
     private MemoryLimits limits;
     private int nPages;
@@ -42,9 +43,7 @@ public class Memory {
     public int grow(int size) {
         var prevPages = nPages;
         var numPages = nPages + size;
-        // TODO if max is null then we just let it grow as much as it wants?
-        if (limits.getMaximum() != null && numPages >= limits.getMaximum())
-            throw new RuntimeException("Program exceeded max pages: " + limits.getMaximum());
+        if (numPages >= limits.getMaximum()) return -1;
         var capacity = buffer.capacity() + (PAGE_SIZE * size);
         var result = ByteBuffer.allocate(capacity).order(ByteOrder.LITTLE_ENDIAN);
         var position = buffer.position();

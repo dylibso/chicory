@@ -61,7 +61,7 @@ public class ParserTest {
         var memories = memorySection.getMemories();
         assertEquals(1, memories.length);
         assertEquals(1, memories[0].getMemoryLimits().getInitial());
-        assertNull(memories[0].getMemoryLimits().getMaximum());
+        assertEquals(65536, memories[0].getMemoryLimits().getMaximum());
 
         var codeSection = module.getCodeSection();
         var functionBodies = codeSection.getFunctionBodies();
