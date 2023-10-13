@@ -75,7 +75,7 @@ public class Memory {
             }
             var data = segment.getData();
             var offset = (int) offsetInstr.getOperands()[0];
-            System.out.println("Writing data segment " + offset + " " + new String(data));
+            // System.out.println("Writing data segment " + offset + " " + new String(data));
             for (int i = 0, j = offset; i < data.length; i++, j++) {
                 this.buffer.put(j, data[i]);
             }
