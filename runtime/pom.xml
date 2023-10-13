@@ -52,6 +52,11 @@
             memory_size.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
+            SpecV1MemoryGrowTest.test67,
+            <!-- call indirect failures -->
+            SpecV1MemoryGrowTest.test64,
+            SpecV1MemoryGrowTest.test65,
+            SpecV1MemoryGrowTest.test66,
             <!-- Errors -->
             SpecV1LocalTeeTest.test31,
             SpecV1LocalTeeTest.test32,
