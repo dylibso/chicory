@@ -5,6 +5,10 @@ public class MemoryLimits {
     private int initial;
     private int maximum;
 
+    public static MemoryLimits defaultLimits() {
+        return new MemoryLimits(0, MAX_PAGES);
+    }
+
     public MemoryLimits(int initial, Integer maximum) {
         this.initial = initial;
         if (maximum == null) {

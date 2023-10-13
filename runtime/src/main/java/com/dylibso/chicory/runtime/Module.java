@@ -75,8 +75,7 @@ public class Module {
             }
             memory = new Memory(memories[0].getMemoryLimits(), dataSegments);
         } else {
-            // TODO fix default
-            memory = new Memory(new MemoryLimits(1, 10), dataSegments);
+            memory = new Memory(MemoryLimits.defaultLimits(), dataSegments);
         }
 
         var types = new FunctionType[0];

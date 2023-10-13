@@ -43,7 +43,7 @@ public class Memory {
     public int grow(int size) {
         var prevPages = nPages;
         var numPages = nPages + size;
-        if (numPages >= limits.getMaximum()) return -1;
+        if (numPages > limits.getMaximum()) return -1;
         var capacity = buffer.capacity() + (PAGE_SIZE * size);
         var result = ByteBuffer.allocate(capacity).order(ByteOrder.LITTLE_ENDIAN);
         var position = buffer.position();
