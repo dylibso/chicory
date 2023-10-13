@@ -1093,6 +1093,24 @@ public class Machine {
                             this.stack.push(Value.i64(Double.valueOf(tos.asDouble()).longValue()));
                             break;
                         }
+                    case I32_WRAP_I64:
+                        {
+                            var tos = this.stack.pop();
+                            this.stack.push(Value.i32(tos.asInt()));
+                            break;
+                        }
+                    case I64_EXTEND_I32_S:
+                        {
+                            var tos = this.stack.pop();
+                            this.stack.push(Value.i64(Integer.valueOf(tos.asInt()).longValue()));
+                            break;
+                        }
+                    case I64_EXTEND_I32_U:
+                        {
+                            var tos = this.stack.pop();
+                            this.stack.push(Value.i64(tos.asUInt()));
+                            break;
+                        }
                     default:
                         throw new RuntimeException(
                                 "Machine doesn't recognize Instruction " + instruction);
