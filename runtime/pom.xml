@@ -48,7 +48,8 @@
             int_literals.wast,
             int_exprs.wast,
             endianness.wast,
-            fac.wast</wastToProcess>
+            fac.wast,
+            data.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
             stack.wast</orderedWastToProcess>
