@@ -47,13 +47,15 @@
             align.wast,
             int_literals.wast,
             int_exprs.wast,
-            endianness.wast</wastToProcess>
+            endianness.wast,
+            fac.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
             stack.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
             SpecV1MemoryGrowTest.test67,
+            SpecV1FacTest.test4,
             <!-- call indirect failures -->
             SpecV1MemoryGrowTest.test64,
             SpecV1MemoryGrowTest.test65,

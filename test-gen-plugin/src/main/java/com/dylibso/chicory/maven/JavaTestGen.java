@@ -148,7 +148,8 @@ public class JavaTestGen {
                     //                    }
                     break;
                 default:
-                    log.info("command type not yet supported " + cmd.getType());
+                    // TODO we need to implement all of these
+                    log.info("TODO: command type not yet supported " + cmd.getType());
                     //                    throw new IllegalArgumentException(
                     //                            "command type not yet supported " +
                     // cmd.getType());
