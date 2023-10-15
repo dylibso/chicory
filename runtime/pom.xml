@@ -49,7 +49,8 @@
             int_exprs.wast,
             endianness.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
-            memory_size.wast</orderedWastToProcess>
+            memory_size.wast,
+            stack.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
             SpecV1MemoryGrowTest.test67,
