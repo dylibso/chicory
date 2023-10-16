@@ -3,9 +3,9 @@ package com.dylibso.chicory.wasm.types;
 public class Table {
     private ElementType elementType;
     private long limitMin;
-    private long limitMax;
+    private Long limitMax;
 
-    public Table(ElementType elementType, long limitMin, long limitMax) {
+    public Table(ElementType elementType, long limitMin, Long limitMax) {
         this.elementType = elementType;
         this.limitMin = limitMin;
         this.limitMax = limitMax;
@@ -19,7 +19,7 @@ public class Table {
         return limitMin;
     }
 
-    public long getLimitMax() {
+    public Long getLimitMax() {
         return limitMax;
     }
 }
