@@ -161,12 +161,12 @@ public class Machine {
                         }
                     case END:
                         {
-                            frame.blockDepth--;
                             // if this is the last end, then we're done with
                             // the function
                             if (frame.blockDepth == 0) {
                                 break loop;
                             }
+                            frame.blockDepth--;
                             break;
                         }
                     case LOCAL_GET:
