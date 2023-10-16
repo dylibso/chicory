@@ -77,8 +77,7 @@ public class Module {
             }
             memory = new Memory(memories[0].getMemoryLimits(), dataSegments);
         } else {
-            // TODO fix default
-            memory = new Memory(new MemoryLimits(1, 10), dataSegments);
+            memory = new Memory(MemoryLimits.defaultLimits(), dataSegments);
         }
 
         var types = new FunctionType[0];
@@ -88,9 +87,9 @@ public class Module {
         }
 
         var numFuncTypes = 0;
-        var funcSecton = module.getFunctionSection();
-        if (funcSecton != null) {
-            numFuncTypes = funcSecton.getTypeIndices().length;
+        var funcSection = module.getFunctionSection();
+        if (funcSection != null) {
+            numFuncTypes = funcSection.getTypeIndices().length;
             if (module.getImportSection() != null) {
                 numFuncTypes += module.getImportSection().getImports().length;
             }

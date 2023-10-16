@@ -1,11 +1,11 @@
 package com.dylibso.chicory.runtime;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 class Printer {
 
@@ -87,9 +87,9 @@ public class ModuleTest {
         var printer = new Printer("Hello, World!");
         var func =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
-                            var offset = args[0].asInt();
-                            var len = args[1].asInt();
+                        (Memory memory, Value... args) -> { // decompiled is:  console_log(13, 0);
+                            var len = args[0].asInt();
+                            var offset = args[1].asInt();
                             var message = memory.getString(offset, len);
                             printer.println(message);
                             return null;

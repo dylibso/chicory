@@ -59,8 +59,15 @@ public class Machine {
                 var instruction = code.get(frame.pc++);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
-                // System.out.println("func="+frame.funcId + "@"+frame.pc + ": " + instruction + "
-                // stack="+this.stack);
+                //                System.out.println(
+                //                        "func="
+                //                                + frame.funcId
+                //                                + "@"
+                //                                + frame.pc
+                //                                + ": "
+                //                                + instruction
+                //                                + "stack="
+                //                                + this.stack);
                 switch (opcode) {
                     case UNREACHABLE:
                         throw new TrapException("Trapped on unreachable instruction", callStack);
@@ -116,22 +123,27 @@ public class Machine {
                     case RETURN:
                         shouldReturn = true;
                         break;
-                    case CALL_INDIRECT:
-                        {
-                            //                    var index = this.stack.pop().asInt();
-                            //                    var funcId =
-                            // instance.getTable().getFuncRef(index);
-                            //                    var typeId =
-                            // instance.getFunctionTypes().get(funcId);
-                            //                    var type = instance.getTypes().get(typeId);
-                            //                    // given a list of param types, let's pop those
-                            // params off the stack
-                            //                    // and pass as args to the function call
-                            //                    var args =
-                            // extractArgsForParams(type.paramTypes());
-                            //                    call(funcId, args, false);
-                            break;
-                        }
+                        //                    case CALL_INDIRECT:
+                        //                        {
+                        //                            //                    var index =
+                        // this.stack.pop().asInt();
+                        //                            //                    var funcId =
+                        //                            // instance.getTable().getFuncRef(index);
+                        //                            //                    var typeId =
+                        //                            // instance.getFunctionTypes().get(funcId);
+                        //                            //                    var type =
+                        // instance.getTypes().get(typeId);
+                        //                            //                    // given a list of param
+                        // types, let's pop those
+                        //                            // params off the stack
+                        //                            //                    // and pass as args to
+                        // the function call
+                        //                            //                    var args =
+                        //                            // extractArgsForParams(type.paramTypes());
+                        //                            //                    call(funcId, args,
+                        // false);
+                        //                            break;
+                        //                        }
                     case DROP:
                         this.stack.pop();
                         break;
@@ -316,9 +328,25 @@ public class Machine {
                             instance.getMemory().putI64(ptr, value);
                             break;
                         }
+                    case F32_STORE:
+                        {
+                            var value = this.stack.pop().asFloat();
+                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
+                            instance.getMemory().putF32(ptr, value);
+                            break;
+                        }
+                    case F64_STORE:
+                        {
+                            var value = this.stack.pop().asDouble();
+                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
+                            instance.getMemory().putF64(ptr, value);
+                            break;
+                        }
                     case MEMORY_GROW:
                         {
-                            instance.getMemory().grow();
+                            var size = stack.pop().asInt();
+                            var nPages = instance.getMemory().grow(size);
+                            stack.push(Value.i32(nPages));
                             break;
                         }
                     case I32_STORE8:
@@ -338,7 +366,7 @@ public class Machine {
                         }
                     case MEMORY_SIZE:
                         {
-                            var sz = instance.getMemory().getInitialSize();
+                            var sz = instance.getMemory().getSize();
                             this.stack.push(Value.i32(sz));
                             break;
                         }
@@ -814,11 +842,183 @@ public class Machine {
                             this.stack.push(Value.i32(z));
                             break;
                         }
+                    case F32_ADD:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+                            this.stack.push(Value.fromFloat(a + b));
+                            break;
+                        }
                     case F64_ADD:
                         {
                             var a = this.stack.pop().asDouble();
                             var b = this.stack.pop().asDouble();
                             this.stack.push(Value.fromDouble(a + b));
+                            break;
+                        }
+                    case F32_SUB:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+                            this.stack.push(Value.fromFloat(b - a));
+                            break;
+                        }
+                    case F64_SUB:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(b - a));
+                            break;
+                        }
+                    case F32_MUL:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+                            this.stack.push(Value.fromFloat(b * a));
+                            break;
+                        }
+                    case F64_MUL:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(b * a));
+                            break;
+                        }
+                    case F32_DIV:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+                            this.stack.push(Value.fromFloat(b / a));
+                            break;
+                        }
+                    case F64_DIV:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(b / a));
+                            break;
+                        }
+                    case F32_MIN:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+                            this.stack.push(Value.fromFloat(Math.min(a, b)));
+                            break;
+                        }
+                    case F64_MIN:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(Math.min(a, b)));
+                            break;
+                        }
+                    case F32_MAX:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+                            this.stack.push(Value.fromFloat(Math.max(a, b)));
+                            break;
+                        }
+                    case F64_MAX:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(Math.max(a, b)));
+                            break;
+                        }
+                    case F32_SQRT:
+                        {
+                            var val = this.stack.pop().asFloat();
+                            this.stack.push(
+                                    Value.fromFloat(
+                                            Double.valueOf(
+                                                            Math.sqrt(
+                                                                    Float.valueOf(val)
+                                                                            .doubleValue()))
+                                                    .floatValue()));
+                            break;
+                        }
+                    case F64_SQRT:
+                        {
+                            var val = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(Math.sqrt(val)));
+                            break;
+                        }
+                    case F32_FLOOR:
+                        {
+                            var val = this.stack.pop().asFloat();
+                            this.stack.push(
+                                    Value.fromFloat(
+                                            Double.valueOf(
+                                                            Math.floor(
+                                                                    Float.valueOf(val)
+                                                                            .doubleValue()))
+                                                    .floatValue()));
+                            break;
+                        }
+                    case F64_FLOOR:
+                        {
+                            var val = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(Math.floor(val)));
+                            break;
+                        }
+                    case F32_CEIL:
+                        {
+                            var val = this.stack.pop().asFloat();
+                            this.stack.push(
+                                    Value.fromFloat(
+                                            Double.valueOf(
+                                                            Math.ceil(
+                                                                    Float.valueOf(val)
+                                                                            .doubleValue()))
+                                                    .floatValue()));
+                            break;
+                        }
+                    case F64_CEIL:
+                        {
+                            var val = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(Math.ceil(val)));
+                            break;
+                        }
+                    case F32_TRUNC:
+                        {
+                            var val = this.stack.pop().asFloat();
+                            this.stack.push(
+                                    Value.fromFloat(
+                                            Double.valueOf(
+                                                            (val < 0)
+                                                                    ? Math.ceil(
+                                                                            Float.valueOf(val)
+                                                                                    .doubleValue())
+                                                                    : Math.floor(
+                                                                            Float.valueOf(val)
+                                                                                    .doubleValue()))
+                                                    .floatValue()));
+                            break;
+                        }
+                    case F64_TRUNC:
+                        {
+                            var val = this.stack.pop().asDouble();
+                            this.stack.push(
+                                    Value.fromDouble((val < 0) ? Math.ceil(val) : Math.floor(val)));
+                            break;
+                        }
+                    case F32_NEAREST:
+                        {
+                            var val = this.stack.pop().asFloat();
+                            this.stack.push(
+                                    Value.fromFloat(
+                                            Double.valueOf(
+                                                            Math.rint(
+                                                                    Float.valueOf(val)
+                                                                            .doubleValue()))
+                                                    .floatValue()));
+                            break;
+                        }
+                    case F64_NEAREST:
+                        {
+                            var val = this.stack.pop().asDouble();
+                            this.stack.push(Value.fromDouble(Math.rint(val)));
                             break;
                         }
                         // For the extend_* operations, note that java
@@ -857,32 +1057,269 @@ public class Machine {
                         }
                     case F64_CONVERT_I64_U:
                         {
-                            var tos = this.stack.pop();
-                            this.stack.push(Value.i64(tos.asLong()));
+                            var tos = this.stack.pop().asULong();
+                            this.stack.push(Value.fromDouble(tos.doubleValue()));
                             break;
                         }
                     case F64_CONVERT_I32_U:
                         {
                             var tos = this.stack.pop();
-                            this.stack.push(Value.i32(tos.asUInt()));
+                            this.stack.push(
+                                    Value.fromDouble(Long.valueOf(tos.asUInt()).doubleValue()));
                             break;
                         }
                     case F64_CONVERT_I32_S:
                         {
                             var tos = this.stack.pop();
-                            this.stack.push(Value.i32(tos.asInt()));
+                            this.stack.push(
+                                    Value.fromDouble(Long.valueOf(tos.asInt()).doubleValue()));
                             break;
                         }
                     case F64_PROMOTE_F32:
                         {
                             var tos = this.stack.pop();
-                            this.stack.push(Value.f64(tos.asUInt()));
+                            this.stack.push(
+                                    Value.fromDouble(Float.valueOf(tos.asFloat()).doubleValue()));
                             break;
                         }
                     case F64_REINTERPRET_I64:
                         {
                             var tos = this.stack.pop();
+                            this.stack.push(Value.f64(tos.asLong()));
+                            break;
+                        }
+                    case I64_TRUNC_F64_S:
+                        {
+                            var tos = this.stack.pop();
+                            this.stack.push(Value.i64(Double.valueOf(tos.asDouble()).longValue()));
+                            break;
+                        }
+                    case I32_WRAP_I64:
+                        {
+                            var tos = this.stack.pop();
+                            this.stack.push(Value.i32(tos.asInt()));
+                            break;
+                        }
+                    case I64_EXTEND_I32_S:
+                        {
+                            var tos = this.stack.pop();
+                            this.stack.push(Value.i64(Integer.valueOf(tos.asInt()).longValue()));
+                            break;
+                        }
+                    case I64_EXTEND_I32_U:
+                        {
+                            var tos = this.stack.pop();
+                            this.stack.push(Value.i64(tos.asUInt()));
+                            break;
+                        }
+                    case I32_REINTERPRET_F32:
+                        {
+                            var tos = this.stack.pop();
+                            this.stack.push(Value.i32(tos.asInt()));
+                            break;
+                        }
+                    case I64_REINTERPRET_F64:
+                        {
+                            var tos = this.stack.pop();
                             this.stack.push(Value.i64(tos.asLong()));
+                            break;
+                        }
+                    case F32_REINTERPRET_I32:
+                        {
+                            var tos = this.stack.pop();
+                            this.stack.push(Value.f32(tos.asInt()));
+                            break;
+                        }
+                    case F32_COPYSIGN:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+
+                            if (a == 0xFFC00000L) { // +NaN
+                                this.stack.push(Value.fromFloat(Math.copySign(b, -1)));
+                            } else if (a == 0x7FC00000L) { // -NaN
+                                this.stack.push(Value.fromFloat(Math.copySign(b, +1)));
+                            } else {
+                                this.stack.push(Value.fromFloat(Math.copySign(b, a)));
+                            }
+                            break;
+                        }
+                    case F32_ABS:
+                        {
+                            var val = this.stack.pop().asFloat();
+
+                            this.stack.push(Value.fromFloat(Math.abs(Float.valueOf(val))));
+                            break;
+                        }
+                    case F64_COPYSIGN:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+
+                            if (a == 0xFFC0000000000000L) { // +NaN
+                                this.stack.push(Value.fromDouble(Math.copySign(b, -1)));
+                            } else if (a == 0x7FC0000000000000L) { // -NaN
+                                this.stack.push(Value.fromDouble(Math.copySign(b, +1)));
+                            } else {
+                                this.stack.push(Value.fromDouble(Math.copySign(b, a)));
+                            }
+                            break;
+                        }
+                    case F64_ABS:
+                        {
+                            var val = this.stack.pop().asDouble();
+
+                            this.stack.push(Value.fromDouble(Math.abs(Double.valueOf(val))));
+                            break;
+                        }
+                    case F32_NE:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+
+                            this.stack.push(a == b ? Value.FALSE : Value.TRUE);
+                            break;
+                        }
+                    case F64_NE:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+
+                            this.stack.push(a == b ? Value.FALSE : Value.TRUE);
+                            break;
+                        }
+                    case F32_LT:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+
+                            this.stack.push(a > b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F64_LT:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+
+                            this.stack.push(a > b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F32_LE:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+
+                            this.stack.push(a >= b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F64_LE:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+
+                            this.stack.push(a >= b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F32_GE:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+
+                            this.stack.push(a <= b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F64_GE:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+
+                            this.stack.push(a <= b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F32_GT:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+
+                            this.stack.push(a < b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F64_GT:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+
+                            this.stack.push(a < b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F32_DEMOTE_F64:
+                        {
+                            var val = this.stack.pop().asDouble();
+
+                            this.stack.push(Value.fromFloat(Double.valueOf(val).floatValue()));
+                            break;
+                        }
+                    case F32_CONVERT_I32_S:
+                        {
+                            var val = this.stack.pop().asInt();
+
+                            this.stack.push(Value.fromFloat(Integer.valueOf(val).floatValue()));
+                            break;
+                        }
+                    case I32_TRUNC_F32_S:
+                        {
+                            var val = this.stack.pop().asFloat();
+
+                            this.stack.push(Value.i32(Float.valueOf(val).intValue()));
+                            break;
+                        }
+                    case F32_CONVERT_I32_U:
+                        {
+                            var val = this.stack.pop().asUInt();
+
+                            this.stack.push(Value.fromFloat(Long.valueOf(val).floatValue()));
+                            break;
+                        }
+                    case I32_TRUNC_F32_U:
+                        {
+                            var val = this.stack.pop().asFloat();
+
+                            this.stack.push(Value.i32(Float.valueOf(val).longValue()));
+                            break;
+                        }
+                    case F64_CONVERT_I64_S:
+                        {
+                            var val = this.stack.pop().asLong();
+
+                            this.stack.push(Value.fromDouble(Long.valueOf(val).doubleValue()));
+                            break;
+                        }
+                    case I64_TRUNC_F64_U:
+                        {
+                            var val = this.stack.pop().asDouble();
+
+                            this.stack.push(Value.i64(Double.valueOf(val).longValue()));
+                            break;
+                        }
+                    case I32_TRUNC_F64_S:
+                        {
+                            var val = this.stack.pop().asDouble();
+
+                            this.stack.push(Value.i32(Double.valueOf(val).intValue()));
+                            break;
+                        }
+                    case I32_TRUNC_F64_U:
+                        {
+                            var val = this.stack.pop().asDouble();
+
+                            this.stack.push(Value.i32(Double.valueOf(val).longValue()));
+                            break;
+                        }
+                    case I64_TRUNC_F32_S:
+                        {
+                            var val = this.stack.pop().asFloat();
+
+                            this.stack.push(Value.i64(Float.valueOf(val).longValue()));
                             break;
                         }
                     default:
@@ -902,6 +1339,7 @@ public class Machine {
             }
             throw new WASMRuntimeException(e.getMessage(), e);
         } catch (Exception e) {
+            e.printStackTrace();
             throw new WASMRuntimeException("An underlying Java exception occurred", e);
         }
     }
@@ -916,13 +1354,13 @@ public class Machine {
     Value[] extractArgsForParams(ValueType[] params) {
         if (params == null) return new Value[] {};
         var args = new Value[params.length];
-        for (var i = 0; i < params.length; i++) {
+        for (var i = params.length; i > 0; i--) {
             var p = this.stack.pop();
-            var t = params[i];
+            var t = params[i - 1];
             if (p.getType() != t) {
                 throw new RuntimeException("Type error when extracting args.");
             }
-            args[i] = p;
+            args[i - 1] = p;
         }
         return args;
     }

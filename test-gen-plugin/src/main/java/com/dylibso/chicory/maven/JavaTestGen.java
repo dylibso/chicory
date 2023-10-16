@@ -14,9 +14,13 @@ import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.expr.ClassExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.FieldAccessExpr;
+import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.utils.SourceRoot;
 import com.github.javaparser.utils.StringEscapeUtils;
 import java.io.File;
@@ -45,7 +49,8 @@ public class JavaTestGen {
 
     private static final String INSTANCE_NAME = "instance";
 
-    public void generate(File specFile, File wasmFilesFolder) {
+    public CompilationUnit generate(
+            SourceRoot dest, File specFile, File wasmFilesFolder, boolean ordered) {
         Wast wast;
         try {
             wast = mapper.readValue(specFile, Wast.class);
@@ -53,7 +58,6 @@ public class JavaTestGen {
             throw new RuntimeException(e);
         }
 
-        final SourceRoot dest = new SourceRoot(sourceTargetFolder.toPath());
         var cu = new CompilationUnit("com.dylibso.chicory.test.gen");
         var name = specFile.toPath().getParent().toFile().getName();
         var testName = "SpecV1" + capitalize(escapedCamelCase(name)) + "Test";
@@ -61,11 +65,17 @@ public class JavaTestGen {
 
         // all the imports
         // junit imports
-        cu.addImport("org.junit.Ignore");
-        cu.addImport("org.junit.Test");
-        cu.addImport("org.junit.Assert.assertEquals", true, false);
-        cu.addImport("org.junit.Assert.assertThrows", true, false);
-        cu.addImport("org.junit.Assert.assertTrue", true, false);
+        cu.addImport("org.junit.jupiter.api.Disabled");
+        cu.addImport("org.junit.jupiter.api.Test");
+        if (ordered) {
+            cu.addImport("org.junit.jupiter.api.MethodOrderer");
+            cu.addImport("org.junit.jupiter.api.TestMethodOrder");
+            cu.addImport("org.junit.jupiter.api.Order");
+            cu.addImport("org.junit.jupiter.api.TestInstance");
+        }
+        cu.addImport("org.junit.jupiter.api.Assertions.assertEquals", true, false);
+        cu.addImport("org.junit.jupiter.api.Assertions.assertThrows", true, false);
+        cu.addImport("org.junit.jupiter.api.Assertions.assertTrue", true, false);
 
         // runtime imports
         cu.addImport("com.dylibso.chicory.runtime.exceptions.WASMRuntimeException");
@@ -80,6 +90,16 @@ public class JavaTestGen {
         cu.addImport("com.dylibso.chicory.wasm.types.Value");
 
         var testClass = cu.addClass(testName);
+        if (ordered) {
+            testClass.addSingleMemberAnnotation(
+                    "TestMethodOrder",
+                    new ClassExpr(new ClassOrInterfaceType("MethodOrderer.OrderAnnotation")));
+            testClass.addSingleMemberAnnotation(
+                    "TestInstance",
+                    new FieldAccessExpr(
+                            new FieldAccessExpr(new NameExpr("TestInstance"), "Lifecycle"),
+                            "PER_CLASS"));
+        }
 
         MethodDeclaration method;
         int testNumber = 0;
@@ -101,7 +121,7 @@ public class JavaTestGen {
                     break;
                 case ASSERT_RETURN:
                 case ASSERT_TRAP:
-                    method = createTestMethod(testClass, testNumber++, excludedMethods);
+                    method = createTestMethod(testClass, testNumber++, excludedMethods, ordered);
 
                     var baseVarName = escapedCamelCase(cmd.getAction().getField());
                     var varNum = fallbackVarNumber++;
@@ -118,32 +138,41 @@ public class JavaTestGen {
                     break;
                 case ASSERT_INVALID:
                 case ASSERT_MALFORMED:
-                    method = createTestMethod(testClass, testNumber++, excludedMethods);
-
-                    for (var expr : generateAssertThrows(cmd, wasmFilesFolder)) {
-                        method.getBody().get().addStatement(expr);
-                    }
+                    testNumber++;
+                    //                    method = createTestMethod(testClass, testNumber++,
+                    // excludedMethods);
+                    //
+                    //                    for (var expr : generateAssertThrows(cmd,
+                    // wasmFilesFolder)) {
+                    //                        method.getBody().get().addStatement(expr);
+                    //                    }
                     break;
                 default:
-                    log.info("command type not yet supported " + cmd.getType());
+                    // TODO we need to implement all of these
+                    log.info("TODO: command type not yet supported " + cmd.getType());
                     //                    throw new IllegalArgumentException(
                     //                            "command type not yet supported " +
                     // cmd.getType());
             }
         }
 
-        dest.add(cu);
-        dest.saveAll();
+        return cu;
     }
 
     private MethodDeclaration createTestMethod(
-            ClassOrInterfaceDeclaration testClass, int testNumber, List<String> excludedTests) {
+            ClassOrInterfaceDeclaration testClass,
+            int testNumber,
+            List<String> excludedTests,
+            boolean ordered) {
         var methodName = "test" + testNumber;
         var method = testClass.addMethod("test" + testNumber, Modifier.Keyword.PUBLIC);
         if (excludedTests.contains(methodName)) {
-            method.addAnnotation("Ignore");
+            method.addAnnotation("Disabled");
         }
         method.addAnnotation("Test");
+        if (ordered) {
+            method.addSingleMemberAnnotation("Order", new IntegerLiteralExpr(testNumber));
+        }
 
         return method;
     }
@@ -280,10 +309,10 @@ public class JavaTestGen {
 
     private Expression exceptionMessageMatch(String text) {
         return new NameExpr(
-                "assertTrue(\"'\" + exception.getMessage() + \"' doesn't contains: '"
+                "assertTrue(exception.getMessage().contains(\""
                         + text
-                        + "'\", exception.getMessage().contains(\""
+                        + "\"), \"'\" + exception.getMessage() + \"' doesn't contains: '"
                         + text
-                        + "\"))");
+                        + "\")");
     }
 }

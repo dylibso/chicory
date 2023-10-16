@@ -25,9 +25,33 @@ public class WasmValue {
             case I64:
                 return "Long.parseUnsignedLong(\"" + value + "\")";
             case F32:
-                return "Float.parseFloat(\"" + value + "\")";
+                if (value != null) {
+                    switch (value) {
+                        case "nan:canonical":
+                        case "nan:arithmetic":
+                            return "Float.NaN";
+                        default:
+                            return "Float.intBitsToFloat(Integer.parseUnsignedInt(\""
+                                    + value
+                                    + "\"))";
+                    }
+                } else {
+                    return "null";
+                }
             case F64:
-                return "Double.parseDouble(\"" + value + "\")";
+                if (value != null) {
+                    switch (value) {
+                        case "nan:canonical":
+                        case "nan:arithmetic":
+                            return "Double.NaN";
+                        default:
+                            return "Double.longBitsToDouble(Long.parseUnsignedLong(\""
+                                    + value
+                                    + "\"))";
+                    }
+                } else {
+                    return "null";
+                }
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
@@ -36,13 +60,13 @@ public class WasmValue {
     public String toWasmValue() {
         switch (type) {
             case I32:
-                return "Value.i32(Integer.parseUnsignedInt(\"" + value + "\"))";
+                return "Value.i32(" + toJavaValue() + ")";
             case I64:
-                return "Value.i64(Long.parseUnsignedLong(\"" + value + "\"))";
+                return "Value.i64(" + toJavaValue() + ")";
             case F32:
-                return "Value.fromFloat(Float.parseFloat(\"" + value + "\"))";
+                return "Value.f32(Integer.parseUnsignedInt(\"" + value + "\"))";
             case F64:
-                return "Value.fromDouble(Double.parseDouble(\"" + value + "\"))";
+                return "Value.f64(Long.parseUnsignedLong(\"" + value + "\"))";
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }

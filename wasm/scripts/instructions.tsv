@@ -41,7 +41,7 @@ i32.store16 <varuint> <varuint> 	$3B
 i64.store8 <varuint> <varuint> 	$3C
 i64.store16 <varuint> <varuint> 	$3D
 i64.store32 <varuint> <varuint> 	$3E
-memory.size 	$3F
+memory.size <varuint> 	$3F
 memory.grow <varuint> 	$40
 i32.const <varsint32> 	$41
 i64.const <varsint64> 	$42

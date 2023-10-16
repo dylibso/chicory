@@ -15,11 +15,11 @@ public class Value {
     }
 
     public static Value fromFloat(float data) {
-        return Value.f32((int) data);
+        return Value.f32(Float.floatToIntBits(data));
     }
 
     public static Value fromDouble(double data) {
-        return Value.f64((long) data);
+        return Value.f64(Double.doubleToLongBits(data));
     }
 
     public static Value i32(long data) {
@@ -123,7 +123,7 @@ public class Value {
 
     // TODO memoize these
     public long asLong() {
-        return ByteBuffer.wrap(this.data).getLong();
+        return new BigInteger(this.data).longValue();
     }
 
     public BigInteger asULong() {
@@ -151,11 +151,11 @@ public class Value {
     }
 
     public float asFloat() {
-        return (float) asInt();
+        return Float.intBitsToFloat(asInt());
     }
 
     public double asDouble() {
-        return (double) asLong();
+        return Double.longBitsToDouble(asLong());
     }
 
     public String toString() {
@@ -177,7 +177,7 @@ public class Value {
                     return this.asDouble() + "@f64";
                 }
             default:
-                throw new RuntimeException("TODO handle float");
+                throw new RuntimeException("TODO handle missing types");
         }
     }
 

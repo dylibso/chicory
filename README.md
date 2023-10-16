@@ -58,18 +58,20 @@ logIt.apply();
 
 ## Development
 
-You can run `mvn test` on root to run all of the project's tests on root to run all fo the project's tests.
+* `mvn clean install` to run all of the project's tests and install the library in your local repo
+* `mvn spotless:apply` to autoformat the code
 
 ## Modules
 
-There are two independent modules at the moment:
+There are three independent modules at the moment:
 
 * wasm
+* test-gen-plugin
 * runtime
 
 ### wasm package
 
-The `wasm` package contains a lot of the core Wasm types and the binary parser.
+The [wasm](wasm/) package contains a lot of the core Wasm types and the binary parser.
 It can be useful as an independent library for using wasm in Java.
 
 There are a few scripts that we use.
@@ -86,9 +88,13 @@ sh scripts/compile-tests.sh
 ruby scripts/gen-instr.rb
 ```
 
+### test-gen-plugin
+
+The [test-gen-plugin](test-gen-plugin/) package is a maven plugin that handles the test generation that exercises both the wasm package and the runtime package. Tests are parsed from the [Wasm testsuite](https://github.com/WebAssembly/testsuite) and generate Java Junit tests.
+
 ### runtime package
 
-This contains the actual Chicory runtime. There are a few scripts we use here too:
+The [runtime](runtime/) packages contains the actual Chicory runtime. There are a few scripts we use here too:
 
 ```bash
 cd runtime
@@ -96,14 +102,4 @@ cd runtime
 # Recompiles all the wasm modules we use in the tests
 # Only needs to be run if the code for the test wasm modules are changes
 sh scripts/compile-tests.sh
-
-# This pulls down the wasm-testsuite in /tmp and copies over some needed
-# files to our src/test/resources directory. We only need to run
-# this is if we need to update the v1 spec data
-sh scripts/sync-test-suite.sh
-
-# This takes the wasm test suite data and generates Junit tests
-# in src/test/java/com/dylibso/chicory/runtime/. Only need to be re-run
-# If we are updating the specs or changing the code generator
-ruby scripts/generate-java.rb
 ```
