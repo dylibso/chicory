@@ -64,9 +64,9 @@ public class WasmValue {
             case I64:
                 return "Value.i64(" + toJavaValue() + ")";
             case F32:
-                return "Value.fromFloat(" + toJavaValue() + ")";
+                return "Value.f32(Integer.parseUnsignedInt(\"" + value + "\"))";
             case F64:
-                return "Value.fromDouble(" + toJavaValue() + ")";
+                return "Value.f64(Long.parseUnsignedLong(\"" + value + "\"))";
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }

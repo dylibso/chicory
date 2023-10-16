@@ -47,7 +47,11 @@
             align.wast,
             int_literals.wast,
             int_exprs.wast,
-            endianness.wast</wastToProcess>
+            endianness.wast,
+            f32_bitwise.wast,
+            f64_bitwise.wast,
+            f32_cmp.wast,
+            f64_cmp.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast</orderedWastToProcess>
           <excludedTests>

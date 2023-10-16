@@ -59,15 +59,15 @@ public class Machine {
                 var instruction = code.get(frame.pc++);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
-                //                System.out.println(
-                //                        "func="
-                //                                + frame.funcId
-                //                                + "@"
-                //                                + frame.pc
-                //                                + ": "
-                //                                + instruction
-                //                                + "stack="
-                //                                + this.stack);
+                //                                System.out.println(
+                //                                        "func="
+                //                                                + frame.funcId
+                //                                                + "@"
+                //                                                + frame.pc
+                //                                                + ": "
+                //                                                + instruction
+                //                                                + "stack="
+                //                                                + this.stack);
                 switch (opcode) {
                     case UNREACHABLE:
                         throw new TrapException("Trapped on unreachable instruction", callStack);
@@ -1129,22 +1129,128 @@ public class Machine {
                         {
                             var tos = this.stack.pop();
                             this.stack.push(Value.f32(tos.asInt()));
+                            break;
+                        }
                     case F32_COPYSIGN:
                         {
-                            var aValue = this.stack.pop();
-                            var a = aValue.asUInt();
+                            var a = this.stack.pop().asFloat();
                             var b = this.stack.pop().asFloat();
-
-//                            a == 0xFFC00000 // +NaN
-//                            a == 0x7FC00000 // -NaN
 
                             if (a == 0xFFC00000L) { // +NaN
                                 this.stack.push(Value.fromFloat(Math.copySign(b, -1)));
                             } else if (a == 0x7FC00000L) { // -NaN
                                 this.stack.push(Value.fromFloat(Math.copySign(b, +1)));
                             } else {
-                                this.stack.push(Value.fromFloat(Math.copySign(b, aValue.asFloat())));
+                                this.stack.push(Value.fromFloat(Math.copySign(b, a)));
                             }
+                            break;
+                        }
+                    case F32_ABS:
+                        {
+                            var val = this.stack.pop().asFloat();
+
+                            this.stack.push(Value.fromFloat(Math.abs(Float.valueOf(val))));
+                            break;
+                        }
+                    case F64_COPYSIGN:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+
+                            if (a == 0xFFC0000000000000L) { // +NaN
+                                this.stack.push(Value.fromDouble(Math.copySign(b, -1)));
+                            } else if (a == 0x7FC0000000000000L) { // -NaN
+                                this.stack.push(Value.fromDouble(Math.copySign(b, +1)));
+                            } else {
+                                this.stack.push(Value.fromDouble(Math.copySign(b, a)));
+                            }
+                            break;
+                        }
+                    case F64_ABS:
+                        {
+                            var val = this.stack.pop().asDouble();
+
+                            this.stack.push(Value.fromDouble(Math.abs(Double.valueOf(val))));
+                            break;
+                        }
+                    case F32_NE:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+
+                            this.stack.push(a == b ? Value.FALSE : Value.TRUE);
+                            break;
+                        }
+                    case F64_NE:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+
+                            this.stack.push(a == b ? Value.FALSE : Value.TRUE);
+                            break;
+                        }
+                    case F32_LT:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+
+                            this.stack.push(a > b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F64_LT:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+
+                            this.stack.push(a > b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F32_LE:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+
+                            this.stack.push(a >= b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F64_LE:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+
+                            this.stack.push(a >= b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F32_GE:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+
+                            this.stack.push(a <= b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F64_GE:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+
+                            this.stack.push(a <= b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F32_GT:
+                        {
+                            var a = this.stack.pop().asFloat();
+                            var b = this.stack.pop().asFloat();
+
+                            this.stack.push(a < b ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case F64_GT:
+                        {
+                            var a = this.stack.pop().asDouble();
+                            var b = this.stack.pop().asDouble();
+
+                            this.stack.push(a < b ? Value.TRUE : Value.FALSE);
                             break;
                         }
                     default:
