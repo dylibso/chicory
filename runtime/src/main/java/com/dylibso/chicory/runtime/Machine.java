@@ -1129,6 +1129,22 @@ public class Machine {
                         {
                             var tos = this.stack.pop();
                             this.stack.push(Value.f32(tos.asInt()));
+                    case F32_COPYSIGN:
+                        {
+                            var aValue = this.stack.pop();
+                            var a = aValue.asUInt();
+                            var b = this.stack.pop().asFloat();
+
+//                            a == 0xFFC00000 // +NaN
+//                            a == 0x7FC00000 // -NaN
+
+                            if (a == 0xFFC00000L) { // +NaN
+                                this.stack.push(Value.fromFloat(Math.copySign(b, -1)));
+                            } else if (a == 0x7FC00000L) { // -NaN
+                                this.stack.push(Value.fromFloat(Math.copySign(b, +1)));
+                            } else {
+                                this.stack.push(Value.fromFloat(Math.copySign(b, aValue.asFloat())));
+                            }
                             break;
                         }
                     default:
