@@ -12,7 +12,9 @@ public class Table {
     public Table(ElementType elementType, long limitMin, Long limitMax) {
         this.elementType = elementType;
         this.limitMin = limitMin;
-        this.limitMax = limitMax;
+        if (limitMax != null) {
+            this.limitMax = limitMax;
+        }
         this.funcRefs = new ArrayList<>();
     }
 

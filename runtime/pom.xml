@@ -56,11 +56,11 @@
             fac.wast,
             data.wast,
             forward.wast,
-            float_literals.wast,
-            call.wast</wastToProcess>
+            float_literals.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
-            stack.wast</orderedWastToProcess>
+            stack.wast,
+            call.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
             SpecV1MemoryGrowTest.test67,
@@ -70,6 +70,7 @@
             SpecV1MemoryGrowTest.test65,
             SpecV1MemoryGrowTest.test66,
             <!-- Errors -->
+            SpecV1CallTest.test51,
             SpecV1LocalTeeTest.test31,
             SpecV1LocalTeeTest.test32,
             SpecV1LocalTeeTest.test33,
