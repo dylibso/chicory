@@ -8,5 +8,5 @@ import com.dylibso.chicory.wasm.types.Value;
  */
 @FunctionalInterface
 public interface ExportFunction {
-    Value apply(Value... args) throws ChicoryException;
+    Value[] apply(Value... args) throws ChicoryException;
 }

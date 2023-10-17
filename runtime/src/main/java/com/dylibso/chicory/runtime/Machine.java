@@ -19,7 +19,7 @@ public class Machine {
         this.callStack = new Stack<>();
     }
 
-    public Value call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
+    public Value[] call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
         var func = instance.getFunction(funcId);
         if (func != null) {
             this.callStack.push(new StackFrame(funcId, 0, args, func.getLocals()));
@@ -46,7 +46,13 @@ public class Machine {
         var type = instance.getTypes()[typeId];
         if (type.getReturns().length == 0) return null;
         if (this.stack.size() == 0) return null;
-        return this.stack.pop();
+
+        var totalResults = type.getReturns().length;
+        var results = new Value[totalResults];
+        for (var i = totalResults - 1; i >= 0; i--) {
+            results[i] = this.stack.pop();
+        }
+        return results;
     }
 
     void eval(List<Instruction> code) throws ChicoryException {

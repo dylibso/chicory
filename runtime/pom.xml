@@ -56,7 +56,8 @@
             fac.wast,
             data.wast,
             forward.wast,
-            float_literals.wast</wastToProcess>
+            float_literals.wast,
+            call.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
             stack.wast</orderedWastToProcess>
