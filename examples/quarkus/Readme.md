@@ -13,7 +13,9 @@ Compile the rust demo program:
 (cd demo-rust && ./compile.sh)
 ```
 
-Now send the program to the Quarkus application:
+You can now use the minimal UI available at: http://localhost:8080
+
+Or use curl to send the program to the Quarkus application:
 
 ```
 curl -v 'http://localhost:8080/wasm' -H 'Content-Type: application/octet-stream' --data-binary @demo-rust/main.wasm

@@ -13,26 +13,26 @@ pub extern "C" fn alloc(len: i32) -> *const u8 {
     ptr
 }
 
-// #[no_mangle]
-// pub extern fn count(ptr: i32, len: i32) -> i32 {
-//     let bytes = unsafe { slice::from_raw_parts(ptr as *const u8, len as usize) };
-//     let s = str::from_utf8(bytes).unwrap();
-//     let mut count: i32 = 0;
-//     for ch in s.chars() {
-//         if VOWELS.contains(&ch) {
-//             count += 1;
-//         }
-//     }
-//     count
-// }
-
 #[no_mangle]
 pub extern fn count(ptr: i32, len: i32) -> i32 {
     let bytes = unsafe { slice::from_raw_parts(ptr as *const u8, len as usize) };
     let s = str::from_utf8(bytes).unwrap();
     let mut count: i32 = 0;
     for ch in s.chars() {
-      count += 1;
+        if VOWELS.contains(&ch) {
+            count += 1;
+        }
     }
     count
 }
+
+// #[no_mangle]
+// pub extern fn count(ptr: i32, len: i32) -> i32 {
+//     let bytes = unsafe { slice::from_raw_parts(ptr as *const u8, len as usize) };
+//     let s = str::from_utf8(bytes).unwrap();
+//     let mut count: i32 = 0;
+//     for ch in s.chars() {
+//       count += 1;
+//     }
+//     count
+// }
