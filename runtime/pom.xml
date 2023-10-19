@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>com.dylibso.chickory</groupId>
+    <groupId>com.dylibso.chicory</groupId>
     <artifactId>chicory</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
@@ -12,7 +12,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.dylibso.chickory</groupId>
+      <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm</artifactId>
     </dependency>
 
@@ -25,7 +25,7 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>com.dylibso.chickory</groupId>
+        <groupId>com.dylibso.chicory</groupId>
         <artifactId>test-gen-plugin</artifactId>
         <version>${project.version}</version>
         <configuration>

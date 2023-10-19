@@ -4,6 +4,7 @@ import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.types.*;
+import java.io.InputStream;
 import java.util.HashMap;
 
 public class Module {
@@ -12,6 +13,11 @@ public class Module {
 
     public static Module build(String wasmFile) {
         var parser = new Parser(wasmFile);
+        return new Module(parser.parseModule());
+    }
+
+    public static Module build(InputStream inputWasmFile) {
+        var parser = new Parser(inputWasmFile);
         return new Module(parser.parseModule());
     }
 
