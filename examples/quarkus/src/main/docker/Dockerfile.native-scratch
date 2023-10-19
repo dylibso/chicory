@@ -1,0 +1,44 @@
+####
+# This Dockerfile is used in order to build a distroless container that runs the Quarkus application in native (no JVM) mode
+#
+# Before building the container image run:
+#
+# ./mvnw package -Pnative
+#
+# Then, build the image with:
+#
+# docker build -f src/main/docker/Dockerfile.native-scratch -t quarkus/getting-started .
+#
+# Then run the container using:
+#
+# docker run -i --rm -p 8080:8080 quarkus/getting-started
+#
+###
+FROM quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:22.1-java11 AS build
+# FROM quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:22.1-java17 AS build -> is failing
+# FROM quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:java17 AS build -> is failing
+USER root
+RUN microdnf install make gcc
+COPY --chown=quarkus:quarkus mvnw /code/mvnw
+COPY --chown=quarkus:quarkus .mvn /code/.mvn
+COPY --chown=quarkus:quarkus pom.xml /code/
+RUN mkdir /musl && \
+    curl -L -o musl.tar.gz https://more.musl.cc/11.2.1/x86_64-linux-musl/x86_64-linux-musl-native.tgz && \
+    tar -xvzf musl.tar.gz -C /musl --strip-components 1 && \
+    curl -L -o zlib.tar.gz https://www.zlib.net/zlib-1.3.tar.gz && \
+    mkdir zlib && tar -xvzf zlib.tar.gz -C zlib --strip-components 1 && \
+    cd zlib && ./configure --static --prefix=/musl && \
+    make && make install && \
+    cd .. && rm -rf zlib && rm -f zlib.tar.gz && rm -f musl.tar.gz
+ENV PATH="/musl/bin:${PATH}"
+USER quarkus
+WORKDIR /code
+COPY src /code/src
+COPY lib /code/lib
+RUN ./mvnw package -Dnative -DskipTests -Dquarkus.native.additional-build-args="--static","--libc=musl"
+
+## Stage 2 : create the final image
+FROM scratch
+COPY --from=build /code/target/*-runner /application
+EXPOSE 8080
+ENTRYPOINT [ "/application" ]
