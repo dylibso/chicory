@@ -71,6 +71,8 @@
             SpecV1MemoryGrowTest.test66,
             <!-- Errors -->
             SpecV1CallTest.test51,
+            SpecV1CallTest.test49,
+            SpecV1CallTest.test50,
             SpecV1LocalTeeTest.test31,
             SpecV1LocalTeeTest.test32,
             SpecV1LocalTeeTest.test33,

@@ -140,7 +140,6 @@ public class Machine {
                             // and pass as args to the function call
                             var args = extractArgsForParams(type.getParams());
                             call(funcId, args, false);
-                            frame.pc = instruction.getAddress();
                             break;
                         }
                     case DROP:
