@@ -14,8 +14,8 @@ pub extern "C" fn alloc(len: i32) -> *const u8 {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn dealloc(ptr: &mut u8) {
-    let _ = Vec::from_raw_parts(ptr, 0, 1024);
+pub unsafe extern "C" fn dealloc(ptr: &mut u8, len: i32) {
+    let _ = Vec::from_raw_parts(ptr, 0, len as usize);
 }
 
 #[no_mangle]

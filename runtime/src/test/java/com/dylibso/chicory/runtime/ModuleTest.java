@@ -167,6 +167,7 @@ public class ModuleTest {
     public void shouldCountVowels() {
         var instance = Module.build("src/test/resources/wasm/count_vowels.rs.wasm").instantiate();
         var alloc = instance.getExport("alloc");
+        var dealloc = instance.getExport("dealloc");
         var countVowels = instance.getExport("count_vowels");
         var memory = instance.getMemory();
         var message = "Hello, World!";
@@ -174,6 +175,7 @@ public class ModuleTest {
         var ptr = alloc.apply(Value.i32(len)).asInt();
         memory.put(ptr, message);
         var result = countVowels.apply(Value.i32(ptr), Value.i32(len));
+        dealloc.apply(Value.i32(ptr), Value.i32(len));
         assertEquals(3, result.asInt());
     }
 
