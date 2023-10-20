@@ -144,6 +144,24 @@ public class Module {
             exports.put("_start", export);
         }
 
+        Table table = null;
+        if (module.getTableSection() != null) {
+            if (module.getTableSection().getTables().length > 1) {
+                throw new ChicoryException("We don't currently support more than 1 table");
+            }
+            table = module.getTableSection().getTables()[0];
+            if (module.getElementSection() != null) {
+                for (var el : module.getElementSection().getElements()) {
+                    var idx = el.getTableIndex();
+                    if (idx != 0)
+                        throw new ChicoryException("We don't currently support more than 1 table");
+                    for (var fi : el.getFuncIndices()) {
+                        table.addFuncRef((int) fi);
+                    }
+                }
+            }
+        }
+
         return new Instance(
                 this,
                 globalInitializers,
@@ -152,7 +170,8 @@ public class Module {
                 functions,
                 types,
                 functionTypes,
-                hostFuncs);
+                hostFuncs,
+                table);
     }
 
     private HostFunction[] mapHostFunctions(Import[] imports, HostFunction[] hostFunctions) {
