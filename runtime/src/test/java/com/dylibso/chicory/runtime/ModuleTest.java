@@ -164,21 +164,20 @@ public class ModuleTest {
     }
 
     @Test
-    //    public void shouldCountVowels() {
-    //        var instance =
-    // Module.build("src/test/resources/wasm/count_vowels.wasm").instantiate();
-    //        var alloc = instance.getExport("alloc");
-    //        var dealloc = instance.getExport("dealloc");
-    //        var countVowels = instance.getExport("count_vowels");
-    //        var memory = instance.getMemory();
-    //        var message = "Hello, World!";
-    //        var len = message.getBytes().length;
-    //        var ptr = alloc.apply(Value.i32(len)).asInt();
-    //        memory.put(ptr, message);
-    //        var result = countVowels.apply(Value.i32(ptr), Value.i32(len));
-    //        dealloc.apply(Value.i32(ptr), Value.i32(len));
-    //        assertEquals(3, result.asInt());
-    //    }
+    public void shouldCountVowels() {
+        var instance = Module.build("src/test/resources/wasm/count_vowels.rs.wasm").instantiate();
+        var alloc = instance.getExport("alloc");
+        var dealloc = instance.getExport("dealloc");
+        var countVowels = instance.getExport("count_vowels");
+        var memory = instance.getMemory();
+        var message = "Hello, World!";
+        var len = message.getBytes().length;
+        var ptr = alloc.apply(Value.i32(len))[0].asInt();
+        memory.put(ptr, message);
+        var result = countVowels.apply(Value.i32(ptr), Value.i32(len));
+        dealloc.apply(Value.i32(ptr), Value.i32(len));
+        assertEquals(3, result[0].asInt());
+    }
 
     public void shouldRunBasicCProgram() {
         // check with: wasmtime src/test/resources/wasm/basic.c.wasm --invoke run

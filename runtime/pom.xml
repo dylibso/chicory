@@ -93,9 +93,6 @@
             SpecV1MemoryGrowTest.test65,
             SpecV1MemoryGrowTest.test66,
             <!-- Errors -->
-            SpecV1CallTest.test51,
-            SpecV1CallTest.test49,
-            SpecV1CallTest.test50,
             SpecV1LocalTeeTest.test31,
             SpecV1LocalTeeTest.test32,
             SpecV1LocalTeeTest.test33,
@@ -140,6 +137,7 @@
             SpecV1AddressTest.test251,
             SpecV1AddressTest.test254,
             SpecV1AlignTest.test129,
+            SpecV1CallTest.test51,
             <!-- Invalid and Malformed failures, can be ignored for now -->
             SpecV1LocalGetTest.test29,
             SpecV1LocalGetTest.test30,
