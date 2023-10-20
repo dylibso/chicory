@@ -458,7 +458,11 @@ public class Parser {
 
     private static Instruction parseInstruction(ByteBuffer buffer) {
         var address = buffer.position();
-        var b = buffer.get() & 0xff;
+        var b = (int) buffer.get() & 0xff;
+        if (b == 0xfc) { // it's a multi-byte opcode
+            // TODO how do we map this to an int?
+            b = 0xff + (buffer.get() & 0xff);
+        }
         var op = OpCode.byOpCode(b);
         if (op == null) {
             throw new IllegalArgumentException("Can't find opcode for op value " + b);

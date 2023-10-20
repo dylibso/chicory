@@ -123,7 +123,8 @@ public class Module {
             }
         }
 
-        var hostFuncs = mapHostFunctions(imports, hostFunctions);
+        //var hostFuncs = mapHostFunctions(imports, hostFunctions);
+        var hostFuncs = hostFunctions;
 
         if (module.getStartSection() != null) {
             startFuncId = (int) module.getStartSection().getStartIndex();

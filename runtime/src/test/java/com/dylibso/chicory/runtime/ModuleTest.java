@@ -165,7 +165,7 @@ public class ModuleTest {
 
     @Test
     public void shouldCountVowels() {
-        var instance = Module.build("src/test/resources/wasm/count_vowels.rs.wasm").instantiate();
+        var instance = Module.build("src/test/resources/wasm/count_vowels.wasm").instantiate();
         var alloc = instance.getExport("alloc");
         var dealloc = instance.getExport("dealloc");
         var countVowels = instance.getExport("count_vowels");
@@ -238,6 +238,19 @@ public class ModuleTest {
         var instance = Module.build("src/test/resources/wasm/kitchensink.wat.wasm").instantiate();
         var run = instance.getExport("run");
         assertEquals(6, run.apply(Value.i32(100)).asInt());
+    }
+
+    @Test
+    public void shouldRunWasiModule() {
+        // check with: wasmtime src/test/resources/wasm/wasi_hello.rs.wasm
+        var wasi = new Wasi();
+        var instance =
+                Module.build("src/test/resources/wasm/wasi_hello.rs.wasm")
+                        .instantiate(wasi.toHostFunctions());
+        var run = instance.getExport("_start");
+        run.apply();
+        run = instance.getExport("__main_void");
+        run.apply();
     }
 
     //    @Test

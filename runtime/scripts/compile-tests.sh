@@ -13,7 +13,12 @@ RUSTS="./src/test/resources/wasm/*.rs"
 for w in $RUSTS
 do
   echo "Compiling $w file..."
-  rustc $w --target=wasm32-unknown-unknown --crate-type=cdylib -C opt-level=0 -C debuginfo=0 -o $w.wasm
+  file_basename=$(basename "$w")
+  if [[ "$file_basename" == "wasi_"* ]]; then
+    rustc $w --target=wasm32-wasi -C opt-level=0 -C debuginfo=0 -o $w.wasm
+  else
+    rustc $w --target=wasm32-unknown-unknown --crate-type=cdylib -C opt-level=0 -C debuginfo=0 -o $w.wasm
+  fi
 done
 
 CS="./src/test/resources/wasm/*.c"
