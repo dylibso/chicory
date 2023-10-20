@@ -4,6 +4,7 @@ import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.*;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -13,6 +14,7 @@ import java.util.Stack;
 
 public class Parser {
     private String filePath;
+    private InputStream inputStream;
     private ParserListener listener;
     private List<Integer> includeSections;
 
@@ -20,6 +22,12 @@ public class Parser {
 
     public Parser(String filePath) {
         this.filePath = filePath;
+        this.listener = null;
+        this.includeSections = null;
+    }
+
+    public Parser(InputStream inputStream) {
+        this.inputStream = inputStream;
         this.listener = null;
         this.includeSections = null;
     }
@@ -36,7 +44,10 @@ public class Parser {
     private ByteBuffer readByteBuffer() {
         try {
             // Read the Wasm file into a ByteBuffer
-            FileInputStream fileInputStream = new FileInputStream(filePath);
+            var fileInputStream = inputStream;
+            if (this.inputStream == null) {
+                fileInputStream = new FileInputStream(filePath);
+            }
             byte[] buf = new byte[fileInputStream.available()];
             fileInputStream.read(buf);
             fileInputStream.close();
