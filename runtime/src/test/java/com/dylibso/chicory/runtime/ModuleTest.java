@@ -172,11 +172,11 @@ public class ModuleTest {
         var memory = instance.getMemory();
         var message = "Hello, World!";
         var len = message.getBytes().length;
-        var ptr = alloc.apply(Value.i32(len)).asInt();
+        var ptr = alloc.apply(Value.i32(len))[0].asInt();
         memory.put(ptr, message);
         var result = countVowels.apply(Value.i32(ptr), Value.i32(len));
         dealloc.apply(Value.i32(ptr), Value.i32(len));
-        assertEquals(3, result.asInt());
+        assertEquals(3, result[0].asInt());
     }
 
     @Test
