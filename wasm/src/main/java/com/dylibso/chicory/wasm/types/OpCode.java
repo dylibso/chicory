@@ -183,7 +183,11 @@ public enum OpCode {
     I32_EXTEND_16_S(0xC1), // i32.extend_16_s
     I64_EXTEND_8_S(0xC2), // i64.extend_8_s
     I64_EXTEND_16_S(0xC3), // i64.extend_16_s
-    I64_EXTEND_32_S(0xC4); // i64.extend_32_s
+    I64_EXTEND_32_S(0xC4), // i64.extend_32_s
+    MEMORY_INIT(0x107), // memory.init
+    DATA_DROP(0x108), // data.drop
+    MEMORY_COPY(0x109), // memory.copy
+    MEMORY_FILL(0x10A); // memory.fill
 
     private final int opcode;
 
@@ -396,5 +400,9 @@ public enum OpCode {
         signature.put(I64_EXTEND_8_S, new WasmEncoding[] {});
         signature.put(I64_EXTEND_16_S, new WasmEncoding[] {});
         signature.put(I64_EXTEND_32_S, new WasmEncoding[] {});
+        signature.put(MEMORY_INIT, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(DATA_DROP, new WasmEncoding[] {WasmEncoding.VARUINT});
+        signature.put(MEMORY_COPY, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(MEMORY_FILL, new WasmEncoding[] {WasmEncoding.VARUINT});
     }
 }

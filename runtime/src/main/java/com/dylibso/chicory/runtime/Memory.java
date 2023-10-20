@@ -1,6 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.*;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -65,20 +66,61 @@ public class Memory {
      */
     public void reinstantiate() {
         this.zero();
-        for (var segment : dataSegments) {
-            var offsetExpr = segment.getOffset();
-            var offsetInstr = offsetExpr[0];
-            // TODO how flexible can this be? Do we need to dynamically eval the expression?
-            if (offsetInstr.getOpcode() != OpCode.I32_CONST) {
-                throw new RuntimeException(
-                        "Don't support data segment expressions other than i32.const yet");
+        for (var s : dataSegments) {
+            if (s instanceof ActiveDataSegment) {
+                var segment = (ActiveDataSegment) s;
+                var offsetExpr = segment.getOffset();
+                var offsetInstr = offsetExpr[0];
+                // TODO how flexible can this be? Do we need to dynamically eval the expression?
+                if (offsetInstr.getOpcode() != OpCode.I32_CONST) {
+                    throw new RuntimeException(
+                            "Don't support data segment expressions other than i32.const yet");
+                }
+                var data = segment.getData();
+                var offset = (int) offsetInstr.getOperands()[0];
+                // System.out.println("Writing data segment " + offset + " " + new String(data));
+                // TODO is there a cleaner way doing buffer.put(offset, data)?
+                for (int i = 0, j = offset; i < data.length; i++, j++) {
+                    this.buffer.put(j, data[i]);
+                }
+            } else if (s instanceof PassiveDataSegment) {
+                // System.out.println("Skipping passive segment " + s);
+            } else {
+                throw new ChicoryException("Data segment should be active or passive: " + s);
             }
-            var data = segment.getData();
-            var offset = (int) offsetInstr.getOperands()[0];
-            // System.out.println("Writing data segment " + offset + " " + new String(data));
-            for (int i = 0, j = offset; i < data.length; i++, j++) {
-                this.buffer.put(j, data[i]);
+        }
+    }
+
+    public void copy(int dest, int src, int size) {
+        var data = new byte[size];
+        this.buffer.get(data, src, size);
+        try {
+            // TODO why can't i just write this array to the buffer without the loop?
+            for (var i = 0; i < size; i++) {
+                this.buffer.put(dest + i, data[i]);
             }
+        } catch (IndexOutOfBoundsException e) {
+            throw new WASMRuntimeException("out of bounds memory access");
+        }
+    }
+
+    public void initPassiveSegment(int segmentId, int dest, int offset, int size) {
+        var segment = dataSegments[segmentId];
+        if (!(segment instanceof PassiveDataSegment)) {
+            throw new ChicoryException(
+                    "data segment with id "
+                            + " is not a passive segment and cannot be initialized at runtime");
+        }
+        var data = segment.getData();
+        // TODO why doesn't this API work?
+        // this.buffer.put(target, segment.getData(), offset, size);
+        int j = dest;
+        try {
+            for (var i = offset; i < size; i++) {
+                this.buffer.put(j++, data[i]);
+            }
+        } catch (IndexOutOfBoundsException e) {
+            throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 

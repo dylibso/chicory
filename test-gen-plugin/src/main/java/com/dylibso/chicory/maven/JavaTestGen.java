@@ -76,6 +76,7 @@ public class JavaTestGen {
         cu.addImport("org.junit.jupiter.api.Assertions.assertEquals", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertThrows", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertTrue", true, false);
+        cu.addImport("org.junit.jupiter.api.Assertions.assertDoesNotThrow", true, false);
 
         // runtime imports
         cu.addImport("com.dylibso.chicory.runtime.exceptions.WASMRuntimeException");
@@ -119,6 +120,7 @@ public class JavaTestGen {
                             INSTANCE_NAME + moduleInstantiationNumber++,
                             generateModuleInstantiation(cmd, wasmFilesFolder));
                     break;
+                case ACTION:
                 case ASSERT_RETURN:
                 case ASSERT_TRAP:
                     method = createTestMethod(testClass, testNumber++, excludedMethods, ordered);
@@ -132,8 +134,14 @@ public class JavaTestGen {
                         method.getBody().get().addStatement(fieldExport.get());
                     }
 
-                    for (var expr : generateAssert(varName, cmd)) {
-                        method.getBody().get().addStatement(expr);
+                    if (cmd.getType() == CommandType.ACTION) {
+                        for (var expr : generateInvoke(varName, cmd)) {
+                            method.getBody().get().addStatement(expr);
+                        }
+                    } else {
+                        for (var expr : generateAssert(varName, cmd)) {
+                            method.getBody().get().addStatement(expr);
+                        }
                     }
                     break;
                 case ASSERT_INVALID:
@@ -257,6 +265,30 @@ public class JavaTestGen {
         }
 
         throw new RuntimeException("Unreachable");
+    }
+
+    private List<Expression> generateInvoke(String varName, Command cmd) {
+        assert cmd.getType() == CommandType.ACTION;
+
+        String invocationMethod;
+        if (cmd.getAction().getType() == INVOKE) {
+            var args =
+                    Arrays.stream(cmd.getAction().getArgs())
+                            .map(WasmValue::toWasmValue)
+                            .collect(Collectors.joining(", "));
+            invocationMethod = ".apply(" + args + ")";
+        } else {
+            throw new IllegalArgumentException(
+                    "Unhandled action type " + cmd.getAction().getType());
+        }
+
+        var assertDecl =
+                new NameExpr(
+                        "var exception = assertDoesNotThrow(() -> "
+                                + varName
+                                + invocationMethod
+                                + ")");
+        return List.of(assertDecl);
     }
 
     private Expression generateModuleInstantiation(Command cmd, File folder) {
