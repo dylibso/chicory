@@ -1320,6 +1320,44 @@ public class Machine {
                             this.stack.push(Value.i64(Float.valueOf(val).longValue()));
                             break;
                         }
+                    case MEMORY_INIT:
+                        {
+                            var segmentId = (int) operands[0];
+                            var memidx = (int) operands[1];
+                            if (memidx != 0)
+                                throw new WASMRuntimeException(
+                                        "We don't support non zero index for memory: " + memidx);
+                            var size = this.stack.pop().asInt();
+                            var offset = this.stack.pop().asInt();
+                            var destination = this.stack.pop().asInt();
+                            instance.getMemory()
+                                    .initPassiveSegment(segmentId, destination, offset, size);
+                            break;
+                        }
+                    case DATA_DROP:
+                        {
+                            // do nothing
+                            // TODO we'll need to tell the segment it's been dropped which changes
+                            // the behavior
+                            // next time we try to do memory.init
+                            break;
+                        }
+                    case MEMORY_COPY:
+                        {
+                            var memidxSrc = (int) operands[0];
+                            var memidxDst = (int) operands[1];
+                            if (memidxDst != 0 && memidxSrc != 0)
+                                throw new WASMRuntimeException(
+                                        "We don't support non zero index for memory: "
+                                                + memidxSrc
+                                                + " "
+                                                + memidxDst);
+                            var size = this.stack.pop().asInt();
+                            var offset = this.stack.pop().asInt();
+                            var destination = this.stack.pop().asInt();
+                            instance.getMemory().copy(destination, offset, size);
+                            break;
+                        }
                     default:
                         throw new RuntimeException(
                                 "Machine doesn't recognize Instruction " + instruction);
