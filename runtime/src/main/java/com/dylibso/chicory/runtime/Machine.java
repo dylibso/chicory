@@ -19,7 +19,7 @@ public class Machine {
         this.callStack = new Stack<>();
     }
 
-    public Value call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
+    public Value[] call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
         var func = instance.getFunction(funcId);
         if (func != null) {
             this.callStack.push(new StackFrame(funcId, 0, args, func.getLocals()));
@@ -46,13 +46,20 @@ public class Machine {
         var type = instance.getTypes()[typeId];
         if (type.getReturns().length == 0) return null;
         if (this.stack.size() == 0) return null;
-        return this.stack.pop();
+
+        var totalResults = type.getReturns().length;
+        var results = new Value[totalResults];
+        for (var i = totalResults - 1; i >= 0; i--) {
+            results[i] = this.stack.pop();
+        }
+        return results;
     }
 
     void eval(List<Instruction> code) throws ChicoryException {
         try {
             var frame = callStack.peek();
             boolean shouldReturn = false;
+
             loop:
             while (frame.pc < code.size()) {
                 if (shouldReturn) return;
@@ -123,27 +130,22 @@ public class Machine {
                     case RETURN:
                         shouldReturn = true;
                         break;
-                        //                    case CALL_INDIRECT:
-                        //                        {
-                        //                            //                    var index =
-                        // this.stack.pop().asInt();
-                        //                            //                    var funcId =
-                        //                            // instance.getTable().getFuncRef(index);
-                        //                            //                    var typeId =
-                        //                            // instance.getFunctionTypes().get(funcId);
-                        //                            //                    var type =
-                        // instance.getTypes().get(typeId);
-                        //                            //                    // given a list of param
-                        // types, let's pop those
-                        //                            // params off the stack
-                        //                            //                    // and pass as args to
-                        // the function call
-                        //                            //                    var args =
-                        //                            // extractArgsForParams(type.paramTypes());
-                        //                            //                    call(funcId, args,
-                        // false);
-                        //                            break;
-                        //                        }
+                    case CALL_INDIRECT:
+                        {
+                            var tableIdx = operands[1];
+                            if (tableIdx != 0)
+                                throw new ChicoryException(
+                                        "We only support a table index of 0 in call-indirect");
+                            var funcTableIdx = this.stack.pop().asInt();
+                            var funcId = instance.getTable().getFuncRef(funcTableIdx);
+                            var typeId = (int) operands[0];
+                            var type = instance.getTypes()[typeId];
+                            // given a list of param types, let's pop those params off the stack
+                            // and pass as args to the function call
+                            var args = extractArgsForParams(type.getParams());
+                            call(funcId, args, false);
+                            break;
+                        }
                     case DROP:
                         this.stack.pop();
                         break;

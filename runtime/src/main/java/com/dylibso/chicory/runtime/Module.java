@@ -56,15 +56,18 @@ public class Module {
             if (g.getInit().length > 2)
                 throw new RuntimeException("We don't support this global initializer");
             var instr = g.getInit()[0];
-            // TODO we're assuming this is a const value, do we need to eval it?
-            if (instr.getOpcode() != OpCode.I32_CONST && instr.getOpcode() != OpCode.I64_CONST) {
-                throw new RuntimeException(
-                        "We only support I32_CONST and I64_CONST on global initializers right now");
-            }
             if (instr.getOpcode() == OpCode.I32_CONST) {
                 globals[i] = Value.i32(instr.getOperands()[0]);
-            } else {
+            } else if (instr.getOpcode() == OpCode.I64_CONST) {
                 globals[i] = Value.i64(instr.getOperands()[0]);
+            } else if (instr.getOpcode() == OpCode.F32_CONST) {
+                globals[i] = Value.f32(instr.getOperands()[0]);
+            } else if (instr.getOpcode() == OpCode.F64_CONST) {
+                globals[i] = Value.f64(instr.getOperands()[0]);
+            } else {
+                throw new RuntimeException(
+                        "We only support i32,i64,f32,f64 const opcodes on global initializers right"
+                                + " now");
             }
         }
 
@@ -143,6 +146,24 @@ public class Module {
             exports.put("_start", export);
         }
 
+        Table table = null;
+        if (module.getTableSection() != null) {
+            if (module.getTableSection().getTables().length > 1) {
+                throw new ChicoryException("We don't currently support more than 1 table");
+            }
+            table = module.getTableSection().getTables()[0];
+            if (module.getElementSection() != null) {
+                for (var el : module.getElementSection().getElements()) {
+                    var idx = el.getTableIndex();
+                    if (idx != 0)
+                        throw new ChicoryException("We don't currently support more than 1 table");
+                    for (var fi : el.getFuncIndices()) {
+                        table.addFuncRef((int) fi);
+                    }
+                }
+            }
+        }
+
         return new Instance(
                 this,
                 globalInitializers,
@@ -151,7 +172,8 @@ public class Module {
                 functions,
                 types,
                 functionTypes,
-                hostFuncs);
+                hostFuncs,
+                table);
     }
 
     private HostFunction[] mapHostFunctions(Import[] imports, HostFunction[] hostFunctions) {

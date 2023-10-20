@@ -59,7 +59,8 @@
             float_literals.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
-            stack.wast</orderedWastToProcess>
+            stack.wast,
+            call.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
             SpecV1MemoryGrowTest.test67,
@@ -113,6 +114,7 @@
             SpecV1AddressTest.test251,
             SpecV1AddressTest.test254,
             SpecV1AlignTest.test129,
+            SpecV1CallTest.test51,
             <!-- Invalid and Malformed failures, can be ignored for now -->
             SpecV1LocalGetTest.test29,
             SpecV1LocalGetTest.test30,
