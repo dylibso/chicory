@@ -4,9 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-import org.junit.jupiter.api.Test;
-
 import java.util.List;
+import org.junit.jupiter.api.Test;
 
 class Printer {
 

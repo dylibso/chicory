@@ -134,7 +134,7 @@ public class Machine {
                         {
                             var index = this.stack.pop().asInt();
                             var funcId = instance.getTable().getFuncRef(index);
-                            var typeId = instance.getFunctionTypes()[funcId];
+                            var typeId = (int) operands[0];
                             var type = instance.getTypes()[typeId];
                             // given a list of param types, let's pop those params off the stack
                             // and pass as args to the function call
