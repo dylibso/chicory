@@ -72,6 +72,7 @@ public class JavaTestGen {
 
         // all the imports
         // junit imports
+        cu.addImport("java.io.File");
         cu.addImport("org.junit.jupiter.api.Disabled");
         cu.addImport("org.junit.jupiter.api.Test");
         if (ordered) {
@@ -313,7 +314,11 @@ public class JavaTestGen {
             additionalParam = ", ModuleType." + cmd.getModuleType().toUpperCase();
         }
         return new NameExpr(
-                "Module.build(\"" + relativeFile + "\"" + additionalParam + ").instantiate()");
+                "Module.build(new File(\""
+                        + relativeFile
+                        + "\")"
+                        + additionalParam
+                        + ").instantiate()");
     }
 
     private List<Expression> generateAssertThrows(Command cmd, File wasmFilesFolder) {
