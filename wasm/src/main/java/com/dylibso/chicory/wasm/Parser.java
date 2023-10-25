@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasm;
 
+import com.dylibso.chicory.wasm.control_flow.ControlFlowStateMachine;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.*;
 import java.io.FileInputStream;
@@ -396,9 +397,10 @@ public class Parser {
                 locals.add(new Value(type, bytes));
             }
             var instructions = new ArrayList<Instruction>();
-            OpCode op;
+            var cfSM = new ControlFlowStateMachine();
             do {
                 var instruction = parseInstruction(buffer);
+                // depth control
                 switch (instruction.getOpcode()) {
                     case BLOCK:
                     case LOOP:
@@ -426,13 +428,20 @@ public class Parser {
                             break;
                         }
                 }
+
+                // control flow
+                cfSM.process(instruction);
                 instructions.add(instruction);
+
                 // System.out.println(Integer.toHexString(instruction.getAddress()) + " " +
                 // instruction);
             } while (buffer.position() < funcEndPoint);
 
             // label the instructions with jumps
-            ControlFlow.labelBranches(instructions);
+            //            ControlFlow.labelBranches(instructions);
+
+            // Control flow final consistency check
+            // cfSM.end();
 
             functionBodies[i] = new FunctionBody(locals, instructions);
         }

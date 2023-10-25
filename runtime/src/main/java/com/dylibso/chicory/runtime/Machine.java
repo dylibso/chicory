@@ -65,7 +65,6 @@ public class Machine {
                 if (shouldReturn) return;
                 var instruction = code.get(frame.pc++);
                 var opcode = instruction.getOpcode();
-                var operands = instruction.getOperands();
                 //                System.out.println(
                 //                        "func="
                 //                                + frame.funcId
@@ -75,6 +74,7 @@ public class Machine {
                 //                                + instruction
                 //                                + "stack="
                 //                                + this.stack);
+                var operands = instruction.getOperands();
                 switch (opcode) {
                     case UNREACHABLE:
                         throw new TrapException("Trapped on unreachable instruction", callStack);
