@@ -1,6 +1,7 @@
 package com.dylibso.chicory.wasm;
 
 import com.dylibso.chicory.wasm.control_flow.ControlFlowStateMachine;
+import com.dylibso.chicory.wasm.control_flow.ControlTree;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.*;
 import java.io.FileInputStream;
@@ -384,6 +385,9 @@ public class Parser {
         var funcBodyCount = readVarUInt32(buffer);
         var functionBodies = new FunctionBody[(int) funcBodyCount];
 
+        var root = new ControlTree();
+        var currentControlFlow = root;
+
         // Parse individual function bodies in the code section
         for (int i = 0; i < funcBodyCount; i++) {
             var blockScope = new Stack<OpCode>();
@@ -396,8 +400,10 @@ public class Parser {
                 var type = ValueType.byId(readVarUInt32(buffer));
                 locals.add(new Value(type, bytes));
             }
+            var instructionCount = 0;
             var instructions = new ArrayList<Instruction>();
             var cfSM = new ControlFlowStateMachine();
+            currentControlFlow = root;
             do {
                 var instruction = parseInstruction(buffer);
                 // depth control
@@ -429,16 +435,88 @@ public class Parser {
                         }
                 }
 
+                // control-flow
+                // System.out.println("DEBUG: " + instruction.getOpcode() + " - " + instructionCount + " root? " + currentControlFlow.isRoot());
+                switch (instruction.getOpcode()) {
+                    case BLOCK:
+                        currentControlFlow = currentControlFlow.spawn(instruction);
+                        break;
+                    case LOOP:
+                        currentControlFlow = currentControlFlow.spawn(instruction);
+                        break;
+                    case IF:
+                        {
+                            currentControlFlow = currentControlFlow.spawn(instruction);
+
+                            // defaults
+                            instruction.setLabelTrue(instructionCount + 1);
+                            instruction.setLabelFalse(instructionCount + 1);
+                            break;
+                        }
+                    case ELSE:
+                        {
+                            assert(currentControlFlow.getInstruction().getOpcode() == OpCode.IF);
+                            currentControlFlow
+                                    .getInstruction()
+                                    .setLabelFalse(instructionCount + 1);
+                            currentControlFlow.setInstruction(instruction);
+                            break;
+                        }
+                    case BR:
+                    case BR_IF:
+                        var offset = (int) instruction.getOperands()[0];
+                        ControlTree reference = currentControlFlow;
+                        while (offset > 0) {
+                            reference = reference.getParent();
+                            offset--;
+                        }
+                        reference.addCallback(instruction::setLabelTrue);
+
+                        // Defaults
+                        instruction.setLabelTrue(instructionCount + 1);
+                        instruction.setLabelFalse(instructionCount + 1);
+                        break;
+                    case BR_TABLE:
+                        // TODO: implement me
+                        instruction.setLabelTrue(instructionCount + 1);
+                        instruction.setLabelFalse(instructionCount + 1);
+                        break;
+                    case END:
+                        if (!currentControlFlow.isRoot()) {
+                            switch (currentControlFlow.getInstruction().getOpcode()) {
+                                case IF:
+                                    currentControlFlow
+                                            .getInstruction()
+                                            .setLabelFalse(instructionCount);
+                                case ELSE:
+                                    currentControlFlow
+                                            .getInstruction()
+                                            .setLabelTrue(instructionCount);
+                            }
+                        }
+
+                        currentControlFlow.setFinalInstructionNumber(instructionCount);
+                        currentControlFlow = currentControlFlow.getParent();
+                        break;
+                    default:
+                        {
+                            break;
+                        }
+                }
+
                 // control flow
-                cfSM.process(instruction);
+                instructionCount++;
+                //                cfSM.process(instruction);
                 instructions.add(instruction);
 
                 // System.out.println(Integer.toHexString(instruction.getAddress()) + " " +
                 // instruction);
             } while (buffer.position() < funcEndPoint);
 
+            root.triggerCallbacks();
+
             // label the instructions with jumps
-            //            ControlFlow.labelBranches(instructions);
+            // ControlFlow.labelBranches(instructions);
 
             // Control flow final consistency check
             // cfSM.end();

@@ -59,21 +59,22 @@ public class Machine {
         try {
             var frame = callStack.peek();
             boolean shouldReturn = false;
+            int stackSizeBeforeBranch = 0;
 
             loop:
             while (frame.pc < code.size()) {
                 if (shouldReturn) return;
                 var instruction = code.get(frame.pc++);
+                System.out.println(
+                        "func="
+                                + frame.funcId
+                                + "@"
+                                + frame.pc
+                                + ": "
+                                + instruction
+                                + "stack="
+                                + this.stack);
                 var opcode = instruction.getOpcode();
-                //                System.out.println(
-                //                        "func="
-                //                                + frame.funcId
-                //                                + "@"
-                //                                + frame.pc
-                //                                + ": "
-                //                                + instruction
-                //                                + "stack="
-                //                                + this.stack);
                 var operands = instruction.getOperands();
                 switch (opcode) {
                     case UNREACHABLE:
@@ -91,8 +92,10 @@ public class Machine {
                             frame.blockDepth++;
                             var pred = this.stack.pop().asInt();
                             if (pred == 0) {
+                                System.out.println("IF - Jump to false: " + instruction.getLabelFalse());
                                 frame.pc = instruction.getLabelFalse();
                             } else {
+                                System.out.println("IF - Jump to true: " + instruction.getLabelTrue());
                                 frame.pc = instruction.getLabelTrue();
                             }
                             break;
@@ -100,6 +103,7 @@ public class Machine {
                     case ELSE:
                     case BR:
                         {
+                            System.out.println("Jump to " + instruction.getLabelTrue());
                             frame.pc = instruction.getLabelTrue();
                             break;
                         }

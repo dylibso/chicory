@@ -7,8 +7,7 @@ import java.util.Stack;
 
 public class ControlFlowStateMachine {
 
-    private Map<Integer, Stack<IfControlFlow>> cfs = new HashMap<>();
-    // check at the end if we can squash the two:
+    private Stack<IfControlFlow> ifControlFlows = new Stack<>();
     private Map<Integer, Stack<Endable>> BRcfs = new HashMap<>();
     private int instructionCounter = 0;
 
@@ -18,34 +17,30 @@ public class ControlFlowStateMachine {
         switch (instruction.getOpcode()) {
             case IF:
                 {
-                    cfs.compute(
-                            instruction.getDepth(),
-                            (k, v) -> {
-                                var stack = (v == null) ? new Stack<IfControlFlow>() : v;
-                                stack.push(new IfControlFlow(instruction, instructionCounter));
-                                return stack;
-                            });
+                    ifControlFlows.push(new IfControlFlow(instruction, instructionCounter));
                     break;
                 }
             case ELSE:
                 {
-                    cfs.get(instruction.getDepth()).peek().onElse(instruction, instructionCounter);
+                    if (!ifControlFlows.empty()) {
+                        ifControlFlows.peek().onElse(instruction, instructionCounter);
+                    } else {
+                        // this should not happen ...
+                    }
                     break;
                 }
             case END:
                 {
-                    if (cfs.containsKey(instruction.getDepth())) {
-                        cfs.get(instruction.getDepth())
-                                .pop()
-                                .onEnd(instruction, instructionCounter);
-                    }
-
-                    if (BRcfs.containsKey(instruction.getDepth())) {
-                        BRcfs.get(instruction.getDepth())
-                                .forEach(
-                                        e -> {
-                                            e.onEnd(instruction, instructionCounter);
-                                        });
+                    if (!ifControlFlows.empty()) {
+                        ifControlFlows.pop().onEnd(instruction, instructionCounter);
+                    } else {
+                        if (BRcfs.containsKey(instruction.getDepth())) {
+                            BRcfs.get(instruction.getDepth())
+                                    .forEach(
+                                            e -> {
+                                                e.onEnd(instruction, instructionCounter);
+                                            });
+                        }
                     }
                     break;
                 }
