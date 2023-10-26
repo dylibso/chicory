@@ -65,15 +65,15 @@ public class Machine {
             while (frame.pc < code.size()) {
                 if (shouldReturn) return;
                 var instruction = code.get(frame.pc++);
-                System.out.println(
-                        "func="
-                                + frame.funcId
-                                + "@"
-                                + frame.pc
-                                + ": "
-                                + instruction
-                                + "stack="
-                                + this.stack);
+                //                System.out.println(
+                //                        "func="
+                //                                + frame.funcId
+                //                                + "@"
+                //                                + frame.pc
+                //                                + ": "
+                //                                + instruction
+                //                                + "stack="
+                //                                + this.stack);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
                 switch (opcode) {
@@ -85,17 +85,17 @@ public class Machine {
                     case BLOCK:
                         {
                             frame.blockDepth++;
+                            frame.stackBeforeSize = this.stack.size();
                             break;
                         }
                     case IF:
                         {
                             frame.blockDepth++;
+                            frame.stackBeforeSize = this.stack.size();
                             var pred = this.stack.pop().asInt();
                             if (pred == 0) {
-                                System.out.println("IF - Jump to false: " + instruction.getLabelFalse());
                                 frame.pc = instruction.getLabelFalse();
                             } else {
-                                System.out.println("IF - Jump to true: " + instruction.getLabelTrue());
                                 frame.pc = instruction.getLabelTrue();
                             }
                             break;
@@ -103,13 +103,13 @@ public class Machine {
                     case ELSE:
                     case BR:
                         {
-                            System.out.println("Jump to " + instruction.getLabelTrue());
                             frame.pc = instruction.getLabelTrue();
                             break;
                         }
                     case BR_IF:
                         {
                             var pred = this.stack.pop().asInt();
+
                             if (pred == 0) {
                                 frame.pc = instruction.getLabelFalse();
                             } else {
