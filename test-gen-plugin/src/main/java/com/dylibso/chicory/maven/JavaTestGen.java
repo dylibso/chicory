@@ -25,6 +25,7 @@ import com.github.javaparser.utils.SourceRoot;
 import com.github.javaparser.utils.StringEscapeUtils;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -146,6 +147,7 @@ public class JavaTestGen {
                     break;
                 case ASSERT_INVALID:
                 case ASSERT_MALFORMED:
+                case ASSERT_UNINSTANTIABLE:
                     testNumber++;
                     //                    method = createTestMethod(testClass, testNumber++,
                     // excludedMethods);
@@ -210,61 +212,54 @@ public class JavaTestGen {
     private List<Expression> generateAssert(String varName, Command cmd) {
         assert (cmd.getType() == CommandType.ASSERT_RETURN
                 || cmd.getType() == CommandType.ASSERT_TRAP);
+        assert (cmd.getExpected() != null);
+        assert (cmd.getExpected().length > 0);
+        assert (cmd.getAction().getType() == INVOKE);
 
-        var returnVar = "null";
-        var typeConversion = "";
-        var deltaParam = "";
-        if (cmd.getExpected() != null && cmd.getExpected().length > 0) {
-            if (cmd.getExpected().length == 1) {
-                var expected = cmd.getExpected()[0];
-                returnVar = expected.toJavaValue();
-                typeConversion = expected.extractType();
-                deltaParam = expected.getDelta();
+        var args =
+                Arrays.stream(cmd.getAction().getArgs())
+                        .map(WasmValue::toWasmValue)
+                        .collect(Collectors.joining(", "));
+
+        var invocationMethod = ".apply(" + args + ")";
+        if (cmd.getType() == CommandType.ASSERT_TRAP) {
+            var assertDecl =
+                    new NameExpr(
+                            "var exception ="
+                                    + " assertThrows(WASMRuntimeException.class, () -> "
+                                    + varName
+                                    + invocationMethod
+                                    + ")");
+            if (cmd.getText() != null) {
+                return List.of(assertDecl, exceptionMessageMatch(cmd.getText()));
             } else {
-                throw new RuntimeException("Multiple expected return, implement me!");
+                return List.of(assertDecl);
             }
-        }
+        } else if (cmd.getType() == CommandType.ASSERT_RETURN) {
+            List exprs = new ArrayList();
+            exprs.add(new NameExpr("var results = " + varName + ".apply(" + args + ")"));
 
-        String invocationMethod;
-        if (cmd.getAction().getType() == INVOKE) {
-            var args =
-                    Arrays.stream(cmd.getAction().getArgs())
-                            .map(WasmValue::toWasmValue)
-                            .collect(Collectors.joining(", "));
-            invocationMethod = ".apply(" + args + ")";
-        } else {
-            throw new IllegalArgumentException(
-                    "Unhandled action type " + cmd.getAction().getType());
-        }
-
-        switch (cmd.getType()) {
-            case ASSERT_RETURN:
-                return List.of(
+            for (int i = 0; i < cmd.getExpected().length; i++) {
+                var expected = cmd.getExpected()[i];
+                var returnVar = expected.toJavaValue();
+                var typeConversion = expected.extractType();
+                var deltaParam = expected.getDelta();
+                exprs.add(
                         new NameExpr(
                                 "assertEquals("
                                         + returnVar
-                                        + ", "
-                                        + varName
-                                        + invocationMethod
+                                        + ", results["
+                                        + i
+                                        + "]"
                                         + typeConversion
                                         + deltaParam
                                         + ")"));
-            case ASSERT_TRAP:
-                var assertDecl =
-                        new NameExpr(
-                                "var exception = assertThrows(WASMRuntimeException.class, () -> "
-                                        + varName
-                                        + invocationMethod
-                                        + typeConversion
-                                        + ")");
-                if (cmd.getText() != null) {
-                    return List.of(assertDecl, exceptionMessageMatch(cmd.getText()));
-                } else {
-                    return List.of(assertDecl);
-                }
-        }
+            }
 
-        throw new RuntimeException("Unreachable");
+            return exprs;
+        } else {
+            throw new IllegalArgumentException("Unhandled command type " + cmd.getType());
+        }
     }
 
     private List<Expression> generateInvoke(String varName, Command cmd) {
