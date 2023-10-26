@@ -9,8 +9,6 @@ public class Instruction {
     private long[] operands;
     private CodeBlock block;
 
-    public ControlTree controlFlow;
-
     // metadata fields
     private Integer labelTrue;
     private Integer labelFalse;
