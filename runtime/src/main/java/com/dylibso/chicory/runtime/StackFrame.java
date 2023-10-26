@@ -69,10 +69,10 @@ public class StackFrame {
 
     public String toString() {
         var nameSec = instance.getModule().getNameSection();
-        var funcName = nameSec.getFunctionNames().get(funcId);
         var id = "[" + funcId + "]";
-        if (funcName != null) {
-            id = funcName + id;
+        if (nameSec != null) {
+            var funcName = nameSec.getFunctionNames().get(funcId);
+            if (funcName != null) id = funcName + id;
         }
         return id + "\n\tpc=" + pc + " locals=" + Arrays.toString(locals.values().toArray());
     }
