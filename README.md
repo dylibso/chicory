@@ -202,14 +202,12 @@ logIt.apply();
 * Demonstrate performance benefits for at least some subset of use cases
 * Support some future standards like Threads, GC, and Component Model
 
-
-
-## Development
+### Building Locally
 
 * `mvn clean install` to run all of the project's tests and install the library in your local repo
 * `mvn spotless:apply` to autoformat the code
 
-## Modules
+### Modules
 
 There are three independent modules at the moment:
 
@@ -217,7 +215,7 @@ There are three independent modules at the moment:
 * test-gen-plugin
 * runtime
 
-### wasm package
+#### wasm package
 
 The [wasm](wasm/) package contains a lot of the core Wasm types and the binary parser.
 It can be useful as an independent library for using wasm in Java.
@@ -236,11 +234,11 @@ sh scripts/compile-tests.sh
 ruby scripts/gen-instr.rb
 ```
 
-### test-gen-plugin
+#### test-gen-plugin
 
 The [test-gen-plugin](test-gen-plugin/) package is a maven plugin that handles the test generation that exercises both the wasm package and the runtime package. Tests are parsed from the [Wasm testsuite](https://github.com/WebAssembly/testsuite) and generate Java Junit tests.
 
-### runtime package
+#### runtime package
 
 The [runtime](runtime/) packages contains the actual Chicory runtime. There are a few scripts we use here too:
 
