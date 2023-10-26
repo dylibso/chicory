@@ -448,9 +448,17 @@ public class Parser {
                         {
                             currentControlFlow = currentControlFlow.spawn(instruction);
 
+                            var defaultJmp = instructionCount + 1;
+                            currentControlFlow.addCallback(end -> {
+                                // check that there is no "else" branch
+                                if (instruction.getLabelFalse() == defaultJmp) {
+                                    instruction.setLabelFalse(end);
+                                }
+                            });
+
                             // defaults
-                            instruction.setLabelTrue(instructionCount + 1);
-                            instruction.setLabelFalse(instructionCount + 1);
+                            instruction.setLabelTrue(defaultJmp);
+                            instruction.setLabelFalse(defaultJmp);
                             break;
                         }
                     case ELSE:
@@ -459,11 +467,14 @@ public class Parser {
                             currentControlFlow
                                     .getInstruction()
                                     .setLabelFalse(instructionCount + 1);
-                            currentControlFlow.setInstruction(instruction);
+
+                            currentControlFlow.addCallback(instruction::setLabelTrue);
+
                             break;
                         }
-                    case BR:
                     case BR_IF:
+                        instruction.setLabelFalse(instructionCount + 1);
+                    case BR:
                         var offset = (int) instruction.getOperands()[0];
                         ControlTree reference = currentControlFlow;
                         while (offset > 0) {
@@ -471,10 +482,6 @@ public class Parser {
                             offset--;
                         }
                         reference.addCallback(instruction::setLabelTrue);
-
-                        // Defaults
-                        instruction.setLabelTrue(instructionCount + 1);
-                        instruction.setLabelFalse(instructionCount + 1);
                         break;
                     case BR_TABLE:
                         // TODO: implement me
@@ -482,19 +489,6 @@ public class Parser {
                         instruction.setLabelFalse(instructionCount + 1);
                         break;
                     case END:
-                        if (!currentControlFlow.isRoot()) {
-                            switch (currentControlFlow.getInstruction().getOpcode()) {
-                                case IF:
-                                    currentControlFlow
-                                            .getInstruction()
-                                            .setLabelFalse(instructionCount);
-                                case ELSE:
-                                    currentControlFlow
-                                            .getInstruction()
-                                            .setLabelTrue(instructionCount);
-                            }
-                        }
-
                         currentControlFlow.setFinalInstructionNumber(instructionCount);
                         currentControlFlow = currentControlFlow.getParent();
                         break;
@@ -512,8 +506,6 @@ public class Parser {
                 // System.out.println(Integer.toHexString(instruction.getAddress()) + " " +
                 // instruction);
             } while (buffer.position() < funcEndPoint);
-
-            root.triggerCallbacks();
 
             // label the instructions with jumps
             // ControlFlow.labelBranches(instructions);

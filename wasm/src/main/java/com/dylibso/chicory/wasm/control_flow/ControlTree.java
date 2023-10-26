@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public class ControlTree {
-    private Instruction instruction;
+    private final Instruction instruction;
     private int finalInstructionNumber = -1; // to be set when END is reached
     private final ControlTree parent;
     private final List<ControlTree> nested;
@@ -42,10 +42,6 @@ public class ControlTree {
         return instruction;
     }
 
-    public void setInstruction(Instruction instruction) {
-        this.instruction = instruction;
-    }
-
     public void addNested(ControlTree nested) {
         this.nested.add(nested);
     }
@@ -60,18 +56,9 @@ public class ControlTree {
 
     public void setFinalInstructionNumber(int finalInstructionNumber) {
         this.finalInstructionNumber = finalInstructionNumber;
-    }
-
-    public void triggerCallbacks() {
-        if (finalInstructionNumber == -1) {
-             throw new RuntimeException("Callbacks should be triggered after everything have been computed");
-        } else {
-            for (var callback : this.callbacks) {
-                callback.accept(finalInstructionNumber);
-            }
-            for (var child : this.nested) {
-                child.triggerCallbacks();
-            }
+        for (var callback : this.callbacks) {
+            callback.accept(finalInstructionNumber);
         }
     }
+
 }
