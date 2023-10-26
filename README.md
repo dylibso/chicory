@@ -180,8 +180,7 @@ logIt.apply();
 ### Goals
 
 * Be as safe as possible
-  * This line is pretty relative
-  * It depends on the resources we have to verify security
+  * In that we are willing to sacrifice things like performance for safety and simplicity
 * Make it easy to run Wasm in any JVM environment without native code, including very restrictive environments.
 * Fully support the core Wasm 1.0 and 2.0 spec specs
 * Make integration with Java (and other host languages) easy and idiomatic.
@@ -197,8 +196,9 @@ logIt.apply();
 * WASI support
     * We may develop this outside of this library
     * Which version we target may depend on when we achieve the goals
-* Support JITing to JVM bytecode
-    * Only if it can be done safely
+* Support AOT or JIT JVM bytecode
+  * There is some prior art here so it can be done
+  * But we want to get our interpreter engine and testsuite solid before we tackle this
 * Demonstrate performance benefits for at least some subset of use cases
 * Support some future standards like Threads, GC, and Component Model
 
