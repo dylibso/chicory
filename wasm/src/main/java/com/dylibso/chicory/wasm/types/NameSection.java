@@ -1,10 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.types.CustomSection;
-
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
