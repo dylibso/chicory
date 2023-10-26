@@ -11,8 +11,6 @@ public class Wast {
     @JsonProperty("commands")
     private Command[] commands;
 
-    public Wast() {}
-
     public File getSourceFilename() {
         return sourceFilename;
     }

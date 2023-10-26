@@ -12,16 +12,18 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 public class TarExtractor {
 
     private final InputStream tarStream;
+
     private final Path destination;
 
-    public TarExtractor(InputStream in, Path destination) throws IOException {
+    public TarExtractor(InputStream in, Path destination) {
         this.tarStream = in;
         this.destination = destination;
-
-        Files.createDirectories(destination);
     }
 
     public void untar() throws IOException {
+
+        Files.createDirectories(destination);
+
         try (BufferedInputStream inputStream = new BufferedInputStream(this.tarStream);
                 TarArchiveInputStream tar =
                         new TarArchiveInputStream(new GzipCompressorInputStream(inputStream))) {

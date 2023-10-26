@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 @JsonIgnoreProperties
 public class Command {
+
     @JsonProperty("type")
     private CommandType type;
 
@@ -14,6 +15,18 @@ public class Command {
 
     @JsonProperty("filename")
     private String filename;
+
+    @JsonProperty("module_type")
+    private String moduleType;
+
+    @JsonProperty("action")
+    private Action action;
+
+    @JsonProperty("expected")
+    private WasmValue[] expected;
+
+    @JsonProperty("text")
+    private String text;
 
     @Override
     public String toString() {
@@ -37,15 +50,6 @@ public class Command {
                 + '\''
                 + '}';
     }
-
-    @JsonProperty("action")
-    private Action action;
-
-    @JsonProperty("expected")
-    private WasmValue[] expected;
-
-    @JsonProperty("text")
-    private String text;
 
     public CommandType getType() {
         return type;
@@ -74,7 +78,4 @@ public class Command {
     public String getModuleType() {
         return moduleType;
     }
-
-    @JsonProperty("module_type")
-    private String moduleType;
 }

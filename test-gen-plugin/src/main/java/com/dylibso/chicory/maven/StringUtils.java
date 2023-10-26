@@ -3,11 +3,10 @@ package com.dylibso.chicory.maven;
 public class StringUtils {
 
     public static String capitalize(String in) {
-        if (in.length() > 0) {
-            return in.substring(0, 1).toUpperCase() + in.substring(1);
-        } else {
+        if (in.isEmpty()) {
             return in;
         }
+        return in.substring(0, 1).toUpperCase() + in.substring(1);
     }
 
     public static String escapedCamelCase(String in) {

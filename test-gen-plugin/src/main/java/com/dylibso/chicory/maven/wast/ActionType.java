@@ -7,7 +7,7 @@ public enum ActionType {
     @JsonProperty("invoke")
     INVOKE("invoke");
 
-    private String value;
+    private final String value;
 
     ActionType(String value) {
         this.value = value;
