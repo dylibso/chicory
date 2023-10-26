@@ -19,7 +19,7 @@ public enum OpCode {
     BR_TABLE(0x0E), // br_table vec(<varuint>) <varuint>
     RETURN(0x0F), // return
     CALL(0x10), // call <varuint>
-    CALL_INDIRECT(0x11), // call_indirect <varuint>
+    CALL_INDIRECT(0x11), // call_indirect <varuint> <varuint>
     DROP(0x1A), // drop
     SELECT(0x1B), // select
     LOCAL_GET(0x20), // local.get <varuint>
@@ -225,7 +225,8 @@ public enum OpCode {
                 BR_TABLE, new WasmEncoding[] {WasmEncoding.VEC_VARUINT, WasmEncoding.VARUINT});
         signature.put(RETURN, new WasmEncoding[] {});
         signature.put(CALL, new WasmEncoding[] {WasmEncoding.VARUINT});
-        signature.put(CALL_INDIRECT, new WasmEncoding[] {WasmEncoding.VARUINT});
+        signature.put(
+                CALL_INDIRECT, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
         signature.put(DROP, new WasmEncoding[] {});
         signature.put(SELECT, new WasmEncoding[] {});
         signature.put(LOCAL_GET, new WasmEncoding[] {WasmEncoding.VARUINT});
