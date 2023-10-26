@@ -59,13 +59,12 @@ public class Machine {
         try {
             var frame = callStack.peek();
             boolean shouldReturn = false;
+            int stackSizeBeforeBranch = 0;
 
             loop:
             while (frame.pc < code.size()) {
                 if (shouldReturn) return;
                 var instruction = code.get(frame.pc++);
-                var opcode = instruction.getOpcode();
-                var operands = instruction.getOperands();
                 //                System.out.println(
                 //                        "func="
                 //                                + frame.funcId
@@ -75,6 +74,8 @@ public class Machine {
                 //                                + instruction
                 //                                + "stack="
                 //                                + this.stack);
+                var opcode = instruction.getOpcode();
+                var operands = instruction.getOperands();
                 switch (opcode) {
                     case UNREACHABLE:
                         throw new TrapException("Trapped on unreachable instruction", callStack);
@@ -84,11 +85,13 @@ public class Machine {
                     case BLOCK:
                         {
                             frame.blockDepth++;
+                            frame.stackBeforeSize = this.stack.size();
                             break;
                         }
                     case IF:
                         {
                             frame.blockDepth++;
+                            frame.stackBeforeSize = this.stack.size();
                             var pred = this.stack.pop().asInt();
                             if (pred == 0) {
                                 frame.pc = instruction.getLabelFalse();
@@ -106,6 +109,7 @@ public class Machine {
                     case BR_IF:
                         {
                             var pred = this.stack.pop().asInt();
+
                             if (pred == 0) {
                                 frame.pc = instruction.getLabelFalse();
                             } else {

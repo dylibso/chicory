@@ -1,0 +1,126 @@
+package com.dylibso.chicory.wasm;
+
+import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.OpCode;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+/**
+ * The purpose of this class is to provide a control structure to, in-line, label branches in a list of instructions.
+ * Wasm has a structured form of control flow. There is no `jmp` to an address.
+ * So instead each branching point can only "jump" to a few points internal to the function
+ * we are executing in. This algorithm mimics the control flow rules and annotates each
+ * branching instruction with the labels (here the jumping point is the index of the instruction in the body)
+ * that it can jump to. Branching instructions can only jump to the beginning of a block if this target is a loop,
+ * or the end of a block for every other target block.
+ * It's up to the Machine to decide, based on what is on the stack, which label to choose.
+ * Here is an example on how to label some code. The left side contains indexes, comments show where the labels go
+ *
+ * 0     (local i32)
+ * 1     (block
+ * 2       (block
+ * 3          (block
+ *                 ;; x == 0
+ * 4               local.get 0
+ * 5               i32.eqz
+ * 6               br_if 0 ;; true=14 false=7
+ *
+ *                 ;; x == 1
+ * 7               local.get 0
+ * 8               i32.const 1
+ * 9               i32.eq
+ * 10              br_if 1 ;; true=17 false=11
+ *
+ *                 ;; the `else` case
+ * 11              i32.const 7
+ * 12              local.set 1
+ * 13              br 2    ;; true=19
+ *            )
+ * 14         i32.const 42
+ * 15         local.set 1
+ * 16         br 1         ;; true=19
+ *            )
+ * 17     i32.const 99
+ * 18     local.set 1
+ *        )
+ * 19   local.get 1)
+ *
+ * This is very sub-optimal at the moment
+ */
+public class ControlTree {
+    private final Instruction instruction;
+    private final int initialInstructionNumber;
+    private int finalInstructionNumber = -1; // to be set when END is reached
+    private final ControlTree parent;
+    private final List<ControlTree> nested;
+    private final List<Consumer<Integer>> callbacks;
+
+    public ControlTree() {
+        this.instruction = null;
+        this.initialInstructionNumber = 0;
+        this.parent = null;
+        this.nested = new ArrayList<>();
+        this.callbacks = new ArrayList<>();
+    }
+
+    private ControlTree(int initialInstructionNumber, Instruction instruction, ControlTree parent) {
+        this.instruction = instruction;
+        this.initialInstructionNumber = initialInstructionNumber;
+        this.parent = parent;
+        this.nested = new ArrayList<>();
+        this.callbacks = new ArrayList<>();
+    }
+
+    public ControlTree spawn(int initialInstructionNumber, Instruction instruction) {
+        var node = new ControlTree(initialInstructionNumber, instruction, this);
+        this.addNested(node);
+        return node;
+    }
+
+    public boolean isRoot() {
+        return this.parent == null;
+    }
+
+    public Instruction getInstruction() {
+        return instruction;
+    }
+
+    public int getInstructionNumber() {
+        return initialInstructionNumber;
+    }
+
+    public void addNested(ControlTree nested) {
+        this.nested.add(nested);
+    }
+
+    public ControlTree getParent() {
+        return parent;
+    }
+
+    public List<ControlTree> getNested() {
+        return nested;
+    }
+
+    public void addCallback(Consumer<Integer> callback) {
+        this.callbacks.add(callback);
+    }
+
+    public void setFinalInstructionNumber(int finalInstructionNumber, Instruction end) {
+        this.finalInstructionNumber = finalInstructionNumber;
+
+        if (end.getScope() == OpCode.LOOP) {
+            var lastLoopInstruction = 0;
+            for (var ct : this.parent.nested) {
+                if (ct.getInstruction().getOpcode() == OpCode.LOOP) {
+                    lastLoopInstruction = ct.getInstructionNumber();
+                }
+            }
+            this.finalInstructionNumber = lastLoopInstruction + 1;
+        }
+
+        for (var callback : this.callbacks) {
+            callback.accept(this.finalInstructionNumber);
+        }
+    }
+}

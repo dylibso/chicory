@@ -383,6 +383,9 @@ public class Parser {
         var funcBodyCount = readVarUInt32(buffer);
         var functionBodies = new FunctionBody[(int) funcBodyCount];
 
+        var root = new ControlTree();
+        var currentControlFlow = root;
+
         // Parse individual function bodies in the code section
         for (int i = 0; i < funcBodyCount; i++) {
             var blockScope = new Stack<OpCode>();
@@ -395,10 +398,12 @@ public class Parser {
                 var type = ValueType.byId(readVarUInt32(buffer));
                 locals.add(new Value(type, bytes));
             }
+            var instructionCount = 0;
             var instructions = new ArrayList<Instruction>();
-            OpCode op;
+            currentControlFlow = root;
             do {
                 var instruction = parseInstruction(buffer);
+                // depth control
                 switch (instruction.getOpcode()) {
                     case BLOCK:
                     case LOOP:
@@ -426,13 +431,90 @@ public class Parser {
                             break;
                         }
                 }
+
+                // control-flow
+                switch (instruction.getOpcode()) {
+                    case BLOCK:
+                    case LOOP:
+                        {
+                            currentControlFlow =
+                                    currentControlFlow.spawn(instructionCount, instruction);
+                            break;
+                        }
+                    case IF:
+                        {
+                            currentControlFlow =
+                                    currentControlFlow.spawn(instructionCount, instruction);
+
+                            var defaultJmp = instructionCount + 1;
+                            currentControlFlow.addCallback(
+                                    end -> {
+                                        // check that there is no "else" branch
+                                        if (instruction.getLabelFalse() == defaultJmp) {
+                                            instruction.setLabelFalse(end);
+                                        }
+                                    });
+
+                            // defaults
+                            instruction.setLabelTrue(defaultJmp);
+                            instruction.setLabelFalse(defaultJmp);
+                            break;
+                        }
+                    case ELSE:
+                        {
+                            assert (currentControlFlow.getInstruction().getOpcode() == OpCode.IF);
+                            currentControlFlow.getInstruction().setLabelFalse(instructionCount + 1);
+
+                            currentControlFlow.addCallback(instruction::setLabelTrue);
+
+                            break;
+                        }
+                    case BR_IF:
+                        {
+                            instruction.setLabelFalse(instructionCount + 1);
+                        }
+                    case BR:
+                        {
+                            var offset = (int) instruction.getOperands()[0];
+                            ControlTree reference = currentControlFlow;
+                            while (offset > 0) {
+                                reference = reference.getParent();
+                                offset--;
+                            }
+                            reference.addCallback(instruction::setLabelTrue);
+                            break;
+                        }
+                    case BR_TABLE:
+                        {
+                            instruction.setLabelTable(new int[instruction.getOperands().length]);
+                            for (var idx = 0; idx < instruction.getLabelTable().length; idx++) {
+                                var offset = (int) instruction.getOperands()[idx];
+                                ControlTree reference = currentControlFlow;
+                                while (offset > 0) {
+                                    reference = reference.getParent();
+                                    offset--;
+                                }
+                                int finalIdx = idx;
+                                reference.addCallback(
+                                        end -> instruction.getLabelTable()[finalIdx] = end);
+                            }
+                            break;
+                        }
+                    case END:
+                        {
+                            currentControlFlow.setFinalInstructionNumber(
+                                    instructionCount, instruction);
+                            currentControlFlow = currentControlFlow.getParent();
+                            break;
+                        }
+                }
+
+                instructionCount++;
                 instructions.add(instruction);
+
                 // System.out.println(Integer.toHexString(instruction.getAddress()) + " " +
                 // instruction);
             } while (buffer.position() < funcEndPoint);
-
-            // label the instructions with jumps
-            ControlFlow.labelBranches(instructions);
 
             functionBodies[i] = new FunctionBody(locals, instructions);
         }
