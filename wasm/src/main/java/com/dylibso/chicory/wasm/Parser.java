@@ -435,13 +435,12 @@ public class Parser {
                 // control-flow
                 switch (instruction.getOpcode()) {
                     case BLOCK:
-                        currentControlFlow =
-                                currentControlFlow.spawn(instructionCount, instruction);
-                        break;
                     case LOOP:
-                        currentControlFlow =
-                                currentControlFlow.spawn(instructionCount, instruction);
-                        break;
+                        {
+                            currentControlFlow =
+                                    currentControlFlow.spawn(instructionCount, instruction);
+                            break;
+                        }
                     case IF:
                         {
                             currentControlFlow =
@@ -471,7 +470,9 @@ public class Parser {
                             break;
                         }
                     case BR_IF:
-                        instruction.setLabelFalse(instructionCount + 1);
+                        {
+                            instruction.setLabelFalse(instructionCount + 1);
+                        }
                     case BR:
                         {
                             var offset = (int) instruction.getOperands()[0];
@@ -500,16 +501,14 @@ public class Parser {
                             break;
                         }
                     case END:
-                        currentControlFlow.setFinalInstructionNumber(instructionCount, instruction);
-                        currentControlFlow = currentControlFlow.getParent();
-                        break;
-                    default:
                         {
+                            currentControlFlow.setFinalInstructionNumber(
+                                    instructionCount, instruction);
+                            currentControlFlow = currentControlFlow.getParent();
                             break;
                         }
                 }
 
-                // control flow
                 instructionCount++;
                 instructions.add(instruction);
 
