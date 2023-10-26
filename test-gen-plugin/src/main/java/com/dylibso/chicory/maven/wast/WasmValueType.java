@@ -15,7 +15,7 @@ public enum WasmValueType {
     @JsonProperty("externref")
     EXTERN_REF("externref");
 
-    private String value;
+    private final String value;
 
     WasmValueType(String value) {
         this.value = value;

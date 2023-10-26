@@ -5,10 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class WasmValue {
 
     @JsonProperty("type")
-    WasmValueType type;
+    private WasmValueType type;
 
     @JsonProperty("value")
-    String value;
+    private String value;
 
     public WasmValueType getType() {
         return type;

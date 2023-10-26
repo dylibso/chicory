@@ -6,19 +6,17 @@ import java.util.Arrays;
 
 @JsonIgnoreProperties
 public class Action {
+
     @JsonProperty("type")
     private ActionType type;
 
     @JsonProperty("field")
-    String field;
+    private String field;
 
     @JsonProperty("args")
-    WasmValue[] args;
-
-    public Action() {}
+    private WasmValue[] args;
 
     public ActionType getType() {
-
         return type;
     }
 

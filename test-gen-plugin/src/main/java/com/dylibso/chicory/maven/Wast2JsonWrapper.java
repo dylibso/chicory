@@ -4,22 +4,22 @@ import static com.dylibso.chicory.maven.Constants.SPEC_JSON;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.apache.maven.plugin.logging.Log;
 
 public class Wast2JsonWrapper {
 
     private static final String WAST2JSON = "wast2json";
+
     private final Log log;
     private final File wabtDownloadTargetFolder;
     private final String wabtReleasesURL;
@@ -45,7 +45,7 @@ public class Wast2JsonWrapper {
     }
 
     public void fetch() {
-        wast2JsonCmd = getWast2Json();
+        wast2JsonCmd = resolveOrInstallWast2Json();
     }
 
     public File execute(File wastFile) {
@@ -57,11 +57,13 @@ public class Wast2JsonWrapper {
         var targetFolder = compiledWastTargetFolder.toPath().resolve(plainName).toFile();
         var destFile = targetFolder.toPath().resolve(SPEC_JSON).toFile();
 
-        targetFolder.mkdirs();
+        if (!targetFolder.mkdirs()) {
+            log.warn("Could not create folder: " + targetFolder);
+        }
 
         var command =
                 List.of(wast2JsonCmd, wastFile.getAbsolutePath(), "-o", destFile.getAbsolutePath());
-        log.info("Going to execute command: " + command.stream().collect(Collectors.joining(" ")));
+        log.info("Going to execute command: " + String.join(" ", command));
 
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(new File("."));
@@ -86,7 +88,9 @@ public class Wast2JsonWrapper {
     }
 
     private void downloadAndExtract(URL url) {
-        wabtDownloadTargetFolder.mkdirs();
+        if (!wabtDownloadTargetFolder.mkdirs()) {
+            log.warn("Could not create folder: " + wabtDownloadTargetFolder);
+        }
         final File finalDestination =
                 new File(wabtDownloadTargetFolder, new File(url.getFile()).getName());
 
@@ -98,7 +102,7 @@ public class Wast2JsonWrapper {
         }
     }
 
-    private String getWast2Json() {
+    private String resolveOrInstallWast2Json() {
         ProcessBuilder pb = new ProcessBuilder(WAST2JSON);
         pb.directory(new File("."));
         pb.inheritIO();
@@ -137,7 +141,7 @@ public class Wast2JsonWrapper {
         var fileName = "wabt-" + wabtVersion + "-" + wabtArchitectureName() + ".tar.gz";
         var wabtRelease = wabtReleasesURL + wabtVersion + "/" + fileName;
         try {
-            downloadAndExtract(new URL(wabtRelease));
+            downloadAndExtract(URI.create(wabtRelease).toURL());
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
@@ -150,14 +154,14 @@ public class Wast2JsonWrapper {
                                 .toFile()
                                 .getAbsolutePath())) {
             new TarExtractor(fis, wabtDownloadTargetFolder.toPath()).untar();
-        } catch (FileNotFoundException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
         // Set executable
-        binary.toFile().setExecutable(true, false);
+        if (!binary.toFile().setExecutable(true, false)) {
+            log.warn("Could change file to be executable: " + binary);
+        }
         return binary.toFile().getAbsolutePath();
     }
 

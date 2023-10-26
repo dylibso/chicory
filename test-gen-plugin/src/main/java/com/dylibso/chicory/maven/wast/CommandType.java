@@ -21,7 +21,7 @@ public enum CommandType {
     @JsonProperty("action")
     ACTION("action");
 
-    private String value;
+    private final String value;
 
     CommandType(String value) {
         this.value = value;
