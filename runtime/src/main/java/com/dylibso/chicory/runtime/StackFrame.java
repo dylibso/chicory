@@ -21,8 +21,10 @@ public class StackFrame {
     public int pc;
     public HashMap<Integer, Value> locals;
     public int blockDepth;
+    private Instance instance;
 
-    public StackFrame(int funcId, int pc, Value[] args, List<Value> initLocals) {
+    public StackFrame(Instance instance, int funcId, int pc, Value[] args, List<Value> initLocals) {
+        this.instance = instance;
         this.funcId = funcId;
         this.pc = pc;
         this.locals = new HashMap<>();
@@ -66,13 +68,12 @@ public class StackFrame {
     }
 
     public String toString() {
-        return "func="
-                + funcId
-                + " "
-                + "pc="
-                + pc
-                + " "
-                + "locals="
-                + Arrays.toString(locals.values().toArray());
+        var nameSec = instance.getModule().getNameSection();
+        var id = "[" + funcId + "]";
+        if (nameSec != null) {
+            var funcName = nameSec.getFunctionNames().get(funcId);
+            if (funcName != null) id = funcName + id;
+        }
+        return id + "\n\tpc=" + pc + " locals=" + Arrays.toString(locals.values().toArray());
     }
 }

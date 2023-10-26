@@ -1,3 +1,7 @@
 .idea/
 target/
 testsuite/
+.classpath
+.project
+.settings
+

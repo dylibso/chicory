@@ -87,7 +87,7 @@ public class ModuleTest {
         var printer = new Printer("Hello, World!");
         var func =
                 new HostFunction(
-                        (Memory memory, Value... args) -> { // decompiled is:  console_log(13, 0);
+                        (Memory memory, Value... args) -> { // decompiled is: console_log(13, 0);
                             var len = args[0].asInt();
                             var offset = args[1].asInt();
                             var message = memory.getString(offset, len);
@@ -188,23 +188,25 @@ public class ModuleTest {
         assertEquals(42, result.asInt());
     }
 
-    //    @Test
-    //    public void shouldRunComplexFunction() {
-    //        // check with: wasmtime src/test/resources/wasm/complex.c.wasm --invoke run
-    //        var instance = Module.build("src/test/resources/wasm/complex.c.wasm").instantiate();
-    //        var run = instance.getExport("run");
-    //        var result = run.apply();
-    //        assertEquals(-679, result.asInt());
-    //    }
+    // @Test
+    // public void shouldRunComplexFunction() {
+    // // check with: wasmtime src/test/resources/wasm/complex.c.wasm --invoke run
+    // var instance =
+    // Module.build("src/test/resources/wasm/complex.c.wasm").instantiate();
+    // var run = instance.getExport("run");
+    // var result = run.apply();
+    // assertEquals(-679, result.asInt());
+    // }
 
-    //    @Test
-    //    public void shouldRunMemoryProgramInC() {
-    //        // check with: wasmtime src/test/resources/wasm/memory.c.wasm --invoke run
-    //        var instance = Module.build("src/test/resources/wasm/memory.c.wasm").instantiate();
-    //        var run = instance.getExport("run");
-    //        var result = run.apply();
-    //        assertEquals(11, result.asInt());
-    //    }
+    // @Test
+    // public void shouldRunMemoryProgramInC() {
+    // // check with: wasmtime src/test/resources/wasm/memory.c.wasm --invoke run
+    // var instance =
+    // Module.build("src/test/resources/wasm/memory.c.wasm").instantiate();
+    // var run = instance.getExport("run");
+    // var result = run.apply();
+    // assertEquals(11, result.asInt());
+    // }
 
     @Test
     public void shouldWorkWithMemoryOps() {
@@ -235,18 +237,20 @@ public class ModuleTest {
 
     @Test
     public void shouldRunKitchenSink() {
-        // check with: wasmtime src/test/resources/wasm/kitchensink.wat.wasm --invoke run 100
+        // check with: wasmtime src/test/resources/wasm/kitchensink.wat.wasm --invoke
+        // run 100
         var instance = Module.build("src/test/resources/wasm/kitchensink.wat.wasm").instantiate();
         var run = instance.getExport("run");
         assertEquals(6, run.apply(Value.i32(100))[0].asInt());
     }
 
-    //    @Test
-    //    public void shouldOperateMemoryOps() {
-    //        // check with: wasmtime src/test/resources/wasm/memories.wat.wasm --invoke run 100
-    //        var instance =
+    // @Test
+    // public void shouldOperateMemoryOps() {
+    // // check with: wasmtime src/test/resources/wasm/memories.wat.wasm --invoke
+    // run 100
+    // var instance =
     // Module.build("src/test/resources/wasm/memories.wat.wasm").instantiate();
-    //        var run = instance.getExport("run");
-    //        assertEquals(-25438, run.apply(Value.i32(100)).asInt());
-    //    }
+    // var run = instance.getExport("run");
+    // assertEquals(-25438, run.apply(Value.i32(100)).asInt());
+    // }
 }

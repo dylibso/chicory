@@ -188,4 +188,12 @@ public class ParserTest {
         assertEquals(fbody.getLocals().get(0).getType(), ValueType.I32);
         assertEquals(fbody.getLocals().get(1).getType(), ValueType.I64);
     }
+
+    @Test
+    public void shouldParseNamesSection() {
+        var parser = new Parser("src/test/resources/wasm/count_vowels.rs.wasm");
+        var module = parser.parseModule();
+        var nameSec = module.getNameSection();
+        assertEquals(nameSec.getFunctionNames().size(), 94);
+    }
 }

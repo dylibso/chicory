@@ -520,7 +520,7 @@ public class Parser {
      * @param buffer
      * @return
      */
-    private static long readVarUInt32(ByteBuffer buffer) {
+    public static long readVarUInt32(ByteBuffer buffer) {
         return Encoding.readUnsignedLeb128(buffer);
     }
 
@@ -531,7 +531,7 @@ public class Parser {
      * @param buffer
      * @return
      */
-    private static long readVarSInt32(ByteBuffer buffer) {
+    public static long readVarSInt32(ByteBuffer buffer) {
         return Encoding.readSigned32Leb128(buffer);
     }
 
@@ -541,19 +541,19 @@ public class Parser {
      * @param buffer
      * @return
      */
-    private static long readVarSInt64(ByteBuffer buffer) {
+    public static long readVarSInt64(ByteBuffer buffer) {
         return Encoding.readSigned64Leb128(buffer);
     }
 
-    private static long readFloat64(ByteBuffer buffer) {
+    public static long readFloat64(ByteBuffer buffer) {
         return buffer.getLong();
     }
 
-    private static long readFloat32(ByteBuffer buffer) {
+    public static long readFloat32(ByteBuffer buffer) {
         return buffer.getInt();
     }
 
-    private static String readName(ByteBuffer buffer) {
+    public static String readName(ByteBuffer buffer) {
         var length = (int) readVarUInt32(buffer);
         byte[] bytes = new byte[length];
         buffer.get(bytes);
