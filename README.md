@@ -116,7 +116,7 @@ Now we can call `countVowels` with this pointer to the string. It will do it's j
 call `dealloc` to free that memory in the module. Though the module could do this itself if you want:
 
 ```java
-Varlue result = countVowels.apply(Value.i32(ptr), Value.i32(len))[0];
+Value result = countVowels.apply(Value.i32(ptr), Value.i32(len))[0];
 dealloc.apply(Value.i32(ptr), Value.i32(len));
 assertEquals(3, result.asInt()); // 3 vowels in Hello, World!
 ```
