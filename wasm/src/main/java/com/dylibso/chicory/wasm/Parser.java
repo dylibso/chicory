@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasm;
 
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.*;
 import java.io.FileInputStream;
@@ -528,11 +529,23 @@ public class Parser {
         var dataSegments = new DataSegment[(int) dataSegmentCount];
 
         for (var i = 0; i < dataSegmentCount; i++) {
-            var idx = readVarUInt32(buffer);
-            var offset = parseExpression(buffer);
-            byte[] data = new byte[(int) readVarUInt32(buffer)];
-            buffer.get(data);
-            dataSegments[i] = new DataSegment(idx, offset, data);
+            var memidx = readVarUInt32(buffer);
+            // if memory idx == 0, then this is an active datasegment
+            // if memory idx == 1, then this is a passive datasegment
+            // TODO won't this break once we support multi-memory?
+            if (memidx == 0) {
+                var offset = parseExpression(buffer);
+                byte[] data = new byte[(int) readVarUInt32(buffer)];
+                buffer.get(data);
+                dataSegments[i] = new ActiveDataSegment(memidx, offset, data);
+            } else if (memidx == 1) {
+                byte[] data = new byte[(int) readVarUInt32(buffer)];
+                buffer.get(data);
+                dataSegments[i] = new PassiveDataSegment(data);
+            } else {
+                throw new ChicoryException(
+                        "Failed to parse data segment with data mode: " + memidx);
+            }
         }
 
         return new DataSection(sectionId, sectionSize, dataSegments);
@@ -540,7 +553,11 @@ public class Parser {
 
     private static Instruction parseInstruction(ByteBuffer buffer) {
         var address = buffer.position();
-        var b = buffer.get() & 0xff;
+        var b = (int) buffer.get() & 0xff;
+        if (b == 0xfc) { // is multi-byte
+            // TODO decide how to encode these into integers
+            b = 0xff + (buffer.get() & 0xff);
+        }
         var op = OpCode.byOpCode(b);
         if (op == null) {
             throw new IllegalArgumentException("Can't find opcode for op value " + b);

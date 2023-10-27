@@ -2,10 +2,7 @@ package com.dylibso.chicory.wasm;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.dylibso.chicory.wasm.types.CustomSection;
-import com.dylibso.chicory.wasm.types.OpCode;
-import com.dylibso.chicory.wasm.types.SectionId;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.*;
 import java.io.File;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -36,7 +33,7 @@ public class ParserTest {
         var dataSection = module.getDataSection();
         var dataSegments = dataSection.getDataSegments();
         assertEquals(1, dataSegments.length);
-        var segment = dataSegments[0];
+        var segment = (ActiveDataSegment) dataSegments[0];
         assertEquals(0, segment.getIdx());
         assertEquals(OpCode.I32_CONST, segment.getOffset()[0].getOpcode());
         assertArrayEquals(new byte[] {0x00, 0x01, 0x02, 0x03}, segment.getData());
