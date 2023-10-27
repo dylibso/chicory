@@ -23,6 +23,7 @@ public class StackFrame {
     public int blockDepth;
     private Instance instance;
     public boolean doControlTransfer = false;
+    public boolean isControlFrame = false;
     public int stackBeforeSize;
     public int returnValue = 0;
     public Value popMeBack = null;
