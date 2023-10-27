@@ -3,16 +3,17 @@ package com.dylibso.chicory.wasm.types;
 import com.dylibso.chicory.wasm.Parser;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class NameSection extends CustomSection {
 
-    private List<String> funcNames;
+    private final List<String> funcNames;
 
     public NameSection(CustomSection sec) {
         super(sec.getSectionId(), sec.getSectionSize());
         this.setBytes(sec.getBytes());
-        funcNames = parseFunctionNames();
+        this.funcNames = parseFunctionNames();
     }
 
     private List<String> parseFunctionNames() {
@@ -37,7 +38,7 @@ public class NameSection extends CustomSection {
             names.add(Parser.readName(buf));
         }
 
-        return names;
+        return Collections.unmodifiableList(names);
     }
 
     public List<String> getFunctionNames() {

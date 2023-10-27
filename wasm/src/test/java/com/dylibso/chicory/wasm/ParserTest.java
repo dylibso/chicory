@@ -119,17 +119,16 @@ public class ParserTest {
     public void shouldSupportCustomListener() {
         var parser = new Parser("src/test/resources/wasm/code.wasm");
         parser.includeSection(SectionId.CUSTOM);
-        parser.setListener(
+        parser.parse(
                 s -> {
                     if (s.getSectionId() == SectionId.CUSTOM) {
                         var customSection = (CustomSection) s;
                         var name = customSection.getName();
-                        assertTrue(name.length() > 0);
+                        assertFalse(name.isEmpty());
                     } else {
                         fail("Should not have received section with id: " + s.getSectionId());
                     }
                 });
-        parser.parse();
     }
 
     //    @Test
