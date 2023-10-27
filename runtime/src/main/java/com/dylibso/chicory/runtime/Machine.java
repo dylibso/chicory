@@ -110,10 +110,7 @@ public class Machine {
                     case IF:
                         {
                             frame.blockDepth++;
-
-                            frame.isControlFrame = false; // TODO: verify
-                            frame.returnValue = Math.max(frame.returnValue, 0);
-                            frame.stackBeforeSize = this.stack.size();
+                            frame.isControlFrame = false;
 
                             var pred = this.stack.pop().asInt();
                             if (pred == 0) {
@@ -147,17 +144,16 @@ public class Machine {
                         }
                     case BR_TABLE:
                         {
-                            var pred = this.stack.pop().asInt();
+                            frame.doControlTransfer = true;
+                            var predValue = this.stack.pop();
+                            var pred = predValue.asInt();
                             if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
                                 // choose default
-                                frame.doControlTransfer = true; // verify ...
-
                                 frame.pc =
                                         instruction
                                                 .getLabelTable()[
                                                 instruction.getLabelTable().length - 1];
                             } else {
-
                                 frame.pc = instruction.getLabelTable()[pred];
                             }
                             break;
@@ -211,8 +207,9 @@ public class Machine {
                                 frame.doControlTransfer = false;
                                 // drop all the values on the stack that have been pushed inside the
                                 // block
-                                Value[] pushMeBack = new Value[frame.returnValue];
-                                for (int i = 0; i < frame.returnValue; i++) {
+                                var valuesToBePushedBack = Math.min(frame.returnValue, this.stack.size());
+                                Value[] pushMeBack = new Value[valuesToBePushedBack];
+                                for (int i = 0; i < valuesToBePushedBack; i++) {
                                     pushMeBack[i] = this.stack.pop();
                                 }
                                 // just drop everything till the stackBeforeSize
@@ -227,7 +224,7 @@ public class Machine {
 
                                 //                                for (int i = 0; i <
                                 // frame.returnValue; i++) {
-                                for (int i = frame.returnValue - 1; i >= 0; i--) {
+                                for (int i = valuesToBePushedBack - 1; i >= 0; i--) {
                                     this.stack.push(pushMeBack[i]);
                                 }
                             }

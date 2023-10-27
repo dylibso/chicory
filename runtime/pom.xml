@@ -95,18 +95,9 @@
             SpecV1MemoryInitTest.test212,
             SpecV1MemoryInitTest.test214,
             SpecV1LoopTest.test28,
-            SpecV1BrTableTest.test109,
-            SpecV1BrTableTest.test110,
-            SpecV1BrTableTest.test127,
-            SpecV1BrTableTest.test129,
-            SpecV1BrTableTest.test130,
-            SpecV1BrTableTest.test131,
-            SpecV1BrTableTest.test132,
-            SpecV1BrTableTest.test139,
-            SpecV1BrTableTest.test141,
-            SpecV1BrTableTest.test142,
-            SpecV1BrTableTest.test143,
-            SpecV1BrTableTest.test144,
+            <!--            SpecV1BrTableTest.test110,-->
+            <!--            SpecV1BrTableTest.test145,-->
+            <!-- extern_ref failures -->
             SpecV1BrTableTest.test146,
             SpecV1BrTableTest.test147,
             SpecV1BrTableTest.test148,
