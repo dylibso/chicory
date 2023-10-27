@@ -147,6 +147,7 @@ public class Machine {
                             frame.doControlTransfer = true;
                             var predValue = this.stack.pop();
                             var pred = predValue.asInt();
+
                             if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
                                 // choose default
                                 frame.pc =
@@ -207,7 +208,8 @@ public class Machine {
                                 frame.doControlTransfer = false;
                                 // drop all the values on the stack that have been pushed inside the
                                 // block
-                                var valuesToBePushedBack = Math.min(frame.returnValue, this.stack.size());
+                                var valuesToBePushedBack =
+                                        Math.min(frame.returnValue, this.stack.size());
                                 Value[] pushMeBack = new Value[valuesToBePushedBack];
                                 for (int i = 0; i < valuesToBePushedBack; i++) {
                                     pushMeBack[i] = this.stack.pop();
@@ -217,13 +219,11 @@ public class Machine {
                                     this.stack.pop();
                                 }
 
-                                // this is for BR_IF and BR_TABLE , verify
+                                // this is to push back the value consumed by BR_IF
                                 if (frame.popMeBack != null) {
                                     this.stack.push(frame.popMeBack);
                                 }
 
-                                //                                for (int i = 0; i <
-                                // frame.returnValue; i++) {
                                 for (int i = valuesToBePushedBack - 1; i >= 0; i--) {
                                     this.stack.push(pushMeBack[i]);
                                 }

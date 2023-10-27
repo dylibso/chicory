@@ -60,14 +60,15 @@
             br.wast,
             br_if.wast,
             br_table.wast,
-            loop.wast,
             if.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
             stack.wast,
             call.wast,
             block.wast,
-            memory_init.wast</orderedWastToProcess>
+            memory_init.wast
+            loop.wast,
+            block.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
             SpecV1MemoryGrowTest.test67,
@@ -94,9 +95,6 @@
             SpecV1MemoryInitTest.test140,
             SpecV1MemoryInitTest.test212,
             SpecV1MemoryInitTest.test214,
-            SpecV1LoopTest.test28,
-            <!--            SpecV1BrTableTest.test110,-->
-            <!--            SpecV1BrTableTest.test145,-->
             <!-- extern_ref failures -->
             SpecV1BrTableTest.test146,
             SpecV1BrTableTest.test147,
