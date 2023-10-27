@@ -37,6 +37,7 @@ public class Machine {
                 }
             }
         }
+
         if (this.callStack.size() > 0) this.callStack.pop();
         if (!popResults) {
             return null;
@@ -52,6 +53,9 @@ public class Machine {
         for (var i = totalResults - 1; i >= 0; i--) {
             results[i] = this.stack.pop();
         }
+//                for (var i = 0; i < totalResults; i++) {
+//                    this.stack.push(results[i]);
+//                }
         return results;
     }
 
@@ -65,15 +69,15 @@ public class Machine {
             while (frame.pc < code.size()) {
                 if (shouldReturn) return;
                 var instruction = code.get(frame.pc++);
-                //                System.out.println(
-                //                        "func="
-                //                                + frame.funcId
-                //                                + "@"
-                //                                + frame.pc
-                //                                + ": "
-                //                                + instruction
-                //                                + "stack="
-                //                                + this.stack);
+                System.out.println(
+                        "func="
+                                + frame.funcId
+                                + "@"
+                                + frame.pc
+                                + ": "
+                                + instruction
+                                + "stack="
+                                + this.stack);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
                 switch (opcode) {
@@ -85,13 +89,29 @@ public class Machine {
                     case BLOCK:
                         {
                             frame.blockDepth++;
+
                             frame.stackBeforeSize = this.stack.size();
+                            var typeId = (int) operands[0];
+
+                            if (typeId == 0x40) { // epsilon
+                                // https://www.w3.org/TR/wasm-core-2/binary/instructions.html#binary-blocktype
+                                frame.returnValue = 0;
+                            } else if (ValueType.byId(typeId) == null) {
+                                var funcType = instance.getTypes()[typeId];
+                                frame.returnValue = funcType.getReturns().length;
+                            } else {
+                                frame.returnValue = 1;
+                            }
                             break;
                         }
                     case IF:
                         {
                             frame.blockDepth++;
+
+                            frame.doControlTransfer = true;
+                            frame.returnValue = 0;
                             frame.stackBeforeSize = this.stack.size();
+
                             var pred = this.stack.pop().asInt();
                             if (pred == 0) {
                                 frame.pc = instruction.getLabelFalse();
@@ -103,22 +123,27 @@ public class Machine {
                     case ELSE:
                     case BR:
                         {
+                            frame.doControlTransfer = true;
                             frame.pc = instruction.getLabelTrue();
                             break;
                         }
                     case BR_IF:
                         {
-                            var pred = this.stack.pop().asInt();
+                            var predValue = this.stack.pop();
+                            var pred = predValue.asInt();
 
                             if (pred == 0) {
                                 frame.pc = instruction.getLabelFalse();
                             } else {
+                                frame.doControlTransfer = true;
                                 frame.pc = instruction.getLabelTrue();
+                                frame.popMeBack = predValue;
                             }
                             break;
                         }
                     case BR_TABLE:
                         {
+                            frame.doControlTransfer = true; // ? verify
                             var pred = this.stack.pop().asInt();
                             if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
                                 // choose default
@@ -167,6 +192,27 @@ public class Machine {
                         }
                     case END:
                         {
+                            if (frame.doControlTransfer) {
+                                // drop all the values on the stack that have been pushed inside the
+                                // block
+                                Value[] pushMeBack = new Value[frame.returnValue];
+                                for (int i = 0; i < frame.returnValue; i++) {
+                                    pushMeBack[i] = this.stack.pop();
+                                }
+                                // just drop everything till the stackBeforeSize
+                                while (this.stack.size() > frame.stackBeforeSize) {
+                                    this.stack.pop();
+                                }
+
+//                                if (frame.popMeBack != null) {
+//                                    this.stack.push(frame.popMeBack);
+//                                }
+
+                                for (int i = 0; i < frame.returnValue; i++) {
+                                    this.stack.push(pushMeBack[i]);
+                                }
+                            }
+
                             // if this is the last end, then we're done with
                             // the function
                             if (frame.blockDepth == 0) {
