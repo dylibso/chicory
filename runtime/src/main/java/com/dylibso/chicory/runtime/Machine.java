@@ -53,9 +53,6 @@ public class Machine {
         for (var i = totalResults - 1; i >= 0; i--) {
             results[i] = this.stack.pop();
         }
-        //                for (var i = 0; i < totalResults; i++) {
-        //                    this.stack.push(results[i]);
-        //                }
         return results;
     }
 
@@ -69,15 +66,15 @@ public class Machine {
             while (frame.pc < code.size()) {
                 if (shouldReturn) return;
                 var instruction = code.get(frame.pc++);
-                //                System.out.println(
-                //                        "func="
-                //                                + frame.funcId
-                //                                + "@"
-                //                                + frame.pc
-                //                                + ": "
-                //                                + instruction
-                //                                + "stack="
-                //                                + this.stack);
+                //                                System.out.println(
+                //                                        "func="
+                //                                                + frame.funcId
+                //                                                + "@"
+                //                                                + frame.pc
+                //                                                + ": "
+                //                                                + instruction
+                //                                                + "stack="
+                //                                                + this.stack);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
                 switch (opcode) {
@@ -91,11 +88,12 @@ public class Machine {
                             frame.blockDepth++;
 
                             frame.isControlFrame = true;
-                            frame.stackBeforeSize = this.stack.size();
+                            frame.stackBeforeSize =
+                                    Math.max(this.stack.size(), frame.stackBeforeSize);
                             var typeId = (int) operands[0];
 
+                            // https://www.w3.org/TR/wasm-core-2/binary/instructions.html#binary-blocktype
                             if (typeId == 0x40) { // epsilon
-                                // https://www.w3.org/TR/wasm-core-2/binary/instructions.html#binary-blocktype
                                 frame.returnValue = Math.max(frame.returnValue, 0);
                             } else if (ValueType.byId(typeId)
                                     != null) { // shortcut to straight value type
@@ -145,8 +143,7 @@ public class Machine {
                     case BR_TABLE:
                         {
                             frame.doControlTransfer = true;
-                            var predValue = this.stack.pop();
-                            var pred = predValue.asInt();
+                            var pred = this.stack.pop().asInt();
 
                             if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
                                 // choose default
