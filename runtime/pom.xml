@@ -66,7 +66,7 @@
             stack.wast,
             call.wast,
             block.wast,
-            memory_init.wast
+            memory_init.wast,
             loop.wast,
             block.wast</orderedWastToProcess>
           <excludedTests>
