@@ -34,7 +34,7 @@ import org.apache.maven.plugin.logging.Log;
 
 public class JavaTestGen {
 
-    private static final String INSTANCE_NAME = "instance";
+    private static final String TEST_MODULE_NAME = "testModule";
 
     private static final JavaParser JAVA_PARSER = new JavaParser();
 
@@ -86,6 +86,10 @@ public class JavaTestGen {
         cu.addImport("org.junit.jupiter.api.Assertions.assertTrue", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertDoesNotThrow", true, false);
 
+        // testing imports
+        cu.addImport("com.dylibso.chicory.testing.ChicoryTest");
+        cu.addImport("com.dylibso.chicory.testing.TestModule");
+
         // runtime imports
         cu.addImport("com.dylibso.chicory.runtime.exceptions.WASMRuntimeException");
         cu.addImport("com.dylibso.chicory.runtime.ExportFunction");
@@ -114,6 +118,8 @@ public class JavaTestGen {
                             "PER_CLASS"));
         }
 
+        testClass.addAnnotation("ChicoryTest");
+
         MethodDeclaration method;
         int testNumber = 0;
         int moduleInstantiationNumber = 0;
@@ -128,8 +134,8 @@ public class JavaTestGen {
             switch (cmd.getType()) {
                 case MODULE:
                     testClass.addFieldWithInitializer(
-                            parseClassOrInterfaceType("Instance"),
-                            INSTANCE_NAME + moduleInstantiationNumber++,
+                            parseClassOrInterfaceType("TestModule"),
+                            TEST_MODULE_NAME + moduleInstantiationNumber++,
                             generateModuleInstantiation(cmd, wasmFilesFolder));
                     break;
                 case ACTION:
@@ -208,9 +214,9 @@ public class JavaTestGen {
                             .setType(parseClassOrInterfaceType("ExportFunction"))
                             .setInitializer(
                                     new NameExpr(
-                                            INSTANCE_NAME
+                                            TEST_MODULE_NAME
                                                     + instanceNumber
-                                                    + ".getExport(\""
+                                                    + ".getInstance().getExport(\""
                                                     + StringEscapeUtils.escapeJava(
                                                             cmd.getAction().getField())
                                                     + "\")"));
@@ -314,11 +320,11 @@ public class JavaTestGen {
             additionalParam = ", ModuleType." + cmd.getModuleType().toUpperCase();
         }
         return new NameExpr(
-                "Module.build(new File(\""
+                "TestModule.of(new File(\""
                         + relativeFile
                         + "\")"
                         + additionalParam
-                        + ").instantiate()");
+                        + ").build().instantiate()");
     }
 
     private List<Expression> generateAssertThrows(Command cmd, File wasmFilesFolder) {
