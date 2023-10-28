@@ -307,17 +307,25 @@ public class Parser {
 
         // Parse individual functions in the function section
         for (int i = 0; i < memoryCount; i++) {
-            var limitType = readVarUInt32(buffer);
-            assert limitType == 0x00 || limitType == 0x01;
-            var initial = (int) readVarUInt32(buffer);
-            Integer max = null;
-            if (limitType == 0x01) {
-                max = (int) readVarUInt32(buffer);
-            }
-            memories[i] = new Memory(new MemoryLimits(initial, max));
+            var limits = parseMemoryLimits(buffer);
+            memories[i] = new Memory(limits);
         }
 
         return new MemorySection(sectionId, sectionSize, memories);
+    }
+
+    private static MemoryLimits parseMemoryLimits(ByteBuffer buffer) {
+
+        var limitType = readVarUInt32(buffer);
+        assert limitType == 0x00 || limitType == 0x01;
+
+        var initial = (int) readVarUInt32(buffer);
+        if (limitType != 0x01) {
+            return new MemoryLimits(initial);
+        }
+
+        int maximum = (int) readVarUInt32(buffer);
+        return new MemoryLimits(initial, maximum);
     }
 
     private static GlobalSection parseGlobalSection(
