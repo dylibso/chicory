@@ -1,6 +1,16 @@
 
 # Quarkus integration example
 
+## Build
+
+To build the container image run:
+
+```
+./build-docker.sh
+```
+
+## Run
+
 Run with docker:
 
 ```

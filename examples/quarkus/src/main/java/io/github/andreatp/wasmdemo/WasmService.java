@@ -3,7 +3,7 @@ package io.github.andreatp.wasmdemo;
 import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.InputStream;
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class WasmService {
@@ -24,10 +24,10 @@ public class WasmService {
         var countVowels = instance.getExport("count");
         var memory = instance.getMemory();
         var len = content.getBytes().length;
-        var ptr = alloc.apply(Value.i32(len)).asInt();
+        var ptr = alloc.apply(Value.i32(len))[0].asInt();
         memory.put(ptr, content);
         var result = countVowels.apply(Value.i32(ptr), Value.i32(len));
 
-        return "result: " + result.asInt();
+        return "result: " + result[0].asInt();
     }
 }

@@ -1,18 +1,22 @@
 package io.github.andreatp.wasmdemo;
 
 import io.github.andreatp.wasmdemo.model.Response;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
+import org.jboss.logging.Logger;
 
 @Path("/wasm")
 public class WasmResource {
+
+    private static final Logger LOG = Logger.getLogger(WasmResource.class);
 
     @Inject WasmService service;
 
@@ -20,14 +24,13 @@ public class WasmResource {
     @Consumes(MediaType.APPLICATION_OCTET_STREAM)
     @Produces(MediaType.APPLICATION_JSON)
     public Response load(InputStream program) throws IOException {
-        try (var bais = new ByteArrayInputStream(program.readAllBytes())) {
-            if (bais.available() <= 0) {
+        try (program) {
+            if (program.available() <= 0) {
                 return new Response("NOT IMPORTED LENGTH IS 0");
             }
-            service.setProgram(bais);
+            service.setProgram(new ByteArrayInputStream(program.readAllBytes()));
+            LOG.info("Program imported.");
             return new Response("imported");
-        } finally {
-            program.close();
         }
     }
 }

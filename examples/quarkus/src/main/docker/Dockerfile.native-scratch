@@ -13,10 +13,8 @@
 #
 # docker run -i --rm -p 8080:8080 quarkus/getting-started
 #
-###
-FROM quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:22.1-java11 AS build
-# FROM quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:22.1-java17 AS build -> is failing
-# FROM quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:java17 AS build -> is failing
+## Stage 1 : build with maven builder image with native capabilities
+FROM quay.io/quarkus/ubi-quarkus-graalvmce-builder-image:jdk-21 AS build
 USER root
 RUN microdnf install make gcc
 COPY --chown=quarkus:quarkus mvnw /code/mvnw

@@ -7,10 +7,6 @@ public class Response {
 
     private String message;
 
-    public Response() {
-        this.message = null;
-    }
-
     public Response(String message) {
         this.message = message;
     }
