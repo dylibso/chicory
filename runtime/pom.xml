@@ -72,7 +72,6 @@
           <excludedTests>
             <!-- Assertion failures -->
             SpecV1MemoryGrowTest.test67,
-            SpecV1FacTest.test4,
             SpecV1MemoryInitTest.test80,
             SpecV1MemoryInitTest.test93,
             SpecV1MemoryInitTest.test101,
