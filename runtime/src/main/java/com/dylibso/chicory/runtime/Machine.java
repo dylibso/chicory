@@ -88,20 +88,24 @@ public class Machine {
                             frame.blockDepth++;
 
                             frame.isControlFrame = true;
-                            frame.stackBeforeSize =
-                                    Math.max(this.stack.size(), frame.stackBeforeSize);
+                            frame.stackSizeBeforeBlock =
+                                    Math.max(this.stack.size(), frame.stackSizeBeforeBlock);
                             var typeId = (int) operands[0];
 
                             // https://www.w3.org/TR/wasm-core-2/binary/instructions.html#binary-blocktype
                             if (typeId == 0x40) { // epsilon
-                                frame.returnValue = Math.max(frame.returnValue, 0);
+                                frame.numberOfValuesToReturn =
+                                        Math.max(frame.numberOfValuesToReturn, 0);
                             } else if (ValueType.byId(typeId)
                                     != null) { // shortcut to straight value type
-                                frame.returnValue = Math.max(frame.returnValue, 1);
+                                frame.numberOfValuesToReturn =
+                                        Math.max(frame.numberOfValuesToReturn, 1);
                             } else { // look it up
                                 var funcType = instance.getTypes()[typeId];
-                                frame.returnValue =
-                                        Math.max(frame.returnValue, funcType.getReturns().length);
+                                frame.numberOfValuesToReturn =
+                                        Math.max(
+                                                frame.numberOfValuesToReturn,
+                                                funcType.getReturns().length);
                             }
 
                             break;
@@ -136,16 +140,17 @@ public class Machine {
                                 frame.pc = instruction.getLabelFalse();
                             } else {
                                 frame.doControlTransfer = true;
+                                frame.branchConditionValue = predValue;
                                 frame.pc = instruction.getLabelTrue();
-                                frame.popMeBack = predValue;
                             }
                             break;
                         }
                     case BR_TABLE:
                         {
-                            frame.doControlTransfer = true;
                             var predValue = this.stack.pop();
                             var pred = predValue.asInt();
+
+                            frame.doControlTransfer = true;
 
                             if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
                                 // choose default
@@ -154,12 +159,7 @@ public class Machine {
                                                 .getLabelTable()[
                                                 instruction.getLabelTable().length - 1];
                             } else {
-                                // the reasoning here might be that it's mimicking BR_IF
-                                // if the value selected is valid and is "true" it needs to be
-                                // popped back
-                                if (pred > 0) {
-                                    frame.popMeBack = predValue;
-                                }
+                                frame.branchConditionValue = predValue;
                                 frame.pc = instruction.getLabelTable()[pred];
                             }
 
@@ -214,25 +214,30 @@ public class Machine {
                                 frame.doControlTransfer = false;
 
                                 var valuesToBePushedBack =
-                                        Math.min(frame.returnValue, this.stack.size());
-                                Value[] pushMeBack = new Value[valuesToBePushedBack];
+                                        Math.min(frame.numberOfValuesToReturn, this.stack.size());
+
+                                // pop the values from the stack
+                                Value[] tmp = new Value[valuesToBePushedBack];
                                 for (int i = 0; i < valuesToBePushedBack; i++) {
-                                    pushMeBack[i] = this.stack.pop();
+                                    tmp[i] = this.stack.pop();
                                 }
 
-                                // just drop everything till the stackBeforeSize
-                                while (this.stack.size() > frame.stackBeforeSize) {
+                                // drop everything till the previous label
+                                while (this.stack.size() > frame.stackSizeBeforeBlock) {
                                     this.stack.pop();
                                 }
 
-                                // this is to push back the value consumed by BR_IF
-                                if (frame.popMeBack != null) {
-                                    this.stack.push(frame.popMeBack);
-                                    frame.popMeBack = null;
+                                // this is mostly empirical
+                                // if a branch have been taken we restore the consumed value from
+                                // the stack
+                                if (frame.branchConditionValue != null
+                                        && frame.branchConditionValue.asInt() > 0) {
+                                    this.stack.push(frame.branchConditionValue);
                                 }
 
+                                // Push the values to the stack.
                                 for (int i = valuesToBePushedBack - 1; i >= 0; i--) {
-                                    this.stack.push(pushMeBack[i]);
+                                    this.stack.push(tmp[i]);
                                 }
                             }
 

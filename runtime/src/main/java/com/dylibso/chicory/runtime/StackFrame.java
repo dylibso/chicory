@@ -24,9 +24,9 @@ public class StackFrame {
     private Instance instance;
     public boolean doControlTransfer = false;
     public boolean isControlFrame = false;
-    public int stackBeforeSize;
-    public int returnValue = 0;
-    public Value popMeBack = null;
+    public int stackSizeBeforeBlock;
+    public int numberOfValuesToReturn = 0;
+    public Value branchConditionValue = null;
 
     public StackFrame(Instance instance, int funcId, int pc, Value[] args, List<Value> initLocals) {
         this.instance = instance;
