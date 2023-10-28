@@ -12,26 +12,35 @@ import java.util.Arrays;
  * Represents the linear memory in the Wasm program. Can be shared
  * reference b/w the host and the guest.
  */
-public class Memory {
-    // 64KiB = 65,536
-    public static int PAGE_SIZE = (int) Math.pow(2, 16);
-    public static int MAX_PAGES = (int) Math.pow(2, 16);
+public final class Memory {
+
+    /**
+     * A WebAssembly page size is 64KiB = 65,536 bits.
+     */
+    public static final int PAGE_SIZE = 2 << 15;
+
+    private final MemoryLimits limits;
+
+    private final DataSegment[] dataSegments;
+
     private ByteBuffer buffer;
-    private MemoryLimits limits;
+
     private int nPages;
-    private DataSegment[] dataSegments;
 
     public Memory(MemoryLimits limits) {
-        this.limits = limits;
-        this.buffer =
-                ByteBuffer.allocate(PAGE_SIZE * limits.getInitial()).order(ByteOrder.LITTLE_ENDIAN);
-        this.nPages = limits.getInitial();
+        this(limits, null);
     }
 
     public Memory(MemoryLimits limits, DataSegment[] dataSegments) {
-        this(limits);
+        this.limits = limits;
+        this.buffer = allocateByteBuffer(PAGE_SIZE * limits.getInitial());
+        this.nPages = limits.getInitial();
         this.dataSegments = dataSegments;
         this.reinstantiate();
+    }
+
+    private static ByteBuffer allocateByteBuffer(int capacity) {
+        return ByteBuffer.allocate(capacity).order(ByteOrder.LITTLE_ENDIAN);
     }
 
     /**
@@ -42,17 +51,24 @@ public class Memory {
     }
 
     public int grow(int size) {
+
         var prevPages = nPages;
-        var numPages = nPages + size;
-        if (numPages > limits.getMaximum()) return -1;
-        var capacity = buffer.capacity() + (PAGE_SIZE * size);
-        var result = ByteBuffer.allocate(capacity).order(ByteOrder.LITTLE_ENDIAN);
-        var position = buffer.position();
-        buffer.rewind();
-        result.put(buffer);
+        var numPages = prevPages + size;
+
+        if (numPages > limits.getMaximum()) {
+            return -1;
+        }
+
+        var currentBuffer = buffer;
+        var result = allocateByteBuffer(currentBuffer.capacity() + (PAGE_SIZE * size));
+        var position = currentBuffer.position();
+        currentBuffer.rewind();
+        result.put(currentBuffer);
         result.position(position);
+
         buffer = result;
         nPages = numPages;
+
         return prevPages;
     }
 
@@ -66,6 +82,11 @@ public class Memory {
      */
     public void reinstantiate() {
         this.zero();
+
+        if (dataSegments == null) {
+            return;
+        }
+
         for (var s : dataSegments) {
             if (s instanceof ActiveDataSegment) {
                 var segment = (ActiveDataSegment) s;
@@ -311,6 +332,7 @@ public class Memory {
     }
 
     public void zero() {
+        // see https://appsintheopen.com/posts/53-resetting-bytebuffers-to-zero-in-java
         Arrays.fill(this.buffer.array(), (byte) 0);
         this.buffer.position(0);
     }
