@@ -66,15 +66,15 @@ public class Machine {
             while (frame.pc < code.size()) {
                 if (shouldReturn) return;
                 var instruction = code.get(frame.pc++);
-                //                                System.out.println(
-                //                                        "func="
-                //                                                + frame.funcId
-                //                                                + "@"
-                //                                                + frame.pc
-                //                                                + ": "
-                //                                                + instruction
-                //                                                + "stack="
-                //                                                + this.stack);
+                //                System.out.println(
+                //                        "func="
+                //                                + frame.funcId
+                //                                + "@"
+                //                                + frame.pc
+                //                                + ": "
+                //                                + instruction
+                //                                + "stack="
+                //                                + this.stack);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
                 switch (opcode) {
@@ -103,6 +103,7 @@ public class Machine {
                                 frame.returnValue =
                                         Math.max(frame.returnValue, funcType.getReturns().length);
                             }
+
                             break;
                         }
                     case IF:
@@ -143,7 +144,8 @@ public class Machine {
                     case BR_TABLE:
                         {
                             frame.doControlTransfer = true;
-                            var pred = this.stack.pop().asInt();
+                            var predValue = this.stack.pop();
+                            var pred = predValue.asInt();
 
                             if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
                                 // choose default
@@ -152,8 +154,15 @@ public class Machine {
                                                 .getLabelTable()[
                                                 instruction.getLabelTable().length - 1];
                             } else {
+                                // the reasoning here might be that it's mimicking BR_IF
+                                // if the value selected is valid and is "true" it needs to be
+                                // popped back
+                                if (pred > 0) {
+                                    frame.popMeBack = predValue;
+                                }
                                 frame.pc = instruction.getLabelTable()[pred];
                             }
+
                             break;
                         }
                     case RETURN:
@@ -203,14 +212,14 @@ public class Machine {
                             if (frame.doControlTransfer && frame.isControlFrame) {
                                 // reset the control transfer
                                 frame.doControlTransfer = false;
-                                // drop all the values on the stack that have been pushed inside the
-                                // block
+
                                 var valuesToBePushedBack =
                                         Math.min(frame.returnValue, this.stack.size());
                                 Value[] pushMeBack = new Value[valuesToBePushedBack];
                                 for (int i = 0; i < valuesToBePushedBack; i++) {
                                     pushMeBack[i] = this.stack.pop();
                                 }
+
                                 // just drop everything till the stackBeforeSize
                                 while (this.stack.size() > frame.stackBeforeSize) {
                                     this.stack.pop();
@@ -219,6 +228,7 @@ public class Machine {
                                 // this is to push back the value consumed by BR_IF
                                 if (frame.popMeBack != null) {
                                     this.stack.push(frame.popMeBack);
+                                    frame.popMeBack = null;
                                 }
 
                                 for (int i = valuesToBePushedBack - 1; i >= 0; i--) {
@@ -1435,6 +1445,8 @@ public class Machine {
                 throw new WASMRuntimeException("integer divide by zero: " + e.getMessage(), e);
             }
             throw new WASMRuntimeException(e.getMessage(), e);
+        } catch (IndexOutOfBoundsException e) {
+            throw new WASMRuntimeException("undefined element: " + e.getMessage(), e);
         } catch (Exception e) {
             e.printStackTrace();
             throw new WASMRuntimeException("An underlying Java exception occurred", e);

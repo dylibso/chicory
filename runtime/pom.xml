@@ -104,7 +104,6 @@
             SpecV1MemoryGrowTest.test65,
             SpecV1MemoryGrowTest.test66,
             <!-- Errors -->
-            SpecV1IfTest.test47,
             SpecV1LocalTeeTest.test31,
             SpecV1LocalTeeTest.test32,
             SpecV1LocalTeeTest.test33,
