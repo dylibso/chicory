@@ -23,11 +23,12 @@ public class MemoryLimits {
 
     public MemoryLimits(int initial, int maximum) {
         if (initial < 0 || initial > maximum) {
-            throw new IllegalArgumentException("initial");
+            throw new IllegalArgumentException(
+                    "initial must be >= 0 and <= maximum, but was " + initial);
         }
 
         if (maximum > MAX_PAGES) {
-            throw new IllegalArgumentException("maximum");
+            throw new IllegalArgumentException("maximum must be <= MAX_PAGES, but was " + maximum);
         }
 
         this.initial = initial;

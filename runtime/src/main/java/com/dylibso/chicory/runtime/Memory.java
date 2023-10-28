@@ -59,14 +59,14 @@ public final class Memory {
             return -1;
         }
 
-        var currentBuffer = buffer;
-        var result = allocateByteBuffer(currentBuffer.capacity() + (PAGE_SIZE * size));
-        var position = currentBuffer.position();
-        currentBuffer.rewind();
-        result.put(currentBuffer);
-        result.position(position);
+        var oldBuffer = buffer;
+        var newBuffer = allocateByteBuffer(oldBuffer.capacity() + (PAGE_SIZE * size));
+        var position = oldBuffer.position();
+        oldBuffer.rewind();
+        newBuffer.put(oldBuffer);
+        newBuffer.position(position);
 
-        buffer = result;
+        buffer = newBuffer;
         nPages = numPages;
 
         return prevPages;
