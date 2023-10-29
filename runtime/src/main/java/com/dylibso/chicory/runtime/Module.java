@@ -140,6 +140,10 @@ public class Module {
 
         if (module.getStartSection() != null) {
             startFuncId = (int) module.getStartSection().getStartIndex();
+            // if we got a start func, let's add it to the exports
+            var desc = new ExportDesc(startFuncId, ExportDescType.FuncIdx);
+            var export = new Export("_start", desc);
+            exports.put("_start", export);
         }
 
         if (module.getFunctionSection() != null) {
@@ -147,13 +151,6 @@ public class Module {
             for (var ft : module.getFunctionSection().getTypeIndices()) {
                 functionTypes[funcId++] = ft;
             }
-        }
-
-        if (startFuncId != null) {
-            // if we got a start func, let's add it to the exports
-            var desc = new ExportDesc(startFuncId, ExportDescType.FuncIdx);
-            var export = new Export("_start", desc);
-            exports.put("_start", export);
         }
 
         Table table = null;
@@ -187,18 +184,21 @@ public class Module {
     }
 
     private HostFunction[] mapHostFunctions(Import[] imports, HostFunction[] hostFunctions) {
-        var hostImports = new HostFunction[hostFunctions.length];
-        for (var f : hostFunctions) {
-            Integer foundId = null;
-            for (var i : imports) {
+        var hostImports = new HostFunction[imports.length];
+        for (var impIdx = 0; impIdx < imports.length; impIdx++) {
+            var i = imports[impIdx];
+            var name = i.getModuleName() + "." + i.getFieldName();
+            var found = false;
+            for (var f : hostFunctions) {
                 if (i.getModuleName().equals(f.getModuleName())
                         && i.getFieldName().equals(f.getFieldName())) {
-                    foundId = (int) i.getDesc().getIndex();
+                    hostImports[impIdx] = f;
+                    found = true;
                     break;
                 }
             }
-            if (foundId == null) throw new RuntimeException("Couldn't map import to function");
-            hostImports[foundId] = f;
+            if (!found)
+                throw new ChicoryException("Could not find host function for import " + name);
         }
         return hostImports;
     }

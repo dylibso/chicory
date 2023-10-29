@@ -13,6 +13,10 @@ public class Wasi {
         functions[0] =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
+                            System.out.println("environ_get");
+                            for (var arg : args) {
+                                System.out.println(arg);
+                            }
                             return null;
                         },
                         "wasi_snapshot_preview1",
@@ -23,6 +27,10 @@ public class Wasi {
         functions[1] =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
+                            System.out.println("environ_sizes_get");
+                            for (var arg : args) {
+                                System.out.println(arg);
+                            }
                             return null;
                         },
                         "wasi_snapshot_preview1",
@@ -33,6 +41,10 @@ public class Wasi {
         functions[2] =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
+                            System.out.println("proc_exit");
+                            for (var arg : args) {
+                                System.out.println(arg);
+                            }
                             return null;
                         },
                         "wasi_snapshot_preview1",
@@ -43,6 +55,10 @@ public class Wasi {
         functions[3] =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
+                            System.out.println("fd_write");
+                            for (var arg : args) {
+                                System.out.println(arg);
+                            }
                             return null;
                         },
                         "wasi_snapshot_preview1",

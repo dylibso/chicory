@@ -1,6 +1,14 @@
 
 wasi_hello.rs.wasm:	file format wasm 0x1
 
+Section Details:
+
+Import[4]:
+ - func[0] sig=7 <_ZN4wasi13lib_generated22wasi_snapshot_preview18fd_write17h4af746c5c9249244E> <- wasi_snapshot_preview1.fd_write
+ - func[1] sig=4 <__imported_wasi_snapshot_preview1_environ_get> <- wasi_snapshot_preview1.environ_get
+ - func[2] sig=4 <__imported_wasi_snapshot_preview1_environ_sizes_get> <- wasi_snapshot_preview1.environ_sizes_get
+ - func[3] sig=1 <__imported_wasi_snapshot_preview1_proc_exit> <- wasi_snapshot_preview1.proc_exit
+
 Code Disassembly:
 
 0002c2 func[4] <__wasm_call_ctors>:

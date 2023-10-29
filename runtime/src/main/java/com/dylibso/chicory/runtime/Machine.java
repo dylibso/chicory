@@ -22,6 +22,7 @@ public class Machine {
     public Value[] call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
         var func = instance.getFunction(funcId);
         if (func != null) {
+            System.out.println("Calling func " + funcId);
             this.callStack.push(new StackFrame(instance, funcId, 0, args, func.getLocals()));
             eval(func.getInstructions());
         } else {

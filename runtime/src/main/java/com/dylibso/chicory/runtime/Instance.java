@@ -40,7 +40,6 @@ public class Instance {
         var export = module.getExport(name);
         var funcId = (int) export.getDesc().getIndex();
         return (args) -> {
-            // System.out.println("Args: " + Arrays.toString(args));
             try {
                 return machine.call(funcId, args, true);
             } catch (Exception e) {
