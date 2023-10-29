@@ -20,8 +20,6 @@ public enum OpCode {
     RETURN(0x0F), // return
     CALL(0x10), // call <varuint>
     CALL_INDIRECT(0x11), // call_indirect <varuint> <varuint>
-    CALL_REF(0x14), // call_ref <varuint>
-    REF_FUNC(0xD2), // ref.func <varuint>
     DROP(0x1A), // drop
     SELECT(0x1B), // select
     LOCAL_GET(0x20), // local.get <varuint>
@@ -185,7 +183,6 @@ public enum OpCode {
     TABLE_SIZE_FC(0xFC10), // table.size
     TABLE_FILL_FC(0xFC11), // table.fill
     // multi byte instructions: end
-
     I64_EXTEND_I32_S(0xAC), // i64.extend_i32_s
     I64_EXTEND_I32_U(0xAD), // i64.extend_i32_u
     I64_TRUNC_F32_S(0xAE), // i64.trunc_f32_s
@@ -211,6 +208,9 @@ public enum OpCode {
     I64_EXTEND_8_S(0xC2), // i64.extend_8_s
     I64_EXTEND_16_S(0xC3), // i64.extend_16_s
     I64_EXTEND_32_S(0xC4), // i64.extend_32_s
+    REF_NULL(0xD0), // ref.null
+    REF_IS_NULL(0xD1), // ref.is_null
+    REF_FUNC(0xD2), // ref.func
     MEMORY_INIT(0x107), // memory.init
     DATA_DROP(0x108), // data.drop
     MEMORY_COPY(0x109), // memory.copy
@@ -399,7 +399,6 @@ public enum OpCode {
         signature.put(F64_MAX, new WasmEncoding[] {});
         signature.put(F64_COPYSIGN, new WasmEncoding[] {});
         signature.put(I32_WRAP_I64, new WasmEncoding[] {});
-        //
         signature.put(I32_TRUNC_F32_S, new WasmEncoding[] {});
         signature.put(I32_TRUNC_F32_U, new WasmEncoding[] {});
         signature.put(I32_TRUNC_F64_S, new WasmEncoding[] {});
@@ -429,10 +428,9 @@ public enum OpCode {
         signature.put(I64_EXTEND_8_S, new WasmEncoding[] {});
         signature.put(I64_EXTEND_16_S, new WasmEncoding[] {});
         signature.put(I64_EXTEND_32_S, new WasmEncoding[] {});
-        signature.put(MEMORY_INIT, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
-        signature.put(DATA_DROP, new WasmEncoding[] {WasmEncoding.VARUINT});
-        signature.put(MEMORY_COPY, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
-        signature.put(MEMORY_FILL, new WasmEncoding[] {WasmEncoding.VARUINT});
+        signature.put(REF_NULL, new WasmEncoding[] {});
+        signature.put(REF_IS_NULL, new WasmEncoding[] {});
+        signature.put(REF_FUNC, new WasmEncoding[] {});
 
         // multibyte instructions: begin -> todo check for correct encoding
         signature.put(I32_TRUNC_SAT_F32_S, new WasmEncoding[] {WasmEncoding.VARUINT});
@@ -463,7 +461,10 @@ public enum OpCode {
         signature.put(TABLE_SIZE_FC, new WasmEncoding[] {WasmEncoding.VARUINT});
         signature.put(TABLE_FILL_FC, new WasmEncoding[] {WasmEncoding.VARUINT});
         // multibyte instructions: end
-        signature.put(CALL_REF, new WasmEncoding[] {WasmEncoding.VARUINT});
-        signature.put(REF_FUNC, new WasmEncoding[] {WasmEncoding.VARUINT});
+
+        signature.put(MEMORY_INIT, new WasmEncoding[] {});
+        signature.put(DATA_DROP, new WasmEncoding[] {});
+        signature.put(MEMORY_COPY, new WasmEncoding[] {});
+        signature.put(MEMORY_FILL, new WasmEncoding[] {});
     }
 }

@@ -1,12 +1,20 @@
 package com.dylibso.chicory.wasm.types;
 
 public class ImportDesc {
-    private final long index;
-    private final ImportDescType type;
+    private int index;
+    private ImportDescType type;
+    private MutabilityType mutabilityType;
+    private ValueType valType;
 
-    public ImportDesc(long index, ImportDescType type) {
-        this.index = index;
+    public ImportDesc(ImportDescType type, int index) {
         this.type = type;
+        this.index = index;
+    }
+
+    public ImportDesc(ImportDescType type, MutabilityType mutabilityType, ValueType valType) {
+        this.type = type;
+        this.mutabilityType = mutabilityType;
+        this.valType = valType;
     }
 
     public long getIndex() {
@@ -20,25 +28,15 @@ public class ImportDesc {
     public String toString() {
         switch (type) {
             case FuncIdx:
-                return "func[" + index + "]";
+                return "func[]";
             case TableIdx:
-                return "table[" + index + "]";
+                return "table[]";
             case MemIdx:
-                return "memory[" + index + "]";
+                return "memory[]";
             case GlobalIdx:
-                return "global[" + index + "]";
+                return "global[] " + valType + " mutability=" + mutabilityType;
             default:
-                return "unknown[" + index + "]";
+                return "unknown[]";
         }
-        // if (type instanceof FuncIdx) {
-        //     return "func["+index+"]";
-        // } else if (type instanceof TableIdx) {
-        //     return "table["+index+"]";
-        // } else if (type instanceof MemIdx) {
-        //     return "memory["+index+"]";
-        // } else if (type instanceof GlobalIdx) {
-        //     return "global["+index+"]";
-        // }
-
     }
 }

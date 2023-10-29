@@ -142,6 +142,90 @@ public final class Parser {
                 LOGGER.log(
                         System.Logger.Level.WARNING,
                         "Skipping Section with ID due to configuration: " + sectionId);
+                // Process different section types based on the sectionId
+                switch (sectionId) {
+                    case SectionId.CUSTOM:
+                        {
+                            var customSection = parseCustomSection(buffer, sectionId, sectionSize);
+                            listener.onSection(customSection);
+                            break;
+                        }
+                    case SectionId.TYPE:
+                        {
+                            var typeSection = parseTypeSection(buffer, sectionId, sectionSize);
+                            listener.onSection(typeSection);
+                            break;
+                        }
+                    case SectionId.IMPORT:
+                        {
+                            var importSection = parseImportSection(buffer, sectionId, sectionSize);
+                            listener.onSection(importSection);
+                            break;
+                        }
+                    case SectionId.FUNCTION:
+                        {
+                            var funcSection = parseFunctionSection(buffer, sectionId, sectionSize);
+                            listener.onSection(funcSection);
+                            break;
+                        }
+                    case SectionId.TABLE:
+                        {
+                            var tableSection = parseTableSection(buffer, sectionId, sectionSize);
+                            listener.onSection(tableSection);
+                            break;
+                        }
+                    case SectionId.MEMORY:
+                        {
+                            var memorySection = parseMemorySection(buffer, sectionId, sectionSize);
+                            listener.onSection(memorySection);
+                            break;
+                        }
+                    case SectionId.GLOBAL:
+                        {
+                            var globalSection = parseGlobalSection(buffer, sectionId, sectionSize);
+                            listener.onSection(globalSection);
+                            break;
+                        }
+                    case SectionId.EXPORT:
+                        {
+                            var exportSection = parseExportSection(buffer, sectionId, sectionSize);
+                            listener.onSection(exportSection);
+                            break;
+                        }
+                    case SectionId.START:
+                        {
+                            var startSection = parseStartSection(buffer, sectionId, sectionSize);
+                            listener.onSection(startSection);
+                            break;
+                        }
+                    case SectionId.ELEMENT:
+                        {
+                            var elementSection =
+                                    parseElementSection(buffer, sectionId, sectionSize);
+                            listener.onSection(elementSection);
+                            break;
+                        }
+                    case SectionId.CODE:
+                        {
+                            var codeSection = parseCodeSection(buffer, sectionId, sectionSize);
+                            listener.onSection(codeSection);
+                            break;
+                        }
+                    case SectionId.DATA:
+                        {
+                            var dataSection = parseDataSection(buffer, sectionId, sectionSize);
+                            listener.onSection(dataSection);
+                            break;
+                        }
+                    default:
+                        {
+                            System.out.println("Skipping Unknown Section with ID: " + sectionId);
+                            buffer.position((int) (buffer.position() + sectionSize));
+                            break;
+                        }
+                }
+            } else {
+                System.out.println("Skipping Section with ID due to configuration: " + sectionId);
                 buffer.position((int) (buffer.position() + sectionSize));
                 continue;
             }
@@ -247,6 +331,9 @@ public final class Parser {
         var customSection = new CustomSection(sectionId, sectionSize);
         var name = readName(buffer);
         customSection.setName(name);
+        if (sectionSize <= 0) {
+            return customSection;
+        }
         var byteLen = name.getBytes().length;
         var bytes = new byte[(int) (sectionSize - byteLen - Encoding.computeLeb128Size(byteLen))];
         buffer.get(bytes);
@@ -305,9 +392,22 @@ public final class Parser {
             String moduleName = readName(buffer);
             String fieldName = readName(buffer);
             var descType = ImportDescType.byId(readVarUInt32(buffer));
-            var descIdx = readVarUInt32(buffer);
-            var desc = new ImportDesc(descIdx, descType);
-            imports[i] = new Import(moduleName, fieldName, desc);
+            switch (descType) {
+                case FuncIdx:
+                    var funcDesc = new ImportDesc(descType, (int) readVarUInt32(buffer));
+                    imports[i] = new Import(moduleName, fieldName, funcDesc);
+                    break;
+                case TableIdx:
+                    throw new ChicoryException("Don't support table type globals yet");
+                case MemIdx:
+                    throw new ChicoryException("Don't support mem type globals yet");
+                case GlobalIdx:
+                    var globalValType = ValueType.byId(readVarUInt32(buffer));
+                    var globalMut = MutabilityType.byId(readVarUInt32(buffer));
+                    var globalDesc = new ImportDesc(descType, globalMut, globalValType);
+                    imports[i] = new Import(moduleName, fieldName, globalDesc);
+                    break;
+            }
         }
 
         return new ImportSection(sectionId, sectionSize, imports);
