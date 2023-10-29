@@ -60,7 +60,6 @@ public class Machine {
         try {
             var frame = callStack.peek();
             boolean shouldReturn = false;
-            int stackSizeBeforeBranch = 0;
 
             loop:
             while (frame.pc < code.size()) {
