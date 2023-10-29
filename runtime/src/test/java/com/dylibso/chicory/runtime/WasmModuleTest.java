@@ -35,7 +35,7 @@ class Printer {
     }
 }
 
-public class ModuleTest {
+public class WasmModuleTest {
     /**
      * Rigorous Test :-)
      */
