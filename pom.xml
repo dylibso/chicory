@@ -25,6 +25,7 @@
     <maven-surefire-plugin.version>3.2.1</maven-surefire-plugin.version>
     <junit.version>5.10.0</junit.version>
     <spotless.version>2.40.0</spotless.version>
+    <slf4j.version>2.0.9</slf4j.version>
   </properties>
 
   <dependencyManagement>
@@ -41,6 +42,20 @@
         <version>${junit.version}</version>
         <scope>test</scope>
       </dependency>
+
+<!--      <dependency>-->
+<!--        <groupId>org.slf4j</groupId>-->
+<!--        <artifactId>slf4j-jdk-platform-logging</artifactId>-->
+<!--        <version>${slf4j.version}</version>-->
+<!--        <scope>test</scope>-->
+<!--      </dependency>-->
+
+<!--      <dependency>-->
+<!--        <groupId>org.slf4j</groupId>-->
+<!--        <artifactId>slf4j-simple</artifactId>-->
+<!--        <version>${slf4j.version}</version>-->
+<!--        <scope>test</scope>-->
+<!--      </dependency>-->
     </dependencies>
   </dependencyManagement>
 
@@ -63,6 +78,7 @@
         <configuration>
           <systemPropertyVariables>
             <jna.library.path>../target/release</jna.library.path>
+            <java.util.logging.config.file>src/test/resources/logging.properties</java.util.logging.config.file>
           </systemPropertyVariables>
         </configuration>
       </plugin>

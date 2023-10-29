@@ -9,6 +9,7 @@ import java.util.*;
  * This is responsible for holding and interpreting the Wasm code.
  */
 public class Machine {
+    private static final System.Logger LOGGER = System.getLogger(Machine.class.getName());
     private MStack stack;
     private Stack<StackFrame> callStack;
     private Instance instance;
@@ -65,15 +66,16 @@ public class Machine {
             while (frame.pc < code.size()) {
                 if (shouldReturn) return;
                 var instruction = code.get(frame.pc++);
-                //                System.out.println(
-                //                        "func="
-                //                                + frame.funcId
-                //                                + "@"
-                //                                + frame.pc
-                //                                + ": "
-                //                                + instruction
-                //                                + "stack="
-                //                                + this.stack);
+                LOGGER.log(
+                        System.Logger.Level.DEBUG,
+                        "func="
+                                + frame.funcId
+                                + "@"
+                                + frame.pc
+                                + ": "
+                                + instruction
+                                + "stack="
+                                + this.stack);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
                 switch (opcode) {
@@ -1458,9 +1460,9 @@ public class Machine {
     }
 
     public void printStackTrace() {
-        System.out.println("Trapped. Stacktrace:");
+        LOGGER.log(System.Logger.Level.ERROR, "Trapped. Stacktrace:");
         for (var f : callStack) {
-            System.out.println(f);
+            LOGGER.log(System.Logger.Level.ERROR, f);
         }
     }
 

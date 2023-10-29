@@ -58,6 +58,8 @@ import java.util.function.Supplier;
  */
 public final class Parser {
 
+    private static final System.Logger LOGGER = System.getLogger(Parser.class.getName());
+
     private static final int MAGIC_BYTES = 1836278016; // Magic prefix \0asm
 
     private final Supplier<InputStream> input;
@@ -137,7 +139,9 @@ public final class Parser {
             var sectionSize = readVarUInt32(buffer);
 
             if (!shouldParseSection(sectionId)) {
-                System.out.println("Skipping Section with ID due to configuration: " + sectionId);
+                LOGGER.log(
+                        System.Logger.Level.WARNING,
+                        "Skipping Section with ID due to configuration: " + sectionId);
                 buffer.position((int) (buffer.position() + sectionSize));
                 continue;
             }
