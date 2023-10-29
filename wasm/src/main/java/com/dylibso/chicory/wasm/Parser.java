@@ -39,13 +39,15 @@ import com.dylibso.chicory.wasm.types.TableSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Stack;
@@ -62,25 +64,30 @@ public final class Parser {
 
     private final BitSet includeSections;
 
-    public Parser(String filePath) {
-        this(() -> inputStreamFromFile(filePath), new BitSet());
-    }
-
     public Parser(InputStream inputStream) {
         this(() -> inputStream, new BitSet());
+    }
+
+    public Parser(ByteBuffer buffer) {
+        this(() -> new ByteArrayInputStream(buffer.array()), new BitSet());
+    }
+
+    public Parser(File file) {
+        this(
+                () -> {
+                    try {
+                        return new FileInputStream(file);
+                    } catch (FileNotFoundException e) {
+                        throw new IllegalArgumentException(
+                                "File not found at path: " + file.getPath(), e);
+                    }
+                },
+                new BitSet());
     }
 
     public Parser(Supplier<InputStream> input, BitSet includeSections) {
         this.input = requireNonNull(input, "input");
         this.includeSections = requireNonNull(includeSections, "includeSections");
-    }
-
-    private static InputStream inputStreamFromFile(String location) {
-        try {
-            return Files.newInputStream(Path.of(location));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private ByteBuffer readByteBuffer() {
