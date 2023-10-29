@@ -3,6 +3,7 @@ package com.dylibso.chicory.wasm;
 import java.nio.ByteBuffer;
 
 public final class Encoding {
+
     /**
      * Reads an unsigned integer from {@code byteBuffer}.
      */
@@ -77,7 +78,11 @@ public final class Encoding {
         return result;
     }
 
-    // Computes the number of bytes required to encode a given value as LEB128
+    /**
+     * Computes the number of bytes required to encode a given value as LEB128
+     * @param value
+     * @return
+     */
     public static int computeLeb128Size(int value) {
         int size = 0;
         do {

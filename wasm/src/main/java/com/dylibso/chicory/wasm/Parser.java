@@ -1,84 +1,113 @@
 package com.dylibso.chicory.wasm;
 
+import static java.util.Objects.requireNonNull;
+
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
-import com.dylibso.chicory.wasm.types.*;
-import java.io.FileInputStream;
+import com.dylibso.chicory.wasm.types.ActiveDataSegment;
+import com.dylibso.chicory.wasm.types.CodeSection;
+import com.dylibso.chicory.wasm.types.CustomSection;
+import com.dylibso.chicory.wasm.types.DataSection;
+import com.dylibso.chicory.wasm.types.DataSegment;
+import com.dylibso.chicory.wasm.types.Element;
+import com.dylibso.chicory.wasm.types.ElementSection;
+import com.dylibso.chicory.wasm.types.ElementType;
+import com.dylibso.chicory.wasm.types.Export;
+import com.dylibso.chicory.wasm.types.ExportDesc;
+import com.dylibso.chicory.wasm.types.ExportDescType;
+import com.dylibso.chicory.wasm.types.ExportSection;
+import com.dylibso.chicory.wasm.types.FunctionBody;
+import com.dylibso.chicory.wasm.types.FunctionSection;
+import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.Global;
+import com.dylibso.chicory.wasm.types.GlobalSection;
+import com.dylibso.chicory.wasm.types.Import;
+import com.dylibso.chicory.wasm.types.ImportDesc;
+import com.dylibso.chicory.wasm.types.ImportDescType;
+import com.dylibso.chicory.wasm.types.ImportSection;
+import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.Memory;
+import com.dylibso.chicory.wasm.types.MemoryLimits;
+import com.dylibso.chicory.wasm.types.MemorySection;
+import com.dylibso.chicory.wasm.types.MutabilityType;
+import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.PassiveDataSegment;
+import com.dylibso.chicory.wasm.types.SectionId;
+import com.dylibso.chicory.wasm.types.StartSection;
+import com.dylibso.chicory.wasm.types.Table;
+import com.dylibso.chicory.wasm.types.TableSection;
+import com.dylibso.chicory.wasm.types.TypeSection;
+import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.BitSet;
 import java.util.Stack;
+import java.util.function.Supplier;
 
-public class Parser {
-    private String filePath;
-    private InputStream inputStream;
-    private ParserListener listener;
-    private List<Integer> includeSections;
+/**
+ * Parser for Web Assembly binaries.
+ */
+public final class Parser {
 
-    private static int MAGIC_BYTES = 1836278016; // Magic prefix \0asm
+    private static final int MAGIC_BYTES = 1836278016; // Magic prefix \0asm
+
+    private final Supplier<InputStream> input;
+
+    private final BitSet includeSections;
 
     public Parser(String filePath) {
-        this.filePath = filePath;
-        this.listener = null;
-        this.includeSections = null;
+        this(() -> inputStreamFromFile(filePath), new BitSet());
     }
 
     public Parser(InputStream inputStream) {
-        this.inputStream = inputStream;
-        this.listener = null;
-        this.includeSections = null;
+        this(() -> inputStream, new BitSet());
     }
 
-    public void setListener(ParserListener listener) {
-        this.listener = listener;
+    public Parser(Supplier<InputStream> input, BitSet includeSections) {
+        this.input = requireNonNull(input, "input");
+        this.includeSections = requireNonNull(includeSections, "includeSections");
     }
 
-    public void includeSection(int sectionId) {
-        if (this.includeSections == null) this.includeSections = new ArrayList<>();
-        this.includeSections.add(sectionId);
+    private static InputStream inputStreamFromFile(String location) {
+        try {
+            return Files.newInputStream(Path.of(location));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private ByteBuffer readByteBuffer() {
         try {
-            // Read the Wasm file into a ByteBuffer
-            var fileInputStream = inputStream;
-            if (this.inputStream == null) {
-                fileInputStream = new FileInputStream(filePath);
-            }
-            byte[] buf = new byte[fileInputStream.available()];
-            fileInputStream.read(buf);
-            fileInputStream.close();
-
-            var buffer = ByteBuffer.wrap(buf);
+            var buffer = ByteBuffer.wrap(readBytesFromInput());
             buffer.order(ByteOrder.LITTLE_ENDIAN);
             return buffer;
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new IllegalArgumentException("Failed to read file " + filePath);
+            throw new IllegalArgumentException("Failed to read wasm bytes.", e);
+        }
+    }
+
+    private byte[] readBytesFromInput() throws IOException {
+        try (var in = input.get()) {
+            return in.readAllBytes();
         }
     }
 
     public Module parseModule() {
-        if (this.listener != null) {
-            throw new IllegalArgumentException(
-                    "This method overrides your custom listener. You probably want to use"
-                            + " Module#parse() instead");
-        }
         var builder = new ModuleBuilder();
-        setListener(builder);
-        parse();
+        parse(builder);
         return builder.getModule();
     }
 
-    public void parse() {
-        if (this.listener == null) {
-            throw new IllegalArgumentException(
-                    "Missing ParserListener. Use Module#setListener to set a listener;");
-        }
+    public void parse(ParserListener listener) {
+
+        requireNonNull(listener, "listener");
 
         var buffer = readByteBuffer();
 
@@ -100,104 +129,110 @@ public class Parser {
             var sectionId = (int) readVarUInt32(buffer);
             var sectionSize = readVarUInt32(buffer);
 
-            if (shouldParseSection(sectionId)) {
-                // Process different section types based on the sectionId
-                switch (sectionId) {
-                    case SectionId.CUSTOM:
-                        {
-                            var customSection = parseCustomSection(buffer, sectionId, sectionSize);
-                            listener.onSection(customSection);
-                            break;
-                        }
-                    case SectionId.TYPE:
-                        {
-                            var typeSection = parseTypeSection(buffer, sectionId, sectionSize);
-                            listener.onSection(typeSection);
-                            break;
-                        }
-                    case SectionId.IMPORT:
-                        {
-                            var importSection = parseImportSection(buffer, sectionId, sectionSize);
-                            listener.onSection(importSection);
-                            break;
-                        }
-                    case SectionId.FUNCTION:
-                        {
-                            var funcSection = parseFunctionSection(buffer, sectionId, sectionSize);
-                            listener.onSection(funcSection);
-                            break;
-                        }
-                    case SectionId.TABLE:
-                        {
-                            var tableSection = parseTableSection(buffer, sectionId, sectionSize);
-                            listener.onSection(tableSection);
-                            break;
-                        }
-                    case SectionId.MEMORY:
-                        {
-                            var memorySection = parseMemorySection(buffer, sectionId, sectionSize);
-                            listener.onSection(memorySection);
-                            break;
-                        }
-                    case SectionId.GLOBAL:
-                        {
-                            var globalSection = parseGlobalSection(buffer, sectionId, sectionSize);
-                            listener.onSection(globalSection);
-                            break;
-                        }
-                    case SectionId.EXPORT:
-                        {
-                            var exportSection = parseExportSection(buffer, sectionId, sectionSize);
-                            listener.onSection(exportSection);
-                            break;
-                        }
-                    case SectionId.START:
-                        {
-                            var startSection = parseStartSection(buffer, sectionId, sectionSize);
-                            listener.onSection(startSection);
-                            break;
-                        }
-                    case SectionId.ELEMENT:
-                        {
-                            var elementSection =
-                                    parseElementSection(buffer, sectionId, sectionSize);
-                            listener.onSection(elementSection);
-                            break;
-                        }
-                    case SectionId.CODE:
-                        {
-                            var codeSection = parseCodeSection(buffer, sectionId, sectionSize);
-                            listener.onSection(codeSection);
-                            break;
-                        }
-                    case SectionId.DATA:
-                        {
-                            var dataSection = parseDataSection(buffer, sectionId, sectionSize);
-                            listener.onSection(dataSection);
-                            break;
-                        }
-                    default:
-                        {
-                            System.out.println("Skipping Unknown Section with ID: " + sectionId);
-                            buffer.position((int) (buffer.position() + sectionSize));
-                            break;
-                        }
-                }
-            } else {
+            if (!shouldParseSection(sectionId)) {
                 System.out.println("Skipping Section with ID due to configuration: " + sectionId);
                 buffer.position((int) (buffer.position() + sectionSize));
+                continue;
+            }
+
+            // Process different section types based on the sectionId
+            switch (sectionId) {
+                case SectionId.CUSTOM:
+                    {
+                        var customSection = parseCustomSection(buffer, sectionId, sectionSize);
+                        listener.onSection(customSection);
+                        break;
+                    }
+                case SectionId.TYPE:
+                    {
+                        var typeSection = parseTypeSection(buffer, sectionId, sectionSize);
+                        listener.onSection(typeSection);
+                        break;
+                    }
+                case SectionId.IMPORT:
+                    {
+                        var importSection = parseImportSection(buffer, sectionId, sectionSize);
+                        listener.onSection(importSection);
+                        break;
+                    }
+                case SectionId.FUNCTION:
+                    {
+                        var funcSection = parseFunctionSection(buffer, sectionId, sectionSize);
+                        listener.onSection(funcSection);
+                        break;
+                    }
+                case SectionId.TABLE:
+                    {
+                        var tableSection = parseTableSection(buffer, sectionId, sectionSize);
+                        listener.onSection(tableSection);
+                        break;
+                    }
+                case SectionId.MEMORY:
+                    {
+                        var memorySection = parseMemorySection(buffer, sectionId, sectionSize);
+                        listener.onSection(memorySection);
+                        break;
+                    }
+                case SectionId.GLOBAL:
+                    {
+                        var globalSection = parseGlobalSection(buffer, sectionId, sectionSize);
+                        listener.onSection(globalSection);
+                        break;
+                    }
+                case SectionId.EXPORT:
+                    {
+                        var exportSection = parseExportSection(buffer, sectionId, sectionSize);
+                        listener.onSection(exportSection);
+                        break;
+                    }
+                case SectionId.START:
+                    {
+                        var startSection = parseStartSection(buffer, sectionId, sectionSize);
+                        listener.onSection(startSection);
+                        break;
+                    }
+                case SectionId.ELEMENT:
+                    {
+                        var elementSection = parseElementSection(buffer, sectionId, sectionSize);
+                        listener.onSection(elementSection);
+                        break;
+                    }
+                case SectionId.CODE:
+                    {
+                        var codeSection = parseCodeSection(buffer, sectionId, sectionSize);
+                        listener.onSection(codeSection);
+                        break;
+                    }
+                case SectionId.DATA:
+                    {
+                        var dataSection = parseDataSection(buffer, sectionId, sectionSize);
+                        listener.onSection(dataSection);
+                        break;
+                    }
+                default:
+                    {
+                        System.out.println("Skipping Unknown Section with ID: " + sectionId);
+                        buffer.position((int) (buffer.position() + sectionSize));
+                        break;
+                    }
             }
         }
     }
 
+    public void includeSection(int sectionId) {
+        includeSections.set(sectionId);
+    }
+
     private boolean shouldParseSection(int sectionId) {
-        if (this.includeSections == null) return true;
-        if (this.includeSections.contains(sectionId)) return true;
-        return false;
+        if (this.includeSections.isEmpty()) {
+            return true;
+        }
+        return this.includeSections.get(sectionId);
     }
 
     private static CustomSection parseCustomSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var customSection = new CustomSection(sectionId, sectionSize);
         var name = readName(buffer);
         customSection.setName(name);
@@ -210,6 +245,7 @@ public class Parser {
 
     private static TypeSection parseTypeSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var typeCount = readVarUInt32(buffer);
         var types = new FunctionType[(int) typeCount];
 
@@ -249,6 +285,7 @@ public class Parser {
 
     private static ImportSection parseImportSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var importCount = readVarUInt32(buffer);
         var imports = new Import[(int) importCount];
 
@@ -267,6 +304,7 @@ public class Parser {
 
     private static FunctionSection parseFunctionSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var functionCount = readVarUInt32(buffer);
         var typeIndices = new int[(int) functionCount];
 
@@ -281,6 +319,7 @@ public class Parser {
 
     private static TableSection parseTableSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var tableCount = readVarUInt32(buffer);
         var tables = new Table[(int) tableCount];
 
@@ -302,6 +341,7 @@ public class Parser {
 
     private static MemorySection parseMemorySection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var memoryCount = readVarUInt32(buffer);
         var memories = new Memory[(int) memoryCount];
 
@@ -330,6 +370,7 @@ public class Parser {
 
     private static GlobalSection parseGlobalSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var globalCount = readVarUInt32(buffer);
         var globals = new Global[(int) globalCount];
 
@@ -346,6 +387,7 @@ public class Parser {
 
     private static ExportSection parseExportSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var exportCount = readVarUInt32(buffer);
         var exports = new Export[(int) exportCount];
 
@@ -363,6 +405,7 @@ public class Parser {
 
     private static StartSection parseStartSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var startSection = new StartSection(sectionId, sectionSize);
         startSection.setStartIndex(readVarUInt32(buffer));
         return startSection;
@@ -370,6 +413,7 @@ public class Parser {
 
     private static ElementSection parseElementSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var elementCount = readVarUInt32(buffer);
         var elements = new Element[(int) elementCount];
 
@@ -389,6 +433,7 @@ public class Parser {
 
     private static CodeSection parseCodeSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var funcBodyCount = readVarUInt32(buffer);
         var functionBodies = new FunctionBody[(int) funcBodyCount];
 
@@ -533,6 +578,7 @@ public class Parser {
 
     private static DataSection parseDataSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var dataSegmentCount = readVarUInt32(buffer);
         var dataSegments = new DataSegment[(int) dataSegmentCount];
 
@@ -560,6 +606,7 @@ public class Parser {
     }
 
     private static Instruction parseInstruction(ByteBuffer buffer) {
+
         var address = buffer.position();
         var b = (int) buffer.get() & 0xff;
         if (b == 0xfc) { // is multi-byte
@@ -609,6 +656,7 @@ public class Parser {
     }
 
     private static Instruction[] parseExpression(ByteBuffer buffer) {
+
         var expr = new ArrayList<Instruction>();
         while (true) {
             var i = parseInstruction(buffer);
@@ -621,8 +669,9 @@ public class Parser {
     }
 
     /**
-     * Parse a varuint32 from the buffer. We can't fit an unsigned 32bit int
+     * Read an unsigned I32 from the buffer. We can't fit an unsigned 32bit int
      * into a java int, so we must use a long.
+     * See <a href="https://www.w3.org/TR/wasm-core-1/#integers">2.2.2. Integers</a> of the WebAssembly Core Specification.
      *
      * @param buffer
      * @return
@@ -632,8 +681,8 @@ public class Parser {
     }
 
     /**
-     * Parse a varsint32 from the buffer. We can't fit an unsigned 32bit int
-     * into a java int, so we must use a long to use the same type as unsigned.
+     * Read a signed I32 from the buffer. We can't fit an unsigned 32bit int into a java int, so we must use a long to use the same type as unsigned.
+     * See <a href="https://www.w3.org/TR/wasm-core-1/#integers">2.2.2. Integers</a> of the WebAssembly Core Specification.
      *
      * @param buffer
      * @return
@@ -643,7 +692,8 @@ public class Parser {
     }
 
     /**
-     * Parse a varsint64 from the buffer which fits neatly into a long
+     * Read a signed I64 from the buffer which fits neatly into a long.
+     * See <a href="https://www.w3.org/TR/wasm-core-1/#integers">2.2.2. Integers</a> of the WebAssembly Core Specification.
      *
      * @param buffer
      * @return
@@ -652,14 +702,35 @@ public class Parser {
         return Encoding.readSigned64Leb128(buffer);
     }
 
+    /**
+     * Read a F64 from the buffer which fits neatly into a long.
+     * See <a href="https://www.w3.org/TR/wasm-core-1/#floating-point">2.2.3. Floating-Point</a> of the WebAssembly Core Specification.
+     *
+     * @param buffer
+     * @return
+     */
     public static long readFloat64(ByteBuffer buffer) {
         return buffer.getLong();
     }
 
+    /**
+     * Read a F32 from the buffer which fits neatly into a long.
+     * See <a href="https://www.w3.org/TR/wasm-core-1/#floating-point">2.2.3. Floating-Point</a> of the WebAssembly Core Specification.
+     *
+     * @param buffer
+     * @return
+     */
     public static long readFloat32(ByteBuffer buffer) {
         return buffer.getInt();
     }
 
+    /**
+     * Read a symbol name from the buffer as UTF-8 String.
+     * See <a href="https://www.w3.org/TR/wasm-core-1/#names%E2%91%A0">2.2.4. Names</a> of the WebAssembly Core Specification.
+     *
+     * @param buffer
+     * @return
+     */
     public static String readName(ByteBuffer buffer) {
         var length = (int) readVarUInt32(buffer);
         byte[] bytes = new byte[length];
