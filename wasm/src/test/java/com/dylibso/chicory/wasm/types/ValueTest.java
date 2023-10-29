@@ -2,6 +2,7 @@ package com.dylibso.chicory.wasm.types;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
 public class ValueTest {
@@ -27,5 +28,12 @@ public class ValueTest {
         var f64 = Value.f64(4593560419847042606L);
         assertEquals(f64Ref, f64.asDouble(), 0.0);
         assertArrayEquals(f64.getData(), Value.fromDouble(f64Ref).getData());
+    }
+
+    @Test
+    public void equalsContract() {
+        EqualsVerifier.forClass(Value.class)
+                .withPrefabValues(Value.class, Value.i32(42), Value.i32(21))
+                .verify();
     }
 }
