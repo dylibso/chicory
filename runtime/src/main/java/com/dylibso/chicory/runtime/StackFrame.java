@@ -22,7 +22,11 @@ public class StackFrame {
     public HashMap<Integer, Value> locals;
     public int blockDepth;
     private Instance instance;
-    public int stackBeforeSize;
+    public boolean doControlTransfer = false;
+    public boolean isControlFrame = false;
+    public int stackSizeBeforeBlock;
+    public int numberOfValuesToReturn = 0;
+    public Value branchConditionValue = null;
 
     public StackFrame(Instance instance, int funcId, int pc, Value[] args, List<Value> initLocals) {
         this.instance = instance;
