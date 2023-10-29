@@ -9,6 +9,7 @@ import com.dylibso.chicory.maven.wast.CommandType;
 import com.dylibso.chicory.maven.wast.WasmValue;
 import com.dylibso.chicory.maven.wast.Wast;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -20,7 +21,6 @@ import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.utils.SourceRoot;
 import com.github.javaparser.utils.StringEscapeUtils;
 import java.io.File;
@@ -34,11 +34,18 @@ import org.apache.maven.plugin.logging.Log;
 
 public class JavaTestGen {
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private static final String INSTANCE_NAME = "instance";
+
+    private static final JavaParser JAVA_PARSER = new JavaParser();
+
+    private final ObjectMapper mapper;
 
     private final Log log;
+
     private final File baseDir;
+
     private final File sourceTargetFolder;
+
     private final List<String> excludedTests;
 
     public JavaTestGen(Log log, File baseDir, File sourceTargetFolder, List<String> excludedTests) {
@@ -46,9 +53,8 @@ public class JavaTestGen {
         this.baseDir = baseDir;
         this.sourceTargetFolder = sourceTargetFolder;
         this.excludedTests = excludedTests;
+        this.mapper = new ObjectMapper();
     }
-
-    private static final String INSTANCE_NAME = "instance";
 
     public CompilationUnit generate(
             SourceRoot dest, File specFile, File wasmFilesFolder, boolean ordered) {
@@ -66,6 +72,7 @@ public class JavaTestGen {
 
         // all the imports
         // junit imports
+        cu.addImport("java.io.File");
         cu.addImport("org.junit.jupiter.api.Disabled");
         cu.addImport("org.junit.jupiter.api.Test");
         if (ordered) {
@@ -95,7 +102,11 @@ public class JavaTestGen {
         if (ordered) {
             testClass.addSingleMemberAnnotation(
                     "TestMethodOrder",
-                    new ClassExpr(new ClassOrInterfaceType("MethodOrderer.OrderAnnotation")));
+                    new ClassExpr(
+                            JAVA_PARSER
+                                    .parseClassOrInterfaceType("MethodOrderer.OrderAnnotation")
+                                    .getResult()
+                                    .get()));
             testClass.addSingleMemberAnnotation(
                     "TestInstance",
                     new FieldAccessExpr(
@@ -128,7 +139,7 @@ public class JavaTestGen {
 
                     var baseVarName = escapedCamelCase(cmd.getAction().getField());
                     var varNum = fallbackVarNumber++;
-                    var varName = "var" + ((baseVarName.length() == 0) ? varNum : baseVarName);
+                    var varName = "var" + (baseVarName.isEmpty() ? varNum : baseVarName);
                     var fieldExport =
                             generateFieldExport(varName, cmd, (moduleInstantiationNumber - 1));
                     if (fieldExport.isPresent()) {
@@ -181,7 +192,8 @@ public class JavaTestGen {
         }
         method.addAnnotation("Test");
         if (ordered) {
-            method.addSingleMemberAnnotation("Order", new IntegerLiteralExpr(testNumber));
+            method.addSingleMemberAnnotation(
+                    "Order", new IntegerLiteralExpr(Integer.toString(testNumber)));
         }
 
         return method;
@@ -236,7 +248,7 @@ public class JavaTestGen {
                 return List.of(assertDecl);
             }
         } else if (cmd.getType() == CommandType.ASSERT_RETURN) {
-            List exprs = new ArrayList();
+            List<Expression> exprs = new ArrayList<>();
             exprs.add(new NameExpr("var results = " + varName + ".apply(" + args + ")"));
 
             for (int i = 0; i < cmd.getExpected().length; i++) {
@@ -302,7 +314,11 @@ public class JavaTestGen {
             additionalParam = ", ModuleType." + cmd.getModuleType().toUpperCase();
         }
         return new NameExpr(
-                "Module.build(\"" + relativeFile + "\"" + additionalParam + ").instantiate()");
+                "Module.build(new File(\""
+                        + relativeFile
+                        + "\")"
+                        + additionalParam
+                        + ").instantiate()");
     }
 
     private List<Expression> generateAssertThrows(Command cmd, File wasmFilesFolder) {

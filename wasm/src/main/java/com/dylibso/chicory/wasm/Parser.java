@@ -1,84 +1,120 @@
 package com.dylibso.chicory.wasm;
 
+import static java.util.Objects.requireNonNull;
+
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
-import com.dylibso.chicory.wasm.types.*;
+import com.dylibso.chicory.wasm.types.ActiveDataSegment;
+import com.dylibso.chicory.wasm.types.CodeSection;
+import com.dylibso.chicory.wasm.types.CustomSection;
+import com.dylibso.chicory.wasm.types.DataSection;
+import com.dylibso.chicory.wasm.types.DataSegment;
+import com.dylibso.chicory.wasm.types.Element;
+import com.dylibso.chicory.wasm.types.ElementSection;
+import com.dylibso.chicory.wasm.types.ElementType;
+import com.dylibso.chicory.wasm.types.Export;
+import com.dylibso.chicory.wasm.types.ExportDesc;
+import com.dylibso.chicory.wasm.types.ExportDescType;
+import com.dylibso.chicory.wasm.types.ExportSection;
+import com.dylibso.chicory.wasm.types.FunctionBody;
+import com.dylibso.chicory.wasm.types.FunctionSection;
+import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.Global;
+import com.dylibso.chicory.wasm.types.GlobalSection;
+import com.dylibso.chicory.wasm.types.Import;
+import com.dylibso.chicory.wasm.types.ImportDesc;
+import com.dylibso.chicory.wasm.types.ImportDescType;
+import com.dylibso.chicory.wasm.types.ImportSection;
+import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.Memory;
+import com.dylibso.chicory.wasm.types.MemoryLimits;
+import com.dylibso.chicory.wasm.types.MemorySection;
+import com.dylibso.chicory.wasm.types.MutabilityType;
+import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.PassiveDataSegment;
+import com.dylibso.chicory.wasm.types.SectionId;
+import com.dylibso.chicory.wasm.types.StartSection;
+import com.dylibso.chicory.wasm.types.Table;
+import com.dylibso.chicory.wasm.types.TableSection;
+import com.dylibso.chicory.wasm.types.TypeSection;
+import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.BitSet;
 import java.util.Stack;
+import java.util.function.Supplier;
 
-public class Parser {
-    private String filePath;
-    private InputStream inputStream;
-    private ParserListener listener;
-    private List<Integer> includeSections;
+/**
+ * Parser for Web Assembly binaries.
+ */
+public final class Parser {
 
-    private static int MAGIC_BYTES = 1836278016; // Magic prefix \0asm
+    private static final int MAGIC_BYTES = 1836278016; // Magic prefix \0asm
 
-    public Parser(String filePath) {
-        this.filePath = filePath;
-        this.listener = null;
-        this.includeSections = null;
-    }
+    private final Supplier<InputStream> input;
+
+    private final BitSet includeSections;
 
     public Parser(InputStream inputStream) {
-        this.inputStream = inputStream;
-        this.listener = null;
-        this.includeSections = null;
+        this(() -> inputStream, new BitSet());
     }
 
-    public void setListener(ParserListener listener) {
-        this.listener = listener;
+    public Parser(ByteBuffer buffer) {
+        this(() -> new ByteArrayInputStream(buffer.array()), new BitSet());
     }
 
-    public void includeSection(int sectionId) {
-        if (this.includeSections == null) this.includeSections = new ArrayList<>();
-        this.includeSections.add(sectionId);
+    public Parser(File file) {
+        this(
+                () -> {
+                    try {
+                        return new FileInputStream(file);
+                    } catch (FileNotFoundException e) {
+                        throw new IllegalArgumentException(
+                                "File not found at path: " + file.getPath(), e);
+                    }
+                },
+                new BitSet());
+    }
+
+    public Parser(Supplier<InputStream> input, BitSet includeSections) {
+        this.input = requireNonNull(input, "input");
+        this.includeSections = requireNonNull(includeSections, "includeSections");
     }
 
     private ByteBuffer readByteBuffer() {
         try {
-            // Read the Wasm file into a ByteBuffer
-            var fileInputStream = inputStream;
-            if (this.inputStream == null) {
-                fileInputStream = new FileInputStream(filePath);
-            }
-            byte[] buf = new byte[fileInputStream.available()];
-            fileInputStream.read(buf);
-            fileInputStream.close();
-
-            var buffer = ByteBuffer.wrap(buf);
+            var buffer = ByteBuffer.wrap(readBytesFromInput());
             buffer.order(ByteOrder.LITTLE_ENDIAN);
             return buffer;
         } catch (IOException e) {
-            e.printStackTrace();
-            throw new IllegalArgumentException("Failed to read file " + filePath);
+            throw new IllegalArgumentException("Failed to read wasm bytes.", e);
+        }
+    }
+
+    private byte[] readBytesFromInput() throws IOException {
+        try (var in = input.get()) {
+            return in.readAllBytes();
         }
     }
 
     public Module parseModule() {
-        if (this.listener != null) {
-            throw new IllegalArgumentException(
-                    "This method overrides your custom listener. You probably want to use"
-                            + " Module#parse() instead");
-        }
         var builder = new ModuleBuilder();
-        setListener(builder);
-        parse();
+        parse(builder);
         return builder.getModule();
     }
 
-    public void parse() {
-        if (this.listener == null) {
-            throw new IllegalArgumentException(
-                    "Missing ParserListener. Use Module#setListener to set a listener;");
-        }
+    public void parse(ParserListener listener) {
+
+        requireNonNull(listener, "listener");
 
         var buffer = readByteBuffer();
 
@@ -100,104 +136,110 @@ public class Parser {
             var sectionId = (int) readVarUInt32(buffer);
             var sectionSize = readVarUInt32(buffer);
 
-            if (shouldParseSection(sectionId)) {
-                // Process different section types based on the sectionId
-                switch (sectionId) {
-                    case SectionId.CUSTOM:
-                        {
-                            var customSection = parseCustomSection(buffer, sectionId, sectionSize);
-                            listener.onSection(customSection);
-                            break;
-                        }
-                    case SectionId.TYPE:
-                        {
-                            var typeSection = parseTypeSection(buffer, sectionId, sectionSize);
-                            listener.onSection(typeSection);
-                            break;
-                        }
-                    case SectionId.IMPORT:
-                        {
-                            var importSection = parseImportSection(buffer, sectionId, sectionSize);
-                            listener.onSection(importSection);
-                            break;
-                        }
-                    case SectionId.FUNCTION:
-                        {
-                            var funcSection = parseFunctionSection(buffer, sectionId, sectionSize);
-                            listener.onSection(funcSection);
-                            break;
-                        }
-                    case SectionId.TABLE:
-                        {
-                            var tableSection = parseTableSection(buffer, sectionId, sectionSize);
-                            listener.onSection(tableSection);
-                            break;
-                        }
-                    case SectionId.MEMORY:
-                        {
-                            var memorySection = parseMemorySection(buffer, sectionId, sectionSize);
-                            listener.onSection(memorySection);
-                            break;
-                        }
-                    case SectionId.GLOBAL:
-                        {
-                            var globalSection = parseGlobalSection(buffer, sectionId, sectionSize);
-                            listener.onSection(globalSection);
-                            break;
-                        }
-                    case SectionId.EXPORT:
-                        {
-                            var exportSection = parseExportSection(buffer, sectionId, sectionSize);
-                            listener.onSection(exportSection);
-                            break;
-                        }
-                    case SectionId.START:
-                        {
-                            var startSection = parseStartSection(buffer, sectionId, sectionSize);
-                            listener.onSection(startSection);
-                            break;
-                        }
-                    case SectionId.ELEMENT:
-                        {
-                            var elementSection =
-                                    parseElementSection(buffer, sectionId, sectionSize);
-                            listener.onSection(elementSection);
-                            break;
-                        }
-                    case SectionId.CODE:
-                        {
-                            var codeSection = parseCodeSection(buffer, sectionId, sectionSize);
-                            listener.onSection(codeSection);
-                            break;
-                        }
-                    case SectionId.DATA:
-                        {
-                            var dataSection = parseDataSection(buffer, sectionId, sectionSize);
-                            listener.onSection(dataSection);
-                            break;
-                        }
-                    default:
-                        {
-                            System.out.println("Skipping Unknown Section with ID: " + sectionId);
-                            buffer.position((int) (buffer.position() + sectionSize));
-                            break;
-                        }
-                }
-            } else {
+            if (!shouldParseSection(sectionId)) {
                 System.out.println("Skipping Section with ID due to configuration: " + sectionId);
                 buffer.position((int) (buffer.position() + sectionSize));
+                continue;
+            }
+
+            // Process different section types based on the sectionId
+            switch (sectionId) {
+                case SectionId.CUSTOM:
+                    {
+                        var customSection = parseCustomSection(buffer, sectionId, sectionSize);
+                        listener.onSection(customSection);
+                        break;
+                    }
+                case SectionId.TYPE:
+                    {
+                        var typeSection = parseTypeSection(buffer, sectionId, sectionSize);
+                        listener.onSection(typeSection);
+                        break;
+                    }
+                case SectionId.IMPORT:
+                    {
+                        var importSection = parseImportSection(buffer, sectionId, sectionSize);
+                        listener.onSection(importSection);
+                        break;
+                    }
+                case SectionId.FUNCTION:
+                    {
+                        var funcSection = parseFunctionSection(buffer, sectionId, sectionSize);
+                        listener.onSection(funcSection);
+                        break;
+                    }
+                case SectionId.TABLE:
+                    {
+                        var tableSection = parseTableSection(buffer, sectionId, sectionSize);
+                        listener.onSection(tableSection);
+                        break;
+                    }
+                case SectionId.MEMORY:
+                    {
+                        var memorySection = parseMemorySection(buffer, sectionId, sectionSize);
+                        listener.onSection(memorySection);
+                        break;
+                    }
+                case SectionId.GLOBAL:
+                    {
+                        var globalSection = parseGlobalSection(buffer, sectionId, sectionSize);
+                        listener.onSection(globalSection);
+                        break;
+                    }
+                case SectionId.EXPORT:
+                    {
+                        var exportSection = parseExportSection(buffer, sectionId, sectionSize);
+                        listener.onSection(exportSection);
+                        break;
+                    }
+                case SectionId.START:
+                    {
+                        var startSection = parseStartSection(buffer, sectionId, sectionSize);
+                        listener.onSection(startSection);
+                        break;
+                    }
+                case SectionId.ELEMENT:
+                    {
+                        var elementSection = parseElementSection(buffer, sectionId, sectionSize);
+                        listener.onSection(elementSection);
+                        break;
+                    }
+                case SectionId.CODE:
+                    {
+                        var codeSection = parseCodeSection(buffer, sectionId, sectionSize);
+                        listener.onSection(codeSection);
+                        break;
+                    }
+                case SectionId.DATA:
+                    {
+                        var dataSection = parseDataSection(buffer, sectionId, sectionSize);
+                        listener.onSection(dataSection);
+                        break;
+                    }
+                default:
+                    {
+                        System.out.println("Skipping Unknown Section with ID: " + sectionId);
+                        buffer.position((int) (buffer.position() + sectionSize));
+                        break;
+                    }
             }
         }
     }
 
+    public void includeSection(int sectionId) {
+        includeSections.set(sectionId);
+    }
+
     private boolean shouldParseSection(int sectionId) {
-        if (this.includeSections == null) return true;
-        if (this.includeSections.contains(sectionId)) return true;
-        return false;
+        if (this.includeSections.isEmpty()) {
+            return true;
+        }
+        return this.includeSections.get(sectionId);
     }
 
     private static CustomSection parseCustomSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var customSection = new CustomSection(sectionId, sectionSize);
         var name = readName(buffer);
         customSection.setName(name);
@@ -210,6 +252,7 @@ public class Parser {
 
     private static TypeSection parseTypeSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var typeCount = readVarUInt32(buffer);
         var types = new FunctionType[(int) typeCount];
 
@@ -249,6 +292,7 @@ public class Parser {
 
     private static ImportSection parseImportSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var importCount = readVarUInt32(buffer);
         var imports = new Import[(int) importCount];
 
@@ -267,6 +311,7 @@ public class Parser {
 
     private static FunctionSection parseFunctionSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var functionCount = readVarUInt32(buffer);
         var typeIndices = new int[(int) functionCount];
 
@@ -281,6 +326,7 @@ public class Parser {
 
     private static TableSection parseTableSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var tableCount = readVarUInt32(buffer);
         var tables = new Table[(int) tableCount];
 
@@ -302,26 +348,36 @@ public class Parser {
 
     private static MemorySection parseMemorySection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var memoryCount = readVarUInt32(buffer);
         var memories = new Memory[(int) memoryCount];
 
         // Parse individual functions in the function section
         for (int i = 0; i < memoryCount; i++) {
-            var limitType = readVarUInt32(buffer);
-            assert limitType == 0x00 || limitType == 0x01;
-            var initial = (int) readVarUInt32(buffer);
-            Integer max = null;
-            if (limitType == 0x01) {
-                max = (int) readVarUInt32(buffer);
-            }
-            memories[i] = new Memory(new MemoryLimits(initial, max));
+            var limits = parseMemoryLimits(buffer);
+            memories[i] = new Memory(limits);
         }
 
         return new MemorySection(sectionId, sectionSize, memories);
     }
 
+    private static MemoryLimits parseMemoryLimits(ByteBuffer buffer) {
+
+        var limitType = readVarUInt32(buffer);
+        assert limitType == 0x00 || limitType == 0x01;
+
+        var initial = (int) readVarUInt32(buffer);
+        if (limitType != 0x01) {
+            return new MemoryLimits(initial);
+        }
+
+        int maximum = (int) readVarUInt32(buffer);
+        return new MemoryLimits(initial, maximum);
+    }
+
     private static GlobalSection parseGlobalSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var globalCount = readVarUInt32(buffer);
         var globals = new Global[(int) globalCount];
 
@@ -338,6 +394,7 @@ public class Parser {
 
     private static ExportSection parseExportSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var exportCount = readVarUInt32(buffer);
         var exports = new Export[(int) exportCount];
 
@@ -355,6 +412,7 @@ public class Parser {
 
     private static StartSection parseStartSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var startSection = new StartSection(sectionId, sectionSize);
         startSection.setStartIndex(readVarUInt32(buffer));
         return startSection;
@@ -362,6 +420,7 @@ public class Parser {
 
     private static ElementSection parseElementSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var elementCount = readVarUInt32(buffer);
         var elements = new Element[(int) elementCount];
 
@@ -381,8 +440,12 @@ public class Parser {
 
     private static CodeSection parseCodeSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var funcBodyCount = readVarUInt32(buffer);
         var functionBodies = new FunctionBody[(int) funcBodyCount];
+
+        var root = new ControlTree();
+        var currentControlFlow = root;
 
         // Parse individual function bodies in the code section
         for (int i = 0; i < funcBodyCount; i++) {
@@ -396,10 +459,12 @@ public class Parser {
                 var type = ValueType.byId(readVarUInt32(buffer));
                 locals.add(new Value(type, bytes));
             }
+            var instructionCount = 0;
             var instructions = new ArrayList<Instruction>();
-            OpCode op;
+            currentControlFlow = root;
             do {
                 var instruction = parseInstruction(buffer);
+                // depth control
                 switch (instruction.getOpcode()) {
                     case BLOCK:
                     case LOOP:
@@ -427,13 +492,90 @@ public class Parser {
                             break;
                         }
                 }
+
+                // control-flow
+                switch (instruction.getOpcode()) {
+                    case BLOCK:
+                    case LOOP:
+                        {
+                            currentControlFlow =
+                                    currentControlFlow.spawn(instructionCount, instruction);
+                            break;
+                        }
+                    case IF:
+                        {
+                            currentControlFlow =
+                                    currentControlFlow.spawn(instructionCount, instruction);
+
+                            var defaultJmp = instructionCount + 1;
+                            currentControlFlow.addCallback(
+                                    end -> {
+                                        // check that there is no "else" branch
+                                        if (instruction.getLabelFalse() == defaultJmp) {
+                                            instruction.setLabelFalse(end);
+                                        }
+                                    });
+
+                            // defaults
+                            instruction.setLabelTrue(defaultJmp);
+                            instruction.setLabelFalse(defaultJmp);
+                            break;
+                        }
+                    case ELSE:
+                        {
+                            assert (currentControlFlow.getInstruction().getOpcode() == OpCode.IF);
+                            currentControlFlow.getInstruction().setLabelFalse(instructionCount + 1);
+
+                            currentControlFlow.addCallback(instruction::setLabelTrue);
+
+                            break;
+                        }
+                    case BR_IF:
+                        {
+                            instruction.setLabelFalse(instructionCount + 1);
+                        }
+                    case BR:
+                        {
+                            var offset = (int) instruction.getOperands()[0];
+                            ControlTree reference = currentControlFlow;
+                            while (offset > 0) {
+                                reference = reference.getParent();
+                                offset--;
+                            }
+                            reference.addCallback(instruction::setLabelTrue);
+                            break;
+                        }
+                    case BR_TABLE:
+                        {
+                            instruction.setLabelTable(new int[instruction.getOperands().length]);
+                            for (var idx = 0; idx < instruction.getLabelTable().length; idx++) {
+                                var offset = (int) instruction.getOperands()[idx];
+                                ControlTree reference = currentControlFlow;
+                                while (offset > 0) {
+                                    reference = reference.getParent();
+                                    offset--;
+                                }
+                                int finalIdx = idx;
+                                reference.addCallback(
+                                        end -> instruction.getLabelTable()[finalIdx] = end);
+                            }
+                            break;
+                        }
+                    case END:
+                        {
+                            currentControlFlow.setFinalInstructionNumber(
+                                    instructionCount, instruction);
+                            currentControlFlow = currentControlFlow.getParent();
+                            break;
+                        }
+                }
+
+                instructionCount++;
                 instructions.add(instruction);
+
                 // System.out.println(Integer.toHexString(instruction.getAddress()) + " " +
                 // instruction);
             } while (buffer.position() < funcEndPoint);
-
-            // label the instructions with jumps
-            ControlFlow.labelBranches(instructions);
 
             functionBodies[i] = new FunctionBody(locals, instructions);
         }
@@ -443,6 +585,7 @@ public class Parser {
 
     private static DataSection parseDataSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+
         var dataSegmentCount = readVarUInt32(buffer);
         var dataSegments = new DataSegment[(int) dataSegmentCount];
 
@@ -470,6 +613,7 @@ public class Parser {
     }
 
     private static Instruction parseInstruction(ByteBuffer buffer) {
+
         var address = buffer.position();
         var b = (int) buffer.get() & 0xff;
         if (b == 0xfc) { // is multi-byte
@@ -519,6 +663,7 @@ public class Parser {
     }
 
     private static Instruction[] parseExpression(ByteBuffer buffer) {
+
         var expr = new ArrayList<Instruction>();
         while (true) {
             var i = parseInstruction(buffer);
@@ -531,46 +676,69 @@ public class Parser {
     }
 
     /**
-     * Parse a varuint32 from the buffer. We can't fit an unsigned 32bit int
+     * Read an unsigned I32 from the buffer. We can't fit an unsigned 32bit int
      * into a java int, so we must use a long.
+     * See <a href="https://www.w3.org/TR/wasm-core-1/#integers">2.2.2. Integers</a> of the WebAssembly Core Specification.
      *
      * @param buffer
      * @return
      */
-    private static long readVarUInt32(ByteBuffer buffer) {
+    public static long readVarUInt32(ByteBuffer buffer) {
         return Encoding.readUnsignedLeb128(buffer);
     }
 
     /**
-     * Parse a varsint32 from the buffer. We can't fit an unsigned 32bit int
-     * into a java int, so we must use a long to use the same type as unsigned.
+     * Read a signed I32 from the buffer. We can't fit an unsigned 32bit int into a java int, so we must use a long to use the same type as unsigned.
+     * See <a href="https://www.w3.org/TR/wasm-core-1/#integers">2.2.2. Integers</a> of the WebAssembly Core Specification.
      *
      * @param buffer
      * @return
      */
-    private static long readVarSInt32(ByteBuffer buffer) {
+    public static long readVarSInt32(ByteBuffer buffer) {
         return Encoding.readSigned32Leb128(buffer);
     }
 
     /**
-     * Parse a varsint64 from the buffer which fits neatly into a long
+     * Read a signed I64 from the buffer which fits neatly into a long.
+     * See <a href="https://www.w3.org/TR/wasm-core-1/#integers">2.2.2. Integers</a> of the WebAssembly Core Specification.
      *
      * @param buffer
      * @return
      */
-    private static long readVarSInt64(ByteBuffer buffer) {
+    public static long readVarSInt64(ByteBuffer buffer) {
         return Encoding.readSigned64Leb128(buffer);
     }
 
-    private static long readFloat64(ByteBuffer buffer) {
+    /**
+     * Read a F64 from the buffer which fits neatly into a long.
+     * See <a href="https://www.w3.org/TR/wasm-core-1/#floating-point">2.2.3. Floating-Point</a> of the WebAssembly Core Specification.
+     *
+     * @param buffer
+     * @return
+     */
+    public static long readFloat64(ByteBuffer buffer) {
         return buffer.getLong();
     }
 
-    private static long readFloat32(ByteBuffer buffer) {
+    /**
+     * Read a F32 from the buffer which fits neatly into a long.
+     * See <a href="https://www.w3.org/TR/wasm-core-1/#floating-point">2.2.3. Floating-Point</a> of the WebAssembly Core Specification.
+     *
+     * @param buffer
+     * @return
+     */
+    public static long readFloat32(ByteBuffer buffer) {
         return buffer.getInt();
     }
 
-    private static String readName(ByteBuffer buffer) {
+    /**
+     * Read a symbol name from the buffer as UTF-8 String.
+     * See <a href="https://www.w3.org/TR/wasm-core-1/#names%E2%91%A0">2.2.4. Names</a> of the WebAssembly Core Specification.
+     *
+     * @param buffer
+     * @return
+     */
+    public static String readName(ByteBuffer buffer) {
         var length = (int) readVarUInt32(buffer);
         byte[] bytes = new byte[length];
         buffer.get(bytes);

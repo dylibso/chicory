@@ -91,6 +91,10 @@ public class Instance {
         return imports;
     }
 
+    public Module getModule() {
+        return module;
+    }
+
     public Table getTable() {
         return table;
     }

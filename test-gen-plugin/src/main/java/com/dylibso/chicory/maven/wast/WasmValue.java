@@ -5,10 +5,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class WasmValue {
 
     @JsonProperty("type")
-    WasmValueType type;
+    private WasmValueType type;
 
     @JsonProperty("value")
-    String value;
+    private String value;
 
     public WasmValueType getType() {
         return type;
@@ -52,6 +52,8 @@ public class WasmValue {
                 } else {
                     return "null";
                 }
+            case EXTERN_REF:
+                return "null"; // TODO: implement-me placeholder
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
@@ -67,6 +69,8 @@ public class WasmValue {
                 return "Value.f32(Integer.parseUnsignedInt(\"" + value + "\"))";
             case F64:
                 return "Value.f64(Long.parseUnsignedLong(\"" + value + "\"))";
+            case EXTERN_REF:
+                return "null"; // TODO: implement-me placeholder
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
@@ -85,6 +89,8 @@ public class WasmValue {
                     return ".asFloat()";
                 case F64:
                     return ".asDouble()";
+                case EXTERN_REF:
+                    return ""; // TODO: implement-me placeholder
                 default:
                     throw new IllegalArgumentException("Type not recognized " + type);
             }

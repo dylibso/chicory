@@ -21,6 +21,7 @@ import org.apache.maven.project.MavenProject;
  */
 @Mojo(name = "wasm-test-gen", defaultPhase = LifecyclePhase.GENERATE_TEST_SOURCES)
 public class TestGenMojo extends AbstractMojo {
+
     private final Log log = new SystemStreamLog();
 
     /**
@@ -120,8 +121,13 @@ public class TestGenMojo extends AbstractMojo {
                         log, project.getBasedir(), sourceDestinationFolder, clean(excludedTests));
 
         // Create destination folders
-        compiledWastTargetFolder.mkdirs();
-        sourceDestinationFolder.mkdirs();
+        if (!compiledWastTargetFolder.mkdirs()) {
+            log.warn("Failed to create folder: " + compiledWastTargetFolder);
+        }
+
+        if (!sourceDestinationFolder.mkdirs()) {
+            log.warn("Failed to create folder: " + sourceDestinationFolder);
+        }
 
         try {
             // create a reproducible environment

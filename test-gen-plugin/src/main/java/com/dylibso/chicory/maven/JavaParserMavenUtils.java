@@ -7,6 +7,7 @@ import org.apache.maven.plugin.logging.Log;
  * Things to make JavaParser and Maven interact better
  */
 public class JavaParserMavenUtils {
+
     public static void makeJavaParserLogToMavenOutput(Log log) {
         com.github.javaparser.utils.Log.setAdapter(
                 new com.github.javaparser.utils.Log.Adapter() {

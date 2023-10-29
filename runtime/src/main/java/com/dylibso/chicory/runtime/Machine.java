@@ -22,10 +22,10 @@ public class Machine {
     public Value[] call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
         var func = instance.getFunction(funcId);
         if (func != null) {
-            this.callStack.push(new StackFrame(funcId, 0, args, func.getLocals()));
+            this.callStack.push(new StackFrame(instance, funcId, 0, args, func.getLocals()));
             eval(func.getInstructions());
         } else {
-            this.callStack.push(new StackFrame(funcId, 0, args, List.of()));
+            this.callStack.push(new StackFrame(instance, funcId, 0, args, List.of()));
             var imprt = instance.getImports()[funcId];
             var hostFunc = imprt.getHandle();
             var results = hostFunc.apply(this.instance.getMemory(), args);
@@ -37,6 +37,7 @@ public class Machine {
                 }
             }
         }
+
         if (this.callStack.size() > 0) this.callStack.pop();
         if (!popResults) {
             return null;
@@ -64,17 +65,17 @@ public class Machine {
             while (frame.pc < code.size()) {
                 if (shouldReturn) return;
                 var instruction = code.get(frame.pc++);
+                //                System.out.println(
+                //                        "func="
+                //                                + frame.funcId
+                //                                + "@"
+                //                                + frame.pc
+                //                                + ": "
+                //                                + instruction
+                //                                + "stack="
+                //                                + this.stack);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
-                System.out.println(
-                        "func="
-                                + frame.funcId
-                                + "@"
-                                + frame.pc
-                                + ": "
-                                + instruction
-                                + "stack="
-                                + this.stack);
                 switch (opcode) {
                     case UNREACHABLE:
                         throw new TrapException("Trapped on unreachable instruction", callStack);
@@ -84,11 +85,35 @@ public class Machine {
                     case BLOCK:
                         {
                             frame.blockDepth++;
+
+                            frame.isControlFrame = true;
+                            frame.stackSizeBeforeBlock =
+                                    Math.max(this.stack.size(), frame.stackSizeBeforeBlock);
+                            var typeId = (int) operands[0];
+
+                            // https://www.w3.org/TR/wasm-core-2/binary/instructions.html#binary-blocktype
+                            if (typeId == 0x40) { // epsilon
+                                frame.numberOfValuesToReturn =
+                                        Math.max(frame.numberOfValuesToReturn, 0);
+                            } else if (ValueType.byId(typeId)
+                                    != null) { // shortcut to straight value type
+                                frame.numberOfValuesToReturn =
+                                        Math.max(frame.numberOfValuesToReturn, 1);
+                            } else { // look it up
+                                var funcType = instance.getTypes()[typeId];
+                                frame.numberOfValuesToReturn =
+                                        Math.max(
+                                                frame.numberOfValuesToReturn,
+                                                funcType.getReturns().length);
+                            }
+
                             break;
                         }
                     case IF:
                         {
                             frame.blockDepth++;
+                            frame.isControlFrame = false;
+
                             var pred = this.stack.pop().asInt();
                             if (pred == 0) {
                                 frame.pc = instruction.getLabelFalse();
@@ -100,22 +125,32 @@ public class Machine {
                     case ELSE:
                     case BR:
                         {
+                            frame.doControlTransfer = true;
+
                             frame.pc = instruction.getLabelTrue();
                             break;
                         }
                     case BR_IF:
                         {
-                            var pred = this.stack.pop().asInt();
+                            var predValue = this.stack.pop();
+                            var pred = predValue.asInt();
+
                             if (pred == 0) {
                                 frame.pc = instruction.getLabelFalse();
                             } else {
+                                frame.doControlTransfer = true;
+                                frame.branchConditionValue = predValue;
                                 frame.pc = instruction.getLabelTrue();
                             }
                             break;
                         }
                     case BR_TABLE:
                         {
-                            var pred = this.stack.pop().asInt();
+                            var predValue = this.stack.pop();
+                            var pred = predValue.asInt();
+
+                            frame.doControlTransfer = true;
+
                             if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
                                 // choose default
                                 frame.pc =
@@ -123,8 +158,10 @@ public class Machine {
                                                 .getLabelTable()[
                                                 instruction.getLabelTable().length - 1];
                             } else {
+                                frame.branchConditionValue = predValue;
                                 frame.pc = instruction.getLabelTable()[pred];
                             }
+
                             break;
                         }
                     case RETURN:
@@ -169,6 +206,40 @@ public class Machine {
                                 break loop;
                             }
                             frame.blockDepth--;
+
+                            // control transfer happens on all blocks but not on the depth 0
+                            if (frame.doControlTransfer && frame.isControlFrame) {
+                                // reset the control transfer
+                                frame.doControlTransfer = false;
+
+                                var valuesToBePushedBack =
+                                        Math.min(frame.numberOfValuesToReturn, this.stack.size());
+
+                                // pop the values from the stack
+                                Value[] tmp = new Value[valuesToBePushedBack];
+                                for (int i = 0; i < valuesToBePushedBack; i++) {
+                                    tmp[i] = this.stack.pop();
+                                }
+
+                                // drop everything till the previous label
+                                while (this.stack.size() > frame.stackSizeBeforeBlock) {
+                                    this.stack.pop();
+                                }
+
+                                // this is mostly empirical
+                                // if a branch have been taken we restore the consumed value from
+                                // the stack
+                                if (frame.branchConditionValue != null
+                                        && frame.branchConditionValue.asInt() > 0) {
+                                    this.stack.push(frame.branchConditionValue);
+                                }
+
+                                // Push the values to the stack.
+                                for (int i = valuesToBePushedBack - 1; i >= 0; i--) {
+                                    this.stack.push(tmp[i]);
+                                }
+                            }
+
                             break;
                         }
                     case LOCAL_GET:
@@ -1378,6 +1449,8 @@ public class Machine {
                 throw new WASMRuntimeException("integer divide by zero: " + e.getMessage(), e);
             }
             throw new WASMRuntimeException(e.getMessage(), e);
+        } catch (IndexOutOfBoundsException e) {
+            throw new WASMRuntimeException("undefined element: " + e.getMessage(), e);
         } catch (Exception e) {
             e.printStackTrace();
             throw new WASMRuntimeException("An underlying Java exception occurred", e);
