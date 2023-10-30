@@ -20,13 +20,16 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.utils.SourceRoot;
 import com.github.javaparser.utils.StringEscapeUtils;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -74,6 +77,7 @@ public class JavaTestGen {
         // junit imports
         cu.addImport("java.io.File");
         cu.addImport("org.junit.jupiter.api.Disabled");
+        cu.addImport("org.junit.jupiter.api.Tag");
         cu.addImport("org.junit.jupiter.api.Test");
         if (ordered) {
             cu.addImport("org.junit.jupiter.api.MethodOrderer");
@@ -141,7 +145,9 @@ public class JavaTestGen {
                 case ACTION:
                 case ASSERT_RETURN:
                 case ASSERT_TRAP:
-                    method = createTestMethod(testClass, testNumber++, excludedMethods, ordered);
+                    method =
+                            createTestMethod(
+                                    testClass, testNumber++, excludedMethods, ordered, cmd);
 
                     var baseVarName = escapedCamelCase(cmd.getAction().getField());
                     var varNum = fallbackVarNumber++;
@@ -190,7 +196,8 @@ public class JavaTestGen {
             ClassOrInterfaceDeclaration testClass,
             int testNumber,
             List<String> excludedTests,
-            boolean ordered) {
+            boolean ordered,
+            Command cmd) {
         var methodName = "test" + testNumber;
         var method = testClass.addMethod("test" + testNumber, Modifier.Keyword.PUBLIC);
         if (excludedTests.contains(methodName)) {
@@ -200,6 +207,25 @@ public class JavaTestGen {
         if (ordered) {
             method.addSingleMemberAnnotation(
                     "Order", new IntegerLiteralExpr(Integer.toString(testNumber)));
+        }
+
+        // generate Tag annotation with exported symbol as reference
+        switch (cmd.getType()) {
+            case ACTION:
+            case ASSERT_RETURN:
+            case ASSERT_TRAP:
+                {
+                    // some characters that are allowed in wasm symbol names are not allowed in the
+                    // Tag annotation, thus we use base64 encoding.
+                    String export = cmd.getAction().getField();
+                    String base64EncodedExport =
+                            Base64.getEncoder()
+                                    .encodeToString(export.getBytes(StandardCharsets.UTF_8));
+                    method.addSingleMemberAnnotation(
+                            "Tag", new StringLiteralExpr("export=" + base64EncodedExport));
+                }
+
+                break;
         }
 
         return method;

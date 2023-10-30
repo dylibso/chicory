@@ -1,9 +1,10 @@
 package com.dylibso.chicory.testing;
 
 import java.lang.reflect.Method;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Tags;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
 
@@ -41,16 +42,18 @@ public class ChicoryTestWatcher implements TestWatcher {
         TestModule testModule = getTestModule(context, clazz);
 
         String symbolFilter = null;
-        Tags tagsAnno = testMethod.getAnnotation(Tags.class);
-        for (var tag : tagsAnno.value()) {
+        Tag[] tagsAnno = testMethod.getAnnotationsByType(Tag.class);
+        for (var tag : tagsAnno) {
             String tagValue = tag.value();
             if (tagValue.startsWith("export=")) {
-                String exportName = tagValue.substring("export=".length());
+                String exportName =
+                        new String(
+                                Base64.getDecoder().decode(tagValue.substring("export=".length())));
                 symbolFilter = exportName;
             }
         }
 
-        WasmDumper.objectDump(reference, testModule.getFile().toURI());
+        WasmDumper.objectDump(reference, testModule.getFile().toURI(), symbolFilter);
     }
 
     private static TestModule getTestModule(ExtensionContext context, Class<?> clazz) {
