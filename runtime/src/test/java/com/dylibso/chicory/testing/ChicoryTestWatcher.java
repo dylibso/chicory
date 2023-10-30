@@ -3,7 +3,6 @@ package com.dylibso.chicory.testing;
 import java.lang.reflect.Method;
 import java.util.Base64;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
@@ -37,39 +36,24 @@ public class ChicoryTestWatcher implements TestWatcher {
 
         Class<?> clazz = context.getRequiredTestClass();
         String reference = clazz.getSimpleName() + "." + testMethod.getName();
-        System.err.printf("Generating WASM ObjectDump for failed test: %s%n", reference);
+        System.err.printf("wasm-objdump for test: %s%n", reference);
 
-        TestModule testModule = getTestModule(context, clazz);
-
+        String wasmFile = null;
         String symbolFilter = null;
         Tag[] tagsAnno = testMethod.getAnnotationsByType(Tag.class);
         for (var tag : tagsAnno) {
             String tagValue = tag.value();
             if (tagValue.startsWith("export=")) {
-                String exportName =
+                symbolFilter =
                         new String(
                                 Base64.getDecoder().decode(tagValue.substring("export=".length())));
-                symbolFilter = exportName;
+            }
+            if (tagValue.startsWith("wasm=")) {
+                wasmFile = tagValue.substring("wasm=".length());
             }
         }
 
-        WasmDumper.objectDump(reference, testModule.getFile().toURI(), symbolFilter);
-    }
-
-    private static TestModule getTestModule(ExtensionContext context, Class<?> clazz) {
-        return Stream.of(clazz.getDeclaredFields())
-                .filter(field -> field.getType().isAssignableFrom(TestModule.class))
-                .peek(field -> field.setAccessible(true))
-                .map(
-                        field -> {
-                            try {
-                                return (TestModule) field.get(context.getRequiredTestInstance());
-                            } catch (IllegalAccessException e) {
-                                throw new RuntimeException(e);
-                            }
-                        })
-                .findFirst()
-                .get();
+        WasmObjDumpTool.dump(wasmFile, symbolFilter);
     }
 
     private boolean isWasmObjectDumpEnabledFor(Method testMethod) {
