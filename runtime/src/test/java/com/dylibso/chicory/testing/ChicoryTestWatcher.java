@@ -2,6 +2,8 @@ package com.dylibso.chicory.testing;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.stream.Stream;
+import org.junit.jupiter.api.Tags;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.TestWatcher;
 
@@ -36,18 +38,35 @@ public class ChicoryTestWatcher implements TestWatcher {
         String reference = clazz.getSimpleName() + "." + testMethod.getName();
         System.err.printf("Generating WASM ObjectDump for failed test: %s%n", reference);
 
-        for (var field : clazz.getDeclaredFields()) {
-            if (field.getType().isAssignableFrom(TestModule.class)) {
-                field.setAccessible(true);
-                try {
-                    TestModule testModule =
-                            (TestModule) field.get(context.getRequiredTestInstance());
-                    WasmDumper.objectDump(reference, testModule.getFile().toURI());
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
-                }
+        TestModule testModule = getTestModule(context, clazz);
+
+        String symbolFilter = null;
+        Tags tagsAnno = testMethod.getAnnotation(Tags.class);
+        for (var tag : tagsAnno.value()) {
+            String tagValue = tag.value();
+            if (tagValue.startsWith("export=")) {
+                String exportName = tagValue.substring("export=".length());
+                symbolFilter = exportName;
             }
         }
+
+        WasmDumper.objectDump(reference, testModule.getFile().toURI());
+    }
+
+    private static TestModule getTestModule(ExtensionContext context, Class<?> clazz) {
+        return Stream.of(clazz.getDeclaredFields())
+                .filter(field -> field.getType().isAssignableFrom(TestModule.class))
+                .peek(field -> field.setAccessible(true))
+                .map(
+                        field -> {
+                            try {
+                                return (TestModule) field.get(context.getRequiredTestInstance());
+                            } catch (IllegalAccessException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+                .findFirst()
+                .get();
     }
 
     private boolean isWasmObjectDumpEnabledFor(Method testMethod) {
