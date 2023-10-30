@@ -20,13 +20,16 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.utils.SourceRoot;
 import com.github.javaparser.utils.StringEscapeUtils;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -34,7 +37,7 @@ import org.apache.maven.plugin.logging.Log;
 
 public class JavaTestGen {
 
-    private static final String INSTANCE_NAME = "instance";
+    private static final String TEST_MODULE_NAME = "testModule";
 
     private static final JavaParser JAVA_PARSER = new JavaParser();
 
@@ -74,6 +77,7 @@ public class JavaTestGen {
         // junit imports
         cu.addImport("java.io.File");
         cu.addImport("org.junit.jupiter.api.Disabled");
+        cu.addImport("org.junit.jupiter.api.Tag");
         cu.addImport("org.junit.jupiter.api.Test");
         if (ordered) {
             cu.addImport("org.junit.jupiter.api.MethodOrderer");
@@ -85,6 +89,10 @@ public class JavaTestGen {
         cu.addImport("org.junit.jupiter.api.Assertions.assertThrows", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertTrue", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertDoesNotThrow", true, false);
+
+        // testing imports
+        cu.addImport("com.dylibso.chicory.testing.ChicoryTest");
+        cu.addImport("com.dylibso.chicory.testing.TestModule");
 
         // runtime imports
         cu.addImport("com.dylibso.chicory.runtime.exceptions.WASMRuntimeException");
@@ -114,6 +122,8 @@ public class JavaTestGen {
                             "PER_CLASS"));
         }
 
+        testClass.addAnnotation("ChicoryTest");
+
         MethodDeclaration method;
         int testNumber = 0;
         int moduleInstantiationNumber = 0;
@@ -128,14 +138,16 @@ public class JavaTestGen {
             switch (cmd.getType()) {
                 case MODULE:
                     testClass.addFieldWithInitializer(
-                            parseClassOrInterfaceType("Instance"),
-                            INSTANCE_NAME + moduleInstantiationNumber++,
+                            parseClassOrInterfaceType("TestModule"),
+                            TEST_MODULE_NAME + moduleInstantiationNumber++,
                             generateModuleInstantiation(cmd, wasmFilesFolder));
                     break;
                 case ACTION:
                 case ASSERT_RETURN:
                 case ASSERT_TRAP:
-                    method = createTestMethod(testClass, testNumber++, excludedMethods, ordered);
+                    method =
+                            createTestMethod(
+                                    testClass, testNumber++, excludedMethods, ordered, cmd);
 
                     var baseVarName = escapedCamelCase(cmd.getAction().getField());
                     var varNum = fallbackVarNumber++;
@@ -184,7 +196,8 @@ public class JavaTestGen {
             ClassOrInterfaceDeclaration testClass,
             int testNumber,
             List<String> excludedTests,
-            boolean ordered) {
+            boolean ordered,
+            Command cmd) {
         var methodName = "test" + testNumber;
         var method = testClass.addMethod("test" + testNumber, Modifier.Keyword.PUBLIC);
         if (excludedTests.contains(methodName)) {
@@ -194,6 +207,25 @@ public class JavaTestGen {
         if (ordered) {
             method.addSingleMemberAnnotation(
                     "Order", new IntegerLiteralExpr(Integer.toString(testNumber)));
+        }
+
+        // generate Tag annotation with exported symbol as reference
+        switch (cmd.getType()) {
+            case ACTION:
+            case ASSERT_RETURN:
+            case ASSERT_TRAP:
+                {
+                    // some characters that are allowed in wasm symbol names are not allowed in the
+                    // Tag annotation, thus we use base64 encoding.
+                    String export = cmd.getAction().getField();
+                    String base64EncodedExport =
+                            Base64.getEncoder()
+                                    .encodeToString(export.getBytes(StandardCharsets.UTF_8));
+                    method.addSingleMemberAnnotation(
+                            "Tag", new StringLiteralExpr("export=" + base64EncodedExport));
+                }
+
+                break;
         }
 
         return method;
@@ -208,9 +240,9 @@ public class JavaTestGen {
                             .setType(parseClassOrInterfaceType("ExportFunction"))
                             .setInitializer(
                                     new NameExpr(
-                                            INSTANCE_NAME
+                                            TEST_MODULE_NAME
                                                     + instanceNumber
-                                                    + ".getExport(\""
+                                                    + ".getInstance().getExport(\""
                                                     + StringEscapeUtils.escapeJava(
                                                             cmd.getAction().getField())
                                                     + "\")"));
@@ -314,11 +346,11 @@ public class JavaTestGen {
             additionalParam = ", ModuleType." + cmd.getModuleType().toUpperCase();
         }
         return new NameExpr(
-                "Module.build(new File(\""
+                "TestModule.of(new File(\""
                         + relativeFile
                         + "\")"
                         + additionalParam
-                        + ").instantiate()");
+                        + ").build().instantiate()");
     }
 
     private List<Expression> generateAssertThrows(Command cmd, File wasmFilesFolder) {
