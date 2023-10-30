@@ -38,7 +38,6 @@
             local_set.wast,
             local_tee.wast,
             memory.wast,
-            nop.wast,
             return.wast,
             names.wast,
             load.wast,
@@ -68,7 +67,8 @@
             block.wast,
             memory_init.wast,
             loop.wast,
-            block.wast</orderedWastToProcess>
+            block.wast,
+            nop.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
             SpecV1MemoryGrowTest.test67,
@@ -115,14 +115,6 @@
             SpecV1MemoryTest.test3,
             SpecV1MemoryTest.test4,
             SpecV1NamesTest.test481,
-            SpecV1NopTest.test59,
-            SpecV1NopTest.test60,
-            SpecV1NopTest.test61,
-            SpecV1NopTest.test62,
-            SpecV1NopTest.test63,
-            SpecV1NopTest.test64,
-            SpecV1NopTest.test65,
-            SpecV1NopTest.test66,
             SpecV1LoadTest.test17,
             SpecV1LoadTest.test18,
             SpecV1LoadTest.test19,
