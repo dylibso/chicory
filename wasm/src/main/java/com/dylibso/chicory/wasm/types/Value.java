@@ -111,9 +111,10 @@ public class Value {
             case I64:
             case F64:
                 return ByteBuffer.wrap(this.data, 4, 4).getInt();
+            default:
+                throw new IllegalArgumentException(
+                        "Can't turn wasm value of type " + type + " to a int");
         }
-        ;
-        throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a int");
     }
 
     // The unsigned representation of the int, stored in a long
@@ -126,9 +127,10 @@ public class Value {
             case I64:
             case F64:
                 return ByteBuffer.wrap(this.data, 4, 4).getInt() & 0xFFFFFFFFL;
+            default:
+                throw new IllegalArgumentException(
+                        "Can't turn wasm value of type " + type + " to a uint");
         }
-        ;
-        throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a uint");
     }
 
     // TODO memoize these
@@ -155,9 +157,10 @@ public class Value {
                 return ByteBuffer.wrap(this.data, 2, 2).getShort();
             case I64:
                 return ByteBuffer.wrap(this.data, 6, 2).getShort();
+            default:
+                throw new IllegalArgumentException(
+                        "Can't turn wasm value of type " + type + " to a short");
         }
-        ;
-        throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a short");
     }
 
     public float asFloat() {
@@ -179,21 +182,13 @@ public class Value {
     public String toString() {
         switch (this.type) {
             case I32:
-                {
-                    return this.asInt() + "@i32";
-                }
+                return this.asInt() + "@i32";
             case I64:
-                {
-                    return this.asLong() + "@i64";
-                }
+                return this.asLong() + "@i64";
             case F32:
-                {
-                    return this.asFloat() + "@f32";
-                }
+                return this.asFloat() + "@f32";
             case F64:
-                {
-                    return this.asDouble() + "@f64";
-                }
+                return this.asDouble() + "@f64";
             default:
                 throw new RuntimeException("TODO handle missing types");
         }

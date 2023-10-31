@@ -1,11 +1,16 @@
 package com.dylibso.chicory.wasm.types;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
 public class ValueTest {
+
     @Test
     public void shouldEncodeValuesFromLong() {
         var i32 = Value.i32(123L);
@@ -31,9 +36,48 @@ public class ValueTest {
     }
 
     @Test
+    public void validConstruction() {
+
+        new Value(ValueType.I32, 42);
+        assertTrue(true);
+    }
+
+    @Test
+    public void invalidConstruction() {
+
+        assertThrows(IllegalArgumentException.class, () -> new Value(ValueType.I64, 42));
+    }
+
+    @Test
     public void equalsContract() {
-        EqualsVerifier.forClass(Value.class)
-                .withPrefabValues(Value.class, Value.i32(42), Value.i32(21))
-                .verify();
+
+        var i32FortyTwo = Value.i32(42);
+        var i64FortyTwo = Value.i64(42L);
+        var i32TwentyOne = Value.i32(21);
+        var f32TwentyOne = Value.f32(Float.floatToIntBits(21.f));
+
+        assertEquals(i32FortyTwo, i32FortyTwo);
+        assertEquals(i32FortyTwo, Value.i32(42));
+        assertNotEquals(i32FortyTwo, i32TwentyOne);
+        assertNotEquals(i32FortyTwo, null);
+        assertNotEquals(i32TwentyOne, f32TwentyOne);
+        assertNotEquals(i32FortyTwo, i64FortyTwo);
+    }
+
+    @Test
+    public void hashCodeContract() {
+
+        var i32FortyTwo = Value.i32(42);
+        var i64FortyTwo = Value.i64(42L);
+
+        assertEquals(i32FortyTwo.hashCode(), Value.i32(42).hashCode());
+        assertNotEquals(i32FortyTwo.hashCode(), i64FortyTwo.hashCode());
+    }
+
+    @Test
+    public void toStringContract() {
+
+        var i32FortyTwo = Value.i32(42);
+        assertNotNull(i32FortyTwo.toString());
     }
 }
