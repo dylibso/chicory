@@ -74,7 +74,7 @@ public class Machine {
                                 + frame.pc
                                 + ": "
                                 + instruction
-                                + "stack="
+                                + " stack="
                                 + this.stack);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
@@ -1359,14 +1359,28 @@ public class Machine {
                         {
                             var val = this.stack.pop().asFloat();
 
-                            this.stack.push(Value.i32(Float.valueOf(val).longValue()));
+                            this.stack.push(Value.i32((long) val));
+                            break;
+                        }
+                    case F32_CONVERT_I64_S:
+                        {
+                            var val = this.stack.pop().asLong();
+
+                            this.stack.push(Value.fromFloat((float) val));
                             break;
                         }
                     case F64_CONVERT_I64_S:
                         {
                             var val = this.stack.pop().asLong();
 
-                            this.stack.push(Value.fromDouble(Long.valueOf(val).doubleValue()));
+                            this.stack.push(Value.fromDouble((double) val));
+                            break;
+                        }
+                    case I64_TRUNC_F32_U:
+                        {
+                            var val = this.stack.pop().asFloat();
+
+                            this.stack.push(Value.i64((long) val));
                             break;
                         }
                     case I64_TRUNC_F64_U:
@@ -1454,7 +1468,6 @@ public class Machine {
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("undefined element: " + e.getMessage(), e);
         } catch (Exception e) {
-            e.printStackTrace();
             throw new WASMRuntimeException("An underlying Java exception occurred", e);
         }
     }
