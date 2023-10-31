@@ -128,6 +128,8 @@ public class JavaTestGen {
         int testNumber = 0;
         int moduleInstantiationNumber = 0;
         int fallbackVarNumber = 0;
+
+        String currentWasmFile = null;
         for (var cmd : wast.getCommands()) {
             var excludedMethods =
                     excludedTests.stream()
@@ -137,17 +139,23 @@ public class JavaTestGen {
 
             switch (cmd.getType()) {
                 case MODULE:
+                    currentWasmFile = getWasmFile(cmd, wasmFilesFolder);
                     testClass.addFieldWithInitializer(
                             parseClassOrInterfaceType("TestModule"),
                             TEST_MODULE_NAME + moduleInstantiationNumber++,
-                            generateModuleInstantiation(cmd, wasmFilesFolder));
+                            generateModuleInstantiation(cmd, currentWasmFile));
                     break;
                 case ACTION:
                 case ASSERT_RETURN:
                 case ASSERT_TRAP:
                     method =
                             createTestMethod(
-                                    testClass, testNumber++, excludedMethods, ordered, cmd);
+                                    testClass,
+                                    testNumber++,
+                                    excludedMethods,
+                                    ordered,
+                                    cmd,
+                                    currentWasmFile);
 
                     var baseVarName = escapedCamelCase(cmd.getAction().getField());
                     var varNum = fallbackVarNumber++;
@@ -197,7 +205,8 @@ public class JavaTestGen {
             int testNumber,
             List<String> excludedTests,
             boolean ordered,
-            Command cmd) {
+            Command cmd,
+            String currentWasmFile) {
         var methodName = "test" + testNumber;
         var method = testClass.addMethod("test" + testNumber, Modifier.Keyword.PUBLIC);
         if (excludedTests.contains(methodName)) {
@@ -223,6 +232,8 @@ public class JavaTestGen {
                                     .encodeToString(export.getBytes(StandardCharsets.UTF_8));
                     method.addSingleMemberAnnotation(
                             "Tag", new StringLiteralExpr("export=" + base64EncodedExport));
+                    method.addSingleMemberAnnotation(
+                            "Tag", new StringLiteralExpr("wasm=" + currentWasmFile));
                 }
 
                 break;
@@ -330,16 +341,8 @@ public class JavaTestGen {
         return List.of(assertDecl);
     }
 
-    private Expression generateModuleInstantiation(Command cmd, File folder) {
+    private Expression generateModuleInstantiation(Command cmd, String wasmFile) {
         assert (cmd.getType() == CommandType.MODULE);
-
-        var relativeFile =
-                folder.toPath()
-                        .resolve(cmd.getFilename())
-                        .toFile()
-                        .getAbsolutePath()
-                        .replace(baseDir.getAbsolutePath() + File.separator, "")
-                        .replace("\\", "\\\\"); // Win compat
 
         var additionalParam = "";
         if (cmd.getModuleType() != null) {
@@ -347,13 +350,22 @@ public class JavaTestGen {
         }
         return new NameExpr(
                 "TestModule.of(new File(\""
-                        + relativeFile
+                        + wasmFile
                         + "\")"
                         + additionalParam
                         + ").build().instantiate()");
     }
 
-    private List<Expression> generateAssertThrows(Command cmd, File wasmFilesFolder) {
+    private String getWasmFile(Command cmd, File folder) {
+        return folder.toPath()
+                .resolve(cmd.getFilename())
+                .toFile()
+                .getAbsolutePath()
+                .replace(baseDir.getAbsolutePath() + File.separator, "")
+                .replace("\\", "\\\\"); // Win compat
+    }
+
+    private List<Expression> generateAssertThrows(Command cmd, String wasmFile) {
         assert (cmd.getType() == CommandType.ASSERT_INVALID
                 || cmd.getType() == CommandType.ASSERT_MALFORMED);
 
@@ -372,7 +384,7 @@ public class JavaTestGen {
                                 + "assertThrows("
                                 + exceptionType
                                 + ".class, () -> "
-                                + generateModuleInstantiation(cmd, wasmFilesFolder)
+                                + generateModuleInstantiation(cmd, wasmFile)
                                 + ")");
 
         if (cmd.getText() != null) {

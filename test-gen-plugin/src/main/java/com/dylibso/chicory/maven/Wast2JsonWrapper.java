@@ -160,7 +160,7 @@ public class Wast2JsonWrapper {
 
         // Set executable
         if (!binary.toFile().setExecutable(true, false)) {
-            log.warn("Could change file to be executable: " + binary);
+            log.warn("Couldn't change file to be executable: " + binary);
         }
         return binary.toFile().getAbsolutePath();
     }
