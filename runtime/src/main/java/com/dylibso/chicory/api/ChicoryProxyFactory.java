@@ -5,7 +5,6 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.Value;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -28,11 +27,17 @@ enum ChicoryProxyFactory {
 
         var modulePath = deriveModulePath(iface);
         var classLoader = iface.getClassLoader();
-        var moduleInstance = com.dylibso.chicory.runtime.Module.build(resolveModule(classLoader, modulePath)).instantiate();
-        var functionMethods = Stream.of(iface.getMethods()) //
-                .filter(method -> method.isAnnotationPresent(WasmFunction.class)) //
-                .collect(Collectors.toMap(m -> m.toString().hashCode(), createExportedFunctionExtractor(moduleInstance)));
-        var interfaces = new Class[]{iface, ChicoryProxy.class};
+        var moduleInstance =
+                com.dylibso.chicory.runtime.Module.build(resolveModule(classLoader, modulePath))
+                        .instantiate();
+        var functionMethods =
+                Stream.of(iface.getMethods()) //
+                        .filter(method -> method.isAnnotationPresent(WasmFunction.class)) //
+                        .collect(
+                                Collectors.toMap(
+                                        m -> m.toString().hashCode(),
+                                        createExportedFunctionExtractor(moduleInstance)));
+        var interfaces = new Class[] {iface, ChicoryProxy.class};
         var invocationHandler = new ChicoryProxyInvocationHandler(moduleInstance, functionMethods);
         return iface.cast(Proxy.newProxyInstance(classLoader, interfaces, invocationHandler));
     }
@@ -58,14 +63,16 @@ enum ChicoryProxyFactory {
         throw new ChicoryException("Could not find wasm module from modulePath: " + modulePath);
     }
 
-    private static Function<Method, ExportFunction> createExportedFunctionExtractor(Instance moduleInstance) {
+    private static Function<Method, ExportFunction> createExportedFunctionExtractor(
+            Instance moduleInstance) {
 
         return method -> {
             var wasmFunctionAnno = method.getAnnotation(WasmFunction.class);
             var exportedFunction = moduleInstance.getExport(wasmFunctionAnno.value());
 
             if (exportedFunction == null) {
-                throw new ChicoryException(String.format("Method %s is not an exported function", method));
+                throw new ChicoryException(
+                        String.format("Method %s is not an exported function", method));
             }
 
             return exportedFunction;
@@ -76,7 +83,8 @@ enum ChicoryProxyFactory {
 
         var wasmModuleAnno = iface.getAnnotation(WasmModule.class);
         if (wasmModuleAnno == null) {
-            throw new IllegalArgumentException(String.format("%s must be annotated with %s", iface, WasmModule.class));
+            throw new IllegalArgumentException(
+                    String.format("%s must be annotated with %s", iface, WasmModule.class));
         }
 
         var modulePath = wasmModuleAnno.value();
@@ -92,7 +100,9 @@ enum ChicoryProxyFactory {
 
         private final Map<Integer, ExportFunction> methodHashToExportedFunctions;
 
-        public ChicoryProxyInvocationHandler(Instance moduleInstance, Map<Integer, ExportFunction> methodHashToExportedFunctions) {
+        public ChicoryProxyInvocationHandler(
+                Instance moduleInstance,
+                Map<Integer, ExportFunction> methodHashToExportedFunctions) {
             this.moduleInstance = moduleInstance;
             this.methodHashToExportedFunctions = methodHashToExportedFunctions;
         }
@@ -100,17 +110,22 @@ enum ChicoryProxyFactory {
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 
-            ExportFunction exportedFunction = methodHashToExportedFunctions.get(method.toString().hashCode());
+            ExportFunction exportedFunction =
+                    methodHashToExportedFunctions.get(method.toString().hashCode());
 
             if (exportedFunction == null) {
                 // support for equals, hashcode & toString
                 return super.invoke(proxy, method, args);
             }
 
-            return invokeInternal(moduleInstance, exportedFunction, method.getReturnType(), method.getParameterTypes(), args);
+            return invokeInternal(
+                    moduleInstance,
+                    exportedFunction,
+                    method.getReturnType(),
+                    method.getParameterTypes(),
+                    args);
         }
     }
-
 
     public interface ChicoryProxy {
         // marker interface to detect chicory proxies
@@ -118,7 +133,12 @@ enum ChicoryProxyFactory {
 
     public static class WasmInvocationAdapter {
 
-        protected Object invokeInternal(Instance moduleInstance, ExportFunction exportedFunction, Class<?> returnType, Class<?>[] parameterTypes, Object[] args) {
+        protected Object invokeInternal(
+                Instance moduleInstance,
+                ExportFunction exportedFunction,
+                Class<?> returnType,
+                Class<?>[] parameterTypes,
+                Object[] args) {
 
             var alloc = moduleInstance.getExport("alloc");
             var memory = moduleInstance.getMemory();
@@ -126,7 +146,8 @@ enum ChicoryProxyFactory {
             List<ValueWrapper> inputs = new ArrayList<>();
             int valueCount;
             try {
-                valueCount = collectInputParameterValues(parameterTypes, args, alloc, memory, inputs);
+                valueCount =
+                        collectInputParameterValues(parameterTypes, args, alloc, memory, inputs);
                 Value[] inputValues = createValuesFromInput(valueCount, inputs);
                 Value[] outputValues = exportedFunction.apply(inputValues);
                 return extractOutputFromValues(returnType, outputValues);
@@ -167,7 +188,12 @@ enum ChicoryProxyFactory {
             return inputValues;
         }
 
-        protected int collectInputParameterValues(Class<?>[] paramTypes, Object[] args, ExportFunction alloc, Memory memory, List<? super ValueWrapper> inputs) {
+        protected int collectInputParameterValues(
+                Class<?>[] paramTypes,
+                Object[] args,
+                ExportFunction alloc,
+                Memory memory,
+                List<? super ValueWrapper> inputs) {
 
             int valueCount = 0;
             for (int i = 0, n = paramTypes.length; i < n; i++) {
@@ -186,15 +212,20 @@ enum ChicoryProxyFactory {
                 } else if (Number.class.isAssignableFrom(paramType)) {
 
                     if (Integer.class.equals(paramType)) {
-                        inputs.add(new RawValue(Value.i32(Long.parseLong(String.valueOf(args[i])))));
+                        inputs.add(
+                                new RawValue(Value.i32(Long.parseLong(String.valueOf(args[i])))));
                     } else if (Long.class.equals(paramType)) {
-                        inputs.add(new RawValue(Value.i64(Long.parseLong(String.valueOf(args[i])))));
+                        inputs.add(
+                                new RawValue(Value.i64(Long.parseLong(String.valueOf(args[i])))));
                     } else if (Float.class.equals(paramType)) {
-                        inputs.add(new RawValue(Value.f32(Long.parseLong(String.valueOf(args[i])))));
+                        inputs.add(
+                                new RawValue(Value.f32(Long.parseLong(String.valueOf(args[i])))));
                     } else if (Double.class.equals(paramType)) {
-                        inputs.add(new RawValue(Value.f64(Long.parseLong(String.valueOf(args[i])))));
+                        inputs.add(
+                                new RawValue(Value.f64(Long.parseLong(String.valueOf(args[i])))));
                     } else {
-                        throw new IllegalArgumentException("Unsupported parameter type " + paramType);
+                        throw new IllegalArgumentException(
+                                "Unsupported parameter type " + paramType);
                     }
 
                     valueCount++;
@@ -206,7 +237,8 @@ enum ChicoryProxyFactory {
         }
     }
 
-    public static class ObjectInvocationHandler extends WasmInvocationAdapter implements InvocationHandler {
+    public static class ObjectInvocationHandler extends WasmInvocationAdapter
+            implements InvocationHandler {
 
         public static final Method HASH_CODE;
 
@@ -261,8 +293,7 @@ enum ChicoryProxyFactory {
         }
     }
 
-    public interface ValueWrapper {
-    }
+    public interface ValueWrapper {}
 
     static class RawValue implements ValueWrapper {
 
