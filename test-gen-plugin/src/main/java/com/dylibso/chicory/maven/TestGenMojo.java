@@ -99,7 +99,7 @@ public class TestGenMojo extends AbstractMojo {
 
     private List<String> clean(List<String> in) {
         return in.stream()
-                .map(t -> t.replace("\n", "").replace("\r", "").trim())
+                .map(t -> (t != null) ? t.replace("\n", "").replace("\r", "").trim() : "")
                 .collect(Collectors.toList());
     }
 
