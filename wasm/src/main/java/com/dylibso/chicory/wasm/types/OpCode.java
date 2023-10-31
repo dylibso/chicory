@@ -159,6 +159,27 @@ public enum OpCode {
     I32_TRUNC_F32_U(0xA9), // i32.trunc_f32_u
     I32_TRUNC_F64_S(0xAA), // i32.trunc_f64_s
     I32_TRUNC_F64_U(0xAB), // i32.trunc_f64_u
+    // multi byte instructions: begin
+    I32_TRUNC_SAT_F32_S(0xFC00), // i32.trunc_sat_f32_s
+    I32_TRUNC_SAT_F32_U(0xFC01), // i32.trunc_sat_f32_u
+    I32_TRUNC_SAT_F64_S(0xFC02), // i32.trunc_sat_f64_s
+    I32_TRUNC_SAT_F64_U(0xFC03), // i32.trunc_sat_f64_u
+    I64_TRUNC_SAT_F32_S(0xFC04), // i64.trunc_sat_f32_s
+    I64_TRUNC_SAT_F32_U(0xFC05), // i64.trunc_sat_f32_u
+    I64_TRUNC_SAT_F64_S(0xFC06), // i64.trunc_sat_f64_s
+    I64_TRUNC_SAT_F64_U(0xFC07), // i64.trunc_sat_f64_u
+    MEMORY_INIT_FC(0xFC08), // memory.init
+    DATA_DROP_FC(0xFC09), // data.drop
+    MEMORY_COPY_FC(0xFC0A), // memory.copy
+    MEMORY_FILL_FC(0xFC0B), // memory.fill
+    TABLE_INIT_FC(0xFC0C), // table.init
+    ELEM_DROP_FC(0xFC0D), // elem.drop
+    TABLE_COPY_FC(0xFC0E), // table.copy
+    TABLE_GROW_FC(0xFC0F), // table.grow
+    TABLE_SIZE_FC(0xFC10), // table.size
+    TABLE_FILL_FC(0xFC11), // table.fill
+    // multi byte instructions: end
+
     I64_EXTEND_I32_S(0xAC), // i64.extend_i32_s
     I64_EXTEND_I32_U(0xAD), // i64.extend_i32_u
     I64_TRUNC_F32_S(0xAE), // i64.trunc_f32_s
@@ -371,17 +392,17 @@ public enum OpCode {
         signature.put(F64_MIN, new WasmEncoding[] {});
         signature.put(F64_MAX, new WasmEncoding[] {});
         signature.put(F64_COPYSIGN, new WasmEncoding[] {});
-        signature.put(I32_WRAP_I64, new WasmEncoding[] {});
-        signature.put(I32_TRUNC_F32_S, new WasmEncoding[] {});
-        signature.put(I32_TRUNC_F32_U, new WasmEncoding[] {});
-        signature.put(I32_TRUNC_F64_S, new WasmEncoding[] {});
-        signature.put(I32_TRUNC_F64_U, new WasmEncoding[] {});
-        signature.put(I64_EXTEND_I32_S, new WasmEncoding[] {});
-        signature.put(I64_EXTEND_I32_U, new WasmEncoding[] {});
-        signature.put(I64_TRUNC_F32_S, new WasmEncoding[] {});
-        signature.put(I64_TRUNC_F32_U, new WasmEncoding[] {});
-        signature.put(I64_TRUNC_F64_S, new WasmEncoding[] {});
-        signature.put(I64_TRUNC_F64_U, new WasmEncoding[] {});
+        signature.put(I32_WRAP_I64, new WasmEncoding[] {WasmEncoding.VARSINT64});
+        signature.put(I32_TRUNC_F32_S, new WasmEncoding[] {WasmEncoding.VARSINT32});
+        signature.put(I32_TRUNC_F32_U, new WasmEncoding[] {WasmEncoding.VARSINT32});
+        signature.put(I32_TRUNC_F64_S, new WasmEncoding[] {WasmEncoding.VARSINT32});
+        signature.put(I32_TRUNC_F64_U, new WasmEncoding[] {WasmEncoding.VARSINT32});
+        signature.put(I64_EXTEND_I32_S, new WasmEncoding[] {WasmEncoding.VARSINT64});
+        signature.put(I64_EXTEND_I32_U, new WasmEncoding[] {WasmEncoding.VARSINT64});
+        signature.put(I64_TRUNC_F32_S, new WasmEncoding[] {WasmEncoding.VARSINT64});
+        signature.put(I64_TRUNC_F32_U, new WasmEncoding[] {WasmEncoding.VARSINT64});
+        signature.put(I64_TRUNC_F64_S, new WasmEncoding[] {WasmEncoding.VARSINT64});
+        signature.put(I64_TRUNC_F64_U, new WasmEncoding[] {WasmEncoding.VARSINT64});
         signature.put(F32_CONVERT_I32_S, new WasmEncoding[] {});
         signature.put(F32_CONVERT_I32_U, new WasmEncoding[] {});
         signature.put(F32_CONVERT_I64_S, new WasmEncoding[] {});
@@ -405,5 +426,35 @@ public enum OpCode {
         signature.put(DATA_DROP, new WasmEncoding[] {WasmEncoding.VARUINT});
         signature.put(MEMORY_COPY, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
         signature.put(MEMORY_FILL, new WasmEncoding[] {WasmEncoding.VARUINT});
+
+        // multi byte instructions: begin
+        signature.put(I32_TRUNC_SAT_F32_S, new WasmEncoding[] {WasmEncoding.VARSINT32});
+        signature.put(I32_TRUNC_SAT_F32_U, new WasmEncoding[] {WasmEncoding.VARSINT32});
+        signature.put(I32_TRUNC_SAT_F64_S, new WasmEncoding[] {WasmEncoding.VARSINT32});
+        signature.put(I32_TRUNC_SAT_F64_U, new WasmEncoding[] {WasmEncoding.VARSINT32});
+
+        signature.put(I64_TRUNC_SAT_F32_S, new WasmEncoding[] {WasmEncoding.VARSINT64});
+        signature.put(I64_TRUNC_SAT_F32_U, new WasmEncoding[] {WasmEncoding.VARSINT64});
+        signature.put(I64_TRUNC_SAT_F64_S, new WasmEncoding[] {WasmEncoding.VARSINT64});
+        signature.put(I64_TRUNC_SAT_F64_U, new WasmEncoding[] {WasmEncoding.VARSINT64});
+
+        signature.put(
+                MEMORY_INIT_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(DATA_DROP_FC, new WasmEncoding[] {WasmEncoding.VARUINT});
+        signature.put(
+                MEMORY_COPY_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(MEMORY_FILL_FC, new WasmEncoding[] {WasmEncoding.VARUINT});
+        signature.put(
+                TABLE_INIT_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(
+                ELEM_DROP_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(
+                TABLE_COPY_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(
+                TABLE_GROW_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(TABLE_SIZE_FC, new WasmEncoding[] {WasmEncoding.VARUINT});
+        signature.put(
+                TABLE_FILL_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        // multi byte instructions: end
     }
 }

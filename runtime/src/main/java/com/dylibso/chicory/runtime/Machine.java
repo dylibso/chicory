@@ -1380,12 +1380,24 @@ public class Machine {
                         {
                             var val = this.stack.pop().asDouble();
 
+                            if (val > Integer.MAX_VALUE || val < Integer.MIN_VALUE) {
+                                throw new WASMRuntimeException("integer overflow");
+                            }
+
                             this.stack.push(Value.i32((long) val));
                             break;
                         }
                     case I64_TRUNC_F32_S:
                         {
                             var val = this.stack.pop().asFloat();
+
+                            if (Double.isNaN(val)) {
+                                throw new WASMRuntimeException("invalid conversion to integer");
+                            }
+
+                            if (val > Long.MAX_VALUE || val < Long.MIN_VALUE) {
+                                throw new WASMRuntimeException("integer overflow");
+                            }
 
                             this.stack.push(Value.i64((long) val));
                             break;
