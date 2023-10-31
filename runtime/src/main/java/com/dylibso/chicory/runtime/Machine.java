@@ -2,17 +2,25 @@ package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.types.*;
-import java.util.*;
+import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.MutabilityType;
+import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
+import java.util.List;
+import java.util.Stack;
 
 /**
  * This is responsible for holding and interpreting the Wasm code.
  */
 public class Machine {
+
     private static final System.Logger LOGGER = System.getLogger(Machine.class.getName());
-    private MStack stack;
-    private Stack<StackFrame> callStack;
-    private Instance instance;
+
+    private final MStack stack;
+
+    private final Stack<StackFrame> callStack;
+
+    private final Instance instance;
 
     public Machine(Instance instance) {
         this.instance = instance;
@@ -39,7 +47,10 @@ public class Machine {
             }
         }
 
-        if (this.callStack.size() > 0) this.callStack.pop();
+        if (!this.callStack.isEmpty()) {
+            this.callStack.pop();
+        }
+
         if (!popResults) {
             return null;
         }
@@ -74,7 +85,7 @@ public class Machine {
                                 + frame.pc
                                 + ": "
                                 + instruction
-                                + "stack="
+                                + " stack="
                                 + this.stack);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
@@ -434,9 +445,9 @@ public class Machine {
                         }
                     case I64_STORE32:
                         {
-                            var value = this.stack.pop().asInt();
+                            var value = this.stack.pop().asLong();
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().putI32(ptr, value);
+                            instance.getMemory().putI32(ptr, (int) value);
                             break;
                         }
                     case MEMORY_SIZE:
@@ -1004,13 +1015,7 @@ public class Machine {
                     case F32_SQRT:
                         {
                             var val = this.stack.pop().asFloat();
-                            this.stack.push(
-                                    Value.fromFloat(
-                                            Double.valueOf(
-                                                            Math.sqrt(
-                                                                    Float.valueOf(val)
-                                                                            .doubleValue()))
-                                                    .floatValue()));
+                            this.stack.push(Value.fromFloat((float) Math.sqrt(val)));
                             break;
                         }
                     case F64_SQRT:
@@ -1022,13 +1027,7 @@ public class Machine {
                     case F32_FLOOR:
                         {
                             var val = this.stack.pop().asFloat();
-                            this.stack.push(
-                                    Value.fromFloat(
-                                            Double.valueOf(
-                                                            Math.floor(
-                                                                    Float.valueOf(val)
-                                                                            .doubleValue()))
-                                                    .floatValue()));
+                            this.stack.push(Value.fromFloat((float) Math.floor(val)));
                             break;
                         }
                     case F64_FLOOR:
@@ -1040,13 +1039,7 @@ public class Machine {
                     case F32_CEIL:
                         {
                             var val = this.stack.pop().asFloat();
-                            this.stack.push(
-                                    Value.fromFloat(
-                                            Double.valueOf(
-                                                            Math.ceil(
-                                                                    Float.valueOf(val)
-                                                                            .doubleValue()))
-                                                    .floatValue()));
+                            this.stack.push(Value.fromFloat((float) Math.ceil(val)));
                             break;
                         }
                     case F64_CEIL:
@@ -1060,15 +1053,10 @@ public class Machine {
                             var val = this.stack.pop().asFloat();
                             this.stack.push(
                                     Value.fromFloat(
-                                            Double.valueOf(
-                                                            (val < 0)
-                                                                    ? Math.ceil(
-                                                                            Float.valueOf(val)
-                                                                                    .doubleValue())
-                                                                    : Math.floor(
-                                                                            Float.valueOf(val)
-                                                                                    .doubleValue()))
-                                                    .floatValue()));
+                                            (float)
+                                                    ((val < 0)
+                                                            ? Math.ceil(val)
+                                                            : Math.floor(val))));
                             break;
                         }
                     case F64_TRUNC:
@@ -1081,13 +1069,7 @@ public class Machine {
                     case F32_NEAREST:
                         {
                             var val = this.stack.pop().asFloat();
-                            this.stack.push(
-                                    Value.fromFloat(
-                                            Double.valueOf(
-                                                            Math.rint(
-                                                                    Float.valueOf(val)
-                                                                            .doubleValue()))
-                                                    .floatValue()));
+                            this.stack.push(Value.fromFloat((float) Math.rint(val)));
                             break;
                         }
                     case F64_NEAREST:
@@ -1139,22 +1121,19 @@ public class Machine {
                     case F64_CONVERT_I32_U:
                         {
                             var tos = this.stack.pop();
-                            this.stack.push(
-                                    Value.fromDouble(Long.valueOf(tos.asUInt()).doubleValue()));
+                            this.stack.push(Value.fromDouble(tos.asUInt()));
                             break;
                         }
                     case F64_CONVERT_I32_S:
                         {
                             var tos = this.stack.pop();
-                            this.stack.push(
-                                    Value.fromDouble(Long.valueOf(tos.asInt()).doubleValue()));
+                            this.stack.push(Value.fromDouble(tos.asInt()));
                             break;
                         }
                     case F64_PROMOTE_F32:
                         {
                             var tos = this.stack.pop();
-                            this.stack.push(
-                                    Value.fromDouble(Float.valueOf(tos.asFloat()).doubleValue()));
+                            this.stack.push(Value.fromDouble(tos.asFloat()));
                             break;
                         }
                     case F64_REINTERPRET_I64:
@@ -1166,7 +1145,7 @@ public class Machine {
                     case I64_TRUNC_F64_S:
                         {
                             var tos = this.stack.pop();
-                            this.stack.push(Value.i64(Double.valueOf(tos.asDouble()).longValue()));
+                            this.stack.push(Value.i64((long) tos.asDouble()));
                             break;
                         }
                     case I32_WRAP_I64:
@@ -1178,7 +1157,7 @@ public class Machine {
                     case I64_EXTEND_I32_S:
                         {
                             var tos = this.stack.pop();
-                            this.stack.push(Value.i64(Integer.valueOf(tos.asInt()).longValue()));
+                            this.stack.push(Value.i64(tos.asInt()));
                             break;
                         }
                     case I64_EXTEND_I32_U:
@@ -1223,7 +1202,7 @@ public class Machine {
                         {
                             var val = this.stack.pop().asFloat();
 
-                            this.stack.push(Value.fromFloat(Math.abs(Float.valueOf(val))));
+                            this.stack.push(Value.fromFloat(Math.abs(val)));
                             break;
                         }
                     case F64_COPYSIGN:
@@ -1244,7 +1223,7 @@ public class Machine {
                         {
                             var val = this.stack.pop().asDouble();
 
-                            this.stack.push(Value.fromDouble(Math.abs(Double.valueOf(val))));
+                            this.stack.push(Value.fromDouble(Math.abs(val)));
                             break;
                         }
                     case F32_NE:
@@ -1331,70 +1310,84 @@ public class Machine {
                         {
                             var val = this.stack.pop().asDouble();
 
-                            this.stack.push(Value.fromFloat(Double.valueOf(val).floatValue()));
+                            this.stack.push(Value.fromFloat((float) val));
                             break;
                         }
                     case F32_CONVERT_I32_S:
                         {
                             var val = this.stack.pop().asInt();
 
-                            this.stack.push(Value.fromFloat(Integer.valueOf(val).floatValue()));
+                            this.stack.push(Value.fromFloat((float) val));
                             break;
                         }
                     case I32_TRUNC_F32_S:
                         {
                             var val = this.stack.pop().asFloat();
 
-                            this.stack.push(Value.i32(Float.valueOf(val).intValue()));
+                            this.stack.push(Value.i32((int) val));
                             break;
                         }
                     case F32_CONVERT_I32_U:
                         {
                             var val = this.stack.pop().asUInt();
 
-                            this.stack.push(Value.fromFloat(Long.valueOf(val).floatValue()));
+                            this.stack.push(Value.fromFloat((float) val));
                             break;
                         }
                     case I32_TRUNC_F32_U:
                         {
                             var val = this.stack.pop().asFloat();
 
-                            this.stack.push(Value.i32(Float.valueOf(val).longValue()));
+                            this.stack.push(Value.i32((long) val));
+                            break;
+                        }
+                    case F32_CONVERT_I64_S:
+                        {
+                            var val = this.stack.pop().asLong();
+
+                            this.stack.push(Value.fromFloat((float) val));
                             break;
                         }
                     case F64_CONVERT_I64_S:
                         {
                             var val = this.stack.pop().asLong();
 
-                            this.stack.push(Value.fromDouble(Long.valueOf(val).doubleValue()));
+                            this.stack.push(Value.fromDouble((double) val));
+                            break;
+                        }
+                    case I64_TRUNC_F32_U:
+                        {
+                            var val = this.stack.pop().asFloat();
+
+                            this.stack.push(Value.i64((long) val));
                             break;
                         }
                     case I64_TRUNC_F64_U:
                         {
                             var val = this.stack.pop().asDouble();
 
-                            this.stack.push(Value.i64(Double.valueOf(val).longValue()));
+                            this.stack.push(Value.i64((long) val));
                             break;
                         }
                     case I32_TRUNC_F64_S:
                         {
                             var val = this.stack.pop().asDouble();
 
-                            this.stack.push(Value.i32(Double.valueOf(val).intValue()));
+                            this.stack.push(Value.i32((int) val));
                             break;
                         }
                     case I32_TRUNC_F64_U:
                         {
                             var val = this.stack.pop().asDouble();
 
-                            this.stack.push(Value.i32(Double.valueOf(val).longValue()));
+                            this.stack.push(Value.i32((long) val));
                             break;
                         }
                     case I64_TRUNC_F32_S:
                         {
                             var val = this.stack.pop().asFloat();
 
-                            this.stack.push(Value.i64(Float.valueOf(val).longValue()));
+                            this.stack.push(Value.i64((long) val));
                             break;
                         }
                     case MEMORY_INIT:
@@ -1454,7 +1447,6 @@ public class Machine {
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("undefined element: " + e.getMessage(), e);
         } catch (Exception e) {
-            e.printStackTrace();
             throw new WASMRuntimeException("An underlying Java exception occurred", e);
         }
     }

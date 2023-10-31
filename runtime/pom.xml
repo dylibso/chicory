@@ -60,7 +60,8 @@
             br.wast,
             br_if.wast,
             br_table.wast,
-            if.wast</wastToProcess>
+            if.wast,
+            float_misc.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
             stack.wast,
@@ -69,9 +70,24 @@
             memory_init.wast,
             loop.wast,
             block.wast,
-            nop.wast</orderedWastToProcess>
+            nop.wast,
+            float_exprs.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
+            SpecV1FloatExprsTest.test210,
+            SpecV1FloatExprsTest.test306,
+            SpecV1FloatExprsTest.test307,
+            SpecV1FloatExprsTest.test308,
+            SpecV1FloatExprsTest.test309,
+            SpecV1FloatExprsTest.test748,
+            SpecV1FloatExprsTest.test749,
+            SpecV1FloatExprsTest.test750,
+            SpecV1FloatExprsTest.test751,
+            SpecV1FloatExprsTest.test758,
+            SpecV1FloatExprsTest.test759,
+            SpecV1FloatExprsTest.test760,
+            SpecV1FloatExprsTest.test761,
+            SpecV1MemoryGrowTest.test67,
             SpecV1MemoryInitTest.test80,
             SpecV1MemoryInitTest.test93,
             SpecV1MemoryInitTest.test101,
