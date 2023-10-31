@@ -3,6 +3,7 @@ package com.dylibso.chicory.wasm.types;
 import java.util.Stack;
 
 public class Ast {
+    private static final System.Logger LOGGER = System.getLogger(Ast.class.getName());
     private CodeBlock root;
     private Stack<CodeBlock> stack;
 
@@ -66,7 +67,8 @@ public class Ast {
 
     private void printAst(CodeBlock block, int depth) {
         for (var i : block.getInstructions()) {
-            System.out.println(
+            LOGGER.log(
+                    System.Logger.Level.INFO,
                     "0x"
                             + Integer.toHexString(i.getAddress())
                             + " | "

@@ -3,6 +3,8 @@ package com.dylibso.chicory.wasm;
 import com.dylibso.chicory.wasm.types.*;
 
 class ModuleBuilder implements ParserListener {
+
+    private static final System.Logger LOGGER = System.getLogger(ModuleBuilder.class.getName());
     private Module module;
 
     public ModuleBuilder() {
@@ -53,7 +55,9 @@ class ModuleBuilder implements ParserListener {
                 module.setDataSection((DataSection) s);
                 break;
             default:
-                System.out.println("Ignoring section with id: " + s.getSectionId());
+                LOGGER.log(
+                        System.Logger.Level.WARNING,
+                        "Ignoring section with id: " + s.getSectionId());
                 break;
         }
     }

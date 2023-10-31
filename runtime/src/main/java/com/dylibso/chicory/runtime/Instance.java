@@ -1,8 +1,10 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.*;
+import java.util.Arrays;
 
 public class Instance {
+    private static final System.Logger LOGGER = System.getLogger(Instance.class.getName());
     private Module module;
     private Machine machine;
     private FunctionBody[] functions;
@@ -40,7 +42,7 @@ public class Instance {
         var export = module.getExport(name);
         var funcId = (int) export.getDesc().getIndex();
         return (args) -> {
-            // System.out.println("Args: " + Arrays.toString(args));
+            LOGGER.log(System.Logger.Level.DEBUG, "Args: " + Arrays.toString(args));
             try {
                 return machine.call(funcId, args, true);
             } catch (Exception e) {

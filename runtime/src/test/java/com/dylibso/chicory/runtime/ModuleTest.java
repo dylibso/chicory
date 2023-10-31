@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Test;
 
 class Printer {
 
+    private static final System.Logger LOGGER = System.getLogger(Printer.class.getName());
+
     private int count = 0;
     private final String expected;
 
@@ -25,7 +27,7 @@ class Printer {
         if (expected == null || expected.equals(msg)) {
             count++;
         }
-        System.out.println(msg);
+        LOGGER.log(System.Logger.Level.INFO, msg);
     }
 
     public int times() {
