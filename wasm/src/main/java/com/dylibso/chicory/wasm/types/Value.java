@@ -1,13 +1,21 @@
 package com.dylibso.chicory.wasm.types;
 
+import static java.util.Objects.requireNonNull;
+
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Objects;
 
 public class Value {
+
+    public static final Value TRUE;
+
+    public static final Value FALSE;
+
     private final ValueType type;
+
     private final byte[] data;
-    public static Value TRUE;
-    public static Value FALSE;
 
     static {
         TRUE = Value.i32(1);
@@ -38,58 +46,60 @@ public class Value {
         return new Value(ValueType.F64, data);
     }
 
-    public ValueType getType() {
-        return this.type;
-    }
-
-    public byte[] getData() {
-        return this.data;
-    }
-
     public Value(ValueType type, byte[] data) {
-        this.type = type;
-        this.data = data;
+        this.type = requireNonNull(type, "type");
+        this.data = requireNonNull(data, "data");
     }
 
-    public Value(ValueType type, int data) {
-        if (type != ValueType.I32 || type != ValueType.F32) {
-            throw new IllegalArgumentException("Only use this constructor for 32 bit vals");
+    public Value(ValueType type, int value) {
+        this(ensure32bitValueType(type), ByteBuffer.allocate(4).putInt(value).array());
+    }
+
+    public Value(ValueType type, long value) {
+        this(requireNonNull(type, "type"), convertToBytes(type, value));
+    }
+
+    private static ValueType ensure32bitValueType(ValueType type) {
+        if (ValueType.I32.equals(type) || ValueType.F32.equals(type)) {
+            return type;
         }
-        this.type = type;
-        this.data = ByteBuffer.allocate(4).putInt(data).array();
+        throw new IllegalArgumentException(
+                "Invalid type for 32 bit value, only I32 or F32 are allowed, given: " + type);
     }
 
-    public Value(ValueType type, long data) {
-        this.type = type;
+    private static byte[] convertToBytes(ValueType type, long value) {
+        requireNonNull(type, "type");
+        byte[] data;
         switch (type) {
             case I32:
             case F32:
                 {
-                    this.data = new byte[4];
-                    this.data[0] = (byte) (data >> 24);
-                    this.data[1] = (byte) (data >> 16);
-                    this.data[2] = (byte) (data >> 8);
-                    this.data[3] = (byte) data;
+                    data = new byte[4];
+                    data[0] = (byte) (value >> 24);
+                    data[1] = (byte) (value >> 16);
+                    data[2] = (byte) (value >> 8);
+                    data[3] = (byte) value;
                     break;
                 }
             case I64:
             case F64:
                 {
-                    this.data = new byte[8];
-                    this.data[0] = (byte) (data >> 56);
-                    this.data[1] = (byte) (data >> 48);
-                    this.data[2] = (byte) (data >> 40);
-                    this.data[3] = (byte) (data >> 32);
-                    this.data[4] = (byte) (data >> 24);
-                    this.data[5] = (byte) (data >> 16);
-                    this.data[6] = (byte) (data >> 8);
-                    this.data[7] = (byte) data;
+                    data = new byte[8];
+                    data[0] = (byte) (value >> 56);
+                    data[1] = (byte) (value >> 48);
+                    data[2] = (byte) (value >> 40);
+                    data[3] = (byte) (value >> 32);
+                    data[4] = (byte) (value >> 24);
+                    data[5] = (byte) (value >> 16);
+                    data[6] = (byte) (value >> 8);
+                    data[7] = (byte) value;
                     break;
                 }
             default:
-                this.data = new byte[] {};
+                data = new byte[0];
                 break;
         }
+        return data;
     }
 
     // TODO memoize these
@@ -101,9 +111,10 @@ public class Value {
             case I64:
             case F64:
                 return ByteBuffer.wrap(this.data, 4, 4).getInt();
+            default:
+                throw new IllegalArgumentException(
+                        "Can't turn wasm value of type " + type + " to a int");
         }
-        ;
-        throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a int");
     }
 
     // The unsigned representation of the int, stored in a long
@@ -116,9 +127,10 @@ public class Value {
             case I64:
             case F64:
                 return ByteBuffer.wrap(this.data, 4, 4).getInt() & 0xFFFFFFFFL;
+            default:
+                throw new IllegalArgumentException(
+                        "Can't turn wasm value of type " + type + " to a uint");
         }
-        ;
-        throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a uint");
     }
 
     // TODO memoize these
@@ -145,9 +157,10 @@ public class Value {
                 return ByteBuffer.wrap(this.data, 2, 2).getShort();
             case I64:
                 return ByteBuffer.wrap(this.data, 6, 2).getShort();
+            default:
+                throw new IllegalArgumentException(
+                        "Can't turn wasm value of type " + type + " to a short");
         }
-        ;
-        throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a short");
     }
 
     public float asFloat() {
@@ -158,34 +171,43 @@ public class Value {
         return Double.longBitsToDouble(asLong());
     }
 
+    public ValueType getType() {
+        return this.type;
+    }
+
+    public byte[] getData() {
+        return this.data;
+    }
+
     public String toString() {
         switch (this.type) {
             case I32:
-                {
-                    return this.asInt() + "@i32";
-                }
+                return this.asInt() + "@i32";
             case I64:
-                {
-                    return this.asLong() + "@i64";
-                }
+                return this.asLong() + "@i64";
             case F32:
-                {
-                    return this.asFloat() + "@f32";
-                }
+                return this.asFloat() + "@f32";
             case F64:
-                {
-                    return this.asDouble() + "@f64";
-                }
+                return this.asDouble() + "@f64";
             default:
                 throw new RuntimeException("TODO handle missing types");
         }
     }
 
     @Override
-    public boolean equals(Object v) {
-        if (v == this) return true;
-        if (!(v instanceof Value)) return false;
+    public final boolean equals(Object v) {
+        if (v == this) {
+            return true;
+        }
+        if (!(v instanceof Value)) {
+            return false;
+        }
         Value other = (Value) v;
-        return type.equals(other.type) && data.equals(other.data);
+        return Objects.equals(type, other.type) && Arrays.equals(data, other.data);
+    }
+
+    @Override
+    public final int hashCode() {
+        return Objects.hash(type, Arrays.hashCode(data));
     }
 }
