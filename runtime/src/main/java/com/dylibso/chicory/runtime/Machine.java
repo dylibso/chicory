@@ -6,7 +6,6 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-import java.math.BigInteger;
 import java.util.List;
 import java.util.Stack;
 
@@ -16,6 +15,16 @@ import java.util.Stack;
 public class Machine {
 
     private static final System.Logger LOGGER = System.getLogger(Machine.class.getName());
+
+    public static final long MAX_INT_UNSIGNED = 0xFFFFFFFFL;
+
+    public static final long MAX_LONG_UNSIGNED = 0xFFFFFFFFFFFFFFFFL;
+
+    public static final double TWO_POW_63_D = 0x1.0p63; /* 2^63 */
+
+    public static final float TWO_POW_64_PLUS_1_F = 1.8446743E19F; /* 2^64 + 1*/
+
+    public static final double TWO_POW_64_D = 1.844674407370955E19; /* 2^64 */
 
     private final MStack stack;
 
@@ -1092,7 +1101,7 @@ public class Machine {
                         {
                             var original = this.stack.pop().asInt() & 0xFFFF;
                             if ((original & 0x8000) != 0) original |= 0xFFFF0000;
-                            this.stack.push(Value.i32(original & 0xFFFFFFFFL));
+                            this.stack.push(Value.i32(original & MAX_INT_UNSIGNED));
                             break;
                         }
                     case I64_EXTEND_8_S:
@@ -1121,9 +1130,8 @@ public class Machine {
                         }
                     case F64_CONVERT_I32_U:
                         {
-                            int val = this.stack.pop().asInt();
-                            double converted = val & 0xFFFFFFFFL; // Convert to unsigned
-                            this.stack.push(Value.f64(Double.doubleToRawLongBits(converted)));
+                            long tos = this.stack.pop().asUInt();
+                            this.stack.push(Value.f64(Double.doubleToRawLongBits(tos)));
                             break;
                         }
                     case F64_CONVERT_I32_S:
@@ -1146,20 +1154,20 @@ public class Machine {
                         }
                     case I64_TRUNC_F64_S:
                         {
-                            double val = Double.longBitsToDouble(this.stack.pop().asLong());
+                            double tos = this.stack.pop().asDouble();
 
-                            if (Double.isNaN(val)) {
+                            if (Double.isNaN(tos)) {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
 
-                            long valL = (long) val;
-                            if (val == (double) Long.MIN_VALUE) {
-                                valL = Long.MIN_VALUE;
-                            } else if (valL == Long.MIN_VALUE || valL == Long.MAX_VALUE) {
+                            long tosL = (long) tos;
+                            if (tos == (double) Long.MIN_VALUE) {
+                                tosL = Long.MIN_VALUE;
+                            } else if (tosL == Long.MIN_VALUE || tosL == Long.MAX_VALUE) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
 
-                            this.stack.push(Value.i64(valL));
+                            this.stack.push(Value.i64(tosL));
                             break;
                         }
                     case I32_WRAP_I64:
@@ -1329,287 +1337,286 @@ public class Machine {
                         }
                     case F32_CONVERT_I32_S:
                         {
-                            var val = this.stack.pop().asInt();
-
-                            this.stack.push(Value.fromFloat((float) val));
+                            var tos = this.stack.pop().asInt();
+                            this.stack.push(Value.fromFloat((float) tos));
                             break;
                         }
                     case I32_TRUNC_F32_S:
                         {
-                            float val = Float.intBitsToFloat(this.stack.pop().asInt());
+                            float tos = this.stack.pop().asFloat();
 
-                            if (Float.isNaN(val)) {
+                            if (Float.isNaN(tos)) {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
 
-                            if (val < Integer.MIN_VALUE || val >= Integer.MAX_VALUE) {
+                            if (tos < Integer.MIN_VALUE || tos >= Integer.MAX_VALUE) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
 
-                            this.stack.push(Value.i32((long) val));
+                            this.stack.push(Value.i32((long) tos));
                             break;
                         }
 
                     case I32_TRUNC_SAT_F32_S:
                         {
-                            var val = this.stack.pop().asFloat();
+                            var tos = this.stack.pop().asFloat();
 
-                            if (Float.isNaN(val)) {
-                                val = 0;
-                            } else if (val < Integer.MIN_VALUE) {
-                                val = Integer.MIN_VALUE;
-                            } else if (val > Integer.MAX_VALUE) {
-                                val = Integer.MAX_VALUE;
+                            if (Float.isNaN(tos)) {
+                                tos = 0;
+                            } else if (tos < Integer.MIN_VALUE) {
+                                tos = Integer.MIN_VALUE;
+                            } else if (tos > Integer.MAX_VALUE) {
+                                tos = Integer.MAX_VALUE;
                             }
 
-                            this.stack.push(Value.i32((int) val));
+                            this.stack.push(Value.i32((int) tos));
                             break;
                         }
                     case I32_TRUNC_SAT_F32_U:
                         {
-                            var val = this.stack.pop().asFloat();
+                            var tos = this.stack.pop().asFloat();
 
-                            long valL;
-                            if (Float.isNaN(val) || val < 0) {
-                                valL = 0L;
-                            } else if (val >= 0xFFFFFFFFL) {
-                                valL = 0xFFFFFFFFL;
+                            long tosL;
+                            if (Float.isNaN(tos) || tos < 0) {
+                                tosL = 0L;
+                            } else if (tos >= MAX_INT_UNSIGNED) {
+                                tosL = MAX_INT_UNSIGNED;
                             } else {
-                                valL = (long) val;
+                                tosL = (long) tos;
                             }
 
-                            this.stack.push(Value.i32(valL));
+                            this.stack.push(Value.i32(tosL));
                             break;
                         }
 
                     case I32_TRUNC_SAT_F64_S:
                         {
-                            var val = this.stack.pop().asDouble();
+                            var tos = this.stack.pop().asDouble();
 
-                            if (Double.isNaN(val)) {
-                                val = 0;
-                            } else if (val <= Integer.MIN_VALUE) {
-                                val = Integer.MIN_VALUE;
-                            } else if (val >= Integer.MAX_VALUE) {
-                                val = Integer.MAX_VALUE;
+                            if (Double.isNaN(tos)) {
+                                tos = 0;
+                            } else if (tos <= Integer.MIN_VALUE) {
+                                tos = Integer.MIN_VALUE;
+                            } else if (tos >= Integer.MAX_VALUE) {
+                                tos = Integer.MAX_VALUE;
                             }
 
-                            this.stack.push(Value.i32((int) val));
+                            this.stack.push(Value.i32((int) tos));
                             break;
                         }
                     case I32_TRUNC_SAT_F64_U:
                         {
-                            double val = Double.longBitsToDouble(this.stack.pop().asLong());
+                            double tos = Double.longBitsToDouble(this.stack.pop().asLong());
 
-                            long valL;
-                            if (Double.isNaN(val) || val < 0) {
-                                valL = 0;
-                            } else if (val >= 0xFFFFFFFFL + 1.0) {
-                                valL = 0xFFFFFFFFL;
+                            long tosL;
+                            if (Double.isNaN(tos) || tos < 0) {
+                                tosL = 0;
+                            } else if (tos >= MAX_INT_UNSIGNED + 1.0) {
+                                tosL = MAX_INT_UNSIGNED;
                             } else {
-                                valL = (long) val;
+                                tosL = (long) tos;
                             }
-                            this.stack.push(Value.i32(valL));
+                            this.stack.push(Value.i32(tosL));
                             break;
                         }
                     case F32_CONVERT_I32_U:
                         {
-                            var val = this.stack.pop().asUInt();
+                            var tos = this.stack.pop().asUInt();
 
-                            this.stack.push(Value.fromFloat((float) val));
+                            this.stack.push(Value.fromFloat((float) tos));
                             break;
                         }
                     case I32_TRUNC_F32_U:
                         {
-                            var val = this.stack.pop().asFloat();
+                            var tos = this.stack.pop().asFloat();
 
-                            if (Float.isNaN(val)) {
+                            if (Float.isNaN(tos)) {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
 
-                            long valL = (long) val;
-                            if (valL < 0 || valL >= 0xFFFFFFFFL) {
+                            long tosL = (long) tos;
+                            if (tosL < 0 || tosL >= MAX_INT_UNSIGNED) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
 
-                            this.stack.push(Value.i32(valL));
+                            this.stack.push(Value.i32(tosL));
                             break;
                         }
                     case F32_CONVERT_I64_S:
                         {
-                            var val = this.stack.pop().asLong();
+                            var tos = this.stack.pop().asLong();
 
-                            this.stack.push(Value.fromFloat((float) val));
+                            this.stack.push(Value.fromFloat((float) tos));
                             break;
                         }
                     case F32_CONVERT_I64_U:
                         {
-                            BigInteger val = this.stack.pop().asULong();
-                            float converted =
-                                    val.floatValue() < 0
-                                            ? (float) (val.longValue() + 0x1.0p63) /* 2^63 */
-                                            : val.floatValue();
-                            this.stack.push(Value.f32(Float.floatToIntBits(converted)));
+                            var tos = this.stack.pop().asULong();
+                            float tosF =
+                                    tos.floatValue() < 0
+                                            ? (float) (tos.longValue() + TWO_POW_63_D)
+                                            : tos.floatValue();
+                            this.stack.push(Value.f32(Float.floatToIntBits(tosF)));
                             break;
                         }
                     case F64_CONVERT_I64_S:
                         {
-                            var val = this.stack.pop().asLong();
+                            var tos = this.stack.pop().asLong();
 
-                            this.stack.push(Value.fromDouble((double) val));
+                            this.stack.push(Value.fromDouble((double) tos));
                             break;
                         }
                     case I64_TRUNC_F32_U:
                         {
-                            var val = this.stack.pop().asFloat();
+                            var tos = this.stack.pop().asFloat();
 
-                            if (Float.isNaN(val)) {
+                            if (Float.isNaN(tos)) {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
 
-                            var valL = (long) val;
+                            var tosL = (long) tos;
 
-                            if (val == 1.8446743E19F) {
-                                valL = -1099511627776L;
-                            } else if (valL < 0 || (valL == Long.MAX_VALUE)) {
+                            if (tos == TWO_POW_64_PLUS_1_F) {
+                                tosL = -1099511627776L; // why oh why
+                            } else if (tosL < 0 || (tosL == Long.MAX_VALUE)) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
 
-                            this.stack.push(Value.i64(valL));
+                            this.stack.push(Value.i64(tosL));
                             break;
                         }
                     case I64_TRUNC_F64_U:
                         {
-                            var val = this.stack.pop().asDouble();
+                            var tos = this.stack.pop().asDouble();
 
-                            if (Double.isNaN(val)) {
+                            if (Double.isNaN(tos)) {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
-                            var valL = (long) val;
-                            if (val == (double) Long.MAX_VALUE) {
-                                valL = Long.MIN_VALUE;
-                            } else if (val == 1.844674407370955E19) {
-                                valL = -2048; // why oh why
-                            } else if (valL < 0 || valL == Long.MAX_VALUE) {
+                            var tosL = (long) tos;
+                            if (tos == (double) Long.MAX_VALUE) {
+                                tosL = Long.MIN_VALUE;
+                            } else if (tos == TWO_POW_64_D) {
+                                tosL = -2048; // why oh why
+                            } else if (tosL < 0 || tosL == Long.MAX_VALUE) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
-                            this.stack.push(Value.i64(valL));
+                            this.stack.push(Value.i64(tosL));
                             break;
                         }
 
                     case I64_TRUNC_SAT_F32_S:
                         {
-                            var val = this.stack.pop().asFloat();
+                            var tos = this.stack.pop().asFloat();
 
-                            if (Float.isNaN(val)) {
-                                val = 0;
-                            } else if (val <= Long.MIN_VALUE) {
-                                val = Long.MIN_VALUE;
-                            } else if (val >= Long.MAX_VALUE) {
-                                val = Long.MAX_VALUE;
+                            if (Float.isNaN(tos)) {
+                                tos = 0;
+                            } else if (tos <= Long.MIN_VALUE) {
+                                tos = Long.MIN_VALUE;
+                            } else if (tos >= Long.MAX_VALUE) {
+                                tos = Long.MAX_VALUE;
                             }
 
-                            this.stack.push(Value.i64((long) val));
+                            this.stack.push(Value.i64((long) tos));
                             break;
                         }
                     case I64_TRUNC_SAT_F32_U:
                         {
-                            var val = this.stack.pop().asFloat();
+                            var tos = this.stack.pop().asFloat();
 
-                            long valL;
-                            if (Float.isNaN(val) || val < 0) {
-                                valL = 0L;
-                            } else if (val == 1.8446743E19F) {
-                                valL = -1099511627776L;
-                            } else if (val >= Long.MAX_VALUE) {
-                                valL = 0xFFFFFFFFFFFFFFFFL;
+                            long tosL;
+                            if (Float.isNaN(tos) || tos < 0) {
+                                tosL = 0L;
+                            } else if (tos == TWO_POW_64_PLUS_1_F) {
+                                tosL = -1099511627776L;
+                            } else if (tos >= Long.MAX_VALUE) {
+                                tosL = MAX_LONG_UNSIGNED;
                             } else {
-                                valL = (long) val;
+                                tosL = (long) tos;
                             }
 
-                            this.stack.push(Value.i64(valL));
+                            this.stack.push(Value.i64(tosL));
                             break;
                         }
                     case I64_TRUNC_SAT_F64_S:
                         {
-                            var val = this.stack.pop().asDouble();
+                            var tos = this.stack.pop().asDouble();
 
-                            if (Double.isNaN(val)) {
-                                val = 0;
-                            } else if (val <= Long.MIN_VALUE) {
-                                val = Long.MIN_VALUE;
-                            } else if (val >= Long.MAX_VALUE) {
-                                val = Long.MAX_VALUE;
+                            if (Double.isNaN(tos)) {
+                                tos = 0;
+                            } else if (tos <= Long.MIN_VALUE) {
+                                tos = Long.MIN_VALUE;
+                            } else if (tos >= Long.MAX_VALUE) {
+                                tos = Long.MAX_VALUE;
                             }
 
-                            this.stack.push(Value.i64((long) val));
+                            this.stack.push(Value.i64((long) tos));
                             break;
                         }
 
                     case I64_TRUNC_SAT_F64_U:
                         {
-                            double val = this.stack.pop().asDouble();
+                            double tos = this.stack.pop().asDouble();
 
-                            long valL;
-                            if (Double.isNaN(val) || val <= -1.0) {
-                                valL = 0L;
-                            } else if (val == 1.844674407370955E19) {
-                                valL = -2048L;
-                            } else if (val >= 1.8446744073709552E19) { // 2^64
-                                valL = 0xFFFFFFFFFFFFFFFFL;
-                            } else if (val == Long.MAX_VALUE) {
-                                valL = (long) val + 1;
+                            long tosL;
+                            if (Double.isNaN(tos) || tos <= -1.0) {
+                                tosL = 0L;
+                            } else if (tos == TWO_POW_64_D) {
+                                tosL = -2048L;
+                            } else if (tos >= TWO_POW_64_PLUS_1_F) { // 2^64
+                                tosL = MAX_LONG_UNSIGNED;
+                            } else if (tos == Long.MAX_VALUE) {
+                                tosL = (long) tos + 1;
                             } else {
-                                valL = (long) val;
+                                tosL = (long) tos;
                             }
 
-                            this.stack.push(Value.i64(valL));
+                            this.stack.push(Value.i64(tosL));
                             break;
                         }
 
                     case I32_TRUNC_F64_S:
                         {
-                            var val = this.stack.pop().asDouble();
+                            var tos = this.stack.pop().asDouble();
 
-                            if (Double.isNaN(val)) {
+                            if (Double.isNaN(tos)) {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
 
-                            var valL = (long) val;
-                            if (valL < Integer.MIN_VALUE || valL > Integer.MAX_VALUE) {
+                            var tosL = (long) tos;
+                            if (tosL < Integer.MIN_VALUE || tosL > Integer.MAX_VALUE) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
 
-                            this.stack.push(Value.i32(valL));
+                            this.stack.push(Value.i32(tosL));
                             break;
                         }
                     case I32_TRUNC_F64_U:
                         {
-                            double aDouble = this.stack.pop().asDouble();
-                            if (Double.isNaN(aDouble)) {
+                            double tos = this.stack.pop().asDouble();
+                            if (Double.isNaN(tos)) {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
 
-                            var val = (long) aDouble;
-                            if (val < 0 || val > 0xFFFFFFFFL) {
+                            var tosL = (long) tos;
+                            if (tosL < 0 || tosL > MAX_INT_UNSIGNED) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
-                            this.stack.push(Value.i32(val & 0xFFFFFFFFL));
+                            this.stack.push(Value.i32(tosL & MAX_INT_UNSIGNED));
                             break;
                         }
                     case I64_TRUNC_F32_S:
                         {
-                            var val = this.stack.pop().asFloat();
+                            var tos = this.stack.pop().asFloat();
 
-                            if (Float.isNaN(val)) {
+                            if (Float.isNaN(tos)) {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
 
-                            if (val < Long.MIN_VALUE || val >= Long.MAX_VALUE) {
+                            if (tos < Long.MIN_VALUE || tos >= Long.MAX_VALUE) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
 
-                            this.stack.push(Value.i64((long) val));
+                            this.stack.push(Value.i64((long) tos));
                             break;
                         }
                     case MEMORY_INIT:
