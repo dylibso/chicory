@@ -20,6 +20,8 @@ public enum OpCode {
     RETURN(0x0F), // return
     CALL(0x10), // call <varuint>
     CALL_INDIRECT(0x11), // call_indirect <varuint> <varuint>
+    CALL_REF(0x14), // call_ref <varuint>
+    REF_FUNC(0xD2), // ref.func <varuint>
     DROP(0x1A), // drop
     SELECT(0x1B), // select
     LOCAL_GET(0x20), // local.get <varuint>
@@ -432,7 +434,7 @@ public enum OpCode {
         signature.put(MEMORY_COPY, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
         signature.put(MEMORY_FILL, new WasmEncoding[] {WasmEncoding.VARUINT});
 
-        // multi byte instructions: begin -> todo check for correct encoding
+        // multibyte instructions: begin -> todo check for correct encoding
         signature.put(I32_TRUNC_SAT_F32_S, new WasmEncoding[] {WasmEncoding.VARUINT});
         signature.put(I32_TRUNC_SAT_F32_U, new WasmEncoding[] {WasmEncoding.VARUINT});
         signature.put(I32_TRUNC_SAT_F64_S, new WasmEncoding[] {WasmEncoding.VARUINT});
@@ -446,36 +448,22 @@ public enum OpCode {
                 new WasmEncoding[] {
                     WasmEncoding.VARUINT, WasmEncoding.VARUINT, WasmEncoding.VARUINT
                 });
-        signature.put(DATA_DROP_FC, new WasmEncoding[] {WasmEncoding.VARUINT});
         signature.put(
-                MEMORY_COPY_FC,
-                new WasmEncoding[] {
-                    WasmEncoding.VARUINT, WasmEncoding.VARUINT, WasmEncoding.VARUINT
-                });
+                DATA_DROP_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
         signature.put(
-                MEMORY_FILL_FC,
-                new WasmEncoding[] {
-                    WasmEncoding.VARUINT, WasmEncoding.VARUINT, WasmEncoding.VARUINT
-                });
+                MEMORY_COPY_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
         signature.put(
-                TABLE_INIT_FC,
-                new WasmEncoding[] {
-                    WasmEncoding.VARUINT, WasmEncoding.VARUINT, WasmEncoding.VARUINT
-                });
+                MEMORY_FILL_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(
+                TABLE_INIT_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
         signature.put(ELEM_DROP_FC, new WasmEncoding[] {WasmEncoding.VARUINT});
         signature.put(
-                TABLE_COPY_FC,
-                new WasmEncoding[] {
-                    WasmEncoding.VARUINT, WasmEncoding.VARUINT, WasmEncoding.VARUINT
-                });
-        signature.put(
-                TABLE_GROW_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+                TABLE_COPY_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(TABLE_GROW_FC, new WasmEncoding[] {WasmEncoding.VARUINT});
         signature.put(TABLE_SIZE_FC, new WasmEncoding[] {WasmEncoding.VARUINT});
-        signature.put(
-                TABLE_FILL_FC,
-                new WasmEncoding[] {
-                    WasmEncoding.VARUINT, WasmEncoding.VARUINT, WasmEncoding.VARUINT
-                });
-        // multi byte instructions: end
+        signature.put(TABLE_FILL_FC, new WasmEncoding[] {WasmEncoding.VARUINT});
+        // multibyte instructions: end
+        signature.put(CALL_REF, new WasmEncoding[] {WasmEncoding.VARUINT});
+        signature.put(REF_FUNC, new WasmEncoding[] {WasmEncoding.VARUINT});
     }
 }

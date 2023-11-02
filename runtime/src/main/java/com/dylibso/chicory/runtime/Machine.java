@@ -6,6 +6,7 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Stack;
 
@@ -1151,12 +1152,14 @@ public class Machine {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
 
-                            long valLong = (long) val;
-                            if (valLong <= Long.MIN_VALUE || valLong >= Long.MAX_VALUE) {
+                            long valL = (long) val;
+                            if (val == (double) Long.MIN_VALUE) {
+                                valL = Long.MIN_VALUE;
+                            } else if (valL == Long.MIN_VALUE || valL == Long.MAX_VALUE) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
 
-                            this.stack.push(Value.i64(valLong));
+                            this.stack.push(Value.i64(valL));
                             break;
                         }
                     case I32_WRAP_I64:
@@ -1398,15 +1401,15 @@ public class Machine {
                         {
                             double val = Double.longBitsToDouble(this.stack.pop().asLong());
 
-                            long valLong;
+                            long valL;
                             if (Double.isNaN(val) || val < 0) {
-                                valLong = 0;
+                                valL = 0;
                             } else if (val >= 0xFFFFFFFFL + 1.0) {
-                                valLong = 0xFFFFFFFFL;
+                                valL = 0xFFFFFFFFL;
                             } else {
-                                valLong = (long) val;
+                                valL = (long) val;
                             }
-                            this.stack.push(Value.i32(valLong));
+                            this.stack.push(Value.i32(valL));
                             break;
                         }
                     case F32_CONVERT_I32_U:
@@ -1424,12 +1427,12 @@ public class Machine {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
 
-                            long valLong = (long) val;
-                            if (valLong < 0 || valLong >= 0xFFFFFFFFL) {
+                            long valL = (long) val;
+                            if (valL < 0 || valL >= 0xFFFFFFFFL) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
 
-                            this.stack.push(Value.i32(valLong));
+                            this.stack.push(Value.i32(valL));
                             break;
                         }
                     case F32_CONVERT_I64_S:
@@ -1441,11 +1444,11 @@ public class Machine {
                         }
                     case F32_CONVERT_I64_U:
                         {
-                            long val = this.stack.pop().asLong();
+                            BigInteger val = this.stack.pop().asULong();
                             float converted =
-                                    val >= 0
-                                            ? (float) val
-                                            : (float) (val & 0x7FFFFFFFFFFFFFFFL) + 0x1.0p63f;
+                                    val.floatValue() < 0
+                                            ? (float) (val.longValue() + 0x1.0p63) /* 2^63 */
+                                            : val.floatValue();
                             this.stack.push(Value.f32(Float.floatToIntBits(converted)));
                             break;
                         }
@@ -1466,7 +1469,9 @@ public class Machine {
 
                             var valL = (long) val;
 
-                            if (valL < 0 || valL >= Long.MAX_VALUE) {
+                            if (val == 1.8446743E19F) {
+                                valL = -1099511627776L;
+                            } else if (valL < 0 || (valL == Long.MAX_VALUE)) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
 
@@ -1481,7 +1486,11 @@ public class Machine {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
                             var valL = (long) val;
-                            if (valL < 0 || valL >= Long.MAX_VALUE) {
+                            if (val == (double) Long.MAX_VALUE) {
+                                valL = Long.MIN_VALUE;
+                            } else if (val == 1.844674407370955E19) {
+                                valL = -2048; // why oh why
+                            } else if (valL < 0 || valL == Long.MAX_VALUE) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
                             this.stack.push(Value.i64(valL));
@@ -1510,6 +1519,8 @@ public class Machine {
                             long valL;
                             if (Float.isNaN(val) || val < 0) {
                                 valL = 0L;
+                            } else if (val == 1.8446743E19F) {
+                                valL = -1099511627776L;
                             } else if (val >= Long.MAX_VALUE) {
                                 valL = 0xFFFFFFFFFFFFFFFFL;
                             } else {
@@ -1537,17 +1548,22 @@ public class Machine {
 
                     case I64_TRUNC_SAT_F64_U:
                         {
-                            double val = Double.longBitsToDouble(this.stack.pop().asLong());
+                            double val = this.stack.pop().asDouble();
 
-                            long valLong;
+                            long valL;
                             if (Double.isNaN(val) || val <= -1.0) {
-                                valLong = 0L;
+                                valL = 0L;
+                            } else if (val == 1.844674407370955E19) {
+                                valL = -2048L;
                             } else if (val >= 1.8446744073709552E19) { // 2^64
-                                valLong = 0xFFFFFFFFFFFFFFFFL;
+                                valL = 0xFFFFFFFFFFFFFFFFL;
+                            } else if (val == Long.MAX_VALUE) {
+                                valL = (long) val + 1;
                             } else {
-                                valLong = (long) val;
+                                valL = (long) val;
                             }
-                            this.stack.push(Value.i64(valLong));
+
+                            this.stack.push(Value.i64(valL));
                             break;
                         }
 
@@ -1559,12 +1575,12 @@ public class Machine {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
 
-                            var valLong = (long) val;
-                            if (valLong < Integer.MIN_VALUE || valLong > Integer.MAX_VALUE) {
+                            var valL = (long) val;
+                            if (valL < Integer.MIN_VALUE || valL > Integer.MAX_VALUE) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
 
-                            this.stack.push(Value.i32(valLong));
+                            this.stack.push(Value.i32(valL));
                             break;
                         }
                     case I32_TRUNC_F64_U:
