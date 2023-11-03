@@ -36,6 +36,7 @@ import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableSection;
+import com.dylibso.chicory.wasm.types.Type;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -138,10 +139,7 @@ public final class Parser {
             var sectionId = (int) readVarUInt32(buffer);
             var sectionSize = readVarUInt32(buffer);
 
-            if (!shouldParseSection(sectionId)) {
-                LOGGER.log(
-                        System.Logger.Level.WARNING,
-                        "Skipping Section with ID due to configuration: " + sectionId);
+            if (shouldParseSection(sectionId)) {
                 // Process different section types based on the sectionId
                 switch (sectionId) {
                     case SectionId.CUSTOM:
@@ -219,7 +217,9 @@ public final class Parser {
                         }
                     default:
                         {
-                            System.out.println("Skipping Unknown Section with ID: " + sectionId);
+                            LOGGER.log(
+                                    System.Logger.Level.WARNING,
+                                    "Skipping Section with ID due to configuration: " + sectionId);
                             buffer.position((int) (buffer.position() + sectionSize));
                             break;
                         }
@@ -228,88 +228,6 @@ public final class Parser {
                 System.out.println("Skipping Section with ID due to configuration: " + sectionId);
                 buffer.position((int) (buffer.position() + sectionSize));
                 continue;
-            }
-
-            // Process different section types based on the sectionId
-            switch (sectionId) {
-                case SectionId.CUSTOM:
-                    {
-                        var customSection = parseCustomSection(buffer, sectionId, sectionSize);
-                        listener.onSection(customSection);
-                        break;
-                    }
-                case SectionId.TYPE:
-                    {
-                        var typeSection = parseTypeSection(buffer, sectionId, sectionSize);
-                        listener.onSection(typeSection);
-                        break;
-                    }
-                case SectionId.IMPORT:
-                    {
-                        var importSection = parseImportSection(buffer, sectionId, sectionSize);
-                        listener.onSection(importSection);
-                        break;
-                    }
-                case SectionId.FUNCTION:
-                    {
-                        var funcSection = parseFunctionSection(buffer, sectionId, sectionSize);
-                        listener.onSection(funcSection);
-                        break;
-                    }
-                case SectionId.TABLE:
-                    {
-                        var tableSection = parseTableSection(buffer, sectionId, sectionSize);
-                        listener.onSection(tableSection);
-                        break;
-                    }
-                case SectionId.MEMORY:
-                    {
-                        var memorySection = parseMemorySection(buffer, sectionId, sectionSize);
-                        listener.onSection(memorySection);
-                        break;
-                    }
-                case SectionId.GLOBAL:
-                    {
-                        var globalSection = parseGlobalSection(buffer, sectionId, sectionSize);
-                        listener.onSection(globalSection);
-                        break;
-                    }
-                case SectionId.EXPORT:
-                    {
-                        var exportSection = parseExportSection(buffer, sectionId, sectionSize);
-                        listener.onSection(exportSection);
-                        break;
-                    }
-                case SectionId.START:
-                    {
-                        var startSection = parseStartSection(buffer, sectionId, sectionSize);
-                        listener.onSection(startSection);
-                        break;
-                    }
-                case SectionId.ELEMENT:
-                    {
-                        var elementSection = parseElementSection(buffer, sectionId, sectionSize);
-                        listener.onSection(elementSection);
-                        break;
-                    }
-                case SectionId.CODE:
-                    {
-                        var codeSection = parseCodeSection(buffer, sectionId, sectionSize);
-                        listener.onSection(codeSection);
-                        break;
-                    }
-                case SectionId.DATA:
-                    {
-                        var dataSection = parseDataSection(buffer, sectionId, sectionSize);
-                        listener.onSection(dataSection);
-                        break;
-                    }
-                default:
-                    {
-                        System.out.println("Skipping Unknown Section with ID: " + sectionId);
-                        buffer.position((int) (buffer.position() + sectionSize));
-                        break;
-                    }
             }
         }
     }
@@ -345,37 +263,36 @@ public final class Parser {
             ByteBuffer buffer, long sectionId, long sectionSize) {
 
         var typeCount = readVarUInt32(buffer);
-        var types = new FunctionType[(int) typeCount];
+        var types = new Type[(int) typeCount];
 
         // Parse individual types in the type section
         for (int i = 0; i < typeCount; i++) {
             var form = readVarUInt32(buffer);
 
-            if (form != 0x60) {
+            if (form == 0x60) {
+                // Parse function types (form = 0x60)
+                var paramCount = (int) readVarUInt32(buffer);
+                var params = new ValueType[paramCount];
+
+                // Parse parameter types
+                for (int j = 0; j < paramCount; j++) {
+                    params[j] = ValueType.byId(readVarUInt32(buffer));
+                }
+
+                var returnCount = (int) readVarUInt32(buffer);
+                var returns = new ValueType[returnCount];
+
+                // Parse return types
+                for (int j = 0; j < returnCount; j++) {
+                    returns[j] = ValueType.byId(readVarUInt32(buffer));
+                }
+
+                types[i] = new FunctionType(params, returns);
+            } else {
                 throw new RuntimeException(
-                        "We don't support non func types. Form "
-                                + String.format("0x%02X", form)
-                                + " was given but we expected 0x60");
+                        "Table and Mem Types are not parsed yet."); // TODO: restore the prev error
+                // message
             }
-
-            // Parse function types (form = 0x60)
-            var paramCount = (int) readVarUInt32(buffer);
-            var params = new ValueType[paramCount];
-
-            // Parse parameter types
-            for (int j = 0; j < paramCount; j++) {
-                params[j] = ValueType.byId(readVarUInt32(buffer));
-            }
-
-            var returnCount = (int) readVarUInt32(buffer);
-            var returns = new ValueType[returnCount];
-
-            // Parse return types
-            for (int j = 0; j < returnCount; j++) {
-                returns[j] = ValueType.byId(readVarUInt32(buffer));
-            }
-
-            types[i] = new FunctionType(params, returns);
         }
 
         return new TypeSection(sectionId, sectionSize, types);

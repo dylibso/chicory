@@ -27,7 +27,7 @@ public class ParserTest {
         var importSection = module.getImportSection();
         var imports = importSection.getImports();
         assertEquals(1, imports.length);
-        assertEquals("func[0] <env.gotit>", imports[0].toString());
+        assertEquals("func[] <env.gotit>", imports[0].toString());
 
         // check data section
         var dataSection = module.getDataSection();

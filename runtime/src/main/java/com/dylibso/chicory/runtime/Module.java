@@ -63,7 +63,8 @@ public class Module {
         for (var i = 0; i < globalInitializers.length; i++) {
             var g = globalInitializers[i];
             if (g.getInit().length > 2)
-                throw new RuntimeException("We don't a global initializer with multiple instructions");
+                throw new RuntimeException(
+                        "We don't a global initializer with multiple instructions");
             var instr = g.getInit()[0];
             switch (instr.getOpcode()) {
                 case I32_CONST:
@@ -81,16 +82,17 @@ public class Module {
                 case GLOBAL_GET:
                     // TODO this assumes that these are already initialized declared in order
                     // should we make this more resilient? Should initialization happen later?
-                    globals[i] = globals[(int)instr.getOperands()[0]];
+                    globals[i] = globals[(int) instr.getOperands()[0]];
                     break;
                 case REF_NULL:
                     globals[i] = Value.REF_NULL;
                     break;
                 default:
                     throw new RuntimeException(
-                            "We only support i32.const, i64.const, f32.const, f64.const, global.get, and ref.null opcodes on global initializers right"
-                                    + " now. We failed to initialize opcode: " + instr.getOpcode());
-
+                            "We only support i32.const, i64.const, f32.const, f64.const,"
+                                + " global.get, and ref.null opcodes on global initializers right"
+                                + " now. We failed to initialize opcode: "
+                                    + instr.getOpcode());
             }
         }
 
@@ -110,7 +112,7 @@ public class Module {
             memory = new Memory(MemoryLimits.defaultLimits(), dataSegments);
         }
 
-        var types = new FunctionType[0];
+        var types = new Type[0];
         // TODO i guess we should explode if this is the case, is this possible?
         if (module.getTypeSection() != null) {
             types = module.getTypeSection().getTypes();
@@ -131,7 +133,7 @@ public class Module {
             functions = module.getCodeSection().getFunctionBodies();
         }
 
-        int funcId = 0;
+        int importId = 0;
         Integer startFuncId = null;
         var functionTypes = new int[numFuncTypes];
         var imports = new Import[0];
@@ -139,13 +141,23 @@ public class Module {
         if (module.getImportSection() != null) {
             imports = new Import[module.getImportSection().getImports().length];
             for (var imprt : module.getImportSection().getImports()) {
-                if (imprt.getDesc().getType() != ImportDescType.FuncIdx)
-                    throw new ChicoryException("We don't support non-function imports yet. This import is of type " + imprt.getDesc().getType());
-                var type = (int) imprt.getDesc().getIndex();
-                functionTypes[funcId] = type;
-                // The global function id increases on this table
-                // function ids are assigned on imports first
-                imports[funcId++] = imprt;
+                switch (imprt.getDesc().getType()) {
+                    case FuncIdx:
+                        {
+                            var type = (int) imprt.getDesc().getIndex();
+                            functionTypes[importId] = type;
+                            // The global function id increases on this table
+                            // function ids are assigned on imports first
+                            imports[importId++] = imprt;
+                            break;
+                        }
+                    case TableIdx:
+                        throw new ChicoryException("Don't support table type globals yet");
+                    case MemIdx:
+                        throw new ChicoryException("Don't support mem type globals yet");
+                    case GlobalIdx:
+                        imports[importId++] = imprt;
+                }
             }
         }
 
@@ -156,9 +168,9 @@ public class Module {
         }
 
         if (module.getFunctionSection() != null) {
-            if (startFuncId == null) startFuncId = funcId;
+            if (startFuncId == null) startFuncId = importId;
             for (var ft : module.getFunctionSection().getTypeIndices()) {
-                functionTypes[funcId++] = ft;
+                functionTypes[importId++] = ft;
             }
         }
 
@@ -187,10 +199,18 @@ public class Module {
             }
         }
 
+        var globalImportsOffset = 0;
+        for (int i = 0; i < imports.length; i++) {
+            if (imports[i].getDesc().getType() == ImportDescType.GlobalIdx) {
+                globalImportsOffset++;
+            }
+        }
+
         return new Instance(
                 this,
                 globalInitializers,
                 globals,
+                globalImportsOffset, // skip global imports for now
                 memory,
                 functions,
                 types,

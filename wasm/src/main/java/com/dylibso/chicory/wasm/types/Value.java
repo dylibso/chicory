@@ -187,20 +187,16 @@ public class Value {
         }
     }
 
+    public int asExtRef() {
+        return ByteBuffer.wrap(this.data).getInt();
+    }
+
     public float asFloat() {
         return Float.intBitsToFloat(asInt());
     }
 
     public double asDouble() {
         return Double.longBitsToDouble(asLong());
-    }
-
-    public ValueType getType() {
-        return this.type;
-    }
-
-    public byte[] getData() {
-        return this.data;
     }
 
     public String toString() {
@@ -213,6 +209,10 @@ public class Value {
                 return this.asFloat() + "@f32";
             case F64:
                 return this.asDouble() + "@f64";
+            case FuncRef:
+                return "func";
+            case ExternRef:
+                return "ext";
             default:
                 throw new RuntimeException("TODO handle missing types");
         }
