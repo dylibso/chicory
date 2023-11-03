@@ -199,6 +199,14 @@ public class Value {
         return Double.longBitsToDouble(asLong());
     }
 
+    public ValueType getType() {
+        return this.type;
+    }
+
+    public byte[] getData() {
+        return this.data;
+    }
+
     public String toString() {
         switch (this.type) {
             case I32:

@@ -442,12 +442,8 @@ public enum OpCode {
         signature.put(I64_TRUNC_SAT_F64_S, new WasmEncoding[] {WasmEncoding.VARUINT});
         signature.put(I64_TRUNC_SAT_F64_U, new WasmEncoding[] {WasmEncoding.VARUINT});
         signature.put(
-                MEMORY_INIT_FC,
-                new WasmEncoding[] {
-                    WasmEncoding.VARUINT, WasmEncoding.VARUINT, WasmEncoding.VARUINT
-                });
-        signature.put(
-                DATA_DROP_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+                MEMORY_INIT_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(DATA_DROP_FC, new WasmEncoding[] {WasmEncoding.VARUINT});
         signature.put(
                 MEMORY_COPY_FC, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
         signature.put(
