@@ -16,15 +16,9 @@ public class Machine {
 
     private static final System.Logger LOGGER = System.getLogger(Machine.class.getName());
 
-    public static final long MAX_INT_UNSIGNED = 0xFFFFFFFFL;
-
-    public static final long MAX_LONG_UNSIGNED = 0xFFFFFFFFFFFFFFFFL;
-
     public static final double TWO_POW_63_D = 0x1.0p63; /* 2^63 */
 
     public static final float TWO_POW_64_PLUS_1_F = 1.8446743E19F; /* 2^64 + 1*/
-
-    public static final double TWO_POW_64_D = 1.844674407370955E19; /* 2^64 */
 
     private final MStack stack;
 
@@ -1101,7 +1095,7 @@ public class Machine {
                         {
                             var original = this.stack.pop().asInt() & 0xFFFF;
                             if ((original & 0x8000) != 0) original |= 0xFFFF0000;
-                            this.stack.push(Value.i32(original & MAX_INT_UNSIGNED));
+                            this.stack.push(Value.i32(original & 0xFFFFFFFFL));
                             break;
                         }
                     case I64_EXTEND_8_S:
@@ -1379,8 +1373,8 @@ public class Machine {
                             long tosL;
                             if (Float.isNaN(tos) || tos < 0) {
                                 tosL = 0L;
-                            } else if (tos >= MAX_INT_UNSIGNED) {
-                                tosL = MAX_INT_UNSIGNED;
+                            } else if (tos >= 0xFFFFFFFFL) {
+                                tosL = 0xFFFFFFFFL;
                             } else {
                                 tosL = (long) tos;
                             }
@@ -1411,8 +1405,8 @@ public class Machine {
                             long tosL;
                             if (Double.isNaN(tos) || tos < 0) {
                                 tosL = 0;
-                            } else if (tos >= MAX_INT_UNSIGNED + 1.0) {
-                                tosL = MAX_INT_UNSIGNED;
+                            } else if (tos >= 0xFFFFFFFFL + 1.0) {
+                                tosL = 0xFFFFFFFFL;
                             } else {
                                 tosL = (long) tos;
                             }
@@ -1435,7 +1429,7 @@ public class Machine {
                             }
 
                             long tosL = (long) tos;
-                            if (tosL < 0 || tosL >= MAX_INT_UNSIGNED) {
+                            if (tosL < 0 || tosL >= 0xFFFFFFFFL) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
 
@@ -1476,9 +1470,7 @@ public class Machine {
 
                             var tosL = (long) tos;
 
-                            if (tos == TWO_POW_64_PLUS_1_F) {
-                                tosL = -1099511627776L; // why oh why
-                            } else if (tosL < 0 || (tosL == Long.MAX_VALUE)) {
+                            if (tosL < 0 || (tosL == Long.MAX_VALUE)) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
 
@@ -1495,8 +1487,6 @@ public class Machine {
                             var tosL = (long) tos;
                             if (tos == (double) Long.MAX_VALUE) {
                                 tosL = Long.MIN_VALUE;
-                            } else if (tos == TWO_POW_64_D) {
-                                tosL = -2048; // why oh why
                             } else if (tosL < 0 || tosL == Long.MAX_VALUE) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
@@ -1526,10 +1516,8 @@ public class Machine {
                             long tosL;
                             if (Float.isNaN(tos) || tos < 0) {
                                 tosL = 0L;
-                            } else if (tos == TWO_POW_64_PLUS_1_F) {
-                                tosL = -1099511627776L;
                             } else if (tos >= Long.MAX_VALUE) {
-                                tosL = MAX_LONG_UNSIGNED;
+                                tosL = 0xFFFFFFFFFFFFFFFFL;
                             } else {
                                 tosL = (long) tos;
                             }
@@ -1560,10 +1548,8 @@ public class Machine {
                             long tosL;
                             if (Double.isNaN(tos) || tos <= -1.0) {
                                 tosL = 0L;
-                            } else if (tos == TWO_POW_64_D) {
-                                tosL = -2048L;
-                            } else if (tos >= TWO_POW_64_PLUS_1_F) { // 2^64
-                                tosL = MAX_LONG_UNSIGNED;
+                            } else if (tos >= TWO_POW_64_PLUS_1_F) {
+                                tosL = 0xFFFFFFFFFFFFFFFFL;
                             } else if (tos == Long.MAX_VALUE) {
                                 tosL = (long) tos + 1;
                             } else {
@@ -1598,10 +1584,10 @@ public class Machine {
                             }
 
                             var tosL = (long) tos;
-                            if (tosL < 0 || tosL > MAX_INT_UNSIGNED) {
+                            if (tosL < 0 || tosL > 0xFFFFFFFFL) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
-                            this.stack.push(Value.i32(tosL & MAX_INT_UNSIGNED));
+                            this.stack.push(Value.i32(tosL & 0xFFFFFFFFL));
                             break;
                         }
                     case I64_TRUNC_F32_S:

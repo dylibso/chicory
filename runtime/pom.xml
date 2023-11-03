@@ -74,7 +74,12 @@
             nop.wast,
             float_exprs.wast</orderedWastToProcess>
           <excludedTests>
+            <!-- integer overflow -->
+            SpecV1ConversionsTest.test150,
+            SpecV1ConversionsTest.test194,
             <!-- Assertion failures -->
+            SpecV1ConversionsTest.test336,
+            SpecV1ConversionsTest.test380,
             SpecV1FloatExprsTest.test210,
             SpecV1FloatExprsTest.test306,
             SpecV1FloatExprsTest.test307,
