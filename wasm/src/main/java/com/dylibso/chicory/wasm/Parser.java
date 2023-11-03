@@ -621,8 +621,6 @@ public final class Parser {
         var address = buffer.position();
         var b = (int) buffer.get() & 0xff;
         if (b == 0xfc) { // is multi-byte
-            // TODO decide how to encode these into integers
-            //            b = 0xff + (buffer.get() & 0xff);
             b = (0xfc << 8) | (buffer.get() & 0xff);
         }
         var op = OpCode.byOpCode(b);

@@ -1446,10 +1446,16 @@ public class Machine {
                     case F32_CONVERT_I64_U:
                         {
                             var tos = this.stack.pop().asULong();
-                            float tosF =
-                                    tos.floatValue() < 0
-                                            ? (float) (tos.longValue() + TWO_POW_63_D)
-                                            : tos.floatValue();
+                            float tosF;
+                            if (tos.floatValue() < 0) {
+                                /*
+                                (the BigInteger is large, sign bit is set), tos.longValue() gets the lower 64 bits of the BigInteger (as a signed long),
+                                and 0x1.0p63 (which is 2^63 in floating-point notation) is added to adjust the float value back to the unsigned range.
+                                 */
+                                tosF = (float) (tos.longValue() + TWO_POW_63_D);
+                            } else {
+                                tosF = tos.floatValue();
+                            }
                             this.stack.push(Value.f32(Float.floatToIntBits(tosF)));
                             break;
                         }
