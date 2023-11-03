@@ -36,7 +36,6 @@ import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableSection;
-import com.dylibso.chicory.wasm.types.Type;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -263,36 +262,37 @@ public final class Parser {
             ByteBuffer buffer, long sectionId, long sectionSize) {
 
         var typeCount = readVarUInt32(buffer);
-        var types = new Type[(int) typeCount];
+        var types = new FunctionType[(int) typeCount];
 
         // Parse individual types in the type section
         for (int i = 0; i < typeCount; i++) {
             var form = readVarUInt32(buffer);
 
-            if (form == 0x60) {
-                // Parse function types (form = 0x60)
-                var paramCount = (int) readVarUInt32(buffer);
-                var params = new ValueType[paramCount];
-
-                // Parse parameter types
-                for (int j = 0; j < paramCount; j++) {
-                    params[j] = ValueType.byId(readVarUInt32(buffer));
-                }
-
-                var returnCount = (int) readVarUInt32(buffer);
-                var returns = new ValueType[returnCount];
-
-                // Parse return types
-                for (int j = 0; j < returnCount; j++) {
-                    returns[j] = ValueType.byId(readVarUInt32(buffer));
-                }
-
-                types[i] = new FunctionType(params, returns);
-            } else {
+            if (form != 0x60) {
                 throw new RuntimeException(
-                        "Table and Mem Types are not parsed yet."); // TODO: restore the prev error
-                // message
+                        "We don't support non func types. Form "
+                                + String.format("0x%02X", form)
+                                + " was given but we expected 0x60");
             }
+
+            // Parse function types (form = 0x60)
+            var paramCount = (int) readVarUInt32(buffer);
+            var params = new ValueType[paramCount];
+
+            // Parse parameter types
+            for (int j = 0; j < paramCount; j++) {
+                params[j] = ValueType.byId(readVarUInt32(buffer));
+            }
+
+            var returnCount = (int) readVarUInt32(buffer);
+            var returns = new ValueType[returnCount];
+
+            // Parse return types
+            for (int j = 0; j < returnCount; j++) {
+                returns[j] = ValueType.byId(readVarUInt32(buffer));
+            }
+
+            types[i] = new FunctionType(params, returns);
         }
 
         return new TypeSection(sectionId, sectionSize, types);

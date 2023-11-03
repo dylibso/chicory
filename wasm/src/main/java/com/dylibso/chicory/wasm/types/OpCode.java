@@ -20,6 +20,7 @@ public enum OpCode {
     RETURN(0x0F), // return
     CALL(0x10), // call <varuint>
     CALL_INDIRECT(0x11), // call_indirect <varuint> <varuint>
+    CALL_REF(0x14), // call_ref <varuint>
     DROP(0x1A), // drop
     SELECT(0x1B), // select
     LOCAL_GET(0x20), // local.get <varuint>
@@ -258,6 +259,7 @@ public enum OpCode {
         signature.put(CALL, new WasmEncoding[] {WasmEncoding.VARUINT});
         signature.put(
                 CALL_INDIRECT, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(CALL_REF, new WasmEncoding[] {WasmEncoding.VARUINT});
         signature.put(DROP, new WasmEncoding[] {});
         signature.put(SELECT, new WasmEncoding[] {});
         signature.put(LOCAL_GET, new WasmEncoding[] {WasmEncoding.VARUINT});

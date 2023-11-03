@@ -1,6 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
-public class FunctionType implements Type {
+public class FunctionType {
     private ValueType[] params;
     private ValueType[] returns;
 

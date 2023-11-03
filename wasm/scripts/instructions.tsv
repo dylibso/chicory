@@ -11,6 +11,7 @@ br_table vec(<varuint>) <varuint> 	$0E
 return   	   $0F
 call <varuint>    	   $10
 call_indirect <varuint> <varuint>	$11
+call_ref <varuint>  $14
 drop 	$1A 	[t]→[]
 select 	$1B 	[t t i32]→[t]
 local.get <varuint> 	$20
@@ -175,7 +176,6 @@ i32.extend_16_s      	$C1
 i64.extend_8_s      	$C2
 i64.extend_16_s      	$C3
 i64.extend_32_s      	$C4
-<<<<<<< HEAD
 i32.trunc_sat_f32_s 	$FC00
 i32.trunc_sat_f32_u 	$FC01
 i32.trunc_sat_f64_s 	$FC02
@@ -193,12 +193,3 @@ table.copy <varuint> <varuint> $FC0E
 table.grow <varuint> $FC0F
 table.size <varuint> $FC10
 table.fill <varuint> $FC11
-=======
-ref.null      	$D0
-ref.is_null      	$D1
-ref.func      	$D2
-memory.init      	$107
-data.drop      	$108
-memory.copy      	$109
-memory.fill      	$10A
->>>>>>> 3f64fd3 (stash)

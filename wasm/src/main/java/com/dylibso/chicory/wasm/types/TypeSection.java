@@ -1,14 +1,14 @@
 package com.dylibso.chicory.wasm.types;
 
 public class TypeSection extends Section {
-    private Type[] types;
+    private FunctionType[] types;
 
-    public TypeSection(long id, long size, Type[] types) {
+    public TypeSection(long id, long size, FunctionType[] types) {
         super(id, size);
         this.types = types;
     }
 
-    public Type[] getTypes() {
+    public FunctionType[] getTypes() {
         return types;
     }
 }

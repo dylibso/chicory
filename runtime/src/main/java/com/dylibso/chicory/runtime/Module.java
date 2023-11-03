@@ -112,7 +112,7 @@ public class Module {
             memory = new Memory(MemoryLimits.defaultLimits(), dataSegments);
         }
 
-        var types = new Type[0];
+        var types = new FunctionType[0];
         // TODO i guess we should explode if this is the case, is this possible?
         if (module.getTypeSection() != null) {
             types = module.getTypeSection().getTypes();
