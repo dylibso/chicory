@@ -1405,7 +1405,7 @@ public class Machine {
                             long tosL;
                             if (Double.isNaN(tos) || tos < 0) {
                                 tosL = 0;
-                            } else if (tos >= 0xFFFFFFFFL + 1.0) {
+                            } else if (tos > 0xFFFFFFFFL) {
                                 tosL = 0xFFFFFFFFL;
                             } else {
                                 tosL = (long) tos;
