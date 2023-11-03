@@ -112,20 +112,13 @@ public class ParserTest {
         if (files == null) {
             throw new RuntimeException("Could not find files");
         }
-        RuntimeException ex = null;
         for (var f : files) {
             var parser = new Parser(f);
             try {
-                var module = parser.parseModule();
+                parser.parseModule();
             } catch (Exception e) {
-                if (ex == null) {
-                    ex = new RuntimeException();
-                }
-                ex.addSuppressed(new Exception(String.format("Failed to parse file %s%n", f), e));
+                throw new RuntimeException(String.format("Failed to parse file %s", f), e);
             }
-        }
-        if (ex != null) {
-            throw ex;
         }
     }
 
