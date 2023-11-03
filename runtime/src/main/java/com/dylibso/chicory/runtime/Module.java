@@ -210,7 +210,7 @@ public class Module {
                 this,
                 globalInitializers,
                 globals,
-                globalImportsOffset, // skip global imports for now
+                globalImportsOffset,
                 memory,
                 functions,
                 types,

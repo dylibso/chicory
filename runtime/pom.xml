@@ -62,8 +62,7 @@
             br_table.wast,
             conversions.wast,
             if.wast,
-            float_misc.wast,
-            loop.wast</wastToProcess>
+            float_misc.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
             stack.wast,
