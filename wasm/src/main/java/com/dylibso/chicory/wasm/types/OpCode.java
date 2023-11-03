@@ -460,9 +460,9 @@ public enum OpCode {
         signature.put(TABLE_FILL_FC, new WasmEncoding[] {WasmEncoding.VARUINT});
         // multibyte instructions: end
 
-        signature.put(MEMORY_INIT, new WasmEncoding[] {});
-        signature.put(DATA_DROP, new WasmEncoding[] {});
-        signature.put(MEMORY_COPY, new WasmEncoding[] {});
-        signature.put(MEMORY_FILL, new WasmEncoding[] {});
+        signature.put(MEMORY_INIT, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(DATA_DROP, new WasmEncoding[] {WasmEncoding.VARUINT});
+        signature.put(MEMORY_COPY, new WasmEncoding[] {WasmEncoding.VARUINT, WasmEncoding.VARUINT});
+        signature.put(MEMORY_FILL, new WasmEncoding[] {WasmEncoding.VARUINT});
     }
 }
