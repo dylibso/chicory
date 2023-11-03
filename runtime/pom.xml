@@ -61,9 +61,9 @@
             br_if.wast,
             br_table.wast,
             conversions.wast,
-            float_misc.wast,
-            loop.wast,
             if.wast,
+            float_misc.wast
+            loop.wast,
             global.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
