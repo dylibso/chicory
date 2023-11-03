@@ -13,6 +13,10 @@ public class Value {
 
     public static final Value FALSE;
 
+    public static final Value[] EMPTY_VALUES = new Value[0];
+
+    public static final BigInteger TWO_POW_64 = new BigInteger("2").pow(64);
+
     private final ValueType type;
 
     private final byte[] data;
@@ -133,15 +137,21 @@ public class Value {
         }
     }
 
-    // TODO memoize these
     public long asLong() {
-        return new BigInteger(this.data).longValue();
+        return ((long) (data[0] & 0xFF) << 56)
+                | ((long) (data[1] & 0xFF) << 48)
+                | ((long) (data[2] & 0xFF) << 40)
+                | ((long) (data[3] & 0xFF) << 32)
+                | ((long) (data[4] & 0xFF) << 24)
+                | ((long) (data[5] & 0xFF) << 16)
+                | ((long) (data[6] & 0xFF) << 8)
+                | ((long) (data[7] & 0xFF));
     }
 
     public BigInteger asULong() {
         var b = new BigInteger(this.data);
         if (b.signum() < 0) {
-            return b.add(new BigInteger("2").pow(64));
+            return b.add(TWO_POW_64);
         }
         return b;
     }

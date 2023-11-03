@@ -109,9 +109,16 @@ public class ParserTest {
     public void shouldParseAllFiles() {
         File dir = new File("src/test/resources/wasm/");
         File[] files = dir.listFiles((dir1, name) -> name.toLowerCase().endsWith(".wasm"));
+        if (files == null) {
+            throw new RuntimeException("Could not find files");
+        }
         for (var f : files) {
             var parser = new Parser(f);
-            var module = parser.parseModule();
+            try {
+                parser.parseModule();
+            } catch (Exception e) {
+                throw new RuntimeException(String.format("Failed to parse file %s", f), e);
+            }
         }
     }
 
