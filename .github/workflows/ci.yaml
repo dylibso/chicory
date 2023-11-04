@@ -38,9 +38,6 @@ jobs:
             test-results/**/*.xml
             test-results/**/*.trx
             test-results/**/*.json
-        # with:
-        #   files: |
-        #     ./**/surefire-reports/*.xml
       - name: Set badge color
         shell: bash
         run: |
