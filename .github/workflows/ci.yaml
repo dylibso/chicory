@@ -32,14 +32,13 @@ jobs:
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
         id: test-results
-        if: always()
+        if: always() && matrix.os == 'ubuntu-latest' && matrix.version == '17'
         with:
           files: |
-            test-results/**/*.xml
-            test-results/**/*.trx
-            test-results/**/*.json
+            ./**/surefire-reports/*.xml
       - name: Set badge color
         shell: bash
+        if: matrix.os == 'ubuntu-latest' && matrix.version == '17'
         run: |
           case ${{ fromJSON( steps.test-results.outputs.json ).conclusion }} in
             success)
@@ -54,12 +53,14 @@ jobs:
           esac
         - name: Create badge
           uses: emibcn/badge-action@d6f51ff11b5c3382b3b88689ae2d6db22d9737d1
+          if: matrix.os == 'ubuntu-latest' && matrix.version == '17'
           with:
             label: Tests
             status: '${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.tests }} tests, ${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.runs }} runs: ${{ fromJSON( steps.test-results.outputs.json ).conclusion }}'
             color: ${{ env.BADGE_COLOR }}
             path: badge.svg
         - name: Upload badge to Gist
+          if: matrix.os == 'ubuntu-latest' && matrix.version == '17'
           # Upload only for master branch
           # TODO: re-enable the condition before merging
           # if: >
