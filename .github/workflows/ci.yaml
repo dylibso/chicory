@@ -34,7 +34,8 @@ jobs:
         id: test-results
         if: always()
         with:
-          files: ./**/surefire-reports/*.xml
+          files: |
+            ./**/surefire-reports/*.xml
       - name: Set badge color
         shell: bash
         run: |
