@@ -248,9 +248,6 @@ public final class Parser {
         var customSection = new CustomSection(sectionId, sectionSize);
         var name = readName(buffer);
         customSection.setName(name);
-        if (sectionSize <= 0) {
-            return customSection;
-        }
         var byteLen = name.getBytes().length;
         var bytes = new byte[(int) (sectionSize - byteLen - Encoding.computeLeb128Size(byteLen))];
         buffer.get(bytes);
