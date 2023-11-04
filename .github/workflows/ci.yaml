@@ -2,10 +2,9 @@ name: CI
 
 on:
   push:
-  # TEST IN CI
-  #   branches: [ main ]
-  # pull_request:
-  #   branches: [ main ]
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 permissions:
   contents: read
