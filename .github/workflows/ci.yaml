@@ -34,8 +34,7 @@ jobs:
         id: test-results
         if: always() && matrix.os == 'ubuntu-latest' && matrix.version == '17'
         with:
-          files: |
-            ./**/surefire-reports/*.xml
+          files: './**/surefire-reports/*.xml'
       - name: Set badge color
         shell: bash
         if: matrix.os == 'ubuntu-latest' && matrix.version == '17'
