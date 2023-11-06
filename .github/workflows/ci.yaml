@@ -56,7 +56,7 @@ jobs:
               ;;
           esac
       - name: Create badge
-        uses: emibcn/badge-action@d6f51ff11b5c3382b3b88689ae2d6db22d9737d1
+        uses: emibcn/badge-action@4209421db54c8764d8932070ffd0f81715a629bf
         if: matrix.os == 'ubuntu-latest' && matrix.version == '17'
         with:
           label: Tests
