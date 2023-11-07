@@ -195,9 +195,10 @@ architecture and operating system. This matrix can become quite large. This elim
 
 #### 2. Runtime
 
-At runtime, you must use FFI to execute the module. While there are performance benefits to doing this, when you do,
-you're effectively escaping the safety and observability of the JVM. Having a pure JVM runtime means all your
+At runtime, you must use FFI to execute the module. While there might be performance benefits to doing this for some modules,
+when you do, you're effectively escaping the safety and observability of the JVM. Having a pure JVM runtime means all your
 security and memory guarantees, and your tools, can stay in place.
+JVM program.
 
 ### Goals
 
@@ -219,10 +220,13 @@ security and memory guarantees, and your tools, can stay in place.
 * [x] Simple bytecode interpreter
 * [x] Generate JUnit tests from wasm test suite [link](test-gen-plugin/)
 * [ ] Make all tests green with the interpreter
-* [ ] AOT compiler (generate JVM bytecode .class from Wasm module)
+* [ ] Implement validation logic
+* [ ] Performance improvements
+* [ ] AOT compiler (generate JVM bytecode from Wasm module)
 
 Some nice to have but probably separate items:
 
+* [ ] Off-heap linear memory
 * [ ] WASI Support
 * [ ] GC Support
 * [ ] Threads Support
