@@ -1,5 +1,7 @@
 # Chicory Runtime
 
+[![Test Results](https://gist.githubusercontent.com/andreaTP/69354d1cc6cf23e4c3c4a9a8daf7ea15/raw/8a410d60b8840e7df415f81a3490acf0aac79a93/badge.svg)](https://gist.githubusercontent.com/andreaTP/69354d1cc6cf23e4c3c4a9a8daf7ea15/raw/8a410d60b8840e7df415f81a3490acf0aac79a93/badge.svg)
+
 <img align="right" width="200" src="chicory1.png">
 
 Chicory is a JVM native WebAssembly runtime. It allows you to run WebAssembly programs with
