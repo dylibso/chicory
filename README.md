@@ -236,6 +236,7 @@ Some nice to have but probably separate items:
 
 * [asmble](https://github.com/cretz/asmble)
 * [kwasm](https://github.com/jasonwyatt/KWasm)
+* [wazero](https://wazero.io/)
 
 ### Building Locally
 
