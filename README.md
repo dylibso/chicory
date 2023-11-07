@@ -6,7 +6,7 @@
 
 Chicory is a JVM native WebAssembly runtime. It allows you to run WebAssembly programs with
 zero native dependencies or JNI. Chicory can run Wasm anywhere that the JVM can go. It is designed with
-simplicity and safety in mind. See the [goals section](#goals) for a better idea of what we are trying to achieve.
+simplicity and safety in mind. See the [development section](#development) for a better idea of what we are trying to achieve and why.
 
 ## Getting Started
 
@@ -179,6 +179,26 @@ logIt.apply();
 
 ## Development
 
+### Why is this needed?
+
+There are a number of mature Wasm runtimes to choose from to execute a Wasm module.
+To name a few [v8](https://v8.dev/), [wasmtime](https://wasmtime.dev/), [wasmer](https://wasmer.io/), [wasmedge](https://wasmedge.org/), etc.
+
+Although these can be great choices for running a Wasm application, embedding them into your existing
+Java application has some downsides. Because these runtimes are written in C/C++/Rust/etc, they must be distributed
+and run as native code. This causes two main friction points:
+
+#### 1. Distribution
+
+If you're distributing a Java library (jar, war, etc), you must now distribute along with it a native object targeting the correct
+architecture and operating system. This matrix can become quite large. This eliminates a lot of the simplicity and original benefit of shipping Java code.
+
+#### 2. Runtime
+
+At runtime, you must use FFI to execute the module. While there are performance benefits to doing this, when you do,
+you're effectively escaping the safety and observability of the JVM. Having a pure JVM runtime means all your
+security and memory guarantees, and your tools, can stay in place.
+
 ### Goals
 
 * Be as safe as possible
@@ -193,16 +213,25 @@ logIt.apply();
 * Be the fastest runtime
 * Be the right choice for every JVM project
 
-### Nice-to-Haves:
+### Roadmap
 
-* WASI support
-    * We may develop this outside of this library
-    * Which version we target may depend on when we achieve the goals
-* Support AOT or JIT JVM bytecode
-  * There is some prior art here so it can be done
-  * But we want to get our interpreter engine and testsuite solid before we tackle this
-* Demonstrate performance benefits for at least some subset of use cases
-* Support some future standards like Threads, GC, and Component Model
+* [x] Wasm binary parser [link](wasm/)
+* [x] Simple bytecode interpreter
+* [x] Generate JUnit tests from wasm test suite [link](test-gen-plugin/)
+* [ ] Make all tests green with the interpreter
+* [ ] AOT compiler (generate JVM bytecode .class from Wasm module)
+
+Some nice to have but probably separate items:
+
+* [ ] WASI Support
+* [ ] GC Support
+* [ ] Threads Support
+* [ ] Component Model Support
+
+### Prior Art
+
+* [asmble](https://github.com/cretz/asmble)
+* [kwasm](https://github.com/jasonwyatt/KWasm)
 
 ### Building Locally
 
