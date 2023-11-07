@@ -10,6 +10,7 @@
   <url>http://www.example.com</url>
 
   <modules>
+    <module>wasm-support-plugin</module>
     <module>test-gen-plugin</module>
     <module>wasm</module>
     <module>runtime</module>
