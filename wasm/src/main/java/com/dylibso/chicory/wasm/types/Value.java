@@ -13,6 +13,8 @@ public class Value {
 
     public static final Value FALSE;
 
+    public static final Value REF_NULL;
+
     public static final Value[] EMPTY_VALUES = new Value[0];
 
     public static final BigInteger TWO_POW_64 = new BigInteger("2").pow(64);
@@ -24,6 +26,7 @@ public class Value {
     static {
         TRUE = Value.i32(1);
         FALSE = Value.i32(0);
+        REF_NULL = Value.externRef(1L << 31);
     }
 
     public static Value fromFloat(float data) {
@@ -48,6 +51,10 @@ public class Value {
 
     public static Value f64(long data) {
         return new Value(ValueType.F64, data);
+    }
+
+    public static Value externRef(long data) {
+        return new Value(ValueType.ExternRef, data);
     }
 
     public Value(ValueType type, byte[] data) {
@@ -99,6 +106,13 @@ public class Value {
                     data[7] = (byte) value;
                     break;
                 }
+            case ExternRef:
+                data = new byte[4];
+                data[0] = (byte) (value >> 24);
+                data[1] = (byte) (value >> 16);
+                data[2] = (byte) (value >> 8);
+                data[3] = (byte) value;
+                break;
             default:
                 data = new byte[0];
                 break;
@@ -173,6 +187,10 @@ public class Value {
         }
     }
 
+    public int asExtRef() {
+        return ByteBuffer.wrap(this.data).getInt();
+    }
+
     public float asFloat() {
         return Float.intBitsToFloat(asInt());
     }
@@ -199,6 +217,10 @@ public class Value {
                 return this.asFloat() + "@f32";
             case F64:
                 return this.asDouble() + "@f64";
+            case FuncRef:
+                return "func";
+            case ExternRef:
+                return "ext";
             default:
                 throw new RuntimeException("TODO handle missing types");
         }

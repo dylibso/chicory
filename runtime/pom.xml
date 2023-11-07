@@ -60,9 +60,9 @@
             br.wast,
             br_if.wast,
             br_table.wast,
+            conversions.wast,
             if.wast,
-            float_misc.wast,
-            conversions.wast</wastToProcess>
+            float_misc.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
             stack.wast,
@@ -72,7 +72,8 @@
             loop.wast,
             block.wast,
             nop.wast,
-            float_exprs.wast</orderedWastToProcess>
+            float_exprs.wast,
+            global.wast</orderedWastToProcess>
           <excludedTests>
             <!-- integer overflow -->
             SpecV1ConversionsTest.test150,
@@ -137,10 +138,10 @@
             SpecV1MemoryInitTest.test210,
             SpecV1MemoryInitTest.test212,
             SpecV1MemoryInitTest.test214,
-            <!-- extern_ref failures -->
-            SpecV1BrTableTest.test146,
-            SpecV1BrTableTest.test147,
-            SpecV1BrTableTest.test148,
+            <!-- imports integration is missing -->
+            SpecV1GlobalTest.test6,
+            SpecV1GlobalTest.test7,
+            SpecV1GlobalTest.test57,
             <!-- call indirect failures -->
             SpecV1MemoryGrowTest.test64,
             SpecV1MemoryGrowTest.test65,

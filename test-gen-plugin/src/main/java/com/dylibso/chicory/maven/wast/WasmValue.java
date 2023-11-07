@@ -53,7 +53,10 @@ public class WasmValue {
                     return "null";
                 }
             case EXTERN_REF:
-                return "null"; // TODO: implement-me placeholder
+                if (value.equals("null")) {
+                    return "Value.REF_NULL";
+                }
+                return value;
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
@@ -70,7 +73,7 @@ public class WasmValue {
             case F64:
                 return "Value.f64(Long.parseUnsignedLong(\"" + value + "\"))";
             case EXTERN_REF:
-                return "null"; // TODO: implement-me placeholder
+                return "Value.externRef(" + value + ")";
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
@@ -90,7 +93,7 @@ public class WasmValue {
                 case F64:
                     return ".asDouble()";
                 case EXTERN_REF:
-                    return ""; // TODO: implement-me placeholder
+                    return ".asExtRef()";
                 default:
                     throw new IllegalArgumentException("Type not recognized " + type);
             }

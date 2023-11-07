@@ -59,7 +59,7 @@ public class Machine {
             return null;
         }
 
-        var typeId = instance.getFunctionTypes()[funcId];
+        var typeId = instance.getFunctionType(funcId);
         var type = instance.getTypes()[typeId];
         if (type.getReturns().length == 0) return null;
         if (this.stack.size() == 0) return null;
@@ -277,6 +277,7 @@ public class Machine {
                         }
                     case GLOBAL_GET:
                         {
+                            var ex = instance.getImports().length;
                             var val = instance.getGlobal((int) operands[0]);
                             this.stack.push(val);
                             break;
@@ -284,7 +285,7 @@ public class Machine {
                     case GLOBAL_SET:
                         {
                             var id = (int) operands[0];
-                            var global = instance.getGlobalInitalizers()[id];
+                            var global = instance.getGlobalInitalizer(id);
                             if (global.getMutabilityType() == MutabilityType.Const)
                                 throw new RuntimeException(
                                         "Can't call GLOBAL_SET on immutable global");
@@ -866,7 +867,7 @@ public class Machine {
                     case CALL:
                         {
                             var funcId = (int) operands[0];
-                            var typeId = instance.getFunctionTypes()[funcId];
+                            var typeId = instance.getFunctionType(funcId);
                             var type = instance.getTypes()[typeId];
                             // given a list of param types, let's pop those params off the stack
                             // and pass as args to the function call

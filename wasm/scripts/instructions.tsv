@@ -11,6 +11,7 @@ br_table vec(<varuint>) <varuint> 	$0E
 return   	   $0F
 call <varuint>    	   $10
 call_indirect <varuint> <varuint>	$11
+call_ref <varuint>  $14
 drop 	$1A 	[t]→[]
 select 	$1B 	[t t i32]→[t]
 local.get <varuint> 	$20
