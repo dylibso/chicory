@@ -8,7 +8,7 @@ Chicory is a JVM native WebAssembly runtime. It allows you to run WebAssembly pr
 zero native dependencies or JNI. Chicory can run Wasm anywhere that the JVM can go. It is designed with
 simplicity and safety in mind. See the [development section](#development) for a better idea of what we are trying to achieve and why.
 
-> **Reach out to us**: Chicory is very early in development and there will be rough edges. We're hoping to talk to some early adopters and contributors before we more formally announce it to the world. Please [join our team Zulip chat](https://chicory.zulipchat.com/) if you're interested in providing feedback or contributing. Or just keeping up with development.
+> *Reach out to us*: Chicory is very early in development and there will be rough edges. We're hoping to talk to some early adopters and contributors before we more formally announce it to the world. Please [join our team Zulip chat](https://chicory.zulipchat.com/) if you're interested in providing feedback or contributing. Or just keeping up with development.
 
 ## Getting Started
 
@@ -16,6 +16,8 @@ simplicity and safety in mind. See the [development section](#development) for a
 
 To use the runtime, you need to add the `com.dylibso.chicory:runtime` dependency
 to your dependency management system.
+
+> *Warning*: We're still working on publishing this this to a repository so you may need to install locally for now.
 
 #### Maven
 
