@@ -7,7 +7,7 @@
     <artifactId>chicory</artifactId>
     <version>1.0-SNAPSHOT</version>
   </parent>
-  <artifactId>runtime</artifactId>
+  <artifactId>chicory-runtime</artifactId>
   <packaging>jar</packaging>
 
   <dependencies>
