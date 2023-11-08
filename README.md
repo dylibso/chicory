@@ -202,7 +202,6 @@ architecture and operating system. This matrix can become quite large. This elim
 At runtime, you must use FFI to execute the module. While there might be performance benefits to doing this for some modules,
 when you do, you're effectively escaping the safety and observability of the JVM. Having a pure JVM runtime means all your
 security and memory guarantees, and your tools, can stay in place.
-JVM program.
 
 ### Goals
 
