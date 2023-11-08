@@ -17,7 +17,7 @@ simplicity and safety in mind. See the [development section](#development) for a
 To use the runtime, you need to add the `com.dylibso.chicory:runtime` dependency
 to your dependency management system.
 
-> *Warning*: We're still working on publishing this this to a repository so you may need to install locally for now.
+> *Warning*: We're still working on publishing this to a repository so you may need to install locally for now.
 
 #### Maven
 
