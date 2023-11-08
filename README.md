@@ -32,7 +32,7 @@ to your dependency management system.
 #### Gradle
 
 ```groovy
-implementation 'com.dylibso.chicory:runtime:0.0.1'
+implementation 'com.dylibso.chicory:runtime:1.0-SNAPSHOT'
 ```
 
 ### Loading and Instantiating Code
