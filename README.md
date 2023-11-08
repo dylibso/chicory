@@ -209,7 +209,7 @@ JVM program.
 * Be as safe as possible
   * In that we are willing to sacrifice things like performance for safety and simplicity
 * Make it easy to run Wasm in any JVM environment without native code, including very restrictive environments.
-* Fully support the core Wasm 1.0 and 2.0 spec specs
+* Fully support the core Wasm spec
 * Make integration with Java (and other host languages) easy and idiomatic.
 
 ### Non-Goals:
