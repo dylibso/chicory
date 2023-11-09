@@ -1,6 +1,7 @@
 # Chicory Runtime
 
 [![Test Results](https://gist.githubusercontent.com/andreaTP/69354d1cc6cf23e4c3c4a9a8daf7ea15/raw/8a410d60b8840e7df415f81a3490acf0aac79a93/badge.svg)](https://gist.githubusercontent.com/andreaTP/69354d1cc6cf23e4c3c4a9a8daf7ea15/raw/8a410d60b8840e7df415f81a3490acf0aac79a93/badge.svg)
+[![](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://chicory.zulipchat.com)
 
 <img align="right" width="200" src="chicory1.png">
 
@@ -8,7 +9,7 @@ Chicory is a JVM native WebAssembly runtime. It allows you to run WebAssembly pr
 zero native dependencies or JNI. Chicory can run Wasm anywhere that the JVM can go. It is designed with
 simplicity and safety in mind. See the [development section](#development) for a better idea of what we are trying to achieve and why.
 
-> *Reach out to us*: Chicory is very early in development and there will be rough edges. We're hoping to talk to some early adopters and contributors before we formally announce it a beta to the world. Please [join our team Zulip chat](https://chicory.zulipchat.com/) if you're interested in providing feedback or contributing. Or just keeping up with development.
+> *Reach out to us*: Chicory is very early in development and there will be rough edges. We're hoping to talk to some early adopters and contributors before we formally announce it a beta to the world. Please [join our team Zulip chat with this invite link](https://chicory.zulipchat.com/join/4blqyz2u5boopvqqujc6tpxr) if you're interested in providing feedback or contributing. Or just keeping up with development.
 
 ## Getting Started
 
