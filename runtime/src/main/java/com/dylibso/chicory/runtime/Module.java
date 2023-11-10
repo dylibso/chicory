@@ -165,20 +165,15 @@ public class Module {
 
         if (module.getStartSection() != null) {
             startFuncId = (int) module.getStartSection().getStartIndex();
-        }
-
-        if (module.getFunctionSection() != null) {
-            if (startFuncId == null) startFuncId = importId;
-            for (var ft : module.getFunctionSection().getTypeIndices()) {
-                functionTypes[importId++] = ft;
-            }
-        }
-
-        if (startFuncId != null) {
-            // if we got a start func, let's add it to the exports
             var desc = new ExportDesc(startFuncId, ExportDescType.FuncIdx);
             var export = new Export("_start", desc);
             exports.put("_start", export);
+        }
+
+        if (module.getFunctionSection() != null) {
+            for (var ft : module.getFunctionSection().getTypeIndices()) {
+                functionTypes[importId++] = ft;
+            }
         }
 
         Table table = null;

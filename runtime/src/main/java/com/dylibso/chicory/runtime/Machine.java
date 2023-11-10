@@ -81,16 +81,15 @@ public class Machine {
             while (frame.pc < code.size()) {
                 if (shouldReturn) return;
                 var instruction = code.get(frame.pc++);
-                LOGGER.log(
-                        System.Logger.Level.DEBUG,
-                        "func="
-                                + frame.funcId
-                                + "@"
-                                + frame.pc
-                                + ": "
-                                + instruction
-                                + " stack="
-                                + this.stack);
+//                System.out.println(
+//                        "func="
+//                                + frame.funcId
+//                                + "@"
+//                                + frame.pc
+//                                + ": "
+//                                + instruction
+//                                + " stack="
+//                                + this.stack);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
                 switch (opcode) {
@@ -1688,9 +1687,9 @@ public class Machine {
         for (var i = params.length; i > 0; i--) {
             var p = this.stack.pop();
             var t = params[i - 1];
-            if (p.getType() != t) {
-                throw new RuntimeException("Type error when extracting args.");
-            }
+//            if (p.getType() != t) {
+//                throw new RuntimeException("Type error when extracting args.");
+//            }
             args[i - 1] = p;
         }
         return args;
