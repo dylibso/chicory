@@ -260,6 +260,16 @@ public class ModuleTest {
         assertEquals(6, run.apply(Value.i32(100))[0].asInt());
     }
 
+     @Test
+     public void shouldRunWasiModule() {
+         // check with: wasmtime src/test/resources/wasm/memories.wat.wasm --invoke run 100
+         var wasi = new Wasi();
+         var instance = Module.build(new File("src/test/resources/wasm/hello-wasi.wasm")).instantiate(wasi.toHostFunctions());
+         var run = instance.getExport("_start");
+         var result = run.apply();
+         System.out.println(result);
+     }
+
     // @Test
     // public void shouldOperateMemoryOps() {
     // // check with: wasmtime src/test/resources/wasm/memories.wat.wasm --invoke
