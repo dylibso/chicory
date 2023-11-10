@@ -5,6 +5,7 @@ public class ImportDesc {
     private ImportDescType type;
     private MutabilityType mutabilityType;
     private ValueType valType;
+    private Limits limits;
 
     public ImportDesc(ImportDescType type, int index) {
         this.type = type;
@@ -14,6 +15,19 @@ public class ImportDesc {
     public ImportDesc(ImportDescType type, MutabilityType mutabilityType, ValueType valType) {
         this.type = type;
         this.mutabilityType = mutabilityType;
+        this.valType = valType;
+    }
+
+    public ImportDesc(ImportDescType type, Limits limits) {
+        this.type = type;
+        this.limits = limits;
+        this.valType = null;
+    }
+
+    public ImportDesc(ImportDescType type, Limits limits, ValueType valType) {
+        assert (ValueType.isReferenceType(valType));
+        this.type = type;
+        this.limits = limits;
         this.valType = valType;
     }
 

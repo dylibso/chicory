@@ -152,11 +152,13 @@ public class Module {
                             break;
                         }
                     case TableIdx:
-                        throw new ChicoryException("Don't support table type globals yet");
+                        imports[importId++] = imprt;
+                        break;
                     case MemIdx:
                         throw new ChicoryException("Don't support mem type globals yet");
                     case GlobalIdx:
                         imports[importId++] = imprt;
+                        break;
                 }
             }
         }
@@ -181,19 +183,18 @@ public class Module {
             exports.put("_start", export);
         }
 
-        Table table = null;
+        Table[] tables = new Table[0];
         if (module.getTableSection() != null) {
-            if (module.getTableSection().getTables().length > 1) {
-                throw new ChicoryException("We don't currently support more than 1 table");
-            }
-            table = module.getTableSection().getTables()[0];
-            if (module.getElementSection() != null) {
-                for (var el : module.getElementSection().getElements()) {
-                    var idx = el.getTableIndex();
-                    if (idx != 0)
-                        throw new ChicoryException("We don't currently support more than 1 table");
-                    for (var fi : el.getFuncIndices()) {
-                        table.addFuncRef((int) fi);
+            var tableLength = module.getTableSection().getTables().length;
+            tables = new Table[tableLength];
+            for (int i = 0; i < tableLength; i++) {
+                tables[i] = module.getTableSection().getTables()[i];
+                if (module.getElementSection() != null) {
+                    for (var el : module.getElementSection().getElements()) {
+                        var idx = (int) el.getTableIndex();
+                        for (var fi : el.getFuncIndices()) {
+                            tables[idx].addFuncRef((int) fi);
+                        }
                     }
                 }
             }
@@ -216,7 +217,7 @@ public class Module {
                 types,
                 functionTypes,
                 hostFuncs,
-                table);
+                tables);
     }
 
     private HostFunction[] mapHostFunctions(Import[] imports, HostFunction[] hostFunctions) {
