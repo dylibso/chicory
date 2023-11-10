@@ -10,6 +10,8 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 
 public class Module {
+
+    private static final System.Logger LOGGER = System.getLogger(Module.class.getName());
     private com.dylibso.chicory.wasm.Module module;
     private NameSection nameSec;
 
@@ -200,9 +202,17 @@ public class Module {
         }
 
         var globalImportsOffset = 0;
+        var functionImportsOffset = 0;
         for (int i = 0; i < imports.length; i++) {
-            if (imports[i].getDesc().getType() == ImportDescType.GlobalIdx) {
-                globalImportsOffset++;
+            switch (imports[i].getDesc().getType()) {
+                case GlobalIdx:
+                    globalImportsOffset++;
+                    break;
+                case FuncIdx:
+                    functionImportsOffset++;
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -211,6 +221,7 @@ public class Module {
                 globalInitializers,
                 globals,
                 globalImportsOffset,
+                functionImportsOffset,
                 memory,
                 functions,
                 types,
@@ -220,18 +231,24 @@ public class Module {
     }
 
     private HostFunction[] mapHostFunctions(Import[] imports, HostFunction[] hostFunctions) {
-        var hostImports = new HostFunction[hostFunctions.length];
-        for (var f : hostFunctions) {
-            Integer foundId = null;
-            for (var i : imports) {
+        var hostImports = new HostFunction[imports.length];
+        for (var impIdx = 0; impIdx < imports.length; impIdx++) {
+            var i = imports[impIdx];
+            var name = i.getModuleName() + "." + i.getFieldName();
+            var found = false;
+            for (var f : hostFunctions) {
                 if (i.getModuleName().equals(f.getModuleName())
                         && i.getFieldName().equals(f.getFieldName())) {
-                    foundId = (int) i.getDesc().getIndex();
+                    hostImports[impIdx] = f;
+                    found = true;
                     break;
                 }
             }
-            if (foundId == null) throw new RuntimeException("Couldn't map import to function");
-            hostImports[foundId] = f;
+            if (!found) {
+                LOGGER.log(
+                        System.Logger.Level.WARNING,
+                        "Could not find host function for import " + name);
+            }
         }
         return hostImports;
     }
