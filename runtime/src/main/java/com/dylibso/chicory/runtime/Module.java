@@ -10,6 +10,8 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 
 public class Module {
+
+    private static final System.Logger LOGGER = System.getLogger(Module.class.getName());
     private com.dylibso.chicory.wasm.Module module;
     private NameSection nameSec;
 
@@ -233,8 +235,11 @@ public class Module {
                     break;
                 }
             }
-            if (!found)
-                throw new ChicoryException("Could not find host function for import " + name);
+            if (!found) {
+                LOGGER.log(
+                        System.Logger.Level.WARNING,
+                        "Could not find host function for import " + name);
+            }
         }
         return hostImports;
     }
