@@ -13,6 +13,7 @@ public class Instance {
     private Value[] globals;
 
     private int importedGlobalsOffset;
+    private int importedFunctionsOffset;
     private FunctionType[] types;
     private int[] functionTypes;
     private HostFunction[] imports;
@@ -23,6 +24,7 @@ public class Instance {
             Global[] globalInitalizers,
             Value[] globals,
             int importedGlobalsOffset,
+            int importedFunctionsOffset,
             Memory memory,
             FunctionBody[] functions,
             FunctionType[] types,
@@ -33,6 +35,7 @@ public class Instance {
         this.globalInitalizers = globalInitalizers;
         this.globals = globals;
         this.importedGlobalsOffset = importedGlobalsOffset;
+        this.importedFunctionsOffset = importedFunctionsOffset;
         this.memory = memory;
         this.functions = functions;
         this.types = types;
@@ -61,8 +64,8 @@ public class Instance {
     }
 
     public FunctionBody getFunction(int idx) {
-        if (idx < this.imports.length) return null;
-        return functions[idx - this.imports.length];
+        if (idx < importedFunctionsOffset) return null;
+        return functions[idx - importedFunctionsOffset];
     }
 
     public Memory getMemory() {

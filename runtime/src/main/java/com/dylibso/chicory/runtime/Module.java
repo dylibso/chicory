@@ -202,9 +202,17 @@ public class Module {
         }
 
         var globalImportsOffset = 0;
+        var functionImportsOffset = 0;
         for (int i = 0; i < imports.length; i++) {
-            if (imports[i].getDesc().getType() == ImportDescType.GlobalIdx) {
-                globalImportsOffset++;
+            switch (imports[i].getDesc().getType()) {
+                case GlobalIdx:
+                    globalImportsOffset++;
+                    break;
+                case FuncIdx:
+                    functionImportsOffset++;
+                    break;
+                default:
+                    break;
             }
         }
 
@@ -213,6 +221,7 @@ public class Module {
                 globalInitializers,
                 globals,
                 globalImportsOffset,
+                functionImportsOffset,
                 memory,
                 functions,
                 types,
