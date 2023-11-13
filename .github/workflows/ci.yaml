@@ -40,7 +40,7 @@ jobs:
         if: always() && matrix.os == 'ubuntu-latest' && matrix.version == '17'
         with:
           files: './**/surefire-reports/*.xml'
-  `   - name: Publish badge conditional
+      - name: Publish badge conditional
         id: publish
         run: echo "badge={{ (matrix.os == 'ubuntu-latest' && matrix.version == '17') && (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' || github.event_name != 'workflow_run' && github.ref == 'refs/heads/main') }}" >> $GITHUB_OUTPUT
       - name: Set badge color
