@@ -40,9 +40,16 @@ jobs:
         if: always() && matrix.os == 'ubuntu-latest' && matrix.version == '17'
         with:
           files: './**/surefire-reports/*.xml'
+      - name: Publish badge conditional
+        id: publish
+        if: |
+          (matrix.os == 'ubuntu-latest' && matrix.version == '17') &&
+          (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' ||
+            github.event_name != 'workflow_run' && github.ref == 'refs/heads/main')
+        run: echo "badge=true" >> $GITHUB_OUTPUT
       - name: Set badge color
         shell: bash
-        if: matrix.os == 'ubuntu-latest' && matrix.version == '17'
+        if: steps.publish.outputs.badge
         run: |
           case ${{ fromJSON( steps.test-results.outputs.json ).conclusion }} in
             success)
@@ -57,18 +64,14 @@ jobs:
           esac
       - name: Create badge
         uses: emibcn/badge-action@4209421db54c8764d8932070ffd0f81715a629bf
-        if: matrix.os == 'ubuntu-latest' && matrix.version == '17'
+        if: steps.publish.outputs.badge
         with:
           label: Tests
           status: '${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.tests }} tests, ${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.runs }} runs: ${{ fromJSON( steps.test-results.outputs.json ).conclusion }}'
           color: ${{ env.BADGE_COLOR }}
           path: badge.svg
       - name: Upload badge to Gist
-        # Upload only for main branch
-        if: >
-          (matrix.os == 'ubuntu-latest' && matrix.version == '17') &&
-          (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' ||
-          github.event_name != 'workflow_run' && github.ref == 'refs/heads/main')
+        if: steps.publish.outputs.badge
         uses: andymckay/append-gist-action@6e8d64427fe47cbacf4ab6b890411f1d67c07f3e
         with:
           token: ${{ secrets.GIST_TOKEN }}

@@ -26,6 +26,7 @@ import com.dylibso.chicory.wasm.types.ImportDesc;
 import com.dylibso.chicory.wasm.types.ImportDescType;
 import com.dylibso.chicory.wasm.types.ImportSection;
 import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Memory;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MemorySection;
@@ -135,7 +136,8 @@ public final class Parser {
         }
 
         while (buffer.hasRemaining()) {
-            var sectionId = (int) readVarUInt32(buffer);
+            var sectionId = buffer.get();
+            //            var sectionId = (int) readVarUInt32(buffer);
             var sectionSize = readVarUInt32(buffer);
 
             if (shouldParseSection(sectionId)) {
@@ -308,13 +310,46 @@ public final class Parser {
             var descType = ImportDescType.byId(readVarUInt32(buffer));
             switch (descType) {
                 case FuncIdx:
-                    var funcDesc = new ImportDesc(descType, (int) readVarUInt32(buffer));
-                    imports[i] = new Import(moduleName, fieldName, funcDesc);
-                    break;
+                    {
+                        var funcDesc = new ImportDesc(descType, (int) readVarUInt32(buffer));
+                        imports[i] = new Import(moduleName, fieldName, funcDesc);
+                        break;
+                    }
                 case TableIdx:
-                    throw new ChicoryException("Don't support table type globals yet");
+                    {
+                        var rawTableType = readVarUInt32(buffer);
+                        assert rawTableType == 0x70 || rawTableType == 0x6F;
+                        var tableType =
+                                (rawTableType == 0x70) ? ValueType.FuncRef : ValueType.ExternRef;
+
+                        var limitType = (int) readVarUInt32(buffer);
+                        assert limitType == 0x00 || limitType == 0x01;
+                        var min = (int) readVarUInt32(buffer);
+                        var max = -1;
+                        if (limitType > 0) {
+                            max = (int) readVarUInt32(buffer);
+                        }
+                        var limits = new Limits(min, max);
+
+                        ImportDesc tableDesc = new ImportDesc(descType, limits, tableType);
+                        imports[i] = new Import(moduleName, fieldName, tableDesc);
+                        break;
+                    }
                 case MemIdx:
-                    throw new ChicoryException("Don't support mem type globals yet");
+                    {
+                        var limitType = (int) readVarUInt32(buffer);
+                        assert limitType == 0x00 || limitType == 0x01;
+                        var min = (int) readVarUInt32(buffer);
+                        var max = -1;
+                        if (limitType > 0) {
+                            max = (int) readVarUInt32(buffer);
+                        }
+                        var limits = new Limits(min, max);
+
+                        ImportDesc memDesc = new ImportDesc(descType, limits);
+                        imports[i] = new Import(moduleName, fieldName, memDesc);
+                        break;
+                    }
                 case GlobalIdx:
                     var globalValType = ValueType.byId(readVarUInt32(buffer));
                     var globalMut = MutabilityType.byId(readVarUInt32(buffer));

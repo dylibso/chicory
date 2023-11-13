@@ -19,7 +19,9 @@ public enum CommandType {
     @JsonProperty("assert_exhaustion")
     ASSERT_EXHAUSTION("assert_exhaustion"),
     @JsonProperty("action")
-    ACTION("action");
+    ACTION("action"),
+    @JsonProperty("register")
+    REGISTER("register");
 
     private final String value;
 

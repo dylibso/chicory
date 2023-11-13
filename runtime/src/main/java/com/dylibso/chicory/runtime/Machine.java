@@ -186,12 +186,10 @@ public class Machine {
                         break;
                     case CALL_INDIRECT:
                         {
-                            var tableIdx = operands[1];
-                            if (tableIdx != 0)
-                                throw new ChicoryException(
-                                        "We only support a table index of 0 in call-indirect");
+                            var tableIdx = (int) operands[1];
+                            var table = instance.getTables()[tableIdx];
                             var funcTableIdx = this.stack.pop().asInt();
-                            var funcId = instance.getTable().getFuncRef(funcTableIdx);
+                            var funcId = table.getFuncRef(funcTableIdx);
                             var typeId = (int) operands[0];
                             var type = instance.getTypes()[typeId];
                             // given a list of param types, let's pop those params off the stack

@@ -54,7 +54,6 @@
             f64_cmp.wast,
             float_misc.wast,
             fac.wast,
-            data.wast,
             forward.wast,
             float_literals.wast,
             br.wast,
@@ -62,7 +61,8 @@
             br_table.wast,
             conversions.wast,
             if.wast,
-            float_misc.wast</wastToProcess>
+            float_misc.wast,
+            table.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
             stack.wast,

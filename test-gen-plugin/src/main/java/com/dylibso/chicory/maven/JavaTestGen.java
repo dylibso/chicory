@@ -15,6 +15,7 @@ import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.ClassExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
@@ -22,6 +23,7 @@ import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.utils.SourceRoot;
 import com.github.javaparser.utils.StringEscapeUtils;
 import java.io.File;
@@ -112,7 +114,7 @@ public class JavaTestGen {
                     "TestMethodOrder",
                     new ClassExpr(
                             JAVA_PARSER
-                                    .parseClassOrInterfaceType("MethodOrderer.OrderAnnotation")
+                                    .parseType("MethodOrderer.OrderAnnotation")
                                     .getResult()
                                     .get()));
             testClass.addSingleMemberAnnotation(
@@ -197,6 +199,16 @@ public class JavaTestGen {
             }
         }
 
+        if (testClass.getMethods().size() == 0) {
+            var methodName = "instantiationTest";
+            var instantiationMethod = testClass.addMethod(methodName, Modifier.Keyword.PUBLIC);
+            instantiationMethod.addAnnotation("Test");
+            instantiationMethod.addOrphanComment(
+                    new LineComment("Empty test to trigger the class instances creation"));
+            instantiationMethod.setBody(
+                    new BlockStmt().addStatement(new NameExpr("assertTrue(true)")));
+        }
+
         return cu;
     }
 
@@ -208,7 +220,7 @@ public class JavaTestGen {
             Command cmd,
             String currentWasmFile) {
         var methodName = "test" + testNumber;
-        var method = testClass.addMethod("test" + testNumber, Modifier.Keyword.PUBLIC);
+        var method = testClass.addMethod(methodName, Modifier.Keyword.PUBLIC);
         if (excludedTests.contains(methodName)) {
             method.addAnnotation("Disabled");
         }
