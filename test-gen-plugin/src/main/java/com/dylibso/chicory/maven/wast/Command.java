@@ -28,6 +28,9 @@ public class Command {
     @JsonProperty("text")
     private String text;
 
+    @JsonProperty("as")
+    private String as;
+
     @Override
     public String toString() {
         return "Command{"

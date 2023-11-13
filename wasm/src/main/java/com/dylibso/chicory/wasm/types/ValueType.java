@@ -31,17 +31,4 @@ public enum ValueType {
     public static ValueType byId(long id) {
         return byId.get(id);
     }
-
-    public static boolean isReferenceType(ValueType t) {
-        if (t == null) {
-            return false;
-        }
-        switch (t) {
-            case FuncRef:
-            case ExternRef:
-                return true;
-            default:
-                return false;
-        }
-    }
 }

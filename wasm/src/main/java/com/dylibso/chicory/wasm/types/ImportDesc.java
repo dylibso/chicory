@@ -25,7 +25,7 @@ public class ImportDesc {
     }
 
     public ImportDesc(ImportDescType type, Limits limits, ValueType valType) {
-        assert (ValueType.isReferenceType(valType));
+        assert (valType == ValueType.FuncRef || valType == ValueType.ExternRef);
         this.type = type;
         this.limits = limits;
         this.valType = valType;

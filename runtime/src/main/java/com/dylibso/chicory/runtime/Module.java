@@ -152,10 +152,7 @@ public class Module {
                             break;
                         }
                     case TableIdx:
-                        imports[importId++] = imprt;
-                        break;
                     case MemIdx:
-                        throw new ChicoryException("Don't support mem type globals yet");
                     case GlobalIdx:
                         imports[importId++] = imprt;
                         break;

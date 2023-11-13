@@ -114,7 +114,7 @@ public class JavaTestGen {
                     "TestMethodOrder",
                     new ClassExpr(
                             JAVA_PARSER
-                                    .parseClassOrInterfaceType("MethodOrderer.OrderAnnotation")
+                                    .parseType("MethodOrderer.OrderAnnotation")
                                     .getResult()
                                     .get()));
             testClass.addSingleMemberAnnotation(
