@@ -10,7 +10,7 @@ public class HostFunction {
     private final List<ValueType> paramTypes;
     private final List<ValueType> returnTypes;
 
-    HostFunction(
+    public HostFunction(
             WasmFunctionHandle handle,
             String moduleName,
             String fieldName,
