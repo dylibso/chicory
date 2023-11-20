@@ -62,7 +62,7 @@ public class TestGenMojo extends AbstractMojo {
     /**
      * Wabt version
      */
-    @Parameter(required = true, defaultValue = "1.0.33")
+    @Parameter(required = true, property = "wabtVersion", defaultValue = "1.0.33")
     private String wabtVersion;
 
     @Parameter(
