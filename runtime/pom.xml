@@ -5,18 +5,28 @@
   <parent>
     <groupId>com.dylibso.chicory</groupId>
     <artifactId>chicory</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.0.1</version>
   </parent>
   <artifactId>runtime</artifactId>
   <packaging>jar</packaging>
+  <description>Native JVM WebAssembly runtime</description>
+
+  <url>https://github.com/dylibso/chicory</url>
+
+  <licenses>
+    <license>
+      <name>Apache-2.0</name>
+      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+      <comments>A business-friendly OSS license</comments>
+    </license>
+  </licenses>
 
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm</artifactId>
     </dependency>
-
-    <!--    Test    -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
@@ -76,113 +86,57 @@
             global.wast</orderedWastToProcess>
           <excludedTests>
             <!-- integer overflow -->
-            SpecV1ConversionsTest.test150,
-            SpecV1ConversionsTest.test194,
-            <!-- Assertion failures -->
-            SpecV1ConversionsTest.test336,
-            SpecV1ConversionsTest.test380,
-            SpecV1FloatExprsTest.test210,
-            SpecV1FloatExprsTest.test306,
-            SpecV1FloatExprsTest.test307,
-            SpecV1FloatExprsTest.test308,
-            SpecV1FloatExprsTest.test309,
-            SpecV1FloatExprsTest.test748,
-            SpecV1FloatExprsTest.test749,
-            SpecV1FloatExprsTest.test750,
-            SpecV1FloatExprsTest.test751,
-            SpecV1FloatExprsTest.test758,
-            SpecV1FloatExprsTest.test759,
-            SpecV1FloatExprsTest.test760,
-            SpecV1FloatExprsTest.test761,
-
-            SpecV1MemoryInitTest.test39,
-            SpecV1MemoryInitTest.test40,
-            SpecV1MemoryInitTest.test41,
-            SpecV1MemoryInitTest.test42,
-
-            SpecV1MemoryGrowTest.test67,
-            SpecV1MemoryInitTest.test78,
-            SpecV1MemoryInitTest.test79,
-            SpecV1MemoryInitTest.test80,
-            SpecV1MemoryInitTest.test93,
-            SpecV1MemoryInitTest.test101,
-            SpecV1MemoryInitTest.test102,
-            SpecV1MemoryInitTest.test103,
-            SpecV1MemoryInitTest.test104,
-            SpecV1MemoryInitTest.test107,
-            SpecV1MemoryInitTest.test108,
-            SpecV1MemoryInitTest.test109,
-            SpecV1MemoryInitTest.test110,
-            SpecV1MemoryInitTest.test111,
-            SpecV1MemoryInitTest.test113,
-            SpecV1MemoryInitTest.test115,
-            SpecV1MemoryInitTest.test117,
-            SpecV1MemoryInitTest.test118,
-            SpecV1MemoryInitTest.test126,
-
-            SpecV1MemoryInitTest.test127,
-            SpecV1MemoryInitTest.test128,
-            SpecV1MemoryInitTest.test131,
-            SpecV1MemoryInitTest.test132,
-            SpecV1MemoryInitTest.test133,
-            SpecV1MemoryInitTest.test134,
-            SpecV1MemoryInitTest.test135,
-            SpecV1MemoryInitTest.test136,
-            SpecV1MemoryInitTest.test137,
-            SpecV1MemoryInitTest.test138,
-            SpecV1MemoryInitTest.test139,
-            SpecV1MemoryInitTest.test140,
-            SpecV1MemoryInitTest.test204,
-            SpecV1MemoryInitTest.test206,
-            SpecV1MemoryInitTest.test208,
-            SpecV1MemoryInitTest.test210,
-            SpecV1MemoryInitTest.test212,
-            SpecV1MemoryInitTest.test214,
-            <!-- imports integration is missing -->
+            SpecV1ConversionsTest.test150, SpecV1ConversionsTest.test194,
+            <!--
+            Assertion failures -->
+            SpecV1ConversionsTest.test336, SpecV1ConversionsTest.test380,
+            SpecV1FloatExprsTest.test210, SpecV1FloatExprsTest.test306,
+            SpecV1FloatExprsTest.test307, SpecV1FloatExprsTest.test308,
+            SpecV1FloatExprsTest.test309, SpecV1FloatExprsTest.test748,
+            SpecV1FloatExprsTest.test749, SpecV1FloatExprsTest.test750,
+            SpecV1FloatExprsTest.test751, SpecV1FloatExprsTest.test758,
+            SpecV1FloatExprsTest.test759, SpecV1FloatExprsTest.test760,
+            SpecV1FloatExprsTest.test761, SpecV1MemoryInitTest.test39, SpecV1MemoryInitTest.test40,
+            SpecV1MemoryInitTest.test41, SpecV1MemoryInitTest.test42, SpecV1MemoryGrowTest.test67,
+            SpecV1MemoryInitTest.test78, SpecV1MemoryInitTest.test79, SpecV1MemoryInitTest.test80,
+            SpecV1MemoryInitTest.test93, SpecV1MemoryInitTest.test101, SpecV1MemoryInitTest.test102,
+            SpecV1MemoryInitTest.test103, SpecV1MemoryInitTest.test104,
+            SpecV1MemoryInitTest.test107, SpecV1MemoryInitTest.test108,
+            SpecV1MemoryInitTest.test109, SpecV1MemoryInitTest.test110,
+            SpecV1MemoryInitTest.test111, SpecV1MemoryInitTest.test113,
+            SpecV1MemoryInitTest.test115, SpecV1MemoryInitTest.test117,
+            SpecV1MemoryInitTest.test118, SpecV1MemoryInitTest.test126,
+            SpecV1MemoryInitTest.test127, SpecV1MemoryInitTest.test128,
+            SpecV1MemoryInitTest.test131, SpecV1MemoryInitTest.test132,
+            SpecV1MemoryInitTest.test133, SpecV1MemoryInitTest.test134,
+            SpecV1MemoryInitTest.test135, SpecV1MemoryInitTest.test136,
+            SpecV1MemoryInitTest.test137, SpecV1MemoryInitTest.test138,
+            SpecV1MemoryInitTest.test139, SpecV1MemoryInitTest.test140,
+            SpecV1MemoryInitTest.test204, SpecV1MemoryInitTest.test206,
+            SpecV1MemoryInitTest.test208, SpecV1MemoryInitTest.test210,
+            SpecV1MemoryInitTest.test212, SpecV1MemoryInitTest.test214,
+            <!-- imports integration is
+            missing -->
             SpecV1GlobalTest.test6,
-            SpecV1GlobalTest.test7,
-            SpecV1GlobalTest.test57,
+            SpecV1GlobalTest.test7, SpecV1GlobalTest.test57,
             <!-- call indirect failures -->
             SpecV1MemoryGrowTest.test64,
-            SpecV1MemoryGrowTest.test65,
-            SpecV1MemoryGrowTest.test66,
+            SpecV1MemoryGrowTest.test65, SpecV1MemoryGrowTest.test66,
             <!-- Errors -->
             SpecV1MemoryInitTest.test31,
-            SpecV1MemoryInitTest.test62,
-
-            SpecV1NamesTest.test481,
-            SpecV1AddressTest.test64,
+            SpecV1MemoryInitTest.test62, SpecV1NamesTest.test481, SpecV1AddressTest.test64,
             SpecV1AddressTest.test186,
             <!-- Invalid and Malformed failures, can be ignored for now -->
-            SpecV1AddressTest.test75,
-            SpecV1AddressTest.test76,
-            SpecV1AddressTest.test77,
-            SpecV1AddressTest.test78,
-            SpecV1AddressTest.test79,
-            SpecV1AddressTest.test80,
-            SpecV1AddressTest.test86,
-            SpecV1AddressTest.test87,
-            SpecV1AddressTest.test88,
-            SpecV1AddressTest.test89,
-            SpecV1AddressTest.test90,
-            SpecV1AddressTest.test197,
-            SpecV1AddressTest.test198,
-            SpecV1AddressTest.test199,
-            SpecV1AddressTest.test200,
-            SpecV1AddressTest.test201,
-            SpecV1AddressTest.test202,
-            SpecV1AddressTest.test203,
-            SpecV1AddressTest.test211,
-            SpecV1AddressTest.test212,
-            SpecV1AddressTest.test213,
-            SpecV1AddressTest.test214,
-            SpecV1AddressTest.test217,
-            SpecV1AddressTest.test233,
-            SpecV1AddressTest.test234,
-            SpecV1AddressTest.test236,
-            SpecV1AddressTest.test252,
-            SpecV1AddressTest.test253,
-            SpecV1AddressTest.test255
+            SpecV1AddressTest.test75, SpecV1AddressTest.test76,
+            SpecV1AddressTest.test77, SpecV1AddressTest.test78, SpecV1AddressTest.test79,
+            SpecV1AddressTest.test80, SpecV1AddressTest.test86, SpecV1AddressTest.test87,
+            SpecV1AddressTest.test88, SpecV1AddressTest.test89, SpecV1AddressTest.test90,
+            SpecV1AddressTest.test197, SpecV1AddressTest.test198, SpecV1AddressTest.test199,
+            SpecV1AddressTest.test200, SpecV1AddressTest.test201, SpecV1AddressTest.test202,
+            SpecV1AddressTest.test203, SpecV1AddressTest.test211, SpecV1AddressTest.test212,
+            SpecV1AddressTest.test213, SpecV1AddressTest.test214, SpecV1AddressTest.test217,
+            SpecV1AddressTest.test233, SpecV1AddressTest.test234, SpecV1AddressTest.test236,
+            SpecV1AddressTest.test252, SpecV1AddressTest.test253, SpecV1AddressTest.test255
           </excludedTests>
         </configuration>
         <executions>

@@ -18,22 +18,20 @@ simplicity and safety in mind. See the [development section](#development) for a
 To use the runtime, you need to add the `com.dylibso.chicory:runtime` dependency
 to your dependency management system.
 
-> *Warning*: We're still working on publishing this to a repository so you may need to install locally for now. Pull down the repo and run `mvn clean install`. It will be put into your local maven repo.
-
 #### Maven
 
 ```xml
 <dependency>
   <groupId>com.dylibso.chicory</groupId>
   <artifactId>runtime</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>0.0.1</version>
 </dependency>
 ```
 
 #### Gradle
 
 ```groovy
-implementation 'com.dylibso.chicory:runtime:1.0-SNAPSHOT'
+implementation 'com.dylibso.chicory:runtime:0.0.1`
 ```
 
 ### Loading and Instantiating Code
