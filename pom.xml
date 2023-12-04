@@ -6,7 +6,7 @@
   <artifactId>chicory</artifactId>
   <version>0.0.1</version>
   <packaging>pom</packaging>
-  <name>chicory</name>
+  <name>Chicory</name>
   <description>Native JVM WebAssembly runtime</description>
   <url>https://github.com/dylibso/chicory</url>
 
@@ -198,7 +198,6 @@
             <groupId>org.jreleaser</groupId>
             <artifactId>jreleaser-maven-plugin</artifactId>
             <version>${jreleaser.version}</version>
-            <inherited>false</inherited>
             <configuration>
               <jreleaser>
                 <project>
@@ -219,10 +218,6 @@
                       <maven-central>
                         <active>ALWAYS</active>
                         <url>https://s01.oss.sonatype.org/service/local</url>
-                        <!--
-                          <closeRepository>false</closeRepository>
-                          <releaseRepository>false</releaseRepository>
-                          -->
                         <stagingRepositories>target/staging-deploy</stagingRepositories>
                       </maven-central>
                     </nexus2>

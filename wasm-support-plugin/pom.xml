@@ -10,6 +10,10 @@
   <artifactId>wasm-support-plugin</artifactId>
   <packaging>maven-plugin</packaging>
 
+  <properties>
+    <maven.deploy.skip>true</maven.deploy.skip>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.github.javaparser</groupId>

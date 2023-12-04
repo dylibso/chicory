@@ -9,6 +9,7 @@
   </parent>
   <artifactId>runtime</artifactId>
   <packaging>jar</packaging>
+  <name>Chicory - Runtime</name>
   <description>Native JVM WebAssembly runtime</description>
 
   <url>https://github.com/dylibso/chicory</url>

@@ -10,6 +10,9 @@
   <artifactId>wasm</artifactId>
   <packaging>jar</packaging>
 
+  <name>Chicory - WASM</name>
+  <description>WebAssembly tools</description>
+
   <dependencies>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
