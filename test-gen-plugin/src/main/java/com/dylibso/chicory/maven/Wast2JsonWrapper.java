@@ -2,6 +2,8 @@ package com.dylibso.chicory.maven;
 
 import static com.dylibso.chicory.maven.Constants.SPEC_JSON;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -9,6 +11,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.List;
@@ -23,7 +28,7 @@ public class Wast2JsonWrapper {
     private final Log log;
     private final File wabtDownloadTargetFolder;
     private final String wabtReleasesURL;
-    private final String wabtVersion;
+    private String wabtVersion;
     private final String osName;
     private final File compiledWastTargetFolder;
 
@@ -102,6 +107,40 @@ public class Wast2JsonWrapper {
         }
     }
 
+    private String resolveLatestVersion() {
+        try {
+            URI releaseURI = new URI(wabtReleasesURL);
+            URI latestVersionURI =
+                    new URI(
+                            releaseURI.getScheme(),
+                            "api." + releaseURI.getHost(),
+                            "/repos" + releaseURI.getPath().replace("download/", "latest"),
+                            releaseURI.getFragment());
+
+            HttpRequest request = HttpRequest.newBuilder().uri(latestVersionURI).GET().build();
+
+            HttpResponse<String> response =
+                    HttpClient.newBuilder()
+                            .build()
+                            .send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                throw new RuntimeException("Failed to resolve latest version of WABT");
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode latestVersionJson = mapper.readTree(response.body());
+            String latestVersion = latestVersionJson.get("name").asText();
+            if (latestVersion.startsWith("v")) {
+                latestVersion = latestVersion.substring(1);
+            }
+
+            return latestVersion;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private String resolveOrInstallWast2Json() {
         ProcessBuilder pb = new ProcessBuilder(WAST2JSON);
         pb.directory(new File("."));
@@ -119,6 +158,10 @@ public class Wast2JsonWrapper {
         if (ps != null && ps.exitValue() == 0) {
             log.info(WAST2JSON + " binary detected available, using the system one.");
             return WAST2JSON;
+        }
+
+        if (wabtVersion.equals("latest")) {
+            wabtVersion = resolveLatestVersion();
         }
 
         // Downloading locally WABT

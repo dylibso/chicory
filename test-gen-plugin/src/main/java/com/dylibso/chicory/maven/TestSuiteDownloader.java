@@ -1,7 +1,5 @@
 package com.dylibso.chicory.maven;
 
-import static java.util.Collections.singleton;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,10 +34,8 @@ public class TestSuiteDownloader {
                     Git.cloneRepository()
                             .setURI(testSuiteRepo)
                             .setDirectory(testSuiteFolder)
-                            .setDepth(1)
-                            .setBranchesToClone(singleton("refs/heads/" + testSuiteRepoRef))
-                            .setBranch("refs/heads/" + testSuiteRepoRef)
                             .call()) {
+                git.checkout().setName(testSuiteRepoRef).call();
                 log.warn("Cloned the testsuite at ref: " + testSuiteRepoRef);
             }
         }
