@@ -36,8 +36,8 @@ to your dependency management system.
 #### Gradle
 
 ```groovy
-implementation 'com.dylibso.chicory:runtime:0.0.2`
-implementation 'com.dylibso.chicory:wasm:0.0.2`
+implementation 'com.dylibso.chicory:runtime:0.0.2'
+implementation 'com.dylibso.chicory:wasm:0.0.2'
 ```
 
 ### Loading and Instantiating Code
