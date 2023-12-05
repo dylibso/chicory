@@ -5,7 +5,7 @@
   <parent>
     <groupId>com.dylibso.chicory</groupId>
     <artifactId>chicory</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
   </parent>
   <artifactId>runtime</artifactId>
   <packaging>jar</packaging>

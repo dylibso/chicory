@@ -24,20 +24,20 @@ to your dependency management system.
 <dependency>
   <groupId>com.dylibso.chicory</groupId>
   <artifactId>runtime</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
 </dependency>
 <dependency>
   <groupId>com.dylibso.chicory</groupId>
   <artifactId>wasm</artifactId>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
 </dependency>
 ```
 
 #### Gradle
 
 ```groovy
-implementation 'com.dylibso.chicory:runtime:0.0.1`
-implementation 'com.dylibso.chicory:wasm:0.0.1`
+implementation 'com.dylibso.chicory:runtime:0.0.2`
+implementation 'com.dylibso.chicory:wasm:0.0.2`
 ```
 
 ### Loading and Instantiating Code
