@@ -18,22 +18,26 @@ simplicity and safety in mind. See the [development section](#development) for a
 To use the runtime, you need to add the `com.dylibso.chicory:runtime` dependency
 to your dependency management system.
 
-> *Warning*: We're still working on publishing this to a repository so you may need to install locally for now. Pull down the repo and run `mvn clean install`. It will be put into your local maven repo.
-
 #### Maven
 
 ```xml
 <dependency>
   <groupId>com.dylibso.chicory</groupId>
   <artifactId>runtime</artifactId>
-  <version>1.0-SNAPSHOT</version>
+  <version>0.0.2</version>
+</dependency>
+<dependency>
+  <groupId>com.dylibso.chicory</groupId>
+  <artifactId>wasm</artifactId>
+  <version>0.0.2</version>
 </dependency>
 ```
 
 #### Gradle
 
 ```groovy
-implementation 'com.dylibso.chicory:runtime:1.0-SNAPSHOT'
+implementation 'com.dylibso.chicory:runtime:0.0.2`
+implementation 'com.dylibso.chicory:wasm:0.0.2`
 ```
 
 ### Loading and Instantiating Code
@@ -50,11 +54,14 @@ curl https://raw.githubusercontent.com/dylibso/chicory/main/runtime/src/test/res
 Now let's load this module and instantiate it:
 
 ```java
+import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.runtime.*;
+import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.runtime.Instance;
+import java.io.File;
 
 // point this to your path on disk
-Module module = Module.build("./factorial.wasm");
+Module module = Module.build(new File("./factorial.wasm"));
 Instance instance = module.instantiate();
 ```
 
@@ -76,7 +83,7 @@ on the return value to get back the Java integer:
 
 ```java
 Value result = iterFact.apply(Value.i32(5))[0];
-assertEquals(120, result.asInt());
+System.out.println("Result: " + result.asInt()); // should print 120 (5!)
 ```
 
 > *Note*: Functions in Wasm can have multiple returns but here we're just taking the first returned value.
