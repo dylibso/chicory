@@ -40,6 +40,9 @@ public class Machine {
         } else {
             this.callStack.push(new StackFrame(instance, funcId, 0, args, List.of()));
             var imprt = instance.getImports()[funcId];
+            if (imprt == null) {
+                throw new ChicoryException("Missing imported function, number: " + funcId);
+            }
             var hostFunc = imprt.getHandle();
             var results = hostFunc.apply(this.instance.getMemory(), args);
             // a host function can return null or an array of ints

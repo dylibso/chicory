@@ -32,11 +32,17 @@ public final class Memory {
     }
 
     public Memory(MemoryLimits limits, DataSegment[] dataSegments) {
+        this(limits, dataSegments, true);
+    }
+
+    public Memory(MemoryLimits limits, DataSegment[] dataSegments, boolean initialize) {
         this.limits = limits;
         this.buffer = allocateByteBuffer(PAGE_SIZE * limits.getInitial());
         this.nPages = limits.getInitial();
         this.dataSegments = dataSegments;
-        this.reinstantiate();
+        if (initialize) {
+            this.reinstantiate();
+        }
     }
 
     private static ByteBuffer allocateByteBuffer(int capacity) {

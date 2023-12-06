@@ -10,6 +10,9 @@ public class Command {
     @JsonProperty("type")
     private CommandType type;
 
+    @JsonProperty("name")
+    private String name;
+
     @JsonProperty("line")
     private int line;
 
@@ -36,6 +39,8 @@ public class Command {
         return "Command{"
                 + "type="
                 + type
+                + ", name="
+                + name
                 + ", line="
                 + line
                 + ", filename='"
@@ -56,6 +61,10 @@ public class Command {
 
     public CommandType getType() {
         return type;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public int getLine() {

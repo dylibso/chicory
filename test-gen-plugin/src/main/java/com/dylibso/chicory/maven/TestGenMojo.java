@@ -59,6 +59,12 @@ public class TestGenMojo extends AbstractMojo {
             defaultValue = "${project.build.directory}/generated-test-sources/test-gen")
     private File sourceDestinationFolder;
 
+    /**
+     * Location of the imports sources.
+     */
+    @Parameter(required = true, defaultValue = "${project.basedir}/src/test/java")
+    private File importsSourcesFolder;
+
     @Parameter(required = true, defaultValue = "${project.build.directory}/compiled-wast")
     private File compiledWastTargetFolder;
 
@@ -165,13 +171,13 @@ public class TestGenMojo extends AbstractMojo {
                                                 testsuiteFolder.toPath().resolve(spec).toFile());
                                 var cu =
                                         testGen.generate(
-                                                dest,
                                                 wasmFilesFolder
                                                         .toPath()
                                                         .resolve(SPEC_JSON)
                                                         .toFile(),
                                                 wasmFilesFolder,
-                                                cleanedOrderedWasts.contains(spec));
+                                                cleanedOrderedWasts.contains(spec),
+                                                importsSourcesFolder.toPath());
                                 dest.add(cu);
                             });
             dest.saveAll();

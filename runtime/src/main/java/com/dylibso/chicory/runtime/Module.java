@@ -7,6 +7,7 @@ import com.dylibso.chicory.wasm.types.*;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class Module {
@@ -103,7 +104,7 @@ public class Module {
             dataSegments = module.getDataSection().getDataSegments();
         }
 
-        Memory memory;
+        Memory memory = null;
         if (module.getMemorySection() != null) {
             var memories = module.getMemorySection().getMemories();
             if (memories.length > 1) {
@@ -111,7 +112,25 @@ public class Module {
             }
             memory = new Memory(memories[0].getMemoryLimits(), dataSegments);
         } else {
-            memory = new Memory(MemoryLimits.defaultLimits(), dataSegments);
+            boolean importFound = false;
+            if (module.getImportSection() != null) {
+                for (int i = 0; i < module.getImportSection().getImports().length; i++) {
+                    var imprt = module.getImportSection().getImports()[i];
+                    if (imprt.getDesc().getType() != ImportDescType.MemIdx) {
+                        continue;
+                    }
+
+                    if (importFound) {
+                        throw new ChicoryException("We don't support multiple memories");
+                    }
+                    memory = new Memory(MemoryLimits.defaultLimits(), dataSegments, false);
+                    importFound = true;
+                }
+            }
+
+            if (!importFound) {
+                memory = new Memory(MemoryLimits.defaultLimits(), dataSegments);
+            }
         }
 
         var types = new FunctionType[0];
@@ -124,9 +143,12 @@ public class Module {
         var funcSection = module.getFunctionSection();
         if (funcSection != null) {
             numFuncTypes = funcSection.getTypeIndices().length;
-            if (module.getImportSection() != null) {
-                numFuncTypes += module.getImportSection().getImports().length;
-            }
+        }
+        if (module.getImportSection() != null) {
+            numFuncTypes +=
+                    Arrays.stream(module.getImportSection().getImports())
+                            .filter(is -> is.getDesc().getType() == ImportDescType.FuncIdx)
+                            .count();
         }
 
         FunctionBody[] functions = new FunctionBody[0];
@@ -171,6 +193,9 @@ public class Module {
         if (module.getFunctionSection() != null) {
             if (startFuncId == null) startFuncId = importId;
             for (var ft : module.getFunctionSection().getTypeIndices()) {
+                if (importId >= functionTypes.length) {
+                    break;
+                }
                 functionTypes[importId++] = ft;
             }
         }
@@ -245,9 +270,13 @@ public class Module {
             if (!found) {
                 LOGGER.log(
                         System.Logger.Level.WARNING,
-                        "Could not find host function for import " + name);
+                        "Could not find host function for import number: "
+                                + impIdx
+                                + " named: "
+                                + name);
             }
         }
+
         return hostImports;
     }
 

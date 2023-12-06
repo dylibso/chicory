@@ -1,5 +1,6 @@
 package com.dylibso.chicory.testing;
 
+import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Module;
 import java.io.File;
@@ -30,6 +31,13 @@ public class TestModule {
     public TestModule instantiate() {
         if (this.instance == null) {
             this.instance = module.instantiate();
+        }
+        return this;
+    }
+
+    public TestModule instantiate(HostFunction[] funcs) {
+        if (this.instance == null) {
+            this.instance = module.instantiate(funcs);
         }
         return this;
     }

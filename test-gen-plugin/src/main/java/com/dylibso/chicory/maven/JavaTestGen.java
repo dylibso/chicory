@@ -29,6 +29,7 @@ import com.github.javaparser.utils.StringEscapeUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -62,7 +63,7 @@ public class JavaTestGen {
     }
 
     public CompilationUnit generate(
-            SourceRoot dest, File specFile, File wasmFilesFolder, boolean ordered) {
+            File specFile, File wasmFilesFolder, boolean ordered, Path importsSourceFolder) {
         Wast wast;
         try {
             wast = mapper.readValue(specFile, Wast.class);
@@ -73,6 +74,7 @@ public class JavaTestGen {
         var cu = new CompilationUnit("com.dylibso.chicory.test.gen");
         var name = specFile.toPath().getParent().toFile().getName();
         var testName = "SpecV1" + capitalize(escapedCamelCase(name)) + "Test";
+        var importsName = "SpecV1" + capitalize(escapedCamelCase(name)) + "HostFuncs";
         cu.setStorage(sourceTargetFolder.toPath().resolve(testName + ".java"));
 
         // all the imports
@@ -108,6 +110,9 @@ public class JavaTestGen {
         cu.addImport("com.dylibso.chicory.wasm.exceptions.MalformedException");
         cu.addImport("com.dylibso.chicory.wasm.types.Value");
 
+        // import for host functions
+        cu.addImport("com.dylibso.chicory.imports.*");
+
         var testClass = cu.addClass(testName);
         if (ordered) {
             testClass.addSingleMemberAnnotation(
@@ -129,6 +134,7 @@ public class JavaTestGen {
         MethodDeclaration method;
         int testNumber = 0;
         int moduleInstantiationNumber = 0;
+        String lastModuleVarName;
         int fallbackVarNumber = 0;
 
         String currentWasmFile = null;
@@ -142,10 +148,19 @@ public class JavaTestGen {
             switch (cmd.getType()) {
                 case MODULE:
                     currentWasmFile = getWasmFile(cmd, wasmFilesFolder);
+                    lastModuleVarName = TEST_MODULE_NAME + moduleInstantiationNumber++;
+                    if (cmd.getName() != null) {
+                        lastModuleVarName = cmd.getName().replace("$", "");
+                    }
                     testClass.addFieldWithInitializer(
                             parseClassOrInterfaceType("TestModule"),
-                            TEST_MODULE_NAME + moduleInstantiationNumber++,
-                            generateModuleInstantiation(cmd, currentWasmFile));
+                            lastModuleVarName,
+                            generateModuleInstantiation(
+                                    cmd,
+                                    currentWasmFile,
+                                    importsName,
+                                    lastModuleVarName,
+                                    importsSourceFolder));
                     break;
                 case ACTION:
                 case ASSERT_RETURN:
@@ -162,8 +177,11 @@ public class JavaTestGen {
                     var baseVarName = escapedCamelCase(cmd.getAction().getField());
                     var varNum = fallbackVarNumber++;
                     var varName = "var" + (baseVarName.isEmpty() ? varNum : baseVarName);
-                    var fieldExport =
-                            generateFieldExport(varName, cmd, (moduleInstantiationNumber - 1));
+                    String moduleName = TEST_MODULE_NAME + (moduleInstantiationNumber - 1);
+                    if (cmd.getAction().getModule() != null) {
+                        moduleName = cmd.getAction().getModule().replace("$", "");
+                    }
+                    var fieldExport = generateFieldExport(varName, cmd, moduleName);
                     if (fieldExport.isPresent()) {
                         method.getBody().get().addStatement(fieldExport.get());
                     }
@@ -255,7 +273,7 @@ public class JavaTestGen {
     }
 
     private Optional<Expression> generateFieldExport(
-            String varName, Command cmd, int instanceNumber) {
+            String varName, Command cmd, String moduleName) {
         if (cmd.getAction() != null && cmd.getAction().getField() != null) {
             var declarator =
                     new VariableDeclarator()
@@ -263,8 +281,7 @@ public class JavaTestGen {
                             .setType(parseClassOrInterfaceType("ExportFunction"))
                             .setInitializer(
                                     new NameExpr(
-                                            TEST_MODULE_NAME
-                                                    + instanceNumber
+                                            moduleName
                                                     + ".getInstance().getExport(\""
                                                     + StringEscapeUtils.escapeJava(
                                                             cmd.getAction().getField())
@@ -353,8 +370,40 @@ public class JavaTestGen {
         return List.of(assertDecl);
     }
 
-    private Expression generateModuleInstantiation(Command cmd, String wasmFile) {
+    private Expression generateModuleInstantiation(
+            Command cmd,
+            String wasmFile,
+            String importsName,
+            String varName,
+            Path testSourcesFolder) {
         assert (cmd.getType() == CommandType.MODULE);
+
+        // Detect if the imports are defined
+        String hostFuncs = null;
+        try {
+            final SourceRoot importsSource = new SourceRoot(testSourcesFolder);
+            var parsed =
+                    importsSource.tryToParse("com.dylibso.chicory.imports", importsName + ".java");
+            if (parsed.isSuccessful()) {
+                var methods =
+                        parsed.getResult().get().getClassByName(importsName).get().getMethods();
+
+                for (int i = 0; i < methods.size(); i++) {
+                    if (methods.get(i).getName().asString().equals(varName)) {
+                        hostFuncs = varName;
+                    }
+                }
+                if (hostFuncs == null) {
+                    hostFuncs = "fallback";
+                }
+            }
+
+            if (hostFuncs != null) {
+                log.info("Found binding HostFunctions " + importsName + "#" + varName);
+            }
+        } catch (Exception e) {
+            // ignore
+        }
 
         var additionalParam = "";
         if (cmd.getModuleType() != null) {
@@ -365,7 +414,9 @@ public class JavaTestGen {
                         + wasmFile
                         + "\")"
                         + additionalParam
-                        + ").build().instantiate()");
+                        + ").build().instantiate("
+                        + ((hostFuncs != null) ? importsName + "." + hostFuncs + "()" : "")
+                        + ")");
     }
 
     private String getWasmFile(Command cmd, File folder) {
@@ -396,7 +447,7 @@ public class JavaTestGen {
                                 + "assertThrows("
                                 + exceptionType
                                 + ".class, () -> "
-                                + generateModuleInstantiation(cmd, wasmFile)
+                                + generateModuleInstantiation(cmd, wasmFile, null, null, null)
                                 + ")");
 
         if (cmd.getText() != null) {

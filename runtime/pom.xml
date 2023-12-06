@@ -84,7 +84,8 @@
             block.wast,
             nop.wast,
             float_exprs.wast,
-            global.wast</orderedWastToProcess>
+            global.wast,
+            imports.wast</orderedWastToProcess>
           <excludedTests>
             <!-- integer overflow -->
             SpecV1ConversionsTest.test150, SpecV1ConversionsTest.test194,
