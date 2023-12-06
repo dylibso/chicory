@@ -54,10 +54,10 @@ public class Module {
     }
 
     public Instance instantiate() {
-        return this.instantiate(new HostFunction[0]);
+        return this.instantiate(new HostImports());
     }
 
-    public Instance instantiate(HostFunction[] hostFunctions) {
+    public Instance instantiate(HostImports hostImports) {
         var globalInitializers = new Global[] {};
         if (this.module.getGlobalSection() != null) {
             globalInitializers = this.module.getGlobalSection().getGlobals();
@@ -184,7 +184,7 @@ public class Module {
             }
         }
 
-        var hostFuncs = mapHostFunctions(imports, hostFunctions);
+        var mappedHostImports = mapHostImports(imports, hostImports);
 
         if (module.getStartSection() != null) {
             startFuncId = (int) module.getStartSection().getStartIndex();
@@ -249,23 +249,82 @@ public class Module {
                 functions,
                 types,
                 functionTypes,
-                hostFuncs,
+                mappedHostImports,
                 tables);
     }
 
-    private HostFunction[] mapHostFunctions(Import[] imports, HostFunction[] hostFunctions) {
-        var hostImports = new HostFunction[imports.length];
+    private HostImports mapHostImports(Import[] imports, HostImports hostImports) {
+        int hostFuncNum = 0;
+        int hostGlobalNum = 0;
+        int hostMemNum = 0;
+        int hostTableNum = 0;
+        for (var imprt : imports) {
+            switch (imprt.getDesc().getType()) {
+                case FuncIdx:
+                    hostFuncNum++;
+                case GlobalIdx:
+                    hostGlobalNum++;
+                case MemIdx:
+                    hostMemNum++;
+                case TableIdx:
+                    hostTableNum++;
+            }
+        }
+
+        // TODO: this can probably be refactored ...
+        var hostFuncs = new HostFunction[hostFuncNum];
+        var hostFuncIdx = 0;
+        var hostGlobals = new HostGlobal[hostGlobalNum];
+        var hostGlobalIdx = 0;
+        var hostMems = new HostMemory[hostMemNum];
+        var hostMemIdx = 0;
+        var hostTables = new HostTable[hostTableNum];
+        var hostTableIdx = 0;
         for (var impIdx = 0; impIdx < imports.length; impIdx++) {
             var i = imports[impIdx];
             var name = i.getModuleName() + "." + i.getFieldName();
             var found = false;
-            for (var f : hostFunctions) {
-                if (i.getModuleName().equals(f.getModuleName())
-                        && i.getFieldName().equals(f.getFieldName())) {
-                    hostImports[impIdx] = f;
-                    found = true;
-                    break;
-                }
+            switch (i.getDesc().getType()) {
+                case FuncIdx:
+                    for (var f : hostImports.getFunctions()) {
+                        if (i.getModuleName().equals(f.getModuleName())
+                                && i.getFieldName().equals(f.getFieldName())) {
+                            hostFuncs[hostFuncIdx] = f;
+                            found = true;
+                            break;
+                        }
+                    }
+                    hostFuncIdx++;
+                case GlobalIdx:
+                    for (var g : hostImports.getGlobals()) {
+                        if (i.getModuleName().equals(g.getModuleName())
+                                && i.getFieldName().equals(g.getFieldName())) {
+                            hostGlobals[hostGlobalIdx] = g;
+                            found = true;
+                            break;
+                        }
+                    }
+                    hostGlobalIdx++;
+                case MemIdx:
+                    for (var m : hostImports.getMemories()) {
+                        if (i.getModuleName().equals(m.getModuleName())
+                                && i.getFieldName().equals(m.getFieldName())) {
+                            hostMems[hostMemIdx] = m;
+                            found = true;
+                            break;
+                        }
+                    }
+                    hostMemIdx++;
+                case TableIdx:
+                    for (var t : hostImports.getTables()) {
+                        if (i.getModuleName().equals(t.getModuleName())
+                                && i.getFieldName().equals(t.getFieldName())) {
+                            hostTables[hostTableIdx] = t;
+                            found = true;
+                            break;
+                        }
+                    }
+                    hostTableIdx++;
             }
             if (!found) {
                 LOGGER.log(
@@ -277,7 +336,7 @@ public class Module {
             }
         }
 
-        return hostImports;
+        return new HostImports(hostFuncs, hostGlobals, hostMems, hostTables);
     }
 
     public Export getExport(String name) {

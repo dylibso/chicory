@@ -381,6 +381,7 @@ public class JavaTestGen {
         // Detect if the imports are defined
         String hostFuncs = null;
         try {
+            // TODO: this operation is pretty expensive, we should instantiate the SourceRoot externally from the parallel forEach
             final SourceRoot importsSource = new SourceRoot(testSourcesFolder);
             var parsed =
                     importsSource.tryToParse("com.dylibso.chicory.imports", importsName + ".java");

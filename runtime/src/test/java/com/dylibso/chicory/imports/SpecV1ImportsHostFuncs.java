@@ -1,6 +1,8 @@
 package com.dylibso.chicory.imports;
 
 import com.dylibso.chicory.runtime.HostFunction;
+import com.dylibso.chicory.runtime.HostGlobal;
+import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -9,7 +11,7 @@ import java.util.List;
 
 public class SpecV1ImportsHostFuncs {
 
-    private static HostFunction[] base() {
+    private static HostImports base() {
         var printI32 =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
@@ -109,25 +111,39 @@ public class SpecV1ImportsHostFuncs {
                         "print_f64_f64",
                         List.of(ValueType.F64, ValueType.F64),
                         List.of());
-        return new HostFunction[] {
-            printI32,
-            printI32_1,
-            printI32_2,
-            printF32,
-            printI32F32,
-            printI64,
-            printI64_1,
-            printI64_2,
-            printF64,
-            printF64F64
-        };
+        return new HostImports(
+                new HostFunction[] {
+                    printI32,
+                    printI32_1,
+                    printI32_2,
+                    printF32,
+                    printI32F32,
+                    printI64,
+                    printI64_1,
+                    printI64_2,
+                    printF64,
+                    printF64F64
+                });
     }
 
-    public static HostFunction[] testModule1() {
+    public static HostImports testModule1() {
         return fallback();
     }
 
-    public static HostFunction[] fallback() {
+    public static HostImports testModule11() {
+        return new HostImports(
+                new HostGlobal[] {
+                    new HostGlobal("spectest", "global_i32", Value.i32(0)),
+                    new HostGlobal("spectest", "global_i32_1", Value.i32(0)),
+                    new HostGlobal("spectest", "global_i32_2", Value.i32(0)),
+                    new HostGlobal("spectest", "global_i32_3", Value.i32(1)),
+                    new HostGlobal("spectest", "global_i64", Value.i64(1)),
+                    new HostGlobal("spectest", "global_f32", Value.f32(1)),
+                    new HostGlobal("spectest", "global_f64", Value.f64(1)),
+                });
+    }
+
+    public static HostImports fallback() {
         var testFunc =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
@@ -146,10 +162,10 @@ public class SpecV1ImportsHostFuncs {
                         "func-i64->i64",
                         List.of(ValueType.I64),
                         List.of(ValueType.I64));
-        var base = base();
+        var base = base().getFunctions();
         var additional = new HostFunction[] {testFunc, testFuncI64};
-        HostFunction[] result = Arrays.copyOf(base, base.length + additional.length);
-        System.arraycopy(additional, 0, result, base.length, additional.length);
-        return result;
+        HostFunction[] hostFunctions = Arrays.copyOf(base, base.length + additional.length);
+        System.arraycopy(additional, 0, hostFunctions, base.length, additional.length);
+        return new HostImports(hostFunctions);
     }
 }
