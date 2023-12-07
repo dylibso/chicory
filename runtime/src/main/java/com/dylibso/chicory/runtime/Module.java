@@ -158,6 +158,7 @@ public class Module {
         }
 
         int importId = 0;
+        int importFuncType = 0;
         Integer startFuncId = null;
         var functionTypes = new int[numFuncTypes];
         var imports = new Import[0];
@@ -169,7 +170,7 @@ public class Module {
                     case FuncIdx:
                         {
                             var type = (int) imprt.getDesc().getIndex();
-                            functionTypes[importId] = type;
+                            functionTypes[importFuncType++] = type;
                             // The global function id increases on this table
                             // function ids are assigned on imports first
                             imports[importId++] = imprt;

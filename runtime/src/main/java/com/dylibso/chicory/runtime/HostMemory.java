@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-//TODO: implement me
+// TODO: implement me
 public class HostMemory {
     private final String moduleName;
     private final String fieldName;

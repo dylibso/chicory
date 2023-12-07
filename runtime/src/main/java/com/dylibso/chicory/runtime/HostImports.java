@@ -41,7 +41,11 @@ public class HostImports {
         this.tables = tables;
     }
 
-    public HostImports(HostFunction[] functions, HostGlobal[] globals, HostMemory[] memories, HostTable[] tables) {
+    public HostImports(
+            HostFunction[] functions,
+            HostGlobal[] globals,
+            HostMemory[] memories,
+            HostTable[] tables) {
         this.functions = functions;
         this.globals = globals;
         this.memories = memories;

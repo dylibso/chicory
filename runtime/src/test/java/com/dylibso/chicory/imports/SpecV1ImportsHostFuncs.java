@@ -133,11 +133,11 @@ public class SpecV1ImportsHostFuncs {
     public static HostImports testModule11() {
         return new HostImports(
                 new HostGlobal[] {
-                    new HostGlobal("spectest", "global_i32", Value.i32(0)),
-                    new HostGlobal("spectest", "global_i32_1", Value.i32(0)),
-                    new HostGlobal("spectest", "global_i32_2", Value.i32(0)),
-                    new HostGlobal("spectest", "global_i32_3", Value.i32(1)),
-                    new HostGlobal("spectest", "global_i64", Value.i64(1)),
+                    new HostGlobal("spectest", "global_i32", Value.i32(666)),
+                    new HostGlobal("spectest", "global_i32_1", Value.i32(666)),
+                    new HostGlobal("spectest", "global_i32_2", Value.i32(666)),
+                    new HostGlobal("spectest", "global_i32_3", Value.i32(666)),
+                    new HostGlobal("spectest", "global_i64", Value.i64(666)),
                     new HostGlobal("spectest", "global_f32", Value.f32(1)),
                     new HostGlobal("spectest", "global_f64", Value.f64(1)),
                 });

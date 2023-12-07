@@ -102,7 +102,7 @@ public class Instance {
     }
 
     public int getFunctionType(int idx) {
-        return functionTypes[idx + importedGlobalsOffset];
+        return functionTypes[idx];
     }
 
     public HostImports getImports() {
