@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -269,4 +270,12 @@ public class ModuleTest {
     // var run = instance.getExport("run");
     // assertEquals(-25438, run.apply(Value.i32(100)).asInt());
     // }
+
+    @Test
+    public void shouldHandleExtismKernel() {
+        var module = Module.build(new File("src/test/resources/wasm/count_vowels_extism.wasm"));
+        var plugin = new ExtismPlugin(module);
+        var result = plugin.call("count_vowels", "Hello, World!".getBytes(StandardCharsets.UTF_8));
+        assertEquals("{\"count\":3,\"total\":3,\"vowels\":\"aeiouAEIOU\"}", new String(result));
+    }
 }

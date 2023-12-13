@@ -147,17 +147,21 @@ public final class Memory {
         }
     }
 
-    public String getString(int offset, int len) {
+    public byte[] getBytes(int offset, int len) {
         try {
             var data = new byte[len];
             for (int i = 0, j = offset; i < len; i++, j++) {
                 data[i] = this.buffer.get(j);
             }
 
-            return new String(data);
+            return data;
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
+    }
+
+    public String getString(int offset, int len) {
+        return new String(getBytes(offset, len));
     }
 
     public void put(int offset, String data) {
