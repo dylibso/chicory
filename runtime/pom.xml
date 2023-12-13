@@ -86,8 +86,6 @@
             float_exprs.wast,
             global.wast</orderedWastToProcess>
           <excludedTests>
-            <!-- integer overflow -->
-            SpecV1ConversionsTest.test150, SpecV1ConversionsTest.test194,
             <!--
             Assertion failures -->
             SpecV1ConversionsTest.test336, SpecV1ConversionsTest.test380,
