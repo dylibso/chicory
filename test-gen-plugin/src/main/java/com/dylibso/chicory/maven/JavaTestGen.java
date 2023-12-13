@@ -29,7 +29,6 @@ import com.github.javaparser.utils.StringEscapeUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -63,7 +62,7 @@ public class JavaTestGen {
     }
 
     public CompilationUnit generate(
-            File specFile, File wasmFilesFolder, boolean ordered, Path importsSourceFolder) {
+            File specFile, File wasmFilesFolder, boolean ordered, SourceRoot importsSourceRoot) {
         Wast wast;
         try {
             wast = mapper.readValue(specFile, Wast.class);
@@ -160,7 +159,7 @@ public class JavaTestGen {
                                     currentWasmFile,
                                     importsName,
                                     lastModuleVarName,
-                                    importsSourceFolder));
+                                    importsSourceRoot));
                     break;
                 case ACTION:
                 case ASSERT_RETURN:
@@ -375,17 +374,15 @@ public class JavaTestGen {
             String wasmFile,
             String importsName,
             String varName,
-            Path testSourcesFolder) {
+            SourceRoot testSourcesRoot) {
         assert (cmd.getType() == CommandType.MODULE);
 
         // Detect if the imports are defined
         String hostFuncs = null;
         try {
-            // TODO: this operation is pretty expensive, we should instantiate the SourceRoot
-            // externally from the parallel forEach
-            final SourceRoot importsSource = new SourceRoot(testSourcesFolder);
             var parsed =
-                    importsSource.tryToParse("com.dylibso.chicory.imports", importsName + ".java");
+                    testSourcesRoot.tryToParse(
+                            "com.dylibso.chicory.imports", importsName + ".java");
             if (parsed.isSuccessful()) {
                 var methods =
                         parsed.getResult().get().getClassByName(importsName).get().getMethods();

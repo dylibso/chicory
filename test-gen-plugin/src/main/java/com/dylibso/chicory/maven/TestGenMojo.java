@@ -150,6 +150,7 @@ public class TestGenMojo extends AbstractMojo {
 
             // generate the tests
             final SourceRoot dest = new SourceRoot(sourceDestinationFolder.toPath());
+            final SourceRoot importSourceRoot = new SourceRoot(importsSourcesFolder.toPath());
             clean(allWasts).stream()
                     .parallel()
                     .forEach(
@@ -177,7 +178,7 @@ public class TestGenMojo extends AbstractMojo {
                                                         .toFile(),
                                                 wasmFilesFolder,
                                                 cleanedOrderedWasts.contains(spec),
-                                                importsSourcesFolder.toPath());
+                                                importSourceRoot);
                                 dest.add(cu);
                             });
             dest.saveAll();
