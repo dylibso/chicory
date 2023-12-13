@@ -181,14 +181,18 @@ public class JavaTestGen {
                 case ASSERT_INVALID:
                 case ASSERT_MALFORMED:
                 case ASSERT_UNINSTANTIABLE:
-                    testNumber++;
-                    //                    method = createTestMethod(testClass, testNumber++,
-                    // excludedMethods);
-                    //
-                    //                    for (var expr : generateAssertThrows(cmd,
-                    // wasmFilesFolder)) {
-                    //                        method.getBody().get().addStatement(expr);
-                    //                    }
+                    method =
+                            createTestMethod(
+                                    testClass,
+                                    testNumber++,
+                                    excludedMethods,
+                                    ordered,
+                                    cmd,
+                                    currentWasmFile);
+
+                    for (var expr : generateAssertThrows(cmd, currentWasmFile)) {
+                        method.getBody().get().addStatement(expr);
+                    }
                     break;
                 default:
                     // TODO we need to implement all of these
@@ -356,16 +360,8 @@ public class JavaTestGen {
     private Expression generateModuleInstantiation(Command cmd, String wasmFile) {
         assert (cmd.getType() == CommandType.MODULE);
 
-        var additionalParam = "";
-        if (cmd.getModuleType() != null) {
-            additionalParam = ", ModuleType." + cmd.getModuleType().toUpperCase();
-        }
         return new NameExpr(
-                "TestModule.of(new File(\""
-                        + wasmFile
-                        + "\")"
-                        + additionalParam
-                        + ").build().instantiate()");
+                "TestModule.of(new File(\"" + wasmFile + "\")" + ").build().instantiate()");
     }
 
     private String getWasmFile(Command cmd, File folder) {
