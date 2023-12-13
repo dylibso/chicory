@@ -158,10 +158,10 @@ public class Module {
         }
 
         int importId = 0;
-        int importFuncType = 0;
         Integer startFuncId = null;
         var functionTypes = new int[numFuncTypes];
         var imports = new Import[0];
+        var funcIdx = 0;
 
         if (module.getImportSection() != null) {
             imports = new Import[module.getImportSection().getImports().length];
@@ -170,10 +170,11 @@ public class Module {
                     case FuncIdx:
                         {
                             var type = (int) imprt.getDesc().getIndex();
-                            functionTypes[importFuncType++] = type;
+                            functionTypes[importId] = type;
                             // The global function id increases on this table
                             // function ids are assigned on imports first
                             imports[importId++] = imprt;
+                            funcIdx++;
                             break;
                         }
                     case TableIdx:
@@ -194,10 +195,7 @@ public class Module {
         if (module.getFunctionSection() != null) {
             if (startFuncId == null) startFuncId = importId;
             for (var ft : module.getFunctionSection().getTypeIndices()) {
-                if (importId >= functionTypes.length) {
-                    break;
-                }
-                functionTypes[importId++] = ft;
+                functionTypes[funcIdx++] = ft;
             }
         }
 
@@ -281,6 +279,7 @@ public class Module {
         var hostMemIdx = 0;
         var hostTables = new HostTable[hostTableNum];
         var hostTableIdx = 0;
+        var hostIndex = new FromHost[hostFuncNum + hostGlobalNum + hostMemNum + hostTableNum];
         for (var impIdx = 0; impIdx < imports.length; impIdx++) {
             var i = imports[impIdx];
             var name = i.getModuleName() + "." + i.getFieldName();
@@ -291,6 +290,7 @@ public class Module {
                         if (i.getModuleName().equals(f.getModuleName())
                                 && i.getFieldName().equals(f.getFieldName())) {
                             hostFuncs[hostFuncIdx] = f;
+                            hostIndex[impIdx] = f;
                             found = true;
                             break;
                         }
@@ -301,6 +301,7 @@ public class Module {
                         if (i.getModuleName().equals(g.getModuleName())
                                 && i.getFieldName().equals(g.getFieldName())) {
                             hostGlobals[hostGlobalIdx] = g;
+                            hostIndex[impIdx] = g;
                             found = true;
                             break;
                         }
@@ -311,6 +312,7 @@ public class Module {
                         if (i.getModuleName().equals(m.getModuleName())
                                 && i.getFieldName().equals(m.getFieldName())) {
                             hostMems[hostMemIdx] = m;
+                            hostIndex[impIdx] = m;
                             found = true;
                             break;
                         }
@@ -321,6 +323,7 @@ public class Module {
                         if (i.getModuleName().equals(t.getModuleName())
                                 && i.getFieldName().equals(t.getFieldName())) {
                             hostTables[hostTableIdx] = t;
+                            hostIndex[impIdx] = t;
                             found = true;
                             break;
                         }
@@ -337,7 +340,9 @@ public class Module {
             }
         }
 
-        return new HostImports(hostFuncs, hostGlobals, hostMems, hostTables);
+        var result = new HostImports(hostFuncs, hostGlobals, hostMems, hostTables);
+        result.setIndex(hostIndex);
+        return result;
     }
 
     public Export getExport(String name) {

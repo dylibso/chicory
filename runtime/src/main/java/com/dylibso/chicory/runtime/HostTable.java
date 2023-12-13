@@ -1,7 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 // TODO: implement me
-public class HostTable {
+public class HostTable implements FromHost {
     private final String moduleName;
     private final String fieldName;
 
@@ -16,5 +16,10 @@ public class HostTable {
 
     public String getFieldName() {
         return fieldName;
+    }
+
+    @Override
+    public FromHostType getType() {
+        return FromHostType.TABLE;
     }
 }

@@ -1,7 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 // TODO: implement me
-public class HostMemory {
+public class HostMemory implements FromHost {
     private final String moduleName;
     private final String fieldName;
 
@@ -16,5 +16,10 @@ public class HostMemory {
 
     public String getFieldName() {
         return fieldName;
+    }
+
+    @Override
+    public FromHostType getType() {
+        return FromHostType.MEMORY;
     }
 }

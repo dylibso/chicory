@@ -5,6 +5,7 @@ public class HostImports {
     private final HostGlobal[] globals;
     private final HostMemory[] memories;
     private final HostTable[] tables;
+    private FromHost[] index;
 
     public HostImports() {
         this.functions = new HostFunction[] {};
@@ -66,5 +67,13 @@ public class HostImports {
 
     public HostTable[] getTables() {
         return tables;
+    }
+
+    public FromHost[] getIndex() {
+        return index;
+    }
+
+    public void setIndex(FromHost[] index) {
+        this.index = index;
     }
 }

@@ -39,18 +39,28 @@ public class Machine {
             eval(func.getInstructions());
         } else {
             this.callStack.push(new StackFrame(instance, funcId, 0, args, List.of()));
-            var imprt = instance.getImports().getFunctions()[funcId];
+            var imprt = instance.getImports().getIndex()[funcId];
             if (imprt == null) {
-                throw new ChicoryException("Missing imported function, number: " + funcId);
+                throw new ChicoryException("Missing host import, number: " + funcId);
             }
-            var hostFunc = imprt.getHandle();
-            var results = hostFunc.apply(this.instance.getMemory(), args);
-            // a host function can return null or an array of ints
-            // which we will push onto the stack
-            if (results != null) {
-                for (var result : results) {
-                    this.stack.push(result);
-                }
+
+            switch (imprt.getType()) {
+                case FUNCTION:
+                    var hostFunc = ((HostFunction) imprt).getHandle();
+                    var results = hostFunc.apply(this.instance.getMemory(), args);
+                    // a host function can return null or an array of ints
+                    // which we will push onto the stack
+                    if (results != null) {
+                        for (var result : results) {
+                            this.stack.push(result);
+                        }
+                    }
+                    break;
+                case GLOBAL:
+                    this.stack.push(((HostGlobal) imprt).getValue());
+                    break;
+                default:
+                    throw new ChicoryException("Not implemented");
             }
         }
 

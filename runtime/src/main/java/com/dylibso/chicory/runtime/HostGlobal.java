@@ -3,7 +3,7 @@ package com.dylibso.chicory.runtime;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Value;
 
-public class HostGlobal {
+public class HostGlobal implements FromHost {
     private Value value;
     private final MutabilityType type;
     private final String moduleName;
@@ -38,5 +38,10 @@ public class HostGlobal {
 
     public String getFieldName() {
         return fieldName;
+    }
+
+    @Override
+    public FromHostType getType() {
+        return FromHostType.GLOBAL;
     }
 }
