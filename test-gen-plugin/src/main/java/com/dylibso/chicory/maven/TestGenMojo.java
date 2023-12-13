@@ -176,8 +176,7 @@ public class TestGenMojo extends AbstractMojo {
                             });
             dest.saveAll();
         } catch (Exception e) {
-            System.err.println("Generation of the testsuite failed - ignoring -");
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
 
         // Add the generated tests to the source root
