@@ -1,8 +1,8 @@
 # Contributing guide
 
-**Want to contribute? Great!** 
+**Want to contribute? Great!**
 We try to make it easy, and all contributions, even the smaller ones, are more than welcome.
-This includes bug reports, fixes, documentation, examples... 
+This includes bug reports, fixes, documentation, examples...
 But first, read this page (including the small print at the end).
 
 * [Legal](#legal)
@@ -63,7 +63,7 @@ Because we are all humans, and to ensure Chicory evolves in the right direction,
 
 ### Tests and documentation are not optional
 
-Don't forget to include tests in your pull requests. 
+Don't forget to include tests in your pull requests.
 Also don't forget the documentation (reference documentation, javadoc...).
 
 ## Current status
