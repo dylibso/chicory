@@ -16,7 +16,7 @@ public class Instance {
     private int importedFunctionsOffset;
     private FunctionType[] types;
     private int[] functionTypes;
-    private HostFunction[] imports;
+    private HostImports imports;
     private Table[] tables;
 
     public Instance(
@@ -29,7 +29,7 @@ public class Instance {
             FunctionBody[] functions,
             FunctionType[] types,
             int[] functionTypes,
-            HostFunction[] imports,
+            HostImports imports,
             Table[] tables) {
         this.module = module;
         this.globalInitalizers = globalInitalizers;
@@ -77,14 +77,23 @@ public class Instance {
     }
 
     public void setGlobal(int idx, Value val) {
+        if (idx < importedGlobalsOffset) {
+            imports.getGlobals()[idx].setValue(val);
+        }
         globals[idx - importedGlobalsOffset] = val;
     }
 
     public Value getGlobal(int idx) {
+        if (idx < importedGlobalsOffset) {
+            return null;
+        }
         return globals[idx - importedGlobalsOffset];
     }
 
     public Global getGlobalInitalizer(int idx) {
+        if (idx < importedGlobalsOffset) {
+            return null;
+        }
         return globalInitalizers[idx - importedGlobalsOffset];
     }
 
@@ -93,10 +102,10 @@ public class Instance {
     }
 
     public int getFunctionType(int idx) {
-        return functionTypes[idx + importedGlobalsOffset];
+        return functionTypes[idx];
     }
 
-    public HostFunction[] getImports() {
+    public HostImports getImports() {
         return imports;
     }
 

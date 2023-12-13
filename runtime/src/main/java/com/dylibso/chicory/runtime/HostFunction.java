@@ -3,7 +3,7 @@ package com.dylibso.chicory.runtime;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 
-public class HostFunction {
+public class HostFunction implements FromHost {
     private final WasmFunctionHandle handle;
     private final String moduleName;
     private final String fieldName;
@@ -33,6 +33,11 @@ public class HostFunction {
 
     public String getFieldName() {
         return fieldName;
+    }
+
+    @Override
+    public FromHostType getType() {
+        return FromHostType.FUNCTION;
     }
 
     public List<ValueType> getParamTypes() {

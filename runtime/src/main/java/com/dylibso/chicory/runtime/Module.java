@@ -7,6 +7,7 @@ import com.dylibso.chicory.wasm.types.*;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class Module {
@@ -53,10 +54,10 @@ public class Module {
     }
 
     public Instance instantiate() {
-        return this.instantiate(new HostFunction[0]);
+        return this.instantiate(new HostImports());
     }
 
-    public Instance instantiate(HostFunction[] hostFunctions) {
+    public Instance instantiate(HostImports hostImports) {
         var globalInitializers = new Global[] {};
         if (this.module.getGlobalSection() != null) {
             globalInitializers = this.module.getGlobalSection().getGlobals();
@@ -103,7 +104,7 @@ public class Module {
             dataSegments = module.getDataSection().getDataSegments();
         }
 
-        Memory memory;
+        Memory memory = null;
         if (module.getMemorySection() != null) {
             var memories = module.getMemorySection().getMemories();
             if (memories.length > 1) {
@@ -111,7 +112,25 @@ public class Module {
             }
             memory = new Memory(memories[0].getMemoryLimits(), dataSegments);
         } else {
-            memory = new Memory(MemoryLimits.defaultLimits(), dataSegments);
+            boolean importFound = false;
+            if (module.getImportSection() != null) {
+                for (int i = 0; i < module.getImportSection().getImports().length; i++) {
+                    var imprt = module.getImportSection().getImports()[i];
+                    if (imprt.getDesc().getType() != ImportDescType.MemIdx) {
+                        continue;
+                    }
+
+                    if (importFound) {
+                        throw new ChicoryException("We don't support multiple memories");
+                    }
+                    memory = new Memory(MemoryLimits.defaultLimits(), dataSegments, false);
+                    importFound = true;
+                }
+            }
+
+            if (!importFound) {
+                memory = new Memory(MemoryLimits.defaultLimits(), dataSegments);
+            }
         }
 
         var types = new FunctionType[0];
@@ -124,9 +143,12 @@ public class Module {
         var funcSection = module.getFunctionSection();
         if (funcSection != null) {
             numFuncTypes = funcSection.getTypeIndices().length;
-            if (module.getImportSection() != null) {
-                numFuncTypes += module.getImportSection().getImports().length;
-            }
+        }
+        if (module.getImportSection() != null) {
+            numFuncTypes +=
+                    Arrays.stream(module.getImportSection().getImports())
+                            .filter(is -> is.getDesc().getType() == ImportDescType.FuncIdx)
+                            .count();
         }
 
         FunctionBody[] functions = new FunctionBody[0];
@@ -139,6 +161,7 @@ public class Module {
         Integer startFuncId = null;
         var functionTypes = new int[numFuncTypes];
         var imports = new Import[0];
+        var funcIdx = 0;
 
         if (module.getImportSection() != null) {
             imports = new Import[module.getImportSection().getImports().length];
@@ -151,6 +174,7 @@ public class Module {
                             // The global function id increases on this table
                             // function ids are assigned on imports first
                             imports[importId++] = imprt;
+                            funcIdx++;
                             break;
                         }
                     case TableIdx:
@@ -162,7 +186,7 @@ public class Module {
             }
         }
 
-        var hostFuncs = mapHostFunctions(imports, hostFunctions);
+        var mappedHostImports = mapHostImports(imports, hostImports);
 
         if (module.getStartSection() != null) {
             startFuncId = (int) module.getStartSection().getStartIndex();
@@ -171,7 +195,7 @@ public class Module {
         if (module.getFunctionSection() != null) {
             if (startFuncId == null) startFuncId = importId;
             for (var ft : module.getFunctionSection().getTypeIndices()) {
-                functionTypes[importId++] = ft;
+                functionTypes[funcIdx++] = ft;
             }
         }
 
@@ -224,31 +248,101 @@ public class Module {
                 functions,
                 types,
                 functionTypes,
-                hostFuncs,
+                mappedHostImports,
                 tables);
     }
 
-    private HostFunction[] mapHostFunctions(Import[] imports, HostFunction[] hostFunctions) {
-        var hostImports = new HostFunction[imports.length];
+    private HostImports mapHostImports(Import[] imports, HostImports hostImports) {
+        int hostFuncNum = 0;
+        int hostGlobalNum = 0;
+        int hostMemNum = 0;
+        int hostTableNum = 0;
+        for (var imprt : imports) {
+            switch (imprt.getDesc().getType()) {
+                case FuncIdx:
+                    hostFuncNum++;
+                case GlobalIdx:
+                    hostGlobalNum++;
+                case MemIdx:
+                    hostMemNum++;
+                case TableIdx:
+                    hostTableNum++;
+            }
+        }
+
+        // TODO: this can probably be refactored ...
+        var hostFuncs = new HostFunction[hostFuncNum];
+        var hostFuncIdx = 0;
+        var hostGlobals = new HostGlobal[hostGlobalNum];
+        var hostGlobalIdx = 0;
+        var hostMems = new HostMemory[hostMemNum];
+        var hostMemIdx = 0;
+        var hostTables = new HostTable[hostTableNum];
+        var hostTableIdx = 0;
+        var hostIndex = new FromHost[hostFuncNum + hostGlobalNum + hostMemNum + hostTableNum];
         for (var impIdx = 0; impIdx < imports.length; impIdx++) {
             var i = imports[impIdx];
             var name = i.getModuleName() + "." + i.getFieldName();
             var found = false;
-            for (var f : hostFunctions) {
-                if (i.getModuleName().equals(f.getModuleName())
-                        && i.getFieldName().equals(f.getFieldName())) {
-                    hostImports[impIdx] = f;
-                    found = true;
-                    break;
-                }
+            switch (i.getDesc().getType()) {
+                case FuncIdx:
+                    for (var f : hostImports.getFunctions()) {
+                        if (i.getModuleName().equals(f.getModuleName())
+                                && i.getFieldName().equals(f.getFieldName())) {
+                            hostFuncs[hostFuncIdx] = f;
+                            hostIndex[impIdx] = f;
+                            found = true;
+                            break;
+                        }
+                    }
+                    hostFuncIdx++;
+                case GlobalIdx:
+                    for (var g : hostImports.getGlobals()) {
+                        if (i.getModuleName().equals(g.getModuleName())
+                                && i.getFieldName().equals(g.getFieldName())) {
+                            hostGlobals[hostGlobalIdx] = g;
+                            hostIndex[impIdx] = g;
+                            found = true;
+                            break;
+                        }
+                    }
+                    hostGlobalIdx++;
+                case MemIdx:
+                    for (var m : hostImports.getMemories()) {
+                        if (i.getModuleName().equals(m.getModuleName())
+                                && i.getFieldName().equals(m.getFieldName())) {
+                            hostMems[hostMemIdx] = m;
+                            hostIndex[impIdx] = m;
+                            found = true;
+                            break;
+                        }
+                    }
+                    hostMemIdx++;
+                case TableIdx:
+                    for (var t : hostImports.getTables()) {
+                        if (i.getModuleName().equals(t.getModuleName())
+                                && i.getFieldName().equals(t.getFieldName())) {
+                            hostTables[hostTableIdx] = t;
+                            hostIndex[impIdx] = t;
+                            found = true;
+                            break;
+                        }
+                    }
+                    hostTableIdx++;
             }
             if (!found) {
                 LOGGER.log(
                         System.Logger.Level.WARNING,
-                        "Could not find host function for import " + name);
+                        "Could not find host function for import number: "
+                                + impIdx
+                                + " named: "
+                                + name);
             }
         }
-        return hostImports;
+
+        var result = new HostImports(hostFuncs, hostGlobals, hostMems, hostTables);
+        result.setIndex(hostIndex);
+        return result;
     }
 
     public Export getExport(String name) {

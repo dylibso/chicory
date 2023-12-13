@@ -10,6 +10,9 @@ public class Action {
     @JsonProperty("type")
     private ActionType type;
 
+    @JsonProperty("module")
+    private String module;
+
     @JsonProperty("field")
     private String field;
 
@@ -18,6 +21,10 @@ public class Action {
 
     public ActionType getType() {
         return type;
+    }
+
+    public String getModule() {
+        return module;
     }
 
     public String getField() {
@@ -33,6 +40,9 @@ public class Action {
         return "Action{"
                 + "type="
                 + type
+                + ", module='"
+                + module
+                + '\''
                 + ", field='"
                 + field
                 + '\''

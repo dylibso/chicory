@@ -106,7 +106,7 @@ public class ModuleTest {
         var funcs = new HostFunction[] {func};
         var instance =
                 Module.build(new File("src/test/resources/wasm/host-function.wat.wasm"))
-                        .instantiate(funcs);
+                        .instantiate(new HostImports(funcs));
         var logIt = instance.getExport("logIt");
         logIt.apply();
         assertEquals(10, printer.times());
@@ -150,7 +150,8 @@ public class ModuleTest {
                         List.of());
         var funcs = new HostFunction[] {func};
         var module =
-                Module.build(new File("src/test/resources/wasm/start.wat.wasm")).instantiate(funcs);
+                Module.build(new File("src/test/resources/wasm/start.wat.wasm"))
+                        .instantiate(new HostImports(funcs));
         var start = module.getExport("_start");
         start.apply();
         assertTrue(printer.times() > 0);

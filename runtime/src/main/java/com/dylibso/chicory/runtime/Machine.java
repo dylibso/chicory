@@ -39,15 +39,28 @@ public class Machine {
             eval(func.getInstructions());
         } else {
             this.callStack.push(new StackFrame(instance, funcId, 0, args, List.of()));
-            var imprt = instance.getImports()[funcId];
-            var hostFunc = imprt.getHandle();
-            var results = hostFunc.apply(this.instance.getMemory(), args);
-            // a host function can return null or an array of ints
-            // which we will push onto the stack
-            if (results != null) {
-                for (var result : results) {
-                    this.stack.push(result);
-                }
+            var imprt = instance.getImports().getIndex()[funcId];
+            if (imprt == null) {
+                throw new ChicoryException("Missing host import, number: " + funcId);
+            }
+
+            switch (imprt.getType()) {
+                case FUNCTION:
+                    var hostFunc = ((HostFunction) imprt).getHandle();
+                    var results = hostFunc.apply(this.instance.getMemory(), args);
+                    // a host function can return null or an array of ints
+                    // which we will push onto the stack
+                    if (results != null) {
+                        for (var result : results) {
+                            this.stack.push(result);
+                        }
+                    }
+                    break;
+                case GLOBAL:
+                    this.stack.push(((HostGlobal) imprt).getValue());
+                    break;
+                default:
+                    throw new ChicoryException("Not implemented");
             }
         }
 
@@ -275,18 +288,27 @@ public class Machine {
                         }
                     case GLOBAL_GET:
                         {
-                            var ex = instance.getImports().length;
-                            var val = instance.getGlobal((int) operands[0]);
+                            int idx = (int) operands[0];
+                            var val = instance.getGlobal(idx);
+                            if (val == null) {
+                                val = instance.getImports().getGlobals()[idx].getValue();
+                            }
                             this.stack.push(val);
                             break;
                         }
                     case GLOBAL_SET:
                         {
                             var id = (int) operands[0];
-                            var global = instance.getGlobalInitalizer(id);
-                            if (global.getMutabilityType() == MutabilityType.Const)
+                            var mutabilityType =
+                                    (instance.getGlobalInitalizer(id) == null)
+                                            ? instance.getImports()
+                                                    .getGlobals()[id]
+                                                    .getMutabilityType()
+                                            : instance.getGlobalInitalizer(id);
+                            if (mutabilityType == MutabilityType.Const) {
                                 throw new RuntimeException(
                                         "Can't call GLOBAL_SET on immutable global");
+                            }
                             var val = this.stack.pop();
                             instance.setGlobal(id, val);
                             break;
