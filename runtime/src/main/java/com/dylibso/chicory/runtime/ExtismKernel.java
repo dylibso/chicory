@@ -9,7 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 
 public class ExtismKernel {
-    private static final String KERNEL_PATH = "/Users/ben/dylibso/extism/runtime/src/extism-runtime.wasm";
+    private static final String KERNEL_PATH =
+            "/Users/ben/dylibso/extism/runtime/src/extism-runtime.wasm";
     private static final String IMPORT_MODULE_NAME = "extism:host/env";
     private Instance kernel;
     private Memory memory;
