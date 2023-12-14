@@ -1495,10 +1495,30 @@ public class Machine {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
 
-                            var tosL = (long) tos;
-
-                            if (tosL < 0 || (tosL == Long.MAX_VALUE)) {
+                            if (tos >= 2 * (float) Long.MAX_VALUE) {
                                 throw new WASMRuntimeException("integer overflow");
+                            }
+
+                            long tosL;
+                            if (tos < Long.MAX_VALUE) {
+                                tosL = (long) tos;
+                                if (tosL < 0) {
+                                    throw new WASMRuntimeException("integer overflow");
+                                }
+                            } else {
+                                // This works for getting the unsigned value because binary addition
+                                // yields the correct interpretation in both unsigned &
+                                // 2's-complement
+                                // no matter which the operands are considered to be.
+                                tosL = Long.MAX_VALUE + (long) (tos - (float) Long.MAX_VALUE) + 1;
+                                if (tosL >= 0) {
+                                    // Java's comparison operators assume signed integers. In the
+                                    // case
+                                    // that we're in the range of unsigned values where the sign bit
+                                    // is set, Java considers these values to be negative so we have
+                                    // to check for >= 0 to detect overflow.
+                                    throw new WASMRuntimeException("integer overflow");
+                                }
                             }
 
                             this.stack.push(Value.i64(tosL));
@@ -1511,12 +1531,26 @@ public class Machine {
                             if (Double.isNaN(tos)) {
                                 throw new WASMRuntimeException("invalid conversion to integer");
                             }
-                            var tosL = (long) tos;
-                            if (tos == (double) Long.MAX_VALUE) {
-                                tosL = Long.MIN_VALUE;
-                            } else if (tosL < 0 || tosL == Long.MAX_VALUE) {
+
+                            if (tos >= 2 * (double) Long.MAX_VALUE) {
                                 throw new WASMRuntimeException("integer overflow");
                             }
+
+                            long tosL;
+                            if (tos < Long.MAX_VALUE) {
+                                tosL = (long) tos;
+                                if (tosL < 0) {
+                                    throw new WASMRuntimeException("integer overflow");
+                                }
+                            } else {
+                                // See I64_TRUNC_F32_U for notes on implementation. This is
+                                // the double-based equivalent of that.
+                                tosL = Long.MAX_VALUE + (long) (tos - (double) Long.MAX_VALUE) + 1;
+                                if (tosL >= 0) {
+                                    throw new WASMRuntimeException("integer overflow");
+                                }
+                            }
+
                             this.stack.push(Value.i64(tosL));
                             break;
                         }
