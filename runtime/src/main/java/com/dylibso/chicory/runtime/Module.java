@@ -83,10 +83,17 @@ public class Module {
                     globals[i] = Value.f64(instr.getOperands()[0]);
                     break;
                 case GLOBAL_GET:
-                    // TODO this assumes that these are already initialized declared in order
-                    // should we make this more resilient? Should initialization happen later?
-                    globals[i] = globals[(int) instr.getOperands()[0]];
-                    break;
+                    {
+                        // TODO this assumes that these are already initialized declared in order
+                        // should we make this more resilient? Should initialization happen later?
+                        var globalImports = hostImports.getGlobals();
+                        var idx = (int) instr.getOperands()[0];
+                        globals[i] =
+                                idx < globalImports.length
+                                        ? globalImports[idx].getValue()
+                                        : globals[idx];
+                        break;
+                    }
                 case REF_NULL:
                     globals[i] = Value.REF_NULL;
                     break;

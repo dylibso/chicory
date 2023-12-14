@@ -117,10 +117,6 @@
             SpecV1MemoryInitTest.test204, SpecV1MemoryInitTest.test206,
             SpecV1MemoryInitTest.test208, SpecV1MemoryInitTest.test210,
             SpecV1MemoryInitTest.test212, SpecV1MemoryInitTest.test214,
-            <!-- imports integration is
-            missing -->
-            SpecV1GlobalTest.test6,
-            SpecV1GlobalTest.test7, SpecV1GlobalTest.test57,
             <!-- call indirect failures -->
             SpecV1MemoryGrowTest.test64,
             SpecV1MemoryGrowTest.test65, SpecV1MemoryGrowTest.test66,
