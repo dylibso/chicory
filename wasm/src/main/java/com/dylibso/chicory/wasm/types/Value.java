@@ -4,7 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
+import java.nio.ByteOrder;
 import java.util.Objects;
 
 public class Value {
@@ -21,7 +21,7 @@ public class Value {
 
     private final ValueType type;
 
-    private final byte[] data;
+    private long data;
 
     static {
         TRUE = Value.i32(1);
@@ -57,17 +57,14 @@ public class Value {
         return new Value(ValueType.ExternRef, data);
     }
 
-    public Value(ValueType type, byte[] data) {
-        this.type = requireNonNull(type, "type");
-        this.data = requireNonNull(data, "data");
-    }
-
     public Value(ValueType type, int value) {
-        this(ensure32bitValueType(type), ByteBuffer.allocate(4).putInt(value).array());
+        this.type = requireNonNull(ensure32bitValueType(type), "type");
+        this.data = value;
     }
 
     public Value(ValueType type, long value) {
-        this(requireNonNull(type, "type"), convertToBytes(type, value));
+        this.type = requireNonNull(type, "type");
+        data = value;
     }
 
     private static ValueType ensure32bitValueType(ValueType type) {
@@ -78,57 +75,14 @@ public class Value {
                 "Invalid type for 32 bit value, only I32 or F32 are allowed, given: " + type);
     }
 
-    private static byte[] convertToBytes(ValueType type, long value) {
-        requireNonNull(type, "type");
-        byte[] data;
-        switch (type) {
-            case I32:
-            case F32:
-                {
-                    data = new byte[4];
-                    data[0] = (byte) (value >> 24);
-                    data[1] = (byte) (value >> 16);
-                    data[2] = (byte) (value >> 8);
-                    data[3] = (byte) value;
-                    break;
-                }
-            case I64:
-            case F64:
-                {
-                    data = new byte[8];
-                    data[0] = (byte) (value >> 56);
-                    data[1] = (byte) (value >> 48);
-                    data[2] = (byte) (value >> 40);
-                    data[3] = (byte) (value >> 32);
-                    data[4] = (byte) (value >> 24);
-                    data[5] = (byte) (value >> 16);
-                    data[6] = (byte) (value >> 8);
-                    data[7] = (byte) value;
-                    break;
-                }
-            case ExternRef:
-                data = new byte[4];
-                data[0] = (byte) (value >> 24);
-                data[1] = (byte) (value >> 16);
-                data[2] = (byte) (value >> 8);
-                data[3] = (byte) value;
-                break;
-            default:
-                data = new byte[0];
-                break;
-        }
-        return data;
-    }
-
     // TODO memoize these
     public int asInt() {
         switch (type) {
-            case I32:
-            case F32:
-                return ByteBuffer.wrap(this.data).getInt();
             case I64:
             case F64:
-                return ByteBuffer.wrap(this.data, 4, 4).getInt();
+            case I32:
+            case F32:
+                return (int) data;
             default:
                 throw new IllegalArgumentException(
                         "Can't turn wasm value of type " + type + " to a int");
@@ -141,10 +95,9 @@ public class Value {
         switch (type) {
             case I32:
             case F32:
-                return ByteBuffer.wrap(this.data).getInt() & 0xFFFFFFFFL;
             case I64:
             case F64:
-                return ByteBuffer.wrap(this.data, 4, 4).getInt() & 0xFFFFFFFFL;
+                return data & 0xFFFFFFFFL;
             default:
                 throw new IllegalArgumentException(
                         "Can't turn wasm value of type " + type + " to a uint");
@@ -152,18 +105,31 @@ public class Value {
     }
 
     public long asLong() {
-        return ((long) (data[0] & 0xFF) << 56)
-                | ((long) (data[1] & 0xFF) << 48)
-                | ((long) (data[2] & 0xFF) << 40)
-                | ((long) (data[3] & 0xFF) << 32)
-                | ((long) (data[4] & 0xFF) << 24)
-                | ((long) (data[5] & 0xFF) << 16)
-                | ((long) (data[6] & 0xFF) << 8)
-                | ((long) (data[7] & 0xFF));
+        switch (type) {
+            case I32:
+            case F32:
+            case I64:
+            case F64:
+                return data;
+            default:
+                throw new IllegalArgumentException(
+                        "Can't turn wasm value of type " + type + " to a long");
+        }
     }
 
     public BigInteger asULong() {
-        var b = new BigInteger(this.data);
+        BigInteger b;
+        switch (type) {
+            case I32:
+            case F32:
+            case I64:
+            case F64:
+                b = new BigInteger(Long.toString(data));
+                break;
+            default:
+                throw new IllegalArgumentException(
+                        "Can't turn wasm value of type " + type + " to a ulong");
+        }
         if (b.signum() < 0) {
             return b.add(TWO_POW_64);
         }
@@ -172,15 +138,23 @@ public class Value {
 
     // TODO memoize these
     public byte asByte() {
-        return this.data[this.data.length - 1]; // this the right byte?
+        switch (type) {
+            case I32:
+            case F32:
+            case I64:
+            case F64:
+                return (byte) (data & 0xff);
+            default:
+                throw new IllegalArgumentException(
+                        "Can't turn wasm value of type " + type + " to a byte");
+        }
     }
 
     public short asShort() {
         switch (type) {
             case I32:
-                return ByteBuffer.wrap(this.data, 2, 2).getShort();
             case I64:
-                return ByteBuffer.wrap(this.data, 6, 2).getShort();
+                return (short) (data & 0xffff);
             default:
                 throw new IllegalArgumentException(
                         "Can't turn wasm value of type " + type + " to a short");
@@ -188,7 +162,7 @@ public class Value {
     }
 
     public int asExtRef() {
-        return ByteBuffer.wrap(this.data).getInt();
+        return (int) data;
     }
 
     public float asFloat() {
@@ -204,7 +178,19 @@ public class Value {
     }
 
     public byte[] getData() {
-        return this.data;
+        switch (this.type) {
+            case I64:
+            case F64:
+                ByteBuffer buffer = ByteBuffer.allocate(8);
+                buffer.order(ByteOrder.LITTLE_ENDIAN);
+                buffer.putLong(data);
+                return buffer.array();
+            default:
+                ByteBuffer buffer2 = ByteBuffer.allocate(4);
+                buffer2.order(ByteOrder.LITTLE_ENDIAN);
+                buffer2.putInt((int) data);
+                return buffer2.array();
+        }
     }
 
     public String toString() {
@@ -235,11 +221,11 @@ public class Value {
             return false;
         }
         Value other = (Value) v;
-        return Objects.equals(type, other.type) && Arrays.equals(data, other.data);
+        return Objects.equals(type, other.type) && data == other.data;
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(type, Arrays.hashCode(data));
+        return Objects.hash(type, data);
     }
 }
