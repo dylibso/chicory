@@ -1,6 +1,6 @@
 # Chicory Runtime
 
-[![Test Results](https://gist.githubusercontent.com/andreaTP/69354d1cc6cf23e4c3c4a9a8daf7ea15/raw/8a410d60b8840e7df415f81a3490acf0aac79a93/badge.svg)](https://gist.githubusercontent.com/andreaTP/69354d1cc6cf23e4c3c4a9a8daf7ea15/raw/8a410d60b8840e7df415f81a3490acf0aac79a93/badge.svg)
+[![Test Results](https://gist.githubusercontent.com/andreaTP/69354d1cc6cf23e4c3c4a9a8daf7ea15/raw/badge.svg)](https://gist.githubusercontent.com/andreaTP/69354d1cc6cf23e4c3c4a9a8daf7ea15/raw/badge.svg)
 [![](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://chicory.zulipchat.com)
 
 <img align="right" width="200" src="chicory1.png">
