@@ -1,13 +1,34 @@
 package com.dylibso.chicory.runtime;
 
-// TODO: implement me
+import com.dylibso.chicory.wasm.types.ElementType;
+import com.dylibso.chicory.wasm.types.Table;
+import java.util.Map;
+
 public class HostTable implements FromHost {
     private final String moduleName;
     private final String fieldName;
+    private final Table table;
 
-    public HostTable(String moduleName, String fieldName) {
+    public HostTable(String moduleName, String fieldName, Map<Integer, Integer> funcRefs) {
         this.moduleName = moduleName;
         this.fieldName = fieldName;
+
+        long maxFuncRef = 0;
+        for (var k : funcRefs.keySet()) {
+            if (k > maxFuncRef) {
+                maxFuncRef = k;
+            }
+        }
+
+        this.table = new Table(ElementType.FuncRef, maxFuncRef, maxFuncRef);
+
+        for (int i = 0; i <= maxFuncRef; i++) {
+            if (funcRefs.containsKey(i)) {
+                this.table.addFuncRef(funcRefs.get(i));
+            } else {
+                this.table.addFuncRef(null);
+            }
+        }
     }
 
     public String getModuleName() {
@@ -21,5 +42,9 @@ public class HostTable implements FromHost {
     @Override
     public FromHostType getType() {
         return FromHostType.TABLE;
+    }
+
+    public Table getTable() {
+        return table;
     }
 }

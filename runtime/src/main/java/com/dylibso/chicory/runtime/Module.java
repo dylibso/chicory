@@ -232,6 +232,7 @@ public class Module {
 
         var globalImportsOffset = 0;
         var functionImportsOffset = 0;
+        var tablesImportsOffset = 0;
         for (int i = 0; i < imports.length; i++) {
             switch (imports[i].getDesc().getType()) {
                 case GlobalIdx:
@@ -239,6 +240,9 @@ public class Module {
                     break;
                 case FuncIdx:
                     functionImportsOffset++;
+                    break;
+                case TableIdx:
+                    tablesImportsOffset++;
                     break;
                 default:
                     break;
@@ -251,6 +255,7 @@ public class Module {
                 globals,
                 globalImportsOffset,
                 functionImportsOffset,
+                tablesImportsOffset,
                 memory,
                 functions,
                 types,

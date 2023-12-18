@@ -14,6 +14,7 @@ public class Instance {
 
     private int importedGlobalsOffset;
     private int importedFunctionsOffset;
+    private int importedTablesOffset;
     private FunctionType[] types;
     private int[] functionTypes;
     private HostImports imports;
@@ -25,6 +26,7 @@ public class Instance {
             Value[] globals,
             int importedGlobalsOffset,
             int importedFunctionsOffset,
+            int importedTablesOffset,
             Memory memory,
             FunctionBody[] functions,
             FunctionType[] types,
@@ -36,6 +38,7 @@ public class Instance {
         this.globals = globals;
         this.importedGlobalsOffset = importedGlobalsOffset;
         this.importedFunctionsOffset = importedFunctionsOffset;
+        this.importedTablesOffset = importedTablesOffset;
         this.memory = memory;
         this.functions = functions;
         this.types = types;
@@ -113,7 +116,10 @@ public class Instance {
         return module;
     }
 
-    public Table[] getTables() {
-        return tables;
+    public Table getTable(int idx) {
+        if (idx < importedTablesOffset) {
+            return null;
+        }
+        return tables[idx - importedTablesOffset];
     }
 }

@@ -98,7 +98,7 @@ public class JavaTestGen {
         cu.addImport("com.dylibso.chicory.testing.TestModule");
 
         // runtime imports
-        cu.addImport("com.dylibso.chicory.runtime.exceptions.WASMRuntimeException");
+        cu.addImport("com.dylibso.chicory.wasm.exceptions.ChicoryException");
         cu.addImport("com.dylibso.chicory.runtime.ExportFunction");
         cu.addImport("com.dylibso.chicory.runtime.Instance");
         cu.addImport("com.dylibso.chicory.runtime.Module");
@@ -309,7 +309,7 @@ public class JavaTestGen {
             var assertDecl =
                     new NameExpr(
                             "var exception ="
-                                    + " assertThrows(WASMRuntimeException.class, () -> "
+                                    + " assertThrows(ChicoryException.class, () -> "
                                     + varName
                                     + invocationMethod
                                     + ")");

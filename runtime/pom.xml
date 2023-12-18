@@ -122,13 +122,6 @@
             SpecV1MemoryInitTest.test31,
             SpecV1MemoryInitTest.test62, SpecV1NamesTest.test481, SpecV1AddressTest.test64,
             SpecV1AddressTest.test186,
-            <!-- Import Table, to be supported -->
-            SpecV1ImportsTest.test10,
-            SpecV1ImportsTest.test11,
-            SpecV1ImportsTest.test12,
-            SpecV1ImportsTest.test13,
-            SpecV1ImportsTest.test15,
-            SpecV1ImportsTest.test16,
             <!-- Import Memory, to be supported -->
             SpecV1ImportsTest.test19,
             SpecV1ImportsTest.test20,
@@ -146,9 +139,6 @@
             SpecV1ImportsTest.test36,
             SpecV1ImportsTest.test37,
             <!-- Invalid and Malformed failures, can be ignored for now -->
-            SpecV1ImportsTest.test9,
-            SpecV1ImportsTest.test14,
-            SpecV1ImportsTest.test17,
             SpecV1ImportsTest.test18,
             SpecV1ImportsTest.test22,
             SpecV1AddressTest.test75, SpecV1AddressTest.test76,

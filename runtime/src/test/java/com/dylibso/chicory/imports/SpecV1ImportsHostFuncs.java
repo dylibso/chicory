@@ -3,11 +3,14 @@ package com.dylibso.chicory.imports;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.HostGlobal;
 import com.dylibso.chicory.runtime.HostImports;
+import com.dylibso.chicory.runtime.HostMemory;
+import com.dylibso.chicory.runtime.HostTable;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class SpecV1ImportsHostFuncs {
 
@@ -111,6 +114,7 @@ public class SpecV1ImportsHostFuncs {
                         "print_f64_f64",
                         List.of(ValueType.F64, ValueType.F64),
                         List.of());
+        var table = new HostTable("spectest", "table", Map.of(1, 1, 2, 2, 10, 10));
         return new HostImports(
                 new HostFunction[] {
                     printI32,
@@ -123,7 +127,10 @@ public class SpecV1ImportsHostFuncs {
                     printI64_2,
                     printF64,
                     printF64F64
-                });
+                },
+                new HostGlobal[] {},
+                new HostMemory[] {},
+                new HostTable[] {table});
     }
 
     public static HostImports testModule1() {
@@ -166,6 +173,7 @@ public class SpecV1ImportsHostFuncs {
         var additional = new HostFunction[] {testFunc, testFuncI64};
         HostFunction[] hostFunctions = Arrays.copyOf(base, base.length + additional.length);
         System.arraycopy(additional, 0, hostFunctions, base.length, additional.length);
-        return new HostImports(hostFunctions);
+        return new HostImports(
+                hostFunctions, new HostGlobal[] {}, new HostMemory[] {}, base().getTables());
     }
 }
