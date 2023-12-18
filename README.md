@@ -26,18 +26,12 @@ to your dependency management system.
   <artifactId>runtime</artifactId>
   <version>0.0.2</version>
 </dependency>
-<dependency>
-  <groupId>com.dylibso.chicory</groupId>
-  <artifactId>wasm</artifactId>
-  <version>0.0.2</version>
-</dependency>
 ```
 
 #### Gradle
 
 ```groovy
 implementation 'com.dylibso.chicory:runtime:0.0.2'
-implementation 'com.dylibso.chicory:wasm:0.0.2'
 ```
 
 ### Loading and Instantiating Code
@@ -102,7 +96,7 @@ curl https://raw.githubusercontent.com/dylibso/chicory/main/runtime/src/test/res
 Build and instantiate this module:
 
 ```java
-Instance instance = Module.build("./count_vowels.wasm").instantiate();
+Instance instance = Module.build(new File("./count_vowels.wasm")).instantiate();
 ExportFunction countVowels = instance.getExport("count_vowels");
 ```
 
@@ -183,7 +177,7 @@ Now we just need to pass this host function in during our instantiation phase:
 
 ```java
 var funcs = new HostFunction[] {func};
-var instance = Module.build("./logger.wasm").instantiate(funcs);
+var instance = Module.build(new File("./logger.wasm")).instantiate(funcs);
 var logIt = instance.getExport("logIt");
 logIt.apply();
 // should print "Hello, World!" 10 times
@@ -256,11 +250,16 @@ Some nice to have but probably separate items:
 
 ### Modules
 
-There are three independent modules at the moment:
+There are four independent modules at the moment:
 
+* wasm-support-plugin
 * wasm
 * test-gen-plugin
 * runtime
+
+#### wasm-support-plugin
+
+The [wasm-support-plugin](wasm-support-plugin/) package is a maven plugin that handles the generation of OpCode definitions from an agnostic `tsv` file.
 
 #### wasm package
 
@@ -275,15 +274,11 @@ cd wasm
 # Recompiles all the wasm modules we use in the tests
 # Only needs to be run if the code for the test wasm modules are changes
 sh scripts/compile-tests.sh
-
-# Parses the instructions.tsv file and generates the OpCode.java file.
-# Ony needs to be run if the instructions.tsv file changes
-ruby scripts/gen-instr.rb
 ```
 
 #### test-gen-plugin
 
-The [test-gen-plugin](test-gen-plugin/) package is a maven plugin that handles the test generation that exercises both the wasm package and the runtime package. Tests are parsed from the [Wasm testsuite](https://github.com/WebAssembly/testsuite) and generate Java Junit tests.
+The [test-gen-plugin](test-gen-plugin/) package is a maven plugin that handles the test generation that exercises both the wasm package and the runtime package. Tests are parsed from the [Wasm testsuite](https://github.com/WebAssembly/testsuite) and generate Java JUnit tests.
 
 #### runtime package
 
