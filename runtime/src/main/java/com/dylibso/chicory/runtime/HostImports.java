@@ -35,10 +35,25 @@ public class HostImports {
         this.tables = new HostTable[] {};
     }
 
+    public HostImports(HostMemory memory) {
+        this.functions = new HostFunction[] {};
+        this.globals = new HostGlobal[] {};
+        this.memories = new HostMemory[] {memory};
+        this.tables = new HostTable[] {};
+    }
+
     public HostImports(HostTable[] tables) {
         this.functions = new HostFunction[] {};
         this.globals = new HostGlobal[] {};
         this.memories = new HostMemory[] {};
+        this.tables = tables;
+    }
+
+    public HostImports(
+            HostFunction[] functions, HostGlobal[] globals, HostMemory memory, HostTable[] tables) {
+        this.functions = functions;
+        this.globals = globals;
+        this.memories = new HostMemory[] {memory};
         this.tables = tables;
     }
 

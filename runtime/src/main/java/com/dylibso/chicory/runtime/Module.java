@@ -111,35 +111,6 @@ public class Module {
             dataSegments = module.getDataSection().getDataSegments();
         }
 
-        Memory memory = null;
-        if (module.getMemorySection() != null) {
-            var memories = module.getMemorySection().getMemories();
-            if (memories.length > 1) {
-                throw new ChicoryException("We don't support multiple memories");
-            }
-            memory = new Memory(memories[0].getMemoryLimits(), dataSegments);
-        } else {
-            boolean importFound = false;
-            if (module.getImportSection() != null) {
-                for (int i = 0; i < module.getImportSection().getImports().length; i++) {
-                    var imprt = module.getImportSection().getImports()[i];
-                    if (imprt.getDesc().getType() != ImportDescType.MemIdx) {
-                        continue;
-                    }
-
-                    if (importFound) {
-                        throw new ChicoryException("We don't support multiple memories");
-                    }
-                    memory = new Memory(MemoryLimits.defaultLimits(), dataSegments, false);
-                    importFound = true;
-                }
-            }
-
-            if (!importFound) {
-                memory = new Memory(MemoryLimits.defaultLimits(), dataSegments);
-            }
-        }
-
         var types = new FunctionType[0];
         // TODO i guess we should explode if this is the case, is this possible?
         if (module.getTypeSection() != null) {
@@ -230,6 +201,29 @@ public class Module {
             }
         }
 
+        Memory memory = null;
+        if (module.getMemorySection() != null) {
+            assert (mappedHostImports.getMemories().length == 0);
+
+            var memories = module.getMemorySection().getMemories();
+            if (memories.length > 1) {
+                throw new ChicoryException("Multiple memories are not supported");
+            }
+            memory = new Memory(memories[0].getMemoryLimits(), dataSegments);
+        } else {
+            if (mappedHostImports.getMemories().length > 0) {
+                assert (mappedHostImports.getMemories().length == 1);
+                if (mappedHostImports.getMemories()[0] == null
+                        || mappedHostImports.getMemories()[0].getMemory() == null) {
+                    throw new ChicoryException(
+                            "Imported memory not defined, cannot run the program");
+                }
+                memory = mappedHostImports.getMemories()[0].getMemory();
+            } else {
+                // No memory defined
+            }
+        }
+
         var globalImportsOffset = 0;
         var functionImportsOffset = 0;
         var tablesImportsOffset = 0;
@@ -273,12 +267,16 @@ public class Module {
             switch (imprt.getDesc().getType()) {
                 case FuncIdx:
                     hostFuncNum++;
+                    break;
                 case GlobalIdx:
                     hostGlobalNum++;
+                    break;
                 case MemIdx:
                     hostMemNum++;
+                    break;
                 case TableIdx:
                     hostTableNum++;
+                    break;
             }
         }
 
@@ -308,6 +306,7 @@ public class Module {
                         }
                     }
                     hostFuncIdx++;
+                    break;
                 case GlobalIdx:
                     for (var g : hostImports.getGlobals()) {
                         if (i.getModuleName().equals(g.getModuleName())
@@ -319,6 +318,7 @@ public class Module {
                         }
                     }
                     hostGlobalIdx++;
+                    break;
                 case MemIdx:
                     for (var m : hostImports.getMemories()) {
                         if (i.getModuleName().equals(m.getModuleName())
@@ -330,6 +330,7 @@ public class Module {
                         }
                     }
                     hostMemIdx++;
+                    break;
                 case TableIdx:
                     for (var t : hostImports.getTables()) {
                         if (i.getModuleName().equals(t.getModuleName())
@@ -341,6 +342,7 @@ public class Module {
                         }
                     }
                     hostTableIdx++;
+                    break;
             }
             if (!found) {
                 LOGGER.log(
