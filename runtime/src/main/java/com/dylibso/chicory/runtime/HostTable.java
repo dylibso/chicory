@@ -9,6 +9,12 @@ public class HostTable implements FromHost {
     private final String fieldName;
     private final Table table;
 
+    public HostTable(String moduleName, String fieldName, Table table) {
+        this.moduleName = moduleName;
+        this.fieldName = fieldName;
+        this.table = table;
+    }
+
     public HostTable(String moduleName, String fieldName, Map<Integer, Integer> funcRefs) {
         this.moduleName = moduleName;
         this.fieldName = fieldName;
