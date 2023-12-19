@@ -200,11 +200,14 @@ public class Machine {
                     case CALL_INDIRECT:
                         {
                             var tableIdx = (int) operands[1];
-                            var table = instance.getTables()[tableIdx];
-                            var funcTableIdx = this.stack.pop().asInt();
-                            var funcId = table.getFuncRef(funcTableIdx);
+                            var table = instance.getTable(tableIdx);
+                            if (table == null) { // imported table
+                                table = instance.getImports().getTables()[tableIdx].getTable();
+                            }
                             var typeId = (int) operands[0];
                             var type = instance.getTypes()[typeId];
+                            int funcTableIdx = this.stack.pop().asInt();
+                            int funcId = table.getFuncRef(funcTableIdx);
                             // given a list of param types, let's pop those params off the stack
                             // and pass as args to the function call
                             var args = extractArgsForParams(type.getParams());

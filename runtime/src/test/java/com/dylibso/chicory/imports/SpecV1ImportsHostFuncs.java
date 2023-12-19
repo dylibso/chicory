@@ -3,11 +3,15 @@ package com.dylibso.chicory.imports;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.HostGlobal;
 import com.dylibso.chicory.runtime.HostImports;
+import com.dylibso.chicory.runtime.HostMemory;
+import com.dylibso.chicory.runtime.HostTable;
 import com.dylibso.chicory.runtime.Memory;
+import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 public class SpecV1ImportsHostFuncs {
 
@@ -111,6 +115,10 @@ public class SpecV1ImportsHostFuncs {
                         "print_f64_f64",
                         List.of(ValueType.F64, ValueType.F64),
                         List.of());
+        var table = new HostTable("spectest", "table", Map.of(1, 1, 2, 2, 10, 10));
+        var mem = new Memory(new MemoryLimits(1, 2));
+        mem.putI32(10, 16); // data d_a(offset: 10) = "\10";
+        var memory = new HostMemory("spectest", "memory", mem);
         return new HostImports(
                 new HostFunction[] {
                     printI32,
@@ -123,11 +131,10 @@ public class SpecV1ImportsHostFuncs {
                     printI64_2,
                     printF64,
                     printF64F64
-                });
-    }
-
-    public static HostImports testModule1() {
-        return fallback();
+                },
+                new HostGlobal[] {},
+                memory,
+                new HostTable[] {table});
     }
 
     public static HostImports testModule11() {
@@ -141,6 +148,33 @@ public class SpecV1ImportsHostFuncs {
                     new HostGlobal("spectest", "global_f32", Value.f32(1)),
                     new HostGlobal("spectest", "global_f64", Value.f64(1)),
                 });
+    }
+
+    private static HostImports memory2Inf =
+            new HostImports(
+                    new HostMemory(
+                            "test", "memory-2-inf", new Memory(MemoryLimits.defaultLimits())));
+
+    public static HostImports testModule40() {
+        return memory2Inf;
+    }
+
+    public static HostImports testModule41() {
+        return memory2Inf;
+    }
+
+    public static HostImports testModule42() {
+        return memory2Inf;
+    }
+
+    public static HostImports Mgim1() {
+        var mem = new Memory(new MemoryLimits(2, 3));
+        return new HostImports(new HostMemory("grown-memory", "memory", mem));
+    }
+
+    public static HostImports Mgim2() {
+        var mem = new Memory(new MemoryLimits(3, 4));
+        return new HostImports(new HostMemory("grown-imported-memory", "memory", mem));
     }
 
     public static HostImports fallback() {
@@ -166,6 +200,7 @@ public class SpecV1ImportsHostFuncs {
         var additional = new HostFunction[] {testFunc, testFuncI64};
         HostFunction[] hostFunctions = Arrays.copyOf(base, base.length + additional.length);
         System.arraycopy(additional, 0, hostFunctions, base.length, additional.length);
-        return new HostImports(hostFunctions);
+        return new HostImports(
+                hostFunctions, new HostGlobal[] {}, base().getMemories()[0], base().getTables());
     }
 }

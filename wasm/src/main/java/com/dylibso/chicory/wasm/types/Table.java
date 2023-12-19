@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,11 +31,15 @@ public class Table {
         return limitMax;
     }
 
-    public void addFuncRef(int funcRef) {
+    public void addFuncRef(Integer funcRef) {
         this.funcRefs.add(funcRef);
     }
 
     public int getFuncRef(int index) {
-        return this.funcRefs.get(index);
+        var res = this.funcRefs.get(index);
+        if (res == null) {
+            throw new ChicoryException("uninitialized element");
+        }
+        return res;
     }
 }
