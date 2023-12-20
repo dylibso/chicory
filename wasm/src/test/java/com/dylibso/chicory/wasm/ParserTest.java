@@ -13,7 +13,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseFile() {
-        var parser = new Parser(new File("src/test/resources/wasm/start.wat.wasm"));
+        var parser = new Parser(new File("src/test/resources/compiled/start.wat.wasm"));
         var module = parser.parseModule();
 
         // check types section
@@ -79,7 +79,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseIterfact() {
-        var parser = new Parser(new File("src/test/resources/wasm/iterfact.wat.wasm"));
+        var parser = new Parser(new File("src/test/resources/compiled/iterfact.wat.wasm"));
         var module = parser.parseModule();
 
         // check types section
@@ -107,7 +107,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseAllFiles() {
-        File dir = new File("src/test/resources/wasm/");
+        File dir = new File("src/test/resources/compiled/");
         File[] files = dir.listFiles((dir1, name) -> name.toLowerCase().endsWith(".wasm"));
         if (files == null) {
             throw new RuntimeException("Could not find files");
@@ -150,7 +150,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseFloats() {
-        var parser = new Parser(new File("src/test/resources/wasm/float.wat.wasm"));
+        var parser = new Parser(new File("src/test/resources/compiled/float.wat.wasm"));
         var module = parser.parseModule();
         var codeSection = module.getCodeSection();
         var fbody = codeSection.getFunctionBodies()[0];
@@ -162,7 +162,7 @@ public class ParserTest {
 
     @Test
     public void shouldProperlyParseSignedValue() {
-        var parser = new Parser(new File("src/test/resources/wasm/i32.wat.wasm"));
+        var parser = new Parser(new File("src/test/resources/compiled/i32.wat.wasm"));
         var module = parser.parseModule();
         var codeSection = module.getCodeSection();
         var fbody = codeSection.getFunctionBodies()[0];
@@ -184,7 +184,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseLocalDefinitions() {
-        var parser = new Parser(new File("src/test/resources/wasm/define-locals.wat.wasm"));
+        var parser = new Parser(new File("src/test/resources/compiled/define-locals.wat.wasm"));
         var module = parser.parseModule();
         var codeSection = module.getCodeSection();
         var fbody = codeSection.getFunctionBodies()[0];
@@ -194,9 +194,9 @@ public class ParserTest {
 
     @Test
     public void shouldParseNamesSection() {
-        var parser = new Parser(new File("src/test/resources/wasm/count_vowels.rs.wasm"));
+        var parser = new Parser(new File("src/test/resources/compiled/count_vowels.rs.wasm"));
         var module = parser.parseModule();
         var nameSec = module.getNameSection();
-        assertEquals(nameSec.getFunctionNames().size(), 94);
+        assertEquals(125, nameSec.getFunctionNames().size());
     }
 }
