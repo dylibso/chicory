@@ -1669,6 +1669,7 @@ public class Machine {
                             this.stack.push(Value.i64((long) tos));
                             break;
                         }
+                    case MEMORY_INIT_FC:
                     case MEMORY_INIT:
                         {
                             var segmentId = (int) operands[0];
