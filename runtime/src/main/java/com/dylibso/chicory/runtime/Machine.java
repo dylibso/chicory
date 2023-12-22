@@ -1580,10 +1580,22 @@ public class Machine {
                             long tosL;
                             if (Float.isNaN(tos) || tos < 0) {
                                 tosL = 0L;
-                            } else if (tos >= Long.MAX_VALUE) {
+                            } else if (tos > Math.pow(2, 64) - 1) {
                                 tosL = 0xFFFFFFFFFFFFFFFFL;
                             } else {
-                                tosL = (long) tos;
+                                if (tos < Long.MAX_VALUE) {
+                                    tosL = (long) tos;
+                                } else {
+                                    // See I64_TRUNC_F32_U for notes on implementation. This is
+                                    // the double-based equivalent of that.
+                                    tosL =
+                                            Long.MAX_VALUE
+                                                    + (long) (tos - (double) Long.MAX_VALUE)
+                                                    + 1;
+                                    if (tosL >= 0) {
+                                        throw new WASMRuntimeException("integer overflow");
+                                    }
+                                }
                             }
 
                             this.stack.push(Value.i64(tosL));
@@ -1610,14 +1622,24 @@ public class Machine {
                             double tos = this.stack.pop().asDouble();
 
                             long tosL;
-                            if (Double.isNaN(tos) || tos <= -1.0) {
+                            if (Double.isNaN(tos) || tos < 0) {
                                 tosL = 0L;
-                            } else if (tos >= TWO_POW_64_PLUS_1_F) {
+                            } else if (tos > Math.pow(2, 64) - 1) {
                                 tosL = 0xFFFFFFFFFFFFFFFFL;
-                            } else if (tos == Long.MAX_VALUE) {
-                                tosL = (long) tos + 1;
                             } else {
-                                tosL = (long) tos;
+                                if (tos < Long.MAX_VALUE) {
+                                    tosL = (long) tos;
+                                } else {
+                                    // See I64_TRUNC_F32_U for notes on implementation. This is
+                                    // the double-based equivalent of that.
+                                    tosL =
+                                            Long.MAX_VALUE
+                                                    + (long) (tos - (double) Long.MAX_VALUE)
+                                                    + 1;
+                                    if (tosL >= 0) {
+                                        throw new WASMRuntimeException("integer overflow");
+                                    }
+                                }
                             }
 
                             this.stack.push(Value.i64(tosL));

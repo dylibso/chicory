@@ -89,7 +89,6 @@
           <excludedTests>
             <!--
             Assertion failures -->
-            SpecV1ConversionsTest.test336, SpecV1ConversionsTest.test380,
             SpecV1FloatExprsTest.test210, SpecV1FloatExprsTest.test306,
             SpecV1FloatExprsTest.test307, SpecV1FloatExprsTest.test308,
             SpecV1FloatExprsTest.test309, SpecV1FloatExprsTest.test748,
