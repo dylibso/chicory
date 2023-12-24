@@ -107,29 +107,12 @@ public final class Memory {
                 }
                 var data = segment.getData();
                 var offset = (int) offsetInstr.getOperands()[0];
-                // System.out.println("Writing data segment " + offset + " " + new String(data));
-                // TODO is there a cleaner way doing buffer.put(offset, data)?
-                for (int i = 0, j = offset; i < data.length; i++, j++) {
-                    this.buffer.put(j, data[i]);
-                }
+                write(offset, data);
             } else if (s instanceof PassiveDataSegment) {
                 // System.out.println("Skipping passive segment " + s);
             } else {
                 throw new ChicoryException("Data segment should be active or passive: " + s);
             }
-        }
-    }
-
-    public void copy(int dest, int src, int size) {
-        var data = new byte[size];
-        this.buffer.get(data, src, size);
-        try {
-            // TODO why can't i just write this array to the buffer without the loop?
-            for (var i = 0; i < size; i++) {
-                this.buffer.put(dest + i, data[i]);
-            }
-        } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
@@ -140,200 +123,172 @@ public final class Memory {
                     "data segment with id "
                             + " is not a passive segment and cannot be initialized at runtime");
         }
-        var data = segment.getData();
-        // TODO why doesn't this API work?
-        // this.buffer.put(target, segment.getData(), offset, size);
-        int j = dest;
+        write(dest, segment.getData(), offset, size);
+    }
+
+    public void writeString(int offset, String data) {
+        write(offset, data.getBytes(StandardCharsets.UTF_8));
+    }
+
+    public String readString(int addr, int len) {
         try {
-            for (var i = offset; i < size; i++) {
-                this.buffer.put(j++, data[i]);
-            }
+            return new String(readBytes(addr, len), StandardCharsets.UTF_8);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public String getString(int offset, int len) {
-        try {
-            var data = new byte[len];
-            for (int i = 0, j = offset; i < len; i++, j++) {
-                data[i] = this.buffer.get(j);
-            }
+    public void write(int addr, byte[] data) {
+        write(addr, data, 0, data.length);
+    }
 
-            return new String(data);
+    public void write(int addr, byte[] data, int offset, int size) {
+        try {
+            buffer.position(addr);
+            buffer.put(data, offset, size);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public void put(int offset, String data) {
+    public byte read(int addr) {
         try {
-            var bytes = data.getBytes(StandardCharsets.UTF_8);
-            for (int i = 0, j = offset; i < bytes.length; i++, j++) {
-                byte b = bytes[i];
-                this.buffer.put(j, b);
-            }
+            return buffer.get(addr);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public void put(int offset, byte[] data) {
+    public byte[] readBytes(int addr, int len) {
         try {
-            // System.out.println("mem-write@" + offset + " " + data);
-            for (int i = 0, j = offset; i < data.length; i++, j++) {
-                byte b = data[i];
-                this.buffer.put(j, b);
-            }
+            var bytes = new byte[len];
+            buffer.position(addr);
+            buffer.get(bytes);
+            return bytes;
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public void put(int offset, Value data) {
+    public void write(int addr, Value data) {
+        write(addr, data.getData());
+    }
+
+    public void writeI32(int addr, int data) {
         try {
-            var bytes = data.getData();
-            for (int i = 0, j = offset; i < bytes.length; i++, j++) {
-                this.buffer.put(j, bytes[i]);
-            }
+            buffer.putInt(addr, data);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public void putI32(int offset, int data) {
+    public Value readI32(int addr) {
         try {
-            this.buffer.putInt(offset, data);
+            return Value.i32(buffer.getInt(addr));
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public void putF32(int offset, float data) {
+    public Value readU32(int addr) {
         try {
-            this.buffer.putFloat(offset, data);
+            return Value.i32(buffer.getInt(addr) & 0xffffffffL);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public void putF64(int offset, double data) {
+    public void writeLong(int addr, long data) {
         try {
-            this.buffer.putDouble(offset, data);
+            buffer.putLong(addr, data);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public void putShort(int offset, short data) {
+    public Value readI64(int addr) {
         try {
-            this.buffer.putShort(offset, data);
+            return Value.i64(buffer.getLong(addr));
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public void putI64(int offset, long data) {
+    public void writeShort(int addr, short data) {
         try {
-            this.buffer.putLong(offset, data);
+            buffer.putShort(addr, data);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public void putByte(int offset, byte data) {
+    public Value readI16(int addr) {
         try {
-            this.buffer.put(offset, data);
+            return Value.i32(buffer.getShort(addr));
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public byte get(int offset) {
+    public Value readU16(int addr) {
         try {
-            // System.out.println("mem-read@" + offset);
-            return this.buffer.get(offset);
+            return Value.i32(buffer.getShort(addr) & 0xffff);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public Value getI32(int offset) {
+    public void writeByte(int addr, byte data) {
         try {
-            // System.out.println("mem-read@" + offset);
-            return Value.i32(this.buffer.getInt(offset));
+            buffer.put(addr, data);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public Value getU32(int offset) {
+    public Value readI8U(int addr) {
         try {
-            // System.out.println("mem-read@" + offset);
-            return Value.i64(this.buffer.getLong(offset) & 0xffffffffL);
+            return Value.i32(read(addr));
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public Value getI64(int offset) {
+    public Value readI8(int addr) {
         try {
-            // System.out.println("mem-read@" + offset);
-            return Value.i64(this.buffer.getLong(offset));
+            return Value.i32(read(addr));
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public Value getI16(int offset) {
+    public void writeF32(int addr, float data) {
         try {
-            // System.out.println("mem-read@" + offset);
-            return Value.i32(this.buffer.getShort(offset));
+            buffer.putFloat(addr, data);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public Value getU16(int offset) {
+    public Value readF32(int addr) {
         try {
-            // System.out.println("mem-read@" + offset);
-            return Value.i32(this.buffer.getInt(offset) & 0xffff);
+            return Value.f32(buffer.getInt(addr));
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public Value getI8U(int offset) {
+    public void writeF64(int addr, double data) {
         try {
-            // System.out.println("mem-read@" + offset);
-            return Value.i32(this.buffer.get(offset) & 0xff);
+            buffer.putDouble(addr, data);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public Value getI8(int offset) {
+    public Value readF64(int addr) {
         try {
-            // System.out.println("mem-read@" + offset);
-            return Value.i32(this.buffer.get(offset));
-        } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
-        }
-    }
-
-    public Value getF32(int offset) {
-        // System.out.println("mem-read@" + offset);
-        try {
-            return Value.f32(this.buffer.getInt(offset));
-        } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
-        }
-    }
-
-    public Value getF64(int offset) {
-        try {
-            // System.out.println("mem-read@" + offset);
-            return Value.f64(this.buffer.getLong(offset));
+            return Value.f64(buffer.getLong(addr));
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
@@ -341,7 +296,11 @@ public final class Memory {
 
     public void zero() {
         // see https://appsintheopen.com/posts/53-resetting-bytebuffers-to-zero-in-java
-        Arrays.fill(this.buffer.array(), (byte) 0);
-        this.buffer.position(0);
+        Arrays.fill(buffer.array(), (byte) 0);
+        buffer.position(0);
+    }
+
+    public void copy(int dest, int src, int size) {
+        write(dest, readBytes(src, size));
     }
 }

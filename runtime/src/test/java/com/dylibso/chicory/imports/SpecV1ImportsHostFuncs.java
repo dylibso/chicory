@@ -117,7 +117,7 @@ public class SpecV1ImportsHostFuncs {
                         List.of());
         var table = new HostTable("spectest", "table", Map.of(1, 1, 2, 2, 10, 10));
         var mem = new Memory(new MemoryLimits(1, 2));
-        mem.putI32(10, 16); // data d_a(offset: 10) = "\10";
+        mem.writeI32(10, 16); // data d_a(offset: 10) = "\10";
         var memory = new HostMemory("spectest", "memory", mem);
         return new HostImports(
                 new HostFunction[] {

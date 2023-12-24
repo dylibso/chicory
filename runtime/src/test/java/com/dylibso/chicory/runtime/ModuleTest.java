@@ -95,7 +95,7 @@ public class ModuleTest {
                         (Memory memory, Value... args) -> { // decompiled is: console_log(13, 0);
                             var len = args[0].asInt();
                             var offset = args[1].asInt();
-                            var message = memory.getString(offset, len);
+                            var message = memory.readString(offset, len);
                             printer.println(message);
                             return null;
                         },
@@ -186,7 +186,7 @@ public class ModuleTest {
         var message = "Hello, World!";
         var len = message.getBytes().length;
         var ptr = alloc.apply(Value.i32(len))[0].asInt();
-        memory.put(ptr, message);
+        memory.writeString(ptr, message);
         var result = countVowels.apply(Value.i32(ptr), Value.i32(len));
         dealloc.apply(Value.i32(ptr), Value.i32(len));
         assertEquals(3, result[0].asInt());
