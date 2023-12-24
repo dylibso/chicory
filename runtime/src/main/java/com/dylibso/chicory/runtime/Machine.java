@@ -878,13 +878,34 @@ public class Machine {
                     case F32_NEG:
                         {
                             var tos = this.stack.pop().asFloat();
-                            this.stack.push(Value.fromFloat(-1.0f * tos));
+
+                            float result;
+                            if (Float.isNaN(tos)) {
+                                result =
+                                        Float.intBitsToFloat(
+                                                Float.floatToRawIntBits(tos) ^ 0x80000000);
+                            } else {
+                                result = -1.0f * tos;
+                            }
+
+                            this.stack.push(Value.fromFloat(result));
                             break;
                         }
                     case F64_NEG:
                         {
                             var tos = this.stack.pop().asDouble();
-                            this.stack.push(Value.fromDouble(-1.0d * tos));
+
+                            double result;
+                            if (Double.isNaN(tos)) {
+                                result =
+                                        Double.longBitsToDouble(
+                                                Double.doubleToRawLongBits(tos)
+                                                        ^ 0x8000000000000000L);
+                            } else {
+                                result = -1.0d * tos;
+                            }
+
+                            this.stack.push(Value.fromDouble(result));
                             break;
                         }
                     case CALL:

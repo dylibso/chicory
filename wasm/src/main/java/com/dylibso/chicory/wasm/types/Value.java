@@ -30,11 +30,11 @@ public class Value {
     }
 
     public static Value fromFloat(float data) {
-        return Value.f32(Float.floatToIntBits(data));
+        return Value.f32(Float.floatToRawIntBits(data));
     }
 
     public static Value fromDouble(double data) {
-        return Value.f64(Double.doubleToLongBits(data));
+        return Value.f64(Double.doubleToRawLongBits(data));
     }
 
     public static Value i32(long data) {
