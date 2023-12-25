@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chicory Quarkus demo</title>
+</head>
+<script type="text/javascript" defer>
+window.onload = () => {
+    console.log("Attaching functions:");
+    document.getElementById('testInput').addEventListener("input", async (e) => {
+        try {
+                const response = await fetch("http://localhost:8080/compute", {
+                    method: "POST",
+                    body: `{ \"content\": ${JSON.stringify(e.target.value)} }`,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                });
+                const result = await response.json();
+                document.getElementById('count').textContent = result.message;
+            } catch (error) {
+                document.getElementById('count').textContent = "Count failed to compute";
+                console.error("Error:", error);
+            }
+    });
+
+
+    document.getElementById('wasmFile').addEventListener('change', async function(e) {
+        if (e.target.files[0]) {
+            try {
+                const response = await fetch("http://localhost:8080/wasm", {
+                    method: "POST",
+                    body: e.target.files[0],
+                    headers: {
+                        'Content-Type': 'application/octet-stream',
+                    },
+                });
+                const result = await response.json();
+                document.getElementById('uploadResult').textContent = result.message;
+                console.log("Success:", result);
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        }
+    });
+};
+</script>
+<body>
+
+    <div class="banner lead">
+        <h2>This is a Quarkus + Chicory example application</h2>
+    </div>
+
+    <div class="container">
+        <div class="left-column">
+            <p class="lead">First of all upload a wasm function:</p>
+            <input type="file" id="wasmFile"></input>
+            <label id="uploadResult" enabled="false"></label>
+        </div>
+    </div>
+
+    <div class="container2">
+        <div class="left-column">
+            <p class="lead">And now let's type things around:</p>
+            <textarea id="testInput"></textarea>
+            <label>Count: </label><label id="count" enabled="false"></label>
+        </div>
+    </div>
+
+</body>
+</html>
