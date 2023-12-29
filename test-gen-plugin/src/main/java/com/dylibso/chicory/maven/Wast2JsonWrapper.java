@@ -142,7 +142,7 @@ public class Wast2JsonWrapper {
     }
 
     private String resolveOrInstallWast2Json() {
-        ProcessBuilder pb = new ProcessBuilder(WAST2JSON);
+        ProcessBuilder pb = new ProcessBuilder(WAST2JSON, "--version");
         pb.directory(new File("."));
         pb.inheritIO();
         Process ps = null;
