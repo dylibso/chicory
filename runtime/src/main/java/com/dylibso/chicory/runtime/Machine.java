@@ -156,6 +156,14 @@ public class Machine {
                     case BR:
                         {
                             frame.doControlTransfer = true;
+                            var size = this.stack.size();
+                            frame.stackBefore = new Value[size];
+                            for (int i = 0; i < size; i++) {
+                                frame.stackBefore[i] = this.stack.pop();
+                            }
+                            for (int i = size - 1; i >= 0; i--) {
+                                this.stack.push(frame.stackBefore[i]);
+                            }
 
                             frame.pc = instruction.getLabelTrue();
                             break;
@@ -165,10 +173,19 @@ public class Machine {
                             var predValue = this.stack.pop();
                             var pred = predValue.asInt();
 
+                            frame.doControlTransfer = true;
+                            var size = this.stack.size();
+                            frame.stackBefore = new Value[size];
+                            for (int i = 0; i < size; i++) {
+                                frame.stackBefore[i] = this.stack.pop();
+                            }
+                            for (int i = size - 1; i >= 0; i--) {
+                                this.stack.push(frame.stackBefore[i]);
+                            }
+
                             if (pred == 0) {
                                 frame.pc = instruction.getLabelFalse();
                             } else {
-                                frame.doControlTransfer = true;
                                 frame.branchConditionValue = predValue;
                                 frame.pc = instruction.getLabelTrue();
                             }
@@ -180,6 +197,14 @@ public class Machine {
                             var pred = predValue.asInt();
 
                             frame.doControlTransfer = true;
+                            var size = this.stack.size();
+                            frame.stackBefore = new Value[size];
+                            for (int i = 0; i < size; i++) {
+                                frame.stackBefore[i] = this.stack.pop();
+                            }
+                            for (int i = size - 1; i >= 0; i--) {
+                                this.stack.push(frame.stackBefore[i]);
+                            }
 
                             if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
                                 // choose default
@@ -231,20 +256,14 @@ public class Machine {
                         }
                     case END:
                         {
-                            // if this is the last end, then we're done with
-                            // the function
-                            if (frame.blockDepth == 0) {
-                                break loop;
-                            }
-                            frame.blockDepth--;
-
-                            // control transfer happens on all blocks but not on the depth 0
                             if (frame.doControlTransfer && frame.isControlFrame) {
                                 // reset the control transfer
                                 frame.doControlTransfer = false;
 
                                 var valuesToBePushedBack =
-                                        Math.min(frame.numberOfValuesToReturn, this.stack.size());
+                                        Math.min(
+                                                frame.numberOfValuesToReturn,
+                                                frame.stackBefore.length);
 
                                 // pop the values from the stack
                                 Value[] tmp = new Value[valuesToBePushedBack];
@@ -260,6 +279,7 @@ public class Machine {
                                 // this is mostly empirical
                                 // if a branch have been taken we restore the consumed value from
                                 // the stack
+                                // check if we can refactor this part
                                 if (frame.branchConditionValue != null
                                         && frame.branchConditionValue.asInt() > 0) {
                                     this.stack.push(frame.branchConditionValue);
@@ -269,8 +289,24 @@ public class Machine {
                                 for (int i = valuesToBePushedBack - 1; i >= 0; i--) {
                                     this.stack.push(tmp[i]);
                                 }
+
+                                if (frame.stackBefore.length > this.stack.size()) {
+                                    var size =
+                                            frame.stackBefore.length
+                                                    - this.stack.size()
+                                                    - valuesToBePushedBack;
+                                    for (int i = size - 1; i >= 0; i--) {
+                                        this.stack.push(frame.stackBefore[i]);
+                                    }
+                                }
                             }
 
+                            // if this is the last end, then we're done with
+                            // the function
+                            if (frame.blockDepth == 0) {
+                                break loop;
+                            }
+                            frame.blockDepth--;
                             break;
                         }
                     case LOCAL_GET:

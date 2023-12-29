@@ -23,7 +23,8 @@ public class StackFrame {
     public int blockDepth;
     private Instance instance;
     public boolean doControlTransfer = false;
-    public boolean isControlFrame = false;
+    public Value[] stackBefore;
+    public boolean isControlFrame = true;
     public int stackSizeBeforeBlock;
     public int numberOfValuesToReturn = 0;
     public Value branchConditionValue = null;
