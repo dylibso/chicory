@@ -1714,10 +1714,8 @@ public class Machine {
                             this.stack.push(Value.i64((long) tos));
                             break;
                         }
-                    case MEMORY_INIT_FC:
                     case MEMORY_INIT:
                         {
-                            System.out.println("Stack size: " + stack.size());
                             var segmentId = (int) operands[0];
                             var memidx = (int) operands[1];
                             if (memidx != 0)

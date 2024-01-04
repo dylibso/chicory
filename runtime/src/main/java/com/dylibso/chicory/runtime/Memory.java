@@ -119,9 +119,9 @@ public final class Memory {
     public void initPassiveSegment(int segmentId, int dest, int offset, int size) {
         var segment = dataSegments[segmentId];
         if (!(segment instanceof PassiveDataSegment)) {
-            throw new ChicoryException(
-                    "data segment with id "
-                            + " is not a passive segment and cannot be initialized at runtime");
+            // Wasm test suite expects this trap message, even though it would be
+            // more informative to specifically identify the segment type mismatch
+            throw new WASMRuntimeException("out of bounds memory access");
         }
         write(dest, segment.getData(), offset, size);
     }

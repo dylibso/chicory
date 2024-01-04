@@ -42,7 +42,6 @@ i32.store16 <varuint> <varuint> 	$3B
 i64.store8 <varuint> <varuint> 	$3C
 i64.store16 <varuint> <varuint> 	$3D
 i64.store32 <varuint> <varuint> 	$3E
-memory.init <varuint> <varuint>	$6B
 memory.size <varuint>	$3F
 memory.grow <varuint>	$40
 i32.const <varsint32> 	$41
@@ -188,8 +187,8 @@ i64.trunc_sat_f32_s 	$FC04
 i64.trunc_sat_f32_u 	$FC05
 i64.trunc_sat_f64_s 	$FC06
 i64.trunc_sat_f64_u 	$FC07
-memory.init.fc <varuint> <varuint>	$FC08
-data.drop <varuint> <varuint>	$FC09
+memory.init <varuint> <varuint>	$FC08
+data.drop <varuint>	$FC09
 memory.copy <varuint> <varuint>	$FC0A
 memory.fill <varuint> <varuint>	$FC0B
 table.init <varuint> <varuint>	$FC0C

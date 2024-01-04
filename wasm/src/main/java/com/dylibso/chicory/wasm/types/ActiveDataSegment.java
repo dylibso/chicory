@@ -1,8 +1,12 @@
 package com.dylibso.chicory.wasm.types;
 
 public class ActiveDataSegment extends DataSegment {
-    private long idx;
-    private Instruction[] offset;
+    private final long idx;
+    private final Instruction[] offset;
+
+    public ActiveDataSegment(Instruction[] offset, byte[] data) {
+        this(0, offset, data);
+    }
 
     public ActiveDataSegment(long idx, Instruction[] offset, byte[] data) {
         super(data);

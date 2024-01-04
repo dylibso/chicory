@@ -643,22 +643,24 @@ public final class Parser {
         var dataSegments = new DataSegment[(int) dataSegmentCount];
 
         for (var i = 0; i < dataSegmentCount; i++) {
-            var memidx = readVarUInt32(buffer);
-            // if memory idx == 0, then this is an active datasegment
-            // if memory idx == 1, then this is a passive datasegment
-            // TODO won't this break once we support multi-memory?
-            if (memidx == 0) {
+            var mode = readVarUInt32(buffer);
+            if (mode == 0) {
                 var offset = parseExpression(buffer);
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
                 buffer.get(data);
-                dataSegments[i] = new ActiveDataSegment(memidx, offset, data);
-            } else if (memidx == 1) {
+                dataSegments[i] = new ActiveDataSegment(offset, data);
+            } else if (mode == 1) {
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
                 buffer.get(data);
                 dataSegments[i] = new PassiveDataSegment(data);
+            } else if (mode == 2) {
+                var memoryId = readVarUInt32(buffer);
+                var offset = parseExpression(buffer);
+                byte[] data = new byte[(int) readVarUInt32(buffer)];
+                buffer.get(data);
+                dataSegments[i] = new ActiveDataSegment(memoryId, offset, data);
             } else {
-                throw new ChicoryException(
-                        "Failed to parse data segment with data mode: " + memidx);
+                throw new ChicoryException("Failed to parse data segment with data mode: " + mode);
             }
         }
 
