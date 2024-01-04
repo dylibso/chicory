@@ -86,6 +86,7 @@ public class Machine {
     }
 
     void eval(List<Instruction> code) throws ChicoryException {
+
         try {
             var frame = callStack.peek();
             boolean shouldReturn = false;
@@ -93,7 +94,8 @@ public class Machine {
             loop:
             while (frame.pc < code.size()) {
                 if (shouldReturn) return;
-                var instruction = code.get(frame.pc++);
+                var instruction = code.get(frame.pc);
+                frame.pc++;
                 LOGGER.log(
                         System.Logger.Level.DEBUG,
                         "func="
@@ -320,42 +322,42 @@ public class Machine {
                     case I32_LOAD:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getI32(ptr);
+                            var val = instance.getMemory().readI32(ptr);
                             this.stack.push(val);
                             break;
                         }
                     case I64_LOAD:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getI64(ptr);
+                            var val = instance.getMemory().readI64(ptr);
                             this.stack.push(val);
                             break;
                         }
                     case F32_LOAD:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getF32(ptr);
+                            var val = instance.getMemory().readF32(ptr);
                             this.stack.push(val);
                             break;
                         }
                     case F64_LOAD:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getF64(ptr);
+                            var val = instance.getMemory().readF64(ptr);
                             this.stack.push(val);
                             break;
                         }
                     case I32_LOAD8_S:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getI8(ptr);
+                            var val = instance.getMemory().readI8(ptr);
                             this.stack.push(val);
                             break;
                         }
                     case I64_LOAD8_S:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getI8(ptr);
+                            var val = instance.getMemory().readI8(ptr);
                             // TODO a bit hacky
                             this.stack.push(Value.i64(val.asInt()));
                             break;
@@ -363,14 +365,14 @@ public class Machine {
                     case I32_LOAD8_U:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getI8U(ptr);
+                            var val = instance.getMemory().readU8(ptr);
                             this.stack.push(val);
                             break;
                         }
                     case I64_LOAD8_U:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getI8U(ptr);
+                            var val = instance.getMemory().readU8(ptr);
                             // TODO a bit hacky
                             this.stack.push(Value.i64(val.asInt()));
                             break;
@@ -378,14 +380,14 @@ public class Machine {
                     case I32_LOAD16_S:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getI16(ptr);
+                            var val = instance.getMemory().readI16(ptr);
                             this.stack.push(val);
                             break;
                         }
                     case I64_LOAD16_S:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getI16(ptr);
+                            var val = instance.getMemory().readI16(ptr);
                             // TODO this is a bit hacky
                             this.stack.push(Value.i64(val.asInt()));
                             break;
@@ -393,14 +395,14 @@ public class Machine {
                     case I32_LOAD16_U:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getU16(ptr);
+                            var val = instance.getMemory().readU16(ptr);
                             this.stack.push(val);
                             break;
                         }
                     case I64_LOAD16_U:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getU16(ptr);
+                            var val = instance.getMemory().readU16(ptr);
                             // TODO this is a bit hacky
                             this.stack.push(Value.i64(val.asInt()));
                             break;
@@ -408,7 +410,7 @@ public class Machine {
                     case I64_LOAD32_S:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getI32(ptr);
+                            var val = instance.getMemory().readI32(ptr);
                             // TODO this is a bit hacky
                             this.stack.push(Value.i64(val.asInt()));
                             break;
@@ -416,7 +418,7 @@ public class Machine {
                     case I64_LOAD32_U:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().getU32(ptr);
+                            var val = instance.getMemory().readU32(ptr);
                             this.stack.push(val);
                             break;
                         }
@@ -424,7 +426,7 @@ public class Machine {
                         {
                             var value = this.stack.pop().asInt();
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().putI32(ptr, value);
+                            instance.getMemory().writeI32(ptr, value);
                             break;
                         }
                     case I32_STORE16:
@@ -432,28 +434,28 @@ public class Machine {
                         {
                             var value = this.stack.pop().asShort();
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().putShort(ptr, value);
+                            instance.getMemory().writeShort(ptr, value);
                             break;
                         }
                     case I64_STORE:
                         {
                             var value = this.stack.pop().asLong();
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().putI64(ptr, value);
+                            instance.getMemory().writeLong(ptr, value);
                             break;
                         }
                     case F32_STORE:
                         {
                             var value = this.stack.pop().asFloat();
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().putF32(ptr, value);
+                            instance.getMemory().writeF32(ptr, value);
                             break;
                         }
                     case F64_STORE:
                         {
                             var value = this.stack.pop().asDouble();
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().putF64(ptr, value);
+                            instance.getMemory().writeF64(ptr, value);
                             break;
                         }
                     case MEMORY_GROW:
@@ -468,14 +470,14 @@ public class Machine {
                         {
                             var value = this.stack.pop().asByte();
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().putByte(ptr, value);
+                            instance.getMemory().writeByte(ptr, value);
                             break;
                         }
                     case I64_STORE32:
                         {
                             var value = this.stack.pop().asLong();
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().putI32(ptr, (int) value);
+                            instance.getMemory().writeI32(ptr, (int) value);
                             break;
                         }
                     case MEMORY_SIZE:
@@ -1712,7 +1714,6 @@ public class Machine {
                             this.stack.push(Value.i64((long) tos));
                             break;
                         }
-                    case MEMORY_INIT_FC:
                     case MEMORY_INIT:
                         {
                             var segmentId = (int) operands[0];
@@ -1729,10 +1730,8 @@ public class Machine {
                         }
                     case DATA_DROP:
                         {
-                            // do nothing
-                            // TODO we'll need to tell the segment it's been dropped which changes
-                            // the behavior
-                            // next time we try to do memory.init
+                            var segment = (int) operands[0];
+                            instance.getMemory().drop(segment);
                             break;
                         }
                     case MEMORY_COPY:
@@ -1768,7 +1767,7 @@ public class Machine {
             }
             throw new WASMRuntimeException(e.getMessage(), e);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("undefined element: " + e.getMessage(), e);
+            throw new WASMRuntimeException("undefined element " + e.getMessage(), e);
         } catch (Exception e) {
             throw new WASMRuntimeException("An underlying Java exception occurred", e);
         }
