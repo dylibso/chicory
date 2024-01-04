@@ -1730,10 +1730,6 @@ public class Machine {
                         }
                     case DATA_DROP:
                         {
-                            // do nothing
-                            // TODO we'll need to tell the segment it's been dropped which changes
-                            // the behavior
-                            // next time we try to do memory.init
                             var segment = (int) operands[0];
                             instance.getMemory().drop(segment);
                             break;
