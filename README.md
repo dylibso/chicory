@@ -247,6 +247,7 @@ Some nice to have but probably separate items:
 
 * `mvn clean install` to run all of the project's tests and install the library in your local repo
 * `mvn spotless:apply` to autoformat the code
+* `./scripts/compile-resources.sh` will recompile and regenerate the `resources/compiled` folders
 
 ### Modules
 
@@ -266,31 +267,13 @@ The [wasm-support-plugin](wasm-support-plugin/) package is a maven plugin that h
 The [wasm](wasm/) package contains a lot of the core Wasm types and the binary parser.
 It can be useful as an independent library for using wasm in Java.
 
-There are a few scripts that we use.
-
-```bash
-cd wasm
-
-# Recompiles all the wasm modules we use in the tests
-# Only needs to be run if the code for the test wasm modules are changes
-sh scripts/compile-tests.sh
-```
-
 #### test-gen-plugin
 
 The [test-gen-plugin](test-gen-plugin/) package is a maven plugin that handles the test generation that exercises both the wasm package and the runtime package. Tests are parsed from the [Wasm testsuite](https://github.com/WebAssembly/testsuite) and generate Java JUnit tests.
 
 #### runtime package
 
-The [runtime](runtime/) packages contains the actual Chicory runtime. There are a few scripts we use here too:
-
-```bash
-cd runtime
-
-# Recompiles all the wasm modules we use in the tests
-# Only needs to be run if the code for the test wasm modules are changes
-sh scripts/compile-tests.sh
-```
+The [runtime](runtime/) packages contains the actual Chicory runtime.
 
 #### logging
 
