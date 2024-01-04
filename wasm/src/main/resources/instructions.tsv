@@ -188,7 +188,7 @@ i64.trunc_sat_f32_s 	$FC04
 i64.trunc_sat_f32_u 	$FC05
 i64.trunc_sat_f64_s 	$FC06
 i64.trunc_sat_f64_u 	$FC07
-memory.init.fc <varuint> <varuint> <varuint>	$FC08
+memory.init.fc <varuint> <varuint>	$FC08
 data.drop <varuint> <varuint>	$FC09
 memory.copy <varuint> <varuint>	$FC0A
 memory.fill <varuint> <varuint>	$FC0B
