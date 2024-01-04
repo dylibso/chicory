@@ -1771,7 +1771,6 @@ public class Machine {
             }
             throw new WASMRuntimeException(e.getMessage(), e);
         } catch (IndexOutOfBoundsException e) {
-            e.printStackTrace();
             throw new WASMRuntimeException("undefined element " + e.getMessage(), e);
         } catch (Exception e) {
             throw new WASMRuntimeException("An underlying Java exception occurred", e);

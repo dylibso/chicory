@@ -131,11 +131,7 @@ public final class Memory {
     }
 
     public String readString(int addr, int len) {
-        try {
-            return new String(readBytes(addr, len), StandardCharsets.UTF_8);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
-        }
+        return new String(readBytes(addr, len), StandardCharsets.UTF_8);
     }
 
     public void write(int addr, byte[] data) {
@@ -146,7 +142,7 @@ public final class Memory {
         try {
             buffer.position(addr);
             buffer.put(data, offset, size);
-        } catch (IndexOutOfBoundsException e) {
+        } catch (Exception e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
@@ -165,7 +161,7 @@ public final class Memory {
             buffer.position(addr);
             buffer.get(bytes);
             return bytes;
-        } catch (IndexOutOfBoundsException e) {
+        } catch (Exception e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
