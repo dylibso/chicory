@@ -86,6 +86,7 @@ public class Machine {
     }
 
     void eval(List<Instruction> code) throws ChicoryException {
+
         try {
             var frame = callStack.peek();
             boolean shouldReturn = false;
@@ -363,14 +364,14 @@ public class Machine {
                     case I32_LOAD8_U:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readI8U(ptr);
+                            var val = instance.getMemory().readU8(ptr);
                             this.stack.push(val);
                             break;
                         }
                     case I64_LOAD8_U:
                         {
                             var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readI8U(ptr);
+                            var val = instance.getMemory().readU8(ptr);
                             // TODO a bit hacky
                             this.stack.push(Value.i64(val.asInt()));
                             break;
@@ -1733,6 +1734,8 @@ public class Machine {
                             // TODO we'll need to tell the segment it's been dropped which changes
                             // the behavior
                             // next time we try to do memory.init
+                            var segment = (int) operands[0];
+                            instance.getMemory().drop(segment);
                             break;
                         }
                     case MEMORY_COPY:
@@ -1768,7 +1771,8 @@ public class Machine {
             }
             throw new WASMRuntimeException(e.getMessage(), e);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("undefined element: " + e.getMessage(), e);
+            e.printStackTrace();
+            throw new WASMRuntimeException("undefined element " + e.getMessage(), e);
         } catch (Exception e) {
             throw new WASMRuntimeException("An underlying Java exception occurred", e);
         }

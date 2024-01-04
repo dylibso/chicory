@@ -246,9 +246,9 @@ public final class Memory {
         }
     }
 
-    public Value readI8U(int addr) {
+    public Value readU8(int addr) {
         try {
-            return Value.i32(read(addr));
+            return Value.i32(read(addr) & 0xFF);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
@@ -302,5 +302,9 @@ public final class Memory {
 
     public void copy(int dest, int src, int size) {
         write(dest, readBytes(src, size));
+    }
+
+    public void drop(int segment) {
+        dataSegments[segment] = PassiveDataSegment.EMPTY;
     }
 }
