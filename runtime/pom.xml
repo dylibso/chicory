@@ -91,8 +91,6 @@
             Assertion failures -->
             <!-- call indirect failures -->
             <!-- Errors -->
-            SpecV1NamesTest.test481, SpecV1AddressTest.test64,
-            SpecV1AddressTest.test186,
             <!-- Invalid and Malformed failures, can be ignored for now -->
             SpecV1AddressTest.test75, SpecV1AddressTest.test76,
             SpecV1AddressTest.test77, SpecV1AddressTest.test78, SpecV1AddressTest.test79,
