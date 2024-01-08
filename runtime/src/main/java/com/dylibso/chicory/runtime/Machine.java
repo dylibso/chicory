@@ -156,15 +156,7 @@ public class Machine {
                     case BR:
                         {
                             frame.doControlTransfer = true;
-                            var size = this.stack.size();
-                            frame.stackBefore = new Value[size];
-                            for (int i = 0; i < size; i++) {
-                                frame.stackBefore[i] = this.stack.pop();
-                            }
-                            for (int i = size - 1; i >= 0; i--) {
-                                this.stack.push(frame.stackBefore[i]);
-                            }
-
+                            this.stack.setRestoreFrame(frame);
                             frame.pc = instruction.getLabelTrue();
                             break;
                         }
@@ -174,14 +166,7 @@ public class Machine {
                             var pred = predValue.asInt();
 
                             frame.doControlTransfer = true;
-                            var size = this.stack.size();
-                            frame.stackBefore = new Value[size];
-                            for (int i = 0; i < size; i++) {
-                                frame.stackBefore[i] = this.stack.pop();
-                            }
-                            for (int i = size - 1; i >= 0; i--) {
-                                this.stack.push(frame.stackBefore[i]);
-                            }
+                            this.stack.setRestoreFrame(frame);
 
                             if (pred == 0) {
                                 frame.pc = instruction.getLabelFalse();
@@ -197,14 +182,7 @@ public class Machine {
                             var pred = predValue.asInt();
 
                             frame.doControlTransfer = true;
-                            var size = this.stack.size();
-                            frame.stackBefore = new Value[size];
-                            for (int i = 0; i < size; i++) {
-                                frame.stackBefore[i] = this.stack.pop();
-                            }
-                            for (int i = size - 1; i >= 0; i--) {
-                                this.stack.push(frame.stackBefore[i]);
-                            }
+                            this.stack.setRestoreFrame(frame);
 
                             if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
                                 // choose default
@@ -260,21 +238,36 @@ public class Machine {
                                 // reset the control transfer
                                 frame.doControlTransfer = false;
 
-                                var valuesToBePushedBack =
-                                        Math.min(
-                                                frame.numberOfValuesToReturn,
-                                                frame.stackBefore.length);
+//                                var valuesToBePushedBack =
+//                                        Math.min(
+//                                                frame.numberOfValuesToReturn,
+//                                                frame.stackBefore.size());
 
                                 // pop the values from the stack
-                                Value[] tmp = new Value[valuesToBePushedBack];
-                                for (int i = 0; i < valuesToBePushedBack; i++) {
-                                    tmp[i] = this.stack.pop();
+//                                Value[] tmp = new Value[valuesToBePushedBack];
+//                                for (int i = 0; i < valuesToBePushedBack; i++) {
+//                                    tmp[i] = this.stack.pop();
+//                                }
+                                this.stack.setRestoreFrame(null);
+
+                                Value[] returns = new Value[frame.numberOfValuesToReturn];
+                                for (int i = 0; i < returns.length; i++) {
+                                    if (this.stack.size() > 0)
+                                        returns[i] = this.stack.pop();
+                                    else if (!frame.stackBefore.empty())
+                                        returns[i] = frame.stackBefore.pop();
                                 }
+
 
                                 // drop everything till the previous label
                                 while (this.stack.size() > frame.stackSizeBeforeBlock) {
                                     this.stack.pop();
                                 }
+
+//                                this.stack.setRestoreFrame(null);
+//                                while (this.stack.size() > 0) {
+//                                    this.stack.pop();
+//                                }
 
                                 // this is mostly empirical
                                 // if a branch have been taken we restore the consumed value from
@@ -285,19 +278,22 @@ public class Machine {
                                     this.stack.push(frame.branchConditionValue);
                                 }
 
-                                // Push the values to the stack.
-                                for (int i = valuesToBePushedBack - 1; i >= 0; i--) {
-                                    this.stack.push(tmp[i]);
-                                }
 
-                                if (frame.stackBefore.length > this.stack.size()) {
-                                    var size =
-                                            frame.stackBefore.length
-                                                    - this.stack.size()
-                                                    - valuesToBePushedBack;
-                                    for (int i = size - 1; i >= 0; i--) {
-                                        this.stack.push(frame.stackBefore[i]);
-                                    }
+                                // Push the values to the stack.
+//                                for (int i = valuesToBePushedBack - 1; i >= 0; i--) {
+//                                    this.stack.push(tmp[i]);
+//                                }
+//                                while (!frame.stackBefore.empty()) {
+//                                    this.stack.push(frame.stackBefore.pop());
+//                                }
+//                                while (!frame.stackBefore.empty()) {
+//                                    this.stack.push(frame.stackBefore.pop());
+//                                }
+
+                                for (int i = 0; i < returns.length; i++) {
+                                    Value value = returns[returns.length - 1 - i];
+                                    if (value != null)
+                                        this.stack.push(value);
                                 }
                             }
 

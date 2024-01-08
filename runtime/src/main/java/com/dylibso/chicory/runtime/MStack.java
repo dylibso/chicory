@@ -15,6 +15,12 @@ public class MStack {
         this.stack = new Stack<>();
     }
 
+    private StackFrame unwindFrame;
+
+    public void setRestoreFrame(StackFrame frame) {
+        this.unwindFrame = frame;
+    }
+
     public void push(Value v) {
         if (v == null) throw new RuntimeException("Can't push null value onto stack");
         this.stack.push(v);
@@ -22,6 +28,9 @@ public class MStack {
 
     public Value pop() {
         var r = this.stack.pop();
+        if (unwindFrame != null) {
+            unwindFrame.stackBefore.push(r);
+        }
         if (r == null) throw new RuntimeException("Stack underflow exception");
         return r;
     }
