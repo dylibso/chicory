@@ -156,30 +156,15 @@ public class Machine {
                     case ELSE:
                     case BR:
                         {
-                            frame.doControlTransfer = true;
-                            this.stack.setRestoreFrame(null);
-                            var prevFrame = this.stack.getRestoreFrame();
-                            if (prevFrame != null) {
-                                frame.stackBefore = prevFrame.stackBefore;
-                                prevFrame.stackBefore = new Stack<>();
-                            }
-                            this.stack.setRestoreFrame(frame);
+                            prepareControlTransfer(frame, false);
+
                             frame.pc = instruction.getLabelTrue();
                             break;
                         }
                     case BR_IF:
                         {
-                            var prevFrame = this.stack.getRestoreFrame();
-                            this.stack.setRestoreFrame(null);
-                            var predValue = this.stack.pop();
+                            var predValue = prepareControlTransfer(frame, true);
                             var pred = predValue.asInt();
-
-                            frame.doControlTransfer = true;
-                            if (prevFrame != null) {
-                                frame.stackBefore = prevFrame.stackBefore;
-                                prevFrame.stackBefore = new Stack<>();
-                            }
-                            this.stack.setRestoreFrame(frame);
 
                             if (pred == 0) {
                                 frame.pc = instruction.getLabelFalse();
@@ -191,17 +176,8 @@ public class Machine {
                         }
                     case BR_TABLE:
                         {
-                            var prevFrame = this.stack.getRestoreFrame();
-                            this.stack.setRestoreFrame(null);
-                            var predValue = this.stack.pop();
+                            var predValue = prepareControlTransfer(frame, true);
                             var pred = predValue.asInt();
-
-                            frame.doControlTransfer = true;
-                            if (prevFrame != null) {
-                                frame.stackBefore = prevFrame.stackBefore;
-                                prevFrame.stackBefore = new Stack<>();
-                            }
-                            this.stack.setRestoreFrame(frame);
 
                             if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
                                 // choose default
@@ -1766,6 +1742,23 @@ public class Machine {
         }
     }
 
+    private Value prepareControlTransfer(StackFrame frame, boolean consume) {
+        frame.doControlTransfer = true;
+        var prevFrame = this.stack.getRestoreFrame();
+        this.stack.setRestoreFrame(null);
+        Value predValue = null;
+        if (consume) {
+            predValue = this.stack.pop();
+        }
+        if (prevFrame != null) {
+            frame.stackBefore = prevFrame.stackBefore;
+            prevFrame.stackBefore = new Stack<>();
+        }
+        this.stack.setRestoreFrame(frame);
+
+        return predValue;
+    }
+
     private void doControlTransfer(StackFrame frame) {
         // reset the control transfer
         frame.doControlTransfer = false;
@@ -1787,7 +1780,6 @@ public class Machine {
         // this is mostly empirical
         // if a branch have been taken we restore the consumed value from
         // the stack
-        // check if we can refactor this part
         if (frame.branchConditionValue != null && frame.branchConditionValue.asInt() > 0) {
             this.stack.push(frame.branchConditionValue);
         }
