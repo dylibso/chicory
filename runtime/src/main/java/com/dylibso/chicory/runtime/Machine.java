@@ -1744,17 +1744,18 @@ public class Machine {
 
     private Value prepareControlTransfer(StackFrame frame, boolean consume) {
         frame.doControlTransfer = true;
-        var prevFrame = this.stack.getRestoreFrame();
-        this.stack.setRestoreFrame(null);
+
+        var unwindStack = this.stack.getUnwindFrame();
+        this.stack.resetUnwindFrame();
         Value predValue = null;
         if (consume) {
             predValue = this.stack.pop();
         }
-        if (prevFrame != null) {
-            frame.stackBefore = prevFrame.stackBefore;
-            prevFrame.stackBefore = new Stack<>();
+        if (unwindStack == null) {
+            this.stack.setUnwindFrame(new Stack());
+        } else {
+            this.stack.setUnwindFrame(unwindStack);
         }
-        this.stack.setRestoreFrame(frame);
 
         return predValue;
     }
@@ -1762,12 +1763,12 @@ public class Machine {
     private void doControlTransfer(StackFrame frame) {
         // reset the control transfer
         frame.doControlTransfer = false;
-        this.stack.setRestoreFrame(null);
+        var unwindStack = this.stack.getUnwindFrame();
+        this.stack.resetUnwindFrame();
 
         Value[] returns = new Value[frame.numberOfValuesToReturn];
         for (int i = 0; i < returns.length; i++) {
             if (this.stack.size() > 0) returns[i] = this.stack.pop();
-            else if (!frame.stackBefore.empty()) returns[i] = frame.stackBefore.pop();
         }
 
         // drop everything till the previous label
@@ -1785,8 +1786,8 @@ public class Machine {
         }
 
         if (frame.blockDepth == 0) {
-            while (!frame.stackBefore.empty()) {
-                this.stack.push(frame.stackBefore.pop());
+            while (!unwindStack.empty()) {
+                this.stack.push(unwindStack.pop());
             }
         }
 

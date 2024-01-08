@@ -5,7 +5,6 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Stack;
 
 /**
  * Represents a frame. It's maybe a misonomer to call it a stack frame.
@@ -24,7 +23,6 @@ public class StackFrame {
     public int blockDepth;
     private Instance instance;
     public boolean doControlTransfer = false;
-    public Stack<Value> stackBefore = new Stack();
     public boolean isControlFrame = true;
     public int stackSizeBeforeBlock;
     public int numberOfValuesToReturn = 0;

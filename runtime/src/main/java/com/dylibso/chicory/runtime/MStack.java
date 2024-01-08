@@ -15,13 +15,17 @@ public class MStack {
         this.stack = new Stack<>();
     }
 
-    private StackFrame unwindFrame;
+    private Stack<Value> unwindFrame;
 
-    public void setRestoreFrame(StackFrame frame) {
-        this.unwindFrame = frame;
+    public void setUnwindFrame(Stack<Value> stack) {
+        this.unwindFrame = stack;
     }
 
-    public StackFrame getRestoreFrame() {
+    public void resetUnwindFrame() {
+        this.unwindFrame = null;
+    }
+
+    public Stack<Value> getUnwindFrame() {
         return this.unwindFrame;
     }
 
@@ -33,7 +37,7 @@ public class MStack {
     public Value pop() {
         var r = this.stack.pop();
         if (unwindFrame != null) {
-            unwindFrame.stackBefore.push(r);
+            unwindFrame.push(r);
         }
         if (r == null) throw new RuntimeException("Stack underflow exception");
         return r;
