@@ -144,7 +144,8 @@ public class Machine {
                             frame.blockDepth++;
                             frame.isControlFrame = false;
 
-                            var pred = this.stack.pop().asInt();
+                            var predValue = this.stack.pop();
+                            var pred = predValue.asInt();
                             if (pred == 0) {
                                 frame.pc = instruction.getLabelFalse();
                             } else {
@@ -156,16 +157,28 @@ public class Machine {
                     case BR:
                         {
                             frame.doControlTransfer = true;
+                            this.stack.setRestoreFrame(null);
+                            var prevFrame = this.stack.getRestoreFrame();
+                            if (prevFrame != null) {
+                                frame.stackBefore = prevFrame.stackBefore;
+                                prevFrame.stackBefore = new Stack<>();
+                            }
                             this.stack.setRestoreFrame(frame);
                             frame.pc = instruction.getLabelTrue();
                             break;
                         }
                     case BR_IF:
                         {
+                            var prevFrame = this.stack.getRestoreFrame();
+                            this.stack.setRestoreFrame(null);
                             var predValue = this.stack.pop();
                             var pred = predValue.asInt();
 
                             frame.doControlTransfer = true;
+                            if (prevFrame != null) {
+                                frame.stackBefore = prevFrame.stackBefore;
+                                prevFrame.stackBefore = new Stack<>();
+                            }
                             this.stack.setRestoreFrame(frame);
 
                             if (pred == 0) {
@@ -178,10 +191,16 @@ public class Machine {
                         }
                     case BR_TABLE:
                         {
+                            var prevFrame = this.stack.getRestoreFrame();
+                            this.stack.setRestoreFrame(null);
                             var predValue = this.stack.pop();
                             var pred = predValue.asInt();
 
                             frame.doControlTransfer = true;
+                            if (prevFrame != null) {
+                                frame.stackBefore = prevFrame.stackBefore;
+                                prevFrame.stackBefore = new Stack<>();
+                            }
                             this.stack.setRestoreFrame(frame);
 
                             if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
@@ -235,66 +254,7 @@ public class Machine {
                     case END:
                         {
                             if (frame.doControlTransfer && frame.isControlFrame) {
-                                // reset the control transfer
-                                frame.doControlTransfer = false;
-
-//                                var valuesToBePushedBack =
-//                                        Math.min(
-//                                                frame.numberOfValuesToReturn,
-//                                                frame.stackBefore.size());
-
-                                // pop the values from the stack
-//                                Value[] tmp = new Value[valuesToBePushedBack];
-//                                for (int i = 0; i < valuesToBePushedBack; i++) {
-//                                    tmp[i] = this.stack.pop();
-//                                }
-                                this.stack.setRestoreFrame(null);
-
-                                Value[] returns = new Value[frame.numberOfValuesToReturn];
-                                for (int i = 0; i < returns.length; i++) {
-                                    if (this.stack.size() > 0)
-                                        returns[i] = this.stack.pop();
-                                    else if (!frame.stackBefore.empty())
-                                        returns[i] = frame.stackBefore.pop();
-                                }
-
-
-                                // drop everything till the previous label
-                                while (this.stack.size() > frame.stackSizeBeforeBlock) {
-                                    this.stack.pop();
-                                }
-
-//                                this.stack.setRestoreFrame(null);
-//                                while (this.stack.size() > 0) {
-//                                    this.stack.pop();
-//                                }
-
-                                // this is mostly empirical
-                                // if a branch have been taken we restore the consumed value from
-                                // the stack
-                                // check if we can refactor this part
-                                if (frame.branchConditionValue != null
-                                        && frame.branchConditionValue.asInt() > 0) {
-                                    this.stack.push(frame.branchConditionValue);
-                                }
-
-
-                                // Push the values to the stack.
-//                                for (int i = valuesToBePushedBack - 1; i >= 0; i--) {
-//                                    this.stack.push(tmp[i]);
-//                                }
-//                                while (!frame.stackBefore.empty()) {
-//                                    this.stack.push(frame.stackBefore.pop());
-//                                }
-//                                while (!frame.stackBefore.empty()) {
-//                                    this.stack.push(frame.stackBefore.pop());
-//                                }
-
-                                for (int i = 0; i < returns.length; i++) {
-                                    Value value = returns[returns.length - 1 - i];
-                                    if (value != null)
-                                        this.stack.push(value);
-                                }
+                                doControlTransfer(frame);
                             }
 
                             // if this is the last end, then we're done with
@@ -1803,6 +1763,46 @@ public class Machine {
             throw new WASMRuntimeException("undefined element: " + e.getMessage(), e);
         } catch (Exception e) {
             throw new WASMRuntimeException("An underlying Java exception occurred", e);
+        }
+    }
+
+    private void doControlTransfer(StackFrame frame) {
+        // reset the control transfer
+        frame.doControlTransfer = false;
+        this.stack.setRestoreFrame(null);
+
+        Value[] returns = new Value[frame.numberOfValuesToReturn];
+        for (int i = 0; i < returns.length; i++) {
+            if (this.stack.size() > 0) returns[i] = this.stack.pop();
+            else if (!frame.stackBefore.empty()) returns[i] = frame.stackBefore.pop();
+        }
+
+        // drop everything till the previous label
+        if (frame.blockDepth > 0) {
+            while (this.stack.size() > frame.stackSizeBeforeBlock) {
+                this.stack.pop();
+            }
+        }
+
+        // this is mostly empirical
+        // if a branch have been taken we restore the consumed value from
+        // the stack
+        // check if we can refactor this part
+        if (frame.branchConditionValue != null && frame.branchConditionValue.asInt() > 0) {
+            this.stack.push(frame.branchConditionValue);
+        }
+
+        if (frame.blockDepth == 0) {
+            while (!frame.stackBefore.empty()) {
+                this.stack.push(frame.stackBefore.pop());
+            }
+        }
+
+        for (int i = 0; i < returns.length; i++) {
+            Value value = returns[returns.length - 1 - i];
+            if (value != null) {
+                this.stack.push(value);
+            }
         }
     }
 

@@ -25,7 +25,7 @@ public class StackFrame {
     private Instance instance;
     public boolean doControlTransfer = false;
     public Stack<Value> stackBefore = new Stack();
-    public boolean isControlFrame = false;
+    public boolean isControlFrame = true;
     public int stackSizeBeforeBlock;
     public int numberOfValuesToReturn = 0;
     public Value branchConditionValue = null;

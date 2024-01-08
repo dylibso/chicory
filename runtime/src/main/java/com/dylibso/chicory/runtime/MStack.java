@@ -21,6 +21,10 @@ public class MStack {
         this.unwindFrame = frame;
     }
 
+    public StackFrame getRestoreFrame() {
+        return this.unwindFrame;
+    }
+
     public void push(Value v) {
         if (v == null) throw new RuntimeException("Can't push null value onto stack");
         this.stack.push(v);
