@@ -2,6 +2,8 @@ package com.dylibso.chicory.maven;
 
 import static com.dylibso.chicory.maven.Constants.SPEC_JSON;
 
+import com.dylibso.chicory.maven.wast.Wast;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.utils.SourceRoot;
 import java.io.File;
 import java.util.ArrayList;
@@ -70,8 +72,9 @@ public class TestGenMojo extends AbstractMojo {
 
     /**
      * Wabt version
+     * Accepts a specific version or "latest" to query the GH API
      */
-    @Parameter(required = true, property = "wabtVersion", defaultValue = "latest")
+    @Parameter(required = true, property = "wabtVersion", defaultValue = "1.0.34")
     private String wabtVersion;
 
     @Parameter(
@@ -167,15 +170,43 @@ public class TestGenMojo extends AbstractMojo {
                                                     + wastFile.getAbsolutePath()
                                                     + " not found");
                                 }
-                                var wasmFilesFolder =
-                                        wast2Json.execute(
-                                                testsuiteFolder.toPath().resolve(spec).toFile());
-                                var cu =
-                                        testGen.generate(
+                                var retries = 3;
+                                File specFile = null;
+                                File wasmFilesFolder = null;
+                                Wast wast = null;
+
+                                while (retries > 0) {
+                                    try {
+                                        wasmFilesFolder =
+                                                wast2Json.execute(
+                                                        testsuiteFolder
+                                                                .toPath()
+                                                                .resolve(spec)
+                                                                .toFile());
+
+                                        specFile =
                                                 wasmFilesFolder
                                                         .toPath()
                                                         .resolve(SPEC_JSON)
-                                                        .toFile(),
+                                                        .toFile();
+
+                                        assert (specFile.exists());
+
+                                        wast = new ObjectMapper().readValue(specFile, Wast.class);
+                                        break;
+                                    } catch (Exception e) {
+                                        if (retries > 0) {
+                                            --retries;
+                                        } else {
+                                            throw new RuntimeException(e);
+                                        }
+                                    }
+                                }
+                                var name = specFile.toPath().getParent().toFile().getName();
+                                var cu =
+                                        testGen.generate(
+                                                name,
+                                                wast,
                                                 wasmFilesFolder,
                                                 cleanedOrderedWasts.contains(spec),
                                                 importSourceRoot);

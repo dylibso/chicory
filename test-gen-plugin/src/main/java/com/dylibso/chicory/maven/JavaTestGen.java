@@ -8,15 +8,12 @@ import com.dylibso.chicory.maven.wast.Command;
 import com.dylibso.chicory.maven.wast.CommandType;
 import com.dylibso.chicory.maven.wast.WasmValue;
 import com.dylibso.chicory.maven.wast.Wast;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.comments.LineComment;
-import com.github.javaparser.ast.expr.ClassExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
@@ -27,7 +24,6 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.utils.SourceRoot;
 import com.github.javaparser.utils.StringEscapeUtils;
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,10 +36,6 @@ import org.apache.maven.plugin.logging.Log;
 public class JavaTestGen {
 
     private static final String TEST_MODULE_NAME = "testModule";
-
-    private static final JavaParser JAVA_PARSER = new JavaParser();
-
-    private final ObjectMapper mapper;
 
     private final Log log;
 
@@ -58,20 +50,15 @@ public class JavaTestGen {
         this.baseDir = baseDir;
         this.sourceTargetFolder = sourceTargetFolder;
         this.excludedTests = excludedTests;
-        this.mapper = new ObjectMapper();
     }
 
     public CompilationUnit generate(
-            File specFile, File wasmFilesFolder, boolean ordered, SourceRoot importsSourceRoot) {
-        Wast wast;
-        try {
-            wast = mapper.readValue(specFile, Wast.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
+            String name,
+            Wast wast,
+            File wasmFilesFolder,
+            boolean ordered,
+            SourceRoot importsSourceRoot) {
         var cu = new CompilationUnit("com.dylibso.chicory.test.gen");
-        var name = specFile.toPath().getParent().toFile().getName();
         var testName = "SpecV1" + capitalize(escapedCamelCase(name)) + "Test";
         var importsName = "SpecV1" + capitalize(escapedCamelCase(name)) + "HostFuncs";
         cu.setStorage(sourceTargetFolder.toPath().resolve(testName + ".java"));
@@ -115,12 +102,7 @@ public class JavaTestGen {
         var testClass = cu.addClass(testName);
         if (ordered) {
             testClass.addSingleMemberAnnotation(
-                    "TestMethodOrder",
-                    new ClassExpr(
-                            JAVA_PARSER
-                                    .parseType("MethodOrderer.OrderAnnotation")
-                                    .getResult()
-                                    .get()));
+                    "TestMethodOrder", new NameExpr("MethodOrderer.OrderAnnotation.class"));
             testClass.addSingleMemberAnnotation(
                     "TestInstance",
                     new FieldAccessExpr(

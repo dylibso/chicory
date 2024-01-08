@@ -99,11 +99,19 @@ public class Wast2JsonWrapper {
         final File finalDestination =
                 new File(wabtDownloadTargetFolder, new File(url.getFile()).getName());
 
-        try (ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
-                FileOutputStream fileOutputStream = new FileOutputStream(finalDestination)) {
-            fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Error downloading : " + url, e);
+        var retries = 3;
+        while (retries > 0) {
+            try (ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
+                    FileOutputStream fileOutputStream = new FileOutputStream(finalDestination)) {
+                fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+                break;
+            } catch (IOException e) {
+                --retries;
+            }
+        }
+
+        if (retries == 0) {
+            throw new IllegalArgumentException("Error downloading : " + url);
         }
     }
 
