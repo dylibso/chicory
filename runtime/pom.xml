@@ -85,7 +85,8 @@
             nop.wast,
             float_exprs.wast,
             global.wast,
-            imports.wast</orderedWastToProcess>
+            imports.wast,
+            unwind.wast</orderedWastToProcess>
           <excludedTests>
             <!--
             Assertion failures -->
