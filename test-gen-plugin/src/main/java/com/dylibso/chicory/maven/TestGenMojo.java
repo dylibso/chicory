@@ -70,8 +70,9 @@ public class TestGenMojo extends AbstractMojo {
 
     /**
      * Wabt version
+     * Accepts a specific version or "latest" to query the GH API
      */
-    @Parameter(required = true, property = "wabtVersion", defaultValue = "latest")
+    @Parameter(required = true, property = "wabtVersion", defaultValue = "1.0.34")
     private String wabtVersion;
 
     @Parameter(
