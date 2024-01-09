@@ -1,25 +1,23 @@
 package com.dylibso.chicory.wasm.types;
 
-public class Element {
-    private long tableIndex;
-    private Instruction[] expr;
-    private long[] funcIndices;
+public interface Element {
 
-    public Element(long tableIndex, Instruction[] expr, long[] funcIndices) {
-        this.tableIndex = tableIndex;
-        this.expr = expr;
-        this.funcIndices = funcIndices;
-    }
+    ElemType getElemType();
 
-    public long[] getFuncIndices() {
-        return funcIndices;
-    }
+    enum ElemType {
+        Type(0),
+        Func(1),
+        Table(2),
+        Mem(3),
+        Global(4),
+        Elem(5),
+        Data(6),
+        Start(7);
 
-    public Instruction[] getExpr() {
-        return expr;
-    }
+        private final int id;
 
-    public long getTableIndex() {
-        return tableIndex;
+        ElemType(int id) {
+            this.id = id;
+        }
     }
 }
