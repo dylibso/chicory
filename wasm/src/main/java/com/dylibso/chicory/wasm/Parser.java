@@ -9,6 +9,14 @@ import com.dylibso.chicory.wasm.types.CodeSection;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.DataSection;
 import com.dylibso.chicory.wasm.types.DataSegment;
+import com.dylibso.chicory.wasm.types.ElemData;
+import com.dylibso.chicory.wasm.types.ElemElem;
+import com.dylibso.chicory.wasm.types.ElemFunc;
+import com.dylibso.chicory.wasm.types.ElemGlobal;
+import com.dylibso.chicory.wasm.types.ElemMem;
+import com.dylibso.chicory.wasm.types.ElemStart;
+import com.dylibso.chicory.wasm.types.ElemTable;
+import com.dylibso.chicory.wasm.types.ElemType;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.ElementSection;
 import com.dylibso.chicory.wasm.types.ElementType;
@@ -33,6 +41,7 @@ import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
+import com.dylibso.chicory.wasm.types.RefType;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.Table;
@@ -50,6 +59,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Stack;
 import java.util.function.Supplier;
@@ -478,17 +488,86 @@ public final class Parser {
         var elements = new Element[(int) elementCount];
 
         for (var i = 0; i < elementCount; i++) {
-            var tableIndex = readVarUInt32(buffer);
-            var expr = parseExpression(buffer);
-            var funcIndexCount = readVarUInt32(buffer);
-            var funcIndices = new long[(int) funcIndexCount];
-            for (var j = 0; j < funcIndexCount; j++) {
-                funcIndices[j] = readVarUInt32(buffer);
-            }
-            elements[i] = new Element(tableIndex, expr, funcIndices);
+            elements[i] = parseSingleElement(buffer);
         }
 
         return new ElementSection(sectionId, sectionSize, elements);
+    }
+
+    private static Element parseSingleElement(ByteBuffer buffer) {
+        var kind = readVarUInt32(buffer);
+        switch ((int) kind) {
+            case 0:
+                {
+                    var exprs = parseExpression(buffer);
+                    assert (exprs.length == 1);
+                    var funcIndices = readFuncIndices(buffer);
+                    return new ElemType(exprs[0], funcIndices);
+                }
+            case 1:
+                {
+                    var elemkind = (int) readVarUInt32(buffer);
+                    assert (elemkind == 0x00);
+                    var funcIndices = readFuncIndices(buffer);
+                    return new ElemFunc(funcIndices);
+                }
+            case 2:
+                {
+                    var tableIndex = readVarUInt32(buffer);
+                    var exprs = parseExpression(buffer);
+                    assert (exprs.length == 1);
+                    var elemkind = (int) readVarUInt32(buffer);
+                    assert (elemkind == 0x00);
+                    var funcIndices = readFuncIndices(buffer);
+                    return new ElemTable(tableIndex, exprs[0], funcIndices);
+                }
+            case 3:
+                {
+                    var elemkind = (int) readVarUInt32(buffer);
+                    assert (elemkind == 0x00);
+                    var funcIndices = readFuncIndices(buffer);
+                    return new ElemMem(funcIndices);
+                }
+            case 4:
+                {
+                    var exprs = parseExpression(buffer);
+                    return new ElemGlobal(exprs[0], Arrays.copyOfRange(exprs, 1, exprs.length));
+                }
+            case 5:
+                {
+                    var refType = RefType.byId(readVarUInt32(buffer));
+                    var exprs = parseExpression(buffer);
+                    return new ElemElem(refType, exprs);
+                }
+            case 6:
+                {
+                    var tableIndex = readVarUInt32(buffer);
+                    var exprs1 = parseExpression(buffer);
+                    assert (exprs1.length == 1);
+                    var refType = RefType.byId(readVarUInt32(buffer));
+                    var exprs2 = parseExpression(buffer);
+                    return new ElemData(tableIndex, exprs1[0], refType, exprs2);
+                }
+            case 7:
+                {
+                    var refType = RefType.byId(readVarUInt32(buffer));
+                    var exprs = parseExpression(buffer);
+                    return new ElemStart(refType, exprs);
+                }
+            default:
+                {
+                    throw new ChicoryException("Failed to parse the elements section.");
+                }
+        }
+    }
+
+    private static long[] readFuncIndices(ByteBuffer buffer) {
+        var funcIndexCount = readVarUInt32(buffer);
+        var funcIndices = new long[(int) funcIndexCount];
+        for (var j = 0; j < funcIndexCount; j++) {
+            funcIndices[j] = readVarUInt32(buffer);
+        }
+        return funcIndices;
     }
 
     private static CodeSection parseCodeSection(

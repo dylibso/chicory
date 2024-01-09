@@ -192,9 +192,29 @@ public class Module {
                 tables[i] = module.getTableSection().getTables()[i];
                 if (module.getElementSection() != null) {
                     for (var el : module.getElementSection().getElements()) {
-                        var idx = (int) el.getTableIndex();
-                        for (var fi : el.getFuncIndices()) {
-                            tables[idx].addFuncRef((int) fi);
+                        switch (el.getElemType()) {
+                            case Type:
+                                {
+                                    var typeElem = (ElemType) el;
+                                    for (var fi : typeElem.getFuncIndices()) {
+                                        tables[0].addFuncRef((int) fi);
+                                    }
+                                    // TODO: handle offset 'e'
+                                    break;
+                                }
+                            case Table:
+                                {
+                                    var tableElem = (ElemTable) el;
+                                    var idx = (int) tableElem.getTableIndex();
+                                    for (var fi : tableElem.getFuncIndices()) {
+                                        tables[idx].addFuncRef((int) fi);
+                                    }
+                                    // TODO: handle offset 'e'
+                                    break;
+                                }
+                            default:
+                                throw new ChicoryException(
+                                        "Elment type: " + el.getElemType() + " not yet supported");
                         }
                     }
                 }
