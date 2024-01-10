@@ -4,6 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.dylibso.chicory.wasm.types.*;
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -107,8 +110,18 @@ public class ParserTest {
 
     @Test
     public void shouldParseAllFiles() {
-        File dir = new File("src/test/resources/compiled/");
-        File[] files = dir.listFiles((dir1, name) -> name.toLowerCase().endsWith(".wasm"));
+        File compiledDir = new File("src/test/resources/compiled/");
+        File wasmDir = new File("src/test/resources/wasm/");
+        List<File> files =
+                Arrays.stream(
+                                compiledDir.listFiles(
+                                        (ignored, name) -> name.toLowerCase().endsWith(".wasm")))
+                        .collect(Collectors.toList());
+        files.addAll(
+                Arrays.stream(
+                                wasmDir.listFiles(
+                                        (ignored, name) -> name.toLowerCase().endsWith(".wasm")))
+                        .collect(Collectors.toList()));
         if (files == null) {
             throw new RuntimeException("Could not find files");
         }
