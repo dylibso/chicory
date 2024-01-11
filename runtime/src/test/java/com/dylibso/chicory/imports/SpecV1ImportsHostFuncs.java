@@ -1,5 +1,7 @@
 package com.dylibso.chicory.imports;
 
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.HostGlobal;
 import com.dylibso.chicory.runtime.HostImports;
@@ -115,7 +117,11 @@ public class SpecV1ImportsHostFuncs {
                         "print_f64_f64",
                         List.of(ValueType.F64, ValueType.F64),
                         List.of());
-        var table = new HostTable("spectest", "table", Map.of(1, 1, 2, 2, 10, 10, 100, 100));
+        var table =
+                new HostTable(
+                        "spectest",
+                        "table",
+                        Map.of(1, 1, 2, 2, 10, 10, 24, 24, 100, REF_NULL_VALUE));
         var mem = new Memory(new MemoryLimits(1, 2));
         mem.writeI32(10, 16); // data d_a(offset: 10) = "\10";
         var memory = new HostMemory("spectest", "memory", mem);

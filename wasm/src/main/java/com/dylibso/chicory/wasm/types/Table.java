@@ -6,7 +6,7 @@ import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 
 public class Table {
 
-    public static final int UNINITIALIZED = -1;
+    public static final int UNINITIALIZED = -2;
     private ElementType elementType;
     private long limitMin;
     private long limitMax;
@@ -38,18 +38,16 @@ public class Table {
     }
 
     public Value getRef(int index) {
+        int res = UNINITIALIZED;
         try {
-            var res = this.refs[index];
-            if (res == UNINITIALIZED) {
-                throw new ChicoryException("uninitialized element");
-            }
-            if (this.getElementType() == ElementType.FuncRef) {
-                return Value.funcRef(res);
-            } else {
-                return Value.externRef(res);
-            }
+            res = this.refs[index];
         } catch (IndexOutOfBoundsException e) {
-            throw new ChicoryException("out of bounds table access, undefined element", e);
+            throw new ChicoryException("undefined element", e);
+        }
+        if (this.getElementType() == ElementType.FuncRef) {
+            return Value.funcRef(res);
+        } else {
+            return Value.externRef(res);
         }
     }
 

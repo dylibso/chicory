@@ -200,7 +200,7 @@ public class Module {
                                 var expr = typeElem.getExpr();
                                 var addr = getConstantValue(expr);
                                 for (var fi : typeElem.getFuncIndices()) {
-                                    tables[0].setRef(addr, (int) fi);
+                                    tables[0].setRef(addr++, (int) fi);
                                 }
                                 break;
                             }
@@ -211,7 +211,7 @@ public class Module {
                                 var expr = tableElem.getExpr();
                                 var addr = getConstantValue(expr);
                                 for (var fi : tableElem.getFuncIndices()) {
-                                    tables[idx].setRef(addr, (int) fi);
+                                    tables[idx].setRef(addr++, (int) fi);
                                 }
                                 break;
                             }

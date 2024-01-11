@@ -53,12 +53,12 @@ public class WasmValue {
                     return "null";
                 }
             case EXTERN_REF:
-                if (value.equals("null")) {
+                if (value.toString().equals("null")) {
                     return "Value.EXTREF_NULL";
                 }
                 return value;
             case FUNC_REF:
-                if (value.equals("null")) {
+                if (value.toString().equals("null")) {
                     return "Value.FUNCREF_NULL";
                 }
                 return value;
@@ -78,13 +78,13 @@ public class WasmValue {
             case F64:
                 return "Value.f64(Long.parseUnsignedLong(\"" + value + "\"))";
             case EXTERN_REF:
-                if (value.equals("null")) {
-                    return value;
+                if (value.toString().equals("null")) {
+                    return "Value.EXTREF_NULL";
                 }
                 return "Value.externRef(" + value + ")";
             case FUNC_REF:
-                if (value.equals("null")) {
-                    return value;
+                if (value.toString().equals("null")) {
+                    return "Value.FUNCREF_NULL";
                 }
                 return "Value.funcRef(" + value + ")";
             default:

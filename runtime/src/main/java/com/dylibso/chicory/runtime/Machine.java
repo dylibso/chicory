@@ -1,5 +1,8 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.wasm.types.Table.UNINITIALIZED;
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.Instruction;
@@ -208,6 +211,11 @@ public class Machine {
                             var type = instance.getTypes()[typeId];
                             int funcTableIdx = this.stack.pop().asInt();
                             int funcId = table.getRef(funcTableIdx).asFuncRef();
+                            if (funcId == UNINITIALIZED) {
+                                throw new ChicoryException("uninitialized element");
+                            } else if (funcId == REF_NULL_VALUE) {
+                                throw new ChicoryException("undefined element");
+                            }
                             // given a list of param types, let's pop those params off the stack
                             // and pass as args to the function call
                             var args = extractArgsForParams(type.getParams());
@@ -294,6 +302,12 @@ public class Machine {
                                 table = instance.getImports().getTables()[idx].getTable();
                             }
                             var i = this.stack.pop().asInt();
+                            if (i < 0
+                                    || (table.getLimitMax() != 0 && i >= table.getLimitMax())
+                                    || i >= table.getLimitMin()) {
+                                throw new WASMRuntimeException("out of bounds table access");
+                            }
+                            var ref = table.getRef(i);
                             this.stack.push(table.getRef(i));
                             break;
                         }
