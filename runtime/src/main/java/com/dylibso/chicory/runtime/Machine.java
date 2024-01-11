@@ -207,7 +207,7 @@ public class Machine {
                             var typeId = (int) operands[0];
                             var type = instance.getTypes()[typeId];
                             int funcTableIdx = this.stack.pop().asInt();
-                            int funcId = table.getFuncRef(funcTableIdx);
+                            int funcId = table.getRef(funcTableIdx).asFuncRef();
                             // given a list of param types, let's pop those params off the stack
                             // and pass as args to the function call
                             var args = extractArgsForParams(type.getParams());
@@ -284,6 +284,29 @@ public class Machine {
                             }
                             var val = this.stack.pop();
                             instance.setGlobal(id, val);
+                            break;
+                        }
+                    case TABLE_GET:
+                        {
+                            var idx = (int) operands[0];
+                            var table = instance.getTable(idx);
+                            if (table == null) {
+                                table = instance.getImports().getTables()[idx].getTable();
+                            }
+                            var i = this.stack.pop().asInt();
+                            this.stack.push(table.getRef(i));
+                            break;
+                        }
+                    case TABLE_SET:
+                        {
+                            var idx = (int) operands[0];
+                            var table = instance.getTable(idx);
+                            if (table == null) {
+                                table = instance.getImports().getTables()[idx].getTable();
+                            }
+                            var value = this.stack.pop().asExtRef();
+                            var i = this.stack.pop().asInt();
+                            table.setRef(i, value);
                             break;
                         }
                         // TODO signed and unsigned are the same right now
@@ -1716,6 +1739,13 @@ public class Machine {
                             var offset = this.stack.pop().asInt();
                             var destination = this.stack.pop().asInt();
                             instance.getMemory().copy(destination, offset, size);
+                            break;
+                        }
+                    case REF_IS_NULL:
+                        {
+                            var val = this.stack.pop();
+                            this.stack.push(
+                                    val.equals(Value.EXTREF_NULL) ? Value.TRUE : Value.FALSE);
                             break;
                         }
                     default:

@@ -54,7 +54,12 @@ public class WasmValue {
                 }
             case EXTERN_REF:
                 if (value.equals("null")) {
-                    return "Value.REF_NULL";
+                    return "Value.EXTREF_NULL";
+                }
+                return value;
+            case FUNC_REF:
+                if (value.equals("null")) {
+                    return "Value.FUNCREF_NULL";
                 }
                 return value;
             default:
@@ -73,7 +78,15 @@ public class WasmValue {
             case F64:
                 return "Value.f64(Long.parseUnsignedLong(\"" + value + "\"))";
             case EXTERN_REF:
+                if (value.equals("null")) {
+                    return value;
+                }
                 return "Value.externRef(" + value + ")";
+            case FUNC_REF:
+                if (value.equals("null")) {
+                    return value;
+                }
+                return "Value.funcRef(" + value + ")";
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
@@ -94,6 +107,8 @@ public class WasmValue {
                     return ".asDouble()";
                 case EXTERN_REF:
                     return ".asExtRef()";
+                case FUNC_REF:
+                    return ".asFuncRef()";
                 default:
                     throw new IllegalArgumentException("Type not recognized " + type);
             }

@@ -9,11 +9,13 @@ import java.util.Objects;
 
 public class Value {
 
-    public static final Value TRUE;
+    public static final Value TRUE = Value.i32(1);
 
-    public static final Value FALSE;
+    public static final Value FALSE = Value.i32(0);
 
-    public static final Value REF_NULL;
+    public static final int REF_NULL_VALUE = 0;
+    public static final Value EXTREF_NULL = Value.externRef(REF_NULL_VALUE);
+    public static final Value FUNCREF_NULL = Value.funcRef(REF_NULL_VALUE);
 
     public static final Value[] EMPTY_VALUES = new Value[0];
 
@@ -22,12 +24,6 @@ public class Value {
     private final ValueType type;
 
     private long data;
-
-    static {
-        TRUE = Value.i32(1);
-        FALSE = Value.i32(0);
-        REF_NULL = Value.externRef(1L << 31);
-    }
 
     public static Value fromFloat(float data) {
         return Value.f32(Float.floatToRawIntBits(data));
@@ -55,6 +51,10 @@ public class Value {
 
     public static Value externRef(long data) {
         return new Value(ValueType.ExternRef, data);
+    }
+
+    public static Value funcRef(long data) {
+        return new Value(ValueType.FuncRef, data);
     }
 
     public Value(ValueType type, int value) {
@@ -165,6 +165,10 @@ public class Value {
         return (int) data;
     }
 
+    public int asFuncRef() {
+        return (int) data;
+    }
+
     public float asFloat() {
         return Float.intBitsToFloat(asInt());
     }
@@ -204,9 +208,9 @@ public class Value {
             case F64:
                 return this.asDouble() + "@f64";
             case FuncRef:
-                return "func";
+                return "func[" + (int) data + "]";
             case ExternRef:
-                return "ext";
+                return "ext[" + (int) data + "]";
             default:
                 throw new RuntimeException("TODO handle missing types");
         }
@@ -221,11 +225,11 @@ public class Value {
             return false;
         }
         Value other = (Value) v;
-        return Objects.equals(type, other.type) && data == other.data;
+        return Objects.equals(type.id(), other.type.id()) && data == other.data;
     }
 
     @Override
     public final int hashCode() {
-        return Objects.hash(type, data);
+        return Objects.hash(type.id(), data);
     }
 }

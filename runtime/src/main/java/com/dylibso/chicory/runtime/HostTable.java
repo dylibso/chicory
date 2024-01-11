@@ -28,11 +28,11 @@ public class HostTable implements FromHost {
 
         this.table = new Table(ElementType.FuncRef, maxFuncRef, maxFuncRef);
 
-        for (int i = 0; i <= maxFuncRef; i++) {
+        for (int i = 0; i < maxFuncRef; i++) {
             if (funcRefs.containsKey(i)) {
-                this.table.addFuncRef(funcRefs.get(i));
+                this.table.setRef(i, funcRefs.get(i));
             } else {
-                this.table.addFuncRef(null);
+                this.table.setRef(i, Table.UNINITIALIZED);
             }
         }
     }
