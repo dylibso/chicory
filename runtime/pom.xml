@@ -104,8 +104,7 @@
             SpecV1AddressTest.test203, SpecV1AddressTest.test211, SpecV1AddressTest.test212,
             SpecV1AddressTest.test213, SpecV1AddressTest.test214, SpecV1AddressTest.test217,
             SpecV1AddressTest.test233, SpecV1AddressTest.test234, SpecV1AddressTest.test236,
-            SpecV1AddressTest.test252, SpecV1AddressTest.test253, SpecV1AddressTest.test255,
-            SpecV1TableCopyTest.test1, SpecV1TableCopyTest.test2
+            SpecV1AddressTest.test252, SpecV1AddressTest.test253, SpecV1AddressTest.test255
           </excludedTests>
         </configuration>
         <executions>
