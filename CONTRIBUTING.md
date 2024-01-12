@@ -53,7 +53,7 @@ All submissions, including submissions by project members, need to be reviewed a
 ### Coding Guidelines
 
  * We primarily use the Git history to track authorship. GitHub also has [this nice page with your contributions](https://github.com/quarkusio/quarkus/graphs/contributors).
- * Please take care to write code that fits with existing code styles. The sintactic formatting is automated and can be applied project wise using the command `msn spotless:apply`.
+ * Please take care to write code that fits with existing code styles. The syntactic formatting is automated and can be applied project wise using the command `mvn spotless:apply`.
  * Commits should be atomic and semantic. Please properly squash your pull requests before submitting them. Fixup commits can be used temporarily during the review process but things should be squashed at the end to have meaningful commits.
  * We typically squash and merge pull requests when they are approved. This tends to keep the commit history a little bit more tidy without placing undue burden on the developers.
 
