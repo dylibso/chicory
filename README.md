@@ -11,7 +11,7 @@ simplicity and safety in mind. See the [development section](#development) for a
 
 > *Reach out to us*: Chicory is very early in development and there will be rough edges. We're hoping to talk to some early adopters and contributors before we formally announce it a beta to the world. Please [join our team Zulip chat with this invite link](https://chicory.zulipchat.com/join/g4gqsxoys6orfxlrk6hn4cyp/) if you're interested in providing feedback or contributing. Or just keeping up with development.
 
-## Getting Started
+## Getting Started (as a user)
 
 ### Install Dependency
 
@@ -243,11 +243,17 @@ Some nice to have but probably separate items:
 * [kwasm](https://github.com/jasonwyatt/KWasm)
 * [wazero](https://wazero.io/)
 
-### Building Locally
+### Building the Runtime
+
+Contributors and other advanced users may want to build the runtime from source. To do so, you'll need to have Maven installed.
+
+Basic steps:
 
 * `mvn clean install` to run all of the project's tests and install the library in your local repo
 * `mvn spotless:apply` to autoformat the code
 * `./scripts/compile-resources.sh` will recompile and regenerate the `resources/compiled` folders
+
+NOTE: The `install` target relies on the `wabt` library to compile the test suite. This is not currently released for ARM (e.g. new Macs with Apple Silicon). However, `wabt` is available from Homebrew, so `brew install wabt` before running `mvn clean install` should work.
 
 ### Modules
 
