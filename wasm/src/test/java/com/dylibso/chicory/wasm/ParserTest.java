@@ -212,10 +212,4 @@ public class ParserTest {
         var nameSec = module.getNameSection();
         assertEquals(125, nameSec.getFunctionNames().size());
     }
-
-    @Test
-    public void dummy() {
-        var parser = new Parser(new File("src/test/resources/wasm/spec.1.wasm"));
-        var module = parser.parseModule();
-    }
 }
