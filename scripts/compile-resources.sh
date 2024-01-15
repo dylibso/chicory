@@ -25,7 +25,12 @@ do
   do
     if test -f "$w"; then
       out=$(echo $w | sed 's|resources/sources|resources/compiled|')
-      cat $w | docker run --rm -i --entrypoint "./compile-rust.sh" ${CONTAINER_IMAGE} > $out.wasm
+      # if the filename contains wasi then use the wasi compiler
+      if [[ "$w" == "*-wasi" ]]; then
+        cat $w | docker run --rm -i --entrypoint "./compile-rust-wasi.sh" ${CONTAINER_IMAGE} > $out.wasm
+      else
+        cat $w | docker run --rm -i --entrypoint "./compile-rust.sh" ${CONTAINER_IMAGE} > $out.wasm
+      end
     fi
   done
 

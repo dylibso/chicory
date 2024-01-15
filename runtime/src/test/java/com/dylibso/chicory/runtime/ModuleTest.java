@@ -278,6 +278,18 @@ public class ModuleTest {
         run.apply(); // prints hello world
     }
 
+    @Test
+    public void shouldRunWasiRustModule() {
+        // check with: wasmtime src/test/resources/compiled/hello-wasi.rs.wasm
+        var wasi = new Wasi();
+        var imports = new HostImports(wasi.toHostFunctions());
+        var instance =
+                Module.build(new File("src/test/resources/compiled/hello-wasi.rs.wasm"))
+                        .instantiate(imports);
+        var run = instance.getExport("_start");
+        run.apply(); // prints hello world
+    }
+
     // @Test
     // public void shouldOperateMemoryOps() {
     // // check with: wasmtime src/test/resources/wasm/memories.wat.wasm --invoke
