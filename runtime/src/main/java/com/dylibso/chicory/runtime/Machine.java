@@ -470,6 +470,23 @@ public class Machine {
                             stack.push(Value.i32(nPages));
                             break;
                         }
+                    case MEMORY_FILL:
+                        {
+                            var memidx = (int) operands[0];
+                            if (memidx != 0) {
+                                throw new WASMRuntimeException(
+                                        "We don't support multiple memories just yet");
+                            }
+                            var size = stack.pop().asInt();
+                            var val = stack.pop().asByte();
+                            var offset = stack.pop().asInt();
+                            var end = (size + offset);
+                            if (end > instance.getMemory().getMaximumSize()) {
+                                throw new WASMRuntimeException("out of bounds memory access");
+                            }
+                            instance.getMemory().fill(val, offset, end);
+                            break;
+                        }
                     case I32_STORE8:
                     case I64_STORE8:
                         {

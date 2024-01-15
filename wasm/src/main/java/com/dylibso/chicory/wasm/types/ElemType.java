@@ -6,10 +6,10 @@ public class ElemType implements Element {
         return ElemType.Type;
     }
 
-    private Instruction expr;
+    private Instruction[] expr;
     private long[] funcIndices;
 
-    public ElemType(Instruction expr, long[] funcIndices) {
+    public ElemType(Instruction[] expr, long[] funcIndices) {
         this.expr = expr;
         this.funcIndices = funcIndices;
     }
@@ -18,7 +18,7 @@ public class ElemType implements Element {
         return funcIndices;
     }
 
-    public Instruction getExpr() {
+    public Instruction[] getExpr() {
         return expr;
     }
 }

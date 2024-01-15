@@ -7,11 +7,11 @@ public class ElemData implements Element {
     }
 
     private long tableIndex;
-    private Instruction expr;
+    private Instruction[] expr;
     private RefType refType;
-    private Instruction[] exprs;
+    private Instruction[][] exprs;
 
-    public ElemData(long tableIndex, Instruction expr, RefType refType, Instruction[] exprs) {
+    public ElemData(long tableIndex, Instruction[] expr, RefType refType, Instruction[][] exprs) {
         this.tableIndex = tableIndex;
         this.expr = expr;
         this.refType = refType;
@@ -26,11 +26,11 @@ public class ElemData implements Element {
         this.tableIndex = tableIndex;
     }
 
-    public Instruction getExpr() {
+    public Instruction[] getExpr() {
         return expr;
     }
 
-    public void setExpr(Instruction expr) {
+    public void setExpr(Instruction[] expr) {
         this.expr = expr;
     }
 
@@ -42,11 +42,11 @@ public class ElemData implements Element {
         this.refType = refType;
     }
 
-    public Instruction[] getExprs() {
+    public Instruction[][] getExprs() {
         return exprs;
     }
 
-    public void setExprs(Instruction[] exprs) {
+    public void setExprs(Instruction[][] exprs) {
         this.exprs = exprs;
     }
 }

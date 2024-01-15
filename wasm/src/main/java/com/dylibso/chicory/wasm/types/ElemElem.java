@@ -7,9 +7,9 @@ public class ElemElem implements Element {
     }
 
     private RefType refType;
-    private Instruction[] exprs;
+    private Instruction[][] exprs;
 
-    public ElemElem(RefType refType, Instruction[] exprs) {
+    public ElemElem(RefType refType, Instruction[][] exprs) {
         this.refType = refType;
         this.exprs = exprs;
     }
@@ -22,11 +22,11 @@ public class ElemElem implements Element {
         this.refType = refType;
     }
 
-    public Instruction[] getExprs() {
+    public Instruction[][] getExprs() {
         return exprs;
     }
 
-    public void setExprs(Instruction[] exprs) {
+    public void setExprs(Instruction[][] exprs) {
         this.exprs = exprs;
     }
 }

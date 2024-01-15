@@ -6,27 +6,27 @@ public class ElemGlobal implements Element {
         return ElemType.Global;
     }
 
-    private Instruction expr;
-    private Instruction[] exprs;
+    private Instruction[] expr;
+    private Instruction[][] exprs;
 
-    public ElemGlobal(Instruction expr, Instruction[] exprs) {
+    public ElemGlobal(Instruction[] expr, Instruction[][] exprs) {
         this.expr = expr;
         this.exprs = exprs;
     }
 
-    public Instruction getExpr() {
+    public Instruction[] getExpr() {
         return expr;
     }
 
-    public void setExpr(Instruction expr) {
+    public void setExpr(Instruction[] expr) {
         this.expr = expr;
     }
 
-    public Instruction[] getExprs() {
+    public Instruction[][] getExprs() {
         return exprs;
     }
 
-    public void setExprs(Instruction[] exprs) {
+    public void setExprs(Instruction[][] exprs) {
         this.exprs = exprs;
     }
 }
