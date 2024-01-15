@@ -4,10 +4,7 @@ import static com.dylibso.chicory.maven.Constants.SPEC_JSON;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
@@ -152,24 +149,30 @@ public class Wast2JsonWrapper {
     private String resolveOrInstallWast2Json() {
         ProcessBuilder pb = new ProcessBuilder(WAST2JSON, "--version");
         pb.directory(new File("."));
-        pb.inheritIO();
         Process ps = null;
+        String systemVersion = null;
         try {
             ps = pb.start();
             ps.waitFor(1, TimeUnit.SECONDS);
+            if (ps.exitValue() != 0) {
+                System.err.println(ps.getErrorStream().toString());
+            }
+            systemVersion = new String(ps.getInputStream().readAllBytes());
         } catch (IOException e) {
             // ignore
         } catch (InterruptedException e) {
             // ignore
         }
 
-        if (ps != null && ps.exitValue() == 0) {
-            log.info(WAST2JSON + " binary detected available, using the system one.");
-            return WAST2JSON;
-        }
-
         if (wabtVersion.equals("latest")) {
             wabtVersion = resolveLatestVersion();
+        }
+
+        if (ps != null && ps.exitValue() == 0) {
+            if (systemVersion != null && versionMatches(systemVersion, wabtVersion)) {
+                log.info(WAST2JSON + " binary detected available, using the system one.");
+                return WAST2JSON;
+            }
         }
 
         // Downloading locally WABT
@@ -227,5 +230,37 @@ public class Wast2JsonWrapper {
         } else {
             throw new IllegalArgumentException("Detected OS is not supported: " + osName);
         }
+    }
+
+    /**
+     * Compares the available wast2json version with the minimum required version
+     * using semantic version numbers. Assumes that the version is a 3 part semantic
+     * version number.
+     * @param actual the version of wast2json already installed
+     * @param required the minimum version of wast2json that's required
+     * @return true if the actual version meets the requirements, false otherwise
+     */
+    private boolean versionMatches(String actual, String required) {
+        var actualComponents = splitVersion(actual);
+        var requiredComponents = splitVersion(required);
+
+        if (actualComponents.length != 3 || requiredComponents.length != 3) {
+            return false;
+        }
+
+        return componentMatches(actualComponents, requiredComponents, 0)
+                && componentMatches(actualComponents, requiredComponents, 1)
+                && componentMatches(actualComponents, requiredComponents, 2);
+    }
+
+    private boolean componentMatches(String[] actual, String[] required, int component) {
+        var actualField = Integer.parseInt(actual[component]);
+        var requiredField = Integer.parseInt(required[component]);
+
+        return actualField >= requiredField;
+    }
+
+    private String[] splitVersion(String v) {
+        return v.trim().split("\\.");
     }
 }
