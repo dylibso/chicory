@@ -6,14 +6,26 @@ import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.types.Value;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 
 public class Wasi {
-    public Wasi() {}
+
+    private WasiOptions options;
+
+
+    public Wasi() {
+        this.options = new WasiOptions();
+    }
+
+    public Wasi(WasiOptions opts) {
+        this.options = opts;
+    }
 
     public HostFunction[] toHostFunctions() {
-        var functions = new HostFunction[7];
+        var functions = new HostFunction[8];
 
         functions[0] =
                 new HostFunction(
@@ -42,6 +54,17 @@ public class Wasi {
                 new HostFunction(
                         (Memory memory, Value... args) -> {
                             var fd = args[0].asInt();
+                            PrintStream stream;
+                            switch (fd) {
+                                case 1:
+                                    stream = this.options.getStdout();
+                                    break;
+                                case 2:
+                                    stream = this.options.getStderr();
+                                    break;
+                                default:
+                                    throw new WASMRuntimeException("We don't yet support fd " + fd);
+                            }
                             var iovs = args[1].asInt();
                             var iovsLen = args[2].asInt();
                             var retPtr = args[3].asInt();
@@ -54,14 +77,14 @@ public class Wasi {
                                 var bytes = memory.readBytes(iovBase, iovLen);
                                 // TODO switch on fd
                                 try {
-                                    System.out.write(bytes);
+                                    stream.write(bytes);
                                 } catch (IOException e) {
                                     // TODO how to signal to the guest
                                     throw new RuntimeException(e);
                                 }
                                 bytesWritten += iovLen;
                             }
-                            System.out.flush(); // flush it
+                            stream.flush(); // flush it
                             memory.write(retPtr, Value.i32(bytesWritten));
                             return new Value[] { Value.i32(0) } ;
                         },
@@ -116,6 +139,44 @@ public class Wasi {
                         "wasi_snapshot_preview1",
                         "environ_sizes_get",
                         List.of(I32, I32),
+                        List.of(I32));
+
+        functions[7] =
+                new HostFunction(
+                        (Memory memory, Value... args) -> {
+                            var fd = args[0].asInt();
+                            InputStream stream;
+                            switch (fd) {
+                                case 0:
+                                    stream = this.options.getStdin();
+                                    break;
+                                default:
+                                    throw new WASMRuntimeException("We don't yet support fd " + fd);
+                            }
+                            var iovs = args[1].asInt();
+                            var iovsLen = args[2].asInt();
+                            var retPtr = args[3].asInt();
+                            var bytesRead = 0;
+                            for (var i = 0; i < iovsLen; i++) {
+                                var offset = i * 8;
+                                var base = iovs + offset;
+                                var iovBase = memory.readI32(base).asInt();
+                                var iovLen = memory.readI32(base + 4).asInt();
+                                try {
+                                    var bytes = stream.readNBytes(iovLen);
+                                    memory.write(iovBase, bytes);
+                                    bytesRead += iovLen;
+                                } catch (IOException e) {
+                                    // TODO how to signal to guest?
+                                    throw new WASMRuntimeException(e);
+                                }
+                            }
+                            memory.write(retPtr, Value.i32(bytesRead));
+                            return new Value[] { Value.i32(0) } ;
+                        },
+                        "wasi_snapshot_preview1",
+                        "fd_read",
+                        List.of(I32, I32, I32, I32),
                         List.of(I32));
 
         return functions;

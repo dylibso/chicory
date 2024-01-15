@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -288,6 +290,20 @@ public class ModuleTest {
                         .instantiate(imports);
         var run = instance.getExport("_start");
         run.apply(); // prints hello world
+    }
+
+    @Test
+    public void shouldRunWasiGreetRustModule() {
+        // check with: wasmtime src/test/resources/compiled/greet-wasi.rs.wasm
+        var fakeStdin = new ByteArrayInputStream("Benjamin".getBytes());
+        var wasiOpts = WasiOptions.build().setStdout(System.out).setStdin(fakeStdin);
+        var wasi = new Wasi(wasiOpts);
+        var imports = new HostImports(wasi.toHostFunctions());
+        var instance =
+                Module.build(new File("src/test/resources/compiled/greet-wasi.rs.wasm"))
+                        .instantiate(imports);
+        var run = instance.getExport("_start");
+        run.apply();
     }
 
     // @Test
