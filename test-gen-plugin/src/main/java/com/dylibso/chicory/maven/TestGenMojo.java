@@ -175,7 +175,7 @@ public class TestGenMojo extends AbstractMojo {
                                 File wasmFilesFolder = null;
                                 Wast wast = null;
 
-                                while (retries > 0) {
+                                while (true) {
                                     try {
                                         wasmFilesFolder =
                                                 wast2Json.execute(

@@ -19,6 +19,8 @@ local.set <varuint> 	$21
 local.tee <varuint> 	$22
 global.get <varuint> 	$23
 global.set <varuint> 	$24
+table.get <varuint> 	$25
+table.set <varuint> 	$26
 i32.load <varuint> <varuint> 	$28
 i64.load <varuint> <varuint> 	$29
 f32.load <varuint> <varuint> 	$2A

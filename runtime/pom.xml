@@ -86,7 +86,9 @@
             float_exprs.wast,
             global.wast,
             imports.wast,
-            unwind.wast</orderedWastToProcess>
+            unwind.wast,
+            table_get.wast,
+            table_set.wast</orderedWastToProcess>
           <excludedTests>
             <!--
             Assertion failures -->

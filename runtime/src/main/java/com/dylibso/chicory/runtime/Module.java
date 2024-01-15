@@ -95,7 +95,7 @@ public class Module {
                         break;
                     }
                 case REF_NULL:
-                    globals[i] = Value.REF_NULL;
+                    globals[i] = Value.EXTREF_NULL;
                     break;
                 default:
                     throw new RuntimeException(
@@ -190,32 +190,40 @@ public class Module {
             tables = new Table[tableLength];
             for (int i = 0; i < tableLength; i++) {
                 tables[i] = module.getTableSection().getTables()[i];
-                if (module.getElementSection() != null) {
-                    for (var el : module.getElementSection().getElements()) {
-                        switch (el.getElemType()) {
-                            case Type:
-                                {
-                                    var typeElem = (ElemType) el;
-                                    for (var fi : typeElem.getFuncIndices()) {
-                                        tables[0].addFuncRef((int) fi);
-                                    }
-                                    // TODO: handle offset 'e'
-                                    break;
+            }
+            if (module.getElementSection() != null) {
+                for (var el : module.getElementSection().getElements()) {
+                    switch (el.getElemType()) {
+                        case Type:
+                            {
+                                var typeElem = (ElemType) el;
+                                var expr = typeElem.getExpr();
+                                var addr = getConstantValue(expr);
+                                for (var fi : typeElem.getFuncIndices()) {
+                                    tables[0].setRef(addr++, (int) fi);
                                 }
-                            case Table:
-                                {
-                                    var tableElem = (ElemTable) el;
-                                    var idx = (int) tableElem.getTableIndex();
-                                    for (var fi : tableElem.getFuncIndices()) {
-                                        tables[idx].addFuncRef((int) fi);
-                                    }
-                                    // TODO: handle offset 'e'
-                                    break;
+                                break;
+                            }
+                        case Table:
+                            {
+                                var tableElem = (ElemTable) el;
+                                var idx = (int) tableElem.getTableIndex();
+                                var expr = tableElem.getExpr();
+                                var addr = getConstantValue(expr);
+                                for (var fi : tableElem.getFuncIndices()) {
+                                    tables[idx].setRef(addr++, (int) fi);
                                 }
-                            default:
-                                throw new ChicoryException(
-                                        "Elment type: " + el.getElemType() + " not yet supported");
-                        }
+                                break;
+                            }
+                        case Func:
+                            {
+                                var funcElem = (ElemFunc) el;
+                                // TODO: what?
+                                break;
+                            }
+                        default:
+                            throw new ChicoryException(
+                                    "Elment type: " + el.getElemType() + " not yet supported");
                     }
                 }
             }
@@ -276,6 +284,19 @@ public class Module {
                 functionTypes,
                 mappedHostImports,
                 tables);
+    }
+
+    // TODO: refactor to a method with the implementation in Memory
+    // TODO: handle GLOBAL_GET too
+    // https://www.w3.org/TR/wasm-core-1/#valid-constant
+    private int getConstantValue(Instruction expr) {
+        if (expr.getOpcode() != OpCode.I32_CONST) {
+            throw new RuntimeException(
+                    "Don't support data segment expressions other than"
+                            + " i32.const yet, found: "
+                            + expr.getOpcode());
+        }
+        return (int) expr.getOperands()[0];
     }
 
     private HostImports mapHostImports(Import[] imports, HostImports hostImports) {

@@ -1,14 +1,17 @@
 package com.dylibso.chicory.wasm.types;
 
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Table {
+
+    public static final int UNINITIALIZED = -2;
     private ElementType elementType;
     private long limitMin;
     private long limitMax;
-    private List<Integer> funcRefs;
+
+    private int[] refs;
 
     public Table(ElementType elementType, long limitMin, Long limitMax) {
         this.elementType = elementType;
@@ -16,7 +19,10 @@ public class Table {
         if (limitMax != null) {
             this.limitMax = limitMax;
         }
-        this.funcRefs = new ArrayList<>();
+        refs = new int[(int) limitMin];
+        for (int i = 0; i < limitMin; i++) {
+            refs[i] = REF_NULL_VALUE;
+        }
     }
 
     public ElementType getElementType() {
@@ -31,15 +37,25 @@ public class Table {
         return limitMax;
     }
 
-    public void addFuncRef(Integer funcRef) {
-        this.funcRefs.add(funcRef);
+    public Value getRef(int index) {
+        int res = UNINITIALIZED;
+        try {
+            res = this.refs[index];
+        } catch (IndexOutOfBoundsException e) {
+            throw new ChicoryException("undefined element", e);
+        }
+        if (this.getElementType() == ElementType.FuncRef) {
+            return Value.funcRef(res);
+        } else {
+            return Value.externRef(res);
+        }
     }
 
-    public int getFuncRef(int index) {
-        var res = this.funcRefs.get(index);
-        if (res == null) {
-            throw new ChicoryException("uninitialized element");
+    public void setRef(int index, Integer value) {
+        try {
+            this.refs[index] = value;
+        } catch (IndexOutOfBoundsException e) {
+            throw new ChicoryException("out of bounds table access", e);
         }
-        return res;
     }
 }

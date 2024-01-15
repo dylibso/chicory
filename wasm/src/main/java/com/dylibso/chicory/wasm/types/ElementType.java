@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum ElementType {
+    ExtRef(0x67),
     FuncRef(0x70);
 
     private final long id;

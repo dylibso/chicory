@@ -11,4 +11,12 @@ public class ElemFunc implements Element {
     public ElemFunc(long[] funcIndices) {
         this.funcIndices = funcIndices;
     }
+
+    public long[] getFuncIndices() {
+        return funcIndices;
+    }
+
+    public void setFuncIndices(long[] funcIndices) {
+        this.funcIndices = funcIndices;
+    }
 }
