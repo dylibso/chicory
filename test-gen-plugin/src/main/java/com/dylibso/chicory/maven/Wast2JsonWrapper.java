@@ -233,14 +233,21 @@ public class Wast2JsonWrapper {
     }
 
     /**
-     * Compares the available wast2json version with the minimum required version
-     * using semantic version numbers. Assumes that the version is a 3 part semantic
-     * version number.
+     * Compares the available wast2json version with the minimum required version. It
+     * first checks for an exact match on the version strings, and if they do not
+     * exactly match it tries to parse and compare them using 3 part semantic version numbers.
      * @param actual the version of wast2json already installed
-     * @param required the minimum version of wast2json that's required
+     * @param required the version of wast2json that's required
      * @return true if the actual version meets the requirements, false otherwise
      */
     private boolean versionMatches(String actual, String required) {
+        actual = actual.trim();
+        required = required.trim();
+
+        if(actual.equals(required)){
+            return true;
+        }
+
         var actualComponents = splitVersion(actual);
         var requiredComponents = splitVersion(required);
 
@@ -261,6 +268,6 @@ public class Wast2JsonWrapper {
     }
 
     private String[] splitVersion(String v) {
-        return v.trim().split("\\.");
+        return v.split("\\.");
     }
 }
