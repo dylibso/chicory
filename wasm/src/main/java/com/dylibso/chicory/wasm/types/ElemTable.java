@@ -7,10 +7,10 @@ public class ElemTable implements Element {
     }
 
     private long tableIndex;
-    private Instruction expr;
+    private Instruction[] expr;
     private long[] funcIndices;
 
-    public ElemTable(long tableIndex, Instruction expr, long[] funcIndices) {
+    public ElemTable(long tableIndex, Instruction[] expr, long[] funcIndices) {
         this.tableIndex = tableIndex;
         this.expr = expr;
         this.funcIndices = funcIndices;
@@ -20,7 +20,7 @@ public class ElemTable implements Element {
         return funcIndices;
     }
 
-    public Instruction getExpr() {
+    public Instruction[] getExpr() {
         return expr;
     }
 

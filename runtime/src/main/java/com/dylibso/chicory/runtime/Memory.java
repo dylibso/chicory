@@ -82,6 +82,10 @@ public final class Memory {
         return this.limits.getInitial();
     }
 
+    public int getMaximumSize() {
+        return this.limits.getMaximum();
+    }
+
     /**
      * This zeros out the memory and re-writes the data segments
      * TODO - there is probably a more efficient way to handle this and do we need to do this?
@@ -291,8 +295,17 @@ public final class Memory {
     }
 
     public void zero() {
+        this.fill((byte) 0);
+    }
+
+    public void fill(byte value) {
         // see https://appsintheopen.com/posts/53-resetting-bytebuffers-to-zero-in-java
-        Arrays.fill(buffer.array(), (byte) 0);
+        Arrays.fill(buffer.array(), value);
+        buffer.position(0);
+    }
+
+    public void fill(byte value, int fromIndex, int toIndex) {
+        Arrays.fill(buffer.array(), fromIndex, toIndex, value);
         buffer.position(0);
     }
 

@@ -59,7 +59,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Stack;
 import java.util.function.Supplier;
@@ -483,6 +482,7 @@ public final class Parser {
 
     private static ElementSection parseElementSection(
             ByteBuffer buffer, long sectionId, long sectionSize) {
+        var initialPosition = buffer.position();
 
         var elementCount = readVarUInt32(buffer);
         var elements = new Element[(int) elementCount];
@@ -490,6 +490,7 @@ public final class Parser {
         for (var i = 0; i < elementCount; i++) {
             elements[i] = parseSingleElement(buffer);
         }
+        assert (buffer.position() == initialPosition + sectionSize);
 
         return new ElementSection(sectionId, sectionSize, elements);
     }
@@ -499,10 +500,9 @@ public final class Parser {
         switch ((int) kind) {
             case 0:
                 {
-                    var exprs = parseExpression(buffer);
-                    assert (exprs.length == 1);
+                    var expr = parseExpression(buffer);
                     var funcIndices = readFuncIndices(buffer);
-                    return new ElemType(exprs[0], funcIndices);
+                    return new ElemType(expr, funcIndices);
                 }
             case 1:
                 {
@@ -514,12 +514,11 @@ public final class Parser {
             case 2:
                 {
                     var tableIndex = readVarUInt32(buffer);
-                    var exprs = parseExpression(buffer);
-                    assert (exprs.length == 1);
+                    var expr = parseExpression(buffer);
                     var elemkind = (int) readVarUInt32(buffer);
                     assert (elemkind == 0x00);
                     var funcIndices = readFuncIndices(buffer);
-                    return new ElemTable(tableIndex, exprs[0], funcIndices);
+                    return new ElemTable(tableIndex, expr, funcIndices);
                 }
             case 3:
                 {
@@ -530,28 +529,28 @@ public final class Parser {
                 }
             case 4:
                 {
-                    var exprs = parseExpression(buffer);
-                    return new ElemGlobal(exprs[0], Arrays.copyOfRange(exprs, 1, exprs.length));
+                    var expr = parseExpression(buffer);
+                    var exprs = readExprs(buffer);
+                    return new ElemGlobal(expr, exprs);
                 }
             case 5:
                 {
-                    var refType = RefType.byId(readVarUInt32(buffer));
-                    var exprs = parseExpression(buffer);
+                    var refType = RefType.byId(buffer.get());
+                    var exprs = readExprs(buffer);
                     return new ElemElem(refType, exprs);
                 }
             case 6:
                 {
                     var tableIndex = readVarUInt32(buffer);
-                    var exprs1 = parseExpression(buffer);
-                    assert (exprs1.length == 1);
-                    var refType = RefType.byId(readVarUInt32(buffer));
-                    var exprs2 = parseExpression(buffer);
-                    return new ElemData(tableIndex, exprs1[0], refType, exprs2);
+                    var expr = parseExpression(buffer);
+                    var refType = RefType.byId(buffer.get());
+                    var exprs = readExprs(buffer);
+                    return new ElemData(tableIndex, expr, refType, exprs);
                 }
             case 7:
                 {
-                    var refType = RefType.byId(readVarUInt32(buffer));
-                    var exprs = parseExpression(buffer);
+                    var refType = RefType.byId(buffer.get());
+                    var exprs = readExprs(buffer);
                     return new ElemStart(refType, exprs);
                 }
             default:
@@ -568,6 +567,16 @@ public final class Parser {
             funcIndices[j] = readVarUInt32(buffer);
         }
         return funcIndices;
+    }
+
+    private static Instruction[][] readExprs(ByteBuffer buffer) {
+        var exprIndexCount = readVarUInt32(buffer);
+        var exprs = new Instruction[(int) exprIndexCount][];
+        for (var j = 0; j < exprIndexCount; j++) {
+            var instr = parseExpression(buffer);
+            exprs[j] = instr;
+        }
+        return exprs;
     }
 
     private static CodeSection parseCodeSection(

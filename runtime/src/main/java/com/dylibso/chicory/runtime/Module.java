@@ -221,6 +221,11 @@ public class Module {
                                 // TODO: what?
                                 break;
                             }
+                        case Elem:
+                            {
+                                var elemElem = (ElemElem) el;
+                                break;
+                            }
                         default:
                             throw new ChicoryException(
                                     "Elment type: " + el.getElemType() + " not yet supported");
@@ -289,14 +294,15 @@ public class Module {
     // TODO: refactor to a method with the implementation in Memory
     // TODO: handle GLOBAL_GET too
     // https://www.w3.org/TR/wasm-core-1/#valid-constant
-    private int getConstantValue(Instruction expr) {
-        if (expr.getOpcode() != OpCode.I32_CONST) {
+    private int getConstantValue(Instruction[] expr) {
+        assert (expr.length == 1);
+        if (expr[0].getOpcode() != OpCode.I32_CONST) {
             throw new RuntimeException(
                     "Don't support data segment expressions other than"
                             + " i32.const yet, found: "
-                            + expr.getOpcode());
+                            + expr[0].getOpcode());
         }
-        return (int) expr.getOperands()[0];
+        return (int) expr[0].getOperands()[0];
     }
 
     private HostImports mapHostImports(Import[] imports, HostImports hostImports) {

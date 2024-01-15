@@ -88,12 +88,24 @@
             imports.wast,
             unwind.wast,
             table_get.wast,
-            table_set.wast</orderedWastToProcess>
+            table_set.wast,
+            bulk.wast</orderedWastToProcess>
           <excludedTests>
-            <!--
-            Assertion failures -->
-            <!-- call indirect failures -->
+            <!-- Assertion failures -->
             <!-- Errors -->
+            SpecV1BulkTest.test65, SpecV1BulkTest.test66, SpecV1BulkTest.test67,
+            SpecV1BulkTest.test68, SpecV1BulkTest.test69, SpecV1BulkTest.test70,
+            SpecV1BulkTest.test71, SpecV1BulkTest.test72, SpecV1BulkTest.test73,
+            SpecV1BulkTest.test74, SpecV1BulkTest.test75, SpecV1BulkTest.test76,
+            SpecV1BulkTest.test77, SpecV1BulkTest.test78, SpecV1BulkTest.test79,
+            SpecV1BulkTest.test80, SpecV1BulkTest.test81, SpecV1BulkTest.test82,
+            SpecV1BulkTest.test83, SpecV1BulkTest.test84, SpecV1BulkTest.test85,
+            SpecV1BulkTest.test86, SpecV1BulkTest.test87, SpecV1BulkTest.test88,
+            SpecV1BulkTest.test89, SpecV1BulkTest.test90, SpecV1BulkTest.test91,
+            SpecV1BulkTest.test92, SpecV1BulkTest.test93, SpecV1BulkTest.test94,
+            SpecV1BulkTest.test95, SpecV1BulkTest.test96, SpecV1BulkTest.test97,
+            SpecV1BulkTest.test98, SpecV1BulkTest.test99, SpecV1BulkTest.test100,
+            SpecV1BulkTest.test101, SpecV1BulkTest.test102, SpecV1BulkTest.test103,
             <!-- Invalid and Malformed failures, can be ignored for now -->
             SpecV1AddressTest.test75, SpecV1AddressTest.test76,
             SpecV1AddressTest.test77, SpecV1AddressTest.test78, SpecV1AddressTest.test79,
