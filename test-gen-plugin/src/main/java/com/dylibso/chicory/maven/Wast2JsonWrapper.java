@@ -244,7 +244,7 @@ public class Wast2JsonWrapper {
         actual = actual.trim();
         required = required.trim();
 
-        if(actual.equals(required)){
+        if (actual.equals(required)) {
             return true;
         }
 
