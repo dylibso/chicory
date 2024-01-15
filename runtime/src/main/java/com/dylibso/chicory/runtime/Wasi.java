@@ -4,7 +4,6 @@ import static com.dylibso.chicory.wasm.types.ValueType.*;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.types.Value;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -14,7 +13,6 @@ import java.util.List;
 public class Wasi {
 
     private WasiOptions options;
-
 
     public Wasi() {
         this.options = new WasiOptions();
@@ -32,7 +30,7 @@ public class Wasi {
                         (Memory memory, Value... args) -> {
                             System.out.println("fd_close: " + Arrays.toString(args));
                             throw new WASMRuntimeException("We don't yet support this WASI call");
-                            //return new Value[] { Value.i32(0) };
+                            // return new Value[] { Value.i32(0) };
                         },
                         "wasi_snapshot_preview1",
                         "fd_close",
@@ -86,7 +84,7 @@ public class Wasi {
                             }
                             stream.flush(); // flush it
                             memory.write(retPtr, Value.i32(bytesWritten));
-                            return new Value[] { Value.i32(0) } ;
+                            return new Value[] {Value.i32(0)};
                         },
                         "wasi_snapshot_preview1",
                         "fd_write",
@@ -98,7 +96,7 @@ public class Wasi {
                         (Memory memory, Value... args) -> {
                             System.out.println("fd_seek: " + Arrays.toString(args));
                             throw new WASMRuntimeException("We don't yet support this WASI call");
-                            //return new Value[] {Value.i32(0)};
+                            // return new Value[] {Value.i32(0)};
                         },
                         "wasi_snapshot_preview1",
                         "fd_seek",
@@ -110,7 +108,7 @@ public class Wasi {
                         (Memory memory, Value... args) -> {
                             System.out.println("fd_fdfstat_get: " + Arrays.toString(args));
                             throw new WASMRuntimeException("We don't yet support this WASI call");
-                            //return new Value[] {Value.i32(0)};
+                            // return new Value[] {Value.i32(0)};
                         },
                         "wasi_snapshot_preview1",
                         "fd_fdstat_get",
@@ -122,7 +120,7 @@ public class Wasi {
                         (Memory memory, Value... args) -> {
                             System.out.println("environ_get: " + Arrays.toString(args));
                             throw new WASMRuntimeException("We don't yet support this WASI call");
-                            //return new Value[] {Value.i32(0)};
+                            // return new Value[] {Value.i32(0)};
                         },
                         "wasi_snapshot_preview1",
                         "environ_get",
@@ -134,7 +132,7 @@ public class Wasi {
                         (Memory memory, Value... args) -> {
                             System.out.println("environ_sizes_get: " + Arrays.toString(args));
                             throw new WASMRuntimeException("We don't yet support this WASI call");
-                            //return new Value[] {Value.i32(0)};
+                            // return new Value[] {Value.i32(0)};
                         },
                         "wasi_snapshot_preview1",
                         "environ_sizes_get",
@@ -172,7 +170,7 @@ public class Wasi {
                                 }
                             }
                             memory.write(retPtr, Value.i32(bytesRead));
-                            return new Value[] { Value.i32(0) } ;
+                            return new Value[] {Value.i32(0)};
                         },
                         "wasi_snapshot_preview1",
                         "fd_read",

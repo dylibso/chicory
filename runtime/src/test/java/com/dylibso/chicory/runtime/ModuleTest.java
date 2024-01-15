@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -39,7 +38,7 @@ class MockPrintStream extends PrintStream {
     }
 
     public int getTimes() {
-       return times;
+        return times;
     }
 }
 
@@ -302,6 +301,20 @@ public class ModuleTest {
         var run = instance.getExport("_start");
         run.apply(); // prints Hello, World!
         assertEquals(expected, stdout.getOutput());
+    }
+
+    @Test
+    public void shouldRunWasiGreetRustModule() {
+        // check with: wasmtime src/test/resources/compiled/greet-wasi.rs.wasm
+        var fakeStdin = new ByteArrayInputStream("Benjamin".getBytes());
+        var wasiOpts = WasiOptions.build().setStdout(System.out).setStdin(fakeStdin);
+        var wasi = new Wasi(wasiOpts);
+        var imports = new HostImports(wasi.toHostFunctions());
+        var instance =
+                Module.build(new File("src/test/resources/compiled/greet-wasi.rs.wasm"))
+                        .instantiate(imports);
+        var run = instance.getExport("_start");
+        run.apply();
     }
 
     // @Test

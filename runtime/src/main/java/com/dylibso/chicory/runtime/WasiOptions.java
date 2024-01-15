@@ -12,7 +12,7 @@ public class WasiOptions {
         return new WasiOptions();
     }
 
-    protected WasiOptions() { }
+    protected WasiOptions() {}
 
     public WasiOptions inheritSystem() {
         this.stdout = System.out;
