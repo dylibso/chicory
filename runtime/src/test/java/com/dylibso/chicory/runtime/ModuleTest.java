@@ -22,12 +22,6 @@ class MockPrintStream extends PrintStream {
     }
 
     @Override
-    public void print(String s) {
-        super.print(s);
-        this.times++;
-    }
-
-    @Override
     public void println(String s) {
         super.println(s);
         this.times++;
@@ -118,7 +112,8 @@ public class ModuleTest {
                 Module.build(new File("src/test/resources/compiled/host-function.wat.wasm"))
                         .instantiate(new HostImports(funcs));
         var logIt = instance.getExport("logIt");
-        assertEquals(expected.repeat(10), printer.getOutput());
+        logIt.apply();
+        assertEquals((expected + "\n").repeat(10), printer.getOutput());
         assertEquals(10, printer.getTimes());
     }
 
@@ -166,7 +161,7 @@ public class ModuleTest {
                         .instantiate(new HostImports(funcs));
         var start = module.getExport("_start");
         start.apply();
-        assertEquals(expected, printer.getOutput());
+        assertEquals(expected + "\n", printer.getOutput());
         assertTrue(printer.getTimes() > 0);
     }
 
@@ -279,13 +274,15 @@ public class ModuleTest {
     @Test
     public void shouldRunWasiModule() {
         // check with: wasmtime src/test/resources/compiled/hello-wasi.wat.wasm
-        var wasi = new Wasi();
+        var fakeStdout = new MockPrintStream();
+        var wasi = new Wasi(WasiOptions.build().setStdout(fakeStdout));
         var imports = new HostImports(wasi.toHostFunctions());
         var instance =
                 Module.build(new File("src/test/resources/compiled/hello-wasi.wat.wasm"))
                         .instantiate(imports);
         var run = instance.getExport("_start");
-        run.apply(); // prints hello world
+        run.apply();
+        assertEquals(fakeStdout.getOutput(), "hello world\n");
     }
 
     @Test

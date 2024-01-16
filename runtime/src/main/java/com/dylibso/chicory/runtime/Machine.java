@@ -99,15 +99,16 @@ public class Machine {
                 if (shouldReturn) return;
                 var instruction = code.get(frame.pc);
                 frame.pc++;
-                //                System.out.println(
-                //                        "func="
-                //                                + frame.funcId
-                //                                + "@"
-                //                                + frame.pc
-                //                                + ": "
-                //                                + instruction
-                //                                + " stack="
-                //                                + this.stack);
+                LOGGER.log(
+                        System.Logger.Level.DEBUG,
+                        "func="
+                                + frame.funcId
+                                + "@"
+                                + frame.pc
+                                + ": "
+                                + instruction
+                                + " stack="
+                                + this.stack);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
                 switch (opcode) {
