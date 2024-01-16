@@ -4,8 +4,6 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 
 public class HostImports {
-
-    private String name;
     private final HostFunction[] functions;
     private final HostGlobal[] globals;
     private final HostMemory[] memories;
@@ -13,16 +11,7 @@ public class HostImports {
     private FromHost[] index;
     private HostImports[] delegates;
 
-    public HostImports(String name) {
-        this.name = name;
-        this.functions = new HostFunction[] {};
-        this.globals = new HostGlobal[] {};
-        this.memories = new HostMemory[] {};
-        this.tables = new HostTable[] {};
-    }
-
-    public HostImports(String name, HostImports... imports) {
-        this.name = name;
+    public HostImports(HostImports... imports) {
         this.delegates = imports;
         this.functions = new HostFunction[] {};
         this.globals = new HostGlobal[] {};
@@ -31,7 +20,6 @@ public class HostImports {
     }
 
     public HostImports() {
-        this.name = null;
         this.functions = new HostFunction[] {};
         this.globals = new HostGlobal[] {};
         this.memories = new HostMemory[] {};
@@ -39,7 +27,6 @@ public class HostImports {
     }
 
     public HostImports(HostFunction[] functions) {
-        this.name = null;
         this.functions = functions;
         this.globals = new HostGlobal[] {};
         this.memories = new HostMemory[] {};
@@ -47,7 +34,6 @@ public class HostImports {
     }
 
     public HostImports(HostGlobal[] globals) {
-        this.name = null;
         this.functions = new HostFunction[] {};
         this.globals = globals;
         this.memories = new HostMemory[] {};
@@ -55,7 +41,6 @@ public class HostImports {
     }
 
     public HostImports(HostMemory[] memories) {
-        this.name = null;
         this.functions = new HostFunction[] {};
         this.globals = new HostGlobal[] {};
         this.memories = memories;
@@ -63,7 +48,6 @@ public class HostImports {
     }
 
     public HostImports(HostMemory memory) {
-        this.name = null;
         this.functions = new HostFunction[] {};
         this.globals = new HostGlobal[] {};
         this.memories = new HostMemory[] {memory};
@@ -71,7 +55,6 @@ public class HostImports {
     }
 
     public HostImports(HostTable[] tables) {
-        this.name = null;
         this.functions = new HostFunction[] {};
         this.globals = new HostGlobal[] {};
         this.memories = new HostMemory[] {};
@@ -80,7 +63,6 @@ public class HostImports {
 
     public HostImports(
             HostFunction[] functions, HostGlobal[] globals, HostMemory memory, HostTable[] tables) {
-        this.name = null;
         this.functions = functions;
         this.globals = globals;
         this.memories = new HostMemory[] {memory};
@@ -92,15 +74,10 @@ public class HostImports {
             HostGlobal[] globals,
             HostMemory[] memories,
             HostTable[] tables) {
-        this.name = null;
         this.functions = functions;
         this.globals = globals;
         this.memories = memories;
         this.tables = tables;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public void setDelegates(HostImports[] delegates) {

@@ -21,7 +21,6 @@ public class HostImportsTest {
                                     List.of(),
                                     List.of())
                         });
-        wasiImports.setName("wasi");
         var myFunction =
                 new HostFunction(
                         (Memory memory, Value... args) -> new Value[] {Value.i32(2)},
@@ -54,7 +53,6 @@ public class HostImportsTest {
                                     List.of(),
                                     List.of())
                         });
-        wasiImports.setName("wasi");
         var myFunction =
                 new HostFunction(
                         (Memory memory, Value... args) -> new Value[] {Value.i32(2)},
