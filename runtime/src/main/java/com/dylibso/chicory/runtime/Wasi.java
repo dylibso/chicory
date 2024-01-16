@@ -159,7 +159,9 @@ public class Wasi {
                                 var offset = i * 8;
                                 var base = iovs + offset;
                                 var iovBase = memory.readI32(base).asInt();
-                                // TODO this isn't quite right. there is some good info here that helps understand this https://github.com/tetratelabs/wazero/blob/f72796965b8900e601ab4f2a3fa54b1d69e11bd9/imports/wasi_snapshot_preview1/fs.go#L693
+                                // TODO this isn't quite right. there is some good info here that
+                                // helps understand this
+                                // https://github.com/tetratelabs/wazero/blob/f72796965b8900e601ab4f2a3fa54b1d69e11bd9/imports/wasi_snapshot_preview1/fs.go#L693
                                 var iovLen = memory.readI32(base + 4).asInt();
                                 try {
                                     var bytes = stream.readAllBytes();
