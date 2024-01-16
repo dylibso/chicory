@@ -1,10 +1,13 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.wasm.types.Table.UNINITIALIZED;
+import static com.dylibso.chicory.runtime.Module.getConstantValue;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.types.ElemElem;
+import com.dylibso.chicory.wasm.types.ElemFunc;
+import com.dylibso.chicory.wasm.types.ElemType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Value;
@@ -99,16 +102,16 @@ public class Machine {
                 if (shouldReturn) return;
                 var instruction = code.get(frame.pc);
                 frame.pc++;
-                LOGGER.log(
-                        System.Logger.Level.DEBUG,
-                        "func="
-                                + frame.funcId
-                                + "@"
-                                + frame.pc
-                                + ": "
-                                + instruction
-                                + " stack="
-                                + this.stack);
+                //                LOGGER.log(
+                //                        System.Logger.Level.DEBUG,
+                //                        "func="
+                //                                + frame.funcId
+                //                                + "@"
+                //                                + frame.pc
+                //                                + ": "
+                //                                + instruction
+                //                                + " stack="
+                //                                + this.stack);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
                 switch (opcode) {
@@ -211,10 +214,8 @@ public class Machine {
                             var type = instance.getTypes()[typeId];
                             int funcTableIdx = this.stack.pop().asInt();
                             int funcId = table.getRef(funcTableIdx).asFuncRef();
-                            if (funcId == UNINITIALIZED) {
+                            if (funcId == REF_NULL_VALUE) {
                                 throw new ChicoryException("uninitialized element");
-                            } else if (funcId == REF_NULL_VALUE) {
-                                throw new ChicoryException("undefined element");
                             }
                             // given a list of param types, let's pop those params off the stack
                             // and pass as args to the function call
@@ -1747,6 +1748,26 @@ public class Machine {
                                     .initPassiveSegment(segmentId, destination, offset, size);
                             break;
                         }
+                    case TABLE_INIT:
+                        {
+                            var tableidx = (int) operands[1];
+                            var elementidx = (int) operands[0];
+
+                            var size = this.stack.pop().asInt();
+                            var elemidx = this.stack.pop().asInt();
+                            var offset = this.stack.pop().asInt();
+                            var end = offset + size;
+
+                            var table = instance.getTable(tableidx);
+                            if (table == null) {
+                                table = instance.getImports().getTables()[tableidx].getTable();
+                            }
+                            for (int i = offset; i < end; i++) {
+                                var val = getRuntimeElementValue(elementidx, elemidx++);
+                                table.setRef(i, val);
+                            }
+                            break;
+                        }
                     case DATA_DROP:
                         {
                             var segment = (int) operands[0];
@@ -1769,11 +1790,39 @@ public class Machine {
                             instance.getMemory().copy(destination, offset, size);
                             break;
                         }
+                    case TABLE_COPY:
+                        {
+                            var tableidxSrc = (int) operands[1];
+                            var tableidxDst = (int) operands[0];
+
+                            var size = this.stack.pop().asInt();
+                            var s = this.stack.pop().asInt();
+                            var d = this.stack.pop().asInt();
+                            var src = instance.getTable(tableidxSrc);
+                            var dest = instance.getTable(tableidxDst);
+
+                            for (int i = size - 1; i >= 0; i--) {
+                                if (d <= s) {
+                                    var val = src.getRef(s++);
+                                    dest.setRef(d++, val.asFuncRef());
+                                } else {
+                                    var val = src.getRef(s + i);
+                                    dest.setRef(d + i, val.asFuncRef());
+                                }
+                            }
+                            break;
+                        }
                     case REF_IS_NULL:
                         {
                             var val = this.stack.pop();
                             this.stack.push(
                                     val.equals(Value.EXTREF_NULL) ? Value.TRUE : Value.FALSE);
+                            break;
+                        }
+                    case ELEM_DROP:
+                        {
+                            var x = (int) operands[0];
+                            instance.setElement(x, null);
                             break;
                         }
                     default:
@@ -1854,6 +1903,38 @@ public class Machine {
                 this.stack.push(value);
             }
         }
+    }
+
+    private int getRuntimeElementValue(int idx, int s) {
+        var elem = instance.getElement(idx);
+        var type = elem.getElemType();
+        int val;
+        switch (type) {
+            case Type:
+                {
+                    var t = (ElemType) elem;
+                    val = getConstantValue(t.getExpr());
+                    break;
+                }
+            case Elem:
+                {
+                    var e = (ElemElem) elem;
+                    var expr = e.getExprs()[s];
+                    val = getConstantValue(expr);
+                    break;
+                }
+            case Func:
+                {
+                    var f = (ElemFunc) elem;
+                    val = (int) f.getFuncIndices()[s];
+                    break;
+                }
+            default:
+                {
+                    throw new WASMRuntimeException("Element Type not recognized " + type);
+                }
+        }
+        return val;
     }
 
     public void printStackTrace() {

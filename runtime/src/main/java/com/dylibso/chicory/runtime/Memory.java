@@ -1,5 +1,7 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.runtime.Module.getConstantValue;
+
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.*;
@@ -101,16 +103,8 @@ public final class Memory {
             if (s instanceof ActiveDataSegment) {
                 var segment = (ActiveDataSegment) s;
                 var offsetExpr = segment.getOffset();
-                var offsetInstr = offsetExpr[0];
-                // TODO how flexible can this be? Do we need to dynamically eval the expression?
-                if (offsetInstr.getOpcode() != OpCode.I32_CONST) {
-                    throw new RuntimeException(
-                            "Don't support data segment expressions other than i32.const yet,"
-                                    + " found: "
-                                    + offsetInstr.getOpcode());
-                }
                 var data = segment.getData();
-                var offset = (int) offsetInstr.getOperands()[0];
+                var offset = getConstantValue(offsetExpr);
                 write(offset, data);
             } else if (s instanceof PassiveDataSegment) {
                 // System.out.println("Skipping passive segment " + s);
@@ -309,9 +303,6 @@ public final class Memory {
     }
 
     public void fill(byte value, int fromIndex, int toIndex) {
-        if ((1 + this.nPages * PAGE_SIZE) <= toIndex) {
-            throw new WASMRuntimeException("out of bounds memory access");
-        }
         try {
             Arrays.fill(buffer.array(), fromIndex, toIndex, value);
             buffer.position(0);
