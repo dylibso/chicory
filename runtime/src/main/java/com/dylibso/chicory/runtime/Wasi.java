@@ -64,7 +64,10 @@ public class Wasi {
                                     throw new WASMRuntimeException("We don't yet support fd " + fd);
                             }
                             if (stream == null) {
-                                throw new WASMRuntimeException("The program attempted an fd_write to " + fd + "but this was not granted.");
+                                throw new WASMRuntimeException(
+                                        "The program attempted an fd_write to "
+                                                + fd
+                                                + "but this was not granted.");
                             }
                             var iovs = args[1].asInt();
                             var iovsLen = args[2].asInt();
@@ -155,7 +158,10 @@ public class Wasi {
                                     throw new WASMRuntimeException("We don't yet support fd " + fd);
                             }
                             if (stream == null) {
-                                throw new WASMRuntimeException("The program attempted an fd_read from" + fd + "but this was not granted.");
+                                throw new WASMRuntimeException(
+                                        "The program attempted an fd_read from"
+                                                + fd
+                                                + "but this was not granted.");
                             }
                             var iovs = args[1].asInt();
                             var iovsLen = args[2].asInt();
