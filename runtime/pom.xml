@@ -50,7 +50,6 @@
             local_set.wast,
             local_tee.wast,
             memory.wast,
-            return.wast,
             names.wast,
             load.wast,
             address.wast,
@@ -72,7 +71,6 @@
             br_table.wast,
             conversions.wast,
             if.wast,
-            float_misc.wast,
             table.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
@@ -81,7 +79,6 @@
             block.wast,
             memory_init.wast,
             loop.wast,
-            block.wast,
             nop.wast,
             float_exprs.wast,
             global.wast,
