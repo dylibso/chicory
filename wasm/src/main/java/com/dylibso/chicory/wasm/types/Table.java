@@ -5,8 +5,6 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 
 public class Table {
-
-    public static final int UNINITIALIZED = -2;
     private ElementType elementType;
     private long limitMin;
     private long limitMax;
@@ -38,7 +36,7 @@ public class Table {
     }
 
     public Value getRef(int index) {
-        int res = UNINITIALIZED;
+        int res = REF_NULL_VALUE;
         try {
             res = this.refs[index];
         } catch (IndexOutOfBoundsException e) {
