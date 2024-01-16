@@ -1,4 +1,4 @@
-package com.dylibso.chicory.runtime;
+package com.dylibso.chicory.runtime.wasi;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -15,10 +15,7 @@ public class WasiOptions {
     protected WasiOptions() {}
 
     public WasiOptions inheritSystem() {
-        this.stdout = System.out;
-        this.stdin = System.in;
-        this.stderr = System.err;
-        return this;
+        return setStdout(System.out).setStdin(System.in).setStderr(System.err);
     }
 
     public PrintStream getStdout() {

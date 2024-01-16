@@ -2,6 +2,8 @@ package com.dylibso.chicory.runtime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.dylibso.chicory.runtime.wasi.WasiOptions;
+import com.dylibso.chicory.runtime.wasi.WasiP1;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.ByteArrayInputStream;
