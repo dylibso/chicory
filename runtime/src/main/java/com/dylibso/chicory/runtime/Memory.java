@@ -293,20 +293,15 @@ public final class Memory {
     }
 
     public void fill(byte value) {
-        try {
-            // see https://appsintheopen.com/posts/53-resetting-bytebuffers-to-zero-in-java
-            Arrays.fill(buffer.array(), value);
-            buffer.position(0);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
-        }
+        fill(value, 0, buffer.capacity());
     }
 
     public void fill(byte value, int fromIndex, int toIndex) {
         try {
+            // see https://appsintheopen.com/posts/53-resetting-bytebuffers-to-zero-in-java
             Arrays.fill(buffer.array(), fromIndex, toIndex, value);
             buffer.position(0);
-        } catch (IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
