@@ -10,22 +10,26 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 
-public class Wasi {
+public class WasiP1 {
 
     private WasiOptions options;
 
-    public Wasi() {
+    public WasiP1() {
+        // TODO by default everything should by blocked
+        // this works now because streams are null.
+        // maybe we want a more explicit way of doing this though
         this.options = new WasiOptions();
     }
 
-    public Wasi(WasiOptions opts) {
+    public WasiP1(WasiOptions opts) {
         this.options = opts;
     }
 
     public HostFunction[] toHostFunctions() {
-        var functions = new HostFunction[8];
+        var fidx = 8; // 46
+        var functions = new HostFunction[fidx + 1];
 
-        functions[0] =
+        functions[fidx--] =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
                             System.out.println("fd_close: " + Arrays.toString(args));
@@ -37,7 +41,7 @@ public class Wasi {
                         List.of(I32),
                         List.of(I32));
 
-        functions[1] =
+        functions[fidx--] =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
                             System.out.println("proc_exit: " + Arrays.toString(args));
@@ -48,7 +52,7 @@ public class Wasi {
                         List.of(I32),
                         List.of());
 
-        functions[2] =
+        functions[fidx--] =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
                             var fd = args[0].asInt();
@@ -97,7 +101,7 @@ public class Wasi {
                         List.of(I32, I32, I32, I32),
                         List.of(I32));
 
-        functions[3] =
+        functions[fidx--] =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
                             System.out.println("fd_seek: " + Arrays.toString(args));
@@ -109,7 +113,7 @@ public class Wasi {
                         List.of(I32, I64, I32, I32),
                         List.of(I32));
 
-        functions[4] =
+        functions[fidx--] =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
                             System.out.println("fd_fdfstat_get: " + Arrays.toString(args));
@@ -121,7 +125,7 @@ public class Wasi {
                         List.of(I32, I32),
                         List.of(I32));
 
-        functions[5] =
+        functions[fidx--] =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
                             System.out.println("environ_get: " + Arrays.toString(args));
@@ -133,7 +137,7 @@ public class Wasi {
                         List.of(I32, I32, I32, I32),
                         List.of(I32));
 
-        functions[6] =
+        functions[fidx--] =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
                             System.out.println("environ_sizes_get: " + Arrays.toString(args));
@@ -145,7 +149,7 @@ public class Wasi {
                         List.of(I32, I32),
                         List.of(I32));
 
-        functions[7] =
+        functions[fidx--] =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
                             var fd = args[0].asInt();

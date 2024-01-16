@@ -275,7 +275,7 @@ public class ModuleTest {
     public void shouldRunWasiModule() {
         // check with: wasmtime src/test/resources/compiled/hello-wasi.wat.wasm
         var fakeStdout = new MockPrintStream();
-        var wasi = new Wasi(WasiOptions.build().setStdout(fakeStdout));
+        var wasi = new WasiP1(WasiOptions.build().setStdout(fakeStdout));
         var imports = new HostImports(wasi.toHostFunctions());
         var instance =
                 Module.build(new File("src/test/resources/compiled/hello-wasi.wat.wasm"))
@@ -290,7 +290,7 @@ public class ModuleTest {
         // check with: wasmtime src/test/resources/compiled/hello-wasi.rs.wasm
         var expected = "Hello, World!\n";
         var stdout = new MockPrintStream();
-        var wasi = new Wasi(WasiOptions.build().setStdout(stdout));
+        var wasi = new WasiP1(WasiOptions.build().setStdout(stdout));
         var imports = new HostImports(wasi.toHostFunctions());
         var instance =
                 Module.build(new File("src/test/resources/compiled/hello-wasi.rs.wasm"))
@@ -305,7 +305,7 @@ public class ModuleTest {
         // check with: wasmtime src/test/resources/compiled/greet-wasi.rs.wasm
         var fakeStdin = new ByteArrayInputStream("Benjamin".getBytes());
         var wasiOpts = WasiOptions.build().setStdout(System.out).setStdin(fakeStdin);
-        var wasi = new Wasi(wasiOpts);
+        var wasi = new WasiP1(wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
         var instance =
                 Module.build(new File("src/test/resources/compiled/greet-wasi.rs.wasm"))
