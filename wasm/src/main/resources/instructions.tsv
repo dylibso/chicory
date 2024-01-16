@@ -192,7 +192,7 @@ i64.trunc_sat_f64_u 	$FC07
 memory.init <varuint> <varuint>	$FC08
 data.drop <varuint>	$FC09
 memory.copy <varuint> <varuint>	$FC0A
-memory.fill <varuint> <varuint>	$FC0B
+memory.fill <varuint>	$FC0B
 table.init <varuint> <varuint>	$FC0C
 elem.drop <varuint>	$FC0D
 table.copy <varuint> <varuint>	$FC0E
