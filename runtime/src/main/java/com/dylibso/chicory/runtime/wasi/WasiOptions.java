@@ -8,7 +8,7 @@ public class WasiOptions {
     private PrintStream stderr;
     private InputStream stdin;
 
-    public static WasiOptions build() {
+    public static WasiOptions builder() {
         return new WasiOptions();
     }
 
