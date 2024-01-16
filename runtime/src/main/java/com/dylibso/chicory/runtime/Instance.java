@@ -19,6 +19,7 @@ public class Instance {
     private int[] functionTypes;
     private HostImports imports;
     private Table[] tables;
+    private Element[] elements;
 
     public Instance(
             Module module,
@@ -32,7 +33,8 @@ public class Instance {
             FunctionType[] types,
             int[] functionTypes,
             HostImports imports,
-            Table[] tables) {
+            Table[] tables,
+            Element[] elements) {
         this.module = module;
         this.globalInitalizers = globalInitalizers;
         this.globals = globals;
@@ -46,6 +48,7 @@ public class Instance {
         this.imports = imports;
         this.machine = new Machine(this);
         this.tables = tables;
+        this.elements = elements;
     }
 
     public ExportFunction getExport(String name) {
@@ -121,5 +124,13 @@ public class Instance {
             return null;
         }
         return tables[idx - importedTablesOffset];
+    }
+
+    public Element getElement(int idx) {
+        return elements[idx];
+    }
+
+    public void setElement(int idx, Element val) {
+        elements[idx] = val;
     }
 }
