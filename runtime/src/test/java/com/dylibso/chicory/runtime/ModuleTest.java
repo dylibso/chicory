@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
@@ -302,19 +304,19 @@ public class ModuleTest {
         assertEquals(expected, stdout.getOutput());
     }
 
-    //    @Test
-    //    public void shouldRunWasiGreetRustModule() {
-    //        // check with: wasmtime src/test/resources/compiled/greet-wasi.rs.wasm
-    //        var fakeStdin = new ByteArrayInputStream("Benjamin".getBytes());
-    //        var wasiOpts = WasiOptions.build().setStdout(System.out).setStdin(fakeStdin);
-    //        var wasi = new Wasi(wasiOpts);
-    //        var imports = new HostImports(wasi.toHostFunctions());
-    //        var instance =
-    //                Module.build(new File("src/test/resources/compiled/greet-wasi.rs.wasm"))
-    //                        .instantiate(imports);
-    //        var run = instance.getExport("_start");
-    //        run.apply();
-    //    }
+    @Test
+    public void shouldRunWasiGreetRustModule() {
+        // check with: wasmtime src/test/resources/compiled/greet-wasi.rs.wasm
+        var fakeStdin = new ByteArrayInputStream("Benjamin".getBytes());
+        var wasiOpts = WasiOptions.build().setStdout(System.out).setStdin(fakeStdin);
+        var wasi = new Wasi(wasiOpts);
+        var imports = new HostImports(wasi.toHostFunctions());
+        var instance =
+                Module.build(new File("src/test/resources/compiled/greet-wasi.rs.wasm"))
+                        .instantiate(imports);
+        var run = instance.getExport("_start");
+        run.apply();
+    }
 
     // @Test
     // public void shouldOperateMemoryOps() {

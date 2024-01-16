@@ -309,6 +309,9 @@ public final class Memory {
     }
 
     public void fill(byte value, int fromIndex, int toIndex) {
+        if ((1 + this.nPages * PAGE_SIZE) <= toIndex) {
+            throw new WASMRuntimeException("out of bounds memory access");
+        }
         try {
             Arrays.fill(buffer.array(), fromIndex, toIndex, value);
             buffer.position(0);
