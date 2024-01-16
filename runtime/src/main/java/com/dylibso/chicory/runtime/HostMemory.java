@@ -4,6 +4,7 @@ public class HostMemory implements FromHost {
     private final String moduleName;
     private final String fieldName;
     private final Memory memory;
+    private boolean override;
 
     public HostMemory(String moduleName, String fieldName, Memory memory) {
         this.moduleName = moduleName;
@@ -17,6 +18,15 @@ public class HostMemory implements FromHost {
 
     public String getFieldName() {
         return fieldName;
+    }
+
+    public void setOverride(boolean override) {
+        this.override = override;
+    }
+
+    @Override
+    public boolean override() {
+        return override;
     }
 
     @Override

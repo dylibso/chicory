@@ -8,6 +8,7 @@ public class HostGlobal implements FromHost {
     private final MutabilityType type;
     private final String moduleName;
     private final String fieldName;
+    private boolean override;
 
     public HostGlobal(String moduleName, String fieldName, Value value) {
         this(moduleName, fieldName, value, MutabilityType.Const);
@@ -38,6 +39,15 @@ public class HostGlobal implements FromHost {
 
     public String getFieldName() {
         return fieldName;
+    }
+
+    public void setOverride(boolean override) {
+        this.override = override;
+    }
+
+    @Override
+    public boolean override() {
+        return override;
     }
 
     @Override

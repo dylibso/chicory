@@ -13,4 +13,6 @@ public interface FromHost {
     String getFieldName();
 
     FromHostType getType();
+
+    boolean override();
 }
