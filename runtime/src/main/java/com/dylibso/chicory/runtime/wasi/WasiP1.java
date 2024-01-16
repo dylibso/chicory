@@ -3,7 +3,6 @@ package com.dylibso.chicory.runtime.wasi;
 import static com.dylibso.chicory.wasm.types.ValueType.*;
 
 import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.types.Value;
@@ -27,7 +26,9 @@ public class WasiP1 {
 
     public WasiP1(WasiOptions opts) {
         this.options = opts;
-        LOGGER.log(System.Logger.Level.WARNING, "Use of WASIP1 is experimental and will only work for the simplest of use cases.");
+        LOGGER.log(
+                System.Logger.Level.WARNING,
+                "Use of WASIP1 is experimental and will only work for the simplest of use cases.");
     }
 
     public HostFunction[] toHostFunctions() {
