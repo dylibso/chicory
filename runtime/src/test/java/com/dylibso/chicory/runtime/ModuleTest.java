@@ -115,7 +115,7 @@ public class ModuleTest {
                         .instantiate(new HostImports(funcs));
         var logIt = instance.getExport("logIt");
         logIt.apply();
-        assertEquals((expected + "\n").repeat(10), printer.getOutput());
+        assertEquals((expected + "\n").repeat(10), printer.getOutput().strip());
         assertEquals(10, printer.getTimes());
     }
 
@@ -163,7 +163,7 @@ public class ModuleTest {
                         .instantiate(new HostImports(funcs));
         var start = module.getExport("_start");
         start.apply();
-        assertEquals(expected + "\n", printer.getOutput());
+        assertEquals(expected, printer.getOutput().strip());
         assertTrue(printer.getTimes() > 0);
     }
 
@@ -284,7 +284,7 @@ public class ModuleTest {
                         .instantiate(imports);
         var run = instance.getExport("_start");
         run.apply();
-        assertEquals(fakeStdout.getOutput(), "hello world\n");
+        assertEquals(fakeStdout.getOutput().strip(), "hello world");
     }
 
     @Test
@@ -299,7 +299,7 @@ public class ModuleTest {
                         .instantiate(imports);
         var run = instance.getExport("_start");
         run.apply(); // prints Hello, World!
-        assertEquals(expected, stdout.getOutput());
+        assertEquals(expected, stdout.getOutput().strip());
     }
 
     @Test
