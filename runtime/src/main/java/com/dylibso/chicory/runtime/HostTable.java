@@ -1,5 +1,7 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+
 import com.dylibso.chicory.wasm.types.ElementType;
 import com.dylibso.chicory.wasm.types.Table;
 import java.util.Map;
@@ -32,7 +34,7 @@ public class HostTable implements FromHost {
             if (funcRefs.containsKey(i)) {
                 this.table.setRef(i, funcRefs.get(i));
             } else {
-                this.table.setRef(i, Table.UNINITIALIZED);
+                this.table.setRef(i, REF_NULL_VALUE);
             }
         }
     }

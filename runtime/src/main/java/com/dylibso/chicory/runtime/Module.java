@@ -180,6 +180,7 @@ public class Module {
         }
 
         Table[] tables = new Table[0];
+        Element[] elements = new Element[0];
         if (module.getTableSection() != null) {
             var tableLength = module.getTableSection().getTables().length;
             tables = new Table[tableLength];
@@ -187,6 +188,7 @@ public class Module {
                 tables[i] = module.getTableSection().getTables()[i];
             }
             if (module.getElementSection() != null) {
+                elements = module.getElementSection().getElements();
                 for (var el : module.getElementSection().getElements()) {
                     switch (el.getElemType()) {
                         case Type:
@@ -213,12 +215,13 @@ public class Module {
                         case Func:
                             {
                                 var funcElem = (ElemFunc) el;
-                                // TODO: what?
+                                // TODO: what? only runtime?
                                 break;
                             }
                         case Elem:
                             {
                                 var elemElem = (ElemElem) el;
+                                // TODO: what? only runtime?
                                 break;
                             }
                         default:
@@ -283,13 +286,11 @@ public class Module {
                 types,
                 functionTypes,
                 mappedHostImports,
-                tables);
+                tables,
+                elements);
     }
 
-    // TODO: refactor to a method with the implementation in Memory
-    // TODO: handle GLOBAL_GET too
-    // https://www.w3.org/TR/wasm-core-1/#valid-constant
-    private int getConstantValue(Instruction[] expr) {
+    public static int getConstantValue(Instruction[] expr) {
         assert (expr.length == 1);
         if (expr[0].getOpcode() != OpCode.I32_CONST) {
             throw new RuntimeException(
