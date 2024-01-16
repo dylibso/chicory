@@ -481,9 +481,6 @@ public class Machine {
                             var val = stack.pop().asByte();
                             var offset = stack.pop().asInt();
                             var end = (size + offset);
-                            if (end > instance.getMemory().getMaximumSize()) {
-                                throw new WASMRuntimeException("out of bounds memory access");
-                            }
                             instance.getMemory().fill(val, offset, end);
                             break;
                         }
