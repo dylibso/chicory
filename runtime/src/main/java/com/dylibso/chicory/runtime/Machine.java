@@ -99,18 +99,15 @@ public class Machine {
                 if (shouldReturn) return;
                 var instruction = code.get(frame.pc);
                 frame.pc++;
-                //                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
-                //                    LOGGER.log(
-                //                            System.Logger.Level.DEBUG,
-                //                            "func="
-                //                                    + frame.funcId
-                //                                    + "@"
-                //                                    + frame.pc
-                //                                    + ": "
-                //                                    + instruction
-                //                                    + " stack="
-                //                                    + this.stack);
-                //                }
+                if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
+                    LOGGER.log(
+                            System.Logger.Level.DEBUG,
+                            "func={0}@{1}:{2} stack={3}",
+                            frame.funcId,
+                            frame.pc,
+                            instruction,
+                            this.stack);
+                }
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
                 switch (opcode) {
