@@ -3,6 +3,7 @@ package com.dylibso.chicory.runtime.wasi;
 import static com.dylibso.chicory.wasm.types.ValueType.*;
 
 import com.dylibso.chicory.runtime.HostFunction;
+import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.types.Value;
@@ -13,6 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class WasiP1 {
+    private static final System.Logger LOGGER = System.getLogger(WasiP1.class.getName());
 
     private WasiOptions options;
 
@@ -20,11 +22,12 @@ public class WasiP1 {
         // TODO by default everything should by blocked
         // this works now because streams are null.
         // maybe we want a more explicit way of doing this though
-        this.options = new WasiOptions();
+        this(new WasiOptions());
     }
 
     public WasiP1(WasiOptions opts) {
         this.options = opts;
+        LOGGER.log(System.Logger.Level.WARNING, "Use of WASIP1 is experimental and will only work for the simplest of use cases.");
     }
 
     public HostFunction[] toHostFunctions() {
