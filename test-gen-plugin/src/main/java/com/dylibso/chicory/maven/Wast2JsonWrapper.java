@@ -155,7 +155,11 @@ public class Wast2JsonWrapper {
             ps = pb.start();
             ps.waitFor(1, TimeUnit.SECONDS);
             if (ps.exitValue() != 0) {
-                System.err.println(ps.getErrorStream().toString());
+                log.warn(
+                        "Couldn't get system "
+                                + WAST2JSON
+                                + " version: "
+                                + ps.getErrorStream().toString());
             }
             systemVersion = new String(ps.getInputStream().readAllBytes());
         } catch (IOException e) {
@@ -170,8 +174,19 @@ public class Wast2JsonWrapper {
 
         if (ps != null && ps.exitValue() == 0) {
             if (systemVersion != null && versionMatches(systemVersion, wabtVersion)) {
-                log.info(WAST2JSON + " binary detected available, using the system one.");
+                log.info(
+                        WAST2JSON
+                                + " binary detected available, using the system one with version "
+                                + systemVersion);
                 return WAST2JSON;
+            } else {
+                log.info(
+                        "System "
+                                + WAST2JSON
+                                + " cannot be used due to its version: actual - "
+                                + systemVersion
+                                + ", required - "
+                                + wabtVersion);
             }
         }
 
