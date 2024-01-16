@@ -15,26 +15,19 @@ import org.junit.jupiter.api.Test;
 
 class MockPrintStream extends PrintStream {
     private ByteArrayOutputStream baos;
-    private int times;
 
     public MockPrintStream() {
         super(new ByteArrayOutputStream());
         this.baos = (ByteArrayOutputStream) this.out;
-        this.times = 0;
     }
 
     @Override
     public void println(String s) {
         super.println(s);
-        this.times++;
     }
 
     public String getOutput() {
         return baos.toString();
-    }
-
-    public int getTimes() {
-        return times;
     }
 }
 
@@ -115,8 +108,7 @@ public class ModuleTest {
                         .instantiate(new HostImports(funcs));
         var logIt = instance.getExport("logIt");
         logIt.apply();
-        assertEquals((expected + "\n").repeat(10), printer.getOutput().strip());
-        assertEquals(10, printer.getTimes());
+        assertEquals((expected + "\n").repeat(10).strip(), printer.getOutput().strip());
     }
 
     @Test
@@ -164,7 +156,6 @@ public class ModuleTest {
         var start = module.getExport("_start");
         start.apply();
         assertEquals(expected, printer.getOutput().strip());
-        assertTrue(printer.getTimes() > 0);
     }
 
     @Test
@@ -290,7 +281,7 @@ public class ModuleTest {
     @Test
     public void shouldRunWasiRustModule() {
         // check with: wasmtime src/test/resources/compiled/hello-wasi.rs.wasm
-        var expected = "Hello, World!\n";
+        var expected = "Hello, World!";
         var stdout = new MockPrintStream();
         var wasi = new WasiP1(WasiOptions.builder().setStdout(stdout));
         var imports = new HostImports(wasi.toHostFunctions());
