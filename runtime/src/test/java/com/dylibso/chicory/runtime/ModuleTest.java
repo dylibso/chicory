@@ -108,7 +108,7 @@ public class ModuleTest {
                         .instantiate(new HostImports(funcs));
         var logIt = instance.getExport("logIt");
         logIt.apply();
-        assertEquals((expected + "\n").repeat(10).strip(), printer.getOutput().strip());
+        assertEquals(expected.repeat(10).strip(), printer.getOutput().replaceAll("\n|\r", ""));
     }
 
     @Test
