@@ -57,7 +57,8 @@ public class Module {
         return this.instantiate(new HostImports());
     }
 
-    public Instance instantiate(HostImports hostImports) {
+    public Instance instantiate(HostImports initialHostImports) {
+        var hostImports = initialHostImports.resolve();
         var globalInitializers = new Global[] {};
         if (this.module.getGlobalSection() != null) {
             globalInitializers = this.module.getGlobalSection().getGlobals();
