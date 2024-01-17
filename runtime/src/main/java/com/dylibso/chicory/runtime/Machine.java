@@ -1801,6 +1801,12 @@ public class Machine {
                             var src = instance.getTable(tableidxSrc);
                             var dest = instance.getTable(tableidxDst);
 
+                            if (size < 0
+                                    || (s < 0 || (size + s) > src.getSize())
+                                    || (d < 0 || (size + d) > dest.getSize())) {
+                                throw new WASMRuntimeException("out of bounds table access");
+                            }
+
                             for (int i = size - 1; i >= 0; i--) {
                                 if (d <= s) {
                                     var val = src.getRef(s++);

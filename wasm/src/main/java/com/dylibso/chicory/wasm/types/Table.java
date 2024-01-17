@@ -35,6 +35,10 @@ public class Table {
         return limitMax;
     }
 
+    public int getSize() {
+        return refs.length;
+    }
+
     public Value getRef(int index) {
         int res = REF_NULL_VALUE;
         try {
