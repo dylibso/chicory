@@ -9,7 +9,7 @@ public enum ValueType {
     I64(0x7e),
     I32(0x7f),
     V128(0x7b),
-    FuncRef(0x7a),
+    FuncRef(0x70),
     ExternRef(0x6f);
 
     private final long id;

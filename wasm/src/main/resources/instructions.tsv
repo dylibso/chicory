@@ -178,7 +178,7 @@ i32.extend_16_s      	$C1
 i64.extend_8_s      	$C2
 i64.extend_16_s      	$C3
 i64.extend_32_s      	$C4
-ref.null	$D0
+ref.null <varuint>	$D0
 ref.is_null	$D1
 ref.func <varuint>	$D2
 i32.trunc_sat_f32_s 	$FC00

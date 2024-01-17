@@ -305,7 +305,7 @@ public class Machine {
                             var i = this.stack.pop().asInt();
                             if (i < 0
                                     || (table.getLimitMax() != 0 && i >= table.getLimitMax())
-                                    || i >= table.getLimitMin()) {
+                                    || i >= table.getSize()) {
                                 throw new WASMRuntimeException("out of bounds table access");
                             }
                             var ref = table.getRef(i);
@@ -1839,6 +1839,44 @@ public class Machine {
                             for (int i = offset; i < end; i++) {
                                 table.setRef(i, val);
                             }
+                            break;
+                        }
+                    case TABLE_SIZE:
+                        {
+                            var tableidx = (int) operands[0];
+                            var table = instance.getTable(tableidx);
+                            if (table == null) {
+                                table = instance.getImports().getTables()[tableidx].getTable();
+                            }
+
+                            this.stack.push(Value.i32(table.getSize()));
+                            break;
+                        }
+                    case TABLE_GROW:
+                        {
+                            var tableidx = (int) operands[0];
+                            var table = instance.getTable(tableidx);
+                            if (table == null) {
+                                table = instance.getImports().getTables()[tableidx].getTable();
+                            }
+
+                            var size = stack.pop().asInt();
+                            var valValue = stack.pop();
+                            var val = valValue.asExtRef();
+
+                            var res = table.grow(size, val);
+                            stack.push(Value.i32(res));
+                            break;
+                        }
+                    case REF_FUNC:
+                        {
+                            stack.push(Value.funcRef(operands[0]));
+                            break;
+                        }
+                    case REF_NULL:
+                        {
+                            var type = ValueType.byId(operands[0]);
+                            stack.push(new Value(type, (long) REF_NULL_VALUE));
                             break;
                         }
                     case REF_IS_NULL:

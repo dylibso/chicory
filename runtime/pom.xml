@@ -92,7 +92,8 @@
             bulk.wast,
             table_init.wast,
             table_copy.wast,
-            table_fill.wast</orderedWastToProcess>
+            table_fill.wast,
+            table_grow.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
             <!-- Errors -->
