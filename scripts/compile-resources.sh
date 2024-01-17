@@ -4,7 +4,7 @@ set -euxo pipefail
 CONTAINER_IMAGE="docker.io/andreatp/chicory-compilation-support"
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-declare -a arr=("wasm" "runtime")
+declare -a arr=("wasm" "runtime" "wasi")
 
 for i in "${arr[@]}"
 do

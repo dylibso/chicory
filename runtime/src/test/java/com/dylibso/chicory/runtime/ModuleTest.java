@@ -2,32 +2,36 @@ package com.dylibso.chicory.runtime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.dylibso.chicory.runtime.wasi.WasiOptions;
-import com.dylibso.chicory.runtime.wasi.WasiP1;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.PrintStream;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class MockPrintStream extends PrintStream {
-    private ByteArrayOutputStream baos;
+class Printer {
 
-    public MockPrintStream() {
-        super(new ByteArrayOutputStream());
-        this.baos = (ByteArrayOutputStream) this.out;
+    private static final System.Logger LOGGER = System.getLogger(Printer.class.getName());
+
+    private int count = 0;
+    private final String expected;
+
+    Printer() {
+        this.expected = null;
     }
 
-    @Override
-    public void println(String s) {
-        super.println(s);
+    Printer(String expected) {
+        this.expected = expected;
     }
 
-    public String getOutput() {
-        return baos.toString();
+    public void println(String msg) {
+        if (expected == null || expected.equals(msg)) {
+            count++;
+        }
+        LOGGER.log(System.Logger.Level.INFO, msg);
+    }
+
+    public int times() {
+        return count;
     }
 }
 
@@ -87,8 +91,7 @@ public class ModuleTest {
 
     @Test
     public void shouldConsoleLogWithString() {
-        var expected = "Hello, World!";
-        var printer = new MockPrintStream();
+        var printer = new Printer("Hello, World!");
         var func =
                 new HostFunction(
                         (Memory memory, Value... args) -> { // decompiled is: console_log(13, 0);
@@ -108,7 +111,7 @@ public class ModuleTest {
                         .instantiate(new HostImports(funcs));
         var logIt = instance.getExport("logIt");
         logIt.apply();
-        assertEquals(expected.repeat(10).strip(), printer.getOutput().replaceAll("\n|\r", ""));
+        assertEquals(10, printer.times());
     }
 
     @Test
@@ -136,8 +139,7 @@ public class ModuleTest {
 
     @Test
     public void shouldWorkWithStartFunction() {
-        var expected = "gotit 42";
-        var printer = new MockPrintStream();
+        var printer = new Printer("gotit 42");
         var func =
                 new HostFunction(
                         (Memory memory, Value... args) -> {
@@ -155,7 +157,7 @@ public class ModuleTest {
                         .instantiate(new HostImports(funcs));
         var start = module.getExport("_start");
         start.apply();
-        assertEquals(expected, printer.getOutput().strip());
+        assertTrue(printer.times() > 0);
     }
 
     @Test
@@ -262,49 +264,6 @@ public class ModuleTest {
 
         var run = instance.getExport("run");
         assertEquals(6, run.apply(Value.i32(100))[0].asInt());
-    }
-
-    @Test
-    public void shouldRunWasiModule() {
-        // check with: wasmtime src/test/resources/compiled/hello-wasi.wat.wasm
-        var fakeStdout = new MockPrintStream();
-        var wasi = new WasiP1(WasiOptions.builder().setStdout(fakeStdout));
-        var imports = new HostImports(wasi.toHostFunctions());
-        var instance =
-                Module.build(new File("src/test/resources/compiled/hello-wasi.wat.wasm"))
-                        .instantiate(imports);
-        var run = instance.getExport("_start");
-        run.apply();
-        assertEquals(fakeStdout.getOutput().strip(), "hello world");
-    }
-
-    @Test
-    public void shouldRunWasiRustModule() {
-        // check with: wasmtime src/test/resources/compiled/hello-wasi.rs.wasm
-        var expected = "Hello, World!";
-        var stdout = new MockPrintStream();
-        var wasi = new WasiP1(WasiOptions.builder().setStdout(stdout));
-        var imports = new HostImports(wasi.toHostFunctions());
-        var instance =
-                Module.build(new File("src/test/resources/compiled/hello-wasi.rs.wasm"))
-                        .instantiate(imports);
-        var run = instance.getExport("_start");
-        run.apply(); // prints Hello, World!
-        assertEquals(expected, stdout.getOutput().strip());
-    }
-
-    @Test
-    public void shouldRunWasiGreetRustModule() {
-        // check with: wasmtime src/test/resources/compiled/greet-wasi.rs.wasm
-        var fakeStdin = new ByteArrayInputStream("Benjamin".getBytes());
-        var wasiOpts = WasiOptions.builder().setStdout(System.out).setStdin(fakeStdin);
-        var wasi = new WasiP1(wasiOpts);
-        var imports = new HostImports(wasi.toHostFunctions());
-        var instance =
-                Module.build(new File("src/test/resources/compiled/greet-wasi.rs.wasm"))
-                        .instantiate(imports);
-        var run = instance.getExport("_start");
-        run.apply();
     }
 
     // @Test
