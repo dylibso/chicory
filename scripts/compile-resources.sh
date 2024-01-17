@@ -4,7 +4,7 @@ set -euxo pipefail
 CONTAINER_IMAGE="docker.io/andreatp/chicory-compilation-support"
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-declare -a arr=("wasm" "runtime")
+declare -a arr=("wasm" "runtime" "wasi")
 
 for i in "${arr[@]}"
 do
@@ -30,7 +30,7 @@ do
         cat $w | docker run --rm -i --entrypoint "./compile-rust-wasi.sh" ${CONTAINER_IMAGE} > $out.wasm
       else
         cat $w | docker run --rm -i --entrypoint "./compile-rust.sh" ${CONTAINER_IMAGE} > $out.wasm
-      end
+      fi
     fi
   done
 
