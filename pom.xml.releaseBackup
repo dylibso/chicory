@@ -42,7 +42,7 @@
   <scm>
     <connection>scm:git:git://github.com/dylibso/chicory.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/dylibso/chicory.git</developerConnection>
-    <tag>chicory-0.0.3</tag>
+    <tag>main</tag>
     <url>https://github.com/dylibso/chicory</url>
   </scm>
 
