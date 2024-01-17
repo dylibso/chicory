@@ -2,6 +2,17 @@ name: release
 
 on:
   workflow_dispatch:
+    inputs:
+      release-version:
+        description: 'Version being released'
+        required: true
+      branch:
+        description: 'Branch to release from'
+        required: true
+        default: 'main'
+
+permissions:
+  contents: write
 
 jobs:
   release:
@@ -11,8 +22,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       # Configure build steps as you'd normally do
 
@@ -20,14 +29,28 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: 11
-          distribution: 'zulu'
+          distribution: 'temurin'
           server-id: central
           server-username: MAVEN_USERNAME
           server-password: MAVEN_CENTRAL_TOKEN
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
-      # Post JARs to Maven Central
+      - name: Setup Git
+        run: |
+          git config user.name "Chicory BOT"
+          git config user.email "chicory@dylibso.com"
+
+      - name: Set the version
+        run: |
+          mvn versions:set -DgenerateBackupPoms=false -DnewVersion=${{ github.event.inputs.release-version }}
+          git add .
+          git commit -m "Release version update ${{ github.event.inputs.release-version }}"
+          git push
+          git tag ${{ github.event.inputs.release-version }}
+          git push origin ${{ github.event.inputs.release-version }}
+        env:
+          GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
 
       - name: Release to Maven Central
         env:
@@ -36,8 +59,6 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           export GPG_TTY=$(tty)
-          git config user.name "${{ github.event.head_commit.committer.name }}"
-          git config user.email "${{ github.event.head_commit.committer.email }}"
           mvn -B --file pom.xml release:prepare release:perform
 
       # Create a release
@@ -45,7 +66,7 @@ jobs:
       - name: Run JReleaser
         uses: jreleaser/release-action@v2
         env:
-          JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JRELEASER_GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
 
       # Persist logs
 
@@ -57,3 +78,12 @@ jobs:
           path: |
             out/jreleaser/trace.log
             out/jreleaser/output.properties
+
+      - name: Back to Snapshot
+        run: |
+          mvn versions:set -DgenerateBackupPoms=false -DnewVersion=999-SNAPSHOT
+          git add .
+          git commit -m "Snapshot version update"
+          git push
+        env:
+          GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
