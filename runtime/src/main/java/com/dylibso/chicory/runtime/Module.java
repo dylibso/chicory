@@ -224,6 +224,12 @@ public class Module {
                                 // TODO: what? only runtime?
                                 break;
                             }
+                        case Mem:
+                            {
+                                var memElem = (ElemMem) el;
+                                // TODO: what? only runtime?
+                                break;
+                            }
                         default:
                             throw new ChicoryException(
                                     "Elment type: " + el.getElemType() + " not yet supported");
