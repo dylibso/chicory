@@ -1818,6 +1818,29 @@ public class Machine {
                             }
                             break;
                         }
+                    case TABLE_FILL:
+                    {
+                        var tableidx = (int) operands[0];
+
+                        var size = this.stack.pop().asInt();
+                        var val = this.stack.pop().asExtRef();
+                        var offset = this.stack.pop().asInt();
+                        var end = offset + size;
+
+                        var table = instance.getTable(tableidx);
+                        if (table == null) {
+                            table = instance.getImports().getTables()[tableidx].getTable();
+                        }
+
+                        if (size < 0 || end > table.getSize()) {
+                            throw new WASMRuntimeException("out of bounds table access");
+                        }
+
+                        for (int i = offset; i < end; i++) {
+                            table.setRef(i, val);
+                        }
+                        break;
+                    }
                     case REF_IS_NULL:
                         {
                             var val = this.stack.pop();
