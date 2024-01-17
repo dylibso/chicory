@@ -4,7 +4,7 @@
 
   <groupId>com.dylibso.chicory</groupId>
   <artifactId>chicory</artifactId>
-  <version>0.0.3</version>
+  <version>0.0.4-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Chicory</name>
   <description>Native JVM WebAssembly runtime</description>
@@ -210,8 +210,8 @@
                 <include>*.md</include>
                 <include>.gitignore</include>
               </includes>
-              <trimTrailingWhitespace></trimTrailingWhitespace>
-              <endWithNewline></endWithNewline>
+              <trimTrailingWhitespace />
+              <endWithNewline />
               <indent>
                 <spaces>true</spaces>
                 <spacesPerTab>2</spacesPerTab>
@@ -229,14 +229,14 @@
               <reflowLongStrings>true</reflowLongStrings>
               <formatJavadoc>false</formatJavadoc>
             </googleJavaFormat>
-            <importOrder></importOrder>
-            <removeUnusedImports></removeUnusedImports>
+            <importOrder />
+            <removeUnusedImports />
           </java>
           <pom>
             <includes>
               <include>**/pom.xml</include>
             </includes>
-            <sortPom></sortPom>
+            <sortPom />
           </pom>
         </configuration>
         <executions>
