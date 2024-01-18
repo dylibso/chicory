@@ -74,6 +74,10 @@ public class Instance {
         return functions[idx - importedFunctionsOffset];
     }
 
+    public int getFunctionsSize() {
+        return importedFunctionsOffset + functions.length;
+    }
+
     public Memory getMemory() {
         return memory;
     }
@@ -128,6 +132,10 @@ public class Instance {
 
     public Element getElement(int idx) {
         return elements[idx];
+    }
+
+    public int getElementSize() {
+        return elements.length;
     }
 
     public void setElement(int idx, Element val) {

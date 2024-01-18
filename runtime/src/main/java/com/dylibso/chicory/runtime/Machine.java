@@ -1762,8 +1762,18 @@ public class Machine {
                             if (table == null) {
                                 table = instance.getImports().getTables()[tableidx].getTable();
                             }
+
+                            if (size < 0
+                                    || size + elemidx > instance.getElementSize()
+                                    || end > table.getSize()) {
+                                throw new WASMRuntimeException("out of bounds table access");
+                            }
+
                             for (int i = offset; i < end; i++) {
                                 var val = getRuntimeElementValue(elementidx, elemidx++);
+                                if (val > instance.getFunctionsSize()) {
+                                    throw new WASMRuntimeException("out of bounds table access");
+                                }
                                 table.setRef(i, val);
                             }
                             break;
@@ -1976,6 +1986,9 @@ public class Machine {
 
     private int getRuntimeElementValue(int idx, int s) {
         var elem = instance.getElement(idx);
+        if (elem == null) {
+            throw new WASMRuntimeException("out of bounds table access");
+        }
         var type = elem.getElemType();
         int val;
         switch (type) {
