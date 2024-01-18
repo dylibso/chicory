@@ -1988,9 +1988,6 @@ public class Machine {
 
     private int getRuntimeElementValue(int idx, int s) {
         var elem = instance.getElement(idx);
-        if (elem == null) {
-            throw new WASMRuntimeException("out of bounds table access");
-        }
         var type = elem.getElemType();
         int val;
         switch (type) {
@@ -2003,9 +2000,6 @@ public class Machine {
             case Elem:
                 {
                     var e = (ElemElem) elem;
-                    if (s >= e.getExprs().length) {
-                        throw new WASMRuntimeException("out of bounds table access");
-                    }
                     var expr = e.getExprs()[s];
                     val = getConstantValue(expr);
                     break;
@@ -2013,9 +2007,6 @@ public class Machine {
             case Func:
                 {
                     var f = (ElemFunc) elem;
-                    if (s >= f.getFuncIndices().length) {
-                        throw new WASMRuntimeException("out of bounds table access");
-                    }
                     val = (int) f.getFuncIndices()[s];
                     break;
                 }

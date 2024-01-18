@@ -103,7 +103,7 @@ public class Module {
                 default:
                     throw new RuntimeException(
                             "We only support i32.const, i64.const, f32.const, f64.const,"
-                                + " global.get, and ref.null opcodes on global initializers right"
+                                + " global.get, ref.func and ref.null opcodes on global initializers right"
                                 + " now. We failed to initialize opcode: "
                                     + instr.getOpcode());
             }
