@@ -5,25 +5,25 @@ import java.util.Arrays;
 
 public class Instance {
     private static final System.Logger LOGGER = System.getLogger(Instance.class.getName());
-    private Module module;
-    private Machine machine;
-    private FunctionBody[] functions;
-    private Memory memory;
-    private Global[] globalInitalizers;
-    private Value[] globals;
+    private final Module module;
+    private final Machine machine;
+    private final FunctionBody[] functions;
+    private final Memory memory;
+    private final Global[] globalInitializers;
+    private final Value[] globals;
 
-    private int importedGlobalsOffset;
-    private int importedFunctionsOffset;
-    private int importedTablesOffset;
-    private FunctionType[] types;
-    private int[] functionTypes;
-    private HostImports imports;
-    private Table[] tables;
-    private Element[] elements;
+    private final int importedGlobalsOffset;
+    private final int importedFunctionsOffset;
+    private final int importedTablesOffset;
+    private final FunctionType[] types;
+    private final int[] functionTypes;
+    private final HostImports imports;
+    private final Table[] tables;
+    private final Element[] elements;
 
     public Instance(
             Module module,
-            Global[] globalInitalizers,
+            Global[] globalInitializers,
             Value[] globals,
             int importedGlobalsOffset,
             int importedFunctionsOffset,
@@ -36,7 +36,7 @@ public class Instance {
             Table[] tables,
             Element[] elements) {
         this.module = module;
-        this.globalInitalizers = globalInitalizers;
+        this.globalInitializers = globalInitializers;
         this.globals = globals;
         this.importedGlobalsOffset = importedGlobalsOffset;
         this.importedFunctionsOffset = importedFunctionsOffset;
@@ -100,11 +100,11 @@ public class Instance {
         return globals[idx - importedGlobalsOffset];
     }
 
-    public Global getGlobalInitalizer(int idx) {
+    public Global getGlobalInitializer(int idx) {
         if (idx < importedGlobalsOffset) {
             return null;
         }
-        return globalInitalizers[idx - importedGlobalsOffset];
+        return globalInitializers[idx - importedGlobalsOffset];
     }
 
     public FunctionType[] getTypes() {
