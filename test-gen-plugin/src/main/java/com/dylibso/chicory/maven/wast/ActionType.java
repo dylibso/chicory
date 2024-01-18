@@ -5,7 +5,9 @@ import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum ActionType {
     @JsonProperty("invoke")
-    INVOKE("invoke");
+    INVOKE("invoke"),
+    @JsonProperty("get")
+    GET("get");
 
     private final String value;
 
