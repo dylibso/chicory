@@ -9,9 +9,9 @@ import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
 
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.MICROSECONDS)
-@Fork(1)
-public class MyBenchmark {
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
+@Fork(value = 1, warmups = 3)
+public class RuntimeBenchmarks {
     @State(Scope.Thread)
     public static class MyState {
         private Instance factModule;
