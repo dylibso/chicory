@@ -5,21 +5,21 @@ import java.util.Arrays;
 
 public class Instance {
     private static final System.Logger LOGGER = System.getLogger(Instance.class.getName());
-    private Module module;
-    private Machine machine;
-    private FunctionBody[] functions;
-    private Memory memory;
-    private Global[] globalInitializers;
-    private Value[] globals;
+    private final Module module;
+    private final Machine machine;
+    private final FunctionBody[] functions;
+    private final Memory memory;
+    private final Global[] globalInitializers;
+    private final Value[] globals;
 
-    private int importedGlobalsOffset;
-    private int importedFunctionsOffset;
-    private int importedTablesOffset;
-    private FunctionType[] types;
-    private int[] functionTypes;
-    private HostImports imports;
-    private Table[] tables;
-    private Element[] elements;
+    private final int importedGlobalsOffset;
+    private final int importedFunctionsOffset;
+    private final int importedTablesOffset;
+    private final FunctionType[] types;
+    private final int[] functionTypes;
+    private final HostImports imports;
+    private final Table[] tables;
+    private final Element[] elements;
 
     public Instance(
             Module module,
