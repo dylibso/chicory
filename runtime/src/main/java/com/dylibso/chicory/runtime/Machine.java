@@ -1883,7 +1883,9 @@ public class Machine {
                         {
                             var val = this.stack.pop();
                             this.stack.push(
-                                    val.equals(Value.EXTREF_NULL) ? Value.TRUE : Value.FALSE);
+                                    val.equals(Value.EXTREF_NULL) || val.equals(Value.FUNCREF_NULL)
+                                            ? Value.TRUE
+                                            : Value.FALSE);
                             break;
                         }
                     case ELEM_DROP:

@@ -71,7 +71,8 @@
             br_table.wast,
             conversions.wast,
             if.wast,
-            table.wast</wastToProcess>
+            table.wast,
+            ref_null.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
             stack.wast,
@@ -93,7 +94,10 @@
             table_init.wast,
             table_copy.wast,
             table_fill.wast,
-            table_grow.wast</orderedWastToProcess>
+            table_grow.wast,
+            table_size.wast,
+            ref_func.wast,
+            ref_is_null.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Assertion failures -->
             <!-- Errors -->

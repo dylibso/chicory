@@ -97,6 +97,9 @@ public class Module {
                 case REF_NULL:
                     globals[i] = Value.EXTREF_NULL;
                     break;
+                case REF_FUNC:
+                    globals[i] = Value.funcRef(instr.getOperands()[0]);
+                    break;
                 default:
                     throw new RuntimeException(
                             "We only support i32.const, i64.const, f32.const, f64.const,"
