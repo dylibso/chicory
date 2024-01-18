@@ -55,7 +55,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -261,7 +260,11 @@ public final class Parser {
         var name = readName(buffer);
         customSection.setName(name);
         var byteLen = name.getBytes().length;
-        var size = Math.min(buffer.limit() - buffer.position(), (sectionSize - byteLen));
+        var size = (sectionSize - byteLen - Encoding.computeLeb128Size(byteLen));
+        var remaining = buffer.limit() - buffer.position();
+        if (remaining > 0) {
+            size = Math.min(remaining, size);
+        }
         var bytes = new byte[(int) size];
         buffer.get(bytes);
         customSection.setBytes(bytes);
