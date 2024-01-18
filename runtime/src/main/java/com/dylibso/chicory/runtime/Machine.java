@@ -215,7 +215,7 @@ public class Machine {
                             int funcTableIdx = this.stack.pop().asInt();
                             int funcId = table.getRef(funcTableIdx).asFuncRef();
                             if (funcId == REF_NULL_VALUE) {
-                                throw new ChicoryException("uninitialized element");
+                                throw new ChicoryException("uninitialized element " + funcTableIdx);
                             }
                             // given a list of param types, let's pop those params off the stack
                             // and pass as args to the function call
@@ -1764,7 +1764,9 @@ public class Machine {
                             }
 
                             if (size < 0
-                                    || size + elemidx > instance.getElementSize()
+                                    || elementidx > instance.getElementSize()
+                                    || instance.getElement(elementidx) == null
+                                    || elemidx + size > instance.getElement(elementidx).getSize()
                                     || end > table.getSize()) {
                                 throw new WASMRuntimeException("out of bounds table access");
                             }
@@ -2001,6 +2003,9 @@ public class Machine {
             case Elem:
                 {
                     var e = (ElemElem) elem;
+                    if (s >= e.getExprs().length) {
+                        throw new WASMRuntimeException("out of bounds table access");
+                    }
                     var expr = e.getExprs()[s];
                     val = getConstantValue(expr);
                     break;
@@ -2008,6 +2013,9 @@ public class Machine {
             case Func:
                 {
                     var f = (ElemFunc) elem;
+                    if (s >= f.getFuncIndices().length) {
+                        throw new WASMRuntimeException("out of bounds table access");
+                    }
                     val = (int) f.getFuncIndices()[s];
                     break;
                 }

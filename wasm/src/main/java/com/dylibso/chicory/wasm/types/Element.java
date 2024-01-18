@@ -4,6 +4,8 @@ public interface Element {
 
     ElemType getElemType();
 
+    int getSize();
+
     enum ElemType {
         Type(0),
         Func(1),

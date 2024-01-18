@@ -21,4 +21,8 @@ public class ElemType implements Element {
     public Instruction[] getExpr() {
         return expr;
     }
+
+    public int getSize() {
+        return expr.length;
+    }
 }
