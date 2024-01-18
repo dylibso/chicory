@@ -27,4 +27,8 @@ public class ElemTable implements Element {
     public long getTableIndex() {
         return tableIndex;
     }
+
+    public int getSize() {
+        return expr.length;
+    }
 }

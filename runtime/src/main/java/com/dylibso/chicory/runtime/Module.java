@@ -97,11 +97,14 @@ public class Module {
                 case REF_NULL:
                     globals[i] = Value.EXTREF_NULL;
                     break;
+                case REF_FUNC:
+                    globals[i] = Value.funcRef(instr.getOperands()[0]);
+                    break;
                 default:
                     throw new RuntimeException(
                             "We only support i32.const, i64.const, f32.const, f64.const,"
-                                + " global.get, and ref.null opcodes on global initializers right"
-                                + " now. We failed to initialize opcode: "
+                                    + " global.get, ref.func and ref.null opcodes on global"
+                                    + " initializers right now. We failed to initialize opcode: "
                                     + instr.getOpcode());
             }
         }

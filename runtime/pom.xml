@@ -71,7 +71,8 @@
             br_table.wast,
             conversions.wast,
             if.wast,
-            table.wast</wastToProcess>
+            table.wast,
+            ref_null.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
             stack.wast,
@@ -93,45 +94,14 @@
             table_init.wast,
             table_copy.wast,
             table_fill.wast,
-            table_grow.wast</orderedWastToProcess>
+            table_grow.wast,
+            table_size.wast,
+            ref_func.wast,
+            ref_is_null.wast</orderedWastToProcess>
           <excludedTests>
-            <!-- Assertion failures -->
-            <!-- Errors -->
-            SpecV1BulkTest.test65, SpecV1BulkTest.test66, SpecV1BulkTest.test67,
-            SpecV1BulkTest.test68, SpecV1BulkTest.test69, SpecV1BulkTest.test70,
-            SpecV1BulkTest.test71, SpecV1BulkTest.test72, SpecV1BulkTest.test73,
-            SpecV1BulkTest.test74, SpecV1BulkTest.test75, SpecV1BulkTest.test76,
-            SpecV1BulkTest.test77, SpecV1BulkTest.test78, SpecV1BulkTest.test79,
-            SpecV1BulkTest.test80, SpecV1BulkTest.test81, SpecV1BulkTest.test82,
-            SpecV1BulkTest.test83, SpecV1BulkTest.test84, SpecV1BulkTest.test85,
-            SpecV1BulkTest.test86, SpecV1BulkTest.test87, SpecV1BulkTest.test88,
-            SpecV1BulkTest.test89, SpecV1BulkTest.test90, SpecV1BulkTest.test91,
-            SpecV1BulkTest.test92, SpecV1BulkTest.test93, SpecV1BulkTest.test94,
-            SpecV1BulkTest.test95, SpecV1BulkTest.test96, SpecV1BulkTest.test97,
-            SpecV1BulkTest.test98, SpecV1BulkTest.test99, SpecV1BulkTest.test100,
-            SpecV1BulkTest.test101, SpecV1BulkTest.test102, SpecV1BulkTest.test103,
-            <!--  out of bounds table access, can be ignored for now -->
-            SpecV1TableInitTest.test191, SpecV1TableInitTest.test194, SpecV1TableInitTest.test195,
-            SpecV1TableInitTest.test196, SpecV1TableInitTest.test199, SpecV1TableInitTest.test201,
-            SpecV1TableInitTest.test203, SpecV1TableInitTest.test206, SpecV1TableInitTest.test208,
-            SpecV1TableInitTest.test210, SpecV1TableInitTest.test299, SpecV1TableInitTest.test300,
-            SpecV1TableInitTest.test301, SpecV1TableInitTest.test302, SpecV1TableInitTest.test303,
-            SpecV1TableInitTest.test304, SpecV1TableInitTest.test305, SpecV1TableInitTest.test306,
-            SpecV1TableInitTest.test333, SpecV1TableInitTest.test334, SpecV1TableInitTest.test335,
-            SpecV1TableInitTest.test336, SpecV1TableInitTest.test337, SpecV1TableInitTest.test338,
-            SpecV1TableInitTest.test339, SpecV1TableInitTest.test340, SpecV1TableInitTest.test437,
-            SpecV1TableInitTest.test438, SpecV1TableInitTest.test439, SpecV1TableInitTest.test440,
-            SpecV1TableInitTest.test441, SpecV1TableInitTest.test442, SpecV1TableInitTest.test443,
-            SpecV1TableInitTest.test444, SpecV1TableInitTest.test445, SpecV1TableInitTest.test446,
-            SpecV1TableInitTest.test447, SpecV1TableInitTest.test448, SpecV1TableInitTest.test449,
-            SpecV1TableInitTest.test450, SpecV1TableInitTest.test451, SpecV1TableInitTest.test452,
-            SpecV1TableInitTest.test501, SpecV1TableInitTest.test599, SpecV1TableInitTest.test600,
-            SpecV1TableInitTest.test601, SpecV1TableInitTest.test602, SpecV1TableInitTest.test603,
-            SpecV1TableInitTest.test604, SpecV1TableInitTest.test605, SpecV1TableInitTest.test606,
-            SpecV1TableInitTest.test607, SpecV1TableInitTest.test608, SpecV1TableInitTest.test609,
-            SpecV1TableInitTest.test610, SpecV1TableInitTest.test611, SpecV1TableInitTest.test612,
-            SpecV1TableInitTest.test613, SpecV1TableInitTest.test614, SpecV1TableInitTest.test662,
-            SpecV1TableInitTest.test727,
+            <!-- Init Active/Passive segments -->
+            SpecV1BulkTest.test79, SpecV1BulkTest.test81, SpecV1BulkTest.test83,
+            SpecV1BulkTest.test85,
             <!-- Invalid and Malformed failures, can be ignored for now -->
             SpecV1AddressTest.test75, SpecV1AddressTest.test76,
             SpecV1AddressTest.test77, SpecV1AddressTest.test78, SpecV1AddressTest.test79,

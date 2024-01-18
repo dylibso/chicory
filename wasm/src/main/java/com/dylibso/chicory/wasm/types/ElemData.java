@@ -49,4 +49,8 @@ public class ElemData implements Element {
     public void setExprs(Instruction[][] exprs) {
         this.exprs = exprs;
     }
+
+    public int getSize() {
+        return exprs.length;
+    }
 }

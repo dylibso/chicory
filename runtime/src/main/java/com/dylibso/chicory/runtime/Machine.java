@@ -215,7 +215,7 @@ public class Machine {
                             int funcTableIdx = this.stack.pop().asInt();
                             int funcId = table.getRef(funcTableIdx).asFuncRef();
                             if (funcId == REF_NULL_VALUE) {
-                                throw new ChicoryException("uninitialized element");
+                                throw new ChicoryException("uninitialized element " + funcTableIdx);
                             }
                             // given a list of param types, let's pop those params off the stack
                             // and pass as args to the function call
@@ -1762,8 +1762,20 @@ public class Machine {
                             if (table == null) {
                                 table = instance.getImports().getTables()[tableidx].getTable();
                             }
+
+                            if (size < 0
+                                    || elementidx > instance.getElementSize()
+                                    || instance.getElement(elementidx) == null
+                                    || elemidx + size > instance.getElement(elementidx).getSize()
+                                    || end > table.getSize()) {
+                                throw new WASMRuntimeException("out of bounds table access");
+                            }
+
                             for (int i = offset; i < end; i++) {
                                 var val = getRuntimeElementValue(elementidx, elemidx++);
+                                if (val > instance.getFunctionsSize()) {
+                                    throw new WASMRuntimeException("out of bounds table access");
+                                }
                                 table.setRef(i, val);
                             }
                             break;
@@ -1883,7 +1895,9 @@ public class Machine {
                         {
                             var val = this.stack.pop();
                             this.stack.push(
-                                    val.equals(Value.EXTREF_NULL) ? Value.TRUE : Value.FALSE);
+                                    val.equals(Value.EXTREF_NULL) || val.equals(Value.FUNCREF_NULL)
+                                            ? Value.TRUE
+                                            : Value.FALSE);
                             break;
                         }
                     case ELEM_DROP:

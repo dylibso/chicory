@@ -11,4 +11,8 @@ public class ElemMem implements Element {
     public ElemMem(long[] funcIndices) {
         this.funcIndices = funcIndices;
     }
+
+    public int getSize() {
+        return funcIndices.length;
+    }
 }

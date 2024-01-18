@@ -19,4 +19,8 @@ public class ElemFunc implements Element {
     public void setFuncIndices(long[] funcIndices) {
         this.funcIndices = funcIndices;
     }
+
+    public int getSize() {
+        return funcIndices.length;
+    }
 }
