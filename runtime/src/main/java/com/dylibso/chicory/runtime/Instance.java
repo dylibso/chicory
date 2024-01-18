@@ -9,7 +9,7 @@ public class Instance {
     private Machine machine;
     private FunctionBody[] functions;
     private Memory memory;
-    private Global[] globalInitalizers;
+    private Global[] globalInitializers;
     private Value[] globals;
 
     private int importedGlobalsOffset;
@@ -23,7 +23,7 @@ public class Instance {
 
     public Instance(
             Module module,
-            Global[] globalInitalizers,
+            Global[] globalInitializers,
             Value[] globals,
             int importedGlobalsOffset,
             int importedFunctionsOffset,
@@ -36,7 +36,7 @@ public class Instance {
             Table[] tables,
             Element[] elements) {
         this.module = module;
-        this.globalInitalizers = globalInitalizers;
+        this.globalInitializers = globalInitializers;
         this.globals = globals;
         this.importedGlobalsOffset = importedGlobalsOffset;
         this.importedFunctionsOffset = importedFunctionsOffset;
@@ -96,11 +96,11 @@ public class Instance {
         return globals[idx - importedGlobalsOffset];
     }
 
-    public Global getGlobalInitalizer(int idx) {
+    public Global getGlobalInitializer(int idx) {
         if (idx < importedGlobalsOffset) {
             return null;
         }
-        return globalInitalizers[idx - importedGlobalsOffset];
+        return globalInitializers[idx - importedGlobalsOffset];
     }
 
     public FunctionType[] getTypes() {

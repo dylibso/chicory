@@ -282,11 +282,11 @@ public class Machine {
                         {
                             var id = (int) operands[0];
                             var mutabilityType =
-                                    (instance.getGlobalInitalizer(id) == null)
+                                    (instance.getGlobalInitializer(id) == null)
                                             ? instance.getImports()
                                                     .getGlobals()[id]
                                                     .getMutabilityType()
-                                            : instance.getGlobalInitalizer(id);
+                                            : instance.getGlobalInitializer(id);
                             if (mutabilityType == MutabilityType.Const) {
                                 throw new RuntimeException(
                                         "Can't call GLOBAL_SET on immutable global");
