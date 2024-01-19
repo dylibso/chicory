@@ -65,8 +65,6 @@
     <commons-compress.version>1.25.0</commons-compress.version>
     <jackson.version>2.16.1</jackson.version>
     <jgit.version>6.8.0.202311291450-r</jgit.version>
-    <jreleaser.version>1.10.0</jreleaser.version>
-    <jreleaser.git.root.search>true</jreleaser.git.root.search>
 
     <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
     <maven-plugin-annotations.version>3.11.0</maven-plugin-annotations.version>
@@ -84,6 +82,7 @@
     <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
     <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
     <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
+    <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -173,9 +172,9 @@
           <version>${spotless.version}</version>
         </plugin>
         <plugin>
-          <groupId>org.jreleaser</groupId>
-          <artifactId>jreleaser-maven-plugin</artifactId>
-          <version>${jreleaser.version}</version>
+          <groupId>org.sonatype.plugins</groupId>
+          <artifactId>nexus-staging-maven-plugin</artifactId>
+          <version>${nexus-staging-maven-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -255,20 +254,42 @@
   <profiles>
     <profile>
       <id>release</id>
+      <distributionManagement>
+        <snapshotRepository>
+          <id>ossrh</id>
+          <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+      </distributionManagement>
       <build>
         <plugins>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <extensions>true</extensions>
             <configuration>
-              <additionalJOption>-Xdoclint:none</additionalJOption>
+              <serverId>ossrh</serverId>
+              <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>true</autoReleaseAfterClose>
             </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>3.1.0</version>
             <executions>
               <execution>
-                <id>attach-javadoc</id>
+                <id>sign-artifacts</id>
                 <goals>
-                  <goal>jar</goal>
+                  <goal>sign</goal>
                 </goals>
+                <phase>verify</phase>
+                <configuration>
+                  <!-- Prevent `gpg` from using pinentry programs -->
+                  <gpgArguments>
+                    <arg>--pinentry-mode</arg>
+                    <arg>loopback</arg>
+                  </gpgArguments>
+                </configuration>
               </execution>
             </executions>
           </plugin>
@@ -277,43 +298,36 @@
             <artifactId>maven-source-plugin</artifactId>
             <executions>
               <execution>
-                <id>attach-source</id>
+                <id>attach-sources</id>
                 <goals>
-                  <goal>jar</goal>
+                  <goal>jar-no-fork</goal>
                 </goals>
               </execution>
             </executions>
           </plugin>
           <plugin>
-            <groupId>org.jreleaser</groupId>
-            <artifactId>jreleaser-maven-plugin</artifactId>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
             <configuration>
-              <jreleaser>
-                <project>
-                  <copyright>Dylibso, Inc.</copyright>
-                </project>
-                <release>
-                  <github>
-                    <skipRelease>true</skipRelease>
-                  </github>
-                </release>
-                <signing>
-                  <active>ALWAYS</active>
-                  <armored>true</armored>
-                </signing>
-                <deploy>
-                  <maven>
-                    <nexus2>
-                      <maven-central>
-                        <active>ALWAYS</active>
-                        <url>https://s01.oss.sonatype.org/service/local</url>
-                        <stagingRepositories>target/staging-deploy</stagingRepositories>
-                      </maven-central>
-                    </nexus2>
-                  </maven>
-                </deploy>
-              </jreleaser>
+              <additionalDependencies>
+                <additionalDependency>
+                  <groupId>jakarta.annotation</groupId>
+                  <artifactId>jakarta.annotation-api</artifactId>
+                  <version>${annotation-api.version}</version>
+                </additionalDependency>
+              </additionalDependencies>
+              <failOnError>false</failOnError>
+              <failOnWarnings>false</failOnWarnings>
+              <source>${maven.compiler.source}</source>
             </configuration>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>
