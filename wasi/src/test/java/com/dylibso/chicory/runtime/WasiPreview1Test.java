@@ -8,6 +8,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
+
+import com.dylibso.chicory.wasm.types.Value;
 import org.junit.jupiter.api.Test;
 
 class MockPrintStream extends PrintStream {
@@ -71,5 +73,18 @@ public class WasiPreview1Test {
                         .instantiate(imports);
         var run = instance.getExport("_start");
         run.apply();
+    }
+
+    @Test
+    public void shouldRunPrism() {
+        // https://github.com/ruby/prism
+        var wasiOpts = WasiOptions.builder().inheritSystem().build();
+        var wasi = new WasiPreview1(wasiOpts);
+        var imports = new HostImports(wasi.toHostFunctions());
+        var instance =
+                Module.build(new File("src/test/resources/wasm/prism.wasm"))
+                        .instantiate(imports);
+        var pmSerializeParse = instance.getExport("pm_serialize_parse");
+        pmSerializeParse.apply(Value.i32(1), Value.i32(2), Value.i32(3), Value.i32(4));
     }
 }
