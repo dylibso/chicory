@@ -2,6 +2,7 @@ package com.dylibso.chicory.wasm;
 
 import static java.util.Objects.requireNonNull;
 
+import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
@@ -42,6 +43,7 @@ import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.RefType;
+import com.dylibso.chicory.wasm.types.Section;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.Table;
@@ -49,10 +51,6 @@ import com.dylibso.chicory.wasm.types.TableSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -61,50 +59,29 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Stack;
-import java.util.function.Supplier;
 
 /**
  * Parser for Web Assembly binaries.
  */
 public final class Parser {
 
-    private static final System.Logger LOGGER = System.getLogger(Parser.class.getName());
-
     private static final int MAGIC_BYTES = 1836278016; // Magic prefix \0asm
 
-    private final Supplier<InputStream> input;
-
     private final BitSet includeSections;
+    private final Logger logger;
 
-    public Parser(InputStream inputStream) {
-        this(() -> inputStream, new BitSet());
+    public Parser(Logger logger) {
+        this(logger, new BitSet());
     }
 
-    public Parser(ByteBuffer buffer) {
-        this(() -> new ByteArrayInputStream(buffer.array()), new BitSet());
-    }
-
-    public Parser(File file) {
-        this(
-                () -> {
-                    try {
-                        return new FileInputStream(file);
-                    } catch (FileNotFoundException e) {
-                        throw new IllegalArgumentException(
-                                "File not found at path: " + file.getPath(), e);
-                    }
-                },
-                new BitSet());
-    }
-
-    public Parser(Supplier<InputStream> input, BitSet includeSections) {
-        this.input = requireNonNull(input, "input");
+    public Parser(Logger logger, BitSet includeSections) {
+        this.logger = requireNonNull(logger, "logger");
         this.includeSections = requireNonNull(includeSections, "includeSections");
     }
 
-    private ByteBuffer readByteBuffer() {
+    private ByteBuffer readByteBuffer(InputStream is) {
         try {
-            var buffer = ByteBuffer.wrap(readBytesFromInput());
+            var buffer = ByteBuffer.wrap(is.readAllBytes());
             buffer.order(ByteOrder.LITTLE_ENDIAN);
             return buffer;
         } catch (IOException e) {
@@ -112,23 +89,64 @@ public final class Parser {
         }
     }
 
-    private byte[] readBytesFromInput() throws IOException {
-        try (var in = input.get()) {
-            return in.readAllBytes();
-        }
+    public Module parseModule(InputStream in) {
+        Module module = new Module();
+
+        parse(
+                in,
+                (s) -> {
+                    switch (s.getSectionId()) {
+                        case SectionId.CUSTOM:
+                            module.addCustomSection((CustomSection) s);
+                            break;
+                        case SectionId.TYPE:
+                            module.setTypeSection((TypeSection) s);
+                            break;
+                        case SectionId.IMPORT:
+                            module.setImportSection((ImportSection) s);
+                            break;
+                        case SectionId.FUNCTION:
+                            module.setFunctionSection((FunctionSection) s);
+                            break;
+                        case SectionId.TABLE:
+                            module.setTableSection((TableSection) s);
+                            break;
+                        case SectionId.MEMORY:
+                            module.setMemorySection((MemorySection) s);
+                            break;
+                        case SectionId.GLOBAL:
+                            module.setGlobalSection((GlobalSection) s);
+                            break;
+                        case SectionId.EXPORT:
+                            module.setExportSection((ExportSection) s);
+                            break;
+                        case SectionId.START:
+                            module.setStartSection((StartSection) s);
+                            break;
+                        case SectionId.ELEMENT:
+                            module.setElementSection((ElementSection) s);
+                            break;
+                        case SectionId.CODE:
+                            module.setCodeSection((CodeSection) s);
+                            break;
+                        case SectionId.DATA:
+                            module.setDataSection((DataSection) s);
+                            break;
+                        default:
+                            logger.warnf("Ignoring section with id: %d", s.getSectionId());
+                            break;
+                    }
+                });
+
+        return module;
     }
 
-    public Module parseModule() {
-        var builder = new ModuleBuilder();
-        parse(builder);
-        return builder.getModule();
-    }
-
-    public void parse(ParserListener listener) {
+    // package protected to make it visible for testing
+    void parse(InputStream in, ParserListener listener) {
 
         requireNonNull(listener, "listener");
 
-        var buffer = readByteBuffer();
+        var buffer = readByteBuffer(in);
 
         int magicNumber = buffer.getInt();
         if (magicNumber != MAGIC_BYTES) {
@@ -227,9 +245,8 @@ public final class Parser {
                         }
                     default:
                         {
-                            LOGGER.log(
-                                    System.Logger.Level.WARNING,
-                                    "Skipping Section with ID due to configuration: " + sectionId);
+                            // "Skipping Section with ID due to configuration: " + sectionId
+                            listener.onSection(new Section(sectionId, sectionSize));
                             buffer.position((int) (buffer.position() + sectionSize));
                             break;
                         }

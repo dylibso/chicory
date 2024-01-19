@@ -3,9 +3,8 @@ package com.dylibso.chicory.wasm.types;
 import java.util.Stack;
 
 public class Ast {
-    private static final System.Logger LOGGER = System.getLogger(Ast.class.getName());
-    private CodeBlock root;
-    private Stack<CodeBlock> stack;
+    private final CodeBlock root;
+    private final Stack<CodeBlock> stack;
 
     // private List<Instruction> instructions;
 
@@ -61,21 +60,24 @@ public class Ast {
         this.stack.pop();
     }
 
-    public void print() {
-        printAst(root, 0);
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        printAst(sb, root, 0);
+        return sb.toString();
     }
 
-    private void printAst(CodeBlock block, int depth) {
+    private void printAst(StringBuilder sb, CodeBlock block, int depth) {
         for (var i : block.getInstructions()) {
-            LOGGER.log(
-                    System.Logger.Level.INFO,
-                    "0x"
-                            + Integer.toHexString(i.getAddress())
-                            + " | "
-                            + "\t".repeat(depth)
-                            + i.toString());
+            sb.append("0x");
+            sb.append(Integer.toHexString(i.getAddress()));
+            sb.append(" | ");
+            sb.append("\t".repeat(depth));
+            sb.append(i);
+            sb.append("\n");
+
             if (i.getCodeBlock() != null) {
-                printAst(i.getCodeBlock(), depth + 1);
+                printAst(sb, i.getCodeBlock(), depth + 1);
             }
         }
     }

@@ -36,6 +36,7 @@
   <modules>
     <module>wasm-support-plugin</module>
     <module>test-gen-plugin</module>
+    <module>log</module>
     <module>wasm</module>
     <module>runtime</module>
     <module>wasi</module>
@@ -98,6 +99,11 @@
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>log</artifactId>
+        <version>${project.version}</version>
+      </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>wasm</artifactId>

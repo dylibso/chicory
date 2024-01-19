@@ -21,8 +21,6 @@ import java.util.Stack;
  */
 public class Machine {
 
-    private static final System.Logger LOGGER = System.getLogger(Machine.class.getName());
-
     private final MStack stack;
 
     private final Stack<StackFrame> callStack;
@@ -2048,11 +2046,8 @@ public class Machine {
         return val;
     }
 
-    public void printStackTrace() {
-        LOGGER.log(System.Logger.Level.ERROR, "Trapped. Stacktrace:");
-        for (var f : callStack) {
-            LOGGER.log(System.Logger.Level.ERROR, f);
-        }
+    List<StackFrame> getStackTrace() {
+        return List.copyOf(callStack);
     }
 
     Value[] extractArgsForParams(ValueType[] params) {

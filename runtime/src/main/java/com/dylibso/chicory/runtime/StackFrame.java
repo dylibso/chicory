@@ -59,11 +59,11 @@ public class StackFrame {
         this.blockDepth = 0;
     }
 
-    public void setLocal(int i, Value v) {
+    void setLocal(int i, Value v) {
         this.locals.put(i, v);
     }
 
-    public Value getLocal(int i) {
+    Value getLocal(int i) {
         var l = this.locals.get(i);
         // TODO is this right?
         if (l == null) {
@@ -72,6 +72,7 @@ public class StackFrame {
         return l;
     }
 
+    @Override
     public String toString() {
         var nameSec = instance.getModule().getNameSection();
         var id = "[" + funcId + "]";

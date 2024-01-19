@@ -1,8 +1,8 @@
 package com.dylibso.chicory.wasm.types;
 
 public class Section {
-    private int id;
-    private long size;
+    private final int id;
+    private final long size;
 
     public Section(long id, long size) {
         this.id = (int) id;
