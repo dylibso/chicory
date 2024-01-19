@@ -55,7 +55,7 @@ jobs:
       - name: Release to Maven Central
         run: |
           export GPG_TTY=$(tty)
-          mvn --batch-mode -Prelease deploy
+          mvn clean install source:jar javadoc:jar deploy --batch-mode -Prelease -DskipTests -X
         env:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.SONATYPE_PASSWORD }}

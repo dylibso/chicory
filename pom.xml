@@ -4,7 +4,7 @@
 
   <groupId>com.dylibso.chicory</groupId>
   <artifactId>chicory</artifactId>
-  <version>0.0.3</version>
+  <version>999-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Chicory</name>
   <description>Native JVM WebAssembly runtime</description>
@@ -95,6 +95,11 @@
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>runtime</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wasi</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -319,6 +324,7 @@
               <failOnError>false</failOnError>
               <failOnWarnings>false</failOnWarnings>
               <source>${maven.compiler.source}</source>
+              <additionalOptions>-Xdoclint:none</additionalOptions>
             </configuration>
             <executions>
               <execution>
