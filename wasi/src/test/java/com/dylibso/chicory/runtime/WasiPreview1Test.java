@@ -81,10 +81,31 @@ public class WasiPreview1Test {
         var wasiOpts = WasiOptions.builder().inheritSystem().build();
         var wasi = new WasiPreview1(wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
-        var instance =
+        var prism =
                 Module.build(new File("src/test/resources/wasm/prism.wasm"))
                         .instantiate(imports);
-        var pmSerializeParse = instance.getExport("pm_serialize_parse");
-        pmSerializeParse.apply(Value.i32(1), Value.i32(2), Value.i32(3), Value.i32(4));
+        var calloc = prism.getExport("calloc");
+        var pmSerializeParse = prism.getExport("pm_serialize_parse");
+        var pmBufferInit = prism.getExport("pm_buffer_init");
+        var pmBufferSizeof = prism.getExport("pm_buffer_sizeof");
+        var pmBufferValue = prism.getExport("pm_buffer_value");
+        var pmBufferLength = prism.getExport("pm_buffer_length");
+
+        var source = "1 + 2";
+
+        var sourcePointer = calloc.apply(Value.i32(1), Value.i32(source.length()));
+
+        var packedOptions = "";
+        var optionsPointer = calloc.apply(Value.i32(1), Value.i32(packedOptions.length()));
+
+        pmBufferInit.apply(Value.i32(source.length()));
+
+        var bufferPointer = calloc.apply(pmBufferSizeof.apply()[0], Value.i32(1));
+        pmBufferInit.apply(bufferPointer);
+
+        pmSerializeParse.apply(bufferPointer[0], sourcePointer[0], Value.i32(source.length()), optionsPointer[0]);
+
+        var result = prism.getMemory().readString(pmBufferValue.apply(bufferPointer[0])[0].asInt(), pmBufferLength.apply(bufferPointer[0])[0].asInt());
+        System.out.println(result);
     }
 }
