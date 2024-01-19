@@ -56,7 +56,6 @@ jobs:
         run: |
           export GPG_TTY=$(tty)
           mvn --batch-mode -Prelease deploy
-        working-directory: java
         env:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.SONATYPE_PASSWORD }}
