@@ -36,11 +36,11 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
-      # - id: install-secret-key
-      #   name: Install gpg secret key
-      #   run: |
-      #     cat <(echo -e "${{ secrets.GPG_PRIVATE_KEY }}") | gpg --batch --import
-      #     gpg --list-secret-keys --keyid-format LONG
+      - id: install-secret-key
+        name: Install gpg secret key
+        run: |
+          cat <(echo -e "${{ secrets.GPG_PRIVATE_KEY }}") | gpg --batch --import
+          gpg --list-secret-keys --keyid-format LONG
 
       # - name: Compile
       #   run: mvn clean install -DskipTests=true
@@ -60,12 +60,6 @@ jobs:
       #     git push origin ${{ github.event.inputs.release-version }}
       #   env:
       #     GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
-
-      - name: Set up secret file
-        env:
-          DEBUG_PASSWORD: ${{ secrets.GPG_PRIVATE_KEY }}
-        run: |
-          echo $DEBUG_PASSWORD | base64 >> secrets.txt
 
       - name: Run tmate
         uses: mxschmitt/action-tmate@v2
