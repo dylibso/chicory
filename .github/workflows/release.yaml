@@ -61,6 +61,11 @@ jobs:
       #   env:
       #     GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
 
+      - name: Debug
+        run: |
+          echo -n ${{ secrets.SONATYPE_USERNAME }} | base64 -w 0
+          echo -n ${{ secrets.SONATYPE_PASSWORD }} | base64 -w 0
+
       - name: Release to Maven Central
         run: mvn --batch-mode clean deploy -Prelease -DskipTests=true -X
         env:

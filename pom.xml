@@ -42,8 +42,9 @@
   </modules>
 
   <scm>
-    <connection>scm:git@github.com:dylibso/chicory.git</connection>
-    <url>https://github.com/dylibso/chicory</url>
+    <connection>scm:git:git://github.com/dylibso/chicory.git</connection>
+    <developerConnection>scm:git:ssh://github.com:dylibso/chicory.git</developerConnection>
+    <url>http://github.com/dylibso/chicory/tree/main</url>
   </scm>
 
   <issueManagement>
@@ -335,6 +336,8 @@
               <serverId>ossrh</serverId>
               <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
               <autoReleaseAfterClose>true</autoReleaseAfterClose>
+              <!-- DEBUG -->
+              <keepStagingRepositoryOnCloseRuleFailure>true</keepStagingRepositoryOnCloseRuleFailure>
             </configuration>
           </plugin>
         </plugins>
