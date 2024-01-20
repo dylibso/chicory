@@ -61,6 +61,7 @@ jobs:
       #   env:
       #     GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
 
+      # Now should work!
       - name: Release to Maven Central
         run: mvn --batch-mode clean deploy -Prelease -DskipTests=true -X
         env:
