@@ -10,6 +10,7 @@ public class HostTable implements FromHost {
     private final String moduleName;
     private final String fieldName;
     private final Table table;
+    private boolean override;
 
     public HostTable(String moduleName, String fieldName, Table table) {
         this.moduleName = moduleName;
@@ -45,6 +46,15 @@ public class HostTable implements FromHost {
 
     public String getFieldName() {
         return fieldName;
+    }
+
+    public void setOverride(boolean override) {
+        this.override = override;
+    }
+
+    @Override
+    public boolean override() {
+        return override;
     }
 
     @Override

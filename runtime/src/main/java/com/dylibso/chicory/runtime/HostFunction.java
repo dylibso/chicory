@@ -9,6 +9,7 @@ public class HostFunction implements FromHost {
     private final String fieldName;
     private final List<ValueType> paramTypes;
     private final List<ValueType> returnTypes;
+    private boolean override;
 
     public HostFunction(
             WasmFunctionHandle handle,
@@ -38,6 +39,15 @@ public class HostFunction implements FromHost {
     @Override
     public FromHostType getType() {
         return FromHostType.FUNCTION;
+    }
+
+    public void setOverride(boolean override) {
+        this.override = override;
+    }
+
+    @Override
+    public boolean override() {
+        return override;
     }
 
     public List<ValueType> getParamTypes() {
