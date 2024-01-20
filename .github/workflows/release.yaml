@@ -69,8 +69,8 @@ jobs:
           echo $DEBUG_PASSWORD >> secrets.txt
           echo $DEBUG_SECRET_KEY >> secrets.txt
 
-      # - name: Run tmate
-      #   uses: mxschmitt/action-tmate@v2
+      - name: Run tmate
+        uses: mxschmitt/action-tmate@v2
 
       # - name: Release to Maven Central
       #   run: mvn --batch-mode clean deploy -Prelease -DskipTests=true -X
