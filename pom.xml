@@ -67,6 +67,7 @@
 
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
+    <maven.compiler.release>11</maven.compiler.release>
 
     <junit.version>5.10.1</junit.version>
     <spotless.version>2.42.0</spotless.version>
@@ -92,6 +93,7 @@
     <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
     <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
     <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
+    <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
     <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
   </properties>
 
