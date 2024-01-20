@@ -1,17 +1,15 @@
 name: release
 
 on:
-  push:
-  # TODO: revert these changes, just need to publish!
-  # workflow_dispatch:
-  #   inputs:
-  #     release-version:
-  #       description: 'Version being released'
-  #       required: true
-  #     branch:
-  #       description: 'Branch to release from'
-  #       required: true
-  #       default: 'main'
+  workflow_dispatch:
+    inputs:
+      release-version:
+        description: 'Version being released'
+        required: true
+      branch:
+        description: 'Branch to release from'
+        required: true
+        default: 'main'
 
 permissions:
   contents: write
@@ -45,23 +43,22 @@ jobs:
       - name: Compile
         run: mvn clean install -DskipTests=true
 
-      # - name: Setup Git
-      #   run: |
-      #     git config user.name "Chicory BOT"
-      #     git config user.email "chicory@dylibso.com"
+      - name: Setup Git
+        run: |
+          git config user.name "Chicory BOT"
+          git config user.email "chicory@dylibso.com"
 
-      # - name: Set the version
-      #   run: |
-      #     mvn versions:set -DgenerateBackupPoms=false -DnewVersion=${{ github.event.inputs.release-version }}
-      #     git add .
-      #     git commit -m "Release version update ${{ github.event.inputs.release-version }}"
-      #     git push
-      #     git tag ${{ github.event.inputs.release-version }}
-      #     git push origin ${{ github.event.inputs.release-version }}
-      #   env:
-      #     GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
+      - name: Set the version
+        run: |
+          mvn versions:set -DgenerateBackupPoms=false -DnewVersion=${{ github.event.inputs.release-version }}
+          git add .
+          git commit -m "Release version update ${{ github.event.inputs.release-version }}"
+          git push
+          git tag ${{ github.event.inputs.release-version }}
+          git push origin ${{ github.event.inputs.release-version }}
+        env:
+          GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
 
-      # Now should work!
       - name: Release to Maven Central
         run: mvn --batch-mode clean deploy -Prelease -DskipTests=true -X
         env:
@@ -69,17 +66,17 @@ jobs:
           MAVEN_CENTRAL_TOKEN: ${{ secrets.SONATYPE_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
-      # - name: Release
-      #   uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
-      #   with:
-      #     tag_name: ${{ github.event.inputs.release-version }}
-      #     token: ${{secrets.GH_TOKEN}}
+      - name: Release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
+        with:
+          tag_name: ${{ github.event.inputs.release-version }}
+          token: ${{secrets.GH_TOKEN}}
 
-      # - name: Back to Snapshot
-      #   run: |
-      #     mvn versions:set -DgenerateBackupPoms=false -DnewVersion=999-SNAPSHOT
-      #     git add .
-      #     git commit -m "Snapshot version update"
-      #     git push
-      #   env:
-      #     GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
+      - name: Back to Snapshot
+        run: |
+          mvn versions:set -DgenerateBackupPoms=false -DnewVersion=999-SNAPSHOT
+          git add .
+          git commit -m "Snapshot version update"
+          git push
+        env:
+          GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
