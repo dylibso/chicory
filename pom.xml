@@ -4,7 +4,7 @@
 
   <groupId>com.dylibso.chicory</groupId>
   <artifactId>chicory</artifactId>
-  <version>0.0.3</version>
+  <version>0.0.4</version>
   <packaging>pom</packaging>
   <name>Chicory</name>
   <description>Native JVM WebAssembly runtime</description>
@@ -42,9 +42,7 @@
   </modules>
 
   <scm>
-    <connection>scm:git:git://github.com/dylibso/chicory.git</connection>
-    <developerConnection>scm:git:ssh://git@github.com/dylibso/chicory.git</developerConnection>
-    <tag>main</tag>
+    <connection>scm:git@github.com:dylibso/chicory.git</connection>
     <url>https://github.com/dylibso/chicory</url>
   </scm>
 
