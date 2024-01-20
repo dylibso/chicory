@@ -66,12 +66,6 @@ jobs:
           MAVEN_CENTRAL_TOKEN: ${{ secrets.SONATYPE_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
-      - name: Release
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
-        with:
-          tag_name: ${{ github.event.inputs.release-version }}
-          token: ${{secrets.GH_TOKEN}}
-
       - name: Back to Snapshot
         run: |
           mvn versions:set -DgenerateBackupPoms=false -DnewVersion=999-SNAPSHOT
