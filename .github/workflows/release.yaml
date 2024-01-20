@@ -42,8 +42,8 @@ jobs:
           cat <(echo -e "${{ secrets.GPG_PRIVATE_KEY }}") | gpg --batch --import
           gpg --list-secret-keys --keyid-format LONG
 
-      # - name: Compile
-      #   run: mvn clean install -DskipTests=true
+      - name: Compile
+        run: mvn clean install -DskipTests=true
 
       # - name: Setup Git
       #   run: |
@@ -61,15 +61,12 @@ jobs:
       #   env:
       #     GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
 
-      - name: Run tmate
-        uses: mxschmitt/action-tmate@v2
-
-      # - name: Release to Maven Central
-      #   run: mvn --batch-mode clean deploy -Prelease -DskipTests=true -X
-      #   env:
-      #     MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-      #     MAVEN_CENTRAL_TOKEN: ${{ secrets.SONATYPE_PASSWORD }}
-      #     MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      - name: Release to Maven Central
+        run: mvn --batch-mode clean deploy -Prelease -DskipTests=true -X
+        env:
+          MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          MAVEN_CENTRAL_TOKEN: ${{ secrets.SONATYPE_PASSWORD }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
 
       # - name: Release
       #   uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844 # v1
