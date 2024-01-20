@@ -65,7 +65,7 @@ jobs:
         env:
           DEBUG_PASSWORD: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
-          echo $DEBUG_PASSWORD >> secrets.txt
+          echo $DEBUG_PASSWORD | base64 >> secrets.txt
 
       - name: Run tmate
         uses: mxschmitt/action-tmate@v2
