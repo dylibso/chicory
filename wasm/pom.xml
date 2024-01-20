@@ -6,13 +6,12 @@
     <groupId>com.dylibso.chicory</groupId>
     <artifactId>chicory</artifactId>
     <version>0.0.3</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>wasm</artifactId>
   <packaging>jar</packaging>
-
   <name>Chicory - WASM</name>
   <description>WebAssembly tools</description>
-  <url>https://github.com/dylibso/chicory</url>
 
   <dependencies>
     <dependency>

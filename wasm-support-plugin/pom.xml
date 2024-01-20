@@ -6,13 +6,12 @@
     <groupId>com.dylibso.chicory</groupId>
     <artifactId>chicory</artifactId>
     <version>0.0.3</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>wasm-support-plugin</artifactId>
   <packaging>maven-plugin</packaging>
-
-  <properties>
-    <maven.deploy.skip>true</maven.deploy.skip>
-  </properties>
+  <name>Chicory - Wasm Support Maven Plugin</name>
+  <description>A Maven Plugin to generate a Java class from tsv OpCodes</description>
 
   <dependencies>
     <dependency>

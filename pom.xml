@@ -10,6 +10,11 @@
   <description>Native JVM WebAssembly runtime</description>
   <url>https://github.com/dylibso/chicory</url>
 
+  <organization>
+    <name>Dylibso, Inc.</name>
+    <url>https://dylibso.com</url>
+  </organization>
+
   <licenses>
     <license>
       <name>Apache-2.0</name>
@@ -25,9 +30,6 @@
       <email>oss@dylibso.com</email>
       <organization>Dylibso, Inc.</organization>
       <organizationUrl>https://dylibso.com</organizationUrl>
-      <roles>
-        <role>Maintainer</role>
-      </roles>
     </developer>
   </developers>
 
@@ -50,6 +52,14 @@
     <system>Github</system>
     <url>https://github.com/dylibso/chicory/issues</url>
   </issueManagement>
+
+  <distributionManagement>
+    <repository>
+      <id>ossrh</id>
+      <name>Central Repository OSSRH</name>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -113,7 +123,6 @@
   </dependencyManagement>
 
   <build>
-
     <pluginManagement>
       <plugins>
         <plugin>
@@ -205,6 +214,36 @@
         </configuration>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>${maven-javadoc-plugin.version}</version>
+        <configuration>
+          <doclint>none</doclint>
+          <source>1.8</source>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>${maven-source-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
         <configuration>
@@ -268,19 +307,15 @@
       <build>
         <plugins>
           <plugin>
-            <groupId>org.sonatype.plugins</groupId>
-            <artifactId>nexus-staging-maven-plugin</artifactId>
-            <extensions>true</extensions>
-            <configuration>
-              <serverId>ossrh</serverId>
-              <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-              <autoReleaseAfterClose>true</autoReleaseAfterClose>
-            </configuration>
-          </plugin>
-          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>3.1.0</version>
+            <version>${maven-gpg-plugin.version}</version>
+            <configuration>
+              <gpgArguments>
+                <arg>--pinentry-mode</arg>
+                <arg>loopback</arg>
+              </gpgArguments>
+            </configuration>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -288,52 +323,19 @@
                   <goal>sign</goal>
                 </goals>
                 <phase>verify</phase>
-                <configuration>
-                  <!-- Prevent `gpg` from using pinentry programs -->
-                  <gpgArguments>
-                    <arg>--pinentry-mode</arg>
-                    <arg>loopback</arg>
-                  </gpgArguments>
-                </configuration>
               </execution>
             </executions>
           </plugin>
           <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-source-plugin</artifactId>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <goals>
-                  <goal>jar-no-fork</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
+            <groupId>org.sonatype.plugins</groupId>
+            <artifactId>nexus-staging-maven-plugin</artifactId>
+            <version>${nexus-staging-maven-plugin.version}</version>
+            <extensions>true</extensions>
             <configuration>
-              <additionalDependencies>
-                <additionalDependency>
-                  <groupId>jakarta.annotation</groupId>
-                  <artifactId>jakarta.annotation-api</artifactId>
-                  <version>${annotation-api.version}</version>
-                </additionalDependency>
-              </additionalDependencies>
-              <failOnError>false</failOnError>
-              <failOnWarnings>false</failOnWarnings>
-              <source>${maven.compiler.source}</source>
-              <additionalOptions>-Xdoclint:none</additionalOptions>
+              <serverId>ossrh</serverId>
+              <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+              <autoReleaseAfterClose>true</autoReleaseAfterClose>
             </configuration>
-            <executions>
-              <execution>
-                <id>attach-javadocs</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
           </plugin>
         </plugins>
       </build>

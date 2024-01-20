@@ -6,22 +6,12 @@
     <groupId>com.dylibso.chicory</groupId>
     <artifactId>chicory</artifactId>
     <version>0.0.3</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>wasi</artifactId>
   <packaging>jar</packaging>
   <name>Chicory - WASI</name>
-  <description>WASI Preview 1</description>
-
-  <url>https://github.com/dylibso/chicory</url>
-
-  <licenses>
-    <license>
-      <name>Apache-2.0</name>
-      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-      <distribution>repo</distribution>
-      <comments>A business-friendly OSS license</comments>
-    </license>
-  </licenses>
+  <description>WASI Preview 1 impolementation for Chicory</description>
 
   <dependencies>
     <dependency>
