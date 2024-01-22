@@ -5,13 +5,7 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.types.ElemElem;
-import com.dylibso.chicory.wasm.types.ElemFunc;
-import com.dylibso.chicory.wasm.types.ElemType;
-import com.dylibso.chicory.wasm.types.Instruction;
-import com.dylibso.chicory.wasm.types.MutabilityType;
-import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.*;
 import java.util.List;
 import java.util.Stack;
 
@@ -39,6 +33,19 @@ public class Machine {
     }
 
     public Value[] call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
+        return call(funcId, args, null, popResults);
+    }
+
+    public Value[] call(int funcId, Value[] args, FunctionType callType, boolean popResults)
+            throws ChicoryException {
+
+        var typeId = instance.getFunctionType(funcId);
+        var type = instance.getTypes()[typeId];
+
+        if (callType != null) {
+            verifyIndirectCall(type, callType);
+        }
+
         var func = instance.getFunction(funcId);
         if (func != null) {
             this.callStack.push(new StackFrame(instance, funcId, 0, args, func.getLocals()));
@@ -78,8 +85,6 @@ public class Machine {
             return null;
         }
 
-        var typeId = instance.getFunctionType(funcId);
-        var type = instance.getTypes()[typeId];
         if (type.getReturns().length == 0) return null;
         if (this.stack.size() == 0) return null;
 
@@ -220,7 +225,7 @@ public class Machine {
                             // given a list of param types, let's pop those params off the stack
                             // and pass as args to the function call
                             var args = extractArgsForParams(type.getParams());
-                            call(funcId, args, false);
+                            call(funcId, args, type, false);
                             break;
                         }
                     case DROP:
@@ -2039,5 +2044,12 @@ public class Machine {
             args[i - 1] = p;
         }
         return args;
+    }
+
+    protected void verifyIndirectCall(FunctionType actual, FunctionType expected)
+            throws ChicoryException {
+        if (!actual.typesMatch(expected)) {
+            throw new ChicoryException("indirect call type mismatch");
+        }
     }
 }
