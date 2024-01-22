@@ -67,6 +67,7 @@
             memory_size.wast,
             stack.wast,
             call.wast,
+            call_indirect.wast,
             block.wast,
             memory_init.wast,
             memory_fill.wast,

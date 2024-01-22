@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
+import java.util.Arrays;
+
 public class FunctionType {
     private ValueType[] params;
     private ValueType[] returns;
@@ -15,6 +17,18 @@ public class FunctionType {
 
     public ValueType[] getReturns() {
         return returns;
+    }
+
+    public boolean paramsMatch(FunctionType other) {
+        return Arrays.equals(params, other.params);
+    }
+
+    public boolean returnsMatch(FunctionType other) {
+        return Arrays.equals(returns, other.returns);
+    }
+
+    public boolean typesMatch(FunctionType other) {
+        return paramsMatch(other) && returnsMatch(other);
     }
 
     public String toString() {
