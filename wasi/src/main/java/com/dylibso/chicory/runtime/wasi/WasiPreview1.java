@@ -226,6 +226,19 @@ public class WasiPreview1 {
                 List.of(I32));
     }
 
+    public HostFunction fdFilestatGet() {
+        return new HostFunction(
+                (Memory memory, Value... args) -> {
+                    System.out.println("fd_filestat_get: " + Arrays.toString(args));
+                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    // return new Value[] { Value.i32(0) };
+                },
+                "wasi_snapshot_preview1",
+                "fd_filestat_get",
+                List.of(I32, I32),
+                List.of(I32));
+    }
+
     public HostFunction fdFilestatSetSize() {
         return new HostFunction(
                 (Memory memory, Value... args) -> {
@@ -797,6 +810,7 @@ public class WasiPreview1 {
             argsSizesGet(),
             clockResGet(),
             clockTimeGet(),
+            environGet(),
             environSizesGet(),
             fdAdvise(),
             fdAllocate(),
@@ -805,6 +819,7 @@ public class WasiPreview1 {
             fdFdstatGet(),
             fdFdstatSetFlags(),
             fdFdstatSetRights(),
+            fdFilestatGet(),
             fdFilestatSetSize(),
             fdFilestatSetTimes(),
             fdPread(),
