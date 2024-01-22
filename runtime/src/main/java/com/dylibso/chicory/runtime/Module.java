@@ -249,7 +249,9 @@ public class Module {
             if (memories.length > 1) {
                 throw new ChicoryException("Multiple memories are not supported");
             }
-            memory = new Memory(memories[0].getMemoryLimits(), dataSegments);
+            if (memories.length > 0) {
+                memory = new Memory(memories[0].getMemoryLimits(), dataSegments);
+            }
         } else {
             if (mappedHostImports.getMemories().length > 0) {
                 assert (mappedHostImports.getMemories().length == 1);
