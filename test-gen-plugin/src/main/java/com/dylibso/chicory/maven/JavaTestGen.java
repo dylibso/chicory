@@ -115,7 +115,7 @@ public class JavaTestGen {
         MethodDeclaration method;
         int testNumber = 0;
         int moduleInstantiationNumber = 0;
-        String lastModuleVarName;
+        String lastModuleVarName = null;
         int fallbackVarNumber = 0;
 
         String currentWasmFile = null;
@@ -158,7 +158,7 @@ public class JavaTestGen {
                     var baseVarName = escapedCamelCase(cmd.getAction().getField());
                     var varNum = fallbackVarNumber++;
                     var varName = "var" + (baseVarName.isEmpty() ? varNum : baseVarName);
-                    String moduleName = TEST_MODULE_NAME + (moduleInstantiationNumber - 1);
+                    String moduleName = lastModuleVarName;
                     if (cmd.getAction().getModule() != null) {
                         moduleName = cmd.getAction().getModule().replace("$", "");
                     }
@@ -282,9 +282,11 @@ public class JavaTestGen {
         assert (cmd.getAction().getType() == INVOKE);
 
         var args =
-                Arrays.stream(cmd.getAction().getArgs())
-                        .map(WasmValue::toWasmValue)
-                        .collect(Collectors.joining(", "));
+                (cmd.getAction().getArgs() != null)
+                        ? Arrays.stream(cmd.getAction().getArgs())
+                                .map(WasmValue::toWasmValue)
+                                .collect(Collectors.joining(", "))
+                        : "";
 
         var invocationMethod = ".apply(" + args + ")";
         if (cmd.getType() == CommandType.ASSERT_TRAP) {

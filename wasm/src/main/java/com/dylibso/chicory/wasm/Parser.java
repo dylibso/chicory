@@ -260,7 +260,12 @@ public final class Parser {
         var name = readName(buffer);
         customSection.setName(name);
         var byteLen = name.getBytes().length;
-        var bytes = new byte[(int) (sectionSize - byteLen - Encoding.computeLeb128Size(byteLen))];
+        var size = (sectionSize - byteLen - Encoding.computeLeb128Size(byteLen));
+        var remaining = buffer.limit() - buffer.position();
+        if (remaining > 0) {
+            size = Math.min(remaining, size);
+        }
+        var bytes = new byte[(int) size];
         buffer.get(bytes);
         customSection.setBytes(bytes);
         return customSection;
@@ -760,7 +765,7 @@ public final class Parser {
         var address = buffer.position();
         var b = (int) buffer.get() & 0xff;
         if (b == 0xfc) { // is multi-byte
-            b = (0xfc << 8) | (buffer.get() & 0xff);
+            b = (int) ((0xfc << 8) + Encoding.readUnsignedLeb128(buffer));
         }
         var op = OpCode.byOpCode(b);
         if (op == null) {

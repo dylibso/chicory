@@ -62,6 +62,8 @@
             conversions.wast,
             if.wast,
             table.wast,
+            binary-leb128.wast,
+            binary.wast,
             ref_null.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
@@ -87,11 +89,17 @@
             table_grow.wast,
             table_size.wast,
             ref_func.wast,
+            call_indirect.wast,
             ref_is_null.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Init Active/Passive segments -->
             SpecV1BulkTest.test79, SpecV1BulkTest.test81, SpecV1BulkTest.test83,
             SpecV1BulkTest.test85,
+            <!-- indirect call type mismatch missing validation -->
+            SpecV1CallIndirectTest.test22, SpecV1CallIndirectTest.test23, SpecV1CallIndirectTest.test31,
+            SpecV1CallIndirectTest.test32, SpecV1CallIndirectTest.test37, SpecV1CallIndirectTest.test38,
+            SpecV1CallIndirectTest.test43, SpecV1CallIndirectTest.test44, SpecV1CallIndirectTest.test49,
+            SpecV1CallIndirectTest.test50, SpecV1CallIndirectTest.test130,
             <!-- Invalid and Malformed failures, can be ignored for now -->
             SpecV1AddressTest.test75, SpecV1AddressTest.test76,
             SpecV1AddressTest.test77, SpecV1AddressTest.test78, SpecV1AddressTest.test79,
