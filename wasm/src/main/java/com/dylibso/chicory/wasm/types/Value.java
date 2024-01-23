@@ -33,6 +33,10 @@ public class Value {
         return Value.f64(Double.doubleToRawLongBits(data));
     }
 
+    public static Value fromBoolean(boolean val) {
+        return val ? TRUE : FALSE;
+    }
+
     public static Value i32(long data) {
         return new Value(ValueType.I32, data);
     }
