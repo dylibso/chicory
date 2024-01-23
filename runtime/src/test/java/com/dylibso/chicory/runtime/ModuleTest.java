@@ -94,7 +94,9 @@ public class ModuleTest {
         var printer = new Printer("Hello, World!");
         var func =
                 new HostFunction(
-                        (Memory memory, Value... args) -> { // decompiled is: console_log(13, 0);
+                        (Instance instance,
+                                Value... args) -> { // decompiled is: console_log(13, 0);
+                            Memory memory = instance.getMemory();
                             var len = args[0].asInt();
                             var offset = args[1].asInt();
                             var message = memory.readString(offset, len);
@@ -142,7 +144,7 @@ public class ModuleTest {
         var printer = new Printer("gotit 42");
         var func =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             var val = args[0];
                             printer.println("gotit " + val.asInt());
                             return null;
