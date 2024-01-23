@@ -64,6 +64,7 @@
             table.wast,
             binary-leb128.wast,
             binary.wast,
+            left-to-right.wast,
             ref_null.wast</wastToProcess>
           <orderedWastToProcess>memory_grow.wast,
             memory_size.wast,
@@ -91,6 +92,7 @@
             table_size.wast,
             ref_func.wast,
             call_indirect.wast,
+            store.wast,
             ref_is_null.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Init Active/Passive segments -->
