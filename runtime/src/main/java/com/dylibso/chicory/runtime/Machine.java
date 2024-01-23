@@ -16,10 +16,6 @@ public class Machine {
 
     private static final System.Logger LOGGER = System.getLogger(Machine.class.getName());
 
-    public static final double TWO_POW_63_D = 0x1.0p63; /* 2^63 */
-
-    public static final float TWO_POW_64_PLUS_1_F = 1.8446743E19F; /* 2^64 + 1*/
-
     private final MStack stack;
 
     private final Stack<StackFrame> callStack;
@@ -581,9 +577,10 @@ public class Machine {
                         }
                     case I32_LT_U:
                         {
-                            var b = this.stack.pop().asUInt();
-                            var a = this.stack.pop().asUInt();
-                            this.stack.push(a < b ? Value.TRUE : Value.FALSE);
+                            var b = this.stack.pop().asInt();
+                            var a = this.stack.pop().asInt();
+                            this.stack.push(
+                                    Integer.compareUnsigned(a, b) < 0 ? Value.TRUE : Value.FALSE);
                             break;
                         }
                     case I64_LT_S:
@@ -595,9 +592,10 @@ public class Machine {
                         }
                     case I64_LT_U:
                         {
-                            var b = this.stack.pop().asULong();
-                            var a = this.stack.pop().asULong();
-                            this.stack.push(a.compareTo(b) < 0 ? Value.TRUE : Value.FALSE);
+                            var b = this.stack.pop().asLong();
+                            var a = this.stack.pop().asLong();
+                            this.stack.push(
+                                    Long.compareUnsigned(a, b) < 0 ? Value.TRUE : Value.FALSE);
                             break;
                         }
                     case I32_GT_S:
@@ -609,9 +607,10 @@ public class Machine {
                         }
                     case I32_GT_U:
                         {
-                            var b = this.stack.pop().asUInt();
-                            var a = this.stack.pop().asUInt();
-                            this.stack.push(a > b ? Value.TRUE : Value.FALSE);
+                            var b = this.stack.pop().asInt();
+                            var a = this.stack.pop().asInt();
+                            this.stack.push(
+                                    Integer.compareUnsigned(a, b) > 0 ? Value.TRUE : Value.FALSE);
                             break;
                         }
                     case I64_GT_S:
@@ -623,9 +622,10 @@ public class Machine {
                         }
                     case I64_GT_U:
                         {
-                            var b = this.stack.pop().asULong();
-                            var a = this.stack.pop().asULong();
-                            this.stack.push(a.compareTo(b) > 0 ? Value.TRUE : Value.FALSE);
+                            var b = this.stack.pop().asLong();
+                            var a = this.stack.pop().asLong();
+                            this.stack.push(
+                                    Long.compareUnsigned(a, b) > 0 ? Value.TRUE : Value.FALSE);
                             break;
                         }
                     case I32_GE_S:
@@ -637,16 +637,18 @@ public class Machine {
                         }
                     case I32_GE_U:
                         {
-                            var b = this.stack.pop().asUInt();
-                            var a = this.stack.pop().asUInt();
-                            this.stack.push(a >= b ? Value.TRUE : Value.FALSE);
+                            var b = this.stack.pop().asInt();
+                            var a = this.stack.pop().asInt();
+                            this.stack.push(
+                                    Integer.compareUnsigned(a, b) >= 0 ? Value.TRUE : Value.FALSE);
                             break;
                         }
                     case I64_GE_U:
                         {
-                            var b = this.stack.pop().asULong();
-                            var a = this.stack.pop().asULong();
-                            this.stack.push(a.compareTo(b) >= 0 ? Value.TRUE : Value.FALSE);
+                            var b = this.stack.pop().asLong();
+                            var a = this.stack.pop().asLong();
+                            this.stack.push(
+                                    Long.compareUnsigned(a, b) >= 0 ? Value.TRUE : Value.FALSE);
                             break;
                         }
                     case I64_GE_S:
@@ -665,9 +667,10 @@ public class Machine {
                         }
                     case I32_LE_U:
                         {
-                            var b = this.stack.pop().asUInt();
-                            var a = this.stack.pop().asUInt();
-                            this.stack.push(a <= b ? Value.TRUE : Value.FALSE);
+                            var b = this.stack.pop().asInt();
+                            var a = this.stack.pop().asInt();
+                            this.stack.push(
+                                    Integer.compareUnsigned(a, b) <= 0 ? Value.TRUE : Value.FALSE);
                             break;
                         }
                     case I64_LE_S:
@@ -679,9 +682,10 @@ public class Machine {
                         }
                     case I64_LE_U:
                         {
-                            var b = this.stack.pop().asULong();
-                            var a = this.stack.pop().asULong();
-                            this.stack.push(a.compareTo(b) <= 0 ? Value.TRUE : Value.FALSE);
+                            var b = this.stack.pop().asLong();
+                            var a = this.stack.pop().asLong();
+                            this.stack.push(
+                                    Long.compareUnsigned(a, b) <= 0 ? Value.TRUE : Value.FALSE);
                             break;
                         }
                     case F32_EQ:
@@ -1190,20 +1194,31 @@ public class Machine {
                         }
                     case F64_CONVERT_I64_U:
                         {
-                            var tos = this.stack.pop().asULong();
-                            this.stack.push(Value.fromDouble(tos.doubleValue()));
+                            var tos = this.stack.pop().asLong();
+                            double d;
+                            if (tos >= 0) {
+                                d = tos;
+                            } else {
+                                // only preserve 53 bits of precision (plus one for rounding) to
+                                // avoid rounding errors (64 - 53 == 11)
+                                long sum = tos + 0x3ff;
+                                // did the add overflow? add the MSB back on after the shift
+                                long shiftIn = ((sum ^ tos) & Long.MIN_VALUE) >>> 10;
+                                d = Math.scalb((double) ((sum >>> 11) | shiftIn), 11);
+                            }
+                            this.stack.push(Value.f64(Double.doubleToLongBits(d)));
                             break;
                         }
                     case F64_CONVERT_I32_U:
                         {
                             long tos = this.stack.pop().asUInt();
-                            this.stack.push(Value.f64(Double.doubleToRawLongBits(tos)));
+                            this.stack.push(Value.f64(Double.doubleToLongBits(tos)));
                             break;
                         }
                     case F64_CONVERT_I32_S:
                         {
-                            var tos = this.stack.pop();
-                            this.stack.push(Value.fromDouble(tos.asInt()));
+                            var tos = this.stack.pop().asInt();
+                            this.stack.push(Value.fromDouble(tos));
                             break;
                         }
                     case F64_PROMOTE_F32:
@@ -1517,18 +1532,21 @@ public class Machine {
                         }
                     case F32_CONVERT_I64_U:
                         {
-                            var tos = this.stack.pop().asULong();
-                            float tosF;
-                            if (tos.floatValue() < 0) {
-                                /*
-                                (the BigInteger is large, sign bit is set), tos.longValue() gets the lower 64 bits of the BigInteger (as a signed long),
-                                and 0x1.0p63 (which is 2^63 in floating-point notation) is added to adjust the float value back to the unsigned range.
-                                 */
-                                tosF = (float) (tos.longValue() + TWO_POW_63_D);
+                            var tos = this.stack.pop().asLong();
+
+                            float f;
+                            if (tos >= 0) {
+                                f = tos;
                             } else {
-                                tosF = tos.floatValue();
+                                // only preserve 24 bits of precision (plus one for rounding) to
+                                // avoid rounding errors (64 - 24 == 40)
+                                long sum = tos + 0xff_ffff_ffffL;
+                                // did the add overflow? add the MSB back on after the shift
+                                long shiftIn = ((sum ^ tos) & Long.MIN_VALUE) >>> 39;
+                                f = Math.scalb((float) ((sum >>> 40) | shiftIn), 40);
                             }
-                            this.stack.push(Value.f32(Float.floatToIntBits(tosF)));
+
+                            this.stack.push(Value.f32(Float.floatToIntBits(f)));
                             break;
                         }
                     case F64_CONVERT_I64_S:
