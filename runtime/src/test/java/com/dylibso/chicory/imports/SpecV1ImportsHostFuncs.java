@@ -7,6 +7,7 @@ import com.dylibso.chicory.runtime.HostGlobal;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.HostMemory;
 import com.dylibso.chicory.runtime.HostTable;
+import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.Value;
@@ -20,7 +21,7 @@ public class SpecV1ImportsHostFuncs {
     private static HostImports base() {
         var printI32 =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             return null;
                         },
                         "spectest",
@@ -29,7 +30,7 @@ public class SpecV1ImportsHostFuncs {
                         List.of());
         var printI32_1 =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             return null;
                         },
                         "spectest",
@@ -38,7 +39,7 @@ public class SpecV1ImportsHostFuncs {
                         List.of());
         var printI32_2 =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             return null;
                         },
                         "spectest",
@@ -47,7 +48,7 @@ public class SpecV1ImportsHostFuncs {
                         List.of());
         var printF32 =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             return null;
                         },
                         "spectest",
@@ -56,7 +57,7 @@ public class SpecV1ImportsHostFuncs {
                         List.of());
         var printI32F32 =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             return null;
                         },
                         "spectest",
@@ -65,7 +66,7 @@ public class SpecV1ImportsHostFuncs {
                         List.of());
         var printI64 =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             return null;
                         },
                         "spectest",
@@ -74,7 +75,7 @@ public class SpecV1ImportsHostFuncs {
                         List.of());
         var printI64_1 =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             return null;
                         },
                         "spectest",
@@ -83,7 +84,7 @@ public class SpecV1ImportsHostFuncs {
                         List.of());
         var printI64_2 =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             return null;
                         },
                         "spectest",
@@ -92,7 +93,7 @@ public class SpecV1ImportsHostFuncs {
                         List.of());
         var printF64 =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             return null;
                         },
                         "spectest",
@@ -101,7 +102,7 @@ public class SpecV1ImportsHostFuncs {
                         List.of());
         var printF64_1 =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             return null;
                         },
                         "spectest",
@@ -110,7 +111,7 @@ public class SpecV1ImportsHostFuncs {
                         List.of());
         var printF64F64 =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             return null;
                         },
                         "spectest",
@@ -186,7 +187,7 @@ public class SpecV1ImportsHostFuncs {
     public static HostImports fallback() {
         var testFunc =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             return null;
                         },
                         "test",
@@ -195,7 +196,7 @@ public class SpecV1ImportsHostFuncs {
                         List.of(ValueType.I64));
         var testFuncI64 =
                 new HostFunction(
-                        (Memory memory, Value... args) -> {
+                        (Instance instance, Value... args) -> {
                             return new Value[] {args[0]};
                         },
                         "test",

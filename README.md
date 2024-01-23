@@ -150,10 +150,10 @@ Let's write that host function:
 
 ```java
 var func = new HostFunction(
-    (Memory memory, Value... args) -> { // decompiled is: console_log(13, 0);
+    (Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
         var len = args[0].asInt();
         var offset = args[1].asInt();
-        var message = memory.getString(offset, len);
+        var message = instance.getMemory().getString(offset, len);
         System.out.println(message);
         return null;
     },

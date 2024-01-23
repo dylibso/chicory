@@ -7,5 +7,5 @@ import com.dylibso.chicory.wasm.types.Value;
  */
 @FunctionalInterface
 public interface WasmFunctionHandle {
-    Value[] apply(Memory memory, Value... args);
+    Value[] apply(Instance instance, Value... args);
 }
