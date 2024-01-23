@@ -117,25 +117,6 @@ public class Value {
         }
     }
 
-    public BigInteger asULong() {
-        BigInteger b;
-        switch (type) {
-            case I32:
-            case F32:
-            case I64:
-            case F64:
-                b = new BigInteger(Long.toString(data));
-                break;
-            default:
-                throw new IllegalArgumentException(
-                        "Can't turn wasm value of type " + type + " to a ulong");
-        }
-        if (b.signum() < 0) {
-            return b.add(TWO_POW_64);
-        }
-        return b;
-    }
-
     // TODO memoize these
     public byte asByte() {
         switch (type) {
