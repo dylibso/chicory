@@ -56,7 +56,7 @@ public class Machine {
             switch (imprt.getType()) {
                 case FUNCTION:
                     var hostFunc = ((HostFunction) imprt).getHandle();
-                    var results = hostFunc.apply(this.instance.getMemory(), args);
+                    var results = hostFunc.apply(this.instance, args);
                     // a host function can return null or an array of ints
                     // which we will push onto the stack
                     if (results != null) {
