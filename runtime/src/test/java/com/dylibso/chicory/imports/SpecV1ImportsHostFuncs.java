@@ -208,6 +208,6 @@ public class SpecV1ImportsHostFuncs {
         HostFunction[] hostFunctions = Arrays.copyOf(base, base.length + additional.length);
         System.arraycopy(additional, 0, hostFunctions, base.length, additional.length);
         return new HostImports(
-                hostFunctions, new HostGlobal[] {}, base().getMemories()[0], base().getTables());
+                hostFunctions, new HostGlobal[] {}, base().getMemory(0), base().getTables());
     }
 }

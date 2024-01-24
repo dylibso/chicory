@@ -36,19 +36,19 @@ public class Instance {
             Table[] tables,
             Element[] elements) {
         this.module = module;
-        this.globalInitializers = globalInitializers;
-        this.globals = globals;
+        this.globalInitializers = globalInitializers.clone();
+        this.globals = globals.clone();
         this.importedGlobalsOffset = importedGlobalsOffset;
         this.importedFunctionsOffset = importedFunctionsOffset;
         this.importedTablesOffset = importedTablesOffset;
         this.memory = memory;
-        this.functions = functions;
-        this.types = types;
-        this.functionTypes = functionTypes;
+        this.functions = functions.clone();
+        this.types = types.clone();
+        this.functionTypes = functionTypes.clone();
         this.imports = imports;
         this.machine = new Machine(this);
-        this.tables = tables;
-        this.elements = elements;
+        this.tables = tables.clone();
+        this.elements = elements.clone();
     }
 
     public ExportFunction getExport(String name) {
@@ -65,16 +65,12 @@ public class Instance {
         };
     }
 
-    public FunctionBody[] getFunctions() {
-        return functions;
-    }
-
     public FunctionBody getFunction(int idx) {
         if (idx < importedFunctionsOffset) return null;
         return functions[idx - importedFunctionsOffset];
     }
 
-    public int getFunctionsSize() {
+    public int getFunctionCount() {
         return importedFunctionsOffset + functions.length;
     }
 
@@ -82,13 +78,9 @@ public class Instance {
         return memory;
     }
 
-    public Value[] getGlobals() {
-        return globals;
-    }
-
     public void setGlobal(int idx, Value val) {
         if (idx < importedGlobalsOffset) {
-            imports.getGlobals()[idx].setValue(val);
+            imports.getGlobal(idx).setValue(val);
         }
         globals[idx - importedGlobalsOffset] = val;
     }
@@ -107,8 +99,12 @@ public class Instance {
         return globalInitializers[idx - importedGlobalsOffset];
     }
 
-    public FunctionType[] getTypes() {
-        return types;
+    public int getGlobalCount() {
+        return globals.length;
+    }
+
+    public FunctionType getType(int idx) {
+        return types[idx];
     }
 
     public int getFunctionType(int idx) {
@@ -134,7 +130,7 @@ public class Instance {
         return elements[idx];
     }
 
-    public int getElementSize() {
+    public int getElementCount() {
         return elements.length;
     }
 
