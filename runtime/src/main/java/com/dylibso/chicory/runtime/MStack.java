@@ -1,7 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.Value;
-import java.util.Stack;
+import java.util.ArrayDeque;
 
 /**
  * A temporary class that gives us a little more control over the interface.
@@ -9,15 +9,15 @@ import java.util.Stack;
  * We should replace with something more idiomatic and performant.
  */
 public class MStack {
-    private final Stack<Value> stack;
+    private final ArrayDeque<Value> stack;
 
     public MStack() {
-        this.stack = new Stack<>();
+        this.stack = new ArrayDeque<>();
     }
 
-    private Stack<Value> unwindFrame;
+    private ArrayDeque<Value> unwindFrame;
 
-    public void setUnwindFrame(Stack<Value> stack) {
+    public void setUnwindFrame(ArrayDeque<Value> stack) {
         this.unwindFrame = stack;
     }
 
@@ -25,7 +25,7 @@ public class MStack {
         this.unwindFrame = null;
     }
 
-    public Stack<Value> unwindFrame() {
+    public ArrayDeque<Value> unwindFrame() {
         return this.unwindFrame;
     }
 

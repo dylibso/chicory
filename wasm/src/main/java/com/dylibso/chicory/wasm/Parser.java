@@ -56,9 +56,9 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.Stack;
 
 /**
  * Parser for Web Assembly binaries.
@@ -612,7 +612,7 @@ public final class Parser {
 
         // Parse individual function bodies in the code section
         for (int i = 0; i < funcBodyCount; i++) {
-            var blockScope = new Stack<OpCode>();
+            var blockScope = new ArrayDeque<OpCode>();
             var depth = 0;
             var funcEndPoint = readVarUInt32(buffer) + buffer.position();
             var localCount = readVarUInt32(buffer);

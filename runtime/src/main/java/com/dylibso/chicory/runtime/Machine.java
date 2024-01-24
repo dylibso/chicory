@@ -13,8 +13,8 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+import java.util.ArrayDeque;
 import java.util.List;
-import java.util.Stack;
 
 /**
  * This is responsible for holding and interpreting the Wasm code.
@@ -23,14 +23,14 @@ public class Machine {
 
     private final MStack stack;
 
-    private final Stack<StackFrame> callStack;
+    private final ArrayDeque<StackFrame> callStack;
 
     private final Instance instance;
 
     public Machine(Instance instance) {
         this.instance = instance;
         stack = new MStack();
-        this.callStack = new Stack<>();
+        this.callStack = new ArrayDeque<>();
     }
 
     public Value[] call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
@@ -40,7 +40,7 @@ public class Machine {
     public static Value[] call(
             MStack stack,
             Instance instance,
-            Stack<StackFrame> callStack,
+            ArrayDeque<StackFrame> callStack,
             int funcId,
             Value[] args,
             FunctionType callType,
@@ -105,7 +105,10 @@ public class Machine {
     }
 
     static void eval(
-            MStack stack, Instance instance, Stack<StackFrame> callStack, List<Instruction> code)
+            MStack stack,
+            Instance instance,
+            ArrayDeque<StackFrame> callStack,
+            List<Instruction> code)
             throws ChicoryException {
 
         try {
@@ -1952,7 +1955,7 @@ public class Machine {
     }
 
     private static void CALL(
-            MStack stack, Instance instance, Stack<StackFrame> callStack, long[] operands) {
+            MStack stack, Instance instance, ArrayDeque<StackFrame> callStack, long[] operands) {
         var funcId = (int) operands[0];
         var typeId = instance.functionType(funcId);
         var type = instance.type(typeId);
@@ -2183,7 +2186,7 @@ public class Machine {
     }
 
     private static void CALL_INDIRECT(
-            MStack stack, Instance instance, Stack<StackFrame> callStack, long[] operands) {
+            MStack stack, Instance instance, ArrayDeque<StackFrame> callStack, long[] operands) {
         var tableIdx = (int) operands[1];
         var table = instance.table(tableIdx);
         if (table == null) { // imported table
@@ -2269,7 +2272,7 @@ public class Machine {
             predValue = stack.pop();
         }
         if (unwindStack == null) {
-            stack.setUnwindFrame(new Stack());
+            stack.setUnwindFrame(new ArrayDeque<>());
         } else {
             stack.setUnwindFrame(unwindStack);
         }
@@ -2303,7 +2306,7 @@ public class Machine {
         }
 
         if (frame.blockDepth == 0) {
-            while (!unwindStack.empty()) {
+            while (!unwindStack.isEmpty()) {
                 stack.push(unwindStack.pop());
             }
         }
