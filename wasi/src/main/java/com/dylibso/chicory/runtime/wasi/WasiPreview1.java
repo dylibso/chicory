@@ -2,6 +2,7 @@ package com.dylibso.chicory.runtime.wasi;
 
 import static com.dylibso.chicory.wasm.types.ValueType.*;
 
+import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
@@ -14,28 +15,27 @@ import java.util.Arrays;
 import java.util.List;
 
 public class WasiPreview1 {
-    private static final System.Logger LOGGER = System.getLogger(WasiPreview1.class.getName());
+    private final Logger logger;
+    private final WasiOptions options;
 
-    private WasiOptions options;
-
-    public WasiPreview1() {
+    public WasiPreview1(Logger logger) {
         // TODO by default everything should by blocked
         // this works now because streams are null.
         // maybe we want a more explicit way of doing this though
-        this(WasiOptions.builder().build());
+        this(logger, WasiOptions.builder().build());
     }
 
-    public WasiPreview1(WasiOptions opts) {
+    public WasiPreview1(Logger logger, WasiOptions opts) {
+        this.logger = logger;
         this.options = opts;
-        LOGGER.log(
-                System.Logger.Level.WARNING,
+        logger.warn(
                 "Use of WASIP1 is experimental and will only work for the simplest of use cases.");
     }
 
     public HostFunction adapterCloseBadfd() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("adapter_close_badfd: " + Arrays.toString(args));
+                    logger.info("adapter_close_badfd: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -48,7 +48,7 @@ public class WasiPreview1 {
     public HostFunction adapterOpenBadfd() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("adapter_open_badfd: " + Arrays.toString(args));
+                    logger.info("adapter_open_badfd: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -61,7 +61,7 @@ public class WasiPreview1 {
     public HostFunction argsGet() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("args_get: " + Arrays.toString(args));
+                    logger.info("args_get: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -74,7 +74,7 @@ public class WasiPreview1 {
     public HostFunction argsSizesGet() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("args_sizes_get: " + Arrays.toString(args));
+                    logger.info("args_sizes_get: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -87,7 +87,7 @@ public class WasiPreview1 {
     public HostFunction clockResGet() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("clock_res_get: " + Arrays.toString(args));
+                    logger.info("clock_res_get: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -100,7 +100,7 @@ public class WasiPreview1 {
     public HostFunction clockTimeGet() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("clock_time_get: " + Arrays.toString(args));
+                    logger.info("clock_time_get: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -113,7 +113,7 @@ public class WasiPreview1 {
     public HostFunction environGet() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("environ_get: " + Arrays.toString(args));
+                    logger.info("environ_get: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -126,7 +126,7 @@ public class WasiPreview1 {
     public HostFunction environSizesGet() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("environ_sizes_get: " + Arrays.toString(args));
+                    logger.info("environ_sizes_get: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -139,7 +139,7 @@ public class WasiPreview1 {
     public HostFunction fdAdvise() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_advise: " + Arrays.toString(args));
+                    logger.info("fd_advise: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -152,7 +152,7 @@ public class WasiPreview1 {
     public HostFunction fdAllocate() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_allocate: " + Arrays.toString(args));
+                    logger.info("fd_allocate: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -165,7 +165,7 @@ public class WasiPreview1 {
     public HostFunction fdClose() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_close: " + Arrays.toString(args));
+                    logger.info("fd_close: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -178,7 +178,7 @@ public class WasiPreview1 {
     public HostFunction fdDatasync() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_datasync: " + Arrays.toString(args));
+                    logger.info("fd_datasync: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -191,7 +191,7 @@ public class WasiPreview1 {
     public HostFunction fdFdstatGet() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_fdstat_get: " + Arrays.toString(args));
+                    logger.info("fd_fdstat_get: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -204,7 +204,7 @@ public class WasiPreview1 {
     public HostFunction fdFdstatSetFlags() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_fdstat_set_flags: " + Arrays.toString(args));
+                    logger.info("fd_fdstat_set_flags: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -217,7 +217,7 @@ public class WasiPreview1 {
     public HostFunction fdFdstatSetRights() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_fdstat_set_rights: " + Arrays.toString(args));
+                    logger.info("fd_fdstat_set_rights: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -230,7 +230,7 @@ public class WasiPreview1 {
     public HostFunction fdFilestatGet() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_filestat_get: " + Arrays.toString(args));
+                    logger.info("fd_filestat_get: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -243,7 +243,7 @@ public class WasiPreview1 {
     public HostFunction fdFilestatSetSize() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_filestat_set_size: " + Arrays.toString(args));
+                    logger.info("fd_filestat_set_size: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -256,7 +256,7 @@ public class WasiPreview1 {
     public HostFunction fdFilestatSetTimes() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_filestat_set_times: " + Arrays.toString(args));
+                    logger.info("fd_filestat_set_times: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -269,7 +269,7 @@ public class WasiPreview1 {
     public HostFunction fdPread() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_pread: " + Arrays.toString(args));
+                    logger.info("fd_pread: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -282,7 +282,7 @@ public class WasiPreview1 {
     public HostFunction fdPrestatDirName() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_prestat_dir_name: " + Arrays.toString(args));
+                    logger.info("fd_prestat_dir_name: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -295,7 +295,7 @@ public class WasiPreview1 {
     public HostFunction fdPrestatGet() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_prestat_get: " + Arrays.toString(args));
+                    logger.info("fd_prestat_get: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -308,7 +308,7 @@ public class WasiPreview1 {
     public HostFunction fdPwrite() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_pwrite: " + Arrays.toString(args));
+                    logger.info("fd_pwrite: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] { Value.i32(0) };
                 },
@@ -370,7 +370,7 @@ public class WasiPreview1 {
     public HostFunction fdReaddir() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_readdir: " + Arrays.toString(args));
+                    logger.info("fd_readdir: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -382,7 +382,7 @@ public class WasiPreview1 {
     public HostFunction fdRenumber() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_renumber: " + Arrays.toString(args));
+                    logger.info("fd_renumber: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -394,7 +394,7 @@ public class WasiPreview1 {
     public HostFunction fdSeek() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_seek: " + Arrays.toString(args));
+                    logger.info("fd_seek: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] {Value.i32(0)};
                 },
@@ -407,7 +407,7 @@ public class WasiPreview1 {
     public HostFunction fdSync() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_sync: " + Arrays.toString(args));
+                    logger.info("fd_sync: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] {Value.i32(0)};
                 },
@@ -420,7 +420,7 @@ public class WasiPreview1 {
     public HostFunction fdTell() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("fd_tell: " + Arrays.toString(args));
+                    logger.info("fd_tell: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                     // return new Value[] {Value.i32(0)};
                 },
@@ -484,7 +484,7 @@ public class WasiPreview1 {
     public HostFunction getAllocationState() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("get_allocation_state: " + Arrays.toString(args));
+                    logger.info("get_allocation_state: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -496,7 +496,7 @@ public class WasiPreview1 {
     public HostFunction getStatePtr() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("get_state_ptr: " + Arrays.toString(args));
+                    logger.info("get_state_ptr: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -508,7 +508,7 @@ public class WasiPreview1 {
     public HostFunction Memcpy() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("memcpy: " + Arrays.toString(args));
+                    logger.info("memcpy: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -520,7 +520,7 @@ public class WasiPreview1 {
     public HostFunction Memove() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("memcpy: " + Arrays.toString(args));
+                    logger.info("memcpy: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -532,7 +532,7 @@ public class WasiPreview1 {
     public HostFunction Memset() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("memset: " + Arrays.toString(args));
+                    logger.info("memset: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -544,7 +544,7 @@ public class WasiPreview1 {
     public HostFunction pathCreateDirectory() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("path_create_directory: " + Arrays.toString(args));
+                    logger.info("path_create_directory: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -556,7 +556,7 @@ public class WasiPreview1 {
     public HostFunction pathFilestatGet() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("path_filestat_get: " + Arrays.toString(args));
+                    logger.info("path_filestat_get: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -568,7 +568,7 @@ public class WasiPreview1 {
     public HostFunction pathFilestatSetTimes() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("path_filestat_set_times: " + Arrays.toString(args));
+                    logger.info("path_filestat_set_times: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -580,7 +580,7 @@ public class WasiPreview1 {
     public HostFunction pathLink() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("path_link: " + Arrays.toString(args));
+                    logger.info("path_link: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -592,7 +592,7 @@ public class WasiPreview1 {
     public HostFunction pathOpen() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("path_open: " + Arrays.toString(args));
+                    logger.info("path_open: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -604,7 +604,7 @@ public class WasiPreview1 {
     public HostFunction pathReadlink() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("path_readlink: " + Arrays.toString(args));
+                    logger.info("path_readlink: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -616,7 +616,7 @@ public class WasiPreview1 {
     public HostFunction pathRemoveDirectory() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("path_remove_directory: " + Arrays.toString(args));
+                    logger.info("path_remove_directory: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -628,7 +628,7 @@ public class WasiPreview1 {
     public HostFunction pathRename() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("path_rename: " + Arrays.toString(args));
+                    logger.info("path_rename: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -640,7 +640,7 @@ public class WasiPreview1 {
     public HostFunction pathSymlink() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("path_symlink: " + Arrays.toString(args));
+                    logger.info("path_symlink: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -652,7 +652,7 @@ public class WasiPreview1 {
     public HostFunction pathUnlinkFile() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("path_unlink_file: " + Arrays.toString(args));
+                    logger.info("path_unlink_file: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -664,7 +664,7 @@ public class WasiPreview1 {
     public HostFunction pollOneoff() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("poll_oneoff: " + Arrays.toString(args));
+                    logger.info("poll_oneoff: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -676,7 +676,7 @@ public class WasiPreview1 {
     public HostFunction procExit() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("proc_exit: " + Arrays.toString(args));
+                    logger.info("proc_exit: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -688,7 +688,7 @@ public class WasiPreview1 {
     public HostFunction procRaise() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("proc_raise: " + Arrays.toString(args));
+                    logger.info("proc_raise: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -700,7 +700,7 @@ public class WasiPreview1 {
     public HostFunction randomGet() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("random_get: " + Arrays.toString(args));
+                    logger.info("random_get: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -712,7 +712,7 @@ public class WasiPreview1 {
     public HostFunction resetAdapterState() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("reset_adapter_state: " + Arrays.toString(args));
+                    logger.info("reset_adapter_state: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -724,7 +724,7 @@ public class WasiPreview1 {
     public HostFunction schedYield() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("sched_yield: " + Arrays.toString(args));
+                    logger.info("sched_yield: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -736,7 +736,7 @@ public class WasiPreview1 {
     public HostFunction setAllocationState() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("set_allocation_state: " + Arrays.toString(args));
+                    logger.info("set_allocation_state: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -748,7 +748,7 @@ public class WasiPreview1 {
     public HostFunction setStatePtr() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("set_state_ptr: " + Arrays.toString(args));
+                    logger.info("set_state_ptr: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -760,7 +760,7 @@ public class WasiPreview1 {
     public HostFunction sockAccept() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("sock_accept: " + Arrays.toString(args));
+                    logger.info("sock_accept: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -772,7 +772,7 @@ public class WasiPreview1 {
     public HostFunction sockRecv() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("sock_recv: " + Arrays.toString(args));
+                    logger.info("sock_recv: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -784,7 +784,7 @@ public class WasiPreview1 {
     public HostFunction sockSend() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("sock_send: " + Arrays.toString(args));
+                    logger.info("sock_send: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",
@@ -796,7 +796,7 @@ public class WasiPreview1 {
     public HostFunction sockShutdown() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
-                    System.out.println("sock_shutdown: " + Arrays.toString(args));
+                    logger.info("sock_shutdown: " + Arrays.toString(args));
                     throw new WASMRuntimeException("We don't yet support this WASI call");
                 },
                 "wasi_snapshot_preview1",

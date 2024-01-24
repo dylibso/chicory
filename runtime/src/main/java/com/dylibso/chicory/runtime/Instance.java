@@ -1,5 +1,6 @@
 package com.dylibso.chicory.runtime;
 
+import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -9,7 +10,6 @@ import com.dylibso.chicory.wasm.types.Value;
 import java.util.Arrays;
 
 public class Instance {
-    private static final System.Logger LOGGER = System.getLogger(Instance.class.getName());
     private final Module module;
     private final Machine machine;
     private final FunctionBody[] functions;
@@ -60,12 +60,11 @@ public class Instance {
         var export = module.getExport(name);
         var funcId = (int) export.getDesc().getIndex();
         return (args) -> {
-            LOGGER.log(System.Logger.Level.DEBUG, "Args: " + Arrays.toString(args));
+            this.module.logger().debug(() -> "Args: " + Arrays.toString(args));
             try {
                 return machine.call(funcId, args, true);
             } catch (Exception e) {
-                machine.printStackTrace();
-                throw e;
+                throw new WASMMachineException(machine.getStackTrace(), e);
             }
         };
     }

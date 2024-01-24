@@ -1,5 +1,8 @@
 package com.dylibso.chicory.runtime;
 
+import com.dylibso.chicory.log.Logger;
+import com.dylibso.chicory.log.SystemLogger;
+import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
@@ -23,46 +26,29 @@ import com.dylibso.chicory.wasm.types.NameSection;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 public class Module {
-
-    private static final System.Logger LOGGER = System.getLogger(Module.class.getName());
-    private com.dylibso.chicory.wasm.Module module;
+    private final com.dylibso.chicory.wasm.Module module;
     private NameSection nameSec;
 
-    private HashMap<String, Export> exports;
+    private final HashMap<String, Export> exports;
+    private final Logger logger;
 
-    public static Module build(File wasmFile) {
-        var parser = new Parser(wasmFile);
-        return new Module(parser.parseModule());
-    }
-
-    public static Module build(InputStream inputWasmFile) {
-        var parser = new Parser(inputWasmFile);
-        return new Module(parser.parseModule());
-    }
-
-    public static Module build(ByteBuffer buffer) {
-        var parser = new Parser(buffer);
-        return new Module(parser.parseModule());
-    }
-
-    public static Module build(File wasmFile, ModuleType type) {
-        switch (type) {
-            case TEXT:
-                return build(wasmFile);
-            default:
-                // TODO: implement me
-                throw new InvalidException("type mismatch");
-        }
-    }
-
-    protected Module(com.dylibso.chicory.wasm.Module module) {
+    protected Module(com.dylibso.chicory.wasm.Module module, Logger logger) {
+        this.logger = logger;
         this.module = module;
         this.exports = new HashMap<>();
         if (module.getExportSection() != null) {
@@ -70,6 +56,10 @@ public class Module {
                 exports.put(e.getName(), e);
             }
         }
+    }
+
+    public Logger logger() {
+        return logger;
     }
 
     public Instance instantiate() {
@@ -426,12 +416,9 @@ public class Module {
                     break;
             }
             if (!found) {
-                LOGGER.log(
-                        System.Logger.Level.WARNING,
-                        "Could not find host function for import number: "
-                                + impIdx
-                                + " named: "
-                                + name);
+                this.logger.warnf(
+                        "Could not find host function for import number: %d named %s",
+                        impIdx, name);
             }
         }
 
@@ -450,5 +437,171 @@ public class Module {
         if (nameSec != null) return nameSec;
         nameSec = this.module.getNameSection();
         return nameSec;
+    }
+
+    /**
+     * Use {@link #builder(File)}
+     *
+     * @deprecated
+     */
+    @Deprecated
+    public static Module build(File wasmFile) {
+        return builder(wasmFile).build();
+    }
+
+    /**
+     * Use {@link #builder(InputStream)}
+     *
+     * @deprecated
+     */
+    @Deprecated
+    public static Module build(InputStream is) {
+        return builder(is).build();
+    }
+
+    /**
+     * Use {@link #builder(ByteBuffer)}
+     *
+     * @deprecated
+     */
+    @Deprecated
+    public static Module build(ByteBuffer buffer) {
+        return builder(buffer).build();
+    }
+
+    /**
+     * Use {@link #builder(File)}
+     *
+     * @deprecated
+     */
+    @Deprecated
+    public static Module build(File wasmFile, ModuleType type) {
+        return builder(wasmFile).withType(type).build();
+    }
+
+    /**
+     * Creates a {@link Builder} for the specified {@link InputStream}
+     *
+     * @param input the input stream
+     * @return a {@link Builder} for reading the module definition from the specified input stream
+     */
+    public static Builder builder(InputStream input) {
+        return new Builder(() -> input);
+    }
+
+    /**
+     * Creates a {@link Builder} for the specified {@link ByteBuffer}
+     *
+     * @param buffer the buffer
+     * @return a {@link Builder} for reading the module definition from the specified buffer
+     */
+    public static Builder builder(ByteBuffer buffer) {
+        return builder(buffer.array());
+    }
+
+    /**
+     * Creates a {@link Builder} for the specified byte array
+     *
+     * @param buffer the buffer
+     * @return a {@link Builder} for reading the module definition from the specified buffer
+     */
+    public static Builder builder(byte[] buffer) {
+        return new Builder(() -> new ByteArrayInputStream(buffer));
+    }
+
+    /**
+     * Creates a {@link Builder} for the specified {@link File} resource
+     *
+     * @param file the path of the resource
+     * @return a {@link Builder} for reading the module definition from the specified file
+     */
+    public static Builder builder(File file) {
+        return new Builder(
+                () -> {
+                    try {
+                        return new FileInputStream(file);
+                    } catch (FileNotFoundException e) {
+                        throw new IllegalArgumentException(
+                                "File not found at path: " + file.getPath(), e);
+                    }
+                });
+    }
+
+    /**
+     * Creates a {@link Builder} for the specified classpath resource
+     *
+     * @param classpathResource the name of the resource
+     * @return a {@link Builder}  for reading the module definition from the specified resource
+     */
+    public static Builder builder(String classpathResource) {
+        return new Builder(
+                () -> {
+                    InputStream is =
+                            Thread.currentThread()
+                                    .getContextClassLoader()
+                                    .getResourceAsStream(classpathResource);
+                    if (is == null) {
+                        throw new IllegalArgumentException(
+                                "Resource not found at classpath: " + classpathResource);
+                    }
+                    return is;
+                });
+    }
+
+    /**
+     * Creates a {@link Builder} for the specified {@link Path} resource
+     *
+     * @param path the path of the resource
+     * @return a {@link Builder} for reading the module definition from the specified path
+     */
+    public static Builder builder(Path path) {
+        return new Builder(
+                () -> {
+                    try {
+                        return Files.newInputStream(path);
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException("Error opening file: " + path, e);
+                    }
+                });
+    }
+
+    public static class Builder {
+        private final Supplier<InputStream> inputStreamSupplier;
+        private Logger logger;
+        private ModuleType moduleType;
+
+        private Builder(Supplier<InputStream> inputStreamSupplier) {
+            this.inputStreamSupplier = Objects.requireNonNull(inputStreamSupplier);
+            this.moduleType = ModuleType.TEXT;
+        }
+
+        public Builder withLogger(Logger logger) {
+            this.logger = logger;
+            return this;
+        }
+
+        public Builder withType(ModuleType type) {
+            this.moduleType = type;
+            return this;
+        }
+
+        public Module build() {
+
+            final Logger logger = this.logger != null ? this.logger : new SystemLogger();
+            final Parser parser = new Parser(logger);
+
+            try (final InputStream is = inputStreamSupplier.get()) {
+
+                switch (this.moduleType) {
+                    case TEXT:
+                        return new Module(parser.parseModule(is), logger);
+                    default:
+                        // TODO: implement me
+                        throw new InvalidException("type mismatch");
+                }
+            } catch (IOException e) {
+                throw new WASMRuntimeException(e);
+            }
+        }
     }
 }

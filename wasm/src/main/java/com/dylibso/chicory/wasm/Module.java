@@ -18,7 +18,8 @@ import java.util.HashMap;
 import java.util.List;
 
 public class Module {
-    private HashMap<String, CustomSection> customSections;
+    private final HashMap<String, CustomSection> customSections;
+
     private TypeSection typeSection;
     private ImportSection importSection;
     private FunctionSection functionSection;

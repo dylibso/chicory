@@ -23,7 +23,7 @@ public class TestModule {
 
     public TestModule build() {
         if (this.module == null) {
-            this.module = Module.build(file);
+            this.module = Module.builder(file).build();
         }
         return this;
     }

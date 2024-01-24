@@ -6,22 +6,14 @@
     <groupId>com.dylibso.chicory</groupId>
     <artifactId>chicory</artifactId>
     <version>999-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>wasi</artifactId>
+  <artifactId>log</artifactId>
   <packaging>jar</packaging>
-  <name>Chicory - WASI</name>
-  <description>WASI Preview 1 impolementation for Chicory</description>
+
+  <name>Chicory - Log</name>
+  <description>WebAssembly Log Utilities</description>
 
   <dependencies>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>log</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>runtime</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
