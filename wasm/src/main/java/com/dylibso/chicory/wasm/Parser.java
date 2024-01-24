@@ -95,7 +95,7 @@ public final class Parser {
         parse(
                 in,
                 (s) -> {
-                    switch (s.getSectionId()) {
+                    switch (s.sectionId()) {
                         case SectionId.CUSTOM:
                             module.addCustomSection((CustomSection) s);
                             break;
@@ -133,7 +133,7 @@ public final class Parser {
                             module.setDataSection((DataSection) s);
                             break;
                         default:
-                            logger.warnf("Ignoring section with id: %d", s.getSectionId());
+                            logger.warnf("Ignoring section with id: %d", s.sectionId());
                             break;
                     }
                 });
@@ -628,13 +628,13 @@ public final class Parser {
             do {
                 var instruction = parseInstruction(buffer);
                 // depth control
-                switch (instruction.getOpcode()) {
+                switch (instruction.opcode()) {
                     case BLOCK:
                     case LOOP:
                     case IF:
                         {
                             instruction.setDepth(++depth);
-                            blockScope.push(instruction.getOpcode());
+                            blockScope.push(instruction.opcode());
                             instruction.setScope(blockScope.peek());
                             break;
                         }
@@ -657,7 +657,7 @@ public final class Parser {
                 }
 
                 // control-flow
-                switch (instruction.getOpcode()) {
+                switch (instruction.opcode()) {
                     case BLOCK:
                     case LOOP:
                         {
@@ -674,7 +674,7 @@ public final class Parser {
                             currentControlFlow.addCallback(
                                     end -> {
                                         // check that there is no "else" branch
-                                        if (instruction.getLabelFalse() == defaultJmp) {
+                                        if (instruction.labelFalse() == defaultJmp) {
                                             instruction.setLabelFalse(end);
                                         }
                                     });
@@ -686,8 +686,8 @@ public final class Parser {
                         }
                     case ELSE:
                         {
-                            assert (currentControlFlow.getInstruction().getOpcode() == OpCode.IF);
-                            currentControlFlow.getInstruction().setLabelFalse(instructionCount + 1);
+                            assert (currentControlFlow.instruction().opcode() == OpCode.IF);
+                            currentControlFlow.instruction().setLabelFalse(instructionCount + 1);
 
                             currentControlFlow.addCallback(instruction::setLabelTrue);
 
@@ -699,10 +699,10 @@ public final class Parser {
                         }
                     case BR:
                         {
-                            var offset = (int) instruction.getOperands()[0];
+                            var offset = (int) instruction.operands()[0];
                             ControlTree reference = currentControlFlow;
                             while (offset > 0) {
-                                reference = reference.getParent();
+                                reference = reference.parent();
                                 offset--;
                             }
                             reference.addCallback(instruction::setLabelTrue);
@@ -710,17 +710,17 @@ public final class Parser {
                         }
                     case BR_TABLE:
                         {
-                            instruction.setLabelTable(new int[instruction.getOperands().length]);
-                            for (var idx = 0; idx < instruction.getLabelTable().length; idx++) {
-                                var offset = (int) instruction.getOperands()[idx];
+                            instruction.setLabelTable(new int[instruction.operands().length]);
+                            for (var idx = 0; idx < instruction.labelTable().length; idx++) {
+                                var offset = (int) instruction.operands()[idx];
                                 ControlTree reference = currentControlFlow;
                                 while (offset > 0) {
-                                    reference = reference.getParent();
+                                    reference = reference.parent();
                                     offset--;
                                 }
                                 int finalIdx = idx;
                                 reference.addCallback(
-                                        end -> instruction.getLabelTable()[finalIdx] = end);
+                                        end -> instruction.labelTable()[finalIdx] = end);
                             }
                             break;
                         }
@@ -728,7 +728,7 @@ public final class Parser {
                         {
                             currentControlFlow.setFinalInstructionNumber(
                                     instructionCount, instruction);
-                            currentControlFlow = currentControlFlow.getParent();
+                            currentControlFlow = currentControlFlow.parent();
                             break;
                         }
                 }
@@ -831,7 +831,7 @@ public final class Parser {
         var expr = new ArrayList<Instruction>();
         while (true) {
             var i = parseInstruction(buffer);
-            if (i.getOpcode() == OpCode.END) {
+            if (i.opcode() == OpCode.END) {
                 break;
             }
             expr.add(i);

@@ -10,11 +10,11 @@ public class WasmValue {
     @JsonProperty("value")
     private String value;
 
-    public WasmValueType getType() {
+    public WasmValueType type() {
         return type;
     }
 
-    public String getValue() {
+    public String value() {
         return value;
     }
 
@@ -115,7 +115,7 @@ public class WasmValue {
         }
     }
 
-    public String getDelta() {
+    public String delta() {
         switch (type) {
             case F32:
             case F64:

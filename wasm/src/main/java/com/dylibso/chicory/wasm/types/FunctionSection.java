@@ -8,7 +8,7 @@ public class FunctionSection extends Section {
         this.typeIndices = typeIndices;
     }
 
-    public int[] getTypeIndices() {
+    public int[] typeIndices() {
         return typeIndices;
     }
 }

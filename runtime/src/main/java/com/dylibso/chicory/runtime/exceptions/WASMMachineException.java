@@ -25,7 +25,7 @@ public class WASMMachineException extends ChicoryException {
         this.frames = frames == null ? List.of() : List.copyOf(frames);
     }
 
-    public List<StackFrame> getStackFrames() {
+    public List<StackFrame> stackFrames() {
         return frames;
     }
 }

@@ -8,7 +8,7 @@ public class TypeSection extends Section {
         this.types = types;
     }
 
-    public FunctionType[] getTypes() {
+    public FunctionType[] types() {
         return types;
     }
 }

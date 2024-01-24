@@ -31,11 +31,11 @@ public class ImportDesc {
         this.valType = valType;
     }
 
-    public long getIndex() {
+    public long index() {
         return index;
     }
 
-    public ImportDescType getType() {
+    public ImportDescType type() {
         return type;
     }
 

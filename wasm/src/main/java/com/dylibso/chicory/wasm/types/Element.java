@@ -2,9 +2,9 @@ package com.dylibso.chicory.wasm.types;
 
 public interface Element {
 
-    ElemType getElemType();
+    ElemType elemType();
 
-    int getSize();
+    int size();
 
     enum ElemType {
         Type(0),

@@ -8,9 +8,9 @@ public interface FromHost {
         TABLE;
     }
 
-    String getModuleName();
+    String moduleName();
 
-    String getFieldName();
+    String fieldName();
 
-    FromHostType getType();
+    FromHostType type();
 }

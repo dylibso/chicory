@@ -11,15 +11,15 @@ public class Import {
         this.desc = desc;
     }
 
-    public String getModuleName() {
+    public String moduleName() {
         return moduleName;
     }
 
-    public String getFieldName() {
+    public String fieldName() {
         return fieldName;
     }
 
-    public ImportDesc getDesc() {
+    public ImportDesc desc() {
         return desc;
     }
 

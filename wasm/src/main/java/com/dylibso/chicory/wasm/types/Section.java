@@ -9,11 +9,11 @@ public class Section {
         this.size = size;
     }
 
-    public int getSectionId() {
+    public int sectionId() {
         return id;
     }
 
-    public long getSectionSize() {
+    public long sectionSize() {
         return size;
     }
 }

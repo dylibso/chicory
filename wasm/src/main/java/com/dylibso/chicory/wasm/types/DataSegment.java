@@ -7,7 +7,7 @@ public class DataSegment {
         this.data = data;
     }
 
-    public byte[] getData() {
+    public byte[] data() {
         return data;
     }
 }

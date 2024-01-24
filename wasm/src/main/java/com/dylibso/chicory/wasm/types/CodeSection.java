@@ -8,7 +8,7 @@ public class CodeSection extends Section {
         this.functionBodies = functionBodies;
     }
 
-    public FunctionBody[] getFunctionBodies() {
+    public FunctionBody[] functionBodies() {
         return functionBodies;
     }
 }

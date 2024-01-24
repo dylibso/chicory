@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.runtime.Module.getConstantValue;
+import static com.dylibso.chicory.runtime.Module.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
@@ -47,27 +47,27 @@ public class Machine {
             boolean popResults)
             throws ChicoryException {
 
-        var typeId = instance.getFunctionType(funcId);
-        var type = instance.getType(typeId);
+        var typeId = instance.functionType(funcId);
+        var type = instance.type(typeId);
 
         if (callType != null) {
             verifyIndirectCall(type, callType);
         }
 
-        var func = instance.getFunction(funcId);
+        var func = instance.function(funcId);
         if (func != null) {
-            callStack.push(new StackFrame(instance, funcId, 0, args, func.getLocals()));
-            eval(stack, instance, callStack, func.getInstructions());
+            callStack.push(new StackFrame(instance, funcId, 0, args, func.locals()));
+            eval(stack, instance, callStack, func.instructions());
         } else {
             callStack.push(new StackFrame(instance, funcId, 0, args, List.of()));
-            var imprt = instance.getImports().getIndex()[funcId];
+            var imprt = instance.imports().index()[funcId];
             if (imprt == null) {
                 throw new ChicoryException("Missing host import, number: " + funcId);
             }
 
-            switch (imprt.getType()) {
+            switch (imprt.type()) {
                 case FUNCTION:
-                    var hostFunc = ((HostFunction) imprt).getHandle();
+                    var hostFunc = ((HostFunction) imprt).handle();
                     var results = hostFunc.apply(instance, args);
                     // a host function can return null or an array of ints
                     // which we will push onto the stack
@@ -78,7 +78,7 @@ public class Machine {
                     }
                     break;
                 case GLOBAL:
-                    stack.push(((HostGlobal) imprt).getValue());
+                    stack.push(((HostGlobal) imprt).value());
                     break;
                 default:
                     throw new ChicoryException("Not implemented");
@@ -93,10 +93,10 @@ public class Machine {
             return null;
         }
 
-        if (type.getReturns().length == 0) return null;
+        if (type.returns().length == 0) return null;
         if (stack.size() == 0) return null;
 
-        var totalResults = type.getReturns().length;
+        var totalResults = type.returns().length;
         var results = new Value[totalResults];
         for (var i = totalResults - 1; i >= 0; i--) {
             results[i] = stack.pop();
@@ -127,8 +127,8 @@ public class Machine {
                 //                                + instruction
                 //                                + " stack="
                 //                                + stack);
-                var opcode = instruction.getOpcode();
-                var operands = instruction.getOperands();
+                var opcode = instruction.opcode();
+                var operands = instruction.operands();
                 switch (opcode) {
                     case UNREACHABLE:
                         throw new TrapException("Trapped on unreachable instruction", callStack);
@@ -145,7 +145,7 @@ public class Machine {
                     case BR:
                         prepareControlTransfer(frame, stack, false);
 
-                        frame.pc = instruction.getLabelTrue();
+                        frame.pc = instruction.labelTrue();
                         break;
                     case BR_IF:
                         BR_IF(frame, stack, instruction);
@@ -180,7 +180,7 @@ public class Machine {
                             break;
                         }
                     case LOCAL_GET:
-                        stack.push(frame.getLocal((int) operands[0]));
+                        stack.push(frame.local((int) operands[0]));
                         break;
                     case LOCAL_SET:
                         frame.setLocal((int) operands[0], stack.pop());
@@ -1294,20 +1294,20 @@ public class Machine {
     }
 
     private static void MEMORY_SIZE(MStack stack, Instance instance) {
-        var sz = instance.getMemory().getSize();
+        var sz = instance.memory().pages();
         stack.push(Value.i32(sz));
     }
 
     private static void I64_STORE32(MStack stack, Instance instance, long[] operands) {
         var value = stack.pop().asLong();
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        instance.getMemory().writeI32(ptr, (int) value);
+        instance.memory().writeI32(ptr, (int) value);
     }
 
     private static void I64_STORE8(MStack stack, Instance instance, long[] operands) {
         var value = stack.pop().asByte();
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        instance.getMemory().writeByte(ptr, value);
+        instance.memory().writeByte(ptr, value);
     }
 
     private static void F64_PROMOTE_F32(MStack stack) {
@@ -1511,7 +1511,7 @@ public class Machine {
 
     private static void DATA_DROP(Instance instance, long[] operands) {
         var segment = (int) operands[0];
-        instance.getMemory().drop(segment);
+        instance.memory().drop(segment);
     }
 
     private static void F64_CONVERT_I64_S(MStack stack) {
@@ -1522,9 +1522,9 @@ public class Machine {
 
     private static void TABLE_GROW(MStack stack, Instance instance, long[] operands) {
         var tableidx = (int) operands[0];
-        var table = instance.getTable(tableidx);
+        var table = instance.table(tableidx);
         if (table == null) {
-            table = instance.getImports().getTable(tableidx).getTable();
+            table = instance.imports().table(tableidx).table();
         }
 
         var size = stack.pop().asInt();
@@ -1537,12 +1537,12 @@ public class Machine {
 
     private static void TABLE_SIZE(MStack stack, Instance instance, long[] operands) {
         var tableidx = (int) operands[0];
-        var table = instance.getTable(tableidx);
+        var table = instance.table(tableidx);
         if (table == null) {
-            table = instance.getImports().getTable(tableidx).getTable();
+            table = instance.imports().table(tableidx).table();
         }
 
-        stack.push(Value.i32(table.getSize()));
+        stack.push(Value.i32(table.size()));
     }
 
     private static void TABLE_FILL(MStack stack, Instance instance, long[] operands) {
@@ -1553,12 +1553,12 @@ public class Machine {
         var offset = stack.pop().asInt();
         var end = offset + size;
 
-        var table = instance.getTable(tableidx);
+        var table = instance.table(tableidx);
         if (table == null) {
-            table = instance.getImports().getTable(tableidx).getTable();
+            table = instance.imports().table(tableidx).table();
         }
 
-        if (size < 0 || end > table.getSize()) {
+        if (size < 0 || end > table.size()) {
             throw new WASMRuntimeException("out of bounds table access");
         }
 
@@ -1574,21 +1574,19 @@ public class Machine {
         var size = stack.pop().asInt();
         var s = stack.pop().asInt();
         var d = stack.pop().asInt();
-        var src = instance.getTable(tableidxSrc);
-        var dest = instance.getTable(tableidxDst);
+        var src = instance.table(tableidxSrc);
+        var dest = instance.table(tableidxDst);
 
-        if (size < 0
-                || (s < 0 || (size + s) > src.getSize())
-                || (d < 0 || (size + d) > dest.getSize())) {
+        if (size < 0 || (s < 0 || (size + s) > src.size()) || (d < 0 || (size + d) > dest.size())) {
             throw new WASMRuntimeException("out of bounds table access");
         }
 
         for (int i = size - 1; i >= 0; i--) {
             if (d <= s) {
-                var val = src.getRef(s++);
+                var val = src.ref(s++);
                 dest.setRef(d++, val.asFuncRef());
             } else {
-                var val = src.getRef(s + i);
+                var val = src.ref(s + i);
                 dest.setRef(d + i, val.asFuncRef());
             }
         }
@@ -1603,7 +1601,7 @@ public class Machine {
         var size = stack.pop().asInt();
         var offset = stack.pop().asInt();
         var destination = stack.pop().asInt();
-        instance.getMemory().copy(destination, offset, size);
+        instance.memory().copy(destination, offset, size);
     }
 
     private static void TABLE_INIT(MStack stack, Instance instance, long[] operands) {
@@ -1615,22 +1613,22 @@ public class Machine {
         var offset = stack.pop().asInt();
         var end = offset + size;
 
-        var table = instance.getTable(tableidx);
+        var table = instance.table(tableidx);
         if (table == null) {
-            table = instance.getImports().getTable(tableidx).getTable();
+            table = instance.imports().table(tableidx).table();
         }
 
         if (size < 0
-                || elementidx > instance.getElementCount()
-                || instance.getElement(elementidx) == null
-                || elemidx + size > instance.getElement(elementidx).getSize()
-                || end > table.getSize()) {
+                || elementidx > instance.elementCount()
+                || instance.element(elementidx) == null
+                || elemidx + size > instance.element(elementidx).size()
+                || end > table.size()) {
             throw new WASMRuntimeException("out of bounds table access");
         }
 
         for (int i = offset; i < end; i++) {
             var val = getRuntimeElementValue(instance, elementidx, elemidx++);
-            if (val > instance.getFunctionCount()) {
+            if (val > instance.functionCount()) {
                 throw new WASMRuntimeException("out of bounds table access");
             }
             table.setRef(i, val);
@@ -1645,7 +1643,7 @@ public class Machine {
         var size = stack.pop().asInt();
         var offset = stack.pop().asInt();
         var destination = stack.pop().asInt();
-        instance.getMemory().initPassiveSegment(segmentId, destination, offset, size);
+        instance.memory().initPassiveSegment(segmentId, destination, offset, size);
     }
 
     private static void I64_TRUNC_F32_S(MStack stack) {
@@ -1956,11 +1954,11 @@ public class Machine {
     private static void CALL(
             MStack stack, Instance instance, Stack<StackFrame> callStack, long[] operands) {
         var funcId = (int) operands[0];
-        var typeId = instance.getFunctionType(funcId);
-        var type = instance.getType(typeId);
+        var typeId = instance.functionType(funcId);
+        var type = instance.type(typeId);
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
-        var args = extractArgsForParams(stack, type.getParams());
+        var args = extractArgsForParams(stack, type.params());
         call(stack, instance, callStack, funcId, args, type, false);
     }
 
@@ -1999,139 +1997,139 @@ public class Machine {
         var val = stack.pop().asByte();
         var offset = stack.pop().asInt();
         var end = (size + offset);
-        instance.getMemory().fill(val, offset, end);
+        instance.memory().fill(val, offset, end);
     }
 
     private static void MEMORY_GROW(MStack stack, Instance instance) {
         var size = stack.pop().asInt();
-        var nPages = instance.getMemory().grow(size);
+        var nPages = instance.memory().grow(size);
         stack.push(Value.i32(nPages));
     }
 
     private static void F64_STORE(MStack stack, Instance instance, long[] operands) {
         var value = stack.pop().asDouble();
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        instance.getMemory().writeF64(ptr, value);
+        instance.memory().writeF64(ptr, value);
     }
 
     private static void F32_STORE(MStack stack, Instance instance, long[] operands) {
         var value = stack.pop().asFloat();
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        instance.getMemory().writeF32(ptr, value);
+        instance.memory().writeF32(ptr, value);
     }
 
     private static void I64_STORE(MStack stack, Instance instance, long[] operands) {
         var value = stack.pop().asLong();
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        instance.getMemory().writeLong(ptr, value);
+        instance.memory().writeLong(ptr, value);
     }
 
     private static void I64_STORE16(MStack stack, Instance instance, long[] operands) {
         var value = stack.pop().asShort();
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        instance.getMemory().writeShort(ptr, value);
+        instance.memory().writeShort(ptr, value);
     }
 
     private static void I32_STORE(MStack stack, Instance instance, long[] operands) {
         var value = stack.pop().asInt();
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        instance.getMemory().writeI32(ptr, value);
+        instance.memory().writeI32(ptr, value);
     }
 
     private static void I64_LOAD32_U(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readU32(ptr);
+        var val = instance.memory().readU32(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD32_S(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readI32(ptr);
+        var val = instance.memory().readI32(ptr);
         // TODO this is a bit hacky
         stack.push(Value.i64(val.asInt()));
     }
 
     private static void I64_LOAD16_U(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readU16(ptr);
+        var val = instance.memory().readU16(ptr);
         // TODO this is a bit hacky
         stack.push(Value.i64(val.asInt()));
     }
 
     private static void I32_LOAD16_U(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readU16(ptr);
+        var val = instance.memory().readU16(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD16_S(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readI16(ptr);
+        var val = instance.memory().readI16(ptr);
         // TODO this is a bit hacky
         stack.push(Value.i64(val.asInt()));
     }
 
     private static void I32_LOAD16_S(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readI16(ptr);
+        var val = instance.memory().readI16(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD8_U(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readU8(ptr);
+        var val = instance.memory().readU8(ptr);
         // TODO a bit hacky
         stack.push(Value.i64(val.asInt()));
     }
 
     private static void I32_LOAD8_U(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readU8(ptr);
+        var val = instance.memory().readU8(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD8_S(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readI8(ptr);
+        var val = instance.memory().readI8(ptr);
         // TODO a bit hacky
         stack.push(Value.i64(val.asInt()));
     }
 
     private static void I32_LOAD8_S(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readI8(ptr);
+        var val = instance.memory().readI8(ptr);
         stack.push(val);
     }
 
     private static void F64_LOAD(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readF64(ptr);
+        var val = instance.memory().readF64(ptr);
         stack.push(val);
     }
 
     private static void F32_LOAD(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readF32(ptr);
+        var val = instance.memory().readF32(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readI64(ptr);
+        var val = instance.memory().readI64(ptr);
         stack.push(val);
     }
 
     private static void I32_LOAD(MStack stack, Instance instance, long[] operands) {
         var ptr = (int) (operands[1] + stack.pop().asInt());
-        var val = instance.getMemory().readI32(ptr);
+        var val = instance.memory().readI32(ptr);
         stack.push(val);
     }
 
     private static void TABLE_SET(MStack stack, Instance instance, long[] operands) {
         var idx = (int) operands[0];
-        var table = instance.getTable(idx);
+        var table = instance.table(idx);
         if (table == null) {
-            table = instance.getImports().getTable(idx).getTable();
+            table = instance.imports().table(idx).table();
         }
         var value = stack.pop().asExtRef();
         var i = stack.pop().asInt();
@@ -2140,37 +2138,35 @@ public class Machine {
 
     private static void TABLE_GET(MStack stack, Instance instance, long[] operands) {
         var idx = (int) operands[0];
-        var table = instance.getTable(idx);
+        var table = instance.table(idx);
         if (table == null) {
-            table = instance.getImports().getTable(idx).getTable();
+            table = instance.imports().table(idx).table();
         }
         var i = stack.pop().asInt();
-        if (i < 0
-                || (table.getLimitMax() != 0 && i >= table.getLimitMax())
-                || i >= table.getSize()) {
+        if (i < 0 || (table.limitMax() != 0 && i >= table.limitMax()) || i >= table.size()) {
             throw new WASMRuntimeException("out of bounds table access");
         }
-        stack.push(table.getRef(i));
+        stack.push(table.ref(i));
     }
 
     private static void GLOBAL_SET(MStack stack, Instance instance, long[] operands) {
         var id = (int) operands[0];
         var mutabilityType =
-                (instance.getGlobalInitializer(id) == null)
-                        ? instance.getImports().getGlobal(id).getMutabilityType()
-                        : instance.getGlobalInitializer(id);
+                (instance.globalInitializer(id) == null)
+                        ? instance.imports().global(id).mutabilityType()
+                        : instance.globalInitializer(id);
         if (mutabilityType == MutabilityType.Const) {
             throw new RuntimeException("Can't call GLOBAL_SET on immutable global");
         }
         var val = stack.pop();
-        instance.setGlobal(id, val);
+        instance.writeGlobal(id, val);
     }
 
     private static void GLOBAL_GET(MStack stack, Instance instance, long[] operands) {
         int idx = (int) operands[0];
-        var val = instance.getGlobal(idx);
+        var val = instance.readGlobal(idx);
         if (val == null) {
-            val = instance.getImports().getGlobal(idx).getValue();
+            val = instance.imports().global(idx).value();
         }
         stack.push(val);
     }
@@ -2189,20 +2185,20 @@ public class Machine {
     private static void CALL_INDIRECT(
             MStack stack, Instance instance, Stack<StackFrame> callStack, long[] operands) {
         var tableIdx = (int) operands[1];
-        var table = instance.getTable(tableIdx);
+        var table = instance.table(tableIdx);
         if (table == null) { // imported table
-            table = instance.getImports().getTable(tableIdx).getTable();
+            table = instance.imports().table(tableIdx).table();
         }
         var typeId = (int) operands[0];
-        var type = instance.getType(typeId);
+        var type = instance.type(typeId);
         int funcTableIdx = stack.pop().asInt();
-        int funcId = table.getRef(funcTableIdx).asFuncRef();
+        int funcId = table.ref(funcTableIdx).asFuncRef();
         if (funcId == REF_NULL_VALUE) {
             throw new ChicoryException("uninitialized element " + funcTableIdx);
         }
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
-        var args = extractArgsForParams(stack, type.getParams());
+        var args = extractArgsForParams(stack, type.params());
         call(stack, instance, callStack, funcId, args, type, false);
     }
 
@@ -2219,9 +2215,9 @@ public class Machine {
         } else if (ValueType.byId(typeId) != null) { // shortcut to straight value type
             frame.numberOfValuesToReturn = Math.max(frame.numberOfValuesToReturn, 1);
         } else { // look it up
-            var funcType = instance.getType(typeId);
+            var funcType = instance.type(typeId);
             frame.numberOfValuesToReturn =
-                    Math.max(frame.numberOfValuesToReturn, funcType.getReturns().length);
+                    Math.max(frame.numberOfValuesToReturn, funcType.returns().length);
         }
     }
 
@@ -2232,9 +2228,9 @@ public class Machine {
         var predValue = stack.pop();
         var pred = predValue.asInt();
         if (pred == 0) {
-            frame.pc = instruction.getLabelFalse();
+            frame.pc = instruction.labelFalse();
         } else {
-            frame.pc = instruction.getLabelTrue();
+            frame.pc = instruction.labelTrue();
         }
     }
 
@@ -2242,12 +2238,12 @@ public class Machine {
         var predValue = prepareControlTransfer(frame, stack, true);
         var pred = predValue.asInt();
 
-        if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
+        if (pred < 0 || pred >= instruction.labelTable().length - 1) {
             // choose default
-            frame.pc = instruction.getLabelTable()[instruction.getLabelTable().length - 1];
+            frame.pc = instruction.labelTable()[instruction.labelTable().length - 1];
         } else {
             frame.branchConditionValue = predValue;
-            frame.pc = instruction.getLabelTable()[pred];
+            frame.pc = instruction.labelTable()[pred];
         }
     }
 
@@ -2256,17 +2252,17 @@ public class Machine {
         var pred = predValue.asInt();
 
         if (pred == 0) {
-            frame.pc = instruction.getLabelFalse();
+            frame.pc = instruction.labelFalse();
         } else {
             frame.branchConditionValue = predValue;
-            frame.pc = instruction.getLabelTrue();
+            frame.pc = instruction.labelTrue();
         }
     }
 
     private static Value prepareControlTransfer(StackFrame frame, MStack stack, boolean consume) {
         frame.doControlTransfer = true;
 
-        var unwindStack = stack.getUnwindFrame();
+        var unwindStack = stack.unwindFrame();
         stack.resetUnwindFrame();
         Value predValue = null;
         if (consume) {
@@ -2284,7 +2280,7 @@ public class Machine {
     private static void doControlTransfer(MStack stack, StackFrame frame) {
         // reset the control transfer
         frame.doControlTransfer = false;
-        var unwindStack = stack.getUnwindFrame();
+        var unwindStack = stack.unwindFrame();
         stack.resetUnwindFrame();
 
         Value[] returns = new Value[frame.numberOfValuesToReturn];
@@ -2321,27 +2317,27 @@ public class Machine {
     }
 
     private static int getRuntimeElementValue(Instance instance, int idx, int s) {
-        var elem = instance.getElement(idx);
-        var type = elem.getElemType();
+        var elem = instance.element(idx);
+        var type = elem.elemType();
         int val;
         switch (type) {
             case Type:
                 {
                     var t = (ElemType) elem;
-                    val = getConstantValue(t.getExpr());
+                    val = computeConstantValue(t.exprInstructions());
                     break;
                 }
             case Elem:
                 {
                     var e = (ElemElem) elem;
-                    var expr = e.getExprs()[s];
-                    val = getConstantValue(expr);
+                    var expr = e.exprs()[s];
+                    val = computeConstantValue(expr);
                     break;
                 }
             case Func:
                 {
                     var f = (ElemFunc) elem;
-                    val = (int) f.getFuncIndices()[s];
+                    val = (int) f.funcIndices()[s];
                     break;
                 }
             default:
@@ -2364,7 +2360,7 @@ public class Machine {
         for (var i = params.length; i > 0; i--) {
             var p = stack.pop();
             var t = params[i - 1];
-            if (p.getType() != t) {
+            if (p.type() != t) {
                 throw new RuntimeException("Type error when extracting args.");
             }
             args[i - 1] = p;

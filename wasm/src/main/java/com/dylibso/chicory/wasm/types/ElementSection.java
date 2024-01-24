@@ -8,7 +8,7 @@ public class ElementSection extends Section {
         this.elements = elements;
     }
 
-    public Element[] getElements() {
+    public Element[] elements() {
         return elements;
     }
 }

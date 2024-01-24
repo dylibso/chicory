@@ -8,7 +8,7 @@ public class MemorySection extends Section {
         this.memories = memories;
     }
 
-    public Memory[] getMemories() {
+    public Memory[] memories() {
         return memories;
     }
 }

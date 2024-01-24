@@ -7,7 +7,7 @@ public class StartSection extends Section {
         super(id, size);
     }
 
-    public long getStartIndex() {
+    public long startIndex() {
         return startIndex;
     }
 

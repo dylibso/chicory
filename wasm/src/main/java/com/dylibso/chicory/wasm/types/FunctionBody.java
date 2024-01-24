@@ -11,15 +11,15 @@ public class FunctionBody {
         this.instructions = instructions;
     }
 
-    public List<Value> getLocals() {
+    public List<Value> locals() {
         return locals;
     }
 
-    public List<Instruction> getInstructions() {
+    public List<Instruction> instructions() {
         return instructions;
     }
 
-    public Ast getAst() {
+    public Ast ast() {
         var ast = new Ast();
         for (var i : instructions) {
             ast.addInstruction(i);

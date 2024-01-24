@@ -11,13 +11,13 @@ public class NameSection extends CustomSection {
     private final List<String> funcNames;
 
     public NameSection(CustomSection sec) {
-        super(sec.getSectionId(), sec.getSectionSize());
-        this.setBytes(sec.getBytes());
+        super(sec.sectionId(), sec.sectionSize());
+        this.setBytes(sec.bytes());
         this.funcNames = parseFunctionNames();
     }
 
     private List<String> parseFunctionNames() {
-        ByteBuffer buf = ByteBuffer.wrap(this.getBytes());
+        ByteBuffer buf = ByteBuffer.wrap(this.bytes());
 
         List<String> names = new ArrayList<>();
 
@@ -41,7 +41,7 @@ public class NameSection extends CustomSection {
         return Collections.unmodifiableList(names);
     }
 
-    public List<String> getFunctionNames() {
+    public List<String> functionNames() {
         return funcNames;
     }
 }

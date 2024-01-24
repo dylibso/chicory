@@ -14,13 +14,13 @@ public class Ast {
         this.stack.push(root);
     }
 
-    public CodeBlock getRoot() {
+    public CodeBlock root() {
         return root;
     }
 
     public void addInstruction(Instruction i) {
         var current = peek();
-        switch (i.getOpcode()) {
+        switch (i.opcode()) {
             case BLOCK:
                 {
                     current.addInstruction(i);
@@ -68,16 +68,16 @@ public class Ast {
     }
 
     private void printAst(StringBuilder sb, CodeBlock block, int depth) {
-        for (var i : block.getInstructions()) {
+        for (var i : block.instructions()) {
             sb.append("0x");
-            sb.append(Integer.toHexString(i.getAddress()));
+            sb.append(Integer.toHexString(i.address()));
             sb.append(" | ");
             sb.append("\t".repeat(depth));
             sb.append(i);
             sb.append("\n");
 
-            if (i.getCodeBlock() != null) {
-                printAst(sb, i.getCodeBlock(), depth + 1);
+            if (i.codeBlock() != null) {
+                printAst(sb, i.codeBlock(), depth + 1);
             }
         }
     }

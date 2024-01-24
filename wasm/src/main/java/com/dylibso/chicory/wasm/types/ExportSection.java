@@ -8,7 +8,7 @@ public class ExportSection extends Section {
         this.exports = exports;
     }
 
-    public Export[] getExports() {
+    public Export[] exports() {
         return exports;
     }
 }

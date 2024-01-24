@@ -11,11 +11,11 @@ public class Wast {
     @JsonProperty("commands")
     private Command[] commands;
 
-    public File getSourceFilename() {
+    public File sourceFilename() {
         return sourceFilename;
     }
 
-    public Command[] getCommands() {
+    public Command[] commands() {
         return commands;
     }
 }

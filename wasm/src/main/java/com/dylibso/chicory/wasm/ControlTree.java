@@ -82,11 +82,11 @@ public class ControlTree {
         return this.parent == null;
     }
 
-    public Instruction getInstruction() {
+    public Instruction instruction() {
         return instruction;
     }
 
-    public int getInstructionNumber() {
+    public int instructionNumber() {
         return initialInstructionNumber;
     }
 
@@ -94,11 +94,11 @@ public class ControlTree {
         this.nested.add(nested);
     }
 
-    public ControlTree getParent() {
+    public ControlTree parent() {
         return parent;
     }
 
-    public List<ControlTree> getNested() {
+    public List<ControlTree> nested() {
         return nested;
     }
 
@@ -109,11 +109,11 @@ public class ControlTree {
     public void setFinalInstructionNumber(int finalInstructionNumber, Instruction end) {
         this.finalInstructionNumber = finalInstructionNumber;
 
-        if (end.getScope() == OpCode.LOOP) {
+        if (end.scope() == OpCode.LOOP) {
             var lastLoopInstruction = 0;
             for (var ct : this.parent.nested) {
-                if (ct.getInstruction().getOpcode() == OpCode.LOOP) {
-                    lastLoopInstruction = ct.getInstructionNumber();
+                if (ct.instruction().opcode() == OpCode.LOOP) {
+                    lastLoopInstruction = ct.instructionNumber();
                 }
             }
             this.finalInstructionNumber = lastLoopInstruction + 1;

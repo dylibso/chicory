@@ -59,35 +59,35 @@ public class Command {
                 + '}';
     }
 
-    public CommandType getType() {
+    public CommandType type() {
         return type;
     }
 
-    public String getName() {
+    public String name() {
         return name;
     }
 
-    public int getLine() {
+    public int line() {
         return line;
     }
 
-    public String getFilename() {
+    public String filename() {
         return filename;
     }
 
-    public Action getAction() {
+    public Action action() {
         return action;
     }
 
-    public WasmValue[] getExpected() {
+    public WasmValue[] expected() {
         return expected;
     }
 
-    public String getText() {
+    public String text() {
         return text;
     }
 
-    public String getModuleType() {
+    public String moduleType() {
         return moduleType;
     }
 }

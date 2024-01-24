@@ -8,7 +8,7 @@ public class TableSection extends Section {
         this.tables = tables;
     }
 
-    public Table[] getTables() {
+    public Table[] tables() {
         return tables;
     }
 }

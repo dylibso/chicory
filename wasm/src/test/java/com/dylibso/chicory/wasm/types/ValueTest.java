@@ -28,11 +28,11 @@ public class ValueTest {
         var f32Ref = 0.12345678f;
         var f32 = Value.f32(1039980265L);
         assertEquals(f32Ref, f32.asFloat(), 0.0);
-        assertArrayEquals(f32.getData(), Value.fromFloat(f32Ref).getData());
+        assertArrayEquals(f32.data(), Value.fromFloat(f32Ref).data());
         var f64Ref = 0.123456789012345d;
         var f64 = Value.f64(4593560419847042606L);
         assertEquals(f64Ref, f64.asDouble(), 0.0);
-        assertArrayEquals(f64.getData(), Value.fromDouble(f64Ref).getData());
+        assertArrayEquals(f64.data(), Value.fromDouble(f64Ref).data());
     }
 
     @Test

@@ -12,8 +12,8 @@ class MemoryLimitsTest {
     public void shouldCreateDefaultMemoryLimits() {
         MemoryLimits defaults = MemoryLimits.defaultLimits();
         assertNotNull(defaults);
-        assertEquals(0, defaults.getInitial());
-        assertEquals(MemoryLimits.MAX_PAGES, defaults.getMaximum());
+        assertEquals(0, defaults.initialPages());
+        assertEquals(MemoryLimits.MAX_PAGES, defaults.maximumPages());
     }
 
     @Test
