@@ -9,11 +9,11 @@ public class Limits {
         this.max = max;
     }
 
-    public int getMin() {
+    public int min() {
         return min;
     }
 
-    public int getMax() {
+    public int max() {
         return max;
     }
 }

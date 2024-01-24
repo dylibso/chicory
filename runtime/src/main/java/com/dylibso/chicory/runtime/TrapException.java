@@ -11,7 +11,7 @@ public class TrapException extends ChicoryException {
         super(msg);
     }
 
-    public List<StackFrame> getCallStack() {
+    public List<StackFrame> callStack() {
         return callStack;
     }
 }

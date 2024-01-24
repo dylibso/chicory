@@ -16,7 +16,7 @@ public enum ActionType {
     }
 
     @JsonValue()
-    public String getValue() {
+    public String value() {
         return value;
     }
 }

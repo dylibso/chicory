@@ -56,9 +56,9 @@ public class Instance {
         this.elements = elements.clone();
     }
 
-    public ExportFunction getExport(String name) {
-        var export = module.getExport(name);
-        var funcId = (int) export.getDesc().getIndex();
+    public ExportFunction export(String name) {
+        var export = module.export(name);
+        var funcId = (int) export.desc().index();
         return (args) -> {
             this.module.logger().debug(() -> "Args: " + Arrays.toString(args));
             try {
@@ -69,72 +69,72 @@ public class Instance {
         };
     }
 
-    public FunctionBody getFunction(int idx) {
+    public FunctionBody function(int idx) {
         if (idx < importedFunctionsOffset) return null;
         return functions[idx - importedFunctionsOffset];
     }
 
-    public int getFunctionCount() {
+    public int functionCount() {
         return importedFunctionsOffset + functions.length;
     }
 
-    public Memory getMemory() {
+    public Memory memory() {
         return memory;
     }
 
-    public void setGlobal(int idx, Value val) {
+    public void writeGlobal(int idx, Value val) {
         if (idx < importedGlobalsOffset) {
-            imports.getGlobal(idx).setValue(val);
+            imports.global(idx).setValue(val);
         }
         globals[idx - importedGlobalsOffset] = val;
     }
 
-    public Value getGlobal(int idx) {
+    public Value readGlobal(int idx) {
         if (idx < importedGlobalsOffset) {
             return null;
         }
         return globals[idx - importedGlobalsOffset];
     }
 
-    public Global getGlobalInitializer(int idx) {
+    public Global globalInitializer(int idx) {
         if (idx < importedGlobalsOffset) {
             return null;
         }
         return globalInitializers[idx - importedGlobalsOffset];
     }
 
-    public int getGlobalCount() {
+    public int globalCount() {
         return globals.length;
     }
 
-    public FunctionType getType(int idx) {
+    public FunctionType type(int idx) {
         return types[idx];
     }
 
-    public int getFunctionType(int idx) {
+    public int functionType(int idx) {
         return functionTypes[idx];
     }
 
-    public HostImports getImports() {
+    public HostImports imports() {
         return imports;
     }
 
-    public Module getModule() {
+    public Module module() {
         return module;
     }
 
-    public Table getTable(int idx) {
+    public Table table(int idx) {
         if (idx < importedTablesOffset) {
             return null;
         }
         return tables[idx - importedTablesOffset];
     }
 
-    public Element getElement(int idx) {
+    public Element element(int idx) {
         return elements[idx];
     }
 
-    public int getElementCount() {
+    public int elementCount() {
         return elements.length;
     }
 

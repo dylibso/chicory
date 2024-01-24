@@ -7,7 +7,7 @@ public class Memory {
         this.memoryLimits = memoryLimits;
     }
 
-    public MemoryLimits getMemoryLimits() {
+    public MemoryLimits memoryLimits() {
         return memoryLimits;
     }
 }

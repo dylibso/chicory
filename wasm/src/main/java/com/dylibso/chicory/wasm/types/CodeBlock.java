@@ -16,7 +16,7 @@ public class CodeBlock {
         this.instructions.add(i);
     }
 
-    public List<Instruction> getInstructions() {
+    public List<Instruction> instructions() {
         return instructions;
     }
 }

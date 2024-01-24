@@ -8,7 +8,7 @@ public class ImportSection extends Section {
         this.imports = imports;
     }
 
-    public Import[] getImports() {
+    public Import[] imports() {
         return imports;
     }
 }

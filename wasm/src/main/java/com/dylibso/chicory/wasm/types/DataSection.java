@@ -8,7 +8,7 @@ public class DataSection extends Section {
         this.dataSegments = dataSegments;
     }
 
-    public DataSegment[] getDataSegments() {
+    public DataSegment[] dataSegments() {
         return dataSegments;
     }
 }

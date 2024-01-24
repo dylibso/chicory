@@ -158,11 +158,11 @@ public class Value {
         return Double.longBitsToDouble(asLong());
     }
 
-    public ValueType getType() {
+    public ValueType type() {
         return this.type;
     }
 
-    public byte[] getData() {
+    public byte[] data() {
         switch (this.type) {
             case I64:
             case F64:

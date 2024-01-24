@@ -9,7 +9,7 @@ public class CustomSection extends Section {
         super(id, size);
     }
 
-    public String getName() {
+    public String name() {
         return name;
     }
 
@@ -17,7 +17,7 @@ public class CustomSection extends Section {
         this.name = name;
     }
 
-    public byte[] getBytes() {
+    public byte[] bytes() {
         return bytes;
     }
 

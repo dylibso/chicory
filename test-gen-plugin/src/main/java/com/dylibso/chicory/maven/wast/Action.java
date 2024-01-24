@@ -19,19 +19,19 @@ public class Action {
     @JsonProperty("args")
     private WasmValue[] args;
 
-    public ActionType getType() {
+    public ActionType type() {
         return type;
     }
 
-    public String getModule() {
+    public String module() {
         return module;
     }
 
-    public String getField() {
+    public String field() {
         return field;
     }
 
-    public WasmValue[] getArgs() {
+    public WasmValue[] args() {
         return args;
     }
 

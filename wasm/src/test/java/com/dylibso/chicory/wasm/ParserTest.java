@@ -34,34 +34,34 @@ public class ParserTest {
             var module = parser.parseModule(is);
 
             // check types section
-            var typeSection = module.getTypeSection();
-            var types = typeSection.getTypes();
+            var typeSection = module.typeSection();
+            var types = typeSection.types();
             assertEquals(2, types.length);
             assertEquals("(I32) -> nil", types[0].toString());
             assertEquals("() -> nil", types[1].toString());
 
             // check import section
-            var importSection = module.getImportSection();
-            var imports = importSection.getImports();
+            var importSection = module.importSection();
+            var imports = importSection.imports();
             assertEquals(1, imports.length);
             assertEquals("func[] <env.gotit>", imports[0].toString());
 
             // check data section
-            var dataSection = module.getDataSection();
-            var dataSegments = dataSection.getDataSegments();
+            var dataSection = module.dataSection();
+            var dataSegments = dataSection.dataSegments();
             assertEquals(1, dataSegments.length);
             var segment = (ActiveDataSegment) dataSegments[0];
-            assertEquals(0, segment.getIdx());
-            assertEquals(OpCode.I32_CONST, segment.getOffset()[0].getOpcode());
-            assertArrayEquals(new byte[] {0x00, 0x01, 0x02, 0x03}, segment.getData());
+            assertEquals(0, segment.index());
+            assertEquals(OpCode.I32_CONST, segment.offsetInstructions()[0].opcode());
+            assertArrayEquals(new byte[] {0x00, 0x01, 0x02, 0x03}, segment.data());
 
             // check start section
-            var startSection = module.getStartSection();
-            assertEquals(1, startSection.getStartIndex());
+            var startSection = module.startSection();
+            assertEquals(1, startSection.startIndex());
 
             // check function section
-            var funcSection = module.getFunctionSection();
-            var typeIndices = funcSection.getTypeIndices();
+            var funcSection = module.functionSection();
+            var typeIndices = funcSection.typeIndices();
             assertEquals(1, typeIndices.length);
             assertEquals(1L, (long) typeIndices[0]);
 
@@ -71,27 +71,27 @@ public class ParserTest {
             //        assertEquals(1, exports.size());
 
             // check memory section
-            var memorySection = module.getMemorySection();
-            var memories = memorySection.getMemories();
+            var memorySection = module.memorySection();
+            var memories = memorySection.memories();
             assertEquals(1, memories.length);
-            assertEquals(1, memories[0].getMemoryLimits().getInitial());
-            assertEquals(65536, memories[0].getMemoryLimits().getMaximum());
+            assertEquals(1, memories[0].memoryLimits().initialPages());
+            assertEquals(65536, memories[0].memoryLimits().maximumPages());
 
-            var codeSection = module.getCodeSection();
-            var functionBodies = codeSection.getFunctionBodies();
+            var codeSection = module.codeSection();
+            var functionBodies = codeSection.functionBodies();
             assertEquals(1, functionBodies.length);
             var func = functionBodies[0];
-            var locals = func.getLocals();
+            var locals = func.locals();
             assertEquals(0, locals.size());
-            var instructions = func.getInstructions();
+            var instructions = func.instructions();
             assertEquals(3, instructions.size());
 
             assertEquals("0x00000032: I32_CONST [42]", instructions.get(0).toString());
-            assertEquals(OpCode.I32_CONST, instructions.get(0).getOpcode());
-            assertEquals(42L, (long) instructions.get(0).getOperands()[0]);
-            assertEquals(OpCode.CALL, instructions.get(1).getOpcode());
-            assertEquals(0L, (long) instructions.get(1).getOperands()[0]);
-            assertEquals(OpCode.END, instructions.get(2).getOpcode());
+            assertEquals(OpCode.I32_CONST, instructions.get(0).opcode());
+            assertEquals(42L, (long) instructions.get(0).operands()[0]);
+            assertEquals(OpCode.CALL, instructions.get(1).opcode());
+            assertEquals(0L, (long) instructions.get(1).operands()[0]);
+            assertEquals(OpCode.END, instructions.get(2).opcode());
         }
     }
 
@@ -104,25 +104,25 @@ public class ParserTest {
             var module = parser.parseModule(is);
 
             // check types section
-            var typeSection = module.getTypeSection();
-            var types = typeSection.getTypes();
+            var typeSection = module.typeSection();
+            var types = typeSection.types();
             assertEquals(1, types.length);
             assertEquals("(I32) -> I32", types[0].toString());
 
             // check function section
-            var funcSection = module.getFunctionSection();
-            var typeIndices = funcSection.getTypeIndices();
+            var funcSection = module.functionSection();
+            var typeIndices = funcSection.typeIndices();
             assertEquals(1, typeIndices.length);
             assertEquals(0L, (long) typeIndices[0]);
 
-            var codeSection = module.getCodeSection();
-            var functionBodies = codeSection.getFunctionBodies();
+            var codeSection = module.codeSection();
+            var functionBodies = codeSection.functionBodies();
             assertEquals(1, functionBodies.length);
             var func = functionBodies[0];
-            var locals = func.getLocals();
+            var locals = func.locals();
             assertEquals(1, locals.size());
             assertEquals(1, locals.get(0).asInt());
-            var instructions = func.getInstructions();
+            var instructions = func.instructions();
             assertEquals(22, instructions.size());
         }
     }
@@ -167,12 +167,12 @@ public class ParserTest {
             parser.parse(
                     is,
                     s -> {
-                        if (s.getSectionId() == SectionId.CUSTOM) {
+                        if (s.sectionId() == SectionId.CUSTOM) {
                             var customSection = (CustomSection) s;
-                            var name = customSection.getName();
+                            var name = customSection.name();
                             assertFalse(name.isEmpty());
                         } else {
-                            fail("Should not have received section with id: " + s.getSectionId());
+                            fail("Should not have received section with id: " + s.sectionId());
                         }
                     });
         }
@@ -195,11 +195,11 @@ public class ParserTest {
 
         try (InputStream is = getClass().getResourceAsStream("/compiled/float.wat.wasm")) {
             var module = parser.parseModule(is);
-            var codeSection = module.getCodeSection();
-            var fbody = codeSection.getFunctionBodies()[0];
-            var f32 = Float.intBitsToFloat((int) fbody.getInstructions().get(0).getOperands()[0]);
+            var codeSection = module.codeSection();
+            var fbody = codeSection.functionBodies()[0];
+            var f32 = Float.intBitsToFloat((int) fbody.instructions().get(0).operands()[0]);
             assertEquals(0.12345678f, f32, 0.0);
-            var f64 = Double.longBitsToDouble(fbody.getInstructions().get(1).getOperands()[0]);
+            var f64 = Double.longBitsToDouble(fbody.instructions().get(1).operands()[0]);
             assertEquals(0.123456789012345d, f64, 0.0);
         }
     }
@@ -211,22 +211,22 @@ public class ParserTest {
 
         try (InputStream is = getClass().getResourceAsStream("/compiled/i32.wat.wasm")) {
             var module = parser.parseModule(is);
-            var codeSection = module.getCodeSection();
-            var fbody = codeSection.getFunctionBodies()[0];
-            assertEquals(-2147483648L, fbody.getInstructions().get(0).getOperands()[0]);
-            assertEquals(0L, fbody.getInstructions().get(2).getOperands()[0]);
-            assertEquals(2147483647L, fbody.getInstructions().get(4).getOperands()[0]);
-            assertEquals(-9223372036854775808L, fbody.getInstructions().get(6).getOperands()[0]);
-            assertEquals(0L, fbody.getInstructions().get(8).getOperands()[0]);
-            assertEquals(9223372036854775807L, fbody.getInstructions().get(10).getOperands()[0]);
-            assertEquals(-2147483647L, fbody.getInstructions().get(12).getOperands()[0]);
-            assertEquals(2147483646L, fbody.getInstructions().get(14).getOperands()[0]);
-            assertEquals(-9223372036854775807L, fbody.getInstructions().get(16).getOperands()[0]);
-            assertEquals(9223372036854775806L, fbody.getInstructions().get(18).getOperands()[0]);
-            assertEquals(-1L, fbody.getInstructions().get(20).getOperands()[0]);
-            assertEquals(1L, fbody.getInstructions().get(22).getOperands()[0]);
-            assertEquals(-1L, fbody.getInstructions().get(24).getOperands()[0]);
-            assertEquals(1L, fbody.getInstructions().get(26).getOperands()[0]);
+            var codeSection = module.codeSection();
+            var fbody = codeSection.functionBodies()[0];
+            assertEquals(-2147483648L, fbody.instructions().get(0).operands()[0]);
+            assertEquals(0L, fbody.instructions().get(2).operands()[0]);
+            assertEquals(2147483647L, fbody.instructions().get(4).operands()[0]);
+            assertEquals(-9223372036854775808L, fbody.instructions().get(6).operands()[0]);
+            assertEquals(0L, fbody.instructions().get(8).operands()[0]);
+            assertEquals(9223372036854775807L, fbody.instructions().get(10).operands()[0]);
+            assertEquals(-2147483647L, fbody.instructions().get(12).operands()[0]);
+            assertEquals(2147483646L, fbody.instructions().get(14).operands()[0]);
+            assertEquals(-9223372036854775807L, fbody.instructions().get(16).operands()[0]);
+            assertEquals(9223372036854775806L, fbody.instructions().get(18).operands()[0]);
+            assertEquals(-1L, fbody.instructions().get(20).operands()[0]);
+            assertEquals(1L, fbody.instructions().get(22).operands()[0]);
+            assertEquals(-1L, fbody.instructions().get(24).operands()[0]);
+            assertEquals(1L, fbody.instructions().get(26).operands()[0]);
         }
     }
 
@@ -237,10 +237,10 @@ public class ParserTest {
 
         try (InputStream is = getClass().getResourceAsStream("/compiled/define-locals.wat.wasm")) {
             var module = parser.parseModule(is);
-            var codeSection = module.getCodeSection();
-            var fbody = codeSection.getFunctionBodies()[0];
-            assertEquals(fbody.getLocals().get(0).getType(), ValueType.I32);
-            assertEquals(fbody.getLocals().get(1).getType(), ValueType.I64);
+            var codeSection = module.codeSection();
+            var fbody = codeSection.functionBodies()[0];
+            assertEquals(fbody.locals().get(0).type(), ValueType.I32);
+            assertEquals(fbody.locals().get(1).type(), ValueType.I64);
         }
     }
 
@@ -251,8 +251,8 @@ public class ParserTest {
 
         try (InputStream is = getClass().getResourceAsStream("/compiled/count_vowels.rs.wasm")) {
             var module = parser.parseModule(is);
-            var nameSec = module.getNameSection();
-            assertEquals(125, nameSec.getFunctionNames().size());
+            var nameSec = module.nameSection();
+            assertEquals(125, nameSec.functionNames().size());
         }
     }
 }
