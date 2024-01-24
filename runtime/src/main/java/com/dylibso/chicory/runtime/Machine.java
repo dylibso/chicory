@@ -5,7 +5,14 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.types.*;
+import com.dylibso.chicory.wasm.types.ElemElem;
+import com.dylibso.chicory.wasm.types.ElemFunc;
+import com.dylibso.chicory.wasm.types.ElemType;
+import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.MutabilityType;
+import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 import java.util.Stack;
 
@@ -43,7 +50,7 @@ public class Machine {
             throws ChicoryException {
 
         var typeId = instance.getFunctionType(funcId);
-        var type = instance.getTypes()[typeId];
+        var type = instance.getType(typeId);
 
         if (callType != null) {
             verifyIndirectCall(type, callType);
@@ -1519,7 +1526,7 @@ public class Machine {
         var tableidx = (int) operands[0];
         var table = instance.getTable(tableidx);
         if (table == null) {
-            table = instance.getImports().getTables()[tableidx].getTable();
+            table = instance.getImports().getTable(tableidx).getTable();
         }
 
         var size = stack.pop().asInt();
@@ -1534,7 +1541,7 @@ public class Machine {
         var tableidx = (int) operands[0];
         var table = instance.getTable(tableidx);
         if (table == null) {
-            table = instance.getImports().getTables()[tableidx].getTable();
+            table = instance.getImports().getTable(tableidx).getTable();
         }
 
         stack.push(Value.i32(table.getSize()));
@@ -1550,7 +1557,7 @@ public class Machine {
 
         var table = instance.getTable(tableidx);
         if (table == null) {
-            table = instance.getImports().getTables()[tableidx].getTable();
+            table = instance.getImports().getTable(tableidx).getTable();
         }
 
         if (size < 0 || end > table.getSize()) {
@@ -1612,11 +1619,11 @@ public class Machine {
 
         var table = instance.getTable(tableidx);
         if (table == null) {
-            table = instance.getImports().getTables()[tableidx].getTable();
+            table = instance.getImports().getTable(tableidx).getTable();
         }
 
         if (size < 0
-                || elementidx > instance.getElementSize()
+                || elementidx > instance.getElementCount()
                 || instance.getElement(elementidx) == null
                 || elemidx + size > instance.getElement(elementidx).getSize()
                 || end > table.getSize()) {
@@ -1625,7 +1632,7 @@ public class Machine {
 
         for (int i = offset; i < end; i++) {
             var val = getRuntimeElementValue(instance, elementidx, elemidx++);
-            if (val > instance.getFunctionsSize()) {
+            if (val > instance.getFunctionCount()) {
                 throw new WASMRuntimeException("out of bounds table access");
             }
             table.setRef(i, val);
@@ -1952,7 +1959,7 @@ public class Machine {
             MStack stack, Instance instance, Stack<StackFrame> callStack, long[] operands) {
         var funcId = (int) operands[0];
         var typeId = instance.getFunctionType(funcId);
-        var type = instance.getTypes()[typeId];
+        var type = instance.getType(typeId);
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.getParams());
@@ -2126,7 +2133,7 @@ public class Machine {
         var idx = (int) operands[0];
         var table = instance.getTable(idx);
         if (table == null) {
-            table = instance.getImports().getTables()[idx].getTable();
+            table = instance.getImports().getTable(idx).getTable();
         }
         var value = stack.pop().asExtRef();
         var i = stack.pop().asInt();
@@ -2137,7 +2144,7 @@ public class Machine {
         var idx = (int) operands[0];
         var table = instance.getTable(idx);
         if (table == null) {
-            table = instance.getImports().getTables()[idx].getTable();
+            table = instance.getImports().getTable(idx).getTable();
         }
         var i = stack.pop().asInt();
         if (i < 0
@@ -2145,7 +2152,6 @@ public class Machine {
                 || i >= table.getSize()) {
             throw new WASMRuntimeException("out of bounds table access");
         }
-        var ref = table.getRef(i);
         stack.push(table.getRef(i));
     }
 
@@ -2153,7 +2159,7 @@ public class Machine {
         var id = (int) operands[0];
         var mutabilityType =
                 (instance.getGlobalInitializer(id) == null)
-                        ? instance.getImports().getGlobals()[id].getMutabilityType()
+                        ? instance.getImports().getGlobal(id).getMutabilityType()
                         : instance.getGlobalInitializer(id);
         if (mutabilityType == MutabilityType.Const) {
             throw new RuntimeException("Can't call GLOBAL_SET on immutable global");
@@ -2166,7 +2172,7 @@ public class Machine {
         int idx = (int) operands[0];
         var val = instance.getGlobal(idx);
         if (val == null) {
-            val = instance.getImports().getGlobals()[idx].getValue();
+            val = instance.getImports().getGlobal(idx).getValue();
         }
         stack.push(val);
     }
@@ -2187,10 +2193,10 @@ public class Machine {
         var tableIdx = (int) operands[1];
         var table = instance.getTable(tableIdx);
         if (table == null) { // imported table
-            table = instance.getImports().getTables()[tableIdx].getTable();
+            table = instance.getImports().getTable(tableIdx).getTable();
         }
         var typeId = (int) operands[0];
-        var type = instance.getTypes()[typeId];
+        var type = instance.getType(typeId);
         int funcTableIdx = stack.pop().asInt();
         int funcId = table.getRef(funcTableIdx).asFuncRef();
         if (funcId == REF_NULL_VALUE) {
@@ -2215,7 +2221,7 @@ public class Machine {
         } else if (ValueType.byId(typeId) != null) { // shortcut to straight value type
             frame.numberOfValuesToReturn = Math.max(frame.numberOfValuesToReturn, 1);
         } else { // look it up
-            var funcType = instance.getTypes()[typeId];
+            var funcType = instance.getType(typeId);
             frame.numberOfValuesToReturn =
                     Math.max(frame.numberOfValuesToReturn, funcType.getReturns().length);
         }

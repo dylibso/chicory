@@ -2,7 +2,11 @@ package com.dylibso.chicory.wasm;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.dylibso.chicory.wasm.types.*;
+import com.dylibso.chicory.wasm.types.ActiveDataSegment;
+import com.dylibso.chicory.wasm.types.CustomSection;
+import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.SectionId;
+import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;

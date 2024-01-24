@@ -3,7 +3,26 @@ package com.dylibso.chicory.runtime;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
-import com.dylibso.chicory.wasm.types.*;
+import com.dylibso.chicory.wasm.types.DataSegment;
+import com.dylibso.chicory.wasm.types.ElemElem;
+import com.dylibso.chicory.wasm.types.ElemFunc;
+import com.dylibso.chicory.wasm.types.ElemMem;
+import com.dylibso.chicory.wasm.types.ElemTable;
+import com.dylibso.chicory.wasm.types.ElemType;
+import com.dylibso.chicory.wasm.types.Element;
+import com.dylibso.chicory.wasm.types.Export;
+import com.dylibso.chicory.wasm.types.ExportDesc;
+import com.dylibso.chicory.wasm.types.ExportDescType;
+import com.dylibso.chicory.wasm.types.FunctionBody;
+import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.Global;
+import com.dylibso.chicory.wasm.types.Import;
+import com.dylibso.chicory.wasm.types.ImportDescType;
+import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.NameSection;
+import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.Table;
+import com.dylibso.chicory.wasm.types.Value;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -86,11 +105,10 @@ public class Module {
                     {
                         // TODO this assumes that these are already initialized declared in order
                         // should we make this more resilient? Should initialization happen later?
-                        var globalImports = hostImports.getGlobals();
                         var idx = (int) instr.getOperands()[0];
                         globals[i] =
-                                idx < globalImports.length
-                                        ? globalImports[idx].getValue()
+                                idx < hostImports.getGlobalCount()
+                                        ? hostImports.getGlobal(idx).getValue()
                                         : globals[idx];
                         break;
                     }
@@ -243,7 +261,7 @@ public class Module {
 
         Memory memory = null;
         if (module.getMemorySection() != null) {
-            assert (mappedHostImports.getMemories().length == 0);
+            assert (mappedHostImports.getMemoryCount() == 0);
 
             var memories = module.getMemorySection().getMemories();
             if (memories.length > 1) {
@@ -253,14 +271,14 @@ public class Module {
                 memory = new Memory(memories[0].getMemoryLimits(), dataSegments);
             }
         } else {
-            if (mappedHostImports.getMemories().length > 0) {
-                assert (mappedHostImports.getMemories().length == 1);
-                if (mappedHostImports.getMemories()[0] == null
-                        || mappedHostImports.getMemories()[0].getMemory() == null) {
+            if (mappedHostImports.getMemoryCount() > 0) {
+                assert (mappedHostImports.getMemoryCount() == 1);
+                if (mappedHostImports.getMemory(0) == null
+                        || mappedHostImports.getMemory(0).getMemory() == null) {
                     throw new ChicoryException(
                             "Imported memory not defined, cannot run the program");
                 }
-                memory = mappedHostImports.getMemories()[0].getMemory();
+                memory = mappedHostImports.getMemory(0).getMemory();
             } else {
                 // No memory defined
             }
@@ -344,13 +362,16 @@ public class Module {
         var hostTables = new HostTable[hostTableNum];
         var hostTableIdx = 0;
         var hostIndex = new FromHost[hostFuncNum + hostGlobalNum + hostMemNum + hostTableNum];
+        int cnt;
         for (var impIdx = 0; impIdx < imports.length; impIdx++) {
             var i = imports[impIdx];
             var name = i.getModuleName() + "." + i.getFieldName();
             var found = false;
             switch (i.getDesc().getType()) {
                 case FuncIdx:
-                    for (var f : hostImports.getFunctions()) {
+                    cnt = hostImports.getFunctionCount();
+                    for (int j = 0; j < cnt; j++) {
+                        HostFunction f = hostImports.getFunction(j);
                         if (i.getModuleName().equals(f.getModuleName())
                                 && i.getFieldName().equals(f.getFieldName())) {
                             hostFuncs[hostFuncIdx] = f;
@@ -362,7 +383,9 @@ public class Module {
                     hostFuncIdx++;
                     break;
                 case GlobalIdx:
-                    for (var g : hostImports.getGlobals()) {
+                    cnt = hostImports.getGlobalCount();
+                    for (int j = 0; j < cnt; j++) {
+                        HostGlobal g = hostImports.getGlobal(j);
                         if (i.getModuleName().equals(g.getModuleName())
                                 && i.getFieldName().equals(g.getFieldName())) {
                             hostGlobals[hostGlobalIdx] = g;
@@ -374,7 +397,9 @@ public class Module {
                     hostGlobalIdx++;
                     break;
                 case MemIdx:
-                    for (var m : hostImports.getMemories()) {
+                    cnt = hostImports.getMemoryCount();
+                    for (int j = 0; j < cnt; j++) {
+                        HostMemory m = hostImports.getMemory(j);
                         if (i.getModuleName().equals(m.getModuleName())
                                 && i.getFieldName().equals(m.getFieldName())) {
                             hostMems[hostMemIdx] = m;
@@ -386,7 +411,9 @@ public class Module {
                     hostMemIdx++;
                     break;
                 case TableIdx:
-                    for (var t : hostImports.getTables()) {
+                    cnt = hostImports.getTableCount();
+                    for (int j = 0; j < cnt; j++) {
+                        HostTable t = hostImports.getTable(j);
                         if (i.getModuleName().equals(t.getModuleName())
                                 && i.getFieldName().equals(t.getFieldName())) {
                             hostTables[hostTableIdx] = t;
