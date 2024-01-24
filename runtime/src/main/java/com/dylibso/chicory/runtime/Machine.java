@@ -36,7 +36,7 @@ public class Machine {
             throws ChicoryException {
 
         var typeId = instance.getFunctionType(funcId);
-        var type = instance.getTypes()[typeId];
+        var type = instance.getType(typeId);
 
         if (callType != null) {
             verifyIndirectCall(type, callType);
@@ -139,7 +139,7 @@ public class Machine {
                                 frame.numberOfValuesToReturn =
                                         Math.max(frame.numberOfValuesToReturn, 1);
                             } else { // look it up
-                                var funcType = instance.getTypes()[typeId];
+                                var funcType = instance.getType(typeId);
                                 frame.numberOfValuesToReturn =
                                         Math.max(
                                                 frame.numberOfValuesToReturn,
@@ -209,10 +209,10 @@ public class Machine {
                             var tableIdx = (int) operands[1];
                             var table = instance.getTable(tableIdx);
                             if (table == null) { // imported table
-                                table = instance.getImports().getTables()[tableIdx].getTable();
+                                table = instance.getImports().getTable(tableIdx).getTable();
                             }
                             var typeId = (int) operands[0];
-                            var type = instance.getTypes()[typeId];
+                            var type = instance.getType(typeId);
                             int funcTableIdx = this.stack.pop().asInt();
                             int funcId = table.getRef(funcTableIdx).asFuncRef();
                             if (funcId == REF_NULL_VALUE) {
@@ -274,7 +274,7 @@ public class Machine {
                             int idx = (int) operands[0];
                             var val = instance.getGlobal(idx);
                             if (val == null) {
-                                val = instance.getImports().getGlobals()[idx].getValue();
+                                val = instance.getImports().getGlobal(idx).getValue();
                             }
                             this.stack.push(val);
                             break;
@@ -285,7 +285,7 @@ public class Machine {
                             var mutabilityType =
                                     (instance.getGlobalInitializer(id) == null)
                                             ? instance.getImports()
-                                                    .getGlobals()[id]
+                                                    .getGlobal(id)
                                                     .getMutabilityType()
                                             : instance.getGlobalInitializer(id);
                             if (mutabilityType == MutabilityType.Const) {
@@ -301,7 +301,7 @@ public class Machine {
                             var idx = (int) operands[0];
                             var table = instance.getTable(idx);
                             if (table == null) {
-                                table = instance.getImports().getTables()[idx].getTable();
+                                table = instance.getImports().getTable(idx).getTable();
                             }
                             var i = this.stack.pop().asInt();
                             if (i < 0
@@ -318,7 +318,7 @@ public class Machine {
                             var idx = (int) operands[0];
                             var table = instance.getTable(idx);
                             if (table == null) {
-                                table = instance.getImports().getTables()[idx].getTable();
+                                table = instance.getImports().getTable(idx).getTable();
                             }
                             var value = this.stack.pop().asExtRef();
                             var i = this.stack.pop().asInt();
@@ -943,7 +943,7 @@ public class Machine {
                         {
                             var funcId = (int) operands[0];
                             var typeId = instance.getFunctionType(funcId);
-                            var type = instance.getTypes()[typeId];
+                            var type = instance.getType(typeId);
                             // given a list of param types, let's pop those params off the stack
                             // and pass as args to the function call
                             var args = extractArgsForParams(type.getParams());
@@ -1783,11 +1783,11 @@ public class Machine {
 
                             var table = instance.getTable(tableidx);
                             if (table == null) {
-                                table = instance.getImports().getTables()[tableidx].getTable();
+                                table = instance.getImports().getTable(tableidx).getTable();
                             }
 
                             if (size < 0
-                                    || elementidx > instance.getElementSize()
+                                    || elementidx > instance.getElementCount()
                                     || instance.getElement(elementidx) == null
                                     || elemidx + size > instance.getElement(elementidx).getSize()
                                     || end > table.getSize()) {
@@ -1796,7 +1796,7 @@ public class Machine {
 
                             for (int i = offset; i < end; i++) {
                                 var val = getRuntimeElementValue(elementidx, elemidx++);
-                                if (val > instance.getFunctionsSize()) {
+                                if (val > instance.getFunctionCount()) {
                                     throw new WASMRuntimeException("out of bounds table access");
                                 }
                                 table.setRef(i, val);
@@ -1864,7 +1864,7 @@ public class Machine {
 
                             var table = instance.getTable(tableidx);
                             if (table == null) {
-                                table = instance.getImports().getTables()[tableidx].getTable();
+                                table = instance.getImports().getTable(tableidx).getTable();
                             }
 
                             if (size < 0 || end > table.getSize()) {
@@ -1881,7 +1881,7 @@ public class Machine {
                             var tableidx = (int) operands[0];
                             var table = instance.getTable(tableidx);
                             if (table == null) {
-                                table = instance.getImports().getTables()[tableidx].getTable();
+                                table = instance.getImports().getTable(tableidx).getTable();
                             }
 
                             this.stack.push(Value.i32(table.getSize()));
@@ -1892,7 +1892,7 @@ public class Machine {
                             var tableidx = (int) operands[0];
                             var table = instance.getTable(tableidx);
                             if (table == null) {
-                                table = instance.getImports().getTables()[tableidx].getTable();
+                                table = instance.getImports().getTable(tableidx).getTable();
                             }
 
                             var size = stack.pop().asInt();
