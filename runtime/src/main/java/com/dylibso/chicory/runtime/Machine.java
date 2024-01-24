@@ -24,15 +24,22 @@ public class Machine {
 
     public Machine(Instance instance) {
         this.instance = instance;
-        this.stack = new MStack();
+        stack = new MStack();
         this.callStack = new Stack<>();
     }
 
     public Value[] call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
-        return call(funcId, args, null, popResults);
+        return call(stack, instance, callStack, funcId, args, null, popResults);
     }
 
-    public Value[] call(int funcId, Value[] args, FunctionType callType, boolean popResults)
+    public static Value[] call(
+            MStack stack,
+            Instance instance,
+            Stack<StackFrame> callStack,
+            int funcId,
+            Value[] args,
+            FunctionType callType,
+            boolean popResults)
             throws ChicoryException {
 
         var typeId = instance.getFunctionType(funcId);
@@ -44,10 +51,10 @@ public class Machine {
 
         var func = instance.getFunction(funcId);
         if (func != null) {
-            this.callStack.push(new StackFrame(instance, funcId, 0, args, func.getLocals()));
-            eval(func.getInstructions());
+            callStack.push(new StackFrame(instance, funcId, 0, args, func.getLocals()));
+            eval(stack, instance, callStack, func.getInstructions());
         } else {
-            this.callStack.push(new StackFrame(instance, funcId, 0, args, List.of()));
+            callStack.push(new StackFrame(instance, funcId, 0, args, List.of()));
             var imprt = instance.getImports().getIndex()[funcId];
             if (imprt == null) {
                 throw new ChicoryException("Missing host import, number: " + funcId);
@@ -56,25 +63,25 @@ public class Machine {
             switch (imprt.getType()) {
                 case FUNCTION:
                     var hostFunc = ((HostFunction) imprt).getHandle();
-                    var results = hostFunc.apply(this.instance, args);
+                    var results = hostFunc.apply(instance, args);
                     // a host function can return null or an array of ints
                     // which we will push onto the stack
                     if (results != null) {
                         for (var result : results) {
-                            this.stack.push(result);
+                            stack.push(result);
                         }
                     }
                     break;
                 case GLOBAL:
-                    this.stack.push(((HostGlobal) imprt).getValue());
+                    stack.push(((HostGlobal) imprt).getValue());
                     break;
                 default:
                     throw new ChicoryException("Not implemented");
             }
         }
 
-        if (!this.callStack.isEmpty()) {
-            this.callStack.pop();
+        if (!callStack.isEmpty()) {
+            callStack.pop();
         }
 
         if (!popResults) {
@@ -82,17 +89,19 @@ public class Machine {
         }
 
         if (type.getReturns().length == 0) return null;
-        if (this.stack.size() == 0) return null;
+        if (stack.size() == 0) return null;
 
         var totalResults = type.getReturns().length;
         var results = new Value[totalResults];
         for (var i = totalResults - 1; i >= 0; i--) {
-            results[i] = this.stack.pop();
+            results[i] = stack.pop();
         }
         return results;
     }
 
-    void eval(List<Instruction> code) throws ChicoryException {
+    static void eval(
+            MStack stack, Instance instance, Stack<StackFrame> callStack, List<Instruction> code)
+            throws ChicoryException {
 
         try {
             var frame = callStack.peek();
@@ -112,7 +121,7 @@ public class Machine {
                 //                                + ": "
                 //                                + instruction
                 //                                + " stack="
-                //                                + this.stack);
+                //                                + stack);
                 var opcode = instruction.getOpcode();
                 var operands = instruction.getOperands();
                 switch (opcode) {
@@ -122,127 +131,39 @@ public class Machine {
                         break;
                     case LOOP:
                     case BLOCK:
-                        {
-                            frame.blockDepth++;
-
-                            frame.isControlFrame = true;
-                            frame.stackSizeBeforeBlock =
-                                    Math.max(this.stack.size(), frame.stackSizeBeforeBlock);
-                            var typeId = (int) operands[0];
-
-                            // https://www.w3.org/TR/wasm-core-2/binary/instructions.html#binary-blocktype
-                            if (typeId == 0x40) { // epsilon
-                                frame.numberOfValuesToReturn =
-                                        Math.max(frame.numberOfValuesToReturn, 0);
-                            } else if (ValueType.byId(typeId)
-                                    != null) { // shortcut to straight value type
-                                frame.numberOfValuesToReturn =
-                                        Math.max(frame.numberOfValuesToReturn, 1);
-                            } else { // look it up
-                                var funcType = instance.getTypes()[typeId];
-                                frame.numberOfValuesToReturn =
-                                        Math.max(
-                                                frame.numberOfValuesToReturn,
-                                                funcType.getReturns().length);
-                            }
-
-                            break;
-                        }
+                        BLOCK(frame, stack, instance, operands);
+                        break;
                     case IF:
-                        {
-                            frame.blockDepth++;
-                            frame.isControlFrame = false;
-
-                            var predValue = this.stack.pop();
-                            var pred = predValue.asInt();
-                            if (pred == 0) {
-                                frame.pc = instruction.getLabelFalse();
-                            } else {
-                                frame.pc = instruction.getLabelTrue();
-                            }
-                            break;
-                        }
+                        IF(frame, stack, instruction);
+                        break;
                     case ELSE:
                     case BR:
-                        {
-                            prepareControlTransfer(frame, false);
+                        prepareControlTransfer(frame, stack, false);
 
-                            frame.pc = instruction.getLabelTrue();
-                            break;
-                        }
+                        frame.pc = instruction.getLabelTrue();
+                        break;
                     case BR_IF:
-                        {
-                            var predValue = prepareControlTransfer(frame, true);
-                            var pred = predValue.asInt();
-
-                            if (pred == 0) {
-                                frame.pc = instruction.getLabelFalse();
-                            } else {
-                                frame.branchConditionValue = predValue;
-                                frame.pc = instruction.getLabelTrue();
-                            }
-                            break;
-                        }
+                        BR_IF(frame, stack, instruction);
+                        break;
                     case BR_TABLE:
-                        {
-                            var predValue = prepareControlTransfer(frame, true);
-                            var pred = predValue.asInt();
-
-                            if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
-                                // choose default
-                                frame.pc =
-                                        instruction
-                                                .getLabelTable()[
-                                                instruction.getLabelTable().length - 1];
-                            } else {
-                                frame.branchConditionValue = predValue;
-                                frame.pc = instruction.getLabelTable()[pred];
-                            }
-
-                            break;
-                        }
+                        BR_TABLE(frame, stack, instruction);
+                        break;
                     case RETURN:
                         shouldReturn = true;
                         break;
                     case CALL_INDIRECT:
-                        {
-                            var tableIdx = (int) operands[1];
-                            var table = instance.getTable(tableIdx);
-                            if (table == null) { // imported table
-                                table = instance.getImports().getTables()[tableIdx].getTable();
-                            }
-                            var typeId = (int) operands[0];
-                            var type = instance.getTypes()[typeId];
-                            int funcTableIdx = this.stack.pop().asInt();
-                            int funcId = table.getRef(funcTableIdx).asFuncRef();
-                            if (funcId == REF_NULL_VALUE) {
-                                throw new ChicoryException("uninitialized element " + funcTableIdx);
-                            }
-                            // given a list of param types, let's pop those params off the stack
-                            // and pass as args to the function call
-                            var args = extractArgsForParams(type.getParams());
-                            call(funcId, args, type, false);
-                            break;
-                        }
+                        CALL_INDIRECT(stack, instance, callStack, operands);
+                        break;
                     case DROP:
-                        this.stack.pop();
+                        stack.pop();
                         break;
                     case SELECT:
-                        {
-                            var pred = this.stack.pop().asInt();
-                            var b = this.stack.pop();
-                            var a = this.stack.pop();
-                            if (pred == 0) {
-                                this.stack.push(b);
-                            } else {
-                                this.stack.push(a);
-                            }
-                            break;
-                        }
+                        SELECT(stack);
+                        break;
                     case END:
                         {
                             if (frame.doControlTransfer && frame.isControlFrame) {
-                                doControlTransfer(frame);
+                                doControlTransfer(stack, frame);
                             }
 
                             // if this is the last end, then we're done with
@@ -254,1681 +175,565 @@ public class Machine {
                             break;
                         }
                     case LOCAL_GET:
-                        {
-                            this.stack.push(frame.getLocal((int) operands[0]));
-                            break;
-                        }
+                        stack.push(frame.getLocal((int) operands[0]));
+                        break;
                     case LOCAL_SET:
-                        {
-                            frame.setLocal((int) operands[0], this.stack.pop());
-                            break;
-                        }
+                        frame.setLocal((int) operands[0], stack.pop());
+                        break;
                     case LOCAL_TEE:
-                        {
-                            // here we peek instead of pop, leaving it on the stack
-                            frame.setLocal((int) operands[0], this.stack.peek());
-                            break;
-                        }
+                        // here we peek instead of pop, leaving it on the stack
+                        frame.setLocal((int) operands[0], stack.peek());
+                        break;
                     case GLOBAL_GET:
-                        {
-                            int idx = (int) operands[0];
-                            var val = instance.getGlobal(idx);
-                            if (val == null) {
-                                val = instance.getImports().getGlobals()[idx].getValue();
-                            }
-                            this.stack.push(val);
-                            break;
-                        }
+                        GLOBAL_GET(stack, instance, operands);
+                        break;
                     case GLOBAL_SET:
-                        {
-                            var id = (int) operands[0];
-                            var mutabilityType =
-                                    (instance.getGlobalInitializer(id) == null)
-                                            ? instance.getImports()
-                                                    .getGlobals()[id]
-                                                    .getMutabilityType()
-                                            : instance.getGlobalInitializer(id);
-                            if (mutabilityType == MutabilityType.Const) {
-                                throw new RuntimeException(
-                                        "Can't call GLOBAL_SET on immutable global");
-                            }
-                            var val = this.stack.pop();
-                            instance.setGlobal(id, val);
-                            break;
-                        }
+                        GLOBAL_SET(stack, instance, operands);
+                        break;
                     case TABLE_GET:
-                        {
-                            var idx = (int) operands[0];
-                            var table = instance.getTable(idx);
-                            if (table == null) {
-                                table = instance.getImports().getTables()[idx].getTable();
-                            }
-                            var i = this.stack.pop().asInt();
-                            if (i < 0
-                                    || (table.getLimitMax() != 0 && i >= table.getLimitMax())
-                                    || i >= table.getSize()) {
-                                throw new WASMRuntimeException("out of bounds table access");
-                            }
-                            var ref = table.getRef(i);
-                            this.stack.push(table.getRef(i));
-                            break;
-                        }
+                        TABLE_GET(stack, instance, operands);
+                        break;
                     case TABLE_SET:
-                        {
-                            var idx = (int) operands[0];
-                            var table = instance.getTable(idx);
-                            if (table == null) {
-                                table = instance.getImports().getTables()[idx].getTable();
-                            }
-                            var value = this.stack.pop().asExtRef();
-                            var i = this.stack.pop().asInt();
-                            table.setRef(i, value);
-                            break;
-                        }
+                        TABLE_SET(stack, instance, operands);
+                        break;
                         // TODO signed and unsigned are the same right now
                     case I32_LOAD:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readI32(ptr);
-                            this.stack.push(val);
-                            break;
-                        }
+                        I32_LOAD(stack, instance, operands);
+                        break;
                     case I64_LOAD:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readI64(ptr);
-                            this.stack.push(val);
-                            break;
-                        }
+                        I64_LOAD(stack, instance, operands);
+                        break;
                     case F32_LOAD:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readF32(ptr);
-                            this.stack.push(val);
-                            break;
-                        }
+                        F32_LOAD(stack, instance, operands);
+                        break;
                     case F64_LOAD:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readF64(ptr);
-                            this.stack.push(val);
-                            break;
-                        }
+                        F64_LOAD(stack, instance, operands);
+                        break;
                     case I32_LOAD8_S:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readI8(ptr);
-                            this.stack.push(val);
-                            break;
-                        }
+                        I32_LOAD8_S(stack, instance, operands);
+                        break;
                     case I64_LOAD8_S:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readI8(ptr);
-                            // TODO a bit hacky
-                            this.stack.push(Value.i64(val.asInt()));
-                            break;
-                        }
+                        I64_LOAD8_S(stack, instance, operands);
+                        break;
                     case I32_LOAD8_U:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readU8(ptr);
-                            this.stack.push(val);
-                            break;
-                        }
+                        I32_LOAD8_U(stack, instance, operands);
+                        break;
                     case I64_LOAD8_U:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readU8(ptr);
-                            // TODO a bit hacky
-                            this.stack.push(Value.i64(val.asInt()));
-                            break;
-                        }
+                        I64_LOAD8_U(stack, instance, operands);
+                        break;
                     case I32_LOAD16_S:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readI16(ptr);
-                            this.stack.push(val);
-                            break;
-                        }
+                        I32_LOAD16_S(stack, instance, operands);
+                        break;
                     case I64_LOAD16_S:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readI16(ptr);
-                            // TODO this is a bit hacky
-                            this.stack.push(Value.i64(val.asInt()));
-                            break;
-                        }
+                        I64_LOAD16_S(stack, instance, operands);
+                        break;
                     case I32_LOAD16_U:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readU16(ptr);
-                            this.stack.push(val);
-                            break;
-                        }
+                        I32_LOAD16_U(stack, instance, operands);
+                        break;
                     case I64_LOAD16_U:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readU16(ptr);
-                            // TODO this is a bit hacky
-                            this.stack.push(Value.i64(val.asInt()));
-                            break;
-                        }
+                        I64_LOAD16_U(stack, instance, operands);
+                        break;
                     case I64_LOAD32_S:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readI32(ptr);
-                            // TODO this is a bit hacky
-                            this.stack.push(Value.i64(val.asInt()));
-                            break;
-                        }
+                        I64_LOAD32_S(stack, instance, operands);
+                        break;
                     case I64_LOAD32_U:
-                        {
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            var val = instance.getMemory().readU32(ptr);
-                            this.stack.push(val);
-                            break;
-                        }
+                        I64_LOAD32_U(stack, instance, operands);
+                        break;
                     case I32_STORE:
-                        {
-                            var value = this.stack.pop().asInt();
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().writeI32(ptr, value);
-                            break;
-                        }
+                        I32_STORE(stack, instance, operands);
+                        break;
                     case I32_STORE16:
                     case I64_STORE16:
-                        {
-                            var value = this.stack.pop().asShort();
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().writeShort(ptr, value);
-                            break;
-                        }
+                        I64_STORE16(stack, instance, operands);
+                        break;
                     case I64_STORE:
-                        {
-                            var value = this.stack.pop().asLong();
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().writeLong(ptr, value);
-                            break;
-                        }
+                        I64_STORE(stack, instance, operands);
+                        break;
                     case F32_STORE:
-                        {
-                            var value = this.stack.pop().asFloat();
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().writeF32(ptr, value);
-                            break;
-                        }
+                        F32_STORE(stack, instance, operands);
+                        break;
                     case F64_STORE:
-                        {
-                            var value = this.stack.pop().asDouble();
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().writeF64(ptr, value);
-                            break;
-                        }
+                        F64_STORE(stack, instance, operands);
+                        break;
                     case MEMORY_GROW:
-                        {
-                            var size = stack.pop().asInt();
-                            var nPages = instance.getMemory().grow(size);
-                            stack.push(Value.i32(nPages));
-                            break;
-                        }
+                        MEMORY_GROW(stack, instance);
+                        break;
                     case MEMORY_FILL:
-                        {
-                            var memidx = (int) operands[0];
-                            if (memidx != 0) {
-                                throw new WASMRuntimeException(
-                                        "We don't support multiple memories just yet");
-                            }
-                            var size = stack.pop().asInt();
-                            var val = stack.pop().asByte();
-                            var offset = stack.pop().asInt();
-                            var end = (size + offset);
-                            instance.getMemory().fill(val, offset, end);
-                            break;
-                        }
+                        MEMORY_FILL(stack, instance, operands);
+                        break;
                     case I32_STORE8:
                     case I64_STORE8:
-                        {
-                            var value = this.stack.pop().asByte();
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().writeByte(ptr, value);
-                            break;
-                        }
+                        I64_STORE8(stack, instance, operands);
+                        break;
                     case I64_STORE32:
-                        {
-                            var value = this.stack.pop().asLong();
-                            var ptr = (int) (operands[1] + this.stack.pop().asInt());
-                            instance.getMemory().writeI32(ptr, (int) value);
-                            break;
-                        }
+                        I64_STORE32(stack, instance, operands);
+                        break;
                     case MEMORY_SIZE:
-                        {
-                            var sz = instance.getMemory().getSize();
-                            this.stack.push(Value.i32(sz));
-                            break;
-                        }
+                        MEMORY_SIZE(stack, instance);
+                        break;
                         // TODO 32bit and 64 bit operations are the same for now
                     case I32_CONST:
-                        {
-                            this.stack.push(Value.i32(operands[0]));
-                            break;
-                        }
+                        stack.push(Value.i32(operands[0]));
+                        break;
                     case I64_CONST:
-                        {
-                            this.stack.push(Value.i64(operands[0]));
-                            break;
-                        }
+                        stack.push(Value.i64(operands[0]));
+                        break;
                     case F32_CONST:
-                        {
-                            this.stack.push(Value.f32(operands[0]));
-                            break;
-                        }
+                        stack.push(Value.f32(operands[0]));
+                        break;
                     case F64_CONST:
-                        {
-                            this.stack.push(Value.f64(operands[0]));
-                            break;
-                        }
+                        stack.push(Value.f64(operands[0]));
+                        break;
                     case I32_EQ:
-                        {
-                            var a = stack.pop().asInt();
-                            var b = stack.pop().asInt();
-                            this.stack.push(a == b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I32_EQ(stack);
+                        break;
                     case I64_EQ:
-                        {
-                            var a = this.stack.pop().asLong();
-                            var b = this.stack.pop().asLong();
-                            this.stack.push(a == b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I64_EQ(stack);
+                        break;
                     case I32_NE:
-                        {
-                            var a = this.stack.pop().asInt();
-                            var b = this.stack.pop().asInt();
-                            this.stack.push(a == b ? Value.FALSE : Value.TRUE);
-                            break;
-                        }
+                        I32_NE(stack);
+                        break;
                     case I64_NE:
-                        {
-                            var a = this.stack.pop().asLong();
-                            var b = this.stack.pop().asLong();
-                            this.stack.push(a == b ? Value.FALSE : Value.TRUE);
-                            break;
-                        }
+                        I64_NE(stack);
+                        break;
                     case I32_EQZ:
-                        {
-                            var a = this.stack.pop().asInt();
-                            this.stack.push(a == 0 ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I32_EQZ(stack);
+                        break;
                     case I64_EQZ:
-                        {
-                            var a = this.stack.pop().asLong();
-                            this.stack.push(a == 0L ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I64_EQZ(stack);
+                        break;
                     case I32_LT_S:
-                        {
-                            var b = this.stack.pop().asInt();
-                            var a = this.stack.pop().asInt();
-                            this.stack.push(a < b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I32_LT_S(stack);
+                        break;
                     case I32_LT_U:
-                        {
-                            var b = this.stack.pop().asInt();
-                            var a = this.stack.pop().asInt();
-                            this.stack.push(
-                                    Integer.compareUnsigned(a, b) < 0 ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I32_LT_U(stack);
+                        break;
                     case I64_LT_S:
-                        {
-                            var b = this.stack.pop().asLong();
-                            var a = this.stack.pop().asLong();
-                            this.stack.push(a < b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I64_LT_S(stack);
+                        break;
                     case I64_LT_U:
-                        {
-                            var b = this.stack.pop().asLong();
-                            var a = this.stack.pop().asLong();
-                            this.stack.push(
-                                    Long.compareUnsigned(a, b) < 0 ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I64_LT_U(stack);
+                        break;
                     case I32_GT_S:
-                        {
-                            var b = this.stack.pop().asInt();
-                            var a = this.stack.pop().asInt();
-                            this.stack.push(a > b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I32_GT_S(stack);
+                        break;
                     case I32_GT_U:
-                        {
-                            var b = this.stack.pop().asInt();
-                            var a = this.stack.pop().asInt();
-                            this.stack.push(
-                                    Integer.compareUnsigned(a, b) > 0 ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I32_GT_U(stack);
+                        break;
                     case I64_GT_S:
-                        {
-                            var b = this.stack.pop().asLong();
-                            var a = this.stack.pop().asLong();
-                            this.stack.push(a > b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I64_GT_S(stack);
+                        break;
                     case I64_GT_U:
-                        {
-                            var b = this.stack.pop().asLong();
-                            var a = this.stack.pop().asLong();
-                            this.stack.push(
-                                    Long.compareUnsigned(a, b) > 0 ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I64_GT_U(stack);
+                        break;
                     case I32_GE_S:
-                        {
-                            var b = this.stack.pop().asInt();
-                            var a = this.stack.pop().asInt();
-                            this.stack.push(a >= b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I32_GE_S(stack);
+                        break;
                     case I32_GE_U:
-                        {
-                            var b = this.stack.pop().asInt();
-                            var a = this.stack.pop().asInt();
-                            this.stack.push(
-                                    Integer.compareUnsigned(a, b) >= 0 ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I32_GE_U(stack);
+                        break;
                     case I64_GE_U:
-                        {
-                            var b = this.stack.pop().asLong();
-                            var a = this.stack.pop().asLong();
-                            this.stack.push(
-                                    Long.compareUnsigned(a, b) >= 0 ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I64_GE_U(stack);
+                        break;
                     case I64_GE_S:
-                        {
-                            var b = this.stack.pop().asLong();
-                            var a = this.stack.pop().asLong();
-                            this.stack.push(a >= b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I64_GE_S(stack);
+                        break;
                     case I32_LE_S:
-                        {
-                            var b = this.stack.pop().asInt();
-                            var a = this.stack.pop().asInt();
-                            this.stack.push(a <= b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I32_LE_S(stack);
+                        break;
                     case I32_LE_U:
-                        {
-                            var b = this.stack.pop().asInt();
-                            var a = this.stack.pop().asInt();
-                            this.stack.push(
-                                    Integer.compareUnsigned(a, b) <= 0 ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I32_LE_U(stack);
+                        break;
                     case I64_LE_S:
-                        {
-                            var b = this.stack.pop().asLong();
-                            var a = this.stack.pop().asLong();
-                            this.stack.push(a <= b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I64_LE_S(stack);
+                        break;
                     case I64_LE_U:
-                        {
-                            var b = this.stack.pop().asLong();
-                            var a = this.stack.pop().asLong();
-                            this.stack.push(
-                                    Long.compareUnsigned(a, b) <= 0 ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        I64_LE_U(stack);
+                        break;
                     case F32_EQ:
-                        {
-                            var a = this.stack.pop().asFloat();
-                            var b = this.stack.pop().asFloat();
-                            this.stack.push(a == b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        F32_EQ(stack);
+                        break;
                     case F64_EQ:
-                        {
-                            var a = this.stack.pop().asDouble();
-                            var b = this.stack.pop().asDouble();
-                            this.stack.push(a == b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        F64_EQ(stack);
+                        break;
                     case I32_CLZ:
-                        {
-                            var tos = this.stack.pop().asInt();
-                            var count = Integer.numberOfLeadingZeros(tos);
-                            this.stack.push(Value.i32(count));
-                            break;
-                        }
+                        I32_CLZ(stack);
+                        break;
                     case I32_CTZ:
-                        {
-                            var tos = this.stack.pop().asInt();
-                            var count = Integer.numberOfTrailingZeros(tos);
-                            this.stack.push(Value.i32(count));
-                            break;
-                        }
+                        I32_CTZ(stack);
+                        break;
                     case I32_POPCNT:
-                        {
-                            var tos = this.stack.pop().asInt();
-                            var count = Integer.bitCount(tos);
-                            this.stack.push(Value.i32(count));
-                            break;
-                        }
+                        I32_POPCNT(stack);
+                        break;
                     case I32_ADD:
-                        {
-                            var a = this.stack.pop().asInt();
-                            var b = this.stack.pop().asInt();
-                            this.stack.push(Value.i32(a + b));
-                            break;
-                        }
+                        I32_ADD(stack);
+                        break;
                     case I64_ADD:
-                        {
-                            var a = this.stack.pop().asLong();
-                            var b = this.stack.pop().asLong();
-                            this.stack.push(Value.i64(a + b));
-                            break;
-                        }
+                        I64_ADD(stack);
+                        break;
                     case I32_SUB:
-                        {
-                            var a = this.stack.pop().asInt();
-                            var b = this.stack.pop().asInt();
-                            this.stack.push(Value.i32(b - a));
-                            break;
-                        }
+                        I32_SUB(stack);
+                        break;
                     case I64_SUB:
-                        {
-                            var a = this.stack.pop().asLong();
-                            var b = this.stack.pop().asLong();
-                            this.stack.push(Value.i64(b - a));
-                            break;
-                        }
+                        I64_SUB(stack);
+                        break;
                     case I32_MUL:
-                        {
-                            var a = this.stack.pop().asInt();
-                            var b = this.stack.pop().asInt();
-                            this.stack.push(Value.i32(a * b));
-                            break;
-                        }
+                        I32_MUL(stack);
+                        break;
                     case I64_MUL:
-                        {
-                            var a = this.stack.pop().asLong();
-                            var b = this.stack.pop().asLong();
-                            this.stack.push(Value.i64(a * b));
-                            break;
-                        }
+                        I64_MUL(stack);
+                        break;
                     case I32_DIV_S:
-                        {
-                            var b = this.stack.pop().asInt();
-                            var a = this.stack.pop().asInt();
-                            if (a == Integer.MIN_VALUE && b == -1) {
-                                throw new WASMRuntimeException("integer overflow");
-                            }
-                            this.stack.push(Value.i32(a / b));
-                            break;
-                        }
+                        I32_DIV_S(stack);
+                        break;
                     case I32_DIV_U:
-                        {
-                            var b = this.stack.pop().asUInt();
-                            var a = this.stack.pop().asUInt();
-                            this.stack.push(Value.i32(a / b));
-                            break;
-                        }
+                        I32_DIV_U(stack);
+                        break;
                     case I64_DIV_S:
-                        {
-                            var b = this.stack.pop().asLong();
-                            var a = this.stack.pop().asLong();
-                            if (a == Long.MIN_VALUE && b == -1L) {
-                                throw new WASMRuntimeException("integer overflow");
-                            }
-                            this.stack.push(Value.i64(a / b));
-                            break;
-                        }
+                        I64_DIV_S(stack);
+                        break;
                     case I64_DIV_U:
-                        {
-                            var b = this.stack.pop().asLong();
-                            var a = this.stack.pop().asLong();
-                            this.stack.push(Value.i64(Long.divideUnsigned(a, b)));
-                            break;
-                        }
+                        I64_DIV_U(stack);
+                        break;
                     case I32_REM_S:
-                        {
-                            var b = this.stack.pop().asInt();
-                            var a = this.stack.pop().asInt();
-                            this.stack.push(Value.i32(a % b));
-                            break;
-                        }
+                        I32_REM_S(stack);
+                        break;
                     case I32_REM_U:
-                        {
-                            var b = this.stack.pop().asUInt();
-                            var a = this.stack.pop().asUInt();
-                            this.stack.push(Value.i32(a % b));
-                            break;
-                        }
+                        I32_REM_U(stack);
+                        break;
                     case I64_AND:
-                        {
-                            var a = this.stack.pop().asLong();
-                            var b = this.stack.pop().asLong();
-                            this.stack.push(Value.i64(a & b));
-                            break;
-                        }
+                        I64_AND(stack);
+                        break;
                     case I64_OR:
-                        {
-                            var a = this.stack.pop().asLong();
-                            var b = this.stack.pop().asLong();
-                            this.stack.push(Value.i64(a | b));
-                            break;
-                        }
+                        I64_OR(stack);
+                        break;
                     case I64_XOR:
-                        {
-                            var a = this.stack.pop().asLong();
-                            var b = this.stack.pop().asLong();
-                            this.stack.push(Value.i64(a ^ b));
-                            break;
-                        }
+                        I64_XOR(stack);
+                        break;
                     case I64_SHL:
-                        {
-                            var c = this.stack.pop().asLong();
-                            var v = this.stack.pop().asLong();
-                            this.stack.push(Value.i64(v << c));
-                            break;
-                        }
+                        I64_SHL(stack);
+                        break;
                     case I64_SHR_S:
-                        {
-                            var c = this.stack.pop().asLong();
-                            var v = this.stack.pop().asLong();
-                            this.stack.push(Value.i64(v >> c));
-                            break;
-                        }
+                        I64_SHR_S(stack);
+                        break;
                     case I64_SHR_U:
-                        {
-                            var c = this.stack.pop().asLong();
-                            var v = this.stack.pop().asLong();
-                            this.stack.push(Value.i64(v >>> c));
-                            break;
-                        }
+                        I64_SHR_U(stack);
+                        break;
                     case I64_REM_S:
-                        {
-                            var b = this.stack.pop().asLong();
-                            var a = this.stack.pop().asLong();
-                            this.stack.push(Value.i64(a % b));
-                            break;
-                        }
+                        I64_REM_S(stack);
+                        break;
                     case I64_REM_U:
-                        {
-                            var b = this.stack.pop().asLong();
-                            var a = this.stack.pop().asLong();
-                            this.stack.push(Value.i64(Long.remainderUnsigned(a, b)));
-                            break;
-                        }
+                        I64_REM_U(stack);
+                        break;
                     case I64_ROTL:
-                        {
-                            var c = this.stack.pop().asLong();
-                            var v = this.stack.pop().asLong();
-                            var z = (v << c) | (v >>> (64 - c));
-                            this.stack.push(Value.i64(z));
-                            break;
-                        }
+                        I64_ROTL(stack);
+                        break;
                     case I64_ROTR:
-                        {
-                            var c = this.stack.pop().asLong();
-                            var v = this.stack.pop().asLong();
-                            var z = (v >>> c) | (v << (64 - c));
-                            this.stack.push(Value.i64(z));
-                            break;
-                        }
+                        I64_ROTR(stack);
+                        break;
                     case I64_CLZ:
-                        {
-                            var tos = this.stack.pop();
-                            var count = Long.numberOfLeadingZeros(tos.asLong());
-                            this.stack.push(Value.i64(count));
-                            break;
-                        }
+                        I64_CLZ(stack);
+                        break;
                     case I64_CTZ:
-                        {
-                            var tos = this.stack.pop();
-                            var count = Long.numberOfTrailingZeros(tos.asLong());
-                            this.stack.push(Value.i64(count));
-                            break;
-                        }
+                        I64_CTZ(stack);
+                        break;
                     case I64_POPCNT:
-                        {
-                            var tos = this.stack.pop().asLong();
-                            var count = Long.bitCount(tos);
-                            this.stack.push(Value.i64(count));
-                            break;
-                        }
+                        I64_POPCNT(stack);
+                        break;
                     case F32_NEG:
-                        {
-                            var tos = this.stack.pop().asFloat();
-
-                            float result;
-                            if (Float.isNaN(tos)) {
-                                result =
-                                        Float.intBitsToFloat(
-                                                Float.floatToRawIntBits(tos) ^ 0x80000000);
-                            } else {
-                                result = -1.0f * tos;
-                            }
-
-                            this.stack.push(Value.fromFloat(result));
-                            break;
-                        }
+                        F32_NEG(stack);
+                        break;
                     case F64_NEG:
-                        {
-                            var tos = this.stack.pop().asDouble();
-
-                            double result;
-                            if (Double.isNaN(tos)) {
-                                result =
-                                        Double.longBitsToDouble(
-                                                Double.doubleToRawLongBits(tos)
-                                                        ^ 0x8000000000000000L);
-                            } else {
-                                result = -1.0d * tos;
-                            }
-
-                            this.stack.push(Value.fromDouble(result));
-                            break;
-                        }
+                        F64_NEG(stack);
+                        break;
                     case CALL:
-                        {
-                            var funcId = (int) operands[0];
-                            var typeId = instance.getFunctionType(funcId);
-                            var type = instance.getTypes()[typeId];
-                            // given a list of param types, let's pop those params off the stack
-                            // and pass as args to the function call
-                            var args = extractArgsForParams(type.getParams());
-                            call(funcId, args, false);
-                            break;
-                        }
+                        CALL(stack, instance, callStack, operands);
+                        break;
                     case I32_AND:
-                        {
-                            var a = this.stack.pop().asInt();
-                            var b = this.stack.pop().asInt();
-                            this.stack.push(Value.i32(a & b));
-                            break;
-                        }
+                        I32_AND(stack);
+                        break;
                     case I32_OR:
-                        {
-                            var a = this.stack.pop().asInt();
-                            var b = this.stack.pop().asInt();
-                            this.stack.push(Value.i32(a | b));
-                            break;
-                        }
+                        I32_OR(stack);
+                        break;
                     case I32_XOR:
-                        {
-                            var a = this.stack.pop().asInt();
-                            var b = this.stack.pop().asInt();
-                            this.stack.push(Value.i32(a ^ b));
-                            break;
-                        }
+                        I32_XOR(stack);
+                        break;
                     case I32_SHL:
-                        {
-                            var c = this.stack.pop().asInt();
-                            var v = this.stack.pop().asInt();
-                            this.stack.push(Value.i32(v << c));
-                            break;
-                        }
+                        I32_SHL(stack);
+                        break;
                     case I32_SHR_S:
-                        {
-                            var c = this.stack.pop().asInt();
-                            var v = this.stack.pop().asInt();
-                            this.stack.push(Value.i32(v >> c));
-                            break;
-                        }
+                        I32_SHR_S(stack);
+                        break;
                     case I32_SHR_U:
-                        {
-                            var c = this.stack.pop().asInt();
-                            var v = this.stack.pop().asInt();
-                            this.stack.push(Value.i32(v >>> c));
-                            break;
-                        }
+                        I32_SHR_U(stack);
+                        break;
                     case I32_ROTL:
-                        {
-                            var c = this.stack.pop().asInt();
-                            var v = this.stack.pop().asInt();
-                            var z = (v << c) | (v >>> (32 - c));
-                            this.stack.push(Value.i32(z));
-                            break;
-                        }
+                        I32_ROTL(stack);
+                        break;
                     case I32_ROTR:
-                        {
-                            var c = this.stack.pop().asInt();
-                            var v = this.stack.pop().asInt();
-                            var z = (v >>> c) | (v << (32 - c));
-                            this.stack.push(Value.i32(z));
-                            break;
-                        }
+                        I32_ROTR(stack);
+                        break;
                     case F32_ADD:
-                        {
-                            var a = this.stack.pop().asFloat();
-                            var b = this.stack.pop().asFloat();
-                            this.stack.push(Value.fromFloat(a + b));
-                            break;
-                        }
+                        F32_ADD(stack);
+                        break;
                     case F64_ADD:
-                        {
-                            var a = this.stack.pop().asDouble();
-                            var b = this.stack.pop().asDouble();
-                            this.stack.push(Value.fromDouble(a + b));
-                            break;
-                        }
+                        F64_ADD(stack);
+                        break;
                     case F32_SUB:
-                        {
-                            var a = this.stack.pop().asFloat();
-                            var b = this.stack.pop().asFloat();
-                            this.stack.push(Value.fromFloat(b - a));
-                            break;
-                        }
+                        F32_SUB(stack);
+                        break;
                     case F64_SUB:
-                        {
-                            var a = this.stack.pop().asDouble();
-                            var b = this.stack.pop().asDouble();
-                            this.stack.push(Value.fromDouble(b - a));
-                            break;
-                        }
+                        F64_SUB(stack);
+                        break;
                     case F32_MUL:
-                        {
-                            var a = this.stack.pop().asFloat();
-                            var b = this.stack.pop().asFloat();
-                            this.stack.push(Value.fromFloat(b * a));
-                            break;
-                        }
+                        F32_MUL(stack);
+                        break;
                     case F64_MUL:
-                        {
-                            var a = this.stack.pop().asDouble();
-                            var b = this.stack.pop().asDouble();
-                            this.stack.push(Value.fromDouble(b * a));
-                            break;
-                        }
+                        F64_MUL(stack);
+                        break;
                     case F32_DIV:
-                        {
-                            var a = this.stack.pop().asFloat();
-                            var b = this.stack.pop().asFloat();
-                            this.stack.push(Value.fromFloat(b / a));
-                            break;
-                        }
+                        F32_DIV(stack);
+                        break;
                     case F64_DIV:
-                        {
-                            var a = this.stack.pop().asDouble();
-                            var b = this.stack.pop().asDouble();
-                            this.stack.push(Value.fromDouble(b / a));
-                            break;
-                        }
+                        F64_DIV(stack);
+                        break;
                     case F32_MIN:
-                        {
-                            var a = this.stack.pop().asFloat();
-                            var b = this.stack.pop().asFloat();
-                            this.stack.push(Value.fromFloat(Math.min(a, b)));
-                            break;
-                        }
+                        F32_MIN(stack);
+                        break;
                     case F64_MIN:
-                        {
-                            var a = this.stack.pop().asDouble();
-                            var b = this.stack.pop().asDouble();
-                            this.stack.push(Value.fromDouble(Math.min(a, b)));
-                            break;
-                        }
+                        F64_MIN(stack);
+                        break;
                     case F32_MAX:
-                        {
-                            var a = this.stack.pop().asFloat();
-                            var b = this.stack.pop().asFloat();
-                            this.stack.push(Value.fromFloat(Math.max(a, b)));
-                            break;
-                        }
+                        F32_MAX(stack);
+                        break;
                     case F64_MAX:
-                        {
-                            var a = this.stack.pop().asDouble();
-                            var b = this.stack.pop().asDouble();
-                            this.stack.push(Value.fromDouble(Math.max(a, b)));
-                            break;
-                        }
+                        F64_MAX(stack);
+                        break;
                     case F32_SQRT:
-                        {
-                            var val = this.stack.pop().asFloat();
-                            this.stack.push(Value.fromFloat((float) Math.sqrt(val)));
-                            break;
-                        }
+                        F32_SQRT(stack);
+                        break;
                     case F64_SQRT:
-                        {
-                            var val = this.stack.pop().asDouble();
-                            this.stack.push(Value.fromDouble(Math.sqrt(val)));
-                            break;
-                        }
+                        F64_SQRT(stack);
+                        break;
                     case F32_FLOOR:
-                        {
-                            var val = this.stack.pop().asFloat();
-                            this.stack.push(Value.fromFloat((float) Math.floor(val)));
-                            break;
-                        }
+                        F32_FLOOR(stack);
+                        break;
                     case F64_FLOOR:
-                        {
-                            var val = this.stack.pop().asDouble();
-                            this.stack.push(Value.fromDouble(Math.floor(val)));
-                            break;
-                        }
+                        F64_FLOOR(stack);
+                        break;
                     case F32_CEIL:
-                        {
-                            var val = this.stack.pop().asFloat();
-                            this.stack.push(Value.fromFloat((float) Math.ceil(val)));
-                            break;
-                        }
+                        F32_CEIL(stack);
+                        break;
                     case F64_CEIL:
-                        {
-                            var val = this.stack.pop().asDouble();
-                            this.stack.push(Value.fromDouble(Math.ceil(val)));
-                            break;
-                        }
+                        F64_CEIL(stack);
+                        break;
                     case F32_TRUNC:
-                        {
-                            var val = this.stack.pop().asFloat();
-                            this.stack.push(
-                                    Value.fromFloat(
-                                            (float)
-                                                    ((val < 0)
-                                                            ? Math.ceil(val)
-                                                            : Math.floor(val))));
-                            break;
-                        }
+                        F32_TRUNC(stack);
+                        break;
                     case F64_TRUNC:
-                        {
-                            var val = this.stack.pop().asDouble();
-                            this.stack.push(
-                                    Value.fromDouble((val < 0) ? Math.ceil(val) : Math.floor(val)));
-                            break;
-                        }
+                        F64_TRUNC(stack);
+                        break;
                     case F32_NEAREST:
-                        {
-                            var val = this.stack.pop().asFloat();
-                            this.stack.push(Value.fromFloat((float) Math.rint(val)));
-                            break;
-                        }
+                        F32_NEAREST(stack);
+                        break;
                     case F64_NEAREST:
-                        {
-                            var val = this.stack.pop().asDouble();
-                            this.stack.push(Value.fromDouble(Math.rint(val)));
-                            break;
-                        }
+                        F64_NEAREST(stack);
+                        break;
                         // For the extend_* operations, note that java
                         // automatically does this when casting from
                         // smaller to larger primitives
                     case I32_EXTEND_8_S:
-                        {
-                            var tos = this.stack.pop().asByte();
-                            this.stack.push(Value.i32(tos));
-                            break;
-                        }
+                        I32_EXTEND_8_S(stack);
+                        break;
                     case I32_EXTEND_16_S:
-                        {
-                            var original = this.stack.pop().asInt() & 0xFFFF;
-                            if ((original & 0x8000) != 0) original |= 0xFFFF0000;
-                            this.stack.push(Value.i32(original & 0xFFFFFFFFL));
-                            break;
-                        }
+                        I32_EXTEND_16_S(stack);
+                        break;
                     case I64_EXTEND_8_S:
-                        {
-                            var tos = this.stack.pop().asByte();
-                            this.stack.push(Value.i64(tos));
-                            break;
-                        }
+                        I64_EXTEND_8_S(stack);
+                        break;
                     case I64_EXTEND_16_S:
-                        {
-                            var tos = this.stack.pop().asShort();
-                            this.stack.push(Value.i64(tos));
-                            break;
-                        }
+                        I64_EXTEND_16_S(stack);
+                        break;
                     case I64_EXTEND_32_S:
-                        {
-                            var tos = this.stack.pop().asInt();
-                            this.stack.push(Value.i64(tos));
-                            break;
-                        }
+                        I64_EXTEND_32_S(stack);
+                        break;
                     case F64_CONVERT_I64_U:
-                        {
-                            var tos = this.stack.pop().asLong();
-                            double d;
-                            if (tos >= 0) {
-                                d = tos;
-                            } else {
-                                // only preserve 53 bits of precision (plus one for rounding) to
-                                // avoid rounding errors (64 - 53 == 11)
-                                long sum = tos + 0x3ff;
-                                // did the add overflow? add the MSB back on after the shift
-                                long shiftIn = ((sum ^ tos) & Long.MIN_VALUE) >>> 10;
-                                d = Math.scalb((double) ((sum >>> 11) | shiftIn), 11);
-                            }
-                            this.stack.push(Value.f64(Double.doubleToLongBits(d)));
-                            break;
-                        }
+                        F64_CONVERT_I64_U(stack);
+                        break;
                     case F64_CONVERT_I32_U:
-                        {
-                            long tos = this.stack.pop().asUInt();
-                            this.stack.push(Value.f64(Double.doubleToLongBits(tos)));
-                            break;
-                        }
+                        F64_CONVERT_I32_U(stack);
+                        break;
                     case F64_CONVERT_I32_S:
-                        {
-                            var tos = this.stack.pop().asInt();
-                            this.stack.push(Value.fromDouble(tos));
-                            break;
-                        }
+                        F64_CONVERT_I32_S(stack);
+                        break;
                     case F64_PROMOTE_F32:
-                        {
-                            var tos = this.stack.pop();
-                            this.stack.push(Value.fromDouble(tos.asFloat()));
-                            break;
-                        }
+                        F64_PROMOTE_F32(stack);
+                        break;
                     case F64_REINTERPRET_I64:
-                        {
-                            var tos = this.stack.pop();
-                            this.stack.push(Value.f64(tos.asLong()));
-                            break;
-                        }
+                        F64_REINTERPRET_I64(stack);
+                        break;
                     case I64_TRUNC_F64_S:
-                        {
-                            double tos = this.stack.pop().asDouble();
-
-                            if (Double.isNaN(tos)) {
-                                throw new WASMRuntimeException("invalid conversion to integer");
-                            }
-
-                            long tosL = (long) tos;
-                            if (tos == (double) Long.MIN_VALUE) {
-                                tosL = Long.MIN_VALUE;
-                            } else if (tosL == Long.MIN_VALUE || tosL == Long.MAX_VALUE) {
-                                throw new WASMRuntimeException("integer overflow");
-                            }
-
-                            this.stack.push(Value.i64(tosL));
-                            break;
-                        }
+                        I64_TRUNC_F64_S(stack);
+                        break;
                     case I32_WRAP_I64:
-                        {
-                            var tos = this.stack.pop();
-                            this.stack.push(Value.i32(tos.asInt()));
-                            break;
-                        }
+                        I32_WRAP_I64(stack);
+                        break;
                     case I64_EXTEND_I32_S:
-                        {
-                            var tos = this.stack.pop();
-                            this.stack.push(Value.i64(tos.asInt()));
-                            break;
-                        }
+                        I64_EXTEND_I32_S(stack);
+                        break;
                     case I64_EXTEND_I32_U:
-                        {
-                            var tos = this.stack.pop();
-                            this.stack.push(Value.i64(tos.asUInt()));
-                            break;
-                        }
+                        I64_EXTEND_I32_U(stack);
+                        break;
                     case I32_REINTERPRET_F32:
-                        {
-                            var tos = this.stack.pop();
-                            this.stack.push(Value.i32(tos.asInt()));
-                            break;
-                        }
+                        I32_REINTERPRET_F32(stack);
+                        break;
                     case I64_REINTERPRET_F64:
-                        {
-                            var tos = this.stack.pop();
-                            this.stack.push(Value.i64(tos.asLong()));
-                            break;
-                        }
+                        I64_REINTERPRET_F64(stack);
+                        break;
                     case F32_REINTERPRET_I32:
-                        {
-                            var tos = this.stack.pop();
-                            this.stack.push(Value.f32(tos.asInt()));
-                            break;
-                        }
+                        F32_REINTERPRET_I32(stack);
+                        break;
                     case F32_COPYSIGN:
-                        {
-                            var a = this.stack.pop().asFloat();
-                            var b = this.stack.pop().asFloat();
-
-                            if (a == 0xFFC00000L) { // +NaN
-                                this.stack.push(Value.fromFloat(Math.copySign(b, -1)));
-                            } else if (a == 0x7FC00000L) { // -NaN
-                                this.stack.push(Value.fromFloat(Math.copySign(b, +1)));
-                            } else {
-                                this.stack.push(Value.fromFloat(Math.copySign(b, a)));
-                            }
-                            break;
-                        }
+                        F32_COPYSIGN(stack);
+                        break;
                     case F32_ABS:
-                        {
-                            var val = this.stack.pop().asFloat();
-
-                            this.stack.push(Value.fromFloat(Math.abs(val)));
-                            break;
-                        }
+                        F32_ABS(stack);
+                        break;
                     case F64_COPYSIGN:
-                        {
-                            var a = this.stack.pop().asDouble();
-                            var b = this.stack.pop().asDouble();
-
-                            if (a == 0xFFC0000000000000L) { // +NaN
-                                this.stack.push(Value.fromDouble(Math.copySign(b, -1)));
-                            } else if (a == 0x7FC0000000000000L) { // -NaN
-                                this.stack.push(Value.fromDouble(Math.copySign(b, +1)));
-                            } else {
-                                this.stack.push(Value.fromDouble(Math.copySign(b, a)));
-                            }
-                            break;
-                        }
+                        F64_COPYSIGN(stack);
+                        break;
                     case F64_ABS:
-                        {
-                            var val = this.stack.pop().asDouble();
-
-                            this.stack.push(Value.fromDouble(Math.abs(val)));
-                            break;
-                        }
+                        F64_ABS(stack);
+                        break;
                     case F32_NE:
-                        {
-                            var a = this.stack.pop().asFloat();
-                            var b = this.stack.pop().asFloat();
-
-                            this.stack.push(a == b ? Value.FALSE : Value.TRUE);
-                            break;
-                        }
+                        F32_NE(stack);
+                        break;
                     case F64_NE:
-                        {
-                            var a = this.stack.pop().asDouble();
-                            var b = this.stack.pop().asDouble();
-
-                            this.stack.push(a == b ? Value.FALSE : Value.TRUE);
-                            break;
-                        }
+                        F64_NE(stack);
+                        break;
                     case F32_LT:
-                        {
-                            var a = this.stack.pop().asFloat();
-                            var b = this.stack.pop().asFloat();
-
-                            this.stack.push(a > b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        F32_LT(stack);
+                        break;
                     case F64_LT:
-                        {
-                            var a = this.stack.pop().asDouble();
-                            var b = this.stack.pop().asDouble();
-
-                            this.stack.push(a > b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        F64_LT(stack);
+                        break;
                     case F32_LE:
-                        {
-                            var a = this.stack.pop().asFloat();
-                            var b = this.stack.pop().asFloat();
-
-                            this.stack.push(a >= b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        F32_LE(stack);
+                        break;
                     case F64_LE:
-                        {
-                            var a = this.stack.pop().asDouble();
-                            var b = this.stack.pop().asDouble();
-
-                            this.stack.push(a >= b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        F64_LE(stack);
+                        break;
                     case F32_GE:
-                        {
-                            var a = this.stack.pop().asFloat();
-                            var b = this.stack.pop().asFloat();
-
-                            this.stack.push(a <= b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        F32_GE(stack);
+                        break;
                     case F64_GE:
-                        {
-                            var a = this.stack.pop().asDouble();
-                            var b = this.stack.pop().asDouble();
-
-                            this.stack.push(a <= b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        F64_GE(stack);
+                        break;
                     case F32_GT:
-                        {
-                            var a = this.stack.pop().asFloat();
-                            var b = this.stack.pop().asFloat();
-
-                            this.stack.push(a < b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        F32_GT(stack);
+                        break;
                     case F64_GT:
-                        {
-                            var a = this.stack.pop().asDouble();
-                            var b = this.stack.pop().asDouble();
-
-                            this.stack.push(a < b ? Value.TRUE : Value.FALSE);
-                            break;
-                        }
+                        F64_GT(stack);
+                        break;
                     case F32_DEMOTE_F64:
-                        {
-                            var val = this.stack.pop().asDouble();
-
-                            this.stack.push(Value.fromFloat((float) val));
-                            break;
-                        }
+                        F32_DEMOTE_F64(stack);
+                        break;
                     case F32_CONVERT_I32_S:
-                        {
-                            var tos = this.stack.pop().asInt();
-                            this.stack.push(Value.fromFloat((float) tos));
-                            break;
-                        }
+                        F32_CONVERT_I32_S(stack);
+                        break;
                     case I32_TRUNC_F32_S:
-                        {
-                            float tos = this.stack.pop().asFloat();
-
-                            if (Float.isNaN(tos)) {
-                                throw new WASMRuntimeException("invalid conversion to integer");
-                            }
-
-                            if (tos < Integer.MIN_VALUE || tos >= Integer.MAX_VALUE) {
-                                throw new WASMRuntimeException("integer overflow");
-                            }
-
-                            this.stack.push(Value.i32((long) tos));
-                            break;
-                        }
-
+                        I32_TRUNC_F32_S(stack);
+                        break;
                     case I32_TRUNC_SAT_F32_S:
-                        {
-                            var tos = this.stack.pop().asFloat();
-
-                            if (Float.isNaN(tos)) {
-                                tos = 0;
-                            } else if (tos < Integer.MIN_VALUE) {
-                                tos = Integer.MIN_VALUE;
-                            } else if (tos > Integer.MAX_VALUE) {
-                                tos = Integer.MAX_VALUE;
-                            }
-
-                            this.stack.push(Value.i32((int) tos));
-                            break;
-                        }
+                        I32_TRUNC_SAT_F32_S(stack);
+                        break;
                     case I32_TRUNC_SAT_F32_U:
-                        {
-                            var tos = this.stack.pop().asFloat();
-
-                            long tosL;
-                            if (Float.isNaN(tos) || tos < 0) {
-                                tosL = 0L;
-                            } else if (tos >= 0xFFFFFFFFL) {
-                                tosL = 0xFFFFFFFFL;
-                            } else {
-                                tosL = (long) tos;
-                            }
-
-                            this.stack.push(Value.i32(tosL));
-                            break;
-                        }
-
+                        I32_TRUNC_SAT_F32_U(stack);
+                        break;
                     case I32_TRUNC_SAT_F64_S:
-                        {
-                            var tos = this.stack.pop().asDouble();
-
-                            if (Double.isNaN(tos)) {
-                                tos = 0;
-                            } else if (tos <= Integer.MIN_VALUE) {
-                                tos = Integer.MIN_VALUE;
-                            } else if (tos >= Integer.MAX_VALUE) {
-                                tos = Integer.MAX_VALUE;
-                            }
-
-                            this.stack.push(Value.i32((int) tos));
-                            break;
-                        }
+                        I32_TRUNC_SAY_F64_S(stack);
+                        break;
                     case I32_TRUNC_SAT_F64_U:
-                        {
-                            double tos = Double.longBitsToDouble(this.stack.pop().asLong());
-
-                            long tosL;
-                            if (Double.isNaN(tos) || tos < 0) {
-                                tosL = 0;
-                            } else if (tos > 0xFFFFFFFFL) {
-                                tosL = 0xFFFFFFFFL;
-                            } else {
-                                tosL = (long) tos;
-                            }
-                            this.stack.push(Value.i32(tosL));
-                            break;
-                        }
+                        I32_TRUNC_SAT_F64_U(stack);
+                        break;
                     case F32_CONVERT_I32_U:
-                        {
-                            var tos = this.stack.pop().asUInt();
-
-                            this.stack.push(Value.fromFloat((float) tos));
-                            break;
-                        }
+                        F32_CONVERT_I32_U(stack);
+                        break;
                     case I32_TRUNC_F32_U:
-                        {
-                            var tos = this.stack.pop().asFloat();
-
-                            if (Float.isNaN(tos)) {
-                                throw new WASMRuntimeException("invalid conversion to integer");
-                            }
-
-                            long tosL = (long) tos;
-                            if (tosL < 0 || tosL >= 0xFFFFFFFFL) {
-                                throw new WASMRuntimeException("integer overflow");
-                            }
-
-                            this.stack.push(Value.i32(tosL));
-                            break;
-                        }
+                        I32_TRUNC_F32_U(stack);
+                        break;
                     case F32_CONVERT_I64_S:
-                        {
-                            var tos = this.stack.pop().asLong();
-
-                            this.stack.push(Value.fromFloat((float) tos));
-                            break;
-                        }
+                        F32_CONVERT_I64_S(stack);
+                        break;
                     case F32_CONVERT_I64_U:
-                        {
-                            var tos = this.stack.pop().asLong();
-
-                            float f;
-                            if (tos >= 0) {
-                                f = tos;
-                            } else {
-                                // only preserve 24 bits of precision (plus one for rounding) to
-                                // avoid rounding errors (64 - 24 == 40)
-                                long sum = tos + 0xff_ffff_ffffL;
-                                // did the add overflow? add the MSB back on after the shift
-                                long shiftIn = ((sum ^ tos) & Long.MIN_VALUE) >>> 39;
-                                f = Math.scalb((float) ((sum >>> 40) | shiftIn), 40);
-                            }
-
-                            this.stack.push(Value.f32(Float.floatToIntBits(f)));
-                            break;
-                        }
+                        F32_CONVERT_I64_U(stack);
+                        break;
                     case F64_CONVERT_I64_S:
-                        {
-                            var tos = this.stack.pop().asLong();
-
-                            this.stack.push(Value.fromDouble((double) tos));
-                            break;
-                        }
+                        F64_CONVERT_I64_S(stack);
+                        break;
                     case I64_TRUNC_F32_U:
-                        {
-                            var tos = this.stack.pop().asFloat();
-
-                            if (Float.isNaN(tos)) {
-                                throw new WASMRuntimeException("invalid conversion to integer");
-                            }
-
-                            if (tos >= 2 * (float) Long.MAX_VALUE) {
-                                throw new WASMRuntimeException("integer overflow");
-                            }
-
-                            long tosL;
-                            if (tos < Long.MAX_VALUE) {
-                                tosL = (long) tos;
-                                if (tosL < 0) {
-                                    throw new WASMRuntimeException("integer overflow");
-                                }
-                            } else {
-                                // This works for getting the unsigned value because binary addition
-                                // yields the correct interpretation in both unsigned &
-                                // 2's-complement
-                                // no matter which the operands are considered to be.
-                                tosL = Long.MAX_VALUE + (long) (tos - (float) Long.MAX_VALUE) + 1;
-                                if (tosL >= 0) {
-                                    // Java's comparison operators assume signed integers. In the
-                                    // case
-                                    // that we're in the range of unsigned values where the sign bit
-                                    // is set, Java considers these values to be negative so we have
-                                    // to check for >= 0 to detect overflow.
-                                    throw new WASMRuntimeException("integer overflow");
-                                }
-                            }
-
-                            this.stack.push(Value.i64(tosL));
-                            break;
-                        }
+                        I64_TRUNC_F32_U(stack);
+                        break;
                     case I64_TRUNC_F64_U:
-                        {
-                            var tos = this.stack.pop().asDouble();
-
-                            if (Double.isNaN(tos)) {
-                                throw new WASMRuntimeException("invalid conversion to integer");
-                            }
-
-                            if (tos >= 2 * (double) Long.MAX_VALUE) {
-                                throw new WASMRuntimeException("integer overflow");
-                            }
-
-                            long tosL;
-                            if (tos < Long.MAX_VALUE) {
-                                tosL = (long) tos;
-                                if (tosL < 0) {
-                                    throw new WASMRuntimeException("integer overflow");
-                                }
-                            } else {
-                                // See I64_TRUNC_F32_U for notes on implementation. This is
-                                // the double-based equivalent of that.
-                                tosL = Long.MAX_VALUE + (long) (tos - (double) Long.MAX_VALUE) + 1;
-                                if (tosL >= 0) {
-                                    throw new WASMRuntimeException("integer overflow");
-                                }
-                            }
-
-                            this.stack.push(Value.i64(tosL));
-                            break;
-                        }
-
+                        I64_TRUNC_F64_U(stack);
+                        break;
                     case I64_TRUNC_SAT_F32_S:
-                        {
-                            var tos = this.stack.pop().asFloat();
-
-                            if (Float.isNaN(tos)) {
-                                tos = 0;
-                            } else if (tos <= Long.MIN_VALUE) {
-                                tos = Long.MIN_VALUE;
-                            } else if (tos >= Long.MAX_VALUE) {
-                                tos = Long.MAX_VALUE;
-                            }
-
-                            this.stack.push(Value.i64((long) tos));
-                            break;
-                        }
+                        I64_TRUNC_SAT_F32_S(stack);
+                        break;
                     case I64_TRUNC_SAT_F32_U:
-                        {
-                            var tos = this.stack.pop().asFloat();
-
-                            long tosL;
-                            if (Float.isNaN(tos) || tos < 0) {
-                                tosL = 0L;
-                            } else if (tos > Math.pow(2, 64) - 1) {
-                                tosL = 0xFFFFFFFFFFFFFFFFL;
-                            } else {
-                                if (tos < Long.MAX_VALUE) {
-                                    tosL = (long) tos;
-                                } else {
-                                    // See I64_TRUNC_F32_U for notes on implementation. This is
-                                    // the double-based equivalent of that.
-                                    tosL =
-                                            Long.MAX_VALUE
-                                                    + (long) (tos - (double) Long.MAX_VALUE)
-                                                    + 1;
-                                    if (tosL >= 0) {
-                                        throw new WASMRuntimeException("integer overflow");
-                                    }
-                                }
-                            }
-
-                            this.stack.push(Value.i64(tosL));
-                            break;
-                        }
+                        I64_TRUNC_SAT_F32_U(stack);
+                        break;
                     case I64_TRUNC_SAT_F64_S:
-                        {
-                            var tos = this.stack.pop().asDouble();
-
-                            if (Double.isNaN(tos)) {
-                                tos = 0;
-                            } else if (tos <= Long.MIN_VALUE) {
-                                tos = Long.MIN_VALUE;
-                            } else if (tos >= Long.MAX_VALUE) {
-                                tos = Long.MAX_VALUE;
-                            }
-
-                            this.stack.push(Value.i64((long) tos));
-                            break;
-                        }
-
+                        I64_TRUNC_SAT_F64_S(stack);
+                        break;
                     case I64_TRUNC_SAT_F64_U:
-                        {
-                            double tos = this.stack.pop().asDouble();
-
-                            long tosL;
-                            if (Double.isNaN(tos) || tos < 0) {
-                                tosL = 0L;
-                            } else if (tos > Math.pow(2, 64) - 1) {
-                                tosL = 0xFFFFFFFFFFFFFFFFL;
-                            } else {
-                                if (tos < Long.MAX_VALUE) {
-                                    tosL = (long) tos;
-                                } else {
-                                    // See I64_TRUNC_F32_U for notes on implementation. This is
-                                    // the double-based equivalent of that.
-                                    tosL =
-                                            Long.MAX_VALUE
-                                                    + (long) (tos - (double) Long.MAX_VALUE)
-                                                    + 1;
-                                    if (tosL >= 0) {
-                                        throw new WASMRuntimeException("integer overflow");
-                                    }
-                                }
-                            }
-
-                            this.stack.push(Value.i64(tosL));
-                            break;
-                        }
-
+                        I64_TRUNC_SAT_F64_U(stack);
+                        break;
                     case I32_TRUNC_F64_S:
-                        {
-                            var tos = this.stack.pop().asDouble();
-
-                            if (Double.isNaN(tos)) {
-                                throw new WASMRuntimeException("invalid conversion to integer");
-                            }
-
-                            var tosL = (long) tos;
-                            if (tosL < Integer.MIN_VALUE || tosL > Integer.MAX_VALUE) {
-                                throw new WASMRuntimeException("integer overflow");
-                            }
-
-                            this.stack.push(Value.i32(tosL));
-                            break;
-                        }
+                        I32_TRUNC_F64_S(stack);
+                        break;
                     case I32_TRUNC_F64_U:
-                        {
-                            double tos = this.stack.pop().asDouble();
-                            if (Double.isNaN(tos)) {
-                                throw new WASMRuntimeException("invalid conversion to integer");
-                            }
-
-                            var tosL = (long) tos;
-                            if (tosL < 0 || tosL > 0xFFFFFFFFL) {
-                                throw new WASMRuntimeException("integer overflow");
-                            }
-                            this.stack.push(Value.i32(tosL & 0xFFFFFFFFL));
-                            break;
-                        }
+                        I32_TRUNC_F64_U(stack);
+                        break;
                     case I64_TRUNC_F32_S:
-                        {
-                            var tos = this.stack.pop().asFloat();
-
-                            if (Float.isNaN(tos)) {
-                                throw new WASMRuntimeException("invalid conversion to integer");
-                            }
-
-                            if (tos < Long.MIN_VALUE || tos >= Long.MAX_VALUE) {
-                                throw new WASMRuntimeException("integer overflow");
-                            }
-
-                            this.stack.push(Value.i64((long) tos));
-                            break;
-                        }
+                        I64_TRUNC_F32_S(stack);
+                        break;
                     case MEMORY_INIT:
-                        {
-                            var segmentId = (int) operands[0];
-                            var memidx = (int) operands[1];
-                            if (memidx != 0)
-                                throw new WASMRuntimeException(
-                                        "We don't support non zero index for memory: " + memidx);
-                            var size = this.stack.pop().asInt();
-                            var offset = this.stack.pop().asInt();
-                            var destination = this.stack.pop().asInt();
-                            instance.getMemory()
-                                    .initPassiveSegment(segmentId, destination, offset, size);
-                            break;
-                        }
+                        MEMORY_INIT(stack, instance, operands);
+                        break;
                     case TABLE_INIT:
-                        {
-                            var tableidx = (int) operands[1];
-                            var elementidx = (int) operands[0];
-
-                            var size = this.stack.pop().asInt();
-                            var elemidx = this.stack.pop().asInt();
-                            var offset = this.stack.pop().asInt();
-                            var end = offset + size;
-
-                            var table = instance.getTable(tableidx);
-                            if (table == null) {
-                                table = instance.getImports().getTables()[tableidx].getTable();
-                            }
-
-                            if (size < 0
-                                    || elementidx > instance.getElementSize()
-                                    || instance.getElement(elementidx) == null
-                                    || elemidx + size > instance.getElement(elementidx).getSize()
-                                    || end > table.getSize()) {
-                                throw new WASMRuntimeException("out of bounds table access");
-                            }
-
-                            for (int i = offset; i < end; i++) {
-                                var val = getRuntimeElementValue(elementidx, elemidx++);
-                                if (val > instance.getFunctionsSize()) {
-                                    throw new WASMRuntimeException("out of bounds table access");
-                                }
-                                table.setRef(i, val);
-                            }
-                            break;
-                        }
+                        TABLE_INIT(stack, instance, operands);
+                        break;
                     case DATA_DROP:
-                        {
-                            var segment = (int) operands[0];
-                            instance.getMemory().drop(segment);
-                            break;
-                        }
+                        DATA_DROP(instance, operands);
+                        break;
                     case MEMORY_COPY:
-                        {
-                            var memidxSrc = (int) operands[0];
-                            var memidxDst = (int) operands[1];
-                            if (memidxDst != 0 && memidxSrc != 0)
-                                throw new WASMRuntimeException(
-                                        "We don't support non zero index for memory: "
-                                                + memidxSrc
-                                                + " "
-                                                + memidxDst);
-                            var size = this.stack.pop().asInt();
-                            var offset = this.stack.pop().asInt();
-                            var destination = this.stack.pop().asInt();
-                            instance.getMemory().copy(destination, offset, size);
-                            break;
-                        }
+                        MEMORY_COPY(stack, instance, operands);
+                        break;
                     case TABLE_COPY:
-                        {
-                            var tableidxSrc = (int) operands[1];
-                            var tableidxDst = (int) operands[0];
-
-                            var size = this.stack.pop().asInt();
-                            var s = this.stack.pop().asInt();
-                            var d = this.stack.pop().asInt();
-                            var src = instance.getTable(tableidxSrc);
-                            var dest = instance.getTable(tableidxDst);
-
-                            if (size < 0
-                                    || (s < 0 || (size + s) > src.getSize())
-                                    || (d < 0 || (size + d) > dest.getSize())) {
-                                throw new WASMRuntimeException("out of bounds table access");
-                            }
-
-                            for (int i = size - 1; i >= 0; i--) {
-                                if (d <= s) {
-                                    var val = src.getRef(s++);
-                                    dest.setRef(d++, val.asFuncRef());
-                                } else {
-                                    var val = src.getRef(s + i);
-                                    dest.setRef(d + i, val.asFuncRef());
-                                }
-                            }
-                            break;
-                        }
+                        TABLE_COPY(stack, instance, operands);
+                        break;
                     case TABLE_FILL:
-                        {
-                            var tableidx = (int) operands[0];
-
-                            var size = this.stack.pop().asInt();
-                            var val = this.stack.pop().asExtRef();
-                            var offset = this.stack.pop().asInt();
-                            var end = offset + size;
-
-                            var table = instance.getTable(tableidx);
-                            if (table == null) {
-                                table = instance.getImports().getTables()[tableidx].getTable();
-                            }
-
-                            if (size < 0 || end > table.getSize()) {
-                                throw new WASMRuntimeException("out of bounds table access");
-                            }
-
-                            for (int i = offset; i < end; i++) {
-                                table.setRef(i, val);
-                            }
-                            break;
-                        }
+                        TABLE_FILL(stack, instance, operands);
+                        break;
                     case TABLE_SIZE:
-                        {
-                            var tableidx = (int) operands[0];
-                            var table = instance.getTable(tableidx);
-                            if (table == null) {
-                                table = instance.getImports().getTables()[tableidx].getTable();
-                            }
-
-                            this.stack.push(Value.i32(table.getSize()));
-                            break;
-                        }
+                        TABLE_SIZE(stack, instance, operands);
+                        break;
                     case TABLE_GROW:
-                        {
-                            var tableidx = (int) operands[0];
-                            var table = instance.getTable(tableidx);
-                            if (table == null) {
-                                table = instance.getImports().getTables()[tableidx].getTable();
-                            }
-
-                            var size = stack.pop().asInt();
-                            var valValue = stack.pop();
-                            var val = valValue.asExtRef();
-
-                            var res = table.grow(size, val);
-                            stack.push(Value.i32(res));
-                            break;
-                        }
+                        TABLE_GROW(stack, instance, operands);
+                        break;
                     case REF_FUNC:
-                        {
-                            stack.push(Value.funcRef(operands[0]));
-                            break;
-                        }
+                        stack.push(Value.funcRef(operands[0]));
+                        break;
                     case REF_NULL:
-                        {
-                            var type = ValueType.byId(operands[0]);
-                            stack.push(new Value(type, (long) REF_NULL_VALUE));
-                            break;
-                        }
+                        REF_NULL(stack, operands);
+                        break;
                     case REF_IS_NULL:
-                        {
-                            var val = this.stack.pop();
-                            this.stack.push(
-                                    val.equals(Value.EXTREF_NULL) || val.equals(Value.FUNCREF_NULL)
-                                            ? Value.TRUE
-                                            : Value.FALSE);
-                            break;
-                        }
+                        REF_IS_NULL(stack);
+                        break;
                     case ELEM_DROP:
-                        {
-                            var x = (int) operands[0];
-                            instance.setElement(x, null);
-                            break;
-                        }
+                        ELEM_DROP(instance, operands);
+                        break;
                     default:
                         throw new RuntimeException(
                                 "Machine doesn't recognize Instruction " + instruction);
@@ -1952,39 +757,1541 @@ public class Machine {
         }
     }
 
-    private Value prepareControlTransfer(StackFrame frame, boolean consume) {
+    private static void I32_GE_U(MStack stack) {
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        stack.push(Integer.compareUnsigned(a, b) >= 0 ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I64_GT_U(MStack stack) {
+        var b = stack.pop().asLong();
+        var a = stack.pop().asLong();
+        stack.push(Long.compareUnsigned(a, b) > 0 ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I32_GE_S(MStack stack) {
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        stack.push(a >= b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I64_GE_U(MStack stack) {
+        var b = stack.pop().asLong();
+        var a = stack.pop().asLong();
+        stack.push(Long.compareUnsigned(a, b) >= 0 ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I64_GE_S(MStack stack) {
+        var b = stack.pop().asLong();
+        var a = stack.pop().asLong();
+        stack.push(a >= b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I32_LE_S(MStack stack) {
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        stack.push(a <= b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I32_LE_U(MStack stack) {
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        stack.push(Integer.compareUnsigned(a, b) <= 0 ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I64_LE_S(MStack stack) {
+        var b = stack.pop().asLong();
+        var a = stack.pop().asLong();
+        stack.push(a <= b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I64_LE_U(MStack stack) {
+        var b = stack.pop().asLong();
+        var a = stack.pop().asLong();
+        stack.push(Long.compareUnsigned(a, b) <= 0 ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void F32_EQ(MStack stack) {
+        var a = stack.pop().asFloat();
+        var b = stack.pop().asFloat();
+        stack.push(a == b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void F64_EQ(MStack stack) {
+        var a = stack.pop().asDouble();
+        var b = stack.pop().asDouble();
+        stack.push(a == b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I32_CLZ(MStack stack) {
+        var tos = stack.pop().asInt();
+        var count = Integer.numberOfLeadingZeros(tos);
+        stack.push(Value.i32(count));
+    }
+
+    private static void I32_CTZ(MStack stack) {
+        var tos = stack.pop().asInt();
+        var count = Integer.numberOfTrailingZeros(tos);
+        stack.push(Value.i32(count));
+    }
+
+    private static void I32_POPCNT(MStack stack) {
+        var tos = stack.pop().asInt();
+        var count = Integer.bitCount(tos);
+        stack.push(Value.i32(count));
+    }
+
+    private static void I32_ADD(MStack stack) {
+        var a = stack.pop().asInt();
+        var b = stack.pop().asInt();
+        stack.push(Value.i32(a + b));
+    }
+
+    private static void I64_ADD(MStack stack) {
+        var a = stack.pop().asLong();
+        var b = stack.pop().asLong();
+        stack.push(Value.i64(a + b));
+    }
+
+    private static void I32_SUB(MStack stack) {
+        var a = stack.pop().asInt();
+        var b = stack.pop().asInt();
+        stack.push(Value.i32(b - a));
+    }
+
+    private static void I64_SUB(MStack stack) {
+        var a = stack.pop().asLong();
+        var b = stack.pop().asLong();
+        stack.push(Value.i64(b - a));
+    }
+
+    private static void I32_MUL(MStack stack) {
+        var a = stack.pop().asInt();
+        var b = stack.pop().asInt();
+        stack.push(Value.i32(a * b));
+    }
+
+    private static void I64_MUL(MStack stack) {
+        var a = stack.pop().asLong();
+        var b = stack.pop().asLong();
+        stack.push(Value.i64(a * b));
+    }
+
+    private static void I32_DIV_S(MStack stack) {
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        if (a == Integer.MIN_VALUE && b == -1) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        stack.push(Value.i32(a / b));
+    }
+
+    private static void I32_DIV_U(MStack stack) {
+        var b = stack.pop().asUInt();
+        var a = stack.pop().asUInt();
+        stack.push(Value.i32(a / b));
+    }
+
+    private static void I64_EXTEND_8_S(MStack stack) {
+        var tos = stack.pop().asByte();
+        stack.push(Value.i64(tos));
+    }
+
+    private static void I64_EXTEND_16_S(MStack stack) {
+        var tos = stack.pop().asShort();
+        stack.push(Value.i64(tos));
+    }
+
+    private static void I64_EXTEND_32_S(MStack stack) {
+        var tos = stack.pop().asInt();
+        stack.push(Value.i64(tos));
+    }
+
+    private static void F64_CONVERT_I64_U(MStack stack) {
+        var tos = stack.pop().asLong();
+        double d;
+        if (tos >= 0) {
+            d = tos;
+        } else {
+            // only preserve 53 bits of precision (plus one for rounding) to
+            // avoid rounding errors (64 - 53 == 11)
+            long sum = tos + 0x3ff;
+            // did the add overflow? add the MSB back on after the shift
+            long shiftIn = ((sum ^ tos) & Long.MIN_VALUE) >>> 10;
+            d = Math.scalb((double) ((sum >>> 11) | shiftIn), 11);
+        }
+        stack.push(Value.f64(Double.doubleToLongBits(d)));
+    }
+
+    private static void F64_CONVERT_I32_U(MStack stack) {
+        long tos = stack.pop().asUInt();
+        stack.push(Value.f64(Double.doubleToLongBits(tos)));
+    }
+
+    private static void F64_CONVERT_I32_S(MStack stack) {
+        var tos = stack.pop().asInt();
+        stack.push(Value.fromDouble(tos));
+    }
+
+    private static void I32_EXTEND_8_S(MStack stack) {
+        var tos = stack.pop().asByte();
+        stack.push(Value.i32(tos));
+    }
+
+    private static void F64_NEAREST(MStack stack) {
+        var val = stack.pop().asDouble();
+        stack.push(Value.fromDouble(Math.rint(val)));
+    }
+
+    private static void F32_NEAREST(MStack stack) {
+        var val = stack.pop().asFloat();
+        stack.push(Value.fromFloat((float) Math.rint(val)));
+    }
+
+    private static void F64_TRUNC(MStack stack) {
+        var val = stack.pop().asDouble();
+        stack.push(Value.fromDouble((val < 0) ? Math.ceil(val) : Math.floor(val)));
+    }
+
+    private static void F64_CEIL(MStack stack) {
+        var val = stack.pop().asDouble();
+        stack.push(Value.fromDouble(Math.ceil(val)));
+    }
+
+    private static void F32_CEIL(MStack stack) {
+        var val = stack.pop().asFloat();
+        stack.push(Value.fromFloat((float) Math.ceil(val)));
+    }
+
+    private static void F64_FLOOR(MStack stack) {
+        var val = stack.pop().asDouble();
+        stack.push(Value.fromDouble(Math.floor(val)));
+    }
+
+    private static void F32_FLOOR(MStack stack) {
+        var val = stack.pop().asFloat();
+        stack.push(Value.fromFloat((float) Math.floor(val)));
+    }
+
+    private static void F64_SQRT(MStack stack) {
+        var val = stack.pop().asDouble();
+        stack.push(Value.fromDouble(Math.sqrt(val)));
+    }
+
+    private static void F32_SQRT(MStack stack) {
+        var val = stack.pop().asFloat();
+        stack.push(Value.fromFloat((float) Math.sqrt(val)));
+    }
+
+    private static void F64_MAX(MStack stack) {
+        var a = stack.pop().asDouble();
+        var b = stack.pop().asDouble();
+        stack.push(Value.fromDouble(Math.max(a, b)));
+    }
+
+    private static void F32_MAX(MStack stack) {
+        var a = stack.pop().asFloat();
+        var b = stack.pop().asFloat();
+        stack.push(Value.fromFloat(Math.max(a, b)));
+    }
+
+    private static void F64_MIN(MStack stack) {
+        var a = stack.pop().asDouble();
+        var b = stack.pop().asDouble();
+        stack.push(Value.fromDouble(Math.min(a, b)));
+    }
+
+    private static void F32_MIN(MStack stack) {
+        var a = stack.pop().asFloat();
+        var b = stack.pop().asFloat();
+        stack.push(Value.fromFloat(Math.min(a, b)));
+    }
+
+    private static void F64_DIV(MStack stack) {
+        var a = stack.pop().asDouble();
+        var b = stack.pop().asDouble();
+        stack.push(Value.fromDouble(b / a));
+    }
+
+    private static void F32_DIV(MStack stack) {
+        var a = stack.pop().asFloat();
+        var b = stack.pop().asFloat();
+        stack.push(Value.fromFloat(b / a));
+    }
+
+    private static void F64_MUL(MStack stack) {
+        var a = stack.pop().asDouble();
+        var b = stack.pop().asDouble();
+        stack.push(Value.fromDouble(b * a));
+    }
+
+    private static void F32_MUL(MStack stack) {
+        var a = stack.pop().asFloat();
+        var b = stack.pop().asFloat();
+        stack.push(Value.fromFloat(b * a));
+    }
+
+    private static void F64_SUB(MStack stack) {
+        var a = stack.pop().asDouble();
+        var b = stack.pop().asDouble();
+        stack.push(Value.fromDouble(b - a));
+    }
+
+    private static void F32_SUB(MStack stack) {
+        var a = stack.pop().asFloat();
+        var b = stack.pop().asFloat();
+        stack.push(Value.fromFloat(b - a));
+    }
+
+    private static void F64_ADD(MStack stack) {
+        var a = stack.pop().asDouble();
+        var b = stack.pop().asDouble();
+        stack.push(Value.fromDouble(a + b));
+    }
+
+    private static void F32_ADD(MStack stack) {
+        var a = stack.pop().asFloat();
+        var b = stack.pop().asFloat();
+        stack.push(Value.fromFloat(a + b));
+    }
+
+    private static void I32_ROTR(MStack stack) {
+        var c = stack.pop().asInt();
+        var v = stack.pop().asInt();
+        var z = (v >>> c) | (v << (32 - c));
+        stack.push(Value.i32(z));
+    }
+
+    private static void I32_ROTL(MStack stack) {
+        var c = stack.pop().asInt();
+        var v = stack.pop().asInt();
+        var z = (v << c) | (v >>> (32 - c));
+        stack.push(Value.i32(z));
+    }
+
+    private static void I32_SHR_U(MStack stack) {
+        var c = stack.pop().asInt();
+        var v = stack.pop().asInt();
+        stack.push(Value.i32(v >>> c));
+    }
+
+    private static void I32_SHR_S(MStack stack) {
+        var c = stack.pop().asInt();
+        var v = stack.pop().asInt();
+        stack.push(Value.i32(v >> c));
+    }
+
+    private static void I32_SHL(MStack stack) {
+        var c = stack.pop().asInt();
+        var v = stack.pop().asInt();
+        stack.push(Value.i32(v << c));
+    }
+
+    private static void I32_XOR(MStack stack) {
+        var a = stack.pop().asInt();
+        var b = stack.pop().asInt();
+        stack.push(Value.i32(a ^ b));
+    }
+
+    private static void I32_OR(MStack stack) {
+        var a = stack.pop().asInt();
+        var b = stack.pop().asInt();
+        stack.push(Value.i32(a | b));
+    }
+
+    private static void I32_AND(MStack stack) {
+        var a = stack.pop().asInt();
+        var b = stack.pop().asInt();
+        stack.push(Value.i32(a & b));
+    }
+
+    private static void I64_POPCNT(MStack stack) {
+        var tos = stack.pop().asLong();
+        var count = Long.bitCount(tos);
+        stack.push(Value.i64(count));
+    }
+
+    private static void I64_CTZ(MStack stack) {
+        var tos = stack.pop();
+        var count = Long.numberOfTrailingZeros(tos.asLong());
+        stack.push(Value.i64(count));
+    }
+
+    private static void I64_CLZ(MStack stack) {
+        var tos = stack.pop();
+        var count = Long.numberOfLeadingZeros(tos.asLong());
+        stack.push(Value.i64(count));
+    }
+
+    private static void I64_ROTR(MStack stack) {
+        var c = stack.pop().asLong();
+        var v = stack.pop().asLong();
+        var z = (v >>> c) | (v << (64 - c));
+        stack.push(Value.i64(z));
+    }
+
+    private static void I64_ROTL(MStack stack) {
+        var c = stack.pop().asLong();
+        var v = stack.pop().asLong();
+        var z = (v << c) | (v >>> (64 - c));
+        stack.push(Value.i64(z));
+    }
+
+    private static void I64_REM_U(MStack stack) {
+        var b = stack.pop().asLong();
+        var a = stack.pop().asLong();
+        stack.push(Value.i64(Long.remainderUnsigned(a, b)));
+    }
+
+    private static void I64_REM_S(MStack stack) {
+        var b = stack.pop().asLong();
+        var a = stack.pop().asLong();
+        stack.push(Value.i64(a % b));
+    }
+
+    private static void I64_SHR_U(MStack stack) {
+        var c = stack.pop().asLong();
+        var v = stack.pop().asLong();
+        stack.push(Value.i64(v >>> c));
+    }
+
+    private static void I64_SHR_S(MStack stack) {
+        var c = stack.pop().asLong();
+        var v = stack.pop().asLong();
+        stack.push(Value.i64(v >> c));
+    }
+
+    private static void I64_SHL(MStack stack) {
+        var c = stack.pop().asLong();
+        var v = stack.pop().asLong();
+        stack.push(Value.i64(v << c));
+    }
+
+    private static void I64_XOR(MStack stack) {
+        var a = stack.pop().asLong();
+        var b = stack.pop().asLong();
+        stack.push(Value.i64(a ^ b));
+    }
+
+    private static void I64_OR(MStack stack) {
+        var a = stack.pop().asLong();
+        var b = stack.pop().asLong();
+        stack.push(Value.i64(a | b));
+    }
+
+    private static void I64_AND(MStack stack) {
+        var a = stack.pop().asLong();
+        var b = stack.pop().asLong();
+        stack.push(Value.i64(a & b));
+    }
+
+    private static void I32_REM_U(MStack stack) {
+        var b = stack.pop().asUInt();
+        var a = stack.pop().asUInt();
+        stack.push(Value.i32(a % b));
+    }
+
+    private static void I32_REM_S(MStack stack) {
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        stack.push(Value.i32(a % b));
+    }
+
+    private static void I64_DIV_U(MStack stack) {
+        var b = stack.pop().asLong();
+        var a = stack.pop().asLong();
+        stack.push(Value.i64(Long.divideUnsigned(a, b)));
+    }
+
+    private static void I64_DIV_S(MStack stack) {
+        var b = stack.pop().asLong();
+        var a = stack.pop().asLong();
+        if (a == Long.MIN_VALUE && b == -1L) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        stack.push(Value.i64(a / b));
+    }
+
+    private static void I64_GT_S(MStack stack) {
+        var b = stack.pop().asLong();
+        var a = stack.pop().asLong();
+        stack.push(a > b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I32_GT_U(MStack stack) {
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        stack.push(Integer.compareUnsigned(a, b) > 0 ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I32_GT_S(MStack stack) {
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        stack.push(a > b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I64_LT_U(MStack stack) {
+        var b = stack.pop().asLong();
+        var a = stack.pop().asLong();
+        stack.push(Long.compareUnsigned(a, b) < 0 ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I64_LT_S(MStack stack) {
+        var b = stack.pop().asLong();
+        var a = stack.pop().asLong();
+        stack.push(a < b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I32_LT_U(MStack stack) {
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        stack.push(Integer.compareUnsigned(a, b) < 0 ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I32_LT_S(MStack stack) {
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        stack.push(a < b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I64_EQZ(MStack stack) {
+        var a = stack.pop().asLong();
+        stack.push(a == 0L ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I32_EQZ(MStack stack) {
+        var a = stack.pop().asInt();
+        stack.push(a == 0 ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I64_NE(MStack stack) {
+        var a = stack.pop().asLong();
+        var b = stack.pop().asLong();
+        stack.push(a == b ? Value.FALSE : Value.TRUE);
+    }
+
+    private static void I32_NE(MStack stack) {
+        var a = stack.pop().asInt();
+        var b = stack.pop().asInt();
+        stack.push(a == b ? Value.FALSE : Value.TRUE);
+    }
+
+    private static void I64_EQ(MStack stack) {
+        var a = stack.pop().asLong();
+        var b = stack.pop().asLong();
+        stack.push(a == b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void I32_EQ(MStack stack) {
+        var a = stack.pop().asInt();
+        var b = stack.pop().asInt();
+        stack.push(a == b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void MEMORY_SIZE(MStack stack, Instance instance) {
+        var sz = instance.getMemory().getSize();
+        stack.push(Value.i32(sz));
+    }
+
+    private static void I64_STORE32(MStack stack, Instance instance, long[] operands) {
+        var value = stack.pop().asLong();
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        instance.getMemory().writeI32(ptr, (int) value);
+    }
+
+    private static void I64_STORE8(MStack stack, Instance instance, long[] operands) {
+        var value = stack.pop().asByte();
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        instance.getMemory().writeByte(ptr, value);
+    }
+
+    private static void F64_PROMOTE_F32(MStack stack) {
+        var tos = stack.pop();
+        stack.push(Value.fromDouble(tos.asFloat()));
+    }
+
+    private static void F64_REINTERPRET_I64(MStack stack) {
+        var tos = stack.pop();
+        stack.push(Value.f64(tos.asLong()));
+    }
+
+    private static void I32_WRAP_I64(MStack stack) {
+        var tos = stack.pop();
+        stack.push(Value.i32(tos.asInt()));
+    }
+
+    private static void I64_EXTEND_I32_S(MStack stack) {
+        var tos = stack.pop();
+        stack.push(Value.i64(tos.asInt()));
+    }
+
+    private static void I64_EXTEND_I32_U(MStack stack) {
+        var tos = stack.pop();
+        stack.push(Value.i64(tos.asUInt()));
+    }
+
+    private static void I32_REINTERPRET_F32(MStack stack) {
+        var tos = stack.pop();
+        stack.push(Value.i32(tos.asInt()));
+    }
+
+    private static void I64_REINTERPRET_F64(MStack stack) {
+        var tos = stack.pop();
+        stack.push(Value.i64(tos.asLong()));
+    }
+
+    private static void F32_REINTERPRET_I32(MStack stack) {
+        var tos = stack.pop();
+        stack.push(Value.f32(tos.asInt()));
+    }
+
+    private static void F32_DEMOTE_F64(MStack stack) {
+        var val = stack.pop().asDouble();
+
+        stack.push(Value.fromFloat((float) val));
+    }
+
+    private static void F32_CONVERT_I32_S(MStack stack) {
+        var tos = stack.pop().asInt();
+        stack.push(Value.fromFloat((float) tos));
+    }
+
+    private static void I32_EXTEND_16_S(MStack stack) {
+        var original = stack.pop().asInt() & 0xFFFF;
+        if ((original & 0x8000) != 0) original |= 0xFFFF0000;
+        stack.push(Value.i32(original & 0xFFFFFFFFL));
+    }
+
+    private static void I64_TRUNC_F64_S(MStack stack) {
+        double tos = stack.pop().asDouble();
+
+        if (Double.isNaN(tos)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+
+        long tosL = (long) tos;
+        if (tos == (double) Long.MIN_VALUE) {
+            tosL = Long.MIN_VALUE;
+        } else if (tosL == Long.MIN_VALUE || tosL == Long.MAX_VALUE) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+
+        stack.push(Value.i64(tosL));
+    }
+
+    private static void F32_COPYSIGN(MStack stack) {
+        var a = stack.pop().asFloat();
+        var b = stack.pop().asFloat();
+
+        if (a == 0xFFC00000L) { // +NaN
+            stack.push(Value.fromFloat(Math.copySign(b, -1)));
+        } else if (a == 0x7FC00000L) { // -NaN
+            stack.push(Value.fromFloat(Math.copySign(b, +1)));
+        } else {
+            stack.push(Value.fromFloat(Math.copySign(b, a)));
+        }
+    }
+
+    private static void F32_ABS(MStack stack) {
+        var val = stack.pop().asFloat();
+
+        stack.push(Value.fromFloat(Math.abs(val)));
+    }
+
+    private static void F64_ABS(MStack stack) {
+        var val = stack.pop().asDouble();
+
+        stack.push(Value.fromDouble(Math.abs(val)));
+    }
+
+    private static void F32_NE(MStack stack) {
+        var a = stack.pop().asFloat();
+        var b = stack.pop().asFloat();
+
+        stack.push(a == b ? Value.FALSE : Value.TRUE);
+    }
+
+    private static void F64_NE(MStack stack) {
+        var a = stack.pop().asDouble();
+        var b = stack.pop().asDouble();
+
+        stack.push(a == b ? Value.FALSE : Value.TRUE);
+    }
+
+    private static void F32_LT(MStack stack) {
+        var a = stack.pop().asFloat();
+        var b = stack.pop().asFloat();
+
+        stack.push(a > b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void F64_LT(MStack stack) {
+        var a = stack.pop().asDouble();
+        var b = stack.pop().asDouble();
+
+        stack.push(a > b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void F32_LE(MStack stack) {
+        var a = stack.pop().asFloat();
+        var b = stack.pop().asFloat();
+
+        stack.push(a >= b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void F64_LE(MStack stack) {
+        var a = stack.pop().asDouble();
+        var b = stack.pop().asDouble();
+
+        stack.push(a >= b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void F32_GE(MStack stack) {
+        var a = stack.pop().asFloat();
+        var b = stack.pop().asFloat();
+
+        stack.push(a <= b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void F64_GE(MStack stack) {
+        var a = stack.pop().asDouble();
+        var b = stack.pop().asDouble();
+
+        stack.push(a <= b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void F32_GT(MStack stack) {
+        var a = stack.pop().asFloat();
+        var b = stack.pop().asFloat();
+
+        stack.push(a < b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void F64_GT(MStack stack) {
+        var a = stack.pop().asDouble();
+        var b = stack.pop().asDouble();
+
+        stack.push(a < b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void F32_CONVERT_I32_U(MStack stack) {
+        var tos = stack.pop().asUInt();
+
+        stack.push(Value.fromFloat((float) tos));
+    }
+
+    private static void F32_CONVERT_I64_S(MStack stack) {
+        var tos = stack.pop().asLong();
+
+        stack.push(Value.fromFloat((float) tos));
+    }
+
+    private static void REF_NULL(MStack stack, long[] operands) {
+        var type = ValueType.byId(operands[0]);
+        stack.push(new Value(type, (long) REF_NULL_VALUE));
+    }
+
+    private static void ELEM_DROP(Instance instance, long[] operands) {
+        var x = (int) operands[0];
+        instance.setElement(x, null);
+    }
+
+    private static void REF_IS_NULL(MStack stack) {
+        var val = stack.pop();
+        stack.push(
+                val.equals(Value.EXTREF_NULL) || val.equals(Value.FUNCREF_NULL)
+                        ? Value.TRUE
+                        : Value.FALSE);
+    }
+
+    private static void DATA_DROP(Instance instance, long[] operands) {
+        var segment = (int) operands[0];
+        instance.getMemory().drop(segment);
+    }
+
+    private static void F64_CONVERT_I64_S(MStack stack) {
+        var tos = stack.pop().asLong();
+
+        stack.push(Value.fromDouble((double) tos));
+    }
+
+    private static void TABLE_GROW(MStack stack, Instance instance, long[] operands) {
+        var tableidx = (int) operands[0];
+        var table = instance.getTable(tableidx);
+        if (table == null) {
+            table = instance.getImports().getTables()[tableidx].getTable();
+        }
+
+        var size = stack.pop().asInt();
+        var valValue = stack.pop();
+        var val = valValue.asExtRef();
+
+        var res = table.grow(size, val);
+        stack.push(Value.i32(res));
+    }
+
+    private static void TABLE_SIZE(MStack stack, Instance instance, long[] operands) {
+        var tableidx = (int) operands[0];
+        var table = instance.getTable(tableidx);
+        if (table == null) {
+            table = instance.getImports().getTables()[tableidx].getTable();
+        }
+
+        stack.push(Value.i32(table.getSize()));
+    }
+
+    private static void TABLE_FILL(MStack stack, Instance instance, long[] operands) {
+        var tableidx = (int) operands[0];
+
+        var size = stack.pop().asInt();
+        var val = stack.pop().asExtRef();
+        var offset = stack.pop().asInt();
+        var end = offset + size;
+
+        var table = instance.getTable(tableidx);
+        if (table == null) {
+            table = instance.getImports().getTables()[tableidx].getTable();
+        }
+
+        if (size < 0 || end > table.getSize()) {
+            throw new WASMRuntimeException("out of bounds table access");
+        }
+
+        for (int i = offset; i < end; i++) {
+            table.setRef(i, val);
+        }
+    }
+
+    private static void TABLE_COPY(MStack stack, Instance instance, long[] operands) {
+        var tableidxSrc = (int) operands[1];
+        var tableidxDst = (int) operands[0];
+
+        var size = stack.pop().asInt();
+        var s = stack.pop().asInt();
+        var d = stack.pop().asInt();
+        var src = instance.getTable(tableidxSrc);
+        var dest = instance.getTable(tableidxDst);
+
+        if (size < 0
+                || (s < 0 || (size + s) > src.getSize())
+                || (d < 0 || (size + d) > dest.getSize())) {
+            throw new WASMRuntimeException("out of bounds table access");
+        }
+
+        for (int i = size - 1; i >= 0; i--) {
+            if (d <= s) {
+                var val = src.getRef(s++);
+                dest.setRef(d++, val.asFuncRef());
+            } else {
+                var val = src.getRef(s + i);
+                dest.setRef(d + i, val.asFuncRef());
+            }
+        }
+    }
+
+    private static void MEMORY_COPY(MStack stack, Instance instance, long[] operands) {
+        var memidxSrc = (int) operands[0];
+        var memidxDst = (int) operands[1];
+        if (memidxDst != 0 && memidxSrc != 0)
+            throw new WASMRuntimeException(
+                    "We don't support non zero index for memory: " + memidxSrc + " " + memidxDst);
+        var size = stack.pop().asInt();
+        var offset = stack.pop().asInt();
+        var destination = stack.pop().asInt();
+        instance.getMemory().copy(destination, offset, size);
+    }
+
+    private static void TABLE_INIT(MStack stack, Instance instance, long[] operands) {
+        var tableidx = (int) operands[1];
+        var elementidx = (int) operands[0];
+
+        var size = stack.pop().asInt();
+        var elemidx = stack.pop().asInt();
+        var offset = stack.pop().asInt();
+        var end = offset + size;
+
+        var table = instance.getTable(tableidx);
+        if (table == null) {
+            table = instance.getImports().getTables()[tableidx].getTable();
+        }
+
+        if (size < 0
+                || elementidx > instance.getElementSize()
+                || instance.getElement(elementidx) == null
+                || elemidx + size > instance.getElement(elementidx).getSize()
+                || end > table.getSize()) {
+            throw new WASMRuntimeException("out of bounds table access");
+        }
+
+        for (int i = offset; i < end; i++) {
+            var val = getRuntimeElementValue(instance, elementidx, elemidx++);
+            if (val > instance.getFunctionsSize()) {
+                throw new WASMRuntimeException("out of bounds table access");
+            }
+            table.setRef(i, val);
+        }
+    }
+
+    private static void MEMORY_INIT(MStack stack, Instance instance, long[] operands) {
+        var segmentId = (int) operands[0];
+        var memidx = (int) operands[1];
+        if (memidx != 0)
+            throw new WASMRuntimeException("We don't support non zero index for memory: " + memidx);
+        var size = stack.pop().asInt();
+        var offset = stack.pop().asInt();
+        var destination = stack.pop().asInt();
+        instance.getMemory().initPassiveSegment(segmentId, destination, offset, size);
+    }
+
+    private static void I64_TRUNC_F32_S(MStack stack) {
+        var tos = stack.pop().asFloat();
+
+        if (Float.isNaN(tos)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+
+        if (tos < Long.MIN_VALUE || tos >= Long.MAX_VALUE) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+
+        stack.push(Value.i64((long) tos));
+    }
+
+    private static void I32_TRUNC_F64_U(MStack stack) {
+        double tos = stack.pop().asDouble();
+        if (Double.isNaN(tos)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+
+        var tosL = (long) tos;
+        if (tosL < 0 || tosL > 0xFFFFFFFFL) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        stack.push(Value.i32(tosL & 0xFFFFFFFFL));
+    }
+
+    private static void I32_TRUNC_F64_S(MStack stack) {
+        var tos = stack.pop().asDouble();
+
+        if (Double.isNaN(tos)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+
+        var tosL = (long) tos;
+        if (tosL < Integer.MIN_VALUE || tosL > Integer.MAX_VALUE) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+
+        stack.push(Value.i32(tosL));
+    }
+
+    private static void I64_TRUNC_SAT_F64_U(MStack stack) {
+        double tos = stack.pop().asDouble();
+
+        long tosL;
+        if (Double.isNaN(tos) || tos < 0) {
+            tosL = 0L;
+        } else if (tos > Math.pow(2, 64) - 1) {
+            tosL = 0xFFFFFFFFFFFFFFFFL;
+        } else {
+            if (tos < Long.MAX_VALUE) {
+                tosL = (long) tos;
+            } else {
+                // See I64_TRUNC_F32_U for notes on implementation. This is
+                // the double-based equivalent of that.
+                tosL = Long.MAX_VALUE + (long) (tos - (double) Long.MAX_VALUE) + 1;
+                if (tosL >= 0) {
+                    throw new WASMRuntimeException("integer overflow");
+                }
+            }
+        }
+
+        stack.push(Value.i64(tosL));
+    }
+
+    private static void I64_TRUNC_SAT_F64_S(MStack stack) {
+        var tos = stack.pop().asDouble();
+
+        if (Double.isNaN(tos)) {
+            tos = 0;
+        } else if (tos <= Long.MIN_VALUE) {
+            tos = Long.MIN_VALUE;
+        } else if (tos >= Long.MAX_VALUE) {
+            tos = Long.MAX_VALUE;
+        }
+
+        stack.push(Value.i64((long) tos));
+    }
+
+    private static void I64_TRUNC_SAT_F32_U(MStack stack) {
+        var tos = stack.pop().asFloat();
+
+        long tosL;
+        if (Float.isNaN(tos) || tos < 0) {
+            tosL = 0L;
+        } else if (tos > Math.pow(2, 64) - 1) {
+            tosL = 0xFFFFFFFFFFFFFFFFL;
+        } else {
+            if (tos < Long.MAX_VALUE) {
+                tosL = (long) tos;
+            } else {
+                // See I64_TRUNC_F32_U for notes on implementation. This is
+                // the double-based equivalent of that.
+                tosL = Long.MAX_VALUE + (long) (tos - (double) Long.MAX_VALUE) + 1;
+                if (tosL >= 0) {
+                    throw new WASMRuntimeException("integer overflow");
+                }
+            }
+        }
+
+        stack.push(Value.i64(tosL));
+    }
+
+    private static void I64_TRUNC_SAT_F32_S(MStack stack) {
+        var tos = stack.pop().asFloat();
+
+        if (Float.isNaN(tos)) {
+            tos = 0;
+        } else if (tos <= Long.MIN_VALUE) {
+            tos = Long.MIN_VALUE;
+        } else if (tos >= Long.MAX_VALUE) {
+            tos = Long.MAX_VALUE;
+        }
+
+        stack.push(Value.i64((long) tos));
+    }
+
+    private static void I64_TRUNC_F64_U(MStack stack) {
+        var tos = stack.pop().asDouble();
+
+        if (Double.isNaN(tos)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+
+        if (tos >= 2 * (double) Long.MAX_VALUE) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+
+        long tosL;
+        if (tos < Long.MAX_VALUE) {
+            tosL = (long) tos;
+            if (tosL < 0) {
+                throw new WASMRuntimeException("integer overflow");
+            }
+        } else {
+            // See I64_TRUNC_F32_U for notes on implementation. This is
+            // the double-based equivalent of that.
+            tosL = Long.MAX_VALUE + (long) (tos - (double) Long.MAX_VALUE) + 1;
+            if (tosL >= 0) {
+                throw new WASMRuntimeException("integer overflow");
+            }
+        }
+
+        stack.push(Value.i64(tosL));
+    }
+
+    private static void I64_TRUNC_F32_U(MStack stack) {
+        var tos = stack.pop().asFloat();
+
+        if (Float.isNaN(tos)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+
+        if (tos >= 2 * (float) Long.MAX_VALUE) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+
+        long tosL;
+        if (tos < Long.MAX_VALUE) {
+            tosL = (long) tos;
+            if (tosL < 0) {
+                throw new WASMRuntimeException("integer overflow");
+            }
+        } else {
+            // This works for getting the unsigned value because binary addition
+            // yields the correct interpretation in both unsigned &
+            // 2's-complement
+            // no matter which the operands are considered to be.
+            tosL = Long.MAX_VALUE + (long) (tos - (float) Long.MAX_VALUE) + 1;
+            if (tosL >= 0) {
+                // Java's comparison operators assume signed integers. In the
+                // case
+                // that we're in the range of unsigned values where the sign bit
+                // is set, Java considers these values to be negative so we have
+                // to check for >= 0 to detect overflow.
+                throw new WASMRuntimeException("integer overflow");
+            }
+        }
+
+        stack.push(Value.i64(tosL));
+    }
+
+    private static void F32_CONVERT_I64_U(MStack stack) {
+        var tos = stack.pop().asLong();
+
+        float f;
+        if (tos >= 0) {
+            f = tos;
+        } else {
+            // only preserve 24 bits of precision (plus one for rounding) to
+            // avoid rounding errors (64 - 24 == 40)
+            long sum = tos + 0xff_ffff_ffffL;
+            // did the add overflow? add the MSB back on after the shift
+            long shiftIn = ((sum ^ tos) & Long.MIN_VALUE) >>> 39;
+            f = Math.scalb((float) ((sum >>> 40) | shiftIn), 40);
+        }
+
+        stack.push(Value.f32(Float.floatToIntBits(f)));
+    }
+
+    private static void I32_TRUNC_F32_U(MStack stack) {
+        var tos = stack.pop().asFloat();
+
+        if (Float.isNaN(tos)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+
+        long tosL = (long) tos;
+        if (tosL < 0 || tosL >= 0xFFFFFFFFL) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+
+        stack.push(Value.i32(tosL));
+    }
+
+    private static void I32_TRUNC_SAT_F64_U(MStack stack) {
+        double tos = Double.longBitsToDouble(stack.pop().asLong());
+
+        long tosL;
+        if (Double.isNaN(tos) || tos < 0) {
+            tosL = 0;
+        } else if (tos > 0xFFFFFFFFL) {
+            tosL = 0xFFFFFFFFL;
+        } else {
+            tosL = (long) tos;
+        }
+        stack.push(Value.i32(tosL));
+    }
+
+    private static void I32_TRUNC_SAY_F64_S(MStack stack) {
+        var tos = stack.pop().asDouble();
+
+        if (Double.isNaN(tos)) {
+            tos = 0;
+        } else if (tos <= Integer.MIN_VALUE) {
+            tos = Integer.MIN_VALUE;
+        } else if (tos >= Integer.MAX_VALUE) {
+            tos = Integer.MAX_VALUE;
+        }
+
+        stack.push(Value.i32((int) tos));
+    }
+
+    private static void I32_TRUNC_SAT_F32_U(MStack stack) {
+        var tos = stack.pop().asFloat();
+
+        long tosL;
+        if (Float.isNaN(tos) || tos < 0) {
+            tosL = 0L;
+        } else if (tos >= 0xFFFFFFFFL) {
+            tosL = 0xFFFFFFFFL;
+        } else {
+            tosL = (long) tos;
+        }
+
+        stack.push(Value.i32(tosL));
+    }
+
+    private static void I32_TRUNC_SAT_F32_S(MStack stack) {
+        var tos = stack.pop().asFloat();
+
+        if (Float.isNaN(tos)) {
+            tos = 0;
+        } else if (tos < Integer.MIN_VALUE) {
+            tos = Integer.MIN_VALUE;
+        } else if (tos > Integer.MAX_VALUE) {
+            tos = Integer.MAX_VALUE;
+        }
+
+        stack.push(Value.i32((int) tos));
+    }
+
+    private static void I32_TRUNC_F32_S(MStack stack) {
+        float tos = stack.pop().asFloat();
+
+        if (Float.isNaN(tos)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+
+        if (tos < Integer.MIN_VALUE || tos >= Integer.MAX_VALUE) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+
+        stack.push(Value.i32((long) tos));
+    }
+
+    private static void F64_COPYSIGN(MStack stack) {
+        var a = stack.pop().asDouble();
+        var b = stack.pop().asDouble();
+
+        if (a == 0xFFC0000000000000L) { // +NaN
+            stack.push(Value.fromDouble(Math.copySign(b, -1)));
+        } else if (a == 0x7FC0000000000000L) { // -NaN
+            stack.push(Value.fromDouble(Math.copySign(b, +1)));
+        } else {
+            stack.push(Value.fromDouble(Math.copySign(b, a)));
+        }
+    }
+
+    private static void F32_TRUNC(MStack stack) {
+        var val = stack.pop().asFloat();
+        stack.push(Value.fromFloat((float) ((val < 0) ? Math.ceil(val) : Math.floor(val))));
+    }
+
+    private static void CALL(
+            MStack stack, Instance instance, Stack<StackFrame> callStack, long[] operands) {
+        var funcId = (int) operands[0];
+        var typeId = instance.getFunctionType(funcId);
+        var type = instance.getTypes()[typeId];
+        // given a list of param types, let's pop those params off the stack
+        // and pass as args to the function call
+        var args = extractArgsForParams(stack, type.getParams());
+        call(stack, instance, callStack, funcId, args, type, false);
+    }
+
+    private static void F64_NEG(MStack stack) {
+        var tos = stack.pop().asDouble();
+
+        double result;
+        if (Double.isNaN(tos)) {
+            result = Double.longBitsToDouble(Double.doubleToRawLongBits(tos) ^ 0x8000000000000000L);
+        } else {
+            result = -1.0d * tos;
+        }
+
+        stack.push(Value.fromDouble(result));
+    }
+
+    private static void F32_NEG(MStack stack) {
+        var tos = stack.pop().asFloat();
+
+        float result;
+        if (Float.isNaN(tos)) {
+            result = Float.intBitsToFloat(Float.floatToRawIntBits(tos) ^ 0x80000000);
+        } else {
+            result = -1.0f * tos;
+        }
+
+        stack.push(Value.fromFloat(result));
+    }
+
+    private static void MEMORY_FILL(MStack stack, Instance instance, long[] operands) {
+        var memidx = (int) operands[0];
+        if (memidx != 0) {
+            throw new WASMRuntimeException("We don't support multiple memories just yet");
+        }
+        var size = stack.pop().asInt();
+        var val = stack.pop().asByte();
+        var offset = stack.pop().asInt();
+        var end = (size + offset);
+        instance.getMemory().fill(val, offset, end);
+    }
+
+    private static void MEMORY_GROW(MStack stack, Instance instance) {
+        var size = stack.pop().asInt();
+        var nPages = instance.getMemory().grow(size);
+        stack.push(Value.i32(nPages));
+    }
+
+    private static void F64_STORE(MStack stack, Instance instance, long[] operands) {
+        var value = stack.pop().asDouble();
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        instance.getMemory().writeF64(ptr, value);
+    }
+
+    private static void F32_STORE(MStack stack, Instance instance, long[] operands) {
+        var value = stack.pop().asFloat();
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        instance.getMemory().writeF32(ptr, value);
+    }
+
+    private static void I64_STORE(MStack stack, Instance instance, long[] operands) {
+        var value = stack.pop().asLong();
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        instance.getMemory().writeLong(ptr, value);
+    }
+
+    private static void I64_STORE16(MStack stack, Instance instance, long[] operands) {
+        var value = stack.pop().asShort();
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        instance.getMemory().writeShort(ptr, value);
+    }
+
+    private static void I32_STORE(MStack stack, Instance instance, long[] operands) {
+        var value = stack.pop().asInt();
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        instance.getMemory().writeI32(ptr, value);
+    }
+
+    private static void I64_LOAD32_U(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readU32(ptr);
+        stack.push(val);
+    }
+
+    private static void I64_LOAD32_S(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readI32(ptr);
+        // TODO this is a bit hacky
+        stack.push(Value.i64(val.asInt()));
+    }
+
+    private static void I64_LOAD16_U(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readU16(ptr);
+        // TODO this is a bit hacky
+        stack.push(Value.i64(val.asInt()));
+    }
+
+    private static void I32_LOAD16_U(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readU16(ptr);
+        stack.push(val);
+    }
+
+    private static void I64_LOAD16_S(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readI16(ptr);
+        // TODO this is a bit hacky
+        stack.push(Value.i64(val.asInt()));
+    }
+
+    private static void I32_LOAD16_S(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readI16(ptr);
+        stack.push(val);
+    }
+
+    private static void I64_LOAD8_U(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readU8(ptr);
+        // TODO a bit hacky
+        stack.push(Value.i64(val.asInt()));
+    }
+
+    private static void I32_LOAD8_U(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readU8(ptr);
+        stack.push(val);
+    }
+
+    private static void I64_LOAD8_S(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readI8(ptr);
+        // TODO a bit hacky
+        stack.push(Value.i64(val.asInt()));
+    }
+
+    private static void I32_LOAD8_S(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readI8(ptr);
+        stack.push(val);
+    }
+
+    private static void F64_LOAD(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readF64(ptr);
+        stack.push(val);
+    }
+
+    private static void F32_LOAD(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readF32(ptr);
+        stack.push(val);
+    }
+
+    private static void I64_LOAD(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readI64(ptr);
+        stack.push(val);
+    }
+
+    private static void I32_LOAD(MStack stack, Instance instance, long[] operands) {
+        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var val = instance.getMemory().readI32(ptr);
+        stack.push(val);
+    }
+
+    private static void TABLE_SET(MStack stack, Instance instance, long[] operands) {
+        var idx = (int) operands[0];
+        var table = instance.getTable(idx);
+        if (table == null) {
+            table = instance.getImports().getTables()[idx].getTable();
+        }
+        var value = stack.pop().asExtRef();
+        var i = stack.pop().asInt();
+        table.setRef(i, value);
+    }
+
+    private static void TABLE_GET(MStack stack, Instance instance, long[] operands) {
+        var idx = (int) operands[0];
+        var table = instance.getTable(idx);
+        if (table == null) {
+            table = instance.getImports().getTables()[idx].getTable();
+        }
+        var i = stack.pop().asInt();
+        if (i < 0
+                || (table.getLimitMax() != 0 && i >= table.getLimitMax())
+                || i >= table.getSize()) {
+            throw new WASMRuntimeException("out of bounds table access");
+        }
+        var ref = table.getRef(i);
+        stack.push(table.getRef(i));
+    }
+
+    private static void GLOBAL_SET(MStack stack, Instance instance, long[] operands) {
+        var id = (int) operands[0];
+        var mutabilityType =
+                (instance.getGlobalInitializer(id) == null)
+                        ? instance.getImports().getGlobals()[id].getMutabilityType()
+                        : instance.getGlobalInitializer(id);
+        if (mutabilityType == MutabilityType.Const) {
+            throw new RuntimeException("Can't call GLOBAL_SET on immutable global");
+        }
+        var val = stack.pop();
+        instance.setGlobal(id, val);
+    }
+
+    private static void GLOBAL_GET(MStack stack, Instance instance, long[] operands) {
+        int idx = (int) operands[0];
+        var val = instance.getGlobal(idx);
+        if (val == null) {
+            val = instance.getImports().getGlobals()[idx].getValue();
+        }
+        stack.push(val);
+    }
+
+    private static void SELECT(MStack stack) {
+        var pred = stack.pop().asInt();
+        var b = stack.pop();
+        var a = stack.pop();
+        if (pred == 0) {
+            stack.push(b);
+        } else {
+            stack.push(a);
+        }
+    }
+
+    private static void CALL_INDIRECT(
+            MStack stack, Instance instance, Stack<StackFrame> callStack, long[] operands) {
+        var tableIdx = (int) operands[1];
+        var table = instance.getTable(tableIdx);
+        if (table == null) { // imported table
+            table = instance.getImports().getTables()[tableIdx].getTable();
+        }
+        var typeId = (int) operands[0];
+        var type = instance.getTypes()[typeId];
+        int funcTableIdx = stack.pop().asInt();
+        int funcId = table.getRef(funcTableIdx).asFuncRef();
+        if (funcId == REF_NULL_VALUE) {
+            throw new ChicoryException("uninitialized element " + funcTableIdx);
+        }
+        // given a list of param types, let's pop those params off the stack
+        // and pass as args to the function call
+        var args = extractArgsForParams(stack, type.getParams());
+        call(stack, instance, callStack, funcId, args, type, false);
+    }
+
+    private static void BLOCK(StackFrame frame, MStack stack, Instance instance, long[] operands) {
+        frame.blockDepth++;
+
+        frame.isControlFrame = true;
+        frame.stackSizeBeforeBlock = Math.max(stack.size(), frame.stackSizeBeforeBlock);
+        var typeId = (int) operands[0];
+
+        // https://www.w3.org/TR/wasm-core-2/binary/instructions.html#binary-blocktype
+        if (typeId == 0x40) { // epsilon
+            frame.numberOfValuesToReturn = Math.max(frame.numberOfValuesToReturn, 0);
+        } else if (ValueType.byId(typeId) != null) { // shortcut to straight value type
+            frame.numberOfValuesToReturn = Math.max(frame.numberOfValuesToReturn, 1);
+        } else { // look it up
+            var funcType = instance.getTypes()[typeId];
+            frame.numberOfValuesToReturn =
+                    Math.max(frame.numberOfValuesToReturn, funcType.getReturns().length);
+        }
+    }
+
+    private static void IF(StackFrame frame, MStack stack, Instruction instruction) {
+        frame.blockDepth++;
+        frame.isControlFrame = false;
+
+        var predValue = stack.pop();
+        var pred = predValue.asInt();
+        if (pred == 0) {
+            frame.pc = instruction.getLabelFalse();
+        } else {
+            frame.pc = instruction.getLabelTrue();
+        }
+    }
+
+    private static void BR_TABLE(StackFrame frame, MStack stack, Instruction instruction) {
+        var predValue = prepareControlTransfer(frame, stack, true);
+        var pred = predValue.asInt();
+
+        if (pred < 0 || pred >= instruction.getLabelTable().length - 1) {
+            // choose default
+            frame.pc = instruction.getLabelTable()[instruction.getLabelTable().length - 1];
+        } else {
+            frame.branchConditionValue = predValue;
+            frame.pc = instruction.getLabelTable()[pred];
+        }
+    }
+
+    private static void BR_IF(StackFrame frame, MStack stack, Instruction instruction) {
+        var predValue = prepareControlTransfer(frame, stack, true);
+        var pred = predValue.asInt();
+
+        if (pred == 0) {
+            frame.pc = instruction.getLabelFalse();
+        } else {
+            frame.branchConditionValue = predValue;
+            frame.pc = instruction.getLabelTrue();
+        }
+    }
+
+    private static Value prepareControlTransfer(StackFrame frame, MStack stack, boolean consume) {
         frame.doControlTransfer = true;
 
-        var unwindStack = this.stack.getUnwindFrame();
-        this.stack.resetUnwindFrame();
+        var unwindStack = stack.getUnwindFrame();
+        stack.resetUnwindFrame();
         Value predValue = null;
         if (consume) {
-            predValue = this.stack.pop();
+            predValue = stack.pop();
         }
         if (unwindStack == null) {
-            this.stack.setUnwindFrame(new Stack());
+            stack.setUnwindFrame(new Stack());
         } else {
-            this.stack.setUnwindFrame(unwindStack);
+            stack.setUnwindFrame(unwindStack);
         }
 
         return predValue;
     }
 
-    private void doControlTransfer(StackFrame frame) {
+    private static void doControlTransfer(MStack stack, StackFrame frame) {
         // reset the control transfer
         frame.doControlTransfer = false;
-        var unwindStack = this.stack.getUnwindFrame();
-        this.stack.resetUnwindFrame();
+        var unwindStack = stack.getUnwindFrame();
+        stack.resetUnwindFrame();
 
         Value[] returns = new Value[frame.numberOfValuesToReturn];
         for (int i = 0; i < returns.length; i++) {
-            if (this.stack.size() > 0) returns[i] = this.stack.pop();
+            if (stack.size() > 0) returns[i] = stack.pop();
         }
 
         // drop everything till the previous label
         if (frame.blockDepth > 0) {
-            while (this.stack.size() > frame.stackSizeBeforeBlock) {
-                this.stack.pop();
+            while (stack.size() > frame.stackSizeBeforeBlock) {
+                stack.pop();
             }
         }
 
@@ -1992,24 +2299,24 @@ public class Machine {
         // if a branch have been taken we restore the consumed value from
         // the stack
         if (frame.branchConditionValue != null && frame.branchConditionValue.asInt() > 0) {
-            this.stack.push(frame.branchConditionValue);
+            stack.push(frame.branchConditionValue);
         }
 
         if (frame.blockDepth == 0) {
             while (!unwindStack.empty()) {
-                this.stack.push(unwindStack.pop());
+                stack.push(unwindStack.pop());
             }
         }
 
         for (int i = 0; i < returns.length; i++) {
             Value value = returns[returns.length - 1 - i];
             if (value != null) {
-                this.stack.push(value);
+                stack.push(value);
             }
         }
     }
 
-    private int getRuntimeElementValue(int idx, int s) {
+    private static int getRuntimeElementValue(Instance instance, int idx, int s) {
         var elem = instance.getElement(idx);
         var type = elem.getElemType();
         int val;
@@ -2048,13 +2355,13 @@ public class Machine {
         }
     }
 
-    Value[] extractArgsForParams(ValueType[] params) {
+    static Value[] extractArgsForParams(MStack stack, ValueType[] params) {
         if (params == null) {
             return Value.EMPTY_VALUES;
         }
         var args = new Value[params.length];
         for (var i = params.length; i > 0; i--) {
-            var p = this.stack.pop();
+            var p = stack.pop();
             var t = params[i - 1];
             if (p.getType() != t) {
                 throw new RuntimeException("Type error when extracting args.");
@@ -2064,7 +2371,7 @@ public class Machine {
         return args;
     }
 
-    protected void verifyIndirectCall(FunctionType actual, FunctionType expected)
+    protected static void verifyIndirectCall(FunctionType actual, FunctionType expected)
             throws ChicoryException {
         if (!actual.typesMatch(expected)) {
             throw new ChicoryException("indirect call type mismatch");
