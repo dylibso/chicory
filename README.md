@@ -55,7 +55,7 @@ import com.dylibso.chicory.runtime.Instance;
 import java.io.File;
 
 // point this to your path on disk
-Module module = Module.build(new File("./factorial.wasm"));
+Module module = Module.builder(new File("./factorial.wasm")).build();
 Instance instance = module.instantiate();
 ```
 
