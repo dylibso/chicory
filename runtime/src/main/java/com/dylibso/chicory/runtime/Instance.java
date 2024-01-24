@@ -1,6 +1,11 @@
 package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.wasm.types.*;
+import com.dylibso.chicory.wasm.types.Element;
+import com.dylibso.chicory.wasm.types.FunctionBody;
+import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.Global;
+import com.dylibso.chicory.wasm.types.Table;
+import com.dylibso.chicory.wasm.types.Value;
 import java.util.Arrays;
 
 public class Instance {

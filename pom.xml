@@ -274,6 +274,11 @@
               <formatJavadoc>false</formatJavadoc>
             </googleJavaFormat>
             <importOrder></importOrder>
+            <replaceRegex>
+              <name>Remove wildcard imports</name>
+              <searchRegex>import\s+[^\*\s]+\*;(\r\n|\r|\n)</searchRegex>
+              <replacement>$1</replacement>
+            </replaceRegex>
             <removeUnusedImports></removeUnusedImports>
           </java>
           <pom>
