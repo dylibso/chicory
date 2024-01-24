@@ -1,6 +1,19 @@
 package com.dylibso.chicory.wasm;
 
-import com.dylibso.chicory.wasm.types.*;
+import com.dylibso.chicory.wasm.types.CodeSection;
+import com.dylibso.chicory.wasm.types.CustomSection;
+import com.dylibso.chicory.wasm.types.DataSection;
+import com.dylibso.chicory.wasm.types.ElementSection;
+import com.dylibso.chicory.wasm.types.ExportSection;
+import com.dylibso.chicory.wasm.types.FunctionSection;
+import com.dylibso.chicory.wasm.types.GlobalSection;
+import com.dylibso.chicory.wasm.types.ImportSection;
+import com.dylibso.chicory.wasm.types.MemorySection;
+import com.dylibso.chicory.wasm.types.Section;
+import com.dylibso.chicory.wasm.types.SectionId;
+import com.dylibso.chicory.wasm.types.StartSection;
+import com.dylibso.chicory.wasm.types.TableSection;
+import com.dylibso.chicory.wasm.types.TypeSection;
 
 class ModuleBuilder implements ParserListener {
 
