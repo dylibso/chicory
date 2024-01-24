@@ -2,7 +2,7 @@ package com.dylibso.chicory.wasm.types;
 
 public class ElemType implements Element {
     @Override
-    public ElemType getElemType() {
+    public ElemType elemType() {
         return ElemType.Type;
     }
 
@@ -14,15 +14,15 @@ public class ElemType implements Element {
         this.funcIndices = funcIndices;
     }
 
-    public long[] getFuncIndices() {
+    public long[] funcIndices() {
         return funcIndices;
     }
 
-    public Instruction[] getExpr() {
+    public Instruction[] exprInstructions() {
         return expr;
     }
 
-    public int getSize() {
+    public int size() {
         return expr.length;
     }
 }

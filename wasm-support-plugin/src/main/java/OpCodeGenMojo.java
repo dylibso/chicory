@@ -126,7 +126,7 @@ public class OpCodeGenMojo extends AbstractMojo {
                                         new NameExpr("this.opcode"),
                                         new NameExpr("opcode"),
                                         AssignExpr.Operator.ASSIGN)));
-        opcodeField.createGetter();
+        opcodeField.createGetter().setName("opcode");
 
         var byOpCodeMap =
                 enumDef.addFieldWithInitializer(
@@ -165,8 +165,7 @@ public class OpCodeGenMojo extends AbstractMojo {
         // byOpCode initialization
         staticBlock.addStatement(
                 new NameExpr(
-                        "for (OpCode e: OpCode.values()) {"
-                                + " byOpCode.put(e.getOpcode(), e); }"));
+                        "for (OpCode e: OpCode.values()) {" + " byOpCode.put(e.opcode(), e); }"));
         for (var assign : staticAssignement) {
             staticBlock.addStatement(assign);
         }

@@ -25,7 +25,7 @@ public class MStack {
         this.unwindFrame = null;
     }
 
-    public Stack<Value> getUnwindFrame() {
+    public Stack<Value> unwindFrame() {
         return this.unwindFrame;
     }
 

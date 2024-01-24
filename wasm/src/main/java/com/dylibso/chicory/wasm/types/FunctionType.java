@@ -11,11 +11,11 @@ public class FunctionType {
         this.returns = returns;
     }
 
-    public ValueType[] getParams() {
+    public ValueType[] params() {
         return params;
     }
 
-    public ValueType[] getReturns() {
+    public ValueType[] returns() {
         return returns;
     }
 

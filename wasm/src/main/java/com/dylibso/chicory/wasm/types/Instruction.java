@@ -21,11 +21,11 @@ public class Instruction {
         this.operands = operands;
     }
 
-    public OpCode getOpcode() {
+    public OpCode opcode() {
         return opcode;
     }
 
-    public long[] getOperands() {
+    public long[] operands() {
         return operands;
     }
 
@@ -33,7 +33,7 @@ public class Instruction {
         this.block = block;
     }
 
-    public CodeBlock getCodeBlock() {
+    public CodeBlock codeBlock() {
         return block;
     }
 
@@ -45,11 +45,11 @@ public class Instruction {
         return result + opcode.toString();
     }
 
-    public int getAddress() {
+    public int address() {
         return address;
     }
 
-    public Integer getLabelTrue() {
+    public Integer labelTrue() {
         return labelTrue;
     }
 
@@ -57,7 +57,7 @@ public class Instruction {
         this.labelTrue = labelTrue;
     }
 
-    public Integer getLabelFalse() {
+    public Integer labelFalse() {
         return labelFalse;
     }
 
@@ -65,7 +65,7 @@ public class Instruction {
         this.labelFalse = labelFalse;
     }
 
-    public int[] getLabelTable() {
+    public int[] labelTable() {
         return labelTable;
     }
 
@@ -73,7 +73,7 @@ public class Instruction {
         this.labelTable = labelTable;
     }
 
-    public Integer getDepth() {
+    public Integer depth() {
         return depth;
     }
 
@@ -81,7 +81,7 @@ public class Instruction {
         this.depth = depth;
     }
 
-    public OpCode getScope() {
+    public OpCode scope() {
         return scope;
     }
 

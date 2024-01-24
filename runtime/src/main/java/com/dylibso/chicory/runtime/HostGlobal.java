@@ -20,7 +20,7 @@ public class HostGlobal implements FromHost {
         this.fieldName = fieldName;
     }
 
-    public Value getValue() {
+    public Value value() {
         return value;
     }
 
@@ -28,20 +28,20 @@ public class HostGlobal implements FromHost {
         this.value = value;
     }
 
-    public MutabilityType getMutabilityType() {
+    public MutabilityType mutabilityType() {
         return type;
     }
 
-    public String getModuleName() {
+    public String moduleName() {
         return moduleName;
     }
 
-    public String getFieldName() {
+    public String fieldName() {
         return fieldName;
     }
 
     @Override
-    public FromHostType getType() {
+    public FromHostType type() {
         return FromHostType.GLOBAL;
     }
 }

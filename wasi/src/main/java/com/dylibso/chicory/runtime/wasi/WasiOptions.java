@@ -18,15 +18,15 @@ public class WasiOptions {
         this.stdin = stdin;
     }
 
-    public PrintStream getStdout() {
+    public PrintStream stdout() {
         return stdout;
     }
 
-    public PrintStream getStderr() {
+    public PrintStream stderr() {
         return stderr;
     }
 
-    public InputStream getStdin() {
+    public InputStream stdin() {
         return stdin;
     }
 }

@@ -11,15 +11,15 @@ public class Global {
         this.init = init;
     }
 
-    public MutabilityType getMutabilityType() {
+    public MutabilityType mutabilityType() {
         return mutabilityType;
     }
 
-    public ValueType getValueType() {
+    public ValueType valueType() {
         return valueType;
     }
 
-    public Instruction[] getInit() {
+    public Instruction[] initInstructions() {
         return init;
     }
 }

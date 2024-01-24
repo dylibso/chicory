@@ -43,11 +43,11 @@ public class MemoryLimits {
         return new MemoryLimits(0, MAX_PAGES);
     }
 
-    public int getInitial() {
+    public int initialPages() {
         return initial;
     }
 
-    public int getMaximum() {
+    public int maximumPages() {
         return maximum;
     }
 }

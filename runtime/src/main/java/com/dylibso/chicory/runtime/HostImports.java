@@ -73,55 +73,55 @@ public class HostImports {
         this.tables = tables.clone();
     }
 
-    public HostFunction[] getFunctions() {
+    public HostFunction[] functions() {
         return functions.clone();
     }
 
-    public int getFunctionCount() {
+    public int functionCount() {
         return functions.length;
     }
 
-    public HostFunction getFunction(int idx) {
+    public HostFunction function(int idx) {
         return functions[idx];
     }
 
-    public HostGlobal[] getGlobals() {
+    public HostGlobal[] globals() {
         return globals;
     }
 
-    public int getGlobalCount() {
+    public int globalCount() {
         return globals.length;
     }
 
-    public HostGlobal getGlobal(int idx) {
+    public HostGlobal global(int idx) {
         return globals[idx];
     }
 
-    public HostMemory[] getMemories() {
+    public HostMemory[] memories() {
         return memories;
     }
 
-    public int getMemoryCount() {
+    public int memoryCount() {
         return memories.length;
     }
 
-    public HostMemory getMemory(int idx) {
+    public HostMemory memory(int idx) {
         return memories[idx];
     }
 
-    public HostTable[] getTables() {
+    public HostTable[] tables() {
         return tables;
     }
 
-    public int getTableCount() {
+    public int tableCount() {
         return tables.length;
     }
 
-    public HostTable getTable(int idx) {
+    public HostTable table(int idx) {
         return tables[idx];
     }
 
-    public FromHost[] getIndex() {
+    public FromHost[] index() {
         return index;
     }
 

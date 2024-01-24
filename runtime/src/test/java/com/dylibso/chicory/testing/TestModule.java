@@ -42,15 +42,15 @@ public class TestModule {
         return this;
     }
 
-    public File getFile() {
+    public File file() {
         return file;
     }
 
-    public Module getModule() {
+    public Module module() {
         return module;
     }
 
-    public Instance getInstance() {
+    public Instance instance() {
         return instance;
     }
 }

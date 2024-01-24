@@ -19,7 +19,7 @@ public class ModuleTest {
     public void shouldWorkFactorial() {
         var module = Module.builder("compiled/iterfact.wat.wasm").build();
         var instance = module.instantiate();
-        var iterFact = instance.getExport("iterFact");
+        var iterFact = instance.export("iterFact");
         var result = iterFact.apply(Value.i32(5))[0];
         assertEquals(120, result.asInt());
     }
@@ -27,7 +27,7 @@ public class ModuleTest {
     @Test
     public void shouldSupportBrTable() {
         var instance = Module.builder("compiled/br_table.wat.wasm").build().instantiate();
-        var switchLike = instance.getExport("switch_like");
+        var switchLike = instance.export("switch_like");
         var result = switchLike.apply(Value.i32(0))[0];
         assertEquals(102, result.asInt());
         result = switchLike.apply(Value.i32(1))[0];
@@ -47,7 +47,7 @@ public class ModuleTest {
     @Test
     public void shouldExerciseBranches() {
         var module = Module.builder("compiled/branching.wat.wasm").build().instantiate();
-        var foo = module.getExport("foo");
+        var foo = module.export("foo");
 
         var result = foo.apply(Value.i32(0))[0];
         assertEquals(42, result.asInt());
@@ -70,7 +70,7 @@ public class ModuleTest {
                 new HostFunction(
                         (Instance instance,
                                 Value... args) -> { // decompiled is: console_log(13, 0);
-                            Memory memory = instance.getMemory();
+                            Memory memory = instance.memory();
                             var len = args[0].asInt();
                             var offset = args[1].asInt();
                             var message = memory.readString(offset, len);
@@ -90,7 +90,7 @@ public class ModuleTest {
                 Module.builder("compiled/host-function.wat.wasm")
                         .build()
                         .instantiate(new HostImports(funcs));
-        var logIt = instance.getExport("logIt");
+        var logIt = instance.export("logIt");
         logIt.apply();
 
         assertEquals(10, count.get());
@@ -99,7 +99,7 @@ public class ModuleTest {
     @Test
     public void shouldComputeFactorial() {
         var module = Module.builder("compiled/iterfact.wat.wasm").build().instantiate();
-        var iterFact = module.getExport("iterFact");
+        var iterFact = module.export("iterFact");
 
         // don't make this too big we will overflow 32 bits
         for (var i = 0; i < 10; i++) {
@@ -141,7 +141,7 @@ public class ModuleTest {
                 Module.builder("compiled/start.wat.wasm")
                         .build()
                         .instantiate(new HostImports(funcs));
-        var start = module.getExport("_start");
+        var start = module.export("_start");
         start.apply();
 
         assertTrue(count.get() > 0);
@@ -150,14 +150,14 @@ public class ModuleTest {
     @Test
     public void shouldTrapOnUnreachable() {
         var instance = Module.builder("compiled/trap.wat.wasm").build().instantiate();
-        var start = instance.getExport("_start");
+        var start = instance.export("_start");
         assertThrows(WASMMachineException.class, start::apply);
     }
 
     @Test
     public void shouldSupportGlobals() {
         var instance = Module.builder("compiled/globals.wat.wasm").build().instantiate();
-        var doit = instance.getExport("doit");
+        var doit = instance.export("doit");
         var result = doit.apply(Value.i32(32))[0];
         assertEquals(42, result.asInt());
     }
@@ -165,10 +165,10 @@ public class ModuleTest {
     @Test
     public void shouldCountVowels() {
         var instance = Module.builder("compiled/count_vowels.rs.wasm").build().instantiate();
-        var alloc = instance.getExport("alloc");
-        var dealloc = instance.getExport("dealloc");
-        var countVowels = instance.getExport("count_vowels");
-        var memory = instance.getMemory();
+        var alloc = instance.export("alloc");
+        var dealloc = instance.export("dealloc");
+        var countVowels = instance.export("count_vowels");
+        var memory = instance.memory();
         var message = "Hello, World!";
         var len = message.getBytes().length;
         var ptr = alloc.apply(Value.i32(len))[0].asInt();
@@ -182,7 +182,7 @@ public class ModuleTest {
     public void shouldRunBasicCProgram() {
         // check with: wasmtime src/test/resources/wasm/basic.c.wasm --invoke run
         var instance = Module.builder("compiled/basic.c.wasm").build().instantiate();
-        var run = instance.getExport("run");
+        var run = instance.export("run");
         var result = run.apply()[0];
         assertEquals(42, result.asInt());
     }
@@ -210,7 +210,7 @@ public class ModuleTest {
     @Test
     public void shouldWorkWithMemoryOps() {
         var instance = Module.builder("compiled/memory.wat.wasm").build().instantiate();
-        var run = instance.getExport("run32");
+        var run = instance.export("run32");
         var results = run.apply(Value.i32(42));
         var result = results[0];
         assertEquals(42, result.asInt());
@@ -221,15 +221,15 @@ public class ModuleTest {
         result = run.apply(Value.i32(Integer.MIN_VALUE))[0];
         assertEquals(Integer.MIN_VALUE, result.asInt());
 
-        run = instance.getExport("run64");
+        run = instance.export("run64");
         result = run.apply(Value.i64(42))[0];
         assertEquals(42L, result.asLong());
 
-        run = instance.getExport("run64");
+        run = instance.export("run64");
         result = run.apply(Value.i64(Long.MIN_VALUE))[0];
         assertEquals(Long.MIN_VALUE, result.asLong());
 
-        run = instance.getExport("run64");
+        run = instance.export("run64");
         result = run.apply(Value.i64(Long.MAX_VALUE))[0];
         assertEquals(Long.MAX_VALUE, result.asLong());
     }
@@ -240,7 +240,7 @@ public class ModuleTest {
         // run 100
         var instance = Module.builder("compiled/kitchensink.wat.wasm").build().instantiate();
 
-        var run = instance.getExport("run");
+        var run = instance.export("run");
         assertEquals(6, run.apply(Value.i32(100))[0].asInt());
     }
 

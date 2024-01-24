@@ -24,7 +24,7 @@ public enum WasmValueType {
     }
 
     @JsonValue()
-    public String getValue() {
+    public String value() {
         return value;
     }
 }

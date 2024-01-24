@@ -9,11 +9,11 @@ public class ExportDesc {
         this.type = type;
     }
 
-    public long getIndex() {
+    public long index() {
         return index;
     }
 
-    public ExportDescType getType() {
+    public ExportDescType type() {
         return type;
     }
 }

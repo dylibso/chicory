@@ -48,23 +48,23 @@ public class Module {
         this.exportSection = exportSection;
     }
 
-    public TypeSection getTypeSection() {
+    public TypeSection typeSection() {
         return typeSection;
     }
 
-    public FunctionSection getFunctionSection() {
+    public FunctionSection functionSection() {
         return functionSection;
     }
 
-    public ExportSection getExportSection() {
+    public ExportSection exportSection() {
         return exportSection;
     }
 
-    public StartSection getStartSection() {
+    public StartSection startSection() {
         return startSection;
     }
 
-    public ImportSection getImportSection() {
+    public ImportSection importSection() {
         return importSection;
     }
 
@@ -76,7 +76,7 @@ public class Module {
         this.importSection = importSection;
     }
 
-    public CodeSection getCodeSection() {
+    public CodeSection codeSection() {
         return codeSection;
     }
 
@@ -88,11 +88,11 @@ public class Module {
         this.dataSection = dataSection;
     }
 
-    public DataSection getDataSection() {
+    public DataSection dataSection() {
         return dataSection;
     }
 
-    public MemorySection getMemorySection() {
+    public MemorySection memorySection() {
         return memorySection;
     }
 
@@ -100,7 +100,7 @@ public class Module {
         this.memorySection = memorySection;
     }
 
-    public GlobalSection getGlobalSection() {
+    public GlobalSection globalSection() {
         return globalSection;
     }
 
@@ -108,7 +108,7 @@ public class Module {
         this.globalSection = globalSection;
     }
 
-    public TableSection getTableSection() {
+    public TableSection tableSection() {
         return tableSection;
     }
 
@@ -117,24 +117,24 @@ public class Module {
     }
 
     public void addCustomSection(CustomSection customSection) {
-        this.customSections.put(customSection.getName(), customSection);
+        this.customSections.put(customSection.name(), customSection);
     }
 
-    public List<CustomSection> getCustomSections() {
+    public List<CustomSection> customSections() {
         return new ArrayList<>(customSections.values());
     }
 
-    public CustomSection getCustomSection(String name) {
+    public CustomSection customSection(String name) {
         return customSections.get(name);
     }
 
-    public NameSection getNameSection() {
+    public NameSection nameSection() {
         var customSec = customSections.get("name");
         if (customSec == null) return null;
         return new NameSection(customSec);
     }
 
-    public ElementSection getElementSection() {
+    public ElementSection elementSection() {
         return elementSection;
     }
 

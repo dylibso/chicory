@@ -24,19 +24,19 @@ public class Table {
         }
     }
 
-    public ElementType getElementType() {
+    public ElementType elementType() {
         return elementType;
     }
 
-    public long getLimitMin() {
+    public long limitMin() {
         return limitMin;
     }
 
-    public Long getLimitMax() {
+    public Long limitMax() {
         return limitMax;
     }
 
-    public int getSize() {
+    public int size() {
         return refs.length;
     }
 
@@ -52,14 +52,14 @@ public class Table {
         return oldSize;
     }
 
-    public Value getRef(int index) {
+    public Value ref(int index) {
         int res = REF_NULL_VALUE;
         try {
             res = this.refs[index];
         } catch (IndexOutOfBoundsException e) {
             throw new ChicoryException("undefined element", e);
         }
-        if (this.getElementType() == ElementType.FuncRef) {
+        if (this.elementType() == ElementType.FuncRef) {
             return Value.funcRef(res);
         } else {
             return Value.externRef(res);

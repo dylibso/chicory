@@ -32,7 +32,7 @@ public enum CommandType {
     }
 
     @JsonValue()
-    public String getValue() {
+    public String value() {
         return value;
     }
 }

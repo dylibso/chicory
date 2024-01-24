@@ -2,7 +2,7 @@ package com.dylibso.chicory.wasm.types;
 
 public class ElemTable implements Element {
     @Override
-    public ElemType getElemType() {
+    public ElemType elemType() {
         return ElemType.Table;
     }
 
@@ -16,19 +16,19 @@ public class ElemTable implements Element {
         this.funcIndices = funcIndices;
     }
 
-    public long[] getFuncIndices() {
+    public long[] funcIndices() {
         return funcIndices;
     }
 
-    public Instruction[] getExpr() {
+    public Instruction[] exprInstructions() {
         return expr;
     }
 
-    public long getTableIndex() {
+    public long tableIndex() {
         return tableIndex;
     }
 
-    public int getSize() {
+    public int size() {
         return expr.length;
     }
 }

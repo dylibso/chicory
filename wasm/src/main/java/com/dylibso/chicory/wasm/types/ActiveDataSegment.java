@@ -14,11 +14,11 @@ public class ActiveDataSegment extends DataSegment {
         this.offset = offset;
     }
 
-    public long getIdx() {
+    public long index() {
         return idx;
     }
 
-    public Instruction[] getOffset() {
+    public Instruction[] offsetInstructions() {
         return offset;
     }
 }

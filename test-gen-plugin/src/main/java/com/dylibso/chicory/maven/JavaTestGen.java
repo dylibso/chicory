@@ -119,19 +119,19 @@ public class JavaTestGen {
         int fallbackVarNumber = 0;
 
         String currentWasmFile = null;
-        for (var cmd : wast.getCommands()) {
+        for (var cmd : wast.commands()) {
             var excludedMethods =
                     excludedTests.stream()
                             .filter(t -> t.startsWith(testName))
                             .map(t -> t.replace(testName + ".", ""))
                             .collect(Collectors.toList());
 
-            switch (cmd.getType()) {
+            switch (cmd.type()) {
                 case MODULE:
                     currentWasmFile = getWasmFile(cmd, wasmFilesFolder);
                     lastModuleVarName = TEST_MODULE_NAME + moduleInstantiationNumber++;
-                    if (cmd.getName() != null) {
-                        lastModuleVarName = cmd.getName().replace("$", "");
+                    if (cmd.name() != null) {
+                        lastModuleVarName = cmd.name().replace("$", "");
                     }
                     testClass.addFieldWithInitializer(
                             parseClassOrInterfaceType("TestModule"),
@@ -155,19 +155,19 @@ public class JavaTestGen {
                                     cmd,
                                     currentWasmFile);
 
-                    var baseVarName = escapedCamelCase(cmd.getAction().getField());
+                    var baseVarName = escapedCamelCase(cmd.action().field());
                     var varNum = fallbackVarNumber++;
                     var varName = "var" + (baseVarName.isEmpty() ? varNum : baseVarName);
                     String moduleName = lastModuleVarName;
-                    if (cmd.getAction().getModule() != null) {
-                        moduleName = cmd.getAction().getModule().replace("$", "");
+                    if (cmd.action().module() != null) {
+                        moduleName = cmd.action().module().replace("$", "");
                     }
                     var fieldExport = generateFieldExport(varName, cmd, moduleName);
                     if (fieldExport.isPresent()) {
                         method.getBody().get().addStatement(fieldExport.get());
                     }
 
-                    if (cmd.getType() == CommandType.ACTION) {
+                    if (cmd.type() == CommandType.ACTION) {
                         for (var expr : generateInvoke(varName, cmd)) {
                             method.getBody().get().addStatement(expr);
                         }
@@ -191,7 +191,7 @@ public class JavaTestGen {
                     break;
                 default:
                     // TODO we need to implement all of these
-                    log.info("TODO: command type not yet supported " + cmd.getType());
+                    log.info("TODO: command type not yet supported " + cmd.type());
                     //                    throw new IllegalArgumentException(
                     //                            "command type not yet supported " +
                     // cmd.getType());
@@ -230,14 +230,14 @@ public class JavaTestGen {
         }
 
         // generate Tag annotation with exported symbol as reference
-        switch (cmd.getType()) {
+        switch (cmd.type()) {
             case ACTION:
             case ASSERT_RETURN:
             case ASSERT_TRAP:
                 {
                     // some characters that are allowed in wasm symbol names are not allowed in the
                     // Tag annotation, thus we use base64 encoding.
-                    String export = cmd.getAction().getField();
+                    String export = cmd.action().field();
                     String base64EncodedExport =
                             Base64.getEncoder()
                                     .encodeToString(export.getBytes(StandardCharsets.UTF_8));
@@ -255,7 +255,7 @@ public class JavaTestGen {
 
     private Optional<Expression> generateFieldExport(
             String varName, Command cmd, String moduleName) {
-        if (cmd.getAction() != null && cmd.getAction().getField() != null) {
+        if (cmd.action() != null && cmd.action().field() != null) {
             var declarator =
                     new VariableDeclarator()
                             .setName(varName)
@@ -263,9 +263,9 @@ public class JavaTestGen {
                             .setInitializer(
                                     new NameExpr(
                                             moduleName
-                                                    + ".getInstance().getExport(\""
+                                                    + ".instance().export(\""
                                                     + StringEscapeUtils.escapeJava(
-                                                            cmd.getAction().getField())
+                                                            cmd.action().field())
                                                     + "\")"));
             Expression varDecl = new VariableDeclarationExpr(declarator);
             return Optional.of(varDecl);
@@ -275,21 +275,20 @@ public class JavaTestGen {
     }
 
     private List<Expression> generateAssert(String varName, Command cmd) {
-        assert (cmd.getType() == CommandType.ASSERT_RETURN
-                || cmd.getType() == CommandType.ASSERT_TRAP);
-        assert (cmd.getExpected() != null);
-        assert (cmd.getExpected().length > 0);
-        assert (cmd.getAction().getType() == INVOKE);
+        assert (cmd.type() == CommandType.ASSERT_RETURN || cmd.type() == CommandType.ASSERT_TRAP);
+        assert (cmd.expected() != null);
+        assert (cmd.expected().length > 0);
+        assert (cmd.action().type() == INVOKE);
 
         var args =
-                (cmd.getAction().getArgs() != null)
-                        ? Arrays.stream(cmd.getAction().getArgs())
+                (cmd.action().args() != null)
+                        ? Arrays.stream(cmd.action().args())
                                 .map(WasmValue::toWasmValue)
                                 .collect(Collectors.joining(", "))
                         : "";
 
         var invocationMethod = ".apply(" + args + ")";
-        if (cmd.getType() == CommandType.ASSERT_TRAP) {
+        if (cmd.type() == CommandType.ASSERT_TRAP) {
             var assertDecl =
                     new NameExpr(
                             "var exception ="
@@ -297,20 +296,20 @@ public class JavaTestGen {
                                     + varName
                                     + invocationMethod
                                     + ")");
-            if (cmd.getText() != null) {
-                return List.of(assertDecl, exceptionMessageMatch(cmd.getText()));
+            if (cmd.text() != null) {
+                return List.of(assertDecl, exceptionMessageMatch(cmd.text()));
             } else {
                 return List.of(assertDecl);
             }
-        } else if (cmd.getType() == CommandType.ASSERT_RETURN) {
+        } else if (cmd.type() == CommandType.ASSERT_RETURN) {
             List<Expression> exprs = new ArrayList<>();
             exprs.add(new NameExpr("var results = " + varName + ".apply(" + args + ")"));
 
-            for (int i = 0; i < cmd.getExpected().length; i++) {
-                var expected = cmd.getExpected()[i];
+            for (int i = 0; i < cmd.expected().length; i++) {
+                var expected = cmd.expected()[i];
                 var returnVar = expected.toJavaValue();
                 var typeConversion = expected.extractType();
-                var deltaParam = expected.getDelta();
+                var deltaParam = expected.delta();
                 exprs.add(
                         new NameExpr(
                                 "assertEquals("
@@ -325,23 +324,22 @@ public class JavaTestGen {
 
             return exprs;
         } else {
-            throw new IllegalArgumentException("Unhandled command type " + cmd.getType());
+            throw new IllegalArgumentException("Unhandled command type " + cmd.type());
         }
     }
 
     private List<Expression> generateInvoke(String varName, Command cmd) {
-        assert cmd.getType() == CommandType.ACTION;
+        assert cmd.type() == CommandType.ACTION;
 
         String invocationMethod;
-        if (cmd.getAction().getType() == INVOKE) {
+        if (cmd.action().type() == INVOKE) {
             var args =
-                    Arrays.stream(cmd.getAction().getArgs())
+                    Arrays.stream(cmd.action().args())
                             .map(WasmValue::toWasmValue)
                             .collect(Collectors.joining(", "));
             invocationMethod = ".apply(" + args + ")";
         } else {
-            throw new IllegalArgumentException(
-                    "Unhandled action type " + cmd.getAction().getType());
+            throw new IllegalArgumentException("Unhandled action type " + cmd.action().type());
         }
 
         var assertDecl =
@@ -359,7 +357,7 @@ public class JavaTestGen {
             String importsName,
             String varName,
             SourceRoot testSourcesRoot) {
-        assert (cmd.getType() == CommandType.MODULE);
+        assert (cmd.type() == CommandType.MODULE);
 
         // Detect if the imports are defined
         String hostFuncs = null;
@@ -389,8 +387,8 @@ public class JavaTestGen {
         }
 
         var additionalParam = "";
-        if (cmd.getModuleType() != null) {
-            additionalParam = ", ModuleType." + cmd.getModuleType().toUpperCase();
+        if (cmd.moduleType() != null) {
+            additionalParam = ", ModuleType." + cmd.moduleType().toUpperCase();
         }
         return new NameExpr(
                 "TestModule.of(new File(\""
@@ -404,7 +402,7 @@ public class JavaTestGen {
 
     private String getWasmFile(Command cmd, File folder) {
         return folder.toPath()
-                .resolve(cmd.getFilename())
+                .resolve(cmd.filename())
                 .toFile()
                 .getAbsolutePath()
                 .replace(baseDir.getAbsolutePath() + File.separator, "")
@@ -412,17 +410,17 @@ public class JavaTestGen {
     }
 
     private List<Expression> generateAssertThrows(Command cmd, String wasmFile) {
-        assert (cmd.getType() == CommandType.ASSERT_INVALID
-                || cmd.getType() == CommandType.ASSERT_MALFORMED);
+        assert (cmd.type() == CommandType.ASSERT_INVALID
+                || cmd.type() == CommandType.ASSERT_MALFORMED);
 
         var exceptionType = "";
-        if (cmd.getType() == CommandType.ASSERT_INVALID) {
+        if (cmd.type() == CommandType.ASSERT_INVALID) {
             exceptionType = "InvalidException";
-        } else if (cmd.getType() == CommandType.ASSERT_MALFORMED) {
+        } else if (cmd.type() == CommandType.ASSERT_MALFORMED) {
             exceptionType = "MalformedException";
         }
 
-        var assignementStmt = (cmd.getText() != null) ? "var exception = " : "";
+        var assignementStmt = (cmd.text() != null) ? "var exception = " : "";
 
         var assertThrows =
                 new NameExpr(
@@ -433,8 +431,8 @@ public class JavaTestGen {
                                 + generateModuleInstantiation(cmd, wasmFile, null, null, null)
                                 + ")");
 
-        if (cmd.getText() != null) {
-            return List.of(assertThrows, exceptionMessageMatch(cmd.getText()));
+        if (cmd.text() != null) {
+            return List.of(assertThrows, exceptionMessageMatch(cmd.text()));
         } else {
             return List.of(assertThrows);
         }

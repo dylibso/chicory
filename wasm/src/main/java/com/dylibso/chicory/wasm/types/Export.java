@@ -9,11 +9,11 @@ public class Export {
         this.desc = desc;
     }
 
-    public String getName() {
+    public String name() {
         return name;
     }
 
-    public ExportDesc getDesc() {
+    public ExportDesc desc() {
         return desc;
     }
 }

@@ -325,7 +325,7 @@ public class WasiPreview1 {
                     InputStream stream;
                     switch (fd) {
                         case 0:
-                            stream = this.options.getStdin();
+                            stream = this.options.stdin();
                             break;
                         default:
                             throw new WASMRuntimeException("We don't yet support fd " + fd);
@@ -340,7 +340,7 @@ public class WasiPreview1 {
                     var iovsLen = args[2].asInt();
                     var retPtr = args[3].asInt();
                     var bytesRead = 0;
-                    Memory memory = instance.getMemory();
+                    Memory memory = instance.memory();
                     for (var i = 0; i < iovsLen; i++) {
                         var offset = i * 8;
                         var base = iovs + offset;
@@ -437,10 +437,10 @@ public class WasiPreview1 {
                     PrintStream stream;
                     switch (fd) {
                         case 1:
-                            stream = this.options.getStdout();
+                            stream = this.options.stdout();
                             break;
                         case 2:
-                            stream = this.options.getStderr();
+                            stream = this.options.stderr();
                             break;
                         default:
                             throw new WASMRuntimeException("We don't yet support fd " + fd);
@@ -455,7 +455,7 @@ public class WasiPreview1 {
                     var iovsLen = args[2].asInt();
                     var retPtr = args[3].asInt();
                     var bytesWritten = 0;
-                    Memory memory = instance.getMemory();
+                    Memory memory = instance.memory();
                     for (var i = 0; i < iovsLen; i++) {
                         var offset = i * 8;
                         var base = iovs + offset;

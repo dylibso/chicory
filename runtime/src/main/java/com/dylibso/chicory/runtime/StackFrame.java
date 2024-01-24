@@ -36,7 +36,7 @@ public class StackFrame {
         // pre-initialize everything to 0
         for (var i = 0; i < initLocals.size(); i++) {
             var l = initLocals.get(i);
-            var type = l.getType() == null ? ValueType.I32 : l.getType();
+            var type = l.type() == null ? ValueType.I32 : l.type();
             // TODO need a cleaner way to initialize?
             // there are footguns to using the raw Value constructor
             switch (type) {
@@ -63,7 +63,7 @@ public class StackFrame {
         this.locals.put(i, v);
     }
 
-    Value getLocal(int i) {
+    Value local(int i) {
         var l = this.locals.get(i);
         // TODO is this right?
         if (l == null) {
@@ -74,10 +74,10 @@ public class StackFrame {
 
     @Override
     public String toString() {
-        var nameSec = instance.getModule().getNameSection();
+        var nameSec = instance.module().nameSection();
         var id = "[" + funcId + "]";
         if (nameSec != null) {
-            var funcName = nameSec.getFunctionNames().get(funcId);
+            var funcName = nameSec.functionNames().get(funcId);
             if (funcName != null) id = funcName + id;
         }
         return id + "\n\tpc=" + pc + " locals=" + Arrays.toString(locals.values().toArray());

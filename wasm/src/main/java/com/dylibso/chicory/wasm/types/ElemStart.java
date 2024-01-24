@@ -2,7 +2,7 @@ package com.dylibso.chicory.wasm.types;
 
 public class ElemStart implements Element {
     @Override
-    public ElemType getElemType() {
+    public ElemType elemType() {
         return ElemType.Start;
     }
 
@@ -14,7 +14,7 @@ public class ElemStart implements Element {
         this.exprs = exprs;
     }
 
-    public RefType getRefType() {
+    public RefType refType() {
         return refType;
     }
 
@@ -22,15 +22,15 @@ public class ElemStart implements Element {
         this.refType = refType;
     }
 
-    public Instruction[][] getExprs() {
+    public Instruction[][] exprInstructionLists() {
         return exprs;
     }
 
-    public void setExprs(Instruction[][] exprs) {
+    public void setExprInstructionLists(Instruction[][] exprs) {
         this.exprs = exprs;
     }
 
-    public int getSize() {
+    public int size() {
         return exprs.length;
     }
 }

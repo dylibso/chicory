@@ -24,9 +24,9 @@ public class WasiPreview1Test {
                 Module.builder(new File("src/test/resources/compiled/hello-wasi.wat.wasm"))
                         .build()
                         .instantiate(imports);
-        var run = instance.getExport("_start");
+        var run = instance.export("_start");
         run.apply();
-        assertEquals(fakeStdout.getOutput().strip(), "hello world");
+        assertEquals(fakeStdout.output().strip(), "hello world");
     }
 
     @Test
@@ -40,9 +40,9 @@ public class WasiPreview1Test {
                 Module.builder(new File("src/test/resources/compiled/hello-wasi.rs.wasm"))
                         .build()
                         .instantiate(imports);
-        var run = instance.getExport("_start");
+        var run = instance.export("_start");
         run.apply(); // prints Hello, World!
-        assertEquals(expected, stdout.getOutput().strip());
+        assertEquals(expected, stdout.output().strip());
     }
 
     @Test
@@ -56,7 +56,7 @@ public class WasiPreview1Test {
                 Module.builder(new File("src/test/resources/compiled/greet-wasi.rs.wasm"))
                         .build()
                         .instantiate(imports);
-        var run = instance.getExport("_start");
+        var run = instance.export("_start");
         run.apply();
     }
 }

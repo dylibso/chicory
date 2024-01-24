@@ -203,11 +203,11 @@ public class SpecV1ImportsHostFuncs {
                         "func-i64->i64",
                         List.of(ValueType.I64),
                         List.of(ValueType.I64));
-        var base = base().getFunctions();
+        var base = base().functions();
         var additional = new HostFunction[] {testFunc, testFuncI64};
         HostFunction[] hostFunctions = Arrays.copyOf(base, base.length + additional.length);
         System.arraycopy(additional, 0, hostFunctions, base.length, additional.length);
         return new HostImports(
-                hostFunctions, new HostGlobal[] {}, base().getMemory(0), base().getTables());
+                hostFunctions, new HostGlobal[] {}, base().memory(0), base().tables());
     }
 }

@@ -23,28 +23,28 @@ public class HostFunction implements FromHost {
         this.returnTypes = returnTypes;
     }
 
-    public WasmFunctionHandle getHandle() {
+    public WasmFunctionHandle handle() {
         return handle;
     }
 
-    public String getModuleName() {
+    public String moduleName() {
         return moduleName;
     }
 
-    public String getFieldName() {
+    public String fieldName() {
         return fieldName;
     }
 
     @Override
-    public FromHostType getType() {
+    public FromHostType type() {
         return FromHostType.FUNCTION;
     }
 
-    public List<ValueType> getParamTypes() {
+    public List<ValueType> paramTypes() {
         return paramTypes;
     }
 
-    public List<ValueType> getReturnTypes() {
+    public List<ValueType> returnTypes() {
         return returnTypes;
     }
 }

@@ -8,7 +8,7 @@ public class GlobalSection extends Section {
         this.globals = globals;
     }
 
-    public Global[] getGlobals() {
+    public Global[] globals() {
         return globals;
     }
 }

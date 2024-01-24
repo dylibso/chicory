@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.runtime.Module.getConstantValue;
+import static com.dylibso.chicory.runtime.Module.computeConstantValue;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
@@ -43,8 +43,8 @@ public final class Memory {
 
     public Memory(MemoryLimits limits, DataSegment[] dataSegments, boolean initialize) {
         this.limits = limits;
-        this.buffer = allocateByteBuffer(PAGE_SIZE * limits.getInitial());
-        this.nPages = limits.getInitial();
+        this.buffer = allocateByteBuffer(PAGE_SIZE * limits.initialPages());
+        this.nPages = limits.initialPages();
         this.dataSegments = dataSegments;
         if (initialize) {
             this.reinstantiate();
@@ -58,7 +58,7 @@ public final class Memory {
     /**
      * Gets the size of the memory in number of pages
      */
-    public int getSize() {
+    public int pages() {
         return nPages;
     }
 
@@ -67,7 +67,7 @@ public final class Memory {
         var prevPages = nPages;
         var numPages = prevPages + size;
 
-        if (numPages > limits.getMaximum()) {
+        if (numPages > limits.maximumPages()) {
             return -1;
         }
 
@@ -84,12 +84,12 @@ public final class Memory {
         return prevPages;
     }
 
-    public int getInitialSize() {
-        return this.limits.getInitial();
+    public int initialPages() {
+        return this.limits.initialPages();
     }
 
-    public int getMaximumSize() {
-        return this.limits.getMaximum();
+    public int maximumPages() {
+        return this.limits.maximumPages();
     }
 
     /**
@@ -106,9 +106,9 @@ public final class Memory {
         for (var s : dataSegments) {
             if (s instanceof ActiveDataSegment) {
                 var segment = (ActiveDataSegment) s;
-                var offsetExpr = segment.getOffset();
-                var data = segment.getData();
-                var offset = getConstantValue(offsetExpr);
+                var offsetExpr = segment.offsetInstructions();
+                var data = segment.data();
+                var offset = computeConstantValue(offsetExpr);
                 write(offset, data);
             } else if (s instanceof PassiveDataSegment) {
                 // System.out.println("Skipping passive segment " + s);
@@ -125,7 +125,7 @@ public final class Memory {
             // more informative to specifically identify the segment type mismatch
             throw new WASMRuntimeException("out of bounds memory access");
         }
-        write(dest, segment.getData(), offset, size);
+        write(dest, segment.data(), offset, size);
     }
 
     public void writeString(int offset, String data) {
@@ -169,7 +169,7 @@ public final class Memory {
     }
 
     public void write(int addr, Value data) {
-        write(addr, data.getData());
+        write(addr, data.data());
     }
 
     public void writeI32(int addr, int data) {

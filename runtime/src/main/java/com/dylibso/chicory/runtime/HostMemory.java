@@ -11,20 +11,20 @@ public class HostMemory implements FromHost {
         this.memory = memory;
     }
 
-    public String getModuleName() {
+    public String moduleName() {
         return moduleName;
     }
 
-    public String getFieldName() {
+    public String fieldName() {
         return fieldName;
     }
 
     @Override
-    public FromHostType getType() {
+    public FromHostType type() {
         return FromHostType.MEMORY;
     }
 
-    public Memory getMemory() {
+    public Memory memory() {
         return memory;
     }
 }

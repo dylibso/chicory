@@ -16,7 +16,7 @@ class MockPrintStream extends PrintStream {
         super.println(s);
     }
 
-    public String getOutput() {
+    public String output() {
         return baos.toString();
     }
 }
