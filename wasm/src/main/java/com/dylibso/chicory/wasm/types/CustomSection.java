@@ -1,27 +1,13 @@
 package com.dylibso.chicory.wasm.types;
 
-public class CustomSection extends Section {
-    private String name;
+/**
+ * A custom section of some kind.
+ */
+public abstract class CustomSection extends Section {
 
-    private byte[] bytes;
-
-    public CustomSection(long id, long size) {
-        super(id, size);
+    protected CustomSection(long size) {
+        super(SectionId.CUSTOM, size);
     }
 
-    public String name() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public byte[] bytes() {
-        return bytes;
-    }
-
-    public void setBytes(byte[] bytes) {
-        this.bytes = bytes;
-    }
+    public abstract String name();
 }

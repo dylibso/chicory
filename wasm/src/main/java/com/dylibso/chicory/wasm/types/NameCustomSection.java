@@ -6,18 +6,30 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class NameSection extends CustomSection {
+/**
+ * The "name" custom section.
+ */
+public class NameCustomSection extends CustomSection {
 
     private final List<String> funcNames;
 
-    public NameSection(CustomSection sec) {
-        super(sec.sectionId(), sec.sectionSize());
-        this.setBytes(sec.bytes());
-        this.funcNames = parseFunctionNames();
+    /**
+     * Construct a new instance.
+     *
+     * @param size the size of the section
+     * @param bytes the byte content of the section
+     */
+    public NameCustomSection(final long size, final byte[] bytes) {
+        super(size);
+        funcNames = parseFunctionNames(bytes);
     }
 
-    private List<String> parseFunctionNames() {
-        ByteBuffer buf = ByteBuffer.wrap(this.bytes());
+    public String name() {
+        return "name";
+    }
+
+    private List<String> parseFunctionNames(final byte[] bytes) {
+        ByteBuffer buf = ByteBuffer.wrap(bytes);
 
         List<String> names = new ArrayList<>();
 

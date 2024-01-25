@@ -9,7 +9,7 @@ import com.dylibso.chicory.wasm.types.FunctionSection;
 import com.dylibso.chicory.wasm.types.GlobalSection;
 import com.dylibso.chicory.wasm.types.ImportSection;
 import com.dylibso.chicory.wasm.types.MemorySection;
-import com.dylibso.chicory.wasm.types.NameSection;
+import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.TableSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
@@ -128,10 +128,8 @@ public class Module {
         return customSections.get(name);
     }
 
-    public NameSection nameSection() {
-        var customSec = customSections.get("name");
-        if (customSec == null) return null;
-        return new NameSection(customSec);
+    public NameCustomSection nameSection() {
+        return (NameCustomSection) customSections.get("name");
     }
 
     public ElementSection elementSection() {
