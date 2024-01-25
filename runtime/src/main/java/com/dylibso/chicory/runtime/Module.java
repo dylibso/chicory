@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 public class Module {
+    public static final String START_FUNCTION_NAME = "_start";
     private final com.dylibso.chicory.wasm.Module module;
     private NameSection nameSec;
 
@@ -180,8 +181,8 @@ public class Module {
         if (module.startSection() != null) {
             startFuncId = (int) module.startSection().startIndex();
             var desc = new ExportDesc(startFuncId, ExportDescType.FuncIdx);
-            var export = new Export("_start", desc);
-            exports.put("_start", export);
+            var export = new Export(START_FUNCTION_NAME, desc);
+            exports.put(START_FUNCTION_NAME, export);
         }
 
         if (module.functionSection() != null) {
@@ -258,7 +259,7 @@ public class Module {
                 throw new ChicoryException("Multiple memories are not supported");
             }
             if (memories.length > 0) {
-                memory = new Memory(memories[0].memoryLimits(), dataSegments);
+                memory = new Memory(memories[0].memoryLimits());
             }
         } else {
             if (mappedHostImports.memoryCount() > 0) {
@@ -301,6 +302,7 @@ public class Module {
                 functionImportsOffset,
                 tablesImportsOffset,
                 memory,
+                dataSegments,
                 functions,
                 types,
                 functionTypes,
@@ -428,9 +430,7 @@ public class Module {
     }
 
     public Export export(String name) {
-        var e = this.exports.get(name);
-        if (e == null) throw new ChicoryException("Unknown export with name " + name);
-        return e;
+        return this.exports.get(name);
     }
 
     public NameSection nameSection() {
