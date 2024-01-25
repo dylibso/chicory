@@ -137,21 +137,16 @@ public class ModuleTest {
                         List.of(ValueType.I32),
                         List.of());
         var funcs = new HostFunction[] {func};
-        var module =
-                Module.builder("compiled/start.wat.wasm")
-                        .build()
-                        .instantiate(new HostImports(funcs));
-        var start = module.export("_start");
-        start.apply();
+        var module = Module.builder("compiled/start.wat.wasm").build();
+        module.instantiate(new HostImports(funcs));
 
         assertTrue(count.get() > 0);
     }
 
     @Test
     public void shouldTrapOnUnreachable() {
-        var instance = Module.builder("compiled/trap.wat.wasm").build().instantiate();
-        var start = instance.export("_start");
-        assertThrows(WASMMachineException.class, start::apply);
+        var module = Module.builder("compiled/trap.wat.wasm").build();
+        assertThrows(WASMMachineException.class, module::instantiate);
     }
 
     @Test

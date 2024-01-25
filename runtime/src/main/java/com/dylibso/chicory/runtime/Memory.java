@@ -27,28 +27,16 @@ public final class Memory {
 
     private final MemoryLimits limits;
 
-    private final DataSegment[] dataSegments;
+    private DataSegment[] dataSegments;
 
     private ByteBuffer buffer;
 
     private int nPages;
 
     public Memory(MemoryLimits limits) {
-        this(limits, null);
-    }
-
-    public Memory(MemoryLimits limits, DataSegment[] dataSegments) {
-        this(limits, dataSegments, true);
-    }
-
-    public Memory(MemoryLimits limits, DataSegment[] dataSegments, boolean initialize) {
         this.limits = limits;
         this.buffer = allocateByteBuffer(PAGE_SIZE * limits.initialPages());
         this.nPages = limits.initialPages();
-        this.dataSegments = dataSegments;
-        if (initialize) {
-            this.reinstantiate();
-        }
     }
 
     private static ByteBuffer allocateByteBuffer(int capacity) {
@@ -96,7 +84,8 @@ public final class Memory {
      * This zeros out the memory and re-writes the data segments
      * TODO - there is probably a more efficient way to handle this and do we need to do this?
      */
-    public void reinstantiate() {
+    public void initialize(DataSegment[] dataSegments) {
+        this.dataSegments = dataSegments;
         this.zero();
 
         if (dataSegments == null) {

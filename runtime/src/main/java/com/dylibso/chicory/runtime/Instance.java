@@ -1,6 +1,10 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.runtime.Module.START_FUNCTION_NAME;
+
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -14,9 +18,9 @@ public class Instance {
     private final Machine machine;
     private final FunctionBody[] functions;
     private final Memory memory;
+    private final DataSegment[] dataSegments;
     private final Global[] globalInitializers;
     private final Value[] globals;
-
     private final int importedGlobalsOffset;
     private final int importedFunctionsOffset;
     private final int importedTablesOffset;
@@ -34,6 +38,7 @@ public class Instance {
             int importedFunctionsOffset,
             int importedTablesOffset,
             Memory memory,
+            DataSegment[] dataSegments,
             FunctionBody[] functions,
             FunctionType[] types,
             int[] functionTypes,
@@ -47,6 +52,7 @@ public class Instance {
         this.importedFunctionsOffset = importedFunctionsOffset;
         this.importedTablesOffset = importedTablesOffset;
         this.memory = memory;
+        this.dataSegments = dataSegments;
         this.functions = functions.clone();
         this.types = types.clone();
         this.functionTypes = functionTypes.clone();
@@ -54,10 +60,24 @@ public class Instance {
         this.machine = new Machine(this);
         this.tables = tables.clone();
         this.elements = elements.clone();
+
+        initialize();
+    }
+
+    private void initialize() {
+        if (memory != null) {
+            memory.initialize(dataSegments);
+        } else if (imports.memories().length > 0) {
+            imports.memories()[0].memory().initialize(dataSegments);
+        }
+        if (module.export(START_FUNCTION_NAME) != null) {
+            export(START_FUNCTION_NAME).apply();
+        }
     }
 
     public ExportFunction export(String name) {
         var export = module.export(name);
+        if (export == null) throw new ChicoryException("Unknown export with name " + name);
         var funcId = (int) export.desc().index();
         return (args) -> {
             this.module.logger().debug(() -> "Args: " + Arrays.toString(args));

@@ -20,12 +20,9 @@ public class WasiPreview1Test {
         var wasi =
                 new WasiPreview1(this.logger, WasiOptions.builder().withStdout(fakeStdout).build());
         var imports = new HostImports(wasi.toHostFunctions());
-        var instance =
-                Module.builder(new File("src/test/resources/compiled/hello-wasi.wat.wasm"))
-                        .build()
-                        .instantiate(imports);
-        var run = instance.export("_start");
-        run.apply();
+        var module =
+                Module.builder(new File("src/test/resources/compiled/hello-wasi.wat.wasm")).build();
+        module.instantiate(imports);
         assertEquals(fakeStdout.output().strip(), "hello world");
     }
 
@@ -36,12 +33,9 @@ public class WasiPreview1Test {
         var stdout = new MockPrintStream();
         var wasi = new WasiPreview1(this.logger, WasiOptions.builder().withStdout(stdout).build());
         var imports = new HostImports(wasi.toHostFunctions());
-        var instance =
-                Module.builder(new File("src/test/resources/compiled/hello-wasi.rs.wasm"))
-                        .build()
-                        .instantiate(imports);
-        var run = instance.export("_start");
-        run.apply(); // prints Hello, World!
+        var module =
+                Module.builder(new File("src/test/resources/compiled/hello-wasi.rs.wasm")).build();
+        module.instantiate(imports); // run _start and prints Hello, World!
         assertEquals(expected, stdout.output().strip());
     }
 
@@ -52,11 +46,8 @@ public class WasiPreview1Test {
         var wasiOpts = WasiOptions.builder().withStdout(System.out).withStdin(fakeStdin).build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
-        var instance =
-                Module.builder(new File("src/test/resources/compiled/greet-wasi.rs.wasm"))
-                        .build()
-                        .instantiate(imports);
-        var run = instance.export("_start");
-        run.apply();
+        var module =
+                Module.builder(new File("src/test/resources/compiled/greet-wasi.rs.wasm")).build();
+        module.instantiate(imports);
     }
 }
