@@ -7,6 +7,8 @@ public class MemoryLimits {
      */
     public static final int MAX_PAGES = 2 << 15;
 
+    private static final MemoryLimits DEFAULT_LIMITS = new MemoryLimits(0, MAX_PAGES);
+
     /**
      * Initial number of pages.
      */
@@ -36,11 +38,10 @@ public class MemoryLimits {
     }
 
     /**
-     * Default memory limits.
-     * @return
+     * {@return the default memory limits}
      */
     public static MemoryLimits defaultLimits() {
-        return new MemoryLimits(0, MAX_PAGES);
+        return DEFAULT_LIMITS;
     }
 
     public int initialPages() {
@@ -49,5 +50,32 @@ public class MemoryLimits {
 
     public int maximumPages() {
         return maximum;
+    }
+
+    public boolean equals(final Object obj) {
+        return obj instanceof MemoryLimits && equals((MemoryLimits) obj);
+    }
+
+    public boolean equals(final MemoryLimits other) {
+        return this == other
+                || other != null && initial == other.initial && maximum == other.maximum;
+    }
+
+    public int hashCode() {
+        return maximum * 19 + initial;
+    }
+
+    public String toString() {
+        return toString(new StringBuilder()).toString();
+    }
+
+    public StringBuilder toString(StringBuilder b) {
+        b.append("[").append(initial).append(',');
+        if (maximum == MAX_PAGES) {
+            b.append("max");
+        } else {
+            b.append(maximum);
+        }
+        return b.append(']');
     }
 }
