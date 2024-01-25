@@ -96,7 +96,6 @@
             table_grow.wast,
             table_size.wast,
             ref_func.wast,
-            call_indirect.wast,
             store.wast,
             ref_is_null.wast</orderedWastToProcess>
           <excludedTests>
