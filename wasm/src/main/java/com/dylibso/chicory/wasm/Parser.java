@@ -40,6 +40,7 @@ import com.dylibso.chicory.wasm.types.Memory;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.MutabilityType;
+import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.RefType;
@@ -49,6 +50,7 @@ import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
+import com.dylibso.chicory.wasm.types.UnknownCustomSection;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.IOException;
@@ -172,7 +174,7 @@ public final class Parser {
                 switch (sectionId) {
                     case SectionId.CUSTOM:
                         {
-                            var customSection = parseCustomSection(buffer, sectionId, sectionSize);
+                            var customSection = parseCustomSection(buffer, sectionSize);
                             listener.onSection(customSection);
                             break;
                         }
@@ -270,12 +272,9 @@ public final class Parser {
         return this.includeSections.get(sectionId);
     }
 
-    private static CustomSection parseCustomSection(
-            ByteBuffer buffer, long sectionId, long sectionSize) {
+    private static CustomSection parseCustomSection(ByteBuffer buffer, long sectionSize) {
 
-        var customSection = new CustomSection(sectionId, sectionSize);
         var name = readName(buffer);
-        customSection.setName(name);
         var byteLen = name.getBytes().length;
         var size = (sectionSize - byteLen - Encoding.computeLeb128Size(byteLen));
         var remaining = buffer.limit() - buffer.position();
@@ -284,8 +283,14 @@ public final class Parser {
         }
         var bytes = new byte[(int) size];
         buffer.get(bytes);
-        customSection.setBytes(bytes);
-        return customSection;
+        CustomSection section;
+        if (name.equals("name")) {
+            // todo: pluggable custom section factories
+            section = new NameCustomSection(sectionSize, bytes);
+        } else {
+            section = new UnknownCustomSection(size, name, bytes);
+        }
+        return section;
     }
 
     private static TypeSection parseTypeSection(
