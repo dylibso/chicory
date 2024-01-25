@@ -19,7 +19,7 @@ import java.util.List;
 /**
  * This is responsible for holding and interpreting the Wasm code.
  */
-public class Machine {
+class Machine {
 
     private final MStack stack;
 
