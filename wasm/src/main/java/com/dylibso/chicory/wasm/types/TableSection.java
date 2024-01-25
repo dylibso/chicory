@@ -3,8 +3,8 @@ package com.dylibso.chicory.wasm.types;
 public class TableSection extends Section {
     private Table[] tables;
 
-    public TableSection(long id, long size, Table[] tables) {
-        super(id, size);
+    public TableSection(long id, Table[] tables) {
+        super(id);
         this.tables = tables;
     }
 

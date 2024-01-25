@@ -12,12 +12,11 @@ public final class UnknownCustomSection extends CustomSection {
     /**
      * Construct a new instance.
      *
-     * @param size the section size
      * @param name the name of the section (must not be {@code null})
      * @param bytes the section contents (must not be {@code null})
      */
-    public UnknownCustomSection(final long size, final String name, final byte[] bytes) {
-        super(size);
+    public UnknownCustomSection(final String name, final byte[] bytes) {
+        super();
         this.name = Objects.requireNonNull(name, "name");
         this.bytes = bytes.clone();
     }
