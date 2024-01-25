@@ -3,15 +3,13 @@ package com.dylibso.chicory.wasm.types;
 import com.dylibso.chicory.wasm.Parser;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /**
  * The "name" custom section.
  */
 public class NameCustomSection extends CustomSection {
 
-    private final List<String> funcNames;
+    private final ArrayList<String> funcNames;
 
     /**
      * Construct a new instance.
@@ -27,10 +25,8 @@ public class NameCustomSection extends CustomSection {
         return "name";
     }
 
-    private List<String> parseFunctionNames(final byte[] bytes) {
+    private ArrayList<String> parseFunctionNames(final byte[] bytes) {
         ByteBuffer buf = ByteBuffer.wrap(bytes);
-
-        List<String> names = new ArrayList<>();
 
         // Expecting function name subsection
         if (buf.get() != 1) {
@@ -42,6 +38,9 @@ public class NameCustomSection extends CustomSection {
 
         // Decode name map length
         long nameMapLength = Parser.readVarUInt32(buf);
+
+        ArrayList<String> names = new ArrayList<>(Math.toIntExact(nameMapLength));
+
         for (int i = 0; i < nameMapLength; i++) {
             // Skip function index
             Parser.readVarUInt32(buf);
@@ -49,10 +48,14 @@ public class NameCustomSection extends CustomSection {
             names.add(Parser.readName(buf));
         }
 
-        return Collections.unmodifiableList(names);
+        return names;
     }
 
-    public List<String> functionNames() {
-        return funcNames;
+    public int functionNameCount() {
+        return funcNames.size();
+    }
+
+    public String getFunctionName(int idx) {
+        return funcNames.get(idx);
     }
 }
