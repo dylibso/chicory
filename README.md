@@ -24,14 +24,14 @@ to your dependency management system.
 <dependency>
   <groupId>com.dylibso.chicory</groupId>
   <artifactId>runtime</artifactId>
-  <version>0.0.2</version>
+  <version>0.0.6</version>
 </dependency>
 ```
 
 #### Gradle
 
 ```groovy
-implementation 'com.dylibso.chicory:runtime:0.0.2'
+implementation 'com.dylibso.chicory:runtime:0.0.6'
 ```
 
 ### Loading and Instantiating Code
@@ -65,10 +65,10 @@ loaded with the code and ready to execute.
 ### Invoking an Export Function
 
 Wasm modules, like all code modules, can export functions to the outside
-world. This module exports a function called `"iterFact"`. We can get a handle to this function using `Instance#getExport(String)`:
+world. This module exports a function called `"iterFact"`. We can get a handle to this function using `Instance#export(String)`:
 
 ```java
-ExportFunction iterFact = instance.getExport("iterFact");
+ExportFunction iterFact = instance.export("iterFact");
 ```
 
 iterFact can be invoked with the `apply()` method. We must map any java types to a wasm type and do the reverse
@@ -96,28 +96,28 @@ curl https://raw.githubusercontent.com/dylibso/chicory/main/runtime/src/test/res
 Build and instantiate this module:
 
 ```java
-Instance instance = Module.build(new File("./count_vowels.wasm")).instantiate();
-ExportFunction countVowels = instance.getExport("count_vowels");
+Instance instance = Module.builder(new File("./count_vowels.wasm")).build().instantiate();
+ExportFunction countVowels = instance.export("count_vowels");
 ```
 
 To pass it a string, we first need to put the string in the module's memory. To make this easier and safe,
 the module gives us some extra exports to allow us to allocate and deallocate memory:
 
 ```java
-ExportFunction alloc = instance.getExport("alloc");
-ExportFunction dealloc = instance.getExport("dealloc");
+ExportFunction alloc = instance.export("alloc");
+ExportFunction dealloc = instance.export("dealloc");
 ```
 
 Let's allocate Wasm memory for a string and put in the instance's memory. We can do this with `Memory#put`:
 
 ```java
-Memory memory = instance.getMemory();
+Memory memory = instance.memory();
 String message = "Hello, World!";
 int len = message.getBytes().length;
 // allocate {len} bytes of memory, this returns a pointer to that memory
 int ptr = alloc.apply(Value.i32(len))[0].asInt();
 // We can now write the message to the module's memory:
-memory.put(ptr, message);
+memory.write(ptr, message);
 ```
 
 Now we can call `countVowels` with this pointer to the string. It will do it's job and return the count. We will
@@ -153,7 +153,7 @@ var func = new HostFunction(
     (Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
         var len = args[0].asInt();
         var offset = args[1].asInt();
-        var message = instance.getMemory().getString(offset, len);
+        var message = instance.memory().readString(offset, len);
         System.out.println(message);
         return null;
     },
@@ -177,8 +177,8 @@ Now we just need to pass this host function in during our instantiation phase:
 
 ```java
 var funcs = new HostFunction[] {func};
-var instance = Module.build(new File("./logger.wasm")).instantiate(funcs);
-var logIt = instance.getExport("logIt");
+var instance = Module.builder(new File("./logger.wasm")).build().instantiate(funcs);
+var logIt = instance.export("logIt");
 logIt.apply();
 // should print "Hello, World!" 10 times
 ```
@@ -255,38 +255,14 @@ Basic steps:
 
 NOTE: The `install` target relies on the `wabt` library to compile the test suite. This is not currently released for ARM (e.g. new Macs with Apple Silicon). However, `wabt` is available from Homebrew, so `brew install wabt` before running `mvn clean install` should work.
 
-### Modules
-
-There are four independent modules at the moment:
-
-* wasm-support-plugin
-* wasm
-* test-gen-plugin
-* runtime
-
-#### wasm-support-plugin
-
-The [wasm-support-plugin](wasm-support-plugin/) package is a maven plugin that handles the generation of OpCode definitions from an agnostic `tsv` file.
-
-#### wasm package
-
-The [wasm](wasm/) package contains a lot of the core Wasm types and the binary parser.
-It can be useful as an independent library for using wasm in Java.
-
-#### test-gen-plugin
-
-The [test-gen-plugin](test-gen-plugin/) package is a maven plugin that handles the test generation that exercises both the wasm package and the runtime package. Tests are parsed from the [Wasm testsuite](https://github.com/WebAssembly/testsuite) and generate Java JUnit tests.
-
-#### runtime package
-
-The [runtime](runtime/) packages contains the actual Chicory runtime.
-
 #### logging
 
-For maximum compatibility and to avoid external dependencies we use the JDK Platform Logging (JEP 264).
+For maximum compatibility and to avoid external dependencies we use, by default, the JDK Platform Logging (JEP 264).
 You can configure it by providing a `logging.properties` using the `java.util.logging.config.file` property and [here](https://docs.oracle.com/cd/E57471_01/bigData.100/data_processing_bdd/src/rdp_logging_config.html) you can find the possible configurations.
 
 For more advanced configuration scenarios we encourage you to provide an alternative, compatible, adapter:
 
 - [slf4j](https://www.slf4j.org/manual.html#jep264)
 - [log4j2](https://logging.apache.org/log4j/2.x/log4j-jpl.html)
+
+It's also possible to provide a custom `com.dylibso.chicory.log.Logger` implementation if JDK Platform Logging is not available or doesn't fit.

@@ -1,4 +1,4 @@
-# wasmparser
+# wasm
 
 This is a pure Java library that can parse Wasm binaries. This is in alpha at the moment.
 We are working on coverage of the spec, tests, and the API may change. When things get settled
@@ -10,10 +10,14 @@ There are two ways you can interface with this library. The simplest way is to p
 module using `parseModule`:
 
 ```java
-var parser = new Parser("/tmp/code.wasm");
-var module = parser.parseModule();
-var customSection = module.getCustomSections()[0];
-System.out.println("First custom section: " + customSection.getName());
+var parser = new Parser(new SystemLogger());
+try (var fis = new FileInputStream("/tmp/code.wasm")) {
+    var module = parser.parseModule(fis);
+    var customSection = module.customSections().get(0);
+    System.out.println("First custom section: " + customSection.getName());
+} catch (Exception e) {
+    throw new RuntimeException(e);
+};
 ```
 
 The second is to use the `ParserListener` interface and the `parse()` method. In this mode you can also call
@@ -22,7 +26,7 @@ sections. This is useful for performance if you only want to parse a piece of th
 If you don't call this method once it will parse all sections.
 
 ```java
-var parser = new Parser("/tmp/code.wasm");
+var parser = new Parser(new SystemLogger());
 
 // include the custom sections, don't call this to receive all sections
 parser.includeSection(SectionId.CUSTOM);
@@ -39,6 +43,10 @@ parser.setListener(section -> {
     }
 });
 
-// call parse() instead of parseModule()
-parser.parse();
+// call parseModule()
+try (var fis = new FileInputStream("/tmp/code.wasm")) {
+    parser.parseModule(fis);
+} catch (Exception e) {
+    throw new RuntimeException(e);
+};
 ```

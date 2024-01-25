@@ -440,46 +440,6 @@ public class Module {
     }
 
     /**
-     * Use {@link #builder(File)}
-     *
-     * @deprecated
-     */
-    @Deprecated
-    public static Module build(File wasmFile) {
-        return builder(wasmFile).build();
-    }
-
-    /**
-     * Use {@link #builder(InputStream)}
-     *
-     * @deprecated
-     */
-    @Deprecated
-    public static Module build(InputStream is) {
-        return builder(is).build();
-    }
-
-    /**
-     * Use {@link #builder(ByteBuffer)}
-     *
-     * @deprecated
-     */
-    @Deprecated
-    public static Module build(ByteBuffer buffer) {
-        return builder(buffer).build();
-    }
-
-    /**
-     * Use {@link #builder(File)}
-     *
-     * @deprecated
-     */
-    @Deprecated
-    public static Module build(File wasmFile, ModuleType type) {
-        return builder(wasmFile).withType(type).build();
-    }
-
-    /**
      * Creates a {@link Builder} for the specified {@link InputStream}
      *
      * @param input the input stream
