@@ -22,7 +22,7 @@ import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.Import;
 import com.dylibso.chicory.wasm.types.ImportDescType;
 import com.dylibso.chicory.wasm.types.Instruction;
-import com.dylibso.chicory.wasm.types.NameSection;
+import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
@@ -42,7 +42,7 @@ import java.util.function.Supplier;
 
 public class Module {
     private final com.dylibso.chicory.wasm.Module module;
-    private NameSection nameSec;
+    private NameCustomSection nameSec;
 
     private final HashMap<String, Export> exports;
     private final Logger logger;
@@ -433,7 +433,7 @@ public class Module {
         return e;
     }
 
-    public NameSection nameSection() {
+    public NameCustomSection nameSection() {
         if (nameSec != null) return nameSec;
         nameSec = this.module.nameSection();
         return nameSec;
