@@ -3,8 +3,8 @@ package com.dylibso.chicory.wasm.types;
 public class CodeSection extends Section {
     private FunctionBody[] functionBodies;
 
-    public CodeSection(long id, FunctionBody[] functionBodies) {
-        super(id);
+    public CodeSection(FunctionBody[] functionBodies) {
+        super(SectionId.CODE);
         this.functionBodies = functionBodies;
     }
 

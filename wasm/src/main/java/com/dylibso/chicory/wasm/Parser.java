@@ -180,68 +180,67 @@ public final class Parser {
                         }
                     case SectionId.TYPE:
                         {
-                            var typeSection = parseTypeSection(buffer, sectionId);
+                            var typeSection = parseTypeSection(buffer);
                             listener.onSection(typeSection);
                             break;
                         }
                     case SectionId.IMPORT:
                         {
-                            var importSection = parseImportSection(buffer, sectionId);
+                            var importSection = parseImportSection(buffer);
                             listener.onSection(importSection);
                             break;
                         }
                     case SectionId.FUNCTION:
                         {
-                            var funcSection = parseFunctionSection(buffer, sectionId);
+                            var funcSection = parseFunctionSection(buffer);
                             listener.onSection(funcSection);
                             break;
                         }
                     case SectionId.TABLE:
                         {
-                            var tableSection = parseTableSection(buffer, sectionId);
+                            var tableSection = parseTableSection(buffer);
                             listener.onSection(tableSection);
                             break;
                         }
                     case SectionId.MEMORY:
                         {
-                            var memorySection = parseMemorySection(buffer, sectionId);
+                            var memorySection = parseMemorySection(buffer);
                             listener.onSection(memorySection);
                             break;
                         }
                     case SectionId.GLOBAL:
                         {
-                            var globalSection = parseGlobalSection(buffer, sectionId);
+                            var globalSection = parseGlobalSection(buffer);
                             listener.onSection(globalSection);
                             break;
                         }
                     case SectionId.EXPORT:
                         {
-                            var exportSection = parseExportSection(buffer, sectionId);
+                            var exportSection = parseExportSection(buffer);
                             listener.onSection(exportSection);
                             break;
                         }
                     case SectionId.START:
                         {
-                            var startSection = parseStartSection(buffer, sectionId);
+                            var startSection = parseStartSection(buffer);
                             listener.onSection(startSection);
                             break;
                         }
                     case SectionId.ELEMENT:
                         {
-                            var elementSection =
-                                    parseElementSection(buffer, sectionId, sectionSize);
+                            var elementSection = parseElementSection(buffer, sectionSize);
                             listener.onSection(elementSection);
                             break;
                         }
                     case SectionId.CODE:
                         {
-                            var codeSection = parseCodeSection(buffer, sectionId);
+                            var codeSection = parseCodeSection(buffer);
                             listener.onSection(codeSection);
                             break;
                         }
                     case SectionId.DATA:
                         {
-                            var dataSection = parseDataSection(buffer, sectionId);
+                            var dataSection = parseDataSection(buffer);
                             listener.onSection(dataSection);
                             break;
                         }
@@ -293,7 +292,7 @@ public final class Parser {
         return section;
     }
 
-    private static TypeSection parseTypeSection(ByteBuffer buffer, long sectionId) {
+    private static TypeSection parseTypeSection(ByteBuffer buffer) {
 
         var typeCount = readVarUInt32(buffer);
         var types = new FunctionType[(int) typeCount];
@@ -329,10 +328,10 @@ public final class Parser {
             types[i] = new FunctionType(params, returns);
         }
 
-        return new TypeSection(sectionId, types);
+        return new TypeSection(types);
     }
 
-    private static ImportSection parseImportSection(ByteBuffer buffer, long sectionId) {
+    private static ImportSection parseImportSection(ByteBuffer buffer) {
 
         var importCount = readVarUInt32(buffer);
         var imports = new Import[(int) importCount];
@@ -391,10 +390,10 @@ public final class Parser {
             }
         }
 
-        return new ImportSection(sectionId, imports);
+        return new ImportSection(imports);
     }
 
-    private static FunctionSection parseFunctionSection(ByteBuffer buffer, long sectionId) {
+    private static FunctionSection parseFunctionSection(ByteBuffer buffer) {
 
         var functionCount = readVarUInt32(buffer);
         var typeIndices = new int[(int) functionCount];
@@ -405,10 +404,10 @@ public final class Parser {
             typeIndices[i] = (int) typeIndex;
         }
 
-        return new FunctionSection(sectionId, typeIndices);
+        return new FunctionSection(typeIndices);
     }
 
-    private static TableSection parseTableSection(ByteBuffer buffer, long sectionId) {
+    private static TableSection parseTableSection(ByteBuffer buffer) {
 
         var tableCount = readVarUInt32(buffer);
         var tables = new Table[(int) tableCount];
@@ -423,10 +422,10 @@ public final class Parser {
             tables[i] = new Table(tableType, limits);
         }
 
-        return new TableSection(sectionId, tables);
+        return new TableSection(tables);
     }
 
-    private static MemorySection parseMemorySection(ByteBuffer buffer, long sectionId) {
+    private static MemorySection parseMemorySection(ByteBuffer buffer) {
 
         var memoryCount = readVarUInt32(buffer);
         var memories = new Memory[(int) memoryCount];
@@ -437,7 +436,7 @@ public final class Parser {
             memories[i] = new Memory(limits);
         }
 
-        return new MemorySection(sectionId, memories);
+        return new MemorySection(memories);
     }
 
     private static MemoryLimits parseMemoryLimits(ByteBuffer buffer) {
@@ -454,7 +453,7 @@ public final class Parser {
         return new MemoryLimits(initial, maximum);
     }
 
-    private static GlobalSection parseGlobalSection(ByteBuffer buffer, long sectionId) {
+    private static GlobalSection parseGlobalSection(ByteBuffer buffer) {
 
         var globalCount = readVarUInt32(buffer);
         var globals = new Global[(int) globalCount];
@@ -467,10 +466,10 @@ public final class Parser {
             globals[i] = new Global(valueType, mutabilityType, init);
         }
 
-        return new GlobalSection(sectionId, globals);
+        return new GlobalSection(globals);
     }
 
-    private static ExportSection parseExportSection(ByteBuffer buffer, long sectionId) {
+    private static ExportSection parseExportSection(ByteBuffer buffer) {
 
         var exportCount = readVarUInt32(buffer);
         var exports = new Export[(int) exportCount];
@@ -484,18 +483,17 @@ public final class Parser {
             exports[i] = new Export(name, desc);
         }
 
-        return new ExportSection(sectionId, exports);
+        return new ExportSection(exports);
     }
 
-    private static StartSection parseStartSection(ByteBuffer buffer, long sectionId) {
+    private static StartSection parseStartSection(ByteBuffer buffer) {
 
-        var startSection = new StartSection(sectionId);
+        var startSection = new StartSection();
         startSection.setStartIndex(readVarUInt32(buffer));
         return startSection;
     }
 
-    private static ElementSection parseElementSection(
-            ByteBuffer buffer, long sectionId, long sectionSize) {
+    private static ElementSection parseElementSection(ByteBuffer buffer, long sectionSize) {
         var initialPosition = buffer.position();
 
         var elementCount = readVarUInt32(buffer);
@@ -506,7 +504,7 @@ public final class Parser {
         }
         assert (buffer.position() == initialPosition + sectionSize);
 
-        return new ElementSection(sectionId, elements);
+        return new ElementSection(elements);
     }
 
     private static Element parseSingleElement(ByteBuffer buffer) {
@@ -593,7 +591,7 @@ public final class Parser {
         return exprs;
     }
 
-    private static CodeSection parseCodeSection(ByteBuffer buffer, long sectionId) {
+    private static CodeSection parseCodeSection(ByteBuffer buffer) {
 
         var funcBodyCount = readVarUInt32(buffer);
         var functionBodies = new FunctionBody[(int) funcBodyCount];
@@ -734,10 +732,10 @@ public final class Parser {
             functionBodies[i] = new FunctionBody(locals, instructions);
         }
 
-        return new CodeSection(sectionId, functionBodies);
+        return new CodeSection(functionBodies);
     }
 
-    private static DataSection parseDataSection(ByteBuffer buffer, long sectionId) {
+    private static DataSection parseDataSection(ByteBuffer buffer) {
 
         var dataSegmentCount = readVarUInt32(buffer);
         var dataSegments = new DataSegment[(int) dataSegmentCount];
@@ -764,7 +762,7 @@ public final class Parser {
             }
         }
 
-        return new DataSection(sectionId, dataSegments);
+        return new DataSection(dataSegments);
     }
 
     private static Instruction parseInstruction(ByteBuffer buffer) {
