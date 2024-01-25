@@ -36,6 +36,28 @@ public class Module {
         this.customSections = new HashMap<>();
     }
 
+    /**
+     * Create a new, empty module with all sections initialized.
+     * The module can then be populated.
+     *
+     * @return the new empty module (not {@code null})
+     */
+    public static Module createEmpty() {
+        Module module = new Module();
+        module.setTypeSection(new TypeSection());
+        module.setImportSection(new ImportSection());
+        module.setFunctionSection(new FunctionSection());
+        module.setTableSection(new TableSection());
+        module.setMemorySection(new MemorySection());
+        module.setGlobalSection(new GlobalSection());
+        module.setExportSection(new ExportSection());
+        module.setStartSection(new StartSection());
+        module.setCodeSection(new CodeSection());
+        module.setDataSection(new DataSection());
+        module.addCustomSection(new NameCustomSection());
+        return module;
+    }
+
     public void setTypeSection(TypeSection typeSection) {
         this.typeSection = typeSection;
     }
