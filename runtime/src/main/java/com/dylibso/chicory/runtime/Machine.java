@@ -2146,7 +2146,7 @@ class Machine {
             table = instance.imports().table(idx).table();
         }
         var i = stack.pop().asInt();
-        if (i < 0 || (table.limitMax() != 0 && i >= table.limitMax()) || i >= table.size()) {
+        if (i < 0 || i >= table.limits().max() || i >= table.size()) {
             throw new WASMRuntimeException("out of bounds table access");
         }
         stack.push(table.ref(i));
