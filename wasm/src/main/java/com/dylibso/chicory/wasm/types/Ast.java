@@ -1,16 +1,16 @@
 package com.dylibso.chicory.wasm.types;
 
-import java.util.Stack;
+import java.util.ArrayDeque;
 
 public class Ast {
     private final CodeBlock root;
-    private final Stack<CodeBlock> stack;
+    private final ArrayDeque<CodeBlock> stack;
 
     // private List<Instruction> instructions;
 
     public Ast() {
         this.root = new CodeBlock(BlockType.BLOCK);
-        this.stack = new Stack<>();
+        this.stack = new ArrayDeque<>();
         this.stack.push(root);
     }
 
@@ -48,8 +48,8 @@ public class Ast {
         }
     }
 
-    private CodeBlock push(CodeBlock block) {
-        return this.stack.push(block);
+    private void push(CodeBlock block) {
+        stack.push(block);
     }
 
     private CodeBlock peek() {
