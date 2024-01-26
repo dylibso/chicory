@@ -16,11 +16,10 @@ public class NameCustomSection extends CustomSection {
     /**
      * Construct a new instance.
      *
-     * @param size the size of the section
      * @param bytes the byte content of the section
      */
-    public NameCustomSection(final long size, final byte[] bytes) {
-        super(size);
+    public NameCustomSection(final byte[] bytes) {
+        super();
         funcNames = parseFunctionNames(bytes);
     }
 
