@@ -1,25 +1,45 @@
 package com.dylibso.chicory.wasm.types;
 
-public interface Element {
+import java.util.List;
+import java.util.Objects;
 
-    ElemType elemType();
+/**
+ * An element, used to initialize table ranges.
+ */
+public abstract class Element {
+    private final ValueType type;
+    private final List<List<Instruction>> initializers;
 
-    int size();
+    /**
+     * Construct a new instance.
+     *
+     * @param type the type of the element values (must not be {@code null})
+     * @param initializers the list of instruction lists which are used to initialize each element in the range (must not be {@code null})
+     */
+    public Element(final ValueType type, final List<List<Instruction>> initializers) {
+        this.type = Objects.requireNonNull(type, "type");
+        this.initializers = List.copyOf(initializers);
+    }
 
-    enum ElemType {
-        Type(0),
-        Func(1),
-        Table(2),
-        Mem(3),
-        Global(4),
-        Elem(5),
-        Data(6),
-        Start(7);
+    /**
+     * {@return the type of the element values}
+     */
+    public ValueType type() {
+        return type;
+    }
 
-        private final int id;
+    /**
+     * {@return the list of instruction lists which are used to initialize each element in the range}
+     */
+    public List<List<Instruction>> initializers() {
+        return initializers;
+    }
 
-        ElemType(int id) {
-            this.id = id;
-        }
+    /**
+     * {@return the number of elements defined by this section}
+     * This value is equal to the number of initializers present.
+     */
+    public int elementCount() {
+        return initializers().size();
     }
 }

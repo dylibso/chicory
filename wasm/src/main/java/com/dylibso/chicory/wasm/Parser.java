@@ -6,17 +6,11 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
+import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.CodeSection;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.DataSection;
-import com.dylibso.chicory.wasm.types.ElemData;
-import com.dylibso.chicory.wasm.types.ElemElem;
-import com.dylibso.chicory.wasm.types.ElemFunc;
-import com.dylibso.chicory.wasm.types.ElemGlobal;
-import com.dylibso.chicory.wasm.types.ElemMem;
-import com.dylibso.chicory.wasm.types.ElemStart;
-import com.dylibso.chicory.wasm.types.ElemTable;
-import com.dylibso.chicory.wasm.types.ElemType;
+import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.ElementSection;
 import com.dylibso.chicory.wasm.types.ElementType;
@@ -43,7 +37,7 @@ import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
-import com.dylibso.chicory.wasm.types.RefType;
+import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.Section;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
@@ -519,67 +513,85 @@ public final class Parser {
     }
 
     private static Element parseSingleElement(ByteBuffer buffer) {
-        var kind = readVarUInt32(buffer);
-        switch ((int) kind) {
-            case 0:
-                {
-                    var expr = parseExpression(buffer);
-                    var funcIndices = readFuncIndices(buffer);
-                    return new ElemType(expr, funcIndices);
-                }
-            case 1:
-                {
-                    var elemkind = (int) readVarUInt32(buffer);
-                    assert (elemkind == 0x00);
-                    var funcIndices = readFuncIndices(buffer);
-                    return new ElemFunc(funcIndices);
-                }
-            case 2:
-                {
-                    var tableIndex = readVarUInt32(buffer);
-                    var expr = parseExpression(buffer);
-                    var elemkind = (int) readVarUInt32(buffer);
-                    assert (elemkind == 0x00);
-                    var funcIndices = readFuncIndices(buffer);
-                    return new ElemTable(tableIndex, expr, funcIndices);
-                }
-            case 3:
-                {
-                    var elemkind = (int) readVarUInt32(buffer);
-                    assert (elemkind == 0x00);
-                    var funcIndices = readFuncIndices(buffer);
-                    return new ElemMem(funcIndices);
-                }
-            case 4:
-                {
-                    var expr = parseExpression(buffer);
-                    var exprs = readExprs(buffer);
-                    return new ElemGlobal(expr, exprs);
-                }
-            case 5:
-                {
-                    var refType = RefType.byId(buffer.get());
-                    var exprs = readExprs(buffer);
-                    return new ElemElem(refType, exprs);
-                }
-            case 6:
-                {
-                    var tableIndex = readVarUInt32(buffer);
-                    var expr = parseExpression(buffer);
-                    var refType = RefType.byId(buffer.get());
-                    var exprs = readExprs(buffer);
-                    return new ElemData(tableIndex, expr, refType, exprs);
-                }
-            case 7:
-                {
-                    var refType = RefType.byId(buffer.get());
-                    var exprs = readExprs(buffer);
-                    return new ElemStart(refType, exprs);
-                }
-            default:
-                {
-                    throw new ChicoryException("Failed to parse the elements section.");
-                }
+        // Elements are actually fairly complex to parse.
+        // See https://webassembly.github.io/spec/core/binary/modules.html#element-section
+
+        int flags = (int) readVarUInt32(buffer);
+
+        // Active elements have bit 0 clear
+        boolean active = (flags & 0b001) == 0;
+        // Declarative elements are non-active elements with bit 1 set
+        boolean declarative = !active && (flags & 0b010) != 0;
+        // Otherwise, it's passive
+        boolean passive = !active && !declarative;
+
+        // Now, characteristics for parsing
+        // Does the (active) segment have a table index, or is it always 0?
+        boolean hasTableIdx = active && (flags & 0b010) != 0;
+        // Is the type always funcref, or do we have to read the type?
+        boolean alwaysFuncRef = active && !hasTableIdx;
+        // Are initializers expressions or function indices?
+        boolean exprInit = (flags & 0b100) != 0;
+        // Is the type encoded as an elemkind?
+        boolean hasElemKind = !exprInit && !alwaysFuncRef;
+        // Is the type encoded as a reftype?
+        boolean hasRefType = exprInit && !alwaysFuncRef;
+
+        // the table index is assumed to be zero
+        int tableIdx = 0;
+        List<Instruction> offset = List.of();
+
+        if (active) {
+            if (hasTableIdx) {
+                tableIdx = Math.toIntExact(readVarUInt32(buffer));
+            }
+            offset = List.of(parseExpression(buffer));
+        }
+        // common path
+        ValueType type;
+        if (alwaysFuncRef) {
+            type = ValueType.FuncRef;
+        } else if (hasElemKind) {
+            int ek = (int) readVarUInt32(buffer);
+            switch (ek) {
+                case 0x00:
+                    {
+                        type = ValueType.FuncRef;
+                        break;
+                    }
+                default:
+                    {
+                        throw new ChicoryException("Invalid element kind");
+                    }
+            }
+        } else {
+            assert hasRefType;
+            type = ValueType.refTypeForId(Math.toIntExact(readVarUInt32(buffer)));
+        }
+        int initCnt = Math.toIntExact(readVarUInt32(buffer));
+        List<List<Instruction>> inits = new ArrayList<>(initCnt);
+        if (exprInit) {
+            // read the expressions directly from the stream
+            for (int i = 0; i < initCnt; i++) {
+                inits.add(List.of(parseExpression(buffer)));
+            }
+        } else {
+            // read function references, and compose them as instruction lists
+            for (int i = 0; i < initCnt; i++) {
+                inits.add(
+                        List.of(
+                                new Instruction(
+                                        -1, OpCode.REF_FUNC, new long[] {readVarUInt32(buffer)}),
+                                new Instruction(-1, OpCode.END, new long[0])));
+            }
+        }
+        if (declarative) {
+            return new DeclarativeElement(type, inits);
+        } else if (passive) {
+            return new PassiveElement(type, inits);
+        } else {
+            assert active;
+            return new ActiveElement(type, inits, tableIdx, offset);
         }
     }
 

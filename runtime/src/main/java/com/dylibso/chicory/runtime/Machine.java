@@ -5,13 +5,12 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.types.ElemElem;
-import com.dylibso.chicory.wasm.types.ElemFunc;
-import com.dylibso.chicory.wasm.types.ElemType;
+import com.dylibso.chicory.wasm.types.ElementType;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
@@ -1621,17 +1620,23 @@ class Machine {
         if (size < 0
                 || elementidx > instance.elementCount()
                 || instance.element(elementidx) == null
-                || elemidx + size > instance.element(elementidx).size()
+                || !(instance.element(elementidx) instanceof PassiveElement)
+                || elemidx + size > instance.element(elementidx).elementCount()
                 || end > table.size()) {
             throw new WASMRuntimeException("out of bounds table access");
         }
 
         for (int i = offset; i < end; i++) {
             var val = getRuntimeElementValue(instance, elementidx, elemidx++);
-            if (val > instance.functionCount()) {
-                throw new WASMRuntimeException("out of bounds table access");
+            if (table.elementType() == ElementType.FuncRef) {
+                if (val.asFuncRef() > instance.functionCount()) {
+                    throw new WASMRuntimeException("out of bounds table access");
+                }
+                table.setRef(i, val.asFuncRef());
+            } else {
+                assert table.elementType() == ElementType.ExtRef;
+                table.setRef(i, val.asExtRef());
             }
-            table.setRef(i, val);
         }
     }
 
@@ -2298,36 +2303,9 @@ class Machine {
         }
     }
 
-    private static int getRuntimeElementValue(Instance instance, int idx, int s) {
-        var elem = instance.element(idx);
-        var type = elem.elemType();
-        int val;
-        switch (type) {
-            case Type:
-                {
-                    var t = (ElemType) elem;
-                    val = computeConstantValue(t.exprInstructions());
-                    break;
-                }
-            case Elem:
-                {
-                    var e = (ElemElem) elem;
-                    var expr = e.exprs()[s];
-                    val = computeConstantValue(expr);
-                    break;
-                }
-            case Func:
-                {
-                    var f = (ElemFunc) elem;
-                    val = (int) f.funcIndices()[s];
-                    break;
-                }
-            default:
-                {
-                    throw new WASMRuntimeException("Element Type not recognized " + type);
-                }
-        }
-        return val;
+    private static Value getRuntimeElementValue(Instance instance, int elemIdx, int itemIdx) {
+        var elem = instance.element(elemIdx);
+        return computeConstantValue(elem.initializers().get(itemIdx));
     }
 
     List<StackFrame> getStackTrace() {
