@@ -3,8 +3,6 @@ package com.dylibso.chicory.runtime;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
 
 /**
  * Represents a frame. It's maybe a misonomer to call it a stack frame.
@@ -19,7 +17,7 @@ import java.util.List;
 public class StackFrame {
     public int funcId;
     public int pc;
-    public HashMap<Integer, Value> locals;
+    public Value[] locals;
     public int blockDepth;
     private Instance instance;
     public boolean doControlTransfer = false;
@@ -28,48 +26,30 @@ public class StackFrame {
     public int numberOfValuesToReturn = 0;
     public Value branchConditionValue = null;
 
-    public StackFrame(Instance instance, int funcId, int pc, Value[] args, List<Value> initLocals) {
+    public StackFrame(Instance instance, int funcId, int pc, Value[] args, ValueType[] localTypes) {
         this.instance = instance;
         this.funcId = funcId;
         this.pc = pc;
-        this.locals = new HashMap<>();
-        // pre-initialize everything to 0
-        for (var i = 0; i < initLocals.size(); i++) {
-            var l = initLocals.get(i);
-            var type = l.type() == null ? ValueType.I32 : l.type();
-            // TODO need a cleaner way to initialize?
-            // there are footguns to using the raw Value constructor
-            switch (type) {
-                case I32:
-                    this.setLocal(i, Value.i32(0));
-                    break;
-                case F32:
-                    this.setLocal(i, Value.f32(0));
-                    break;
-                case I64:
-                    this.setLocal(i, Value.i64(0));
-                    break;
-                case F64:
-                    this.setLocal(i, Value.f64(0));
-                    break;
+        this.locals = new Value[args.length + localTypes.length];
+
+        // initialize all locals.
+        for (var i = 0; i < args.length; i++) locals[i] = args[i];
+        for (var i = 0; i < localTypes.length; i++) {
+            ValueType type = localTypes[i];
+            // TODO: How do we initialize non-numeric V128
+            if (type != ValueType.V128) {
+                locals[i + args.length] = Value.zero(type);
             }
         }
-        // set values from args
-        for (var i = 0; i < args.length; i++) this.setLocal(i, args[i]);
         this.blockDepth = 0;
     }
 
     void setLocal(int i, Value v) {
-        this.locals.put(i, v);
+        this.locals[i] = v;
     }
 
     Value local(int i) {
-        var l = this.locals.get(i);
-        // TODO is this right?
-        if (l == null) {
-            return Value.i64(0L);
-        }
-        return l;
+        return locals[i];
     }
 
     @Override
@@ -80,6 +60,6 @@ public class StackFrame {
             var funcName = nameSec.functionNames().get(funcId);
             if (funcName != null) id = funcName + id;
         }
-        return id + "\n\tpc=" + pc + " locals=" + Arrays.toString(locals.values().toArray());
+        return id + "\n\tpc=" + pc + " locals=" + Arrays.toString(locals);
     }
 }

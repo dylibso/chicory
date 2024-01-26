@@ -51,7 +51,6 @@ import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.UnknownCustomSection;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,6 +60,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 
 /**
  * Parser for Web Assembly binaries.
@@ -591,8 +591,22 @@ public final class Parser {
         return exprs;
     }
 
-    private static CodeSection parseCodeSection(ByteBuffer buffer) {
+    private static List<ValueType> parseCodeSectionLocalTypes(ByteBuffer buffer) {
+        var distinctTypesCount = readVarUInt32(buffer);
+        var locals = new ArrayList<ValueType>();
 
+        for (int i = 0; i < distinctTypesCount; i++) {
+            var numberOfLocals = readVarUInt32(buffer);
+            var type = ValueType.byId(readVarUInt32(buffer));
+            for (int j = 0; j < numberOfLocals; j++) {
+                locals.add(type);
+            }
+        }
+
+        return locals;
+    }
+
+    private static CodeSection parseCodeSection(ByteBuffer buffer) {
         var funcBodyCount = readVarUInt32(buffer);
         var functionBodies = new FunctionBody[(int) funcBodyCount];
 
@@ -604,13 +618,7 @@ public final class Parser {
             var blockScope = new ArrayDeque<OpCode>();
             var depth = 0;
             var funcEndPoint = readVarUInt32(buffer) + buffer.position();
-            var localCount = readVarUInt32(buffer);
-            var locals = new ArrayList<Value>();
-            for (int j = 0; j < localCount; j++) {
-                var bytes = readVarUInt32(buffer);
-                var type = ValueType.byId(readVarUInt32(buffer));
-                locals.add(new Value(type, bytes));
-            }
+            var locals = parseCodeSectionLocalTypes(buffer);
             var instructionCount = 0;
             var instructions = new ArrayList<Instruction>();
             currentControlFlow = root;
@@ -729,7 +737,9 @@ public final class Parser {
                 // instruction);
             } while (buffer.position() < funcEndPoint);
 
-            functionBodies[i] = new FunctionBody(locals, instructions);
+            ValueType[] localTypes = new ValueType[locals.size()];
+            locals.toArray(localTypes);
+            functionBodies[i] = new FunctionBody(localTypes, instructions);
         }
 
         return new CodeSection(functionBodies);
