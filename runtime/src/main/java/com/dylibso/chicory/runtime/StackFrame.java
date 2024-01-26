@@ -30,10 +30,9 @@ public class StackFrame {
         this.instance = instance;
         this.funcId = funcId;
         this.pc = pc;
-        this.locals = new Value[args.length + localTypes.length];
+        this.locals = Arrays.copyOf(args, args.length + localTypes.length);
 
-        // initialize all locals.
-        for (var i = 0; i < args.length; i++) locals[i] = args[i];
+        // initialize codesegment locals.
         for (var i = 0; i < localTypes.length; i++) {
             ValueType type = localTypes[i];
             // TODO: How do we initialize non-numeric V128
