@@ -737,8 +737,7 @@ public final class Parser {
                 // instruction);
             } while (buffer.position() < funcEndPoint);
 
-            ValueType[] localTypes = new ValueType[locals.size()];
-            locals.toArray(localTypes);
+            var localTypes = locals.toArray(ValueType[]::new);
             functionBodies[i] = new FunctionBody(localTypes, instructions);
         }
 
