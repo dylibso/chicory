@@ -3,8 +3,8 @@ package com.dylibso.chicory.wasm.types;
 public class FunctionSection extends Section {
     private int[] typeIndices;
 
-    public FunctionSection(long id, long size, int[] typeIndices) {
-        super(id, size);
+    public FunctionSection(long id, int[] typeIndices) {
+        super(id);
         this.typeIndices = typeIndices;
     }
 
