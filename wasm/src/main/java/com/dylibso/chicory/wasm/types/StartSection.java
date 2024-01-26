@@ -3,8 +3,8 @@ package com.dylibso.chicory.wasm.types;
 public class StartSection extends Section {
     private long startIndex;
 
-    public StartSection(long id) {
-        super(id);
+    public StartSection() {
+        super(SectionId.START);
     }
 
     public long startIndex() {
