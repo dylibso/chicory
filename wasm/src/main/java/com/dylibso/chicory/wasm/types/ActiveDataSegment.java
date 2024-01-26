@@ -1,24 +1,26 @@
 package com.dylibso.chicory.wasm.types;
 
-public class ActiveDataSegment extends DataSegment {
-    private final long idx;
-    private final Instruction[] offset;
+import java.util.List;
 
-    public ActiveDataSegment(Instruction[] offset, byte[] data) {
-        this(0, offset, data);
+public final class ActiveDataSegment extends DataSegment {
+    private final long idx;
+    private final List<Instruction> offsetInstructions;
+
+    public ActiveDataSegment(List<Instruction> offsetInstructions, byte[] data) {
+        this(0, offsetInstructions, data);
     }
 
-    public ActiveDataSegment(long idx, Instruction[] offset, byte[] data) {
+    public ActiveDataSegment(long idx, List<Instruction> offsetInstructions, byte[] data) {
         super(data);
         this.idx = idx;
-        this.offset = offset;
+        this.offsetInstructions = List.copyOf(offsetInstructions);
     }
 
     public long index() {
         return idx;
     }
 
-    public Instruction[] offsetInstructions() {
-        return offset;
+    public List<Instruction> offsetInstructions() {
+        return offsetInstructions;
     }
 }

@@ -763,7 +763,7 @@ public final class Parser {
                 var offset = parseExpression(buffer);
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
                 buffer.get(data);
-                dataSection.addDataSegment(new ActiveDataSegment(offset, data));
+                dataSection.addDataSegment(new ActiveDataSegment(List.of(offset), data));
             } else if (mode == 1) {
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
                 buffer.get(data);
@@ -773,7 +773,7 @@ public final class Parser {
                 var offset = parseExpression(buffer);
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
                 buffer.get(data);
-                dataSection.addDataSegment(new ActiveDataSegment(memoryId, offset, data));
+                dataSection.addDataSegment(new ActiveDataSegment(memoryId, List.of(offset), data));
             } else {
                 throw new ChicoryException("Failed to parse data segment with data mode: " + mode);
             }

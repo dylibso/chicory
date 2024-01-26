@@ -1,10 +1,12 @@
 package com.dylibso.chicory.wasm.types;
 
-public class DataSegment {
-    private byte[] data;
+import java.util.Objects;
+
+public abstract class DataSegment {
+    private final byte[] data;
 
     public DataSegment(byte[] data) {
-        this.data = data;
+        this.data = Objects.requireNonNull(data);
     }
 
     public byte[] data() {
