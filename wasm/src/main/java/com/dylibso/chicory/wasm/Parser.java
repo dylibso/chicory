@@ -474,7 +474,7 @@ public final class Parser {
             var valueType = ValueType.byId(readVarUInt32(buffer));
             var mutabilityType = MutabilityType.byId(readVarUInt32(buffer));
             var init = parseExpression(buffer);
-            globalSection.addGlobal(new Global(valueType, mutabilityType, init));
+            globalSection.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
         }
 
         return globalSection;

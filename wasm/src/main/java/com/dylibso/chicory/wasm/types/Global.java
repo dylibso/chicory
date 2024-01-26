@@ -1,14 +1,19 @@
 package com.dylibso.chicory.wasm.types;
 
-public class Global {
-    private ValueType valueType;
-    private MutabilityType mutabilityType;
-    private Instruction[] init;
+import java.util.List;
 
-    public Global(ValueType valueType, MutabilityType mutabilityType, Instruction[] init) {
+/**
+ * The definition of a global variable in the model of a module.
+ */
+public final class Global {
+    private final ValueType valueType;
+    private final MutabilityType mutabilityType;
+    private final List<Instruction> init;
+
+    public Global(ValueType valueType, MutabilityType mutabilityType, List<Instruction> init) {
         this.valueType = valueType;
         this.mutabilityType = mutabilityType;
-        this.init = init;
+        this.init = List.copyOf(init);
     }
 
     public MutabilityType mutabilityType() {
@@ -19,7 +24,7 @@ public class Global {
         return valueType;
     }
 
-    public Instruction[] initInstructions() {
+    public List<Instruction> initInstructions() {
         return init;
     }
 }
