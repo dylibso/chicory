@@ -359,11 +359,10 @@ public final class Parser {
                         var limitType = (int) readVarUInt32(buffer);
                         assert limitType == 0x00 || limitType == 0x01;
                         var min = (int) readVarUInt32(buffer);
-                        var max = -1;
-                        if (limitType > 0) {
-                            max = (int) readVarUInt32(buffer);
-                        }
-                        var limits = new Limits(min, max);
+                        var limits =
+                                limitType > 0
+                                        ? new Limits(min, readVarUInt32(buffer))
+                                        : new Limits(min);
 
                         ImportDesc tableDesc = new ImportDesc(descType, limits, tableType);
                         imports[i] = new Import(moduleName, fieldName, tableDesc);
@@ -374,11 +373,10 @@ public final class Parser {
                         var limitType = (int) readVarUInt32(buffer);
                         assert limitType == 0x00 || limitType == 0x01;
                         var min = (int) readVarUInt32(buffer);
-                        var max = -1;
-                        if (limitType > 0) {
-                            max = (int) readVarUInt32(buffer);
-                        }
-                        var limits = new Limits(min, max);
+                        var limits =
+                                limitType > 0
+                                        ? new Limits(min, readVarUInt32(buffer))
+                                        : new Limits(min);
 
                         ImportDesc memDesc = new ImportDesc(descType, limits);
                         imports[i] = new Import(moduleName, fieldName, memDesc);
@@ -421,11 +419,8 @@ public final class Parser {
             var limitType = readVarUInt32(buffer);
             assert limitType == 0x00 || limitType == 0x01;
             var min = readVarUInt32(buffer);
-            Long max = null;
-            if (limitType == 0x01) {
-                max = readVarUInt32(buffer);
-            }
-            tables[i] = new Table(tableType, min, max);
+            var limits = limitType > 0 ? new Limits(min, readVarUInt32(buffer)) : new Limits(min);
+            tables[i] = new Table(tableType, limits);
         }
 
         return new TableSection(sectionId, tables);

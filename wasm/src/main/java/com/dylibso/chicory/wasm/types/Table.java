@@ -4,46 +4,37 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import java.util.Arrays;
+import java.util.Objects;
 
 public class Table {
     private final ElementType elementType;
-    private long limitMin;
-    private long limitMax;
+    private final Limits limits;
 
     private int[] refs;
 
-    public Table(ElementType elementType, long limitMin, Long limitMax) {
-        this.elementType = elementType;
-        this.limitMin = limitMin;
-        if (limitMax != null) {
-            this.limitMax = limitMax;
-        }
-        refs = new int[(int) limitMin];
-        for (int i = 0; i < limitMin; i++) {
-            refs[i] = REF_NULL_VALUE;
-        }
+    public Table(final ElementType elementType, final Limits limits) {
+        this.elementType = Objects.requireNonNull(elementType, "elementType");
+        this.limits = Objects.requireNonNull(limits, "limits");
+        refs = new int[(int) limits.min()];
+        Arrays.fill(refs, REF_NULL_VALUE);
     }
 
     public ElementType elementType() {
         return elementType;
     }
 
-    public long limitMin() {
-        return limitMin;
-    }
-
-    public Long limitMax() {
-        return limitMax;
+    public Limits limits() {
+        return limits;
     }
 
     public int size() {
         return refs.length;
     }
 
-    public int grow(int size, Integer value) {
+    public int grow(int size, int value) {
         var oldSize = refs.length;
         var targetSize = oldSize + size;
-        if (size < 0 || (limitMax != 0 && targetSize > limitMax)) {
+        if (size < 0 || targetSize > limits().max()) {
             return -1;
         }
         var newRefs = Arrays.copyOf(refs, targetSize);
@@ -53,7 +44,7 @@ public class Table {
     }
 
     public Value ref(int index) {
-        int res = REF_NULL_VALUE;
+        int res;
         try {
             res = this.refs[index];
         } catch (IndexOutOfBoundsException e) {
@@ -66,7 +57,7 @@ public class Table {
         }
     }
 
-    public void setRef(int index, Integer value) {
+    public void setRef(int index, int value) {
         try {
             this.refs[index] = value;
         } catch (IndexOutOfBoundsException e) {

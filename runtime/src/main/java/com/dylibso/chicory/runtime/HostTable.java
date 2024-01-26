@@ -3,6 +3,7 @@ package com.dylibso.chicory.runtime;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.wasm.types.ElementType;
+import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Table;
 import java.util.Map;
 
@@ -28,14 +29,10 @@ public class HostTable implements FromHost {
             }
         }
 
-        this.table = new Table(ElementType.FuncRef, maxFuncRef, maxFuncRef);
+        this.table = new Table(ElementType.FuncRef, new Limits(maxFuncRef, maxFuncRef));
 
         for (int i = 0; i < maxFuncRef; i++) {
-            if (funcRefs.containsKey(i)) {
-                this.table.setRef(i, funcRefs.get(i));
-            } else {
-                this.table.setRef(i, REF_NULL_VALUE);
-            }
+            this.table.setRef(i, funcRefs.getOrDefault(i, REF_NULL_VALUE));
         }
     }
 
