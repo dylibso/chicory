@@ -3,8 +3,8 @@ package com.dylibso.chicory.wasm.types;
 public class MemorySection extends Section {
     private Memory[] memories;
 
-    public MemorySection(long id, Memory[] memories) {
-        super(id);
+    public MemorySection(Memory[] memories) {
+        super(SectionId.MEMORY);
         this.memories = memories;
     }
 

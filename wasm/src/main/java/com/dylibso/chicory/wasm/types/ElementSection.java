@@ -3,8 +3,8 @@ package com.dylibso.chicory.wasm.types;
 public class ElementSection extends Section {
     private Element[] elements;
 
-    public ElementSection(long id, Element[] elements) {
-        super(id);
+    public ElementSection(Element[] elements) {
+        super(SectionId.ELEMENT);
         this.elements = elements;
     }
 
