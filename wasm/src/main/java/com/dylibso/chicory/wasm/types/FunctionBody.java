@@ -11,7 +11,7 @@ public class FunctionBody {
         this.instructions = instructions;
     }
 
-    public ValueType[] locals() {
+    public ValueType[] localTypes() {
         return locals;
     }
 

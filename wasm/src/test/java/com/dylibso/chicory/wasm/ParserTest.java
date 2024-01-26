@@ -81,7 +81,7 @@ public class ParserTest {
             var functionBodies = codeSection.functionBodies();
             assertEquals(1, functionBodies.length);
             var func = functionBodies[0];
-            assertEquals(0, func.locals().length);
+            assertEquals(0, func.localTypes().length);
             var instructions = func.instructions();
             assertEquals(3, instructions.size());
 
@@ -118,7 +118,7 @@ public class ParserTest {
             var functionBodies = codeSection.functionBodies();
             assertEquals(1, functionBodies.length);
             var func = functionBodies[0];
-            var locals = func.locals();
+            var locals = func.localTypes();
             assertEquals(1, locals.length);
             assertEquals(ValueType.I32, locals[0]);
             var instructions = func.instructions();
@@ -238,8 +238,8 @@ public class ParserTest {
             var module = parser.parseModule(is);
             var codeSection = module.codeSection();
             var fbody = codeSection.functionBodies()[0];
-            assertEquals(fbody.locals()[0], ValueType.I32);
-            assertEquals(fbody.locals()[1], ValueType.I64);
+            assertEquals(fbody.localTypes()[0], ValueType.I32);
+            assertEquals(fbody.localTypes()[1], ValueType.I64);
         }
     }
 

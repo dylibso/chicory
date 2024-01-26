@@ -57,7 +57,7 @@ class Machine {
 
         var func = instance.function(funcId);
         if (func != null) {
-            callStack.push(new StackFrame(instance, funcId, 0, args, func.locals()));
+            callStack.push(new StackFrame(instance, funcId, 0, args, func.localTypes()));
             eval(stack, instance, callStack, func.instructions());
         } else {
             callStack.push(new StackFrame(instance, funcId, 0, args, EMPTY_VALUE_TYPES));
