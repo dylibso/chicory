@@ -61,6 +61,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Parser for Web Assembly binaries.
@@ -69,6 +71,7 @@ public final class Parser {
 
     private static final int MAGIC_BYTES = 1836278016; // Magic prefix \0asm
 
+    private final Map<String, Function<byte[], CustomSection>> customParsers;
     private final BitSet includeSections;
     private final Logger logger;
 
@@ -77,8 +80,16 @@ public final class Parser {
     }
 
     public Parser(Logger logger, BitSet includeSections) {
+        this(logger, includeSections, Map.of("name", NameCustomSection::new));
+    }
+
+    public Parser(
+            Logger logger,
+            BitSet includeSections,
+            Map<String, Function<byte[], CustomSection>> customParsers) {
         this.logger = requireNonNull(logger, "logger");
         this.includeSections = requireNonNull(includeSections, "includeSections");
+        this.customParsers = Map.copyOf(customParsers);
     }
 
     private ByteBuffer readByteBuffer(InputStream is) {
@@ -271,7 +282,7 @@ public final class Parser {
         return this.includeSections.get(sectionId);
     }
 
-    private static CustomSection parseCustomSection(ByteBuffer buffer, long sectionSize) {
+    private CustomSection parseCustomSection(ByteBuffer buffer, long sectionSize) {
 
         var name = readName(buffer);
         var byteLen = name.getBytes().length;
@@ -282,14 +293,8 @@ public final class Parser {
         }
         var bytes = new byte[(int) size];
         buffer.get(bytes);
-        CustomSection section;
-        if (name.equals("name")) {
-            // todo: pluggable custom section factories
-            section = new NameCustomSection(bytes);
-        } else {
-            section = new UnknownCustomSection(name, bytes);
-        }
-        return section;
+        var parser = customParsers.get(name);
+        return parser == null ? new UnknownCustomSection(name, bytes) : parser.apply(bytes);
     }
 
     private static TypeSection parseTypeSection(ByteBuffer buffer) {
