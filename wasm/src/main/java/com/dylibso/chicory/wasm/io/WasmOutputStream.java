@@ -2,6 +2,7 @@ package com.dylibso.chicory.wasm.io;
 
 import static com.dylibso.chicory.wasm.io.Ranges.*;
 
+import com.dylibso.chicory.wasm.op.Op;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -452,6 +453,20 @@ public abstract class WasmOutputStream implements AutoCloseable {
      */
     public void utf8(String string) throws WasmIOException {
         byteVec(string.getBytes(StandardCharsets.UTF_8));
+    }
+
+    /**
+     * Write a WASM opcode to the stream.
+     *
+     * @param op the opcode to write (must not be {@code null})
+     * @throws WasmIOException if an underlying I/O error occurred
+     */
+    public void op(Op op) throws WasmIOException {
+        rawByte(op.opcode());
+        int so = op.secondaryOpcode();
+        if (so != -1) {
+            u8(so);
+        }
     }
 
     // state

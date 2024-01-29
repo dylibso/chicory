@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.io;
 
+import com.dylibso.chicory.wasm.op.Op;
+import com.dylibso.chicory.wasm.op.Ops;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -501,6 +503,23 @@ public abstract class WasmInputStream implements Closeable {
         } catch (IllegalArgumentException e) {
             throw badType(e);
         }
+    }
+
+    /**
+     * Read a WASM opcode from the stream.
+     *
+     * @return the opcode (not {@code null})
+     * @throws WasmParseException if the format of the stream is invalid
+     * @throws WasmIOException if an underlying I/O error occurred
+     * @throws WasmEOFException if the end-of-file was reached unexpectedly
+     */
+    public Op op() throws WasmIOException {
+        Op op = Ops.forOpcode(rawByte());
+        if (op instanceof Op.Prefix) {
+            Op.Prefix pfx = (Op.Prefix) op;
+            op = Ops.forOpcode(pfx.opcode(), u8());
+        }
+        return op;
     }
 
     private static WasmParseException badType(Throwable cause) {
