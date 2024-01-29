@@ -75,6 +75,31 @@ public class Value {
                 "Invalid type for 32 bit value, only I32 or F32 are allowed, given: " + type);
     }
 
+    /**
+     * Create a zeroed value for the particular type.
+     * @param valueType must be a valid zeroable type.
+     * @return a zero.
+     */
+    public static Value zero(ValueType valueType) {
+        switch (valueType) {
+            case I32:
+                return Value.i32(0);
+            case F32:
+                return Value.f32(0);
+            case I64:
+                return Value.i64(0);
+            case F64:
+                return Value.f64(0);
+            case FuncRef:
+                return Value.FUNCREF_NULL;
+            case ExternRef:
+                return Value.EXTREF_NULL;
+            default:
+                throw new IllegalArgumentException(
+                        "Can't create a zero value for type " + valueType);
+        }
+    }
+
     // TODO memoize these
     public int asInt() {
         switch (type) {
