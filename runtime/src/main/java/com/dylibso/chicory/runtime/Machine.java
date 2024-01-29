@@ -12,6 +12,7 @@ import com.dylibso.chicory.wasm.types.ElemType;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
+import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
@@ -172,7 +173,7 @@ class Machine {
                     case END:
                         {
                             if (frame.doControlTransfer && frame.isControlFrame) {
-                                doControlTransfer(stack, frame);
+                                doControlTransfer(instance, stack, frame, instruction.scope());
                             }
 
                             // if this is the last end, then we're done with
@@ -2225,6 +2226,21 @@ class Machine {
         }
     }
 
+    private static int numberOfValuesToReturn(
+            Instance instance, Instruction scope, int defaultNumberOfValues) {
+        if (scope.opcode() != OpCode.END) {
+            var typeId = (int) scope.operands()[0];
+            if (typeId == 0x40) { // epsilon
+                return 0;
+            }
+            if (ValueType.byId(typeId) != null) {
+                return 1;
+            }
+            return instance.type(typeId).returns().length;
+        }
+        return defaultNumberOfValues;
+    }
+
     private static void IF(StackFrame frame, MStack stack, Instruction instruction) {
         frame.blockDepth++;
         frame.isControlFrame = false;
@@ -2281,13 +2297,15 @@ class Machine {
         return predValue;
     }
 
-    private static void doControlTransfer(MStack stack, StackFrame frame) {
+    private static void doControlTransfer(
+            Instance instance, MStack stack, StackFrame frame, Instruction scope) {
         // reset the control transfer
         frame.doControlTransfer = false;
         var unwindStack = stack.unwindFrame();
         stack.resetUnwindFrame();
 
-        Value[] returns = new Value[frame.numberOfValuesToReturn];
+        Value[] returns =
+                new Value[numberOfValuesToReturn(instance, scope, frame.numberOfValuesToReturn)];
         for (int i = 0; i < returns.length; i++) {
             if (stack.size() > 0) returns[i] = stack.pop();
         }
@@ -2304,6 +2322,7 @@ class Machine {
         // the stack
         if (frame.branchConditionValue != null && frame.branchConditionValue.asInt() > 0) {
             stack.push(frame.branchConditionValue);
+            frame.branchConditionValue = null;
         }
 
         if (frame.blockDepth == 0) {

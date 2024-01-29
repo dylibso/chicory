@@ -109,7 +109,7 @@ public class ControlTree {
     public void setFinalInstructionNumber(int finalInstructionNumber, Instruction end) {
         this.finalInstructionNumber = finalInstructionNumber;
 
-        if (end.scope() == OpCode.LOOP) {
+        if (end.scope().opcode() == OpCode.LOOP) {
             var lastLoopInstruction = 0;
             for (var ct : this.parent.nested) {
                 if (ct.instruction().opcode() == OpCode.LOOP) {

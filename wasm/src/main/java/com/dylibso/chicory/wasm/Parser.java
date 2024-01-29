@@ -620,7 +620,7 @@ public final class Parser {
 
         // Parse individual function bodies in the code section
         for (int i = 0; i < funcBodyCount; i++) {
-            var blockScope = new ArrayDeque<OpCode>();
+            var blockScope = new ArrayDeque<Instruction>();
             var depth = 0;
             var funcEndPoint = readVarUInt32(buffer) + buffer.position();
             var locals = parseCodeSectionLocalTypes(buffer);
@@ -636,7 +636,7 @@ public final class Parser {
                     case IF:
                         {
                             instruction.setDepth(++depth);
-                            blockScope.push(instruction.opcode());
+                            blockScope.push(instruction);
                             instruction.setScope(blockScope.peek());
                             break;
                         }
@@ -644,11 +644,8 @@ public final class Parser {
                         {
                             instruction.setDepth(depth);
                             depth--;
-                            if (blockScope.isEmpty()) {
-                                instruction.setScope(OpCode.END);
-                            } else {
-                                instruction.setScope(blockScope.pop());
-                            }
+                            instruction.setScope(
+                                    blockScope.isEmpty() ? instruction : blockScope.pop());
                             break;
                         }
                     default:
