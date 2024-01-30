@@ -78,14 +78,14 @@ public class ParserTest {
             var func = codeSection.getFunctionBody(0);
             assertEquals(0, func.localTypes().length);
             var instructions = func.instructions();
-            assertEquals(3, instructions.size());
+            assertEquals(3, instructions.length);
 
-            assertEquals("0x00000032: I32_CONST [42]", instructions.get(0).toString());
-            assertEquals(OpCode.I32_CONST, instructions.get(0).opcode());
-            assertEquals(42L, (long) instructions.get(0).operands()[0]);
-            assertEquals(OpCode.CALL, instructions.get(1).opcode());
-            assertEquals(0L, (long) instructions.get(1).operands()[0]);
-            assertEquals(OpCode.END, instructions.get(2).opcode());
+            assertEquals("0x00000032: I32_CONST [42]", instructions[0].toString());
+            assertEquals(OpCode.I32_CONST, instructions[0].opcode());
+            assertEquals(42L, instructions[0].operands()[0]);
+            assertEquals(OpCode.CALL, instructions[1].opcode());
+            assertEquals(0L, instructions[1].operands()[0]);
+            assertEquals(OpCode.END, instructions[2].opcode());
         }
     }
 
@@ -114,8 +114,7 @@ public class ParserTest {
             var locals = func.localTypes();
             assertEquals(1, locals.length);
             assertEquals(ValueType.I32, locals[0]);
-            var instructions = func.instructions();
-            assertEquals(22, instructions.size());
+            assertEquals(22, func.instructions().length);
         }
     }
 
@@ -189,9 +188,9 @@ public class ParserTest {
             var module = parser.parseModule(is);
             var codeSection = module.codeSection();
             var fbody = codeSection.getFunctionBody(0);
-            var f32 = Float.intBitsToFloat((int) fbody.instructions().get(0).operands()[0]);
+            var f32 = Float.intBitsToFloat((int) fbody.instructions()[0].operands()[0]);
             assertEquals(0.12345678f, f32, 0.0);
-            var f64 = Double.longBitsToDouble(fbody.instructions().get(1).operands()[0]);
+            var f64 = Double.longBitsToDouble(fbody.instructions()[1].operands()[0]);
             assertEquals(0.123456789012345d, f64, 0.0);
         }
     }
@@ -205,20 +204,21 @@ public class ParserTest {
             var module = parser.parseModule(is);
             var codeSection = module.codeSection();
             var fbody = codeSection.getFunctionBody(0);
-            assertEquals(-2147483648L, fbody.instructions().get(0).operands()[0]);
-            assertEquals(0L, fbody.instructions().get(2).operands()[0]);
-            assertEquals(2147483647L, fbody.instructions().get(4).operands()[0]);
-            assertEquals(-9223372036854775808L, fbody.instructions().get(6).operands()[0]);
-            assertEquals(0L, fbody.instructions().get(8).operands()[0]);
-            assertEquals(9223372036854775807L, fbody.instructions().get(10).operands()[0]);
-            assertEquals(-2147483647L, fbody.instructions().get(12).operands()[0]);
-            assertEquals(2147483646L, fbody.instructions().get(14).operands()[0]);
-            assertEquals(-9223372036854775807L, fbody.instructions().get(16).operands()[0]);
-            assertEquals(9223372036854775806L, fbody.instructions().get(18).operands()[0]);
-            assertEquals(-1L, fbody.instructions().get(20).operands()[0]);
-            assertEquals(1L, fbody.instructions().get(22).operands()[0]);
-            assertEquals(-1L, fbody.instructions().get(24).operands()[0]);
-            assertEquals(1L, fbody.instructions().get(26).operands()[0]);
+            var instructions = fbody.instructions();
+            assertEquals(-2147483648L, instructions[0].operands()[0]);
+            assertEquals(0L, instructions[2].operands()[0]);
+            assertEquals(2147483647L, instructions[4].operands()[0]);
+            assertEquals(-9223372036854775808L, instructions[6].operands()[0]);
+            assertEquals(0L, instructions[8].operands()[0]);
+            assertEquals(9223372036854775807L, instructions[10].operands()[0]);
+            assertEquals(-2147483647L, instructions[12].operands()[0]);
+            assertEquals(2147483646L, instructions[14].operands()[0]);
+            assertEquals(-9223372036854775807L, instructions[16].operands()[0]);
+            assertEquals(9223372036854775806L, instructions[18].operands()[0]);
+            assertEquals(-1L, instructions[20].operands()[0]);
+            assertEquals(1L, instructions[22].operands()[0]);
+            assertEquals(-1L, instructions[24].operands()[0]);
+            assertEquals(1L, instructions[26].operands()[0]);
         }
     }
 

@@ -14,6 +14,14 @@ public class Ast {
         this.stack.push(root);
     }
 
+    public static Ast fromInstructions(Instruction[] instructions) {
+        var ast = new Ast();
+        for (var i : instructions) {
+            ast.addInstruction(i);
+        }
+        return ast;
+    }
+
     public CodeBlock root() {
         return root;
     }

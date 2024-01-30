@@ -107,10 +107,7 @@ class Machine {
     }
 
     static void eval(
-            MStack stack,
-            Instance instance,
-            ArrayDeque<StackFrame> callStack,
-            List<Instruction> code)
+            MStack stack, Instance instance, ArrayDeque<StackFrame> callStack, Instruction[] code)
             throws ChicoryException {
 
         try {
@@ -118,9 +115,9 @@ class Machine {
             boolean shouldReturn = false;
 
             loop:
-            while (frame.pc < code.size()) {
+            while (frame.pc < code.length) {
                 if (shouldReturn) return;
-                var instruction = code.get(frame.pc);
+                var instruction = code[frame.pc];
                 frame.pc++;
                 //                LOGGER.log(
                 //                        System.Logger.Level.DEBUG,

@@ -749,7 +749,8 @@ public final class Parser {
             } while (!lastInstruction);
 
             var localTypes = locals.toArray(ValueType[]::new);
-            functionBodies[i] = new FunctionBody(localTypes, instructions);
+            var instructionsArray = instructions.toArray(Instruction[]::new);
+            functionBodies[i] = new FunctionBody(localTypes, instructionsArray);
         }
 
         return new CodeSection(functionBodies);

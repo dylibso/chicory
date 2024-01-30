@@ -1,12 +1,10 @@
 package com.dylibso.chicory.wasm.types;
 
-import java.util.List;
-
 public class FunctionBody {
     private final ValueType[] locals;
-    private List<Instruction> instructions;
+    private final Instruction[] instructions;
 
-    public FunctionBody(ValueType[] locals, List<Instruction> instructions) {
+    public FunctionBody(ValueType[] locals, Instruction[] instructions) {
         this.locals = locals;
         this.instructions = instructions;
     }
@@ -15,15 +13,7 @@ public class FunctionBody {
         return locals;
     }
 
-    public List<Instruction> instructions() {
+    public Instruction[] instructions() {
         return instructions;
-    }
-
-    public Ast ast() {
-        var ast = new Ast();
-        for (var i : instructions) {
-            ast.addInstruction(i);
-        }
-        return ast;
     }
 }
