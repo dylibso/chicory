@@ -56,7 +56,7 @@ public class StackFrame {
         var nameSec = instance.module().nameSection();
         var id = "[" + funcId + "]";
         if (nameSec != null) {
-            var funcName = nameSec.functionNames().get(funcId);
+            var funcName = nameSec.getFunctionName(funcId);
             if (funcName != null) id = funcName + id;
         }
         return id + "\n\tpc=" + pc + " locals=" + Arrays.toString(locals);
