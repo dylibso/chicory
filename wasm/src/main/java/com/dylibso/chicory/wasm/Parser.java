@@ -626,9 +626,11 @@ public final class Parser {
             var locals = parseCodeSectionLocalTypes(buffer);
             var instructionCount = 0;
             var instructions = new ArrayList<Instruction>();
+            var lastInstruction = false;
             currentControlFlow = root;
             do {
                 var instruction = parseInstruction(buffer);
+                lastInstruction = buffer.position() >= funcEndPoint;
                 // depth control
                 switch (instruction.opcode()) {
                     case BLOCK:
@@ -728,6 +730,13 @@ public final class Parser {
                             currentControlFlow.setFinalInstructionNumber(
                                     instructionCount, instruction);
                             currentControlFlow = currentControlFlow.parent();
+
+                            if (lastInstruction && instructions.size() > 1) {
+                                var former = instructions.get(instructionCount - 1);
+                                if (former.opcode() == OpCode.END) {
+                                    instruction.setScope(former.scope());
+                                }
+                            }
                             break;
                         }
                 }
@@ -737,7 +746,7 @@ public final class Parser {
 
                 // System.out.println(Integer.toHexString(instruction.getAddress()) + " " +
                 // instruction);
-            } while (buffer.position() < funcEndPoint);
+            } while (!lastInstruction);
 
             var localTypes = locals.toArray(ValueType[]::new);
             functionBodies[i] = new FunctionBody(localTypes, instructions);

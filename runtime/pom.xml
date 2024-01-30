@@ -71,7 +71,8 @@
             binary.wast,
             left-to-right.wast,
             ref_null.wast</wastToProcess>
-          <orderedWastToProcess>memory_grow.wast,
+          <orderedWastToProcess>switch.wast,
+            memory_grow.wast,
             memory_size.wast,
             stack.wast,
             call.wast,
