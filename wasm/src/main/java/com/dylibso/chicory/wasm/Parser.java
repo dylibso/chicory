@@ -620,15 +620,17 @@ public final class Parser {
 
         // Parse individual function bodies in the code section
         for (int i = 0; i < funcBodyCount; i++) {
-            var blockScope = new ArrayDeque<OpCode>();
+            var blockScope = new ArrayDeque<Instruction>();
             var depth = 0;
             var funcEndPoint = readVarUInt32(buffer) + buffer.position();
             var locals = parseCodeSectionLocalTypes(buffer);
             var instructionCount = 0;
             var instructions = new ArrayList<Instruction>();
+            var lastInstruction = false;
             currentControlFlow = root;
             do {
                 var instruction = parseInstruction(buffer);
+                lastInstruction = buffer.position() >= funcEndPoint;
                 // depth control
                 switch (instruction.opcode()) {
                     case BLOCK:
@@ -636,7 +638,7 @@ public final class Parser {
                     case IF:
                         {
                             instruction.setDepth(++depth);
-                            blockScope.push(instruction.opcode());
+                            blockScope.push(instruction);
                             instruction.setScope(blockScope.peek());
                             break;
                         }
@@ -644,11 +646,8 @@ public final class Parser {
                         {
                             instruction.setDepth(depth);
                             depth--;
-                            if (blockScope.isEmpty()) {
-                                instruction.setScope(OpCode.END);
-                            } else {
-                                instruction.setScope(blockScope.pop());
-                            }
+                            instruction.setScope(
+                                    blockScope.isEmpty() ? instruction : blockScope.pop());
                             break;
                         }
                     default:
@@ -731,6 +730,13 @@ public final class Parser {
                             currentControlFlow.setFinalInstructionNumber(
                                     instructionCount, instruction);
                             currentControlFlow = currentControlFlow.parent();
+
+                            if (lastInstruction && instructions.size() > 1) {
+                                var former = instructions.get(instructionCount - 1);
+                                if (former.opcode() == OpCode.END) {
+                                    instruction.setScope(former.scope());
+                                }
+                            }
                             break;
                         }
                 }
@@ -740,7 +746,7 @@ public final class Parser {
 
                 // System.out.println(Integer.toHexString(instruction.getAddress()) + " " +
                 // instruction);
-            } while (buffer.position() < funcEndPoint);
+            } while (!lastInstruction);
 
             var localTypes = locals.toArray(ValueType[]::new);
             functionBodies[i] = new FunctionBody(localTypes, instructions);

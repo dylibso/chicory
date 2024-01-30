@@ -12,6 +12,7 @@ import com.dylibso.chicory.wasm.types.ElemType;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
+import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
@@ -140,7 +141,7 @@ class Machine {
                         break;
                     case LOOP:
                     case BLOCK:
-                        BLOCK(frame, stack, instance, operands);
+                        BLOCK(frame, stack);
                         break;
                     case IF:
                         IF(frame, stack, instruction);
@@ -172,7 +173,7 @@ class Machine {
                     case END:
                         {
                             if (frame.doControlTransfer && frame.isControlFrame) {
-                                doControlTransfer(stack, frame);
+                                doControlTransfer(instance, stack, frame, instruction.scope());
                             }
 
                             // if this is the last end, then we're done with
@@ -2206,23 +2207,24 @@ class Machine {
         call(stack, instance, callStack, funcId, args, type, false);
     }
 
-    private static void BLOCK(StackFrame frame, MStack stack, Instance instance, long[] operands) {
+    private static void BLOCK(StackFrame frame, MStack stack) {
         frame.blockDepth++;
-
         frame.isControlFrame = true;
         frame.stackSizeBeforeBlock = Math.max(stack.size(), frame.stackSizeBeforeBlock);
-        var typeId = (int) operands[0];
+    }
 
-        // https://www.w3.org/TR/wasm-core-2/binary/instructions.html#binary-blocktype
-        if (typeId == 0x40) { // epsilon
-            frame.numberOfValuesToReturn = Math.max(frame.numberOfValuesToReturn, 0);
-        } else if (ValueType.byId(typeId) != null) { // shortcut to straight value type
-            frame.numberOfValuesToReturn = Math.max(frame.numberOfValuesToReturn, 1);
-        } else { // look it up
-            var funcType = instance.type(typeId);
-            frame.numberOfValuesToReturn =
-                    Math.max(frame.numberOfValuesToReturn, funcType.returns().length);
+    private static int numberOfValuesToReturn(Instance instance, Instruction scope) {
+        if (scope.opcode() == OpCode.END) {
+            return 0;
         }
+        var typeId = (int) scope.operands()[0];
+        if (typeId == 0x40) { // epsilon
+            return 0;
+        }
+        if (ValueType.byId(typeId) != null) {
+            return 1;
+        }
+        return instance.type(typeId).returns().length;
     }
 
     private static void IF(StackFrame frame, MStack stack, Instruction instruction) {
@@ -2281,13 +2283,14 @@ class Machine {
         return predValue;
     }
 
-    private static void doControlTransfer(MStack stack, StackFrame frame) {
+    private static void doControlTransfer(
+            Instance instance, MStack stack, StackFrame frame, Instruction scope) {
         // reset the control transfer
         frame.doControlTransfer = false;
         var unwindStack = stack.unwindFrame();
         stack.resetUnwindFrame();
 
-        Value[] returns = new Value[frame.numberOfValuesToReturn];
+        Value[] returns = new Value[numberOfValuesToReturn(instance, scope)];
         for (int i = 0; i < returns.length; i++) {
             if (stack.size() > 0) returns[i] = stack.pop();
         }
@@ -2304,6 +2307,7 @@ class Machine {
         // the stack
         if (frame.branchConditionValue != null && frame.branchConditionValue.asInt() > 0) {
             stack.push(frame.branchConditionValue);
+            frame.branchConditionValue = null;
         }
 
         if (frame.blockDepth == 0) {
