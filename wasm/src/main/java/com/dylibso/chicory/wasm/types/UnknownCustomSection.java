@@ -7,25 +7,17 @@ import java.util.Objects;
  */
 public final class UnknownCustomSection extends CustomSection {
     private final String name;
-    private final byte[] bytes;
 
     /**
      * Construct a new instance.
      *
      * @param name the name of the section (must not be {@code null})
-     * @param bytes the section contents (must not be {@code null})
      */
-    public UnknownCustomSection(final String name, final byte[] bytes) {
-        super();
+    public UnknownCustomSection(final String name) {
         this.name = Objects.requireNonNull(name, "name");
-        this.bytes = bytes.clone();
     }
 
     public String name() {
         return name;
-    }
-
-    public byte[] bytes() {
-        return bytes;
     }
 }
