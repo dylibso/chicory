@@ -2214,17 +2214,17 @@ class Machine {
     }
 
     private static int numberOfValuesToReturn(Instance instance, Instruction scope) {
-        if (scope.opcode() != OpCode.END) {
-            var typeId = (int) scope.operands()[0];
-            if (typeId == 0x40) { // epsilon
-                return 0;
-            }
-            if (ValueType.byId(typeId) != null) {
-                return 1;
-            }
-            return instance.type(typeId).returns().length;
+        if (scope.opcode() == OpCode.END) {
+            return 0;
         }
-        return 0;
+        var typeId = (int) scope.operands()[0];
+        if (typeId == 0x40) { // epsilon
+            return 0;
+        }
+        if (ValueType.byId(typeId) != null) {
+            return 1;
+        }
+        return instance.type(typeId).returns().length;
     }
 
     private static void IF(StackFrame frame, MStack stack, Instruction instruction) {
