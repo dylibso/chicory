@@ -35,7 +35,6 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -53,7 +52,9 @@ public class Module {
         this.module = module;
         this.exports = new HashMap<>();
         if (module.exportSection() != null) {
-            for (var e : module.exportSection().exports()) {
+            int cnt = module.exportSection().exportCount();
+            for (int i = 0; i < cnt; i++) {
+                Export e = module.exportSection().getExport(i);
                 exports.put(e.name(), e);
             }
         }
@@ -132,11 +133,11 @@ public class Module {
         var numFuncTypes = 0;
         var funcSection = module.functionSection();
         if (funcSection != null) {
-            numFuncTypes = funcSection.typeIndices().length;
+            numFuncTypes = funcSection.functionCount();
         }
         if (module.importSection() != null) {
             numFuncTypes +=
-                    Arrays.stream(module.importSection().imports())
+                    module.importSection().stream()
                             .filter(is -> is.desc().type() == ImportDescType.FuncIdx)
                             .count();
         }
@@ -154,8 +155,10 @@ public class Module {
         var funcIdx = 0;
 
         if (module.importSection() != null) {
-            imports = new Import[module.importSection().imports().length];
-            for (var imprt : module.importSection().imports()) {
+            int cnt = module.importSection().importCount();
+            imports = new Import[cnt];
+            for (int i = 0; i < cnt; i++) {
+                Import imprt = module.importSection().getImport(i);
                 switch (imprt.desc().type()) {
                     case FuncIdx:
                         {
@@ -186,18 +189,19 @@ public class Module {
         }
 
         if (module.functionSection() != null) {
-            for (var ft : module.functionSection().typeIndices()) {
-                functionTypes[funcIdx++] = ft;
+            int cnt = module.functionSection().functionCount();
+            for (int i = 0; i < cnt; i++) {
+                functionTypes[funcIdx++] = module.functionSection().getFunctionType(i);
             }
         }
 
         Table[] tables = new Table[0];
         Element[] elements = new Element[0];
         if (module.tableSection() != null) {
-            var tableLength = module.tableSection().tables().length;
+            var tableLength = module.tableSection().tableCount();
             tables = new Table[tableLength];
             for (int i = 0; i < tableLength; i++) {
-                tables[i] = module.tableSection().tables()[i];
+                tables[i] = module.tableSection().getTable(i);
             }
             if (module.elementSection() != null) {
                 elements = module.elementSection().elements();
@@ -254,12 +258,12 @@ public class Module {
         if (module.memorySection() != null) {
             assert (mappedHostImports.memoryCount() == 0);
 
-            var memories = module.memorySection().memories();
-            if (memories.length > 1) {
+            var memories = module.memorySection();
+            if (memories.memoryCount() > 1) {
                 throw new ChicoryException("Multiple memories are not supported");
             }
-            if (memories.length > 0) {
-                memory = new Memory(memories[0].memoryLimits());
+            if (memories.memoryCount() > 0) {
+                memory = new Memory(memories.getMemory(0).memoryLimits());
             }
         } else {
             if (mappedHostImports.memoryCount() > 0) {
