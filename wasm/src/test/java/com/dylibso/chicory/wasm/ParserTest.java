@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.dylibso.chicory.log.SystemLogger;
+import com.dylibso.chicory.wasm.io.WasmInputStream;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -155,7 +156,7 @@ public class ParserTest {
         try (InputStream is = getClass().getResourceAsStream("/compiled/count_vowels.rs.wasm")) {
             parser.includeSection(SectionId.CUSTOM);
             parser.parse(
-                    is,
+                    WasmInputStream.of(is),
                     s -> {
                         if (s.sectionId() == SectionId.CUSTOM) {
                             var customSection = (CustomSection) s;

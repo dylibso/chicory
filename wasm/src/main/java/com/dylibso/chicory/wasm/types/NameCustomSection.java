@@ -1,7 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
-import com.dylibso.chicory.wasm.Parser;
-import java.nio.ByteBuffer;
+import com.dylibso.chicory.wasm.io.WasmInputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -31,71 +30,70 @@ public class NameCustomSection extends CustomSection {
     /**
      * Construct a new instance.
      *
-     * @param bytes the byte content of the section
+     * @param in the byte content of the section
      */
-    public NameCustomSection(final byte[] bytes) {
+    public NameCustomSection(final WasmInputStream in) {
         this();
 
-        ByteBuffer buf = ByteBuffer.wrap(bytes);
-
-        while (buf.hasRemaining()) {
-            byte id = buf.get();
+        while (in.peekRawByteOpt() != -1) {
+            int id = in.rawByte();
             // discard subsection size
-            ByteBuffer slice = slice(buf, (int) Parser.readVarUInt32(buf));
-            // todo: IDs 4 and 10 are reserved for the Host GC spec
-            switch (id) {
-                case 0:
-                    {
-                        setModuleName(Parser.readName(slice));
-                        break;
-                    }
-                case 1:
-                    {
-                        oneLevelParse(slice, funcNames);
-                        break;
-                    }
-                case 2:
-                    {
-                        twoLevelParse(slice, localNames);
-                        break;
-                    }
-                case 3:
-                    {
-                        twoLevelParse(slice, labelNames);
-                        break;
-                    }
-                case 5:
-                    {
-                        oneLevelParse(slice, tableNames);
-                        break;
-                    }
-                case 6:
-                    {
-                        oneLevelParse(slice, memoryNames);
-                        break;
-                    }
-                case 7:
-                    {
-                        oneLevelParse(slice, globalNames);
-                        break;
-                    }
-                case 8:
-                    {
-                        oneLevelParse(slice, elementNames);
-                        break;
-                    }
-                case 9:
-                    {
-                        oneLevelParse(slice, dataNames);
-                        break;
-                    }
-                case 11:
-                    {
-                        oneLevelParse(slice, tagNames);
-                        break;
-                    }
-                default:
-                    // ignore unknown subsection for forwards-compatibility
+            try (WasmInputStream slice = in.slice(in.u32Long())) {
+                // todo: IDs 4 and 10 are reserved for the Host GC spec
+                switch (id) {
+                    case 0:
+                        {
+                            setModuleName(slice.utf8());
+                            break;
+                        }
+                    case 1:
+                        {
+                            oneLevelParse(slice, funcNames);
+                            break;
+                        }
+                    case 2:
+                        {
+                            twoLevelParse(slice, localNames);
+                            break;
+                        }
+                    case 3:
+                        {
+                            twoLevelParse(slice, labelNames);
+                            break;
+                        }
+                    case 5:
+                        {
+                            oneLevelParse(slice, tableNames);
+                            break;
+                        }
+                    case 6:
+                        {
+                            oneLevelParse(slice, memoryNames);
+                            break;
+                        }
+                    case 7:
+                        {
+                            oneLevelParse(slice, globalNames);
+                            break;
+                        }
+                    case 8:
+                        {
+                            oneLevelParse(slice, elementNames);
+                            break;
+                        }
+                    case 9:
+                        {
+                            oneLevelParse(slice, dataNames);
+                            break;
+                        }
+                    case 11:
+                        {
+                            oneLevelParse(slice, tagNames);
+                            break;
+                        }
+                    default:
+                        // ignore unknown subsection for forwards-compatibility
+                }
             }
         }
     }
@@ -301,34 +299,22 @@ public class NameCustomSection extends CustomSection {
 
     // parsing helpers
 
-    private void oneLevelParse(final ByteBuffer slice, final ArrayList<NameEntry> list) {
-        int cnt = (int) Parser.readVarUInt32(slice);
+    private void oneLevelParse(final WasmInputStream in, final ArrayList<NameEntry> list) {
+        int cnt = in.u31();
         for (int i = 0; i < cnt; i++) {
-            oneLevelStore(list, (int) Parser.readVarUInt32(slice), Parser.readName(slice));
+            oneLevelStore(list, in.u31(), in.utf8());
         }
     }
 
-    private void twoLevelParse(final ByteBuffer slice, final ArrayList<ListEntry<NameEntry>> list) {
-        int listCnt = (int) Parser.readVarUInt32(slice);
+    private void twoLevelParse(
+            final WasmInputStream in, final ArrayList<ListEntry<NameEntry>> list) {
+        int listCnt = in.u31();
         for (int i = 0; i < listCnt; i++) {
-            int groupIdx = (int) Parser.readVarUInt32(slice);
-            int cnt = (int) Parser.readVarUInt32(slice);
+            int groupIdx = in.u31();
+            int cnt = in.u31();
             for (int j = 0; j < cnt; j++) {
-                twoLevelStore(
-                        list, groupIdx, (int) Parser.readVarUInt32(slice), Parser.readName(slice));
+                twoLevelStore(list, groupIdx, in.u31(), in.utf8());
             }
-        }
-    }
-
-    private ByteBuffer slice(final ByteBuffer buf, final int size) {
-        int pos = buf.position();
-        int lim = buf.limit();
-        try {
-            buf.limit(pos + size);
-            return buf.slice();
-        } finally {
-            buf.limit(lim);
-            buf.position(pos + size);
         }
     }
 
