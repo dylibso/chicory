@@ -13,7 +13,7 @@ public class Instruction {
     private Integer labelFalse;
     private int[] labelTable;
     private Integer depth;
-    private OpCode scope;
+    private Instruction scope;
 
     public Instruction(int address, OpCode opcode, long[] operands) {
         this.address = address;
@@ -81,11 +81,11 @@ public class Instruction {
         this.depth = depth;
     }
 
-    public OpCode scope() {
+    public Instruction scope() {
         return scope;
     }
 
-    public void setScope(OpCode scope) {
+    public void setScope(Instruction scope) {
         this.scope = scope;
     }
 }
