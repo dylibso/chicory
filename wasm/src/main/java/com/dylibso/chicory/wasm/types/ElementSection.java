@@ -6,25 +6,17 @@ import java.util.Objects;
 public class ElementSection extends Section {
     private final ArrayList<Element> elements;
 
-    /**
-     * Construct a new, empty section instance.
-     */
-    public ElementSection() {
-        this(new ArrayList<>());
-    }
-
-    /**
-     * Construct a new, empty section instance.
-     *
-     * @param estimatedSize the estimated number of elements to reserve space for
-     */
-    public ElementSection(int estimatedSize) {
-        this(new ArrayList<>(estimatedSize));
-    }
-
     private ElementSection(ArrayList<Element> elements) {
         super(SectionId.ELEMENT);
         this.elements = elements;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder builder(ElementSection elementSection) {
+        return new Builder(elementSection);
     }
 
     public Element[] elements() {
@@ -39,16 +31,26 @@ public class ElementSection extends Section {
         return elements.get(idx);
     }
 
-    /**
-     * Add an element definition to this section.
-     *
-     * @param element the element to add to this section (must not be {@code null})
-     * @return the index of the newly-added element
-     */
-    public int addElement(Element element) {
-        Objects.requireNonNull(element, "element");
-        int idx = elements.size();
-        elements.add(element);
-        return idx;
+    public static final class Builder {
+        private final ArrayList<Element> elements;
+
+        private Builder() {
+            this.elements = new ArrayList<>();
+        }
+
+        private Builder(ElementSection elementSection) {
+            this.elements = new ArrayList<>();
+            this.elements.addAll(elementSection.elements);
+        }
+
+        public Builder addElement(Element element) {
+            Objects.requireNonNull(element, "element");
+            elements.add(element);
+            return this;
+        }
+
+        public ElementSection build() {
+            return new ElementSection(elements);
+        }
     }
 }

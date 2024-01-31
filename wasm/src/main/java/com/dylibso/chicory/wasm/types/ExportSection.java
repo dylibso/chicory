@@ -6,25 +6,17 @@ import java.util.Objects;
 public class ExportSection extends Section {
     private final ArrayList<Export> exports;
 
-    /**
-     * Construct a new, empty section instance.
-     */
-    public ExportSection() {
-        this(new ArrayList<>());
-    }
-
-    /**
-     * Construct a new, empty section instance.
-     *
-     * @param estimatedSize the estimated number of exports to reserve space for
-     */
-    public ExportSection(int estimatedSize) {
-        this(new ArrayList<>(estimatedSize));
-    }
-
     private ExportSection(ArrayList<Export> exports) {
         super(SectionId.EXPORT);
         this.exports = exports;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder builder(ExportSection exportSection) {
+        return new Builder(exportSection);
     }
 
     public int exportCount() {
@@ -35,16 +27,26 @@ public class ExportSection extends Section {
         return exports.get(idx);
     }
 
-    /**
-     * Add an export definition to this section.
-     *
-     * @param export the export to add to this section (must not be {@code null})
-     * @return the index of the newly-added export
-     */
-    public int addExport(Export export) {
-        Objects.requireNonNull(export, "export");
-        int idx = exports.size();
-        exports.add(export);
-        return idx;
+    public static final class Builder {
+        private final ArrayList<Export> exports;
+
+        private Builder() {
+            this.exports = new ArrayList<>();
+        }
+
+        private Builder(ExportSection exportSection) {
+            this.exports = new ArrayList<>();
+            this.exports.addAll(exportSection.exports);
+        }
+
+        public Builder addExport(Export export) {
+            Objects.requireNonNull(export, "export");
+            exports.add(export);
+            return this;
+        }
+
+        public ExportSection build() {
+            return new ExportSection(exports);
+        }
     }
 }

@@ -6,25 +6,17 @@ import java.util.Objects;
 public class TypeSection extends Section {
     private final ArrayList<FunctionType> types;
 
-    /**
-     * Construct a new, empty section instance.
-     */
-    public TypeSection() {
-        this(new ArrayList<>());
-    }
-
-    /**
-     * Construct a new, empty section instance.
-     *
-     * @param estimatedSize the estimated number of types to reserve space for
-     */
-    public TypeSection(int estimatedSize) {
-        this(new ArrayList<>(estimatedSize));
-    }
-
     private TypeSection(ArrayList<FunctionType> types) {
         super(SectionId.TYPE);
         this.types = types;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder builder(TypeSection typeSection) {
+        return new Builder(typeSection);
     }
 
     public FunctionType[] types() {
@@ -39,16 +31,26 @@ public class TypeSection extends Section {
         return types.get(idx);
     }
 
-    /**
-     * Add a function type definition to this section.
-     *
-     * @param functionType the function type to add to this section (must not be {@code null})
-     * @return the index of the newly-added function type
-     */
-    public int addFunctionType(FunctionType functionType) {
-        Objects.requireNonNull(functionType, "functionType");
-        int idx = types.size();
-        types.add(functionType);
-        return idx;
+    public static final class Builder {
+        private final ArrayList<FunctionType> types;
+
+        private Builder() {
+            this.types = new ArrayList<>();
+        }
+
+        private Builder(TypeSection typeSection) {
+            this.types = new ArrayList<>();
+            this.types.addAll(typeSection.types);
+        }
+
+        public Builder addFunctionType(FunctionType functionType) {
+            Objects.requireNonNull(functionType, "functionType");
+            types.add(functionType);
+            return this;
+        }
+
+        public TypeSection build() {
+            return new TypeSection(types);
+        }
     }
 }

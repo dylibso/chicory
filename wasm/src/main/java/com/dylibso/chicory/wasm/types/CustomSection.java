@@ -10,4 +10,10 @@ public abstract class CustomSection extends Section {
     }
 
     public abstract String name();
+
+    public interface Builder {
+        Builder withBytes(byte[] bytes);
+
+        CustomSection build();
+    }
 }

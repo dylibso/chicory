@@ -1,40 +1,32 @@
 package com.dylibso.chicory.wasm.types;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class FunctionSection extends Section {
-    private int[] typeIndices;
-    private int count;
-
-    /**
-     * Construct a new, empty section instance.
-     */
-    public FunctionSection() {
-        this(new int[8]);
-    }
-
-    /**
-     * Construct a new, empty section instance.
-     *
-     * @param estimatedSize the estimated number of functions to reserve space for
-     */
-    public FunctionSection(int estimatedSize) {
-        this(new int[Math.max(8, estimatedSize)]);
-    }
+    private final int[] typeIndices;
 
     private FunctionSection(int[] typeIndices) {
         super(SectionId.FUNCTION);
         this.typeIndices = typeIndices;
-        count = 0;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder builder(FunctionSection functionSection) {
+        return new Builder(functionSection);
     }
 
     public int functionCount() {
-        return count;
+        return typeIndices.length;
     }
 
     public int getFunctionType(int idx) {
-        Objects.checkIndex(idx, count);
+        Objects.checkIndex(idx, typeIndices.length);
         return typeIndices[idx];
     }
 
@@ -42,19 +34,29 @@ public class FunctionSection extends Section {
         return typeSection.getType(getFunctionType(idx));
     }
 
-    /**
-     * Add a function type index to this section.
-     *
-     * @param typeIndex the type index to add (should be a valid index into the type section)
-     * @return the index of the function whose type index was added
-     */
-    public int addFunctionType(int typeIndex) {
-        int count = this.count;
-        if (count == typeIndices.length) {
-            typeIndices = Arrays.copyOf(typeIndices, count + (count >> 1));
+    public static final class Builder {
+
+        private ArrayList<Integer> typeIndices;
+
+        private Builder() {
+            this.typeIndices = new ArrayList<>();
         }
-        typeIndices[count] = typeIndex;
-        this.count = count + 1;
-        return count;
+
+        private Builder(FunctionSection functionSection) {
+            this.typeIndices = new ArrayList<>();
+            this.typeIndices.addAll(
+                    Arrays.stream(functionSection.typeIndices)
+                            .boxed()
+                            .collect(Collectors.toList()));
+        }
+
+        public Builder addFunctionType(int typeIndex) {
+            this.typeIndices.add(typeIndex);
+            return this;
+        }
+
+        public FunctionSection build() {
+            return new FunctionSection(typeIndices.stream().mapToInt(x -> x).toArray());
+        }
     }
 }

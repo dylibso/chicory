@@ -6,25 +6,17 @@ import java.util.Objects;
 public class GlobalSection extends Section {
     private final ArrayList<Global> globals;
 
-    /**
-     * Construct a new, empty section instance.
-     */
-    public GlobalSection() {
-        this(new ArrayList<>());
-    }
-
-    /**
-     * Construct a new, empty section instance.
-     *
-     * @param estimatedSize the estimated number of globals to reserve space for
-     */
-    public GlobalSection(int estimatedSize) {
-        this(new ArrayList<>(estimatedSize));
-    }
-
     private GlobalSection(ArrayList<Global> globals) {
         super(SectionId.GLOBAL);
         this.globals = globals;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static Builder builder(GlobalSection globalSection) {
+        return new Builder(globalSection);
     }
 
     public Global[] globals() {
@@ -39,16 +31,27 @@ public class GlobalSection extends Section {
         return globals.get(idx);
     }
 
-    /**
-     * Add a global variable definition to this section.
-     *
-     * @param global the global to add to this section (must not be {@code null})
-     * @return the index of the newly-added global
-     */
-    public int addGlobal(Global global) {
-        Objects.requireNonNull(global, "global");
-        int idx = globals.size();
-        globals.add(global);
-        return idx;
+    public static final class Builder {
+
+        private final ArrayList<Global> globals;
+
+        private Builder() {
+            this.globals = new ArrayList<>();
+        }
+
+        private Builder(GlobalSection globalSection) {
+            this.globals = new ArrayList<>();
+            this.globals.addAll(globalSection.globals);
+        }
+
+        public Builder addGlobal(Global global) {
+            Objects.requireNonNull(global, "global");
+            globals.add(global);
+            return this;
+        }
+
+        public GlobalSection build() {
+            return new GlobalSection(this.globals);
+        }
     }
 }
