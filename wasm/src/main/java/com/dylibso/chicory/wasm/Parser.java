@@ -644,8 +644,7 @@ public final class Parser {
                         }
                     case END:
                         {
-                            instruction.setDepth(depth);
-                            depth--;
+                            instruction.setDepth(depth--);
                             instruction.setScope(
                                     blockScope.isEmpty() ? instruction : blockScope.pop());
                             break;

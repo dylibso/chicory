@@ -12,7 +12,7 @@ public class Instruction {
     private Integer labelTrue;
     private Integer labelFalse;
     private int[] labelTable;
-    private Integer depth;
+    private int depth;
     private Instruction scope;
 
     public Instruction(int address, OpCode opcode, long[] operands) {
@@ -73,11 +73,11 @@ public class Instruction {
         this.labelTable = labelTable;
     }
 
-    public Integer depth() {
+    public int depth() {
         return depth;
     }
 
-    public void setDepth(Integer depth) {
+    public void setDepth(int depth) {
         this.depth = depth;
     }
 
