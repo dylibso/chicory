@@ -2201,7 +2201,8 @@ class Machine {
     }
 
     private static void BLOCK(StackFrame frame, MStack stack) {
-        frame.startBlock(stack);
+        frame.isControlFrame = true;
+        frame.registerStackSize(stack);
     }
 
     private static int numberOfValuesToReturn(Instance instance, Instruction scope) {
@@ -2220,6 +2221,7 @@ class Machine {
 
     private static void IF(StackFrame frame, MStack stack, Instruction instruction) {
         frame.isControlFrame = false;
+        frame.registerStackSize(stack);
         var predValue = stack.pop();
         frame.jumpTo(predValue.asInt() == 0 ? instruction.labelFalse() : instruction.labelTrue());
     }

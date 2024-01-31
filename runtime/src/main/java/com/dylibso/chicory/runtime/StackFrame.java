@@ -4,6 +4,7 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -30,8 +31,7 @@ public class StackFrame {
     private final Value[] locals;
     private final Instance instance;
 
-    private final ArrayDeque<Integer> stackSizeBeforeBlock = new ArrayDeque<>();
-    private int blocksToBeDropped;
+    private final List<Integer> stackSizeBeforeBlock = new ArrayList<>();
 
     public StackFrame(Instance instance, int funcId, Value[] args, List<ValueType> localTypes) {
         this(Collections.emptyList(), instance, funcId, args, localTypes);
@@ -90,29 +90,29 @@ public class StackFrame {
         return pc >= code.size();
     }
 
-    public void startBlock(MStack stack) {
-        isControlFrame = true;
-        stackSizeBeforeBlock.push(stack.size());
+    public void registerStackSize(MStack stack) {
+        int depth = zeroBasedCurrentDepth();
+        if (stackSizeBeforeBlock.size()-1 < depth) {
+            stackSizeBeforeBlock.add(stack.size());
+        } else {
+            stackSizeBeforeBlock.set(depth, stack.size());
+        }
     }
 
     public void jumpTo(int newPc) {
-        if (code.size() > newPc) {
-            Instruction jumpInstruction = code.get(newPc);
-            blocksToBeDropped = currentInstruction.depth() - jumpInstruction.depth();
-        }
         pc = newPc;
     }
 
     public void dropValuesOutOfBlock(MStack stack) {
         if (currentInstruction.depth() > 0) {
-            while (blocksToBeDropped-- > 0 && stackSizeBeforeBlock.size() > 1) {
-                stackSizeBeforeBlock.pop();
-            }
-            int expectedStackSize = stackSizeBeforeBlock.pop();
-
+            int expectedStackSize = stackSizeBeforeBlock.get(zeroBasedCurrentDepth());
             while (stack.size() > expectedStackSize) {
                 stack.pop();
             }
         }
+    }
+
+    private int zeroBasedCurrentDepth() {
+        return currentInstruction.depth() - 1;
     }
 }
