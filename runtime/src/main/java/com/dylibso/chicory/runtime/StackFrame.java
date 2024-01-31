@@ -1,8 +1,12 @@
 package com.dylibso.chicory.runtime;
 
+import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Represents a frame. It's maybe a misonomer to call it a stack frame.
@@ -15,20 +19,33 @@ import java.util.Arrays;
  * within the function you are in and only specific places.
  */
 public class StackFrame {
-    public int funcId;
-    public int pc;
-    public Value[] locals;
-    public int blockDepth;
-    private Instance instance;
     public boolean doControlTransfer = false;
     public boolean isControlFrame = true;
-    public int stackSizeBeforeBlock;
-    public Value branchConditionValue = null;
 
-    public StackFrame(Instance instance, int funcId, int pc, Value[] args, ValueType[] localTypes) {
+    private final List<Instruction> code;
+    private Instruction currentInstruction;
+
+    private final int funcId;
+    private int pc;
+    private final Value[] locals;
+    private final Instance instance;
+
+    private final ArrayDeque<Integer> stackSizeBeforeBlock = new ArrayDeque<>();
+    private int blocksToBeDropped;
+
+    public StackFrame(Instance instance, int funcId, Value[] args, ValueType[] localTypes) {
+        this(Collections.emptyList(), instance, funcId, args, localTypes);
+    }
+
+    public StackFrame(
+            List<Instruction> code,
+            Instance instance,
+            int funcId,
+            Value[] args,
+            ValueType[] localTypes) {
+        this.code = code;
         this.instance = instance;
         this.funcId = funcId;
-        this.pc = pc;
         this.locals = Arrays.copyOf(args, args.length + localTypes.length);
 
         // initialize codesegment locals.
@@ -39,7 +56,6 @@ public class StackFrame {
                 locals[i + args.length] = Value.zero(type);
             }
         }
-        this.blockDepth = 0;
     }
 
     void setLocal(int i, Value v) {
@@ -59,5 +75,44 @@ public class StackFrame {
             if (funcName != null) id = funcName + id;
         }
         return id + "\n\tpc=" + pc + " locals=" + Arrays.toString(locals);
+    }
+
+    public Instruction loadCurrentInstruction() {
+        currentInstruction = code.get(pc++);
+        return currentInstruction;
+    }
+
+    public boolean isLastBlock() {
+        return currentInstruction.depth() == 0;
+    }
+
+    public boolean terminated() {
+        return pc >= code.size();
+    }
+
+    public void startBlock(MStack stack) {
+        isControlFrame = true;
+        stackSizeBeforeBlock.push(stack.size());
+    }
+
+    public void jumpTo(int newPc) {
+        if (code.size() > newPc) {
+            Instruction jumpInstruction = code.get(newPc);
+            blocksToBeDropped = currentInstruction.depth() - jumpInstruction.depth();
+        }
+        pc = newPc;
+    }
+
+    public void dropValuesOutOfBlock(MStack stack) {
+        if (currentInstruction.depth() > 0) {
+            while (blocksToBeDropped-- > 0 && stackSizeBeforeBlock.size() > 1) {
+                stackSizeBeforeBlock.pop();
+            }
+            int expectedStackSize = stackSizeBeforeBlock.pop();
+
+            while (stack.size() > expectedStackSize) {
+                stack.pop();
+            }
+        }
     }
 }
