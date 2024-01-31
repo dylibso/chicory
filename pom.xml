@@ -4,7 +4,7 @@
 
   <groupId>com.dylibso.chicory</groupId>
   <artifactId>chicory</artifactId>
-  <version>0.0.7</version>
+  <version>999-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Chicory</name>
   <description>Native JVM WebAssembly runtime</description>
