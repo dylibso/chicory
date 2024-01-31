@@ -2,7 +2,6 @@ package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.runtime.Module.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
-import static com.dylibso.chicory.wasm.types.ValueType.EMPTY_VALUE_TYPES;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
@@ -63,6 +62,7 @@ class Machine {
             eval(stack, instance, callStack);
         } else {
             callStack.push(new StackFrame(instance, funcId, args, EMPTY_VALUE_TYPES));
+            callStack.push(new StackFrame(instance, funcId, args, List.of()));
             var imprt = instance.imports().index()[funcId];
             if (imprt == null) {
                 throw new ChicoryException("Missing host import, number: " + funcId);

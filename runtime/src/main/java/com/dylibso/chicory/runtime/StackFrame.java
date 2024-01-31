@@ -33,7 +33,7 @@ public class StackFrame {
     private final ArrayDeque<Integer> stackSizeBeforeBlock = new ArrayDeque<>();
     private int blocksToBeDropped;
 
-    public StackFrame(Instance instance, int funcId, Value[] args, ValueType[] localTypes) {
+    public StackFrame(Instance instance, int funcId, Value[] args, List<ValueType> localTypes) {
         this(Collections.emptyList(), instance, funcId, args, localTypes);
     }
 
@@ -42,15 +42,15 @@ public class StackFrame {
             Instance instance,
             int funcId,
             Value[] args,
-            ValueType[] localTypes) {
+            List<ValueType> localTypes) {
         this.code = code;
         this.instance = instance;
         this.funcId = funcId;
-        this.locals = Arrays.copyOf(args, args.length + localTypes.length);
+        this.locals = Arrays.copyOf(args, args.length + localTypes.size());
 
         // initialize codesegment locals.
-        for (var i = 0; i < localTypes.length; i++) {
-            ValueType type = localTypes[i];
+        for (var i = 0; i < localTypes.size(); i++) {
+            ValueType type = localTypes.get(i);
             // TODO: How do we initialize non-numeric V128
             if (type != ValueType.V128) {
                 locals[i + args.length] = Value.zero(type);
