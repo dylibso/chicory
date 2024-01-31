@@ -61,7 +61,6 @@ class Machine {
                     new StackFrame(func.instructions(), instance, funcId, args, func.localTypes()));
             eval(stack, instance, callStack);
         } else {
-            callStack.push(new StackFrame(instance, funcId, args, EMPTY_VALUE_TYPES));
             callStack.push(new StackFrame(instance, funcId, args, List.of()));
             var imprt = instance.imports().index()[funcId];
             if (imprt == null) {
