@@ -3,7 +3,6 @@ package com.dylibso.chicory.runtime;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -92,7 +91,7 @@ public class StackFrame {
 
     public void registerStackSize(MStack stack) {
         int depth = zeroBasedCurrentDepth();
-        if (stackSizeBeforeBlock.size()-1 < depth) {
+        if (stackSizeBeforeBlock.size() - 1 < depth) {
             stackSizeBeforeBlock.add(stack.size());
         } else {
             stackSizeBeforeBlock.set(depth, stack.size());
