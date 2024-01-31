@@ -168,6 +168,8 @@ class Machine {
                         {
                             if (frame.doControlTransfer && frame.isControlFrame) {
                                 doControlTransfer(instance, stack, frame, instruction.scope());
+                            } else {
+                                frame.endOfNonControlBlock();
                             }
 
                             // if this is the last end, then we're done with

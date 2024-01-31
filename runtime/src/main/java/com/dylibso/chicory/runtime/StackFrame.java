@@ -3,7 +3,7 @@ package com.dylibso.chicory.runtime;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -30,7 +30,7 @@ public class StackFrame {
     private final Value[] locals;
     private final Instance instance;
 
-    private final List<Integer> stackSizeBeforeBlock = new ArrayList<>();
+    private final ArrayDeque<Integer> stackSizeBeforeBlock = new ArrayDeque<>();
 
     public StackFrame(Instance instance, int funcId, Value[] args, List<ValueType> localTypes) {
         this(Collections.emptyList(), instance, funcId, args, localTypes);
@@ -90,12 +90,7 @@ public class StackFrame {
     }
 
     public void registerStackSize(MStack stack) {
-        int depth = zeroBasedCurrentDepth();
-        if (stackSizeBeforeBlock.size() - 1 < depth) {
-            stackSizeBeforeBlock.add(stack.size());
-        } else {
-            stackSizeBeforeBlock.set(depth, stack.size());
-        }
+        stackSizeBeforeBlock.push(stack.size());
     }
 
     public void jumpTo(int newPc) {
@@ -104,14 +99,20 @@ public class StackFrame {
 
     public void dropValuesOutOfBlock(MStack stack) {
         if (currentInstruction.depth() > 0) {
-            int expectedStackSize = stackSizeBeforeBlock.get(zeroBasedCurrentDepth());
+            while (stackSizeBeforeBlock.size() > currentInstruction.depth()) {
+                stackSizeBeforeBlock.pop();
+            }
+
+            int expectedStackSize = stackSizeBeforeBlock.pop();
             while (stack.size() > expectedStackSize) {
                 stack.pop();
             }
         }
     }
 
-    private int zeroBasedCurrentDepth() {
-        return currentInstruction.depth() - 1;
+    public void endOfNonControlBlock() {
+        if (currentInstruction.depth() > 0) {
+            stackSizeBeforeBlock.pop();
+        }
     }
 }
