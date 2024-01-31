@@ -57,10 +57,11 @@ class Machine {
 
         var func = instance.function(funcId);
         if (func != null) {
-            callStack.push(new StackFrame(instance, funcId, 0, args, func.localTypes()));
-            eval(stack, instance, callStack, func.instructions());
+            callStack.push(
+                    new StackFrame(func.instructions(), instance, funcId, args, func.localTypes()));
+            eval(stack, instance, callStack);
         } else {
-            callStack.push(new StackFrame(instance, funcId, 0, args, List.of()));
+            callStack.push(new StackFrame(instance, funcId, args, List.of()));
             var imprt = instance.imports().index()[funcId];
             if (imprt == null) {
                 throw new ChicoryException("Missing host import, number: " + funcId);
@@ -105,11 +106,7 @@ class Machine {
         return results;
     }
 
-    static void eval(
-            MStack stack,
-            Instance instance,
-            ArrayDeque<StackFrame> callStack,
-            List<Instruction> code)
+    static void eval(MStack stack, Instance instance, ArrayDeque<StackFrame> callStack)
             throws ChicoryException {
 
         try {
@@ -117,10 +114,9 @@ class Machine {
             boolean shouldReturn = false;
 
             loop:
-            while (frame.pc < code.size()) {
+            while (!frame.terminated()) {
                 if (shouldReturn) return;
-                var instruction = code.get(frame.pc);
-                frame.pc++;
+                var instruction = frame.loadCurrentInstruction();
                 //                LOGGER.log(
                 //                        System.Logger.Level.DEBUG,
                 //                        "func="
@@ -148,8 +144,7 @@ class Machine {
                     case ELSE:
                     case BR:
                         prepareControlTransfer(frame, stack, false);
-
-                        frame.pc = instruction.labelTrue();
+                        frame.jumpTo(instruction.labelTrue());
                         break;
                     case BR_IF:
                         BR_IF(frame, stack, instruction);
@@ -173,14 +168,15 @@ class Machine {
                         {
                             if (frame.doControlTransfer && frame.isControlFrame) {
                                 doControlTransfer(instance, stack, frame, instruction.scope());
+                            } else {
+                                frame.endOfNonControlBlock();
                             }
 
                             // if this is the last end, then we're done with
                             // the function
-                            if (frame.blockDepth == 0) {
+                            if (frame.isLastBlock()) {
                                 break loop;
                             }
-                            frame.blockDepth--;
                             break;
                         }
                     case LOCAL_GET:
@@ -2207,9 +2203,8 @@ class Machine {
     }
 
     private static void BLOCK(StackFrame frame, MStack stack) {
-        frame.blockDepth++;
         frame.isControlFrame = true;
-        frame.stackSizeBeforeBlock = Math.max(stack.size(), frame.stackSizeBeforeBlock);
+        frame.registerStackSize(stack);
     }
 
     private static int numberOfValuesToReturn(Instance instance, Instruction scope) {
@@ -2227,16 +2222,10 @@ class Machine {
     }
 
     private static void IF(StackFrame frame, MStack stack, Instruction instruction) {
-        frame.blockDepth++;
         frame.isControlFrame = false;
-
+        frame.registerStackSize(stack);
         var predValue = stack.pop();
-        var pred = predValue.asInt();
-        if (pred == 0) {
-            frame.pc = instruction.labelFalse();
-        } else {
-            frame.pc = instruction.labelTrue();
-        }
+        frame.jumpTo(predValue.asInt() == 0 ? instruction.labelFalse() : instruction.labelTrue());
     }
 
     private static void BR_TABLE(StackFrame frame, MStack stack, Instruction instruction) {
@@ -2245,10 +2234,9 @@ class Machine {
 
         if (pred < 0 || pred >= instruction.labelTable().length - 1) {
             // choose default
-            frame.pc = instruction.labelTable()[instruction.labelTable().length - 1];
+            frame.jumpTo(instruction.labelTable()[instruction.labelTable().length - 1]);
         } else {
-            frame.branchConditionValue = predValue;
-            frame.pc = instruction.labelTable()[pred];
+            frame.jumpTo(instruction.labelTable()[pred]);
         }
     }
 
@@ -2257,10 +2245,9 @@ class Machine {
         var pred = predValue.asInt();
 
         if (pred == 0) {
-            frame.pc = instruction.labelFalse();
+            frame.jumpTo(instruction.labelFalse());
         } else {
-            frame.branchConditionValue = predValue;
-            frame.pc = instruction.labelTrue();
+            frame.jumpTo(instruction.labelTrue());
         }
     }
 
@@ -2295,21 +2282,9 @@ class Machine {
         }
 
         // drop everything till the previous label
-        if (frame.blockDepth > 0) {
-            while (stack.size() > frame.stackSizeBeforeBlock) {
-                stack.pop();
-            }
-        }
+        frame.dropValuesOutOfBlock(stack);
 
-        // this is mostly empirical
-        // if a branch have been taken we restore the consumed value from
-        // the stack
-        if (frame.branchConditionValue != null && frame.branchConditionValue.asInt() > 0) {
-            stack.push(frame.branchConditionValue);
-            frame.branchConditionValue = null;
-        }
-
-        if (frame.blockDepth == 0) {
+        if (frame.isLastBlock()) {
             while (!unwindStack.isEmpty()) {
                 stack.push(unwindStack.pop());
             }
