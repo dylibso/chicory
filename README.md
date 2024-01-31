@@ -117,7 +117,7 @@ int len = message.getBytes().length;
 // allocate {len} bytes of memory, this returns a pointer to that memory
 int ptr = alloc.apply(Value.i32(len))[0].asInt();
 // We can now write the message to the module's memory:
-memory.write(ptr, message);
+memory.writeString(ptr, message);
 ```
 
 Now we can call `countVowels` with this pointer to the string. It will do it's job and return the count. We will
