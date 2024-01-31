@@ -3,6 +3,7 @@ package com.dylibso.chicory.runtime;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Represents a frame. It's maybe a misonomer to call it a stack frame.
@@ -25,15 +26,16 @@ public class StackFrame {
     public int stackSizeBeforeBlock;
     public Value branchConditionValue = null;
 
-    public StackFrame(Instance instance, int funcId, int pc, Value[] args, ValueType[] localTypes) {
+    public StackFrame(
+            Instance instance, int funcId, int pc, Value[] args, List<ValueType> localTypes) {
         this.instance = instance;
         this.funcId = funcId;
         this.pc = pc;
-        this.locals = Arrays.copyOf(args, args.length + localTypes.length);
+        this.locals = Arrays.copyOf(args, args.length + localTypes.size());
 
         // initialize codesegment locals.
-        for (var i = 0; i < localTypes.length; i++) {
-            ValueType type = localTypes[i];
+        for (var i = 0; i < localTypes.size(); i++) {
+            ValueType type = localTypes.get(i);
             // TODO: How do we initialize non-numeric V128
             if (type != ValueType.V128) {
                 locals[i + args.length] = Value.zero(type);

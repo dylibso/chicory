@@ -3,15 +3,15 @@ package com.dylibso.chicory.wasm.types;
 import java.util.List;
 
 public class FunctionBody {
-    private final ValueType[] locals;
-    private List<Instruction> instructions;
+    private final List<ValueType> locals;
+    private final List<Instruction> instructions;
 
-    public FunctionBody(ValueType[] locals, List<Instruction> instructions) {
-        this.locals = locals;
-        this.instructions = instructions;
+    public FunctionBody(List<ValueType> locals, List<Instruction> instructions) {
+        this.locals = List.copyOf(locals);
+        this.instructions = List.copyOf(instructions);
     }
 
-    public ValueType[] localTypes() {
+    public List<ValueType> localTypes() {
         return locals;
     }
 

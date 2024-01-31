@@ -31,6 +31,4 @@ public enum ValueType {
     public static ValueType byId(long id) {
         return byId.get(id);
     }
-
-    public static final ValueType[] EMPTY_VALUE_TYPES = new ValueType[0];
 }
