@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.CustomSection;
-import com.dylibso.chicory.wasm.types.ImportDescType;
+import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -44,7 +44,7 @@ public class ParserTest {
             // check import section
             var importSection = module.importSection();
             assertEquals(1, importSection.importCount());
-            assertEquals(ImportDescType.FuncIdx, importSection.getImport(0).descType());
+            assertEquals(ExternalType.FUNCTION, importSection.getImport(0).importType());
             assertEquals("env", importSection.getImport(0).moduleName());
             assertEquals("gotit", importSection.getImport(0).name());
 

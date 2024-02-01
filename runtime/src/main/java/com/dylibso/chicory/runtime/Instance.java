@@ -78,7 +78,7 @@ public class Instance {
     public ExportFunction export(String name) {
         var export = module.export(name);
         if (export == null) throw new ChicoryException("Unknown export with name " + name);
-        var funcId = (int) export.desc().index();
+        var funcId = export.index();
         return (args) -> {
             this.module.logger().debug(() -> "Args: " + Arrays.toString(args));
             try {

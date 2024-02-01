@@ -15,9 +15,8 @@ import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.ElementSection;
 import com.dylibso.chicory.wasm.types.ElementType;
 import com.dylibso.chicory.wasm.types.Export;
-import com.dylibso.chicory.wasm.types.ExportDesc;
-import com.dylibso.chicory.wasm.types.ExportDescType;
 import com.dylibso.chicory.wasm.types.ExportSection;
+import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionSection;
@@ -25,7 +24,6 @@ import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.GlobalImport;
 import com.dylibso.chicory.wasm.types.GlobalSection;
-import com.dylibso.chicory.wasm.types.ImportDescType;
 import com.dylibso.chicory.wasm.types.ImportSection;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.Limits;
@@ -340,16 +338,16 @@ public final class Parser {
         for (int i = 0; i < importCount; i++) {
             String moduleName = readName(buffer);
             String importName = readName(buffer);
-            var descType = ImportDescType.byId(readVarUInt32(buffer));
+            var descType = ExternalType.byId((int) readVarUInt32(buffer));
             switch (descType) {
-                case FuncIdx:
+                case FUNCTION:
                     {
                         importSection.addImport(
                                 new FunctionImport(
                                         moduleName, importName, (int) readVarUInt32(buffer)));
                         break;
                     }
-                case TableIdx:
+                case TABLE:
                     {
                         var rawTableType = readVarUInt32(buffer);
                         assert rawTableType == 0x70 || rawTableType == 0x6F;
@@ -368,7 +366,7 @@ public final class Parser {
                                 new TableImport(moduleName, importName, tableType, limits));
                         break;
                     }
-                case MemIdx:
+                case MEMORY:
                     {
                         var limitType = (int) readVarUInt32(buffer);
                         assert limitType == 0x00 || limitType == 0x01;
@@ -386,7 +384,7 @@ public final class Parser {
                         importSection.addImport(new MemoryImport(moduleName, importName, limits));
                         break;
                     }
-                case GlobalIdx:
+                case GLOBAL:
                     var globalValType = ValueType.byId(readVarUInt32(buffer));
                     var globalMut = MutabilityType.byId(readVarUInt32(buffer));
                     importSection.addImport(
@@ -482,10 +480,9 @@ public final class Parser {
         // Parse individual functions in the function section
         for (int i = 0; i < exportCount; i++) {
             var name = readName(buffer);
-            var exportType = ExportDescType.byId(readVarUInt32(buffer));
-            var index = readVarUInt32(buffer);
-            var desc = new ExportDesc(index, exportType);
-            exportSection.addExport(new Export(name, desc));
+            var exportType = ExternalType.byId((int) readVarUInt32(buffer));
+            var index = (int) readVarUInt32(buffer);
+            exportSection.addExport(new Export(name, index, exportType));
         }
 
         return exportSection;

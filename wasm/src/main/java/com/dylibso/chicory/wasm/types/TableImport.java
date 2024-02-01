@@ -41,8 +41,8 @@ public final class TableImport extends Import {
         return limits;
     }
 
-    public ImportDescType descType() {
-        return ImportDescType.TableIdx;
+    public ExternalType importType() {
+        return ExternalType.TABLE;
     }
 
     public boolean equals(final Import other) {
