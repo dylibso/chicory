@@ -18,7 +18,6 @@ import com.dylibso.chicory.wasm.types.Import;
 import com.dylibso.chicory.wasm.types.ImportDescType;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.Table;
-import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -67,7 +66,6 @@ public class Module {
         if (this.module.globalSection() != null) {
             globalInitializers = this.module.globalSection().globals();
         }
-        var globals = new Value[globalInitializers.length];
 
         var dataSegments = new DataSegment[0];
         if (module.dataSection() != null) {
