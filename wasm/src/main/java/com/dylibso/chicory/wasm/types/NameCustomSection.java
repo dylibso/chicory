@@ -3,6 +3,7 @@ package com.dylibso.chicory.wasm.types;
 import com.dylibso.chicory.wasm.Parser;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Objects;
 
 /**
  * The "name" custom section.
@@ -10,6 +11,14 @@ import java.util.ArrayList;
 public class NameCustomSection extends CustomSection {
 
     private final ArrayList<String> funcNames;
+
+    /**
+     * Construct a new, empty section instance.
+     */
+    public NameCustomSection() {
+        super();
+        funcNames = new ArrayList<>();
+    }
 
     /**
      * Construct a new instance.
@@ -49,6 +58,19 @@ public class NameCustomSection extends CustomSection {
         }
 
         return names;
+    }
+
+    /**
+     * Add a function name to this section.
+     *
+     * @param functionName the function name to add to this section (must not be {@code null})
+     * @return the index of the newly-added function name
+     */
+    public int addFunctionName(String functionName) {
+        Objects.requireNonNull(functionName, "functionName");
+        int idx = funcNames.size();
+        funcNames.add(functionName);
+        return idx;
     }
 
     public int functionNameCount() {
