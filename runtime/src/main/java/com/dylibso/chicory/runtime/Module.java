@@ -35,7 +35,9 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -316,14 +318,18 @@ public class Module {
     }
 
     public static int computeConstantValue(Instruction[] expr) {
-        assert (expr.length == 1);
-        if (expr[0].opcode() != OpCode.I32_CONST) {
+        return computeConstantValue(Arrays.asList(expr));
+    }
+
+    public static int computeConstantValue(List<Instruction> expr) {
+        assert (expr.size() == 1);
+        if (expr.get(0).opcode() != OpCode.I32_CONST) {
             throw new RuntimeException(
                     "Don't support data segment expressions other than"
                             + " i32.const yet, found: "
-                            + expr[0].opcode());
+                            + expr.get(0).opcode());
         }
-        return (int) expr[0].operands()[0];
+        return (int) expr.get(0).operands()[0];
     }
 
     private HostImports mapHostImports(Import[] imports, HostImports hostImports) {
