@@ -1,36 +1,55 @@
 package com.dylibso.chicory.wasm.types;
 
-public class Import {
-    private String moduleName;
-    private String fieldName;
-    private ImportDesc desc;
+import java.util.Objects;
 
-    public Import(String moduleName, String fieldName, ImportDesc desc) {
-        this.moduleName = moduleName;
-        this.fieldName = fieldName;
-        this.desc = desc;
+/**
+ * Some imported entity.
+ */
+public abstract class Import {
+    private final String moduleName;
+    private final String name;
+
+    Import(String moduleName, String name) {
+        this.moduleName = Objects.requireNonNull(moduleName, "moduleName");
+        this.name = Objects.requireNonNull(name, "name");
     }
 
+    /**
+     * {@return the module name to import from}
+     */
     public String moduleName() {
         return moduleName;
     }
 
-    public String fieldName() {
-        return fieldName;
+    /**
+     * {@return the import name}
+     */
+    public String name() {
+        return name;
     }
 
-    public ImportDesc desc() {
-        return desc;
+    /**
+     * {@return the import descriptor type}
+     */
+    public abstract ImportDescType descType();
+
+    public boolean equals(Object obj) {
+        return obj instanceof Import && equals((Import) obj);
+    }
+
+    public boolean equals(Import other) {
+        return other != null && moduleName.equals(other.moduleName) && name.equals(other.name);
+    }
+
+    public int hashCode() {
+        return Objects.hash(moduleName, name);
+    }
+
+    public StringBuilder toString(StringBuilder b) {
+        return b.append('<').append(moduleName).append('.').append(name).append('>');
     }
 
     public String toString() {
-        var builder = new StringBuilder();
-        builder.append(desc.toString());
-        builder.append(" <");
-        builder.append(moduleName);
-        builder.append('.');
-        builder.append(fieldName);
-        builder.append('>');
-        return builder.toString();
+        return toString(new StringBuilder()).toString();
     }
 }

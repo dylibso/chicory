@@ -12,6 +12,7 @@ import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportDesc;
 import com.dylibso.chicory.wasm.types.ExportDescType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
+import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.Import;
@@ -27,7 +28,9 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -86,7 +89,7 @@ public class Module {
         if (module.importSection() != null) {
             numFuncTypes +=
                     module.importSection().stream()
-                            .filter(is -> is.desc().type() == ImportDescType.FuncIdx)
+                            .filter(is -> is.descType() == ImportDescType.FuncIdx)
                             .count();
         }
 
@@ -107,10 +110,10 @@ public class Module {
             imports = new Import[cnt];
             for (int i = 0; i < cnt; i++) {
                 Import imprt = module.importSection().getImport(i);
-                switch (imprt.desc().type()) {
+                switch (imprt.descType()) {
                     case FuncIdx:
                         {
-                            var type = (int) imprt.desc().index();
+                            var type = ((FunctionImport) imprt).typeIndex();
                             functionTypes[importId] = type;
                             // The global function id increases on this table
                             // function ids are assigned on imports first
@@ -186,7 +189,7 @@ public class Module {
         var functionImportsOffset = 0;
         var tablesImportsOffset = 0;
         for (int i = 0; i < imports.length; i++) {
-            switch (imports[i].desc().type()) {
+            switch (imports[i].descType()) {
                 case GlobalIdx:
                     globalImportsOffset++;
                     break;
@@ -223,7 +226,7 @@ public class Module {
         int hostMemNum = 0;
         int hostTableNum = 0;
         for (var imprt : imports) {
-            switch (imprt.desc().type()) {
+            switch (imprt.descType()) {
                 case FuncIdx:
                     hostFuncNum++;
                     break;
@@ -252,15 +255,15 @@ public class Module {
         int cnt;
         for (var impIdx = 0; impIdx < imports.length; impIdx++) {
             var i = imports[impIdx];
-            var name = i.moduleName() + "." + i.fieldName();
+            var name = i.moduleName() + "." + i.name();
             var found = false;
-            switch (i.desc().type()) {
+            switch (i.descType()) {
                 case FuncIdx:
                     cnt = hostImports.functionCount();
                     for (int j = 0; j < cnt; j++) {
                         HostFunction f = hostImports.function(j);
                         if (i.moduleName().equals(f.moduleName())
-                                && i.fieldName().equals(f.fieldName())) {
+                                && i.name().equals(f.fieldName())) {
                             hostFuncs[hostFuncIdx] = f;
                             hostIndex[impIdx] = f;
                             found = true;
@@ -274,7 +277,7 @@ public class Module {
                     for (int j = 0; j < cnt; j++) {
                         HostGlobal g = hostImports.global(j);
                         if (i.moduleName().equals(g.moduleName())
-                                && i.fieldName().equals(g.fieldName())) {
+                                && i.name().equals(g.fieldName())) {
                             hostGlobals[hostGlobalIdx] = g;
                             hostIndex[impIdx] = g;
                             found = true;
@@ -288,7 +291,7 @@ public class Module {
                     for (int j = 0; j < cnt; j++) {
                         HostMemory m = hostImports.memory(j);
                         if (i.moduleName().equals(m.moduleName())
-                                && i.fieldName().equals(m.fieldName())) {
+                                && i.name().equals(m.fieldName())) {
                             hostMems[hostMemIdx] = m;
                             hostIndex[impIdx] = m;
                             found = true;
@@ -302,7 +305,7 @@ public class Module {
                     for (int j = 0; j < cnt; j++) {
                         HostTable t = hostImports.table(j);
                         if (i.moduleName().equals(t.moduleName())
-                                && i.fieldName().equals(t.fieldName())) {
+                                && i.name().equals(t.fieldName())) {
                             hostTables[hostTableIdx] = t;
                             hostIndex[impIdx] = t;
                             found = true;

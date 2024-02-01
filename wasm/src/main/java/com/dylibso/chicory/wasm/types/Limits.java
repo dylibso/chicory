@@ -25,6 +25,32 @@ public class Limits {
         return max;
     }
 
+    public boolean equals(final Object obj) {
+        return obj instanceof Limits && equals((Limits) obj);
+    }
+
+    public boolean equals(final Limits other) {
+        return this == other || other != null && min == other.min && max == other.max;
+    }
+
+    public int hashCode() {
+        return Long.hashCode(min) * 19 + Long.hashCode(max);
+    }
+
+    public String toString() {
+        return toString(new StringBuilder()).toString();
+    }
+
+    public StringBuilder toString(StringBuilder b) {
+        b.append("[").append(min).append(',');
+        if (max == LIMIT_MAX) {
+            b.append("max");
+        } else {
+            b.append(max);
+        }
+        return b.append(']');
+    }
+
     public static Limits unbounded() {
         return UNBOUNDED;
     }

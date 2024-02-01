@@ -25,17 +25,18 @@ import com.dylibso.chicory.wasm.types.ExportDesc;
 import com.dylibso.chicory.wasm.types.ExportDescType;
 import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.FunctionBody;
+import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionSection;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
+import com.dylibso.chicory.wasm.types.GlobalImport;
 import com.dylibso.chicory.wasm.types.GlobalSection;
-import com.dylibso.chicory.wasm.types.Import;
-import com.dylibso.chicory.wasm.types.ImportDesc;
 import com.dylibso.chicory.wasm.types.ImportDescType;
 import com.dylibso.chicory.wasm.types.ImportSection;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Memory;
+import com.dylibso.chicory.wasm.types.MemoryImport;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.MutabilityType;
@@ -47,6 +48,7 @@ import com.dylibso.chicory.wasm.types.Section;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.Table;
+import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TableSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.UnknownCustomSection;
@@ -343,13 +345,14 @@ public final class Parser {
         // Parse individual imports in the import section
         for (int i = 0; i < importCount; i++) {
             String moduleName = readName(buffer);
-            String fieldName = readName(buffer);
+            String importName = readName(buffer);
             var descType = ImportDescType.byId(readVarUInt32(buffer));
             switch (descType) {
                 case FuncIdx:
                     {
-                        var funcDesc = new ImportDesc(descType, (int) readVarUInt32(buffer));
-                        importSection.addImport(new Import(moduleName, fieldName, funcDesc));
+                        importSection.addImport(
+                                new FunctionImport(
+                                        moduleName, importName, (int) readVarUInt32(buffer)));
                         break;
                     }
                 case TableIdx:
@@ -367,29 +370,33 @@ public final class Parser {
                                         ? new Limits(min, readVarUInt32(buffer))
                                         : new Limits(min);
 
-                        ImportDesc tableDesc = new ImportDesc(descType, limits, tableType);
-                        importSection.addImport(new Import(moduleName, fieldName, tableDesc));
+                        importSection.addImport(
+                                new TableImport(moduleName, importName, tableType, limits));
                         break;
                     }
                 case MemIdx:
                     {
                         var limitType = (int) readVarUInt32(buffer);
                         assert limitType == 0x00 || limitType == 0x01;
-                        var min = (int) readVarUInt32(buffer);
+                        var min = (int) Math.min(MemoryLimits.MAX_PAGES, readVarUInt32(buffer));
                         var limits =
                                 limitType > 0
-                                        ? new Limits(min, readVarUInt32(buffer))
-                                        : new Limits(min);
+                                        ? new MemoryLimits(
+                                                min,
+                                                (int)
+                                                        Math.min(
+                                                                MemoryLimits.MAX_PAGES,
+                                                                readVarUInt32(buffer)))
+                                        : new MemoryLimits(min, MemoryLimits.MAX_PAGES);
 
-                        ImportDesc memDesc = new ImportDesc(descType, limits);
-                        importSection.addImport(new Import(moduleName, fieldName, memDesc));
+                        importSection.addImport(new MemoryImport(moduleName, importName, limits));
                         break;
                     }
                 case GlobalIdx:
                     var globalValType = ValueType.byId(readVarUInt32(buffer));
                     var globalMut = MutabilityType.byId(readVarUInt32(buffer));
-                    var globalDesc = new ImportDesc(descType, globalMut, globalValType);
-                    importSection.addImport(new Import(moduleName, fieldName, globalDesc));
+                    importSection.addImport(
+                            new GlobalImport(moduleName, importName, globalMut, globalValType));
                     break;
             }
         }
@@ -763,7 +770,7 @@ public final class Parser {
                 var offset = parseExpression(buffer);
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
                 buffer.get(data);
-                dataSection.addDataSegment(new ActiveDataSegment(offset, data));
+                dataSection.addDataSegment(new ActiveDataSegment(List.of(offset), data));
             } else if (mode == 1) {
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
                 buffer.get(data);
@@ -773,7 +780,7 @@ public final class Parser {
                 var offset = parseExpression(buffer);
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
                 buffer.get(data);
-                dataSection.addDataSegment(new ActiveDataSegment(memoryId, offset, data));
+                dataSection.addDataSegment(new ActiveDataSegment(memoryId, List.of(offset), data));
             } else {
                 throw new ChicoryException("Failed to parse data segment with data mode: " + mode);
             }

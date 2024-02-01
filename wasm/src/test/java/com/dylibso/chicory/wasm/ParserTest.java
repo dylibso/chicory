@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.CustomSection;
+import com.dylibso.chicory.wasm.types.ImportDescType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -43,14 +44,16 @@ public class ParserTest {
             // check import section
             var importSection = module.importSection();
             assertEquals(1, importSection.importCount());
-            assertEquals("func[] <env.gotit>", importSection.getImport(0).toString());
+            assertEquals(ImportDescType.FuncIdx, importSection.getImport(0).descType());
+            assertEquals("env", importSection.getImport(0).moduleName());
+            assertEquals("gotit", importSection.getImport(0).name());
 
             // check data section
             var dataSection = module.dataSection();
             assertEquals(1, dataSection.dataSegmentCount());
             var segment = (ActiveDataSegment) dataSection.getDataSegment(0);
             assertEquals(0, segment.index());
-            assertEquals(OpCode.I32_CONST, segment.offsetInstructions()[0].opcode());
+            assertEquals(OpCode.I32_CONST, segment.offsetInstructions().get(0).opcode());
             assertArrayEquals(new byte[] {0x00, 0x01, 0x02, 0x03}, segment.data());
 
             // check start section
