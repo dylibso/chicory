@@ -1,11 +1,21 @@
 package com.dylibso.chicory.wasm.types;
 
-public class MemoryLimits {
+/**
+ * Limits for memory sizes, in pages.
+ * Memory limits also define whether the corresponding memory is <em>shared</em>.
+ * <p>
+ * See <a href="https://webassembly.github.io/spec/core/syntax/types.html#syntax-limits">Limits</a>
+ * and <a href="https://webassembly.github.io/spec/core/syntax/modules.html#syntax-mem">Memories</a>
+ * for reference.
+ * See also <a href="https://github.com/WebAssembly/threads/blob/main/proposals/threads/Overview.md#spec-changes">Overview</a>
+ * for the history of shared memory.
+ */
+public final class MemoryLimits {
 
     /**
      * Maximum allowed number of pages.
      */
-    public static final int MAX_PAGES = 2 << 15;
+    public static final int MAX_PAGES = 1 << 16;
 
     private static final MemoryLimits DEFAULT_LIMITS = new MemoryLimits(0, MAX_PAGES);
 
@@ -19,11 +29,40 @@ public class MemoryLimits {
      */
     private final int maximum;
 
+    /**
+     * Whether the memory limits apply to a shared memory segment.
+     */
+    private final boolean shared;
+
+    /**
+     * Construct a new instance.
+     * The maximum size will be {@link #MAX_PAGES} and {@code shared} will be {@code false}.
+     *
+     * @param initial the initial size
+     */
     public MemoryLimits(int initial) {
-        this(initial, MAX_PAGES);
+        this(initial, MAX_PAGES, false);
     }
 
+    /**
+     * Construct a new instance.
+     * {@code shared} will be {@code false}.
+     *
+     * @param initial the initial size
+     * @param maximum the maximum size, in pages
+     */
     public MemoryLimits(int initial, int maximum) {
+        this(initial, maximum, false);
+    }
+
+    /**
+     * Construct a new instance.
+     *
+     * @param initial the initial size, in pages
+     * @param maximum the maximum size, in pages
+     * @param shared {@code true} if the limits apply to a shared memory segment, or {@code false} otherwise
+     */
+    public MemoryLimits(int initial, int maximum, boolean shared) {
         if (initial < 0 || initial > maximum) {
             throw new IllegalArgumentException(
                     "initial must be >= 0 and <= maximum, but was " + initial);
@@ -32,9 +71,9 @@ public class MemoryLimits {
         if (maximum > MAX_PAGES) {
             throw new IllegalArgumentException("maximum must be <= MAX_PAGES, but was " + maximum);
         }
-
         this.initial = initial;
         this.maximum = maximum;
+        this.shared = shared;
     }
 
     /**
@@ -44,12 +83,25 @@ public class MemoryLimits {
         return DEFAULT_LIMITS;
     }
 
+    /**
+     * {@return the initial size, in pages}
+     */
     public int initialPages() {
         return initial;
     }
 
+    /**
+     * {@return the maximum size, in pages}
+     */
     public int maximumPages() {
         return maximum;
+    }
+
+    /**
+     * {@return <code>true</code> if the limits apply to a shared memory segment, or <code>false</code> otherwise}
+     */
+    public boolean shared() {
+        return shared;
     }
 
     public boolean equals(final Object obj) {
@@ -76,6 +128,10 @@ public class MemoryLimits {
         } else {
             b.append(maximum);
         }
-        return b.append(']');
+        b.append(']');
+        if (shared) {
+            b.append(":shared");
+        }
+        return b;
     }
 }
