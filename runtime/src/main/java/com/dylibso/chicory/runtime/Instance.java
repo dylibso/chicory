@@ -122,7 +122,7 @@ public class Instance {
                             var expr = typeElem.exprInstructions();
                             var addr = computeConstantValue(this, expr).asInt();
                             for (var fi : typeElem.funcIndices()) {
-                                tables[0].setRef(addr++, (int) fi);
+                                table(0).setRef(addr++, (int) fi);
                             }
                             break;
                         }
@@ -133,7 +133,7 @@ public class Instance {
                             var expr = tableElem.exprInstructions();
                             var addr = computeConstantValue(this, expr).asInt();
                             for (var fi : tableElem.funcIndices()) {
-                                tables[idx].setRef(addr++, (int) fi);
+                                table(idx).setRef(addr++, (int) fi);
                             }
                             break;
                         }
@@ -242,7 +242,7 @@ public class Instance {
 
     public Table table(int idx) {
         if (idx < importedTablesOffset) {
-            return null;
+            return imports.table(idx).table();
         }
         return tables[idx - importedTablesOffset];
     }
