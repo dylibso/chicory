@@ -82,6 +82,7 @@
             memory_fill.wast,
             memory_redundancy.wast,
             memory_trap.wast,
+            data.wast,
             loop.wast,
             nop.wast,
             float_exprs.wast,
