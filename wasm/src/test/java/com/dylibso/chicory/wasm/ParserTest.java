@@ -247,7 +247,9 @@ public class ParserTest {
         try (InputStream is = getClass().getResourceAsStream("/compiled/count_vowels.rs.wasm")) {
             var module = parser.parseModule(is);
             var nameSec = module.nameSection();
-            assertEquals(125, nameSec.functionNameCount());
+            assertEquals(module.codeSection().functionBodyCount(), nameSec.functionNameCount());
+            assertEquals("__stack_pointer", nameSec.nameOfGlobal(0));
+            assertEquals(".rodata", nameSec.nameOfData(0));
         }
     }
 }
