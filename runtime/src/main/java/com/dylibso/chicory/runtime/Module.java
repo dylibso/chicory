@@ -7,11 +7,6 @@ import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.types.DataSegment;
-import com.dylibso.chicory.wasm.types.ElemElem;
-import com.dylibso.chicory.wasm.types.ElemFunc;
-import com.dylibso.chicory.wasm.types.ElemMem;
-import com.dylibso.chicory.wasm.types.ElemTable;
-import com.dylibso.chicory.wasm.types.ElemType;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportDesc;
@@ -21,9 +16,7 @@ import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.Import;
 import com.dylibso.chicory.wasm.types.ImportDescType;
-import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
-import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
@@ -69,55 +62,12 @@ public class Module {
     }
 
     public Instance instantiate(HostImports hostImports) {
+
         var globalInitializers = new Global[] {};
         if (this.module.globalSection() != null) {
             globalInitializers = this.module.globalSection().globals();
         }
         var globals = new Value[globalInitializers.length];
-        for (var i = 0; i < globalInitializers.length; i++) {
-            var g = globalInitializers[i];
-            if (g.initInstructions().length > 2)
-                throw new RuntimeException(
-                        "We don't a global initializer with multiple instructions");
-            var instr = g.initInstructions()[0];
-            switch (instr.opcode()) {
-                case I32_CONST:
-                    globals[i] = Value.i32(instr.operands()[0]);
-                    break;
-                case I64_CONST:
-                    globals[i] = Value.i64(instr.operands()[0]);
-                    break;
-                case F32_CONST:
-                    globals[i] = Value.f32(instr.operands()[0]);
-                    break;
-                case F64_CONST:
-                    globals[i] = Value.f64(instr.operands()[0]);
-                    break;
-                case GLOBAL_GET:
-                    {
-                        // TODO this assumes that these are already initialized declared in order
-                        // should we make this more resilient? Should initialization happen later?
-                        var idx = (int) instr.operands()[0];
-                        globals[i] =
-                                idx < hostImports.globalCount()
-                                        ? hostImports.global(idx).value()
-                                        : globals[idx];
-                        break;
-                    }
-                case REF_NULL:
-                    globals[i] = Value.EXTREF_NULL;
-                    break;
-                case REF_FUNC:
-                    globals[i] = Value.funcRef(instr.operands()[0]);
-                    break;
-                default:
-                    throw new RuntimeException(
-                            "We only support i32.const, i64.const, f32.const, f64.const,"
-                                    + " global.get, ref.func and ref.null opcodes on global"
-                                    + " initializers right now. We failed to initialize opcode: "
-                                    + instr.opcode());
-            }
-        }
 
         var dataSegments = new DataSegment[0];
         if (module.dataSection() != null) {
@@ -196,62 +146,17 @@ public class Module {
         }
 
         Table[] tables = new Table[0];
-        Element[] elements = new Element[0];
         if (module.tableSection() != null) {
             var tableLength = module.tableSection().tableCount();
             tables = new Table[tableLength];
             for (int i = 0; i < tableLength; i++) {
                 tables[i] = module.tableSection().getTable(i);
             }
-            if (module.elementSection() != null) {
-                elements = module.elementSection().elements();
-                for (var el : module.elementSection().elements()) {
-                    switch (el.elemType()) {
-                        case Type:
-                            {
-                                var typeElem = (ElemType) el;
-                                var expr = typeElem.exprInstructions();
-                                var addr = computeConstantValue(expr);
-                                for (var fi : typeElem.funcIndices()) {
-                                    tables[0].setRef(addr++, (int) fi);
-                                }
-                                break;
-                            }
-                        case Table:
-                            {
-                                var tableElem = (ElemTable) el;
-                                var idx = (int) tableElem.tableIndex();
-                                var expr = tableElem.exprInstructions();
-                                var addr = computeConstantValue(expr);
-                                for (var fi : tableElem.funcIndices()) {
-                                    tables[idx].setRef(addr++, (int) fi);
-                                }
-                                break;
-                            }
-                        case Func:
-                            {
-                                var funcElem = (ElemFunc) el;
-                                // TODO: what? only runtime?
-                                break;
-                            }
-                        case Elem:
-                            {
-                                var elemElem = (ElemElem) el;
-                                // TODO: what? only runtime?
-                                break;
-                            }
-                        case Mem:
-                            {
-                                var memElem = (ElemMem) el;
-                                // TODO: what? only runtime?
-                                break;
-                            }
-                        default:
-                            throw new ChicoryException(
-                                    "Elment type: " + el.elemType() + " not yet supported");
-                    }
-                }
-            }
+        }
+
+        Element[] elements = new Element[0];
+        if (module.elementSection() != null) {
+            elements = module.elementSection().elements();
         }
 
         Memory memory = null;
@@ -301,7 +206,6 @@ public class Module {
         return new Instance(
                 this,
                 globalInitializers,
-                globals,
                 globalImportsOffset,
                 functionImportsOffset,
                 tablesImportsOffset,
@@ -313,17 +217,6 @@ public class Module {
                 mappedHostImports,
                 tables,
                 elements);
-    }
-
-    public static int computeConstantValue(Instruction[] expr) {
-        assert (expr.length == 1);
-        if (expr[0].opcode() != OpCode.I32_CONST) {
-            throw new RuntimeException(
-                    "Don't support data segment expressions other than"
-                            + " i32.const yet, found: "
-                            + expr[0].opcode());
-        }
-        return (int) expr[0].operands()[0];
     }
 
     private HostImports mapHostImports(Import[] imports, HostImports hostImports) {
