@@ -1,6 +1,5 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.runtime.Module.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
@@ -15,6 +14,7 @@ import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -2298,6 +2298,25 @@ class Machine {
         }
     }
 
+    public static Value computeConstantValue(Instance instance, Instruction[] expr) {
+        return computeConstantValue(instance, Arrays.asList(expr));
+    }
+
+    public static Value computeConstantValue(Instance instance, List<Instruction> expr) {
+        assert (expr.size() == 1);
+        var instr = expr.get(0);
+        if (instr.opcode() == OpCode.I32_CONST) {
+            return Value.i32(instr.operands()[0]);
+        } else if (instr.opcode() == OpCode.GLOBAL_GET) {
+            return instance.readGlobal((int) instr.operands()[0]);
+        } else {
+            throw new RuntimeException(
+                    "Don't support data segment expressions other than"
+                            + " i32.const or global.get yet, found: "
+                            + instr.opcode());
+        }
+    }
+
     private static int getRuntimeElementValue(Instance instance, int idx, int s) {
         var elem = instance.element(idx);
         var type = elem.elemType();
@@ -2306,14 +2325,14 @@ class Machine {
             case Type:
                 {
                     var t = (ElemType) elem;
-                    val = computeConstantValue(t.exprInstructions());
+                    val = computeConstantValue(instance, t.exprInstructions()).asInt();
                     break;
                 }
             case Elem:
                 {
                     var e = (ElemElem) elem;
                     var expr = e.exprs()[s];
-                    val = computeConstantValue(expr);
+                    val = computeConstantValue(instance, expr).asInt();
                     break;
                 }
             case Func:
