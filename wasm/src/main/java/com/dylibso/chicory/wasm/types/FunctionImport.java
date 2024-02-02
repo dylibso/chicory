@@ -25,8 +25,8 @@ public final class FunctionImport extends Import {
         return typeIndex;
     }
 
-    public ImportDescType descType() {
-        return ImportDescType.FuncIdx;
+    public ExternalType importType() {
+        return ExternalType.FUNCTION;
     }
 
     public boolean equals(final Import other) {

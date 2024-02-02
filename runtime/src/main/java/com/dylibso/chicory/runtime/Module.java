@@ -10,14 +10,12 @@ import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.Export;
-import com.dylibso.chicory.wasm.types.ExportDesc;
-import com.dylibso.chicory.wasm.types.ExportDescType;
+import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.Import;
-import com.dylibso.chicory.wasm.types.ImportDescType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.Table;
@@ -137,7 +135,7 @@ public class Module {
         if (module.importSection() != null) {
             numFuncTypes +=
                     module.importSection().stream()
-                            .filter(is -> is.descType() == ImportDescType.FuncIdx)
+                            .filter(is -> is.importType() == ExternalType.FUNCTION)
                             .count();
         }
 
@@ -148,7 +146,6 @@ public class Module {
         }
 
         int importId = 0;
-        Integer startFuncId = null;
         var functionTypes = new int[numFuncTypes];
         var imports = new Import[0];
         var funcIdx = 0;
@@ -158,8 +155,8 @@ public class Module {
             imports = new Import[cnt];
             for (int i = 0; i < cnt; i++) {
                 Import imprt = module.importSection().getImport(i);
-                switch (imprt.descType()) {
-                    case FuncIdx:
+                switch (imprt.importType()) {
+                    case FUNCTION:
                         {
                             var type = ((FunctionImport) imprt).typeIndex();
                             functionTypes[importId] = type;
@@ -169,9 +166,7 @@ public class Module {
                             funcIdx++;
                             break;
                         }
-                    case TableIdx:
-                    case MemIdx:
-                    case GlobalIdx:
+                    default:
                         imports[importId++] = imprt;
                         break;
                 }
@@ -181,9 +176,11 @@ public class Module {
         var mappedHostImports = mapHostImports(imports, hostImports);
 
         if (module.startSection() != null) {
-            startFuncId = (int) module.startSection().startIndex();
-            var desc = new ExportDesc(startFuncId, ExportDescType.FuncIdx);
-            var export = new Export(START_FUNCTION_NAME, desc);
+            var export =
+                    new Export(
+                            START_FUNCTION_NAME,
+                            (int) module.startSection().startIndex(),
+                            ExternalType.FUNCTION);
             exports.put(START_FUNCTION_NAME, export);
         }
 
@@ -258,14 +255,14 @@ public class Module {
         var functionImportsOffset = 0;
         var tablesImportsOffset = 0;
         for (int i = 0; i < imports.length; i++) {
-            switch (imports[i].descType()) {
-                case GlobalIdx:
+            switch (imports[i].importType()) {
+                case GLOBAL:
                     globalImportsOffset++;
                     break;
-                case FuncIdx:
+                case FUNCTION:
                     functionImportsOffset++;
                     break;
-                case TableIdx:
+                case TABLE:
                     tablesImportsOffset++;
                     break;
                 default:
@@ -363,17 +360,17 @@ public class Module {
         int hostMemNum = 0;
         int hostTableNum = 0;
         for (var imprt : imports) {
-            switch (imprt.descType()) {
-                case FuncIdx:
+            switch (imprt.importType()) {
+                case FUNCTION:
                     hostFuncNum++;
                     break;
-                case GlobalIdx:
+                case GLOBAL:
                     hostGlobalNum++;
                     break;
-                case MemIdx:
+                case MEMORY:
                     hostMemNum++;
                     break;
-                case TableIdx:
+                case TABLE:
                     hostTableNum++;
                     break;
             }
@@ -394,8 +391,8 @@ public class Module {
             var i = imports[impIdx];
             var name = i.moduleName() + "." + i.name();
             var found = false;
-            switch (i.descType()) {
-                case FuncIdx:
+            switch (i.importType()) {
+                case FUNCTION:
                     cnt = hostImports.functionCount();
                     for (int j = 0; j < cnt; j++) {
                         HostFunction f = hostImports.function(j);
@@ -409,7 +406,7 @@ public class Module {
                     }
                     hostFuncIdx++;
                     break;
-                case GlobalIdx:
+                case GLOBAL:
                     cnt = hostImports.globalCount();
                     for (int j = 0; j < cnt; j++) {
                         HostGlobal g = hostImports.global(j);
@@ -423,7 +420,7 @@ public class Module {
                     }
                     hostGlobalIdx++;
                     break;
-                case MemIdx:
+                case MEMORY:
                     cnt = hostImports.memoryCount();
                     for (int j = 0; j < cnt; j++) {
                         HostMemory m = hostImports.memory(j);
@@ -437,7 +434,7 @@ public class Module {
                     }
                     hostMemIdx++;
                     break;
-                case TableIdx:
+                case TABLE:
                     cnt = hostImports.tableCount();
                     for (int j = 0; j < cnt; j++) {
                         HostTable t = hostImports.table(j);

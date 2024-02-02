@@ -4,6 +4,9 @@ import java.util.Objects;
 
 /**
  * Some imported entity.
+ * <p>
+ * See <a href=https://webassembly.github.io/spec/core/syntax/modules.html#syntax-import">Imports</a> for
+ * reference.
  */
 public abstract class Import {
     private final String moduleName;
@@ -29,9 +32,9 @@ public abstract class Import {
     }
 
     /**
-     * {@return the import descriptor type}
+     * {@return the kind of imported definition}
      */
-    public abstract ImportDescType descType();
+    public abstract ExternalType importType();
 
     public boolean equals(Object obj) {
         return obj instanceof Import && equals((Import) obj);

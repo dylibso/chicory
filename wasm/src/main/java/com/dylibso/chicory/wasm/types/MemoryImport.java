@@ -25,8 +25,8 @@ public final class MemoryImport extends Import {
         return limits;
     }
 
-    public ImportDescType descType() {
-        return ImportDescType.MemIdx;
+    public ExternalType importType() {
+        return ExternalType.MEMORY;
     }
 
     public boolean equals(final Import other) {

@@ -41,8 +41,8 @@ public final class GlobalImport extends Import {
         return type;
     }
 
-    public ImportDescType descType() {
-        return ImportDescType.GlobalIdx;
+    public ExternalType importType() {
+        return ExternalType.GLOBAL;
     }
 
     public boolean equals(final Import other) {
