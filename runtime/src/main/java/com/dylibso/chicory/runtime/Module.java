@@ -6,7 +6,6 @@ import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
-import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.Export;
@@ -16,11 +15,10 @@ import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.Import;
-import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.ImportDescType;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,9 +28,7 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -192,38 +188,17 @@ public class Module {
         }
 
         Table[] tables = new Table[0];
-        Element[] elements = new Element[0];
         if (module.tableSection() != null) {
             var tableLength = module.tableSection().tableCount();
             tables = new Table[tableLength];
             for (int i = 0; i < tableLength; i++) {
                 tables[i] = module.tableSection().getTable(i);
             }
-            if (module.elementSection() != null) {
-                elements = module.elementSection().elements();
-                for (var el : module.elementSection().elements()) {
-                    if (el instanceof ActiveElement) {
-                        var ae = (ActiveElement) el;
-                        var table = tables[ae.tableIndex()];
-                        Value offset = computeConstantValue(ae.offset());
-                        if (offset.type() != ValueType.I32) {
-                            throw new ChicoryException("Invalid offset type in element");
-                        }
-                        List<List<Instruction>> initializers = ae.initializers();
-                        for (int i = 0; i < initializers.size(); i++) {
-                            final List<Instruction> init = initializers.get(i);
-                            if (ae.type() == ValueType.FuncRef) {
-                                table.setRef(
-                                        offset.asInt() + i, computeConstantValue(init).asFuncRef());
-                            } else {
-                                assert ae.type() == ValueType.ExternRef;
-                                table.setRef(
-                                        offset.asInt() + i, computeConstantValue(init).asExtRef());
-                            }
-                        }
-                    }
-                }
-            }
+        }
+
+        Element[] elements = new Element[0];
+        if (module.elementSection() != null) {
+            elements = module.elementSection().elements();
         }
 
         Memory memory = null;
@@ -273,7 +248,6 @@ public class Module {
         return new Instance(
                 this,
                 globalInitializers,
-                globals,
                 globalImportsOffset,
                 functionImportsOffset,
                 tablesImportsOffset,
@@ -285,73 +259,6 @@ public class Module {
                 mappedHostImports,
                 tables,
                 elements);
-    }
-
-    public static Value computeConstantValue(Instruction[] expr) {
-        return computeConstantValue(Arrays.asList(expr));
-    }
-
-    public static Value computeConstantValue(List<Instruction> expr) {
-        Value tos = null;
-        for (Instruction instruction : expr) {
-            switch (instruction.opcode()) {
-                case F32_CONST:
-                    {
-                        tos = Value.f32(instruction.operands()[0]);
-                        break;
-                    }
-                case F64_CONST:
-                    {
-                        tos = Value.f64(instruction.operands()[0]);
-                        break;
-                    }
-                case I32_CONST:
-                    {
-                        tos = Value.i32(instruction.operands()[0]);
-                        break;
-                    }
-                case I64_CONST:
-                    {
-                        tos = Value.i64(instruction.operands()[0]);
-                        break;
-                    }
-                case REF_NULL:
-                    {
-                        ValueType vt = ValueType.byId(instruction.operands()[0]);
-                        if (vt == ValueType.ExternRef) {
-                            tos = Value.EXTREF_NULL;
-                        } else if (vt == ValueType.FuncRef) {
-                            tos = Value.FUNCREF_NULL;
-                        } else {
-                            throw new IllegalStateException(
-                                    "Unexpected wrong type for ref.null instruction");
-                        }
-                        break;
-                    }
-                case REF_FUNC:
-                    {
-                        tos = Value.funcRef(instruction.operands()[0]);
-                        break;
-                    }
-                case GLOBAL_GET:
-                    {
-                        throw new UnsupportedOperationException("TODO: support global gets");
-                    }
-                case END:
-                    {
-                        break;
-                    }
-                default:
-                    {
-                        throw new ChicoryException(
-                                "Non-constant instruction encountered: " + instruction);
-                    }
-            }
-        }
-        if (tos == null) {
-            throw new ChicoryException("No constant value loaded");
-        }
-        return tos;
     }
 
     private HostImports mapHostImports(Import[] imports, HostImports hostImports) {

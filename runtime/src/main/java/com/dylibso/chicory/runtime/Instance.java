@@ -1,17 +1,22 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.runtime.Machine.computeConstantValue;
 import static com.dylibso.chicory.runtime.Module.START_FUNCTION_NAME;
 
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
+import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
+import java.util.List;
 
 public class Instance {
     private final Module module;
@@ -33,7 +38,6 @@ public class Instance {
     public Instance(
             Module module,
             Global[] globalInitializers,
-            Value[] globals,
             int importedGlobalsOffset,
             int importedFunctionsOffset,
             int importedTablesOffset,
@@ -47,7 +51,7 @@ public class Instance {
             Element[] elements) {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
-        this.globals = globals.clone();
+        this.globals = new Value[globalInitializers.length];
         this.importedGlobalsOffset = importedGlobalsOffset;
         this.importedFunctionsOffset = importedFunctionsOffset;
         this.importedTablesOffset = importedTablesOffset;
@@ -65,11 +69,78 @@ public class Instance {
     }
 
     private void initialize() {
-        if (memory != null) {
-            memory.initialize(dataSegments);
-        } else if (imports.memories().length > 0) {
-            imports.memories()[0].memory().initialize(dataSegments);
+        for (var el : elements) {
+            if (el instanceof ActiveElement) {
+                var ae = (ActiveElement) el;
+                var table = table(ae.tableIndex());
+                Value offset = computeConstantValue(this, ae.offset());
+                if (offset.type() != ValueType.I32) {
+                    throw new ChicoryException("Invalid offset type in element");
+                }
+                List<List<Instruction>> initializers = ae.initializers();
+                for (int i = 0; i < initializers.size(); i++) {
+                    final List<Instruction> init = initializers.get(i);
+                    if (ae.type() == ValueType.FuncRef) {
+                        table.setRef(
+                                offset.asInt() + i, computeConstantValue(this, init).asFuncRef());
+                    } else {
+                        assert ae.type() == ValueType.ExternRef;
+                        table.setRef(
+                                offset.asInt() + i, computeConstantValue(this, init).asExtRef());
+                    }
+                }
+            }
         }
+
+        for (var i = 0; i < globalInitializers.length; i++) {
+            var g = globalInitializers[i];
+            if (g.initInstructions().length > 2)
+                throw new RuntimeException(
+                        "We don't a global initializer with multiple instructions");
+            var instr = g.initInstructions()[0];
+            switch (instr.opcode()) {
+                case I32_CONST:
+                    globals[i] = Value.i32(instr.operands()[0]);
+                    break;
+                case I64_CONST:
+                    globals[i] = Value.i64(instr.operands()[0]);
+                    break;
+                case F32_CONST:
+                    globals[i] = Value.f32(instr.operands()[0]);
+                    break;
+                case F64_CONST:
+                    globals[i] = Value.f64(instr.operands()[0]);
+                    break;
+                case GLOBAL_GET:
+                    {
+                        var idx = (int) instr.operands()[0];
+                        globals[i] =
+                                idx < imports.globalCount()
+                                        ? imports.global(idx).value()
+                                        : globals[idx];
+                        break;
+                    }
+                case REF_NULL:
+                    globals[i] = Value.EXTREF_NULL;
+                    break;
+                case REF_FUNC:
+                    globals[i] = Value.funcRef(instr.operands()[0]);
+                    break;
+                default:
+                    throw new RuntimeException(
+                            "We only support i32.const, i64.const, f32.const, f64.const,"
+                                    + " global.get, ref.func and ref.null opcodes on global"
+                                    + " initializers right now. We failed to initialize opcode: "
+                                    + instr.opcode());
+            }
+        }
+
+        if (memory != null) {
+            memory.initialize(this, dataSegments);
+        } else if (imports.memories().length > 0) {
+            imports.memories()[0].memory().initialize(this, dataSegments);
+        }
+
         if (module.export(START_FUNCTION_NAME) != null) {
             export(START_FUNCTION_NAME).apply();
         }
@@ -111,7 +182,7 @@ public class Instance {
 
     public Value readGlobal(int idx) {
         if (idx < importedGlobalsOffset) {
-            return null;
+            return imports.global(idx).value();
         }
         return globals[idx - importedGlobalsOffset];
     }
@@ -145,7 +216,7 @@ public class Instance {
 
     public Table table(int idx) {
         if (idx < importedTablesOffset) {
-            return null;
+            return imports.table(idx).table();
         }
         return tables[idx - importedTablesOffset];
     }
