@@ -75,10 +75,10 @@ public class Module {
         var globals = new Value[globalInitializers.length];
         for (var i = 0; i < globalInitializers.length; i++) {
             var g = globalInitializers[i];
-            if (g.initInstructions().length > 2)
+            if (g.initInstructions().size() > 2)
                 throw new RuntimeException(
                         "We don't a global initializer with multiple instructions");
-            var instr = g.initInstructions()[0];
+            var instr = g.initInstructions().get(0);
             switch (instr.opcode()) {
                 case I32_CONST:
                     globals[i] = Value.i32(instr.operands()[0]);
