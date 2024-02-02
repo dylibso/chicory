@@ -31,4 +31,15 @@ public enum ValueType {
     public static ValueType byId(long id) {
         return byId.get(id);
     }
+
+    public static ValueType refTypeForId(int id) {
+        switch (id) {
+            case 0x70:
+                return FuncRef;
+            case 0x6f:
+                return ExternRef;
+            default:
+                throw new IllegalArgumentException("Invalid reference type");
+        }
+    }
 }

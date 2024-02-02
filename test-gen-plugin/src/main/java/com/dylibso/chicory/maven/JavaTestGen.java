@@ -36,6 +36,7 @@ import org.apache.maven.plugin.logging.Log;
 public class JavaTestGen {
 
     private static final String TEST_MODULE_NAME = "testModule";
+    private static final String TEST_INSTANCE_NAME = "testInstance";
 
     private final Log log;
 
@@ -116,6 +117,7 @@ public class JavaTestGen {
         int testNumber = 0;
         int moduleInstantiationNumber = 0;
         String lastModuleVarName = null;
+        String lastInstanceVarName = null;
         int fallbackVarNumber = 0;
 
         String currentWasmFile = null;
@@ -129,9 +131,12 @@ public class JavaTestGen {
             switch (cmd.type()) {
                 case MODULE:
                     currentWasmFile = getWasmFile(cmd, wasmFilesFolder);
-                    lastModuleVarName = TEST_MODULE_NAME + moduleInstantiationNumber++;
+                    lastModuleVarName = TEST_MODULE_NAME + moduleInstantiationNumber;
+                    lastInstanceVarName = lastModuleVarName + "Instance";
+                    moduleInstantiationNumber++;
                     if (cmd.name() != null) {
                         lastModuleVarName = cmd.name().replace("$", "");
+                        lastInstanceVarName = cmd.name().replace("$", "") + "Instance";
                     }
                     testClass.addFieldWithInitializer(
                             parseClassOrInterfaceType("TestModule"),
@@ -142,6 +147,10 @@ public class JavaTestGen {
                                     importsName,
                                     lastModuleVarName,
                                     importsSourceRoot));
+                    testClass.addFieldWithInitializer(
+                            "Instance",
+                            lastInstanceVarName,
+                            new NameExpr(lastModuleVarName + ".instance()"));
                     break;
                 case ACTION:
                 case ASSERT_RETURN:
@@ -263,7 +272,7 @@ public class JavaTestGen {
                             .setInitializer(
                                     new NameExpr(
                                             moduleName
-                                                    + ".instance().export(\""
+                                                    + "Instance.export(\""
                                                     + StringEscapeUtils.escapeJava(
                                                             cmd.action().field())
                                                     + "\")"));

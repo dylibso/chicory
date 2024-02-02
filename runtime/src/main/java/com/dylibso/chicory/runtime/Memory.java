@@ -98,7 +98,7 @@ public final class Memory {
                 var offsetExpr = segment.offsetInstructions();
                 var data = segment.data();
                 var offset = computeConstantValue(offsetExpr);
-                write(offset, data);
+                write(offset.asInt(), data);
             } else if (s instanceof PassiveDataSegment) {
                 // System.out.println("Skipping passive segment " + s);
             } else {

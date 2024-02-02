@@ -6,12 +6,8 @@ import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
+import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.DataSegment;
-import com.dylibso.chicory.wasm.types.ElemElem;
-import com.dylibso.chicory.wasm.types.ElemFunc;
-import com.dylibso.chicory.wasm.types.ElemMem;
-import com.dylibso.chicory.wasm.types.ElemTable;
-import com.dylibso.chicory.wasm.types.ElemType;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportDesc;
@@ -24,9 +20,9 @@ import com.dylibso.chicory.wasm.types.Import;
 import com.dylibso.chicory.wasm.types.ImportDescType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
-import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -209,49 +205,25 @@ public class Module {
             if (module.elementSection() != null) {
                 elements = module.elementSection().elements();
                 for (var el : module.elementSection().elements()) {
-                    switch (el.elemType()) {
-                        case Type:
-                            {
-                                var typeElem = (ElemType) el;
-                                var expr = typeElem.exprInstructions();
-                                var addr = computeConstantValue(expr);
-                                for (var fi : typeElem.funcIndices()) {
-                                    tables[0].setRef(addr++, (int) fi);
-                                }
-                                break;
+                    if (el instanceof ActiveElement) {
+                        var ae = (ActiveElement) el;
+                        var table = tables[ae.tableIndex()];
+                        Value offset = computeConstantValue(ae.offset());
+                        if (offset.type() != ValueType.I32) {
+                            throw new ChicoryException("Invalid offset type in element");
+                        }
+                        List<List<Instruction>> initializers = ae.initializers();
+                        for (int i = 0; i < initializers.size(); i++) {
+                            final List<Instruction> init = initializers.get(i);
+                            if (ae.type() == ValueType.FuncRef) {
+                                table.setRef(
+                                        offset.asInt() + i, computeConstantValue(init).asFuncRef());
+                            } else {
+                                assert ae.type() == ValueType.ExternRef;
+                                table.setRef(
+                                        offset.asInt() + i, computeConstantValue(init).asExtRef());
                             }
-                        case Table:
-                            {
-                                var tableElem = (ElemTable) el;
-                                var idx = (int) tableElem.tableIndex();
-                                var expr = tableElem.exprInstructions();
-                                var addr = computeConstantValue(expr);
-                                for (var fi : tableElem.funcIndices()) {
-                                    tables[idx].setRef(addr++, (int) fi);
-                                }
-                                break;
-                            }
-                        case Func:
-                            {
-                                var funcElem = (ElemFunc) el;
-                                // TODO: what? only runtime?
-                                break;
-                            }
-                        case Elem:
-                            {
-                                var elemElem = (ElemElem) el;
-                                // TODO: what? only runtime?
-                                break;
-                            }
-                        case Mem:
-                            {
-                                var memElem = (ElemMem) el;
-                                // TODO: what? only runtime?
-                                break;
-                            }
-                        default:
-                            throw new ChicoryException(
-                                    "Elment type: " + el.elemType() + " not yet supported");
+                        }
                     }
                 }
             }
@@ -318,19 +290,71 @@ public class Module {
                 elements);
     }
 
-    public static int computeConstantValue(Instruction[] expr) {
+    public static Value computeConstantValue(Instruction[] expr) {
         return computeConstantValue(Arrays.asList(expr));
     }
 
-    public static int computeConstantValue(List<Instruction> expr) {
-        assert (expr.size() == 1);
-        if (expr.get(0).opcode() != OpCode.I32_CONST) {
-            throw new RuntimeException(
-                    "Don't support data segment expressions other than"
-                            + " i32.const yet, found: "
-                            + expr.get(0).opcode());
+    public static Value computeConstantValue(List<Instruction> expr) {
+        Value tos = null;
+        for (Instruction instruction : expr) {
+            switch (instruction.opcode()) {
+                case F32_CONST:
+                    {
+                        tos = Value.f32(instruction.operands()[0]);
+                        break;
+                    }
+                case F64_CONST:
+                    {
+                        tos = Value.f64(instruction.operands()[0]);
+                        break;
+                    }
+                case I32_CONST:
+                    {
+                        tos = Value.i32(instruction.operands()[0]);
+                        break;
+                    }
+                case I64_CONST:
+                    {
+                        tos = Value.i64(instruction.operands()[0]);
+                        break;
+                    }
+                case REF_NULL:
+                    {
+                        ValueType vt = ValueType.byId(instruction.operands()[0]);
+                        if (vt == ValueType.ExternRef) {
+                            tos = Value.EXTREF_NULL;
+                        } else if (vt == ValueType.FuncRef) {
+                            tos = Value.FUNCREF_NULL;
+                        } else {
+                            throw new IllegalStateException(
+                                    "Unexpected wrong type for ref.null instruction");
+                        }
+                        break;
+                    }
+                case REF_FUNC:
+                    {
+                        tos = Value.funcRef(instruction.operands()[0]);
+                        break;
+                    }
+                case GLOBAL_GET:
+                    {
+                        throw new UnsupportedOperationException("TODO: support global gets");
+                    }
+                case END:
+                    {
+                        break;
+                    }
+                default:
+                    {
+                        throw new ChicoryException(
+                                "Non-constant instruction encountered: " + instruction);
+                    }
+            }
         }
-        return (int) expr.get(0).operands()[0];
+        if (tos == null) {
+            throw new ChicoryException("No constant value loaded");
+        }
+        return tos;
     }
 
     private HostImports mapHostImports(Import[] imports, HostImports hostImports) {
