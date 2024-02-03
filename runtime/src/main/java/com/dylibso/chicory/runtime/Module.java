@@ -15,7 +15,6 @@ import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.Import;
-import com.dylibso.chicory.wasm.types.ImportDescType;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
