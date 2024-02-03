@@ -1,6 +1,5 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.runtime.Module.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
@@ -14,6 +13,7 @@ import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -1522,9 +1522,6 @@ class Machine {
     private static void TABLE_GROW(MStack stack, Instance instance, long[] operands) {
         var tableidx = (int) operands[0];
         var table = instance.table(tableidx);
-        if (table == null) {
-            table = instance.imports().table(tableidx).table();
-        }
 
         var size = stack.pop().asInt();
         var valValue = stack.pop();
@@ -1537,9 +1534,6 @@ class Machine {
     private static void TABLE_SIZE(MStack stack, Instance instance, long[] operands) {
         var tableidx = (int) operands[0];
         var table = instance.table(tableidx);
-        if (table == null) {
-            table = instance.imports().table(tableidx).table();
-        }
 
         stack.push(Value.i32(table.size()));
     }
@@ -1553,9 +1547,6 @@ class Machine {
         var end = offset + size;
 
         var table = instance.table(tableidx);
-        if (table == null) {
-            table = instance.imports().table(tableidx).table();
-        }
 
         if (size < 0 || end > table.size()) {
             throw new WASMRuntimeException("out of bounds table access");
@@ -1613,9 +1604,6 @@ class Machine {
         var end = offset + size;
 
         var table = instance.table(tableidx);
-        if (table == null) {
-            table = instance.imports().table(tableidx).table();
-        }
 
         if (size < 0
                 || elementidx > instance.elementCount()
@@ -2133,9 +2121,7 @@ class Machine {
     private static void TABLE_SET(MStack stack, Instance instance, long[] operands) {
         var idx = (int) operands[0];
         var table = instance.table(idx);
-        if (table == null) {
-            table = instance.imports().table(idx).table();
-        }
+
         var value = stack.pop().asExtRef();
         var i = stack.pop().asInt();
         table.setRef(i, value);
@@ -2144,9 +2130,7 @@ class Machine {
     private static void TABLE_GET(MStack stack, Instance instance, long[] operands) {
         var idx = (int) operands[0];
         var table = instance.table(idx);
-        if (table == null) {
-            table = instance.imports().table(idx).table();
-        }
+
         var i = stack.pop().asInt();
         if (i < 0 || i >= table.limits().max() || i >= table.size()) {
             throw new WASMRuntimeException("out of bounds table access");
@@ -2170,9 +2154,7 @@ class Machine {
     private static void GLOBAL_GET(MStack stack, Instance instance, long[] operands) {
         int idx = (int) operands[0];
         var val = instance.readGlobal(idx);
-        if (val == null) {
-            val = instance.imports().global(idx).value();
-        }
+
         stack.push(val);
     }
 
@@ -2191,9 +2173,7 @@ class Machine {
             MStack stack, Instance instance, ArrayDeque<StackFrame> callStack, long[] operands) {
         var tableIdx = (int) operands[1];
         var table = instance.table(tableIdx);
-        if (table == null) { // imported table
-            table = instance.imports().table(tableIdx).table();
-        }
+
         var typeId = (int) operands[0];
         var type = instance.type(typeId);
         int funcTableIdx = stack.pop().asInt();
@@ -2303,9 +2283,76 @@ class Machine {
         }
     }
 
+    public static Value computeConstantValue(Instance instance, Instruction[] expr) {
+        return computeConstantValue(instance, Arrays.asList(expr));
+    }
+
+    public static Value computeConstantValue(Instance instance, List<Instruction> expr) {
+        Value tos = null;
+        for (Instruction instruction : expr) {
+            switch (instruction.opcode()) {
+                case F32_CONST:
+                    {
+                        tos = Value.f32(instruction.operands()[0]);
+                        break;
+                    }
+                case F64_CONST:
+                    {
+                        tos = Value.f64(instruction.operands()[0]);
+                        break;
+                    }
+                case I32_CONST:
+                    {
+                        tos = Value.i32(instruction.operands()[0]);
+                        break;
+                    }
+                case I64_CONST:
+                    {
+                        tos = Value.i64(instruction.operands()[0]);
+                        break;
+                    }
+                case REF_NULL:
+                    {
+                        ValueType vt = ValueType.byId(instruction.operands()[0]);
+                        if (vt == ValueType.ExternRef) {
+                            tos = Value.EXTREF_NULL;
+                        } else if (vt == ValueType.FuncRef) {
+                            tos = Value.FUNCREF_NULL;
+                        } else {
+                            throw new IllegalStateException(
+                                    "Unexpected wrong type for ref.null instruction");
+                        }
+                        break;
+                    }
+                case REF_FUNC:
+                    {
+                        tos = Value.funcRef(instruction.operands()[0]);
+                        break;
+                    }
+                case GLOBAL_GET:
+                    {
+                        return instance.readGlobal((int) instruction.operands()[0]);
+                    }
+                case END:
+                    {
+                        break;
+                    }
+                default:
+                    {
+                        throw new ChicoryException(
+                                "Non-constant instruction encountered: " + instruction);
+                    }
+            }
+        }
+        if (tos == null) {
+            throw new ChicoryException("No constant value loaded");
+        }
+        return tos;
+    }
+
     private static Value getRuntimeElementValue(Instance instance, int elemIdx, int itemIdx) {
         var elem = instance.element(elemIdx);
-        return computeConstantValue(elem.initializers().get(itemIdx));
+        return computeConstantValue(instance, elem.initializers().get(itemIdx));
     }
 
     List<StackFrame> getStackTrace() {

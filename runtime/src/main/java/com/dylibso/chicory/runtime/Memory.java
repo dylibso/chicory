@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.runtime.Module.computeConstantValue;
+import static com.dylibso.chicory.runtime.Machine.computeConstantValue;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
@@ -84,7 +84,7 @@ public final class Memory {
      * This zeros out the memory and re-writes the data segments
      * TODO - there is probably a more efficient way to handle this and do we need to do this?
      */
-    public void initialize(DataSegment[] dataSegments) {
+    public void initialize(Instance instance, DataSegment[] dataSegments) {
         this.dataSegments = dataSegments;
         this.zero();
 
@@ -97,8 +97,8 @@ public final class Memory {
                 var segment = (ActiveDataSegment) s;
                 var offsetExpr = segment.offsetInstructions();
                 var data = segment.data();
-                var offset = computeConstantValue(offsetExpr);
-                write(offset.asInt(), data);
+                var offset = computeConstantValue(instance, offsetExpr).asInt();
+                write(offset, data);
             } else if (s instanceof PassiveDataSegment) {
                 // System.out.println("Skipping passive segment " + s);
             } else {
