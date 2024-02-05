@@ -1,3 +1,4 @@
+// FROM: https://github.com/bytecodealliance/javy/blob/main/README.md#compiling-to-webassembly
 // Read input from stdin
 const input = readInput();
 // Call the function with the input
