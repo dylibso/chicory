@@ -70,6 +70,9 @@
             binary-leb128.wast,
             binary.wast,
             left-to-right.wast,
+            tokens.wast,
+            type.wast,
+            func_ptrs.wast,
             ref_null.wast</wastToProcess>
           <orderedWastToProcess>switch.wast,
             memory_grow.wast,
