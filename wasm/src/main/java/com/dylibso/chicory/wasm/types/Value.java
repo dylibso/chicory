@@ -58,21 +58,13 @@ public class Value {
     }
 
     public Value(ValueType type, int value) {
-        this.type = requireNonNull(ensure32bitValueType(type), "type");
+        this.type = requireNonNull(type, "type");
         this.data = value;
     }
 
     public Value(ValueType type, long value) {
         this.type = requireNonNull(type, "type");
         data = value;
-    }
-
-    private static ValueType ensure32bitValueType(ValueType type) {
-        if (ValueType.I32.equals(type) || ValueType.F32.equals(type)) {
-            return type;
-        }
-        throw new IllegalArgumentException(
-                "Invalid type for 32 bit value, only I32 or F32 are allowed, given: " + type);
     }
 
     /**
@@ -181,6 +173,10 @@ public class Value {
 
     public double asDouble() {
         return Double.longBitsToDouble(asLong());
+    }
+
+    public Value as(ValueType type) {
+        return new Value(type, data);
     }
 
     public ValueType type() {

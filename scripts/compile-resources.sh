@@ -42,4 +42,13 @@ do
       cat $w | docker run --rm -i --entrypoint "./compile-c.sh" ${CONTAINER_IMAGE} > $out.wasm
     fi
   done
+
+  JSS="${SCRIPT_DIR}/../${i}/src/test/resources/sources/*.js"
+  for w in $JSS
+  do
+    if test -f "$w"; then
+      out=$(echo $w | sed 's|resources/sources|resources/compiled|')
+      cat $w | docker run --rm -i --entrypoint "./compile-js.sh" ${CONTAINER_IMAGE} > $out.wasm
+    fi
+  done
 done
