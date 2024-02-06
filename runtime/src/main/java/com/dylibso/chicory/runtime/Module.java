@@ -28,6 +28,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -369,6 +370,10 @@ public class Module {
 
     public Export export(String name) {
         return this.exports.get(name);
+    }
+
+    public Map<String, Export> exports() {
+        return this.exports;
     }
 
     public NameCustomSection nameSection() {
