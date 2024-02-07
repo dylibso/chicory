@@ -18,6 +18,13 @@
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>runtime</artifactId>
     </dependency>
+
+    <!-- fake dependency to make sure that the executable is available -->
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>cli</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>

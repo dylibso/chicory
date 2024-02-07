@@ -41,6 +41,7 @@
     <module>runtime</module>
     <module>wasi</module>
     <module>wasm-corpus</module>
+    <module>cli</module>
   </modules>
 
   <scm>
@@ -76,6 +77,7 @@
     <commons-compress.version>1.26.0</commons-compress.version>
     <jackson.version>2.16.1</jackson.version>
     <jgit.version>6.8.0.202311291450-r</jgit.version>
+    <picocli.version>4.7.5</picocli.version>
 
     <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
     <maven-plugin-annotations.version>3.11.0</maven-plugin-annotations.version>
@@ -118,6 +120,17 @@
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>wasi</artifactId>
         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>cli</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>info.picocli</groupId>
+        <artifactId>picocli</artifactId>
+        <version>${picocli.version}</version>
       </dependency>
 
       <dependency>

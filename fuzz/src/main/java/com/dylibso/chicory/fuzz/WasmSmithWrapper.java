@@ -24,7 +24,7 @@ public class WasmSmithWrapper {
         return Optional.ofNullable(System.getenv("CHICORY_FUZZ_SEED"))
                 .orElseGet(
                         () -> {
-                            byte[] array = new byte[1000]; // 100 fixed bytes?
+                            byte[] array = new byte[1000];
                             new Random().nextBytes(array);
                             return new String(array, Charset.forName("UTF-8"));
                         });
@@ -32,13 +32,13 @@ public class WasmSmithWrapper {
 
     WasmSmithWrapper() {}
 
-    public File run(String fileName) throws Exception {
+    public File run(String subfolder, String fileName) throws Exception {
         // Those things should be externally tunable
         var instructionTypes = new InstructionTypes(InstructionType.NUMERIC);
-        var targetFolder = new File("target/fuzz/data");
+        var targetFolder = new File("target/fuzz/data/" + subfolder);
         targetFolder.mkdirs();
-        var targetFile = new File("target/fuzz/data/" + fileName);
-        var lastSeedFile = new File("target/fuzz/last_seed.txt");
+        var targetFile = new File("target/fuzz/data/" + subfolder + "/" + fileName);
+        var seedFile = new File("target/fuzz/data/" + subfolder + "/seed.txt");
 
         var command = new ArrayList<>(BINARY_NAME);
         // breaks the execution
@@ -47,7 +47,7 @@ public class WasmSmithWrapper {
         command.addAll(
                 List.of(
                         "--min-exports", // trying to generate something to compare with
-                        "1",
+                        "10", // TODO: make this configurable
                         "--max-imports", // TODO: for now... let see how to handle this
                         "0",
                         "--max-modules", // TODO: Support for multi-modules
@@ -60,20 +60,18 @@ public class WasmSmithWrapper {
                 "Going to execute command:\n"
                         + String.join(" ", command)
                         + " < "
-                        + lastSeedFile.getAbsolutePath());
+                        + seedFile.getAbsolutePath());
 
         ProcessBuilder pb = new ProcessBuilder(command);
         pb.directory(new File("."));
 
         // write the seed file
-        if (lastSeedFile.exists()) {
-            lastSeedFile.delete();
-        }
-        try (var outputStream = new FileOutputStream(lastSeedFile)) {
+        try (var outputStream = new FileOutputStream(seedFile)) {
             outputStream.write((seed).getBytes(StandardCharsets.UTF_8));
+            outputStream.flush();
         }
 
-        pb.redirectInput(lastSeedFile);
+        pb.redirectInput(seedFile);
         Process ps;
         try {
             ps = pb.start();
@@ -89,7 +87,7 @@ public class WasmSmithWrapper {
 
         if (ps.exitValue() != 0) {
             System.err.println("wasm-smith exiting with:" + ps.exitValue());
-            System.err.println(ps.getErrorStream().toString());
+            System.err.println(new String(ps.getErrorStream().readAllBytes()));
             throw new RuntimeException("Failed to execute wasm-smith program.");
         }
 
