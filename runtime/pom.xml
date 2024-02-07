@@ -75,7 +75,9 @@
             type.wast,
             func_ptrs.wast,
             ref_null.wast</wastToProcess>
-          <orderedWastToProcess>switch.wast,
+          <orderedWastToProcess>float_memory.wast,
+            memory_copy.wast,
+            switch.wast,
             memory_grow.wast,
             memory_size.wast,
             stack.wast,
