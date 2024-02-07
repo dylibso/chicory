@@ -2238,28 +2238,13 @@ class Machine {
 
     private static Value prepareControlTransfer(StackFrame frame, MStack stack, boolean consume) {
         frame.doControlTransfer = true;
-
-        var unwindStack = stack.unwindFrame();
-        stack.resetUnwindFrame();
-        Value predValue = null;
-        if (consume) {
-            predValue = stack.pop();
-        }
-        if (unwindStack == null) {
-            stack.setUnwindFrame(new ArrayDeque<>());
-        } else {
-            stack.setUnwindFrame(unwindStack);
-        }
-
-        return predValue;
+        return consume ? stack.pop() : null;
     }
 
     private static void doControlTransfer(
             Instance instance, MStack stack, StackFrame frame, Instruction scope) {
         // reset the control transfer
         frame.doControlTransfer = false;
-        var unwindStack = stack.unwindFrame();
-        stack.resetUnwindFrame();
 
         Value[] returns = new Value[numberOfValuesToReturn(instance, scope)];
         for (int i = 0; i < returns.length; i++) {
@@ -2268,12 +2253,6 @@ class Machine {
 
         // drop everything till the previous label
         frame.dropValuesOutOfBlock(stack);
-
-        if (frame.isLastBlock()) {
-            while (!unwindStack.isEmpty()) {
-                stack.push(unwindStack.pop());
-            }
-        }
 
         for (int i = 0; i < returns.length; i++) {
             Value value = returns[returns.length - 1 - i];

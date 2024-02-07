@@ -15,20 +15,6 @@ public class MStack {
         this.stack = new ArrayDeque<>();
     }
 
-    private ArrayDeque<Value> unwindFrame;
-
-    public void setUnwindFrame(ArrayDeque<Value> stack) {
-        this.unwindFrame = stack;
-    }
-
-    public void resetUnwindFrame() {
-        this.unwindFrame = null;
-    }
-
-    public ArrayDeque<Value> unwindFrame() {
-        return this.unwindFrame;
-    }
-
     public void push(Value v) {
         if (v == null) throw new RuntimeException("Can't push null value onto stack");
         this.stack.push(v);
@@ -36,9 +22,6 @@ public class MStack {
 
     public Value pop() {
         var r = this.stack.pop();
-        if (unwindFrame != null) {
-            unwindFrame.push(r);
-        }
         if (r == null) throw new RuntimeException("Stack underflow exception");
         return r;
     }

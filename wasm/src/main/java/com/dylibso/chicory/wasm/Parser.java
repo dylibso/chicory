@@ -630,7 +630,6 @@ public final class Parser {
         var funcBodyCount = readVarUInt32(buffer);
 
         var root = new ControlTree();
-        var currentControlFlow = root;
         var codeSection = new CodeSection((int) funcBodyCount);
 
         // Parse individual function bodies in the code section
@@ -639,13 +638,17 @@ public final class Parser {
             var depth = 0;
             var funcEndPoint = readVarUInt32(buffer) + buffer.position();
             var locals = parseCodeSectionLocalTypes(buffer);
-            var instructionCount = 0;
             var instructions = new ArrayList<Instruction>();
             var lastInstruction = false;
-            currentControlFlow = root;
+            ControlTree currentControlFlow = null;
+
             do {
                 var instruction = parseInstruction(buffer);
                 lastInstruction = buffer.position() >= funcEndPoint;
+                if (instructions.isEmpty()) {
+                    currentControlFlow = root.spawn(0, instruction);
+                }
+
                 // depth control
                 switch (instruction.opcode()) {
                     case BLOCK:
@@ -677,15 +680,15 @@ public final class Parser {
                     case LOOP:
                         {
                             currentControlFlow =
-                                    currentControlFlow.spawn(instructionCount, instruction);
+                                    currentControlFlow.spawn(instructions.size(), instruction);
                             break;
                         }
                     case IF:
                         {
                             currentControlFlow =
-                                    currentControlFlow.spawn(instructionCount, instruction);
+                                    currentControlFlow.spawn(instructions.size(), instruction);
 
-                            var defaultJmp = instructionCount + 1;
+                            var defaultJmp = instructions.size() + 1;
                             currentControlFlow.addCallback(
                                     end -> {
                                         // check that there is no "else" branch
@@ -702,7 +705,7 @@ public final class Parser {
                     case ELSE:
                         {
                             assert (currentControlFlow.instruction().opcode() == OpCode.IF);
-                            currentControlFlow.instruction().setLabelFalse(instructionCount + 1);
+                            currentControlFlow.instruction().setLabelFalse(instructions.size() + 1);
 
                             currentControlFlow.addCallback(instruction::setLabelTrue);
 
@@ -710,7 +713,7 @@ public final class Parser {
                         }
                     case BR_IF:
                         {
-                            instruction.setLabelFalse(instructionCount + 1);
+                            instruction.setLabelFalse(instructions.size() + 1);
                         }
                     case BR:
                         {
@@ -742,11 +745,11 @@ public final class Parser {
                     case END:
                         {
                             currentControlFlow.setFinalInstructionNumber(
-                                    instructionCount, instruction);
+                                    instructions.size(), instruction);
                             currentControlFlow = currentControlFlow.parent();
 
                             if (lastInstruction && instructions.size() > 1) {
-                                var former = instructions.get(instructionCount - 1);
+                                var former = instructions.get(instructions.size() - 1);
                                 if (former.opcode() == OpCode.END) {
                                     instruction.setScope(former.scope());
                                 }
@@ -755,7 +758,6 @@ public final class Parser {
                         }
                 }
 
-                instructionCount++;
                 instructions.add(instruction);
 
                 // System.out.println(Integer.toHexString(instruction.getAddress()) + " " +

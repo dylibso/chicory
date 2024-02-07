@@ -35,7 +35,8 @@
         <artifactId>test-gen-plugin</artifactId>
         <version>${project.version}</version>
         <configuration>
-          <wastToProcess>labels.wast,
+          <wastToProcess>func.wast,
+            labels.wast,
             i32.wast,
             i64.wast,
             f32.wast,
