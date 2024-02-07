@@ -2361,7 +2361,7 @@ class Machine {
             var p = stack.pop();
             var t = params[i - 1];
             if (p.type() != t) {
-                p = p.as(t);
+                throw new RuntimeException("Type error when extracting args.");
             }
             args[i - 1] = p;
         }
