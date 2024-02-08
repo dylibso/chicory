@@ -51,7 +51,6 @@ public class FuzzTest extends TestModule {
                         currentRepetition, totalRepetitions, methodName));
     }
 
-    @Disabled
     @RepeatedTest(10)
     public void numericOnlyFuzz(RepetitionInfo repetitionInfo) throws Exception {
         var targetWasm =
@@ -64,7 +63,6 @@ public class FuzzTest extends TestModule {
         assertDoesNotThrow(() -> module.instantiate());
     }
 
-    @Disabled
     @RepeatedTest(10)
     public void tableOnlyFuzz(RepetitionInfo repetitionInfo) throws Exception {
         var targetWasm =
