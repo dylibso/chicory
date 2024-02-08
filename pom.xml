@@ -78,6 +78,7 @@
     <jackson.version>2.16.1</jackson.version>
     <jgit.version>6.8.0.202311291450-r</jgit.version>
     <picocli.version>4.7.5</picocli.version>
+    <commons-lang.version>3.14.0</commons-lang.version>
 
     <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
     <maven-plugin-annotations.version>3.11.0</maven-plugin-annotations.version>
@@ -127,10 +128,17 @@
         <version>${project.version}</version>
       </dependency>
 
+      <!-- Used to build a CLI -->
       <dependency>
         <groupId>info.picocli</groupId>
         <artifactId>picocli</artifactId>
         <version>${picocli.version}</version>
+      </dependency>
+      <!-- Used in the infrastructure of Fuzz tests -->
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${commons-lang.version}</version>
       </dependency>
 
       <dependency>

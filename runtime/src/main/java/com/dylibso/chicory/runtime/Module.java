@@ -58,10 +58,14 @@ public class Module {
     }
 
     public Instance instantiate() {
-        return this.instantiate(new HostImports());
+        return this.instantiate(new HostImports(), true);
     }
 
     public Instance instantiate(HostImports hostImports) {
+        return this.instantiate(hostImports, true);
+    }
+
+    public Instance instantiate(HostImports hostImports, boolean start) {
         var globalInitializers = new Global[] {};
         if (this.module.globalSection() != null) {
             globalInitializers = this.module.globalSection().globals();
@@ -258,7 +262,8 @@ public class Module {
                 functionTypes,
                 mappedHostImports,
                 tables,
-                elements);
+                elements,
+                start);
     }
 
     private HostImports mapHostImports(Import[] imports, HostImports hostImports) {
@@ -380,6 +385,10 @@ public class Module {
         if (nameSec != null) return nameSec;
         nameSec = this.module.nameSection();
         return nameSec;
+    }
+
+    public com.dylibso.chicory.wasm.Module wasmModule() {
+        return this.module;
     }
 
     /**

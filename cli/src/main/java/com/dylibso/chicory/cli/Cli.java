@@ -48,7 +48,9 @@ public class Cli implements Runnable {
     @Override
     public void run() {
         // TODO: improve the handling of the logLevel
-        try (var is = new ByteArrayInputStream((".level = " + logLevel).getBytes(StandardCharsets.UTF_8))) {
+        try (var is =
+                new ByteArrayInputStream(
+                        (".level = " + logLevel).getBytes(StandardCharsets.UTF_8))) {
             LogManager.getLogManager().readConfiguration(is);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -63,16 +65,33 @@ public class Cli implements Runnable {
                                                 WasiOptions.builder().inheritSystem().build())
                                         .toHostFunctions())
                         : new HostImports();
-        var instance = module.instantiate(imports);
+        var instance = module.instantiate(imports, false);
 
         if (functionName != null) {
+            var exportSig = module.export(functionName);
+            var export = instance.export(functionName);
 
-            var functionArgs = new Value[0];
-            if (arguments.length > 0) {
-                // TODO: adapt the values to the parameters of the function
+            var typeId = instance.functionType(exportSig.index());
+            var type = instance.type(typeId);
+
+            if (arguments.length != type.params().length) {
+                throw new RuntimeException(
+                        "The function needs "
+                                + type.params().length
+                                + " parameters, but found: "
+                                + arguments.length);
+            }
+            var params = new Value[type.params().length];
+            for (var i = 0; i < type.params().length; i++) {
+                params[i] = new Value(type.params()[i], Long.valueOf(arguments[i]));
             }
 
-            instance.export(functionName).apply(functionArgs);
+            var result = export.apply(params);
+            if (result != null) {
+                for (var r : result) {
+                    System.out.println(r.asLong()); // Check floating point results
+                }
+            }
         }
     }
 

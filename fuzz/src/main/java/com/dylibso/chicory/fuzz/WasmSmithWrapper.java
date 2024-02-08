@@ -5,13 +5,12 @@ import com.dylibso.chicory.log.SystemLogger;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.lang3.RandomStringUtils;
 
 public class WasmSmithWrapper {
 
@@ -23,18 +22,15 @@ public class WasmSmithWrapper {
     private static String getSeed() {
         return Optional.ofNullable(System.getenv("CHICORY_FUZZ_SEED"))
                 .orElseGet(
-                        () -> {
-                            byte[] array = new byte[1000];
-                            new Random().nextBytes(array);
-                            return new String(array, Charset.forName("UTF-8"));
-                        });
+                        () ->
+                                RandomStringUtils.randomAlphabetic(
+                                        10000)); // Just a big number is enough?
     }
 
     WasmSmithWrapper() {}
 
-    public File run(String subfolder, String fileName) throws Exception {
-        // Those things should be externally tunable
-        var instructionTypes = new InstructionTypes(InstructionType.NUMERIC);
+    public File run(String subfolder, String fileName, InstructionTypes instructionTypes)
+            throws Exception {
         var targetFolder = new File("target/fuzz/data/" + subfolder);
         targetFolder.mkdirs();
         var targetFile = new File("target/fuzz/data/" + subfolder + "/" + fileName);
@@ -44,14 +40,23 @@ public class WasmSmithWrapper {
         // breaks the execution
         // "--ensure-termination",
         // "true"
+        // TODO: make this configurable on a test-by-test basis
+        var defaultProperties = new ArrayList<String>();
+        var propsFile =
+                new String(
+                        getClass().getResourceAsStream("/smith.default.properties").readAllBytes(),
+                        StandardCharsets.UTF_8);
+        var props = propsFile.split("\n");
+        for (var prop : props) {
+            if (!prop.isEmpty()) {
+                var split = prop.split("=");
+                defaultProperties.add("--" + split[0]);
+                defaultProperties.add(split[1]);
+            }
+        }
+        command.addAll(defaultProperties);
         command.addAll(
                 List.of(
-                        "--min-exports", // trying to generate something to compare with
-                        "10", // TODO: make this configurable
-                        "--max-imports", // TODO: for now... let see how to handle this
-                        "0",
-                        "--max-modules", // TODO: Support for multi-modules
-                        "1",
                         "--allowed-instructions",
                         instructionTypes.toString(),
                         "--output",

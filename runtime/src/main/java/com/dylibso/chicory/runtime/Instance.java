@@ -34,6 +34,7 @@ public class Instance {
     private final HostImports imports;
     private final Table[] tables;
     private final Element[] elements;
+    private final boolean start;
 
     public Instance(
             Module module,
@@ -48,7 +49,8 @@ public class Instance {
             int[] functionTypes,
             HostImports imports,
             Table[] tables,
-            Element[] elements) {
+            Element[] elements,
+            boolean start) {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
         this.globals = new Value[globalInitializers.length];
@@ -64,6 +66,7 @@ public class Instance {
         this.machine = new Machine(this);
         this.tables = tables.clone();
         this.elements = elements.clone();
+        this.start = start;
 
         initialize();
     }
@@ -141,7 +144,7 @@ public class Instance {
             imports.memories()[0].memory().initialize(this, dataSegments);
         }
 
-        if (module.export(START_FUNCTION_NAME) != null) {
+        if (start && module.export(START_FUNCTION_NAME) != null) {
             export(START_FUNCTION_NAME).apply();
         }
     }
