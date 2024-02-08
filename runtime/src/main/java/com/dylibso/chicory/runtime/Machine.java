@@ -163,6 +163,9 @@ class Machine {
                     case SELECT:
                         SELECT(stack);
                         break;
+                    case SELECT_T:
+                        SELECT_T(stack, operands);
+                        break;
                     case END:
                         {
                             if (frame.doControlTransfer && frame.isControlFrame) {
@@ -2159,6 +2162,17 @@ class Machine {
     }
 
     private static void SELECT(MStack stack) {
+        var pred = stack.pop().asInt();
+        var b = stack.pop();
+        var a = stack.pop();
+        if (pred == 0) {
+            stack.push(b);
+        } else {
+            stack.push(a);
+        }
+    }
+
+    private static void SELECT_T(MStack stack, long[] operands) {
         var pred = stack.pop().asInt();
         var b = stack.pop();
         var a = stack.pop();

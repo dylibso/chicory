@@ -14,6 +14,7 @@ call_indirect <varuint> <varuint>	$11
 call_ref <varuint>	$14
 drop 	$1A 	[t]→[]
 select 	$1B 	[t t i32]→[t]
+select.t vec(<varuint>)	$1C 	[t t i32]→[t]
 local.get <varuint> 	$20
 local.set <varuint> 	$21
 local.tee <varuint> 	$22
