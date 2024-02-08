@@ -2361,7 +2361,18 @@ class Machine {
             var p = stack.pop();
             var t = params[i - 1];
             if (p.type() != t) {
-                throw new RuntimeException("Type error when extracting args.");
+                // Similar to what is happening in WaZero
+                // https://github.com/tetratelabs/wazero/blob/36676928d22ab92c34299eb0dca7608c92c94b22/internal/wasm/gofunc.go#L109
+                switch (t) {
+                    case I32:
+                    case I64:
+                    case F32:
+                    case F64:
+                        p = new Value(t, p.asLong());
+                        break;
+                    default:
+                        throw new RuntimeException("Type error when extracting args. Found: " + t);
+                }
             }
             args[i - 1] = p;
         }

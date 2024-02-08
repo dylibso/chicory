@@ -175,10 +175,6 @@ public class Value {
         return Double.longBitsToDouble(asLong());
     }
 
-    public Value as(ValueType type) {
-        return new Value(type, data);
-    }
-
     public ValueType type() {
         return this.type;
     }
