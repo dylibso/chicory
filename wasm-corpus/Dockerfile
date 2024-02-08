@@ -35,8 +35,10 @@ RUN curl -L -O https://github.com/WebAssembly/wabt/releases/download/1.0.34/wabt
 RUN curl -L -O https://github.com/bytecodealliance/javy/releases/download/v1.4.0/javy-x86_64-linux-v1.4.0.gz && \
     mkdir -p /opt/javy && \
     gunzip javy-x86_64-linux-v1.4.0.gz && \
-    mv javy-x86_64-linux-v1.4.0 /opt/javy/javy && \
-    chmod a+x /opt/javy/javy
+    mv javy-x86_64-linux-v1.4.0 /usr/bin/javy && \
+    chmod a+x /usr/bin/javy
+
+ENV PATH="/opt/wabt/bin:${PATH}"
 
 WORKDIR /usr/code
 

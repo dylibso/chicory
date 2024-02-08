@@ -4,7 +4,7 @@ set -e
 
 compileWat() {
   filename=$(basename "$1")
-  (set -x; /opt/wabt/bin/wat2wasm $1 -o "./compiled/$filename.wasm")
+  (set -x; wat2wasm $1 -o "./compiled/$filename.wasm")
 }
 
 compileRust() {
@@ -20,15 +20,15 @@ compileRust() {
   (set -x; rustc $1 --target=$target --crate-type=$crate_type -o "./compiled/$filename.wasm")
 }
 
+ENV_WASI_SDK_PATH="${WASK_SDK_PATH:-/opt/wasi-sdk}"
 compileC() {
   filename=$(basename "$1")
-  WASI_SDK_PATH=/opt/wasi-sdk
-  (set -x; /opt/wasi-sdk/bin/clang -g -o "./compiled/$filename.wasm" $1 -nostartfiles -Wl,--no-entry -Wl,--export=run)
+  (set -x; ${ENV_WASI_SDK_PATH}/bin/clang -g -o "./compiled/$filename.wasm" $1 -nostartfiles -Wl,--no-entry -Wl,--export=run)
 }
 
 compileJavy() {
   filename=$(basename "$1")
-  (set -x; /opt/javy/javy compile $1 -o "./compiled/$filename.javy.wasm")
+  (set -x; javy compile $1 -o "./compiled/$filename.javy.wasm")
 }
 
 compile() {
