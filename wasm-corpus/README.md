@@ -16,7 +16,7 @@ cd wasm-corpus
 ./run.sh rebuild
 
 # compile all the submodules
-./run.sh 
+./run.sh
 
 # compile just one folder
 ./run.sh rust
