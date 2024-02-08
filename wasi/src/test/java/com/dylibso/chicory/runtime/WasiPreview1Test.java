@@ -7,7 +7,6 @@ import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.wasi.WasiOptions;
 import com.dylibso.chicory.runtime.wasi.WasiPreview1;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import org.junit.jupiter.api.Test;
 
 public class WasiPreview1Test {
@@ -20,8 +19,7 @@ public class WasiPreview1Test {
         var wasi =
                 new WasiPreview1(this.logger, WasiOptions.builder().withStdout(fakeStdout).build());
         var imports = new HostImports(wasi.toHostFunctions());
-        var module =
-                Module.builder(new File("src/test/resources/compiled/hello-wasi.wat.wasm")).build();
+        var module = Module.builder("compiled/hello-wasi.wat.wasm").build();
         module.instantiate(imports);
         assertEquals(fakeStdout.output().strip(), "hello world");
     }
@@ -33,8 +31,7 @@ public class WasiPreview1Test {
         var stdout = new MockPrintStream();
         var wasi = new WasiPreview1(this.logger, WasiOptions.builder().withStdout(stdout).build());
         var imports = new HostImports(wasi.toHostFunctions());
-        var module =
-                Module.builder(new File("src/test/resources/compiled/hello-wasi.rs.wasm")).build();
+        var module = Module.builder("compiled/hello-wasi.rs.wasm").build();
         module.instantiate(imports); // run _start and prints Hello, World!
         assertEquals(expected, stdout.output().strip());
     }
@@ -46,8 +43,7 @@ public class WasiPreview1Test {
         var wasiOpts = WasiOptions.builder().withStdout(System.out).withStdin(fakeStdin).build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
-        var module =
-                Module.builder(new File("src/test/resources/compiled/greet-wasi.rs.wasm")).build();
+        var module = Module.builder("compiled/greet-wasi.rs.wasm").build();
         module.instantiate(imports);
     }
 
@@ -60,7 +56,7 @@ public class WasiPreview1Test {
         var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStdin(fakeStdin).build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
-        var module = Module.builder("compiled/javy-demo.js.wasm").build();
+        var module = Module.builder("compiled/javy-demo.js.javy.wasm").build();
         module.instantiate(imports);
 
         assertEquals(fakeStdout.output(), "{\"foo\":3,\"newBar\":\"baz!\"}");
