@@ -50,4 +50,19 @@ public class WasiPreview1Test {
                 Module.builder(new File("src/test/resources/compiled/greet-wasi.rs.wasm")).build();
         module.instantiate(imports);
     }
+
+    @Test
+    public void shouldRunWasiDemoJavyModule() {
+        // check with: echo "{ \"n\": 2, \"bar\": \"baz\"}" | wasmtime
+        // wasi/src/test/resources/compiled/javy-demo.js.wasm
+        var fakeStdin = new ByteArrayInputStream("{ \"n\": 2, \"bar\": \"baz\" }".getBytes());
+        var fakeStdout = new MockPrintStream();
+        var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStdin(fakeStdin).build();
+        var wasi = new WasiPreview1(this.logger, wasiOpts);
+        var imports = new HostImports(wasi.toHostFunctions());
+        var module = Module.builder("compiled/javy-demo.js.wasm").build();
+        module.instantiate(imports);
+
+        assertEquals(fakeStdout.output(), "{\"foo\":3,\"newBar\":\"baz!\"}");
+    }
 }

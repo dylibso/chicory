@@ -44,7 +44,6 @@ public class ValueTest {
 
     @Test
     public void invalidConstruction() {
-
         assertThrows(IllegalArgumentException.class, () -> new Value(ValueType.I64, 42));
     }
 

@@ -78,6 +78,7 @@
           <orderedWastToProcess>select.wast,
             float_memory.wast,
             memory_copy.wast,
+            func.wast,
             switch.wast,
             memory_grow.wast,
             memory_size.wast,

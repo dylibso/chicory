@@ -17,6 +17,13 @@ RUN wget https://github.com/WebAssembly/wabt/releases/download/1.0.34/wabt-1.0.3
     tar xvf wabt-1.0.34-ubuntu.tar.gz && \
     cp -r wabt-1.0.34/* /opt/wabt
 
+# Install Javy
+RUN wget https://github.com/bytecodealliance/javy/releases/download/v1.4.0/javy-x86_64-linux-v1.4.0.gz && \
+    mkdir -p /opt/javy && \
+    gunzip javy-x86_64-linux-v1.4.0.gz && \
+    mv javy-x86_64-linux-v1.4.0 /opt/javy/javy && \
+    chmod a+x /opt/javy/javy
+
 ENV WASI_SDK_PATH=/opt/wasi-sdk
 
 COPY . .
