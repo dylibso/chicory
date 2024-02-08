@@ -8,3 +8,7 @@ Fuzz testing module - kept separate as it needs some additional tools to be inst
 `wasm-tools` (1.0.57) to use `wasm-smith`
 
 The Chicory cli should be compiled and available on the default path.
+
+## Import in IntelliJ
+
+Right click on `/fuzz/pom.xml` -> "Add as a Maven Project"

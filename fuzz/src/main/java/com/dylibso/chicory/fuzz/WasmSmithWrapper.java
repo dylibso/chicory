@@ -17,14 +17,14 @@ public class WasmSmithWrapper {
     private static final Logger logger = new SystemLogger();
 
     public static final List<String> BINARY_NAME = List.of("wasm-tools", "smith");
-    private String seed = getSeed();
 
-    private static String getSeed() {
+    private int BASE_SEED_SIZE = 100;
+    private String seed = getSeed(BASE_SEED_SIZE);
+
+    // A smaller size of the seed speeds up the execution
+    private static String getSeed(int size) {
         return Optional.ofNullable(System.getenv("CHICORY_FUZZ_SEED"))
-                .orElseGet(
-                        () ->
-                                RandomStringUtils.randomAlphabetic(
-                                        10000)); // Just a big number is enough?
+                .orElseGet(() -> RandomStringUtils.randomAlphabetic(size));
     }
 
     WasmSmithWrapper() {}
@@ -67,33 +67,40 @@ public class WasmSmithWrapper {
                         + " < "
                         + seedFile.getAbsolutePath());
 
-        ProcessBuilder pb = new ProcessBuilder(command);
-        pb.directory(new File("."));
+        var retry = 3;
+        var seedSize = BASE_SEED_SIZE;
+        while (retry > 0) {
+            ProcessBuilder pb = new ProcessBuilder(command);
+            pb.directory(new File("."));
 
-        // write the seed file
-        try (var outputStream = new FileOutputStream(seedFile)) {
-            outputStream.write((seed).getBytes(StandardCharsets.UTF_8));
-            outputStream.flush();
-        }
+            // write the seed file
+            try (var outputStream = new FileOutputStream(seedFile)) {
+                outputStream.write((seed).getBytes(StandardCharsets.UTF_8));
+                outputStream.flush();
+            }
 
-        pb.redirectInput(seedFile);
-        Process ps;
-        try {
-            ps = pb.start();
-            ps.waitFor(10, TimeUnit.SECONDS);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        } finally {
-            // Renew the seed
-            seed = getSeed();
-        }
+            pb.redirectInput(seedFile);
+            Process ps;
+            try {
+                ps = pb.start();
+                ps.waitFor(10, TimeUnit.SECONDS);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } finally {
+                // Renew the seed
+                seed = getSeed(seedSize);
+                seedSize = seedSize * 10;
+            }
 
-        if (ps.exitValue() != 0) {
-            System.err.println("wasm-smith exiting with:" + ps.exitValue());
-            System.err.println(new String(ps.getErrorStream().readAllBytes()));
-            throw new RuntimeException("Failed to execute wasm-smith program.");
+            if (ps.exitValue() != 0) {
+                logger.error("wasm-smith exiting with:" + ps.exitValue());
+                logger.error(new String(ps.getErrorStream().readAllBytes()));
+                retry--;
+            } else {
+                break;
+            }
         }
 
         return targetFile;

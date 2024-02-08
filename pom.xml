@@ -79,6 +79,7 @@
     <jgit.version>6.8.0.202311291450-r</jgit.version>
     <picocli.version>4.7.5</picocli.version>
     <commons-lang.version>3.14.0</commons-lang.version>
+    <commons-io.version>2.13.0</commons-io.version>
 
     <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
     <maven-plugin-annotations.version>3.11.0</maven-plugin-annotations.version>
@@ -140,10 +141,21 @@
         <artifactId>commons-lang3</artifactId>
         <version>${commons-lang.version}</version>
       </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${commons-io.version}</version>
+      </dependency>
 
       <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-params</artifactId>
         <version>${junit.version}</version>
         <scope>test</scope>
       </dependency>
@@ -329,6 +341,12 @@
   </build>
 
   <profiles>
+    <profile>
+      <id>fuzz</id>
+      <modules>
+        <module>fuzz</module>
+      </modules>
+    </profile>
     <profile>
       <id>release</id>
       <distributionManagement>
