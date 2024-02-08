@@ -53,7 +53,8 @@ public class WasiPreview1Test {
 
     @Test
     public void shouldRunWasiDemoJavyModule() {
-        // check with: echo "{ \"n\": 2, \"bar\": \"baz\"}" | wasmtime wasi/src/test/resources/compiled/javy-demo.js.wasm
+        // check with: echo "{ \"n\": 2, \"bar\": \"baz\"}" | wasmtime
+        // wasi/src/test/resources/compiled/javy-demo.js.wasm
         var fakeStdin = new ByteArrayInputStream("{ \"n\": 2, \"bar\": \"baz\" }".getBytes());
         var fakeStdout = new MockPrintStream();
         var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStdin(fakeStdin).build();
