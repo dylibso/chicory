@@ -161,6 +161,7 @@ class Machine {
                         stack.pop();
                         break;
                     case SELECT:
+                    case SELECT_T:
                         SELECT(stack);
                         break;
                     case END:
