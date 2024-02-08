@@ -7,7 +7,6 @@
     <version>999-SNAPSHOT</version>
   </parent>
   <artifactId>wasm-corpus</artifactId>
-  <version>999-SNAPSHOT</version>
-  <name>wasm-corpus</name>
-  <url>http://www.example.com</url>
+  <name>Chicory - WASM Corpus</name>
+  <description>A Corpus of guest modules for testing</description>
 </project>
