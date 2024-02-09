@@ -32,7 +32,11 @@ jobs:
           version: "1.0.57"
       - name: Fuzz Test
         # TODO: if: run this only on the main repo!
-        run:  mvn -B clean install -Pfuzz -am -pl fuzz -Dfuzz.test.numeric=1000 -Dfuzz.test.table=1000
+        run: |
+          # Build everything
+          mvn -B install -DskipTests
+          # Run only the fuzz tests
+          mvn -B clean verify -Pfuzz -pl fuzz -Dfuzz.test.numeric=1000 -Dfuzz.test.table=1000
 
       - name: Create Pull Request with the crash repro
         uses: peter-evans/create-pull-request@v6
