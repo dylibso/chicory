@@ -1,0 +1,2 @@
+We need at least one regression test folder to avoid:
+"You must configure at least one set of arguments for this @ParameterizedTest"

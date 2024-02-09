@@ -1,5 +1,7 @@
 package com.dylibso.chicory.fuzz;
 
+import static com.dylibso.chicory.fuzz.RepeatedTestConfig.FUZZ_TEST_NUMERIC;
+import static com.dylibso.chicory.fuzz.RepeatedTestConfig.FUZZ_TEST_TABLE;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import com.dylibso.chicory.log.Logger;
@@ -9,7 +11,6 @@ import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import java.io.File;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.TestInfo;
@@ -20,14 +21,16 @@ public class FuzzTest extends TestModule {
 
     WasmSmithWrapper smith = new WasmSmithWrapper();
 
-    File generateTestData(int num, InstructionType... instructionTypes) throws Exception {
+    File generateTestData(String prefix, int num, InstructionType... instructionTypes)
+            throws Exception {
         var atLeastOneExportedFunction = false;
 
         var targetModuleName = "test.wasm";
         File targetWasm = null;
         while (!atLeastOneExportedFunction) {
             targetWasm =
-                    smith.run("" + num, targetModuleName, new InstructionTypes(instructionTypes));
+                    smith.run(
+                            prefix + num, targetModuleName, new InstructionTypes(instructionTypes));
 
             atLeastOneExportedFunction =
                     Module.builder(targetWasm).build().exports().values().stream()
@@ -51,10 +54,11 @@ public class FuzzTest extends TestModule {
                         currentRepetition, totalRepetitions, methodName));
     }
 
-    @RepeatedTest(10)
+    @RepeatedTest(value = FUZZ_TEST_NUMERIC, failureThreshold = 1) // stop on first failure
     public void numericOnlyFuzz(RepetitionInfo repetitionInfo) throws Exception {
         var targetWasm =
-                generateTestData(repetitionInfo.getCurrentRepetition(), InstructionType.NUMERIC);
+                generateTestData(
+                        "numeric-", repetitionInfo.getCurrentRepetition(), InstructionType.NUMERIC);
         var module = Module.builder(targetWasm).build();
         var instance = module.instantiate(new HostImports(), false);
 
@@ -63,10 +67,11 @@ public class FuzzTest extends TestModule {
         assertDoesNotThrow(() -> module.instantiate());
     }
 
-    @RepeatedTest(10)
+    @RepeatedTest(value = FUZZ_TEST_TABLE, failureThreshold = 1) // stop on first failure
     public void tableOnlyFuzz(RepetitionInfo repetitionInfo) throws Exception {
         var targetWasm =
-                generateTestData(repetitionInfo.getCurrentRepetition(), InstructionType.TABLE);
+                generateTestData(
+                        "table-", repetitionInfo.getCurrentRepetition(), InstructionType.TABLE);
         var module = Module.builder(targetWasm).build();
         var instance = module.instantiate(new HostImports(), false);
 

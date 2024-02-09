@@ -99,6 +99,7 @@
     <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
     <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
     <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
+    <templating-maven-plugin.version>1.0.0</templating-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -230,6 +231,11 @@
           <artifactId>nexus-staging-maven-plugin</artifactId>
           <version>${nexus-staging-maven-plugin.version}</version>
         </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>templating-maven-plugin</artifactId>
+          <version>${templating-maven-plugin.version}</version>
+        </plugin>
       </plugins>
     </pluginManagement>
 
@@ -346,6 +352,10 @@
       <modules>
         <module>fuzz</module>
       </modules>
+      <properties>
+        <fuzz.test.numeric>2</fuzz.test.numeric>
+        <fuzz.test.table>3</fuzz.test.table>
+      </properties>
     </profile>
     <profile>
       <id>release</id>
