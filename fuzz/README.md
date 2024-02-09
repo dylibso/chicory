@@ -19,9 +19,14 @@ The defaults are defined in the root `pom.xml` under the `fuzz` profile.
 
 ## Run a single reproducer
 
-```
-export CHICORY_SEED_
+Please note that this doesn't seem to work cross machines! e.g. `wasm-smith` returns different modules despite the seed is the same. 
+But is useful for trying things out:
 
+```
+export CHICORY_FUZZ_SEED=your-seed-txt.file
+export CHICORY_FUZZ_TYPES=numeric,table
+
+mvn install -Pfuzz -pl fuzz -Dtest="com.dylibso.chicory.fuzz.SingleReproTest#singleReproducer"
 ```
 
 ## Import in IntelliJ
