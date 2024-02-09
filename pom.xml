@@ -353,8 +353,8 @@
         <module>fuzz</module>
       </modules>
       <properties>
-        <fuzz.test.numeric>2</fuzz.test.numeric>
-        <fuzz.test.table>3</fuzz.test.table>
+        <fuzz.test.numeric>10</fuzz.test.numeric>
+        <fuzz.test.table>10</fuzz.test.table>
       </properties>
     </profile>
     <profile>

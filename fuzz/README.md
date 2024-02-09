@@ -15,6 +15,14 @@ To change the number of iterations of the repeated test you can use java propert
 mvn clean install -Pfuzz -pl fuzz -Dfuzz.test.numeric=10 -Dfuzz.test.table=5
 ```
 
+The defaults are defined in the root `pom.xml` under the `fuzz` profile.
+
+## Run a single reproducer
+
+```
+export CHICORY_SEED_
+
+```
 
 ## Import in IntelliJ
 

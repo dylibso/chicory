@@ -16,21 +16,17 @@ import org.junit.jupiter.api.RepetitionInfo;
 import org.junit.jupiter.api.TestInfo;
 
 public class FuzzTest extends TestModule {
-
     private static final Logger logger = new SystemLogger();
-
     WasmSmithWrapper smith = new WasmSmithWrapper();
 
     File generateTestData(String prefix, int num, InstructionType... instructionTypes)
             throws Exception {
         var atLeastOneExportedFunction = false;
 
-        var targetModuleName = "test.wasm";
         File targetWasm = null;
         while (!atLeastOneExportedFunction) {
             targetWasm =
-                    smith.run(
-                            prefix + num, targetModuleName, new InstructionTypes(instructionTypes));
+                    smith.run(prefix + num, "test.wasm", new InstructionTypes(instructionTypes));
 
             atLeastOneExportedFunction =
                     Module.builder(targetWasm).build().exports().values().stream()

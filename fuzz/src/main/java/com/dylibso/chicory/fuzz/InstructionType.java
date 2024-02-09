@@ -1,5 +1,8 @@
 package com.dylibso.chicory.fuzz;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public enum InstructionType {
     NUMERIC("numeric"),
     VECTOR("vector"),
@@ -14,6 +17,17 @@ public enum InstructionType {
 
     InstructionType(String value) {
         this.value = value;
+    }
+
+    public static InstructionType byValue(String value) {
+        return byValue.get(value);
+    }
+
+    private static final Map<String, InstructionType> byValue =
+            new HashMap<>(InstructionType.values().length);
+
+    static {
+        for (InstructionType i : InstructionType.values()) byValue.put(i.value(), i);
     }
 
     public String value() {

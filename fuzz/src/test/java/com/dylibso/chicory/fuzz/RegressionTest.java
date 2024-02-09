@@ -26,7 +26,7 @@ public class RegressionTest extends TestModule {
         var module = Module.builder(targetWasm).build();
         var instance = module.instantiate(new HostImports(), false);
 
-        testModule(targetWasm, module, instance);
+        testModule(targetWasm, module, instance, false);
         // Sanity check that the starting function doesn't break
         assertDoesNotThrow(() -> module.instantiate());
     }

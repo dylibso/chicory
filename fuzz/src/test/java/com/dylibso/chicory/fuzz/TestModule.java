@@ -10,23 +10,32 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
+
+import com.dylibso.chicory.wasm.types.FunctionType;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 
 public class TestModule {
-
     private static final Logger logger = new SystemLogger();
-
     WasmTimeWrapper wasmtime = new WasmTimeWrapper();
     ChicoryCliWrapper chicoryCli = new ChicoryCliWrapper();
 
+    public List<String> paramsList(FunctionType type) {
+        return Arrays.stream(type.params())
+                .map(p -> randomNumber())
+                .collect(Collectors.toList());
+    }
     public String randomNumber() {
         // TODO: 2 digits integer seems not enough, but a starting point ...
         return RandomStringUtils.randomNumeric(2);
     }
 
     public void testModule(File targetWasm, Module module, Instance instance) throws Exception {
+        testModule(targetWasm, module, instance, true);
+    }
+    public void testModule(File targetWasm, Module module, Instance instance, boolean commitOnFailure) throws Exception {
         for (var export : module.exports().entrySet()) {
             switch (export.getValue().exportType()) {
                 case FUNCTION:
@@ -35,11 +44,7 @@ public class TestModule {
                         var exportSig = module.export(export.getKey());
                         var typeId = instance.functionType(exportSig.index());
                         var type = instance.type(typeId);
-
-                        var params =
-                                Arrays.stream(type.params())
-                                        .map(p -> randomNumber())
-                                        .collect(Collectors.toList());
+                        var params = paramsList(type);
 
                         String oracleResult = null;
                         try {
@@ -82,7 +87,7 @@ public class TestModule {
                             }
                         }
                         // The test is going to fail, copy folders
-                        if (!oracleResult.equals(chicoryResult)) {
+                        if (commitOnFailure && !oracleResult.equals(chicoryResult)) {
                             FileUtils.copyDirectory(
                                     targetWasm.getParentFile(),
                                     new File(

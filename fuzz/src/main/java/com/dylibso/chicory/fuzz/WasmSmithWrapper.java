@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.RandomStringUtils;
 
@@ -18,33 +17,39 @@ public class WasmSmithWrapper {
 
     public static final List<String> BINARY_NAME = List.of("wasm-tools", "smith");
 
-    private int BASE_SEED_SIZE = 100;
+    private int BASE_SEED_SIZE = 1000;
     private String seed = getSeed(BASE_SEED_SIZE);
 
     // A smaller size of the seed speeds up the execution
     private static String getSeed(int size) {
-        return Optional.ofNullable(System.getenv("CHICORY_FUZZ_SEED"))
-                .orElseGet(() -> RandomStringUtils.randomAlphabetic(size));
+        return RandomStringUtils.randomAlphabetic(size);
     }
 
     WasmSmithWrapper() {}
 
     public File run(String subfolder, String fileName, InstructionTypes instructionTypes)
             throws Exception {
-        var targetFolder = new File("target/fuzz/data/" + subfolder);
+        return run(subfolder, fileName, instructionTypes, "/smith.default.properties");
+    }
+
+    public File run(
+            String subfolder,
+            String fileName,
+            InstructionTypes instructionTypes,
+            String smithProperties)
+            throws Exception {
+        var targetSubfolder = "target/fuzz/data/" + subfolder;
+        var targetFolder = new File(targetSubfolder);
         targetFolder.mkdirs();
-        var targetFile = new File("target/fuzz/data/" + subfolder + "/" + fileName);
-        var seedFile = new File("target/fuzz/data/" + subfolder + "/seed.txt");
+        var targetFile = new File(targetSubfolder + "/" + fileName);
+        var seedFile = new File(targetSubfolder + "/seed.txt");
 
         var command = new ArrayList<>(BINARY_NAME);
-        // breaks the execution
-        // "--ensure-termination",
-        // "true"
-        // TODO: make this configurable on a test-by-test basis
+        // --ensure-termination true -> breaks the execution
         var defaultProperties = new ArrayList<String>();
         var propsFile =
                 new String(
-                        getClass().getResourceAsStream("/smith.default.properties").readAllBytes(),
+                        getClass().getResourceAsStream(smithProperties).readAllBytes(),
                         StandardCharsets.UTF_8);
         var props = propsFile.split("\n");
         for (var prop : props) {
@@ -68,6 +73,7 @@ public class WasmSmithWrapper {
                         + seedFile.getAbsolutePath());
 
         var retry = 3;
+        // Trying to use the smallest possible seed for speed reasons
         var seedSize = BASE_SEED_SIZE;
         while (retry > 0) {
             ProcessBuilder pb = new ProcessBuilder(command);
