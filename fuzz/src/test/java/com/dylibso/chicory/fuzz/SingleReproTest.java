@@ -4,12 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Module;
-import com.dylibso.chicory.wasm.types.FunctionType;
-import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
-
-import java.util.List;
 
 public class SingleReproTest extends TestModule {
     private static final String CHICORY_FUZZ_SEED_KEY = "CHICORY_FUZZ_SEED";
