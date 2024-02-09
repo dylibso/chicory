@@ -1,11 +1,11 @@
-package com.dylibso.chicory.runtime;
+package com.dylibso.chicory.wasi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.wasi.WasiOptions;
-import com.dylibso.chicory.runtime.wasi.WasiPreview1;
+import com.dylibso.chicory.runtime.HostImports;
+import com.dylibso.chicory.runtime.Module;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import org.junit.jupiter.api.Test;
