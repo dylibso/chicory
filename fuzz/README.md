@@ -19,7 +19,7 @@ The defaults are defined in the root `pom.xml` under the `fuzz` profile.
 
 ## Run a single reproducer
 
-Please note that this doesn't seem to work cross machines! e.g. `wasm-smith` returns different modules despite the seed is the same. 
+Please note that this doesn't seem to work cross machines! e.g. `wasm-smith` returns different modules despite the seed is the same.
 But is useful for trying things out:
 
 ```
