@@ -1,4 +1,4 @@
-package com.dylibso.chicory.runtime;
+package com.dylibso.chicory.wasi;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;

@@ -1,4 +1,4 @@
-package com.dylibso.chicory.runtime.wasi;
+package com.dylibso.chicory.wasi;
 
 import static com.dylibso.chicory.wasm.types.ValueType.*;
 

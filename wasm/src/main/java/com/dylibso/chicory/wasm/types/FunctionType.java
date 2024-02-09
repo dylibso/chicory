@@ -46,8 +46,8 @@ public class FunctionType {
         if (nReturns == 0) {
             builder.append("nil");
         } else {
-            for (var i = 0; i < nParams; i++) {
-                builder.append(this.params[i].toString());
+            for (var i = 0; i < nReturns; i++) {
+                builder.append(this.returns[i].toString());
                 if (i < nReturns - 1) {
                     builder.append(',');
                 }
