@@ -2,9 +2,8 @@ name: Nightly Fuzz
 
 on:
   push:
-  # TODO: restore me
-  # schedule:
-  #   - cron: "0 0 * * *" # everyday
+   schedule:
+     - cron: "0 0 * * *" # everyday
 
 permissions:
   pull-requests: write
@@ -31,7 +30,8 @@ jobs:
         with:
           version: "1.0.57"
       - name: Fuzz Test
-        # TODO: if: run this only on the main repo!
+        # TODO: change before merging!
+        if: github.repository_owner == 'andreaTP'
         run: |
           # Build everything
           mvn -B install -DskipTests
