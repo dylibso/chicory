@@ -28,4 +28,11 @@
     </dependency>
   </dependencies>
 
+  <build>
+    <testResources>
+      <testResource>
+        <directory>${project.basedir}/../wasm-corpus/src/test/resources</directory>
+      </testResource>
+    </testResources>
+  </build>
 </project>

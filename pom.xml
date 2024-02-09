@@ -40,6 +40,7 @@
     <module>wasm</module>
     <module>runtime</module>
     <module>wasi</module>
+    <module>wasm-corpus</module>
   </modules>
 
   <scm>

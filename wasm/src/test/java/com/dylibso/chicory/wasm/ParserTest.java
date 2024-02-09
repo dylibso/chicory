@@ -124,17 +124,12 @@ public class ParserTest {
 
     @Test
     public void shouldParseAllFiles() {
-        File compiledDir = new File("src/test/resources/compiled/");
-        File wasmDir = new File("src/test/resources/wasm/");
+        File compiledDir = new File("../wasm-corpus/src/test/resources/compiled/");
 
         List<File> files = new ArrayList<>();
         files.addAll(
                 Arrays.asList(
                         compiledDir.listFiles(
-                                (ignored, name) -> name.toLowerCase().endsWith(".wasm"))));
-        files.addAll(
-                Arrays.asList(
-                        wasmDir.listFiles(
                                 (ignored, name) -> name.toLowerCase().endsWith(".wasm"))));
 
         if (files.isEmpty()) {
@@ -157,7 +152,7 @@ public class ParserTest {
         var logger = new SystemLogger();
         var parser = new Parser(logger);
 
-        try (InputStream is = getClass().getResourceAsStream("/wasm/code.wasm")) {
+        try (InputStream is = getClass().getResourceAsStream("/compiled/count_vowels.rs.wasm")) {
             parser.includeSection(SectionId.CUSTOM);
             parser.parse(
                     is,
@@ -172,16 +167,6 @@ public class ParserTest {
                     });
         }
     }
-
-    //    @Test
-    //    public void shouldParseAst() {
-    //        var parser = new Parser("src/test/resources/wasm/code.wasm");
-    //        var module = parser.parseModule();
-    //        var codeSection = module.getCodeSection();
-    //        var fbody = codeSection.getFunctionBodies()[0];
-    //        var ast = fbody.getAst();
-    //        ast.print();
-    //    }
 
     @Test
     public void shouldParseFloats() throws IOException {
