@@ -61,28 +61,18 @@ class Machine {
             eval(stack, instance, callStack);
         } else {
             callStack.push(new StackFrame(instance, funcId, args, List.of()));
-            var imprt = instance.imports().index()[funcId];
+            var imprt = instance.imports().function(funcId);
             if (imprt == null) {
                 throw new ChicoryException("Missing host import, number: " + funcId);
             }
-
-            switch (imprt.type()) {
-                case FUNCTION:
-                    var hostFunc = ((HostFunction) imprt).handle();
-                    var results = hostFunc.apply(instance, args);
-                    // a host function can return null or an array of ints
-                    // which we will push onto the stack
-                    if (results != null) {
-                        for (var result : results) {
-                            stack.push(result);
-                        }
-                    }
-                    break;
-                case GLOBAL:
-                    stack.push(((HostGlobal) imprt).value());
-                    break;
-                default:
-                    throw new ChicoryException("Not implemented");
+            var hostFunc = imprt.handle();
+            var results = hostFunc.apply(instance, args);
+            // a host function can return null or an array of ints
+            // which we will push onto the stack
+            if (results != null) {
+                for (var result : results) {
+                    stack.push(result);
+                }
             }
         }
 

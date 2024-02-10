@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
+import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
 public class ModuleTest {
@@ -248,4 +250,46 @@ public class ModuleTest {
     // var run = instance.getExport("run");
     // assertEquals(-25438, run.apply(Value.i32(100)).asInt());
     // }
+
+    @Test
+    public void shouldRunMixedImports() {
+        var cbrtFunc =
+                new HostFunction(
+                        (Instance instance, Value... args) -> {
+                            var x = args[0].asInt();
+                            var cbrt = Math.cbrt(x);
+                            return new Value[] {Value.fromDouble(cbrt)};
+                        },
+                        "env",
+                        "cbrt",
+                        List.of(ValueType.I32),
+                        List.of(ValueType.F64));
+        var logResult = new AtomicReference<String>(null);
+        var logFunc =
+                new HostFunction(
+                        (Instance instance, Value... args) -> {
+                            var logLevel = args[0].asInt();
+                            var value = (int) args[1].asDouble();
+                            logResult.set(logLevel + ": " + value);
+                            return null;
+                        },
+                        "env",
+                        "log",
+                        List.of(ValueType.I32, ValueType.F64),
+                        List.of());
+        var memory = new HostMemory("env", "memory", new Memory(new MemoryLimits(1)));
+
+        var module = Module.builder("compiled/mixed-imports.wat.wasm").build();
+        var hostImports =
+                new HostImports(
+                        new HostFunction[] {cbrtFunc, logFunc},
+                        new HostGlobal[0],
+                        memory,
+                        new HostTable[0]);
+        var instance = module.instantiate(hostImports);
+
+        var run = instance.export("main");
+        run.apply();
+        assertEquals("1: 164", logResult.get());
+    }
 }

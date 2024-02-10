@@ -154,7 +154,7 @@ public class Module {
                     case FUNCTION:
                         {
                             var type = ((FunctionImport) imprt).typeIndex();
-                            functionTypes[importId] = type;
+                            functionTypes[funcIdx] = type;
                             // The global function id increases on this table
                             // function ids are assigned on imports first
                             imports[importId++] = imprt;
