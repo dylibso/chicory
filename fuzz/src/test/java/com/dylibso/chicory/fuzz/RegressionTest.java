@@ -1,6 +1,7 @@
 package com.dylibso.chicory.fuzz;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Module;
@@ -26,7 +27,11 @@ public class RegressionTest extends TestModule {
         var module = Module.builder(targetWasm).build();
         var instance = module.instantiate(new HostImports(), false);
 
-        testModule(targetWasm, module, instance, false);
+        var results = testModule(targetWasm, module, instance, false);
+
+        for (var res: results) {
+            assertEquals(res.getOracleResult(), res.getChicoryResult());
+        }
         // Sanity check that the starting function doesn't break
         assertDoesNotThrow(() -> module.instantiate());
     }

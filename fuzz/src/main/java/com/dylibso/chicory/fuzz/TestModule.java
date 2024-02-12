@@ -1,7 +1,5 @@
 package com.dylibso.chicory.fuzz;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.Instance;
@@ -10,6 +8,7 @@ import com.dylibso.chicory.wasm.types.FunctionType;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -30,13 +29,15 @@ public class TestModule {
         return RandomStringUtils.randomNumeric(2);
     }
 
-    public void testModule(File targetWasm, Module module, Instance instance) throws Exception {
-        testModule(targetWasm, module, instance, true);
+    public List<TestResult> testModule(File targetWasm, Module module, Instance instance) throws Exception {
+        return testModule(targetWasm, module, instance, true);
     }
 
-    public void testModule(
+    public List<TestResult> testModule(
             File targetWasm, Module module, Instance instance, boolean commitOnFailure)
             throws Exception {
+        var results = new ArrayList<TestResult>();
+
         for (var export : module.exports().entrySet()) {
             switch (export.getValue().exportType()) {
                 case FUNCTION:
@@ -98,7 +99,7 @@ public class TestModule {
                                                     + truncatedExportName));
                         }
 
-                        assertEquals(oracleResult, chicoryResult);
+                        results.add(new TestResult(oracleResult, chicoryResult));
                         break;
                     }
                 default:
@@ -107,5 +108,7 @@ public class TestModule {
                     break;
             }
         }
+
+        return results;
     }
 }
