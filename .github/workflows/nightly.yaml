@@ -30,8 +30,7 @@ jobs:
         with:
           version: "1.0.57"
       - name: Fuzz Test
-        # TODO: change before merging!
-        if: github.repository_owner == 'andreaTP'
+        if: github.repository_owner == 'dylibso'
         run: |
           # Build everything
           mvn -B install -DskipTests
