@@ -29,7 +29,7 @@ public class RegressionTest extends TestModule {
 
         var results = testModule(targetWasm, module, instance, false);
 
-        for (var res: results) {
+        for (var res : results) {
             assertEquals(res.getOracleResult(), res.getChicoryResult());
         }
         // Sanity check that the starting function doesn't break

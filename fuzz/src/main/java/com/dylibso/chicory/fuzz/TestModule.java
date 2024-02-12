@@ -29,7 +29,8 @@ public class TestModule {
         return RandomStringUtils.randomNumeric(2);
     }
 
-    public List<TestResult> testModule(File targetWasm, Module module, Instance instance) throws Exception {
+    public List<TestResult> testModule(File targetWasm, Module module, Instance instance)
+            throws Exception {
         return testModule(targetWasm, module, instance, true);
     }
 
