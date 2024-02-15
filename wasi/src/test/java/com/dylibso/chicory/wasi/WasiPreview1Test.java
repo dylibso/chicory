@@ -68,7 +68,7 @@ public class WasiPreview1Test {
         var wasiOpts = WasiOptions.builder().build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
-        var module = Module.builder("compiled/sum.go.wasm").build();
+        var module = Module.builder("compiled/sum.go.tiny.wasm").build();
         var instance = module.instantiate(imports);
         var sum = instance.export("add");
         var result = sum.apply(Value.i32(20), Value.i32(22))[0];

@@ -31,9 +31,9 @@ compileJavy() {
   (set -x; javy compile $1 -o "./compiled/$filename.javy.wasm")
 }
 
-compileGo() {
+compileTinyGo() {
   filename=$(basename "$1")
-  (set -x; tinygo build -o "./compiled/$filename.wasm" -target=wasi $1)
+  (set -x; tinygo build -o "./compiled/$filename.tiny.wasm" -target=wasi $1)
 }
 
 compile() {
@@ -51,8 +51,8 @@ compile() {
     javy)
       compileJavy $2
       ;;
-    go)
-      compileGo $2
+    tinygo)
+      compileTinyGo $2
       ;;
     *)
       echo "Don't know how to compile language $lang"
@@ -65,7 +65,7 @@ lang="${1:-all}"
 path="${2:-all}"
 
 if [[ "$lang" == "all" ]]; then
-  langs=("wat" "rust" "c" "javy" "go")
+  langs=("wat" "rust" "c" "javy" "tinygo")
 else
   langs=("$lang")
 fi
