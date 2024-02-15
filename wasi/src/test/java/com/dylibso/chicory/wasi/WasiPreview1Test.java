@@ -6,6 +6,7 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
 import org.junit.jupiter.api.Test;
 
@@ -60,5 +61,18 @@ public class WasiPreview1Test {
         module.instantiate(imports);
 
         assertEquals(fakeStdout.output(), "{\"foo\":3,\"newBar\":\"baz!\"}");
+    }
+
+    @Test
+    public void shouldRunTinyGoModule() {
+        var wasiOpts = WasiOptions.builder().build();
+        var wasi = new WasiPreview1(this.logger, wasiOpts);
+        var imports = new HostImports(wasi.toHostFunctions());
+        var module = Module.builder("compiled/sum.go.tiny.wasm").build();
+        var instance = module.instantiate(imports);
+        var sum = instance.export("add");
+        var result = sum.apply(Value.i32(20), Value.i32(22))[0];
+
+        assertEquals(result.asInt(), 42);
     }
 }
