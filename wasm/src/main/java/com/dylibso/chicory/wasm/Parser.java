@@ -252,7 +252,11 @@ public final class Parser {
                         {
                             // "Skipping Section with ID due to configuration: " + sectionId
                             listener.onSection(new Section(sectionId));
-                            buffer.position((int) Math.min(buffer.limit(), buffer.position() + sectionSize));
+                            buffer.position(
+                                    (int)
+                                            Math.min(
+                                                    buffer.limit(),
+                                                    buffer.position() + sectionSize));
                             break;
                         }
                 }
