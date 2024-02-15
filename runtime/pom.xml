@@ -41,8 +41,7 @@
         <artifactId>test-gen-plugin</artifactId>
         <version>${project.version}</version>
         <configuration>
-          <wastToProcess>func.wast,
-            labels.wast,
+          <wastToProcess>labels.wast,
             i32.wast,
             i64.wast,
             f32.wast,
@@ -80,6 +79,21 @@
             tokens.wast,
             type.wast,
             func_ptrs.wast,
+            comments.wast,
+            custom.wast,
+            exports.wast,
+            inline-module.wast,
+            skip-stack-guard-page.wast,
+            token.wast,
+            traps.wast,
+            table-sub.wast,
+            unreachable.wast,
+            unreached-invalid.wast,
+            unreached-valid.wast,
+            utf8-custom-section-id.wast,
+            utf8-import-field.wast,
+            utf8-import-module.wast,
+            utf8-invalid-encoding.wast,
             ref_null.wast</wastToProcess>
           <orderedWastToProcess>select.wast,
             float_memory.wast,
