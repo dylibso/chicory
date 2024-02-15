@@ -38,6 +38,22 @@ RUN curl -L -O https://github.com/bytecodealliance/javy/releases/download/v1.4.0
     mv javy-x86_64-linux-v1.4.0 /usr/bin/javy && \
     chmod a+x /usr/bin/javy
 
+
+# Install Go
+ENV GO_VERSION=1.21.7
+RUN curl -L -O https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz \
+    && tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz \
+    && rm go${GO_VERSION}.linux-amd64.tar.gz
+
+# Set the Go environment variables
+ENV PATH=$PATH:/usr/local/go/bin
+ENV GOPATH=/go
+ENV PATH=$PATH:$GOPATH/bin
+
+# Install tinygo
+RUN curl -L -O https://github.com/tinygo-org/tinygo/releases/download/v0.30.0/tinygo_0.30.0_amd64.deb && \
+    dpkg -i tinygo_0.30.0_amd64.deb
+
 ENV PATH="/opt/wabt/bin:${PATH}"
 
 WORKDIR /usr/code
