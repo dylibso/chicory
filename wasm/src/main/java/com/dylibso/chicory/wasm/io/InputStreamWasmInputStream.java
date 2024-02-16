@@ -7,6 +7,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 
 /**
  * A WASM input stream based on {@link InputStream}.
@@ -51,6 +53,22 @@ class InputStreamWasmInputStream extends WasmInputStream {
                 count -= t;
                 position += t;
             }
+        } catch (IOException e) {
+            throw new WasmIOException(e);
+        }
+    }
+
+    public void transferTo(final WasmOutputStream out) throws WasmIOException {
+        try {
+            position += is.transferTo(out.asOutputStream());
+        } catch (IOException e) {
+            throw new WasmIOException(e);
+        }
+    }
+
+    public void transferTo(final FileChannel fc) throws WasmIOException {
+        try {
+            position += is.transferTo(Channels.newOutputStream(fc));
         } catch (IOException e) {
             throw new WasmIOException(e);
         }

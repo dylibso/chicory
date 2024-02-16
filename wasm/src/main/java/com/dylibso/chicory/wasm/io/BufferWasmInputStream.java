@@ -1,8 +1,10 @@
 package com.dylibso.chicory.wasm.io;
 
+import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 
 /**
  * A WASM input stream backed by a byte buffer.
@@ -30,6 +32,20 @@ class BufferWasmInputStream extends WasmInputStream {
             throw new WasmEOFException();
         }
         buffer.position((int) newOffs);
+    }
+
+    public void transferTo(final WasmOutputStream out) throws WasmIOException {
+        out.rawBytes(buffer);
+    }
+
+    public void transferTo(final FileChannel fc) throws WasmIOException {
+        while (buffer.hasRemaining()) {
+            try {
+                fc.write(buffer);
+            } catch (IOException e) {
+                throw new WasmIOException(e);
+            }
+        }
     }
 
     public int rawByteOpt() {

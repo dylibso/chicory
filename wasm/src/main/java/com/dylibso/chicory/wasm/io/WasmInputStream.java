@@ -3,10 +3,15 @@ package com.dylibso.chicory.wasm.io;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.ValueType;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -95,6 +100,36 @@ public abstract class WasmInputStream implements Closeable {
      */
     public WasmInputStream slice(final long size) {
         return new Slice(this, size);
+    }
+
+    public abstract void transferTo(WasmOutputStream out) throws WasmIOException;
+
+    public abstract void transferTo(FileChannel fc) throws WasmIOException;
+
+    public void transferTo(OutputStream os) throws WasmIOException {
+        if (os instanceof FileOutputStream) {
+            transferTo(((FileOutputStream) os).getChannel());
+            return;
+        } else if (os instanceof WasmOutputStream.AsOutputStream) {
+            transferTo(((WasmOutputStream.AsOutputStream) os).enclosing());
+            return;
+        }
+        // some other kind of output stream; put a buffer around it (if needed)
+        OutputStream wos;
+        if (os instanceof ByteArrayOutputStream || os instanceof BufferedOutputStream) {
+            wos = os;
+        } else {
+            wos = new BufferedOutputStream(os);
+        }
+        int i;
+        try {
+            while ((i = rawByteOpt()) != -1) {
+                wos.write(i);
+            }
+            wos.flush();
+        } catch (IOException e) {
+            throw new WasmIOException("Error transferring content", e);
+        }
     }
 
     // unsigned LEB
@@ -580,6 +615,40 @@ public abstract class WasmInputStream implements Closeable {
         public void skip(final long count) throws WasmIOException {
             if (count > remaining() || closed && count > 0) {
                 throw new WasmEOFException();
+            }
+        }
+
+        public void transferTo(final WasmOutputStream out) throws WasmIOException {
+            int res;
+            while ((res = rawByteOpt()) != -1) {
+                out.rawByte(res);
+            }
+        }
+
+        public void transferTo(final FileChannel fc) throws WasmIOException {
+            ByteBuffer bb = ByteBuffer.allocate(8192);
+            int res;
+            try {
+                for (; ; ) {
+                    res = rawByteOpt();
+                    if (res == -1) {
+                        bb.flip();
+                        while (bb.hasRemaining()) {
+                            fc.write(bb);
+                        }
+                        return;
+                    }
+                    if (!bb.hasRemaining()) {
+                        bb.flip();
+                        while (bb.hasRemaining()) {
+                            fc.write(bb);
+                        }
+                        bb.compact();
+                    }
+                    bb.put((byte) res);
+                }
+            } catch (IOException e) {
+                throw new WasmIOException("Transfer failed", e);
             }
         }
 
