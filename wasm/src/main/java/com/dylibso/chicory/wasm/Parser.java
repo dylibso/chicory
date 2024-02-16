@@ -389,7 +389,7 @@ public final class Parser {
                     }
                 case GLOBAL:
                     var globalValType = ValueType.forId((int) readVarUInt32(buffer));
-                    var globalMut = MutabilityType.byId(readVarUInt32(buffer));
+                    var globalMut = MutabilityType.forId((int) readVarUInt32(buffer));
                     importSection.addImport(
                             new GlobalImport(moduleName, importName, globalMut, globalValType));
                     break;
@@ -467,7 +467,7 @@ public final class Parser {
         // Parse individual globals
         for (int i = 0; i < globalCount; i++) {
             var valueType = ValueType.forId((int) readVarUInt32(buffer));
-            var mutabilityType = MutabilityType.byId(readVarUInt32(buffer));
+            var mutabilityType = MutabilityType.forId((int) readVarUInt32(buffer));
             var init = parseExpression(buffer);
             globalSection.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
         }

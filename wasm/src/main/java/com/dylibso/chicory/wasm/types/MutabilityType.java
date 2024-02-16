@@ -1,29 +1,43 @@
 package com.dylibso.chicory.wasm.types;
 
-import java.util.HashMap;
-import java.util.Map;
-
+/**
+ * The kind of mutability for a global variable.
+ */
 public enum MutabilityType {
-    Const(0x00),
-    Var(0x01);
+    Const(ID.Const),
+    Var(ID.Var);
 
-    private final long id;
+    private final int id;
 
-    MutabilityType(long id) {
+    MutabilityType(int id) {
         this.id = id;
     }
 
-    public long id() {
+    /**
+     * {@return the numerical identifier for this type}
+     */
+    public int id() {
         return id;
     }
 
-    private static final Map<Long, MutabilityType> byId = new HashMap<>(4);
-
-    static {
-        for (MutabilityType e : MutabilityType.values()) byId.put(e.id(), e);
+    /**
+     * {@return the <code>MutabilityType</code> for the given ID value}
+     *
+     * @throws IllegalArgumentException if the ID value does not correspond to a valid mutability type
+     */
+    public static MutabilityType forId(int id) {
+        switch (id) {
+            case ID.Const:
+                return Const;
+            case ID.Var:
+                return Var;
+            default:
+                throw new IllegalArgumentException("Invalid mutability type");
+        }
     }
 
-    public static MutabilityType byId(long id) {
-        return byId.get(id);
+    static final class ID {
+        static final int Const = 0x00;
+        static final int Var = 0x01;
     }
 }
