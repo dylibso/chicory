@@ -9,7 +9,7 @@ import java.util.function.ToIntFunction;
 /**
  * The "name" custom section.
  */
-public class NameCustomSection extends CustomSection {
+public final class NameCustomSection extends CustomSection {
 
     private String moduleName;
     private final ArrayList<NameEntry> funcNames = new ArrayList<>();

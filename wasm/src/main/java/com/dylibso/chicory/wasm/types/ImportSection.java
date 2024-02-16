@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-public class ImportSection extends Section {
+public final class ImportSection extends Section {
     private final ArrayList<Import> imports;
 
     /**

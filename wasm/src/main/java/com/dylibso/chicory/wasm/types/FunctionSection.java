@@ -3,7 +3,7 @@ package com.dylibso.chicory.wasm.types;
 import java.util.Arrays;
 import java.util.Objects;
 
-public class FunctionSection extends Section {
+public final class FunctionSection extends Section {
     private int[] typeIndices;
     private int count;
 

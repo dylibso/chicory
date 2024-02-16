@@ -3,7 +3,7 @@ package com.dylibso.chicory.wasm.types;
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class CodeSection extends Section {
+public final class CodeSection extends Section {
     private final ArrayList<FunctionBody> functionBodies;
 
     /**

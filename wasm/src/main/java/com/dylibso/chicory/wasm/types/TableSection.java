@@ -3,7 +3,7 @@ package com.dylibso.chicory.wasm.types;
 import java.util.ArrayList;
 import java.util.Objects;
 
-public class TableSection extends Section {
+public final class TableSection extends Section {
     private final ArrayList<Table> tables;
 
     /**

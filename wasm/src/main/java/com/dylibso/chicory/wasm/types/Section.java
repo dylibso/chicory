@@ -1,12 +1,23 @@
 package com.dylibso.chicory.wasm.types;
 
-public class Section {
+/**
+ * A section of a WASM file.
+ */
+public abstract class Section {
     private final int id;
 
-    public Section(long id) {
-        this.id = (int) id;
+    /**
+     * Construct a new instance.
+     *
+     * @param id the section identifier
+     */
+    protected Section(int id) {
+        this.id = id;
     }
 
+    /**
+     * {@return the section identifier}
+     */
     public int sectionId() {
         return id;
     }

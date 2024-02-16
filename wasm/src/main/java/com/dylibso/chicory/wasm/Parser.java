@@ -45,6 +45,7 @@ import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TableSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.UnknownCustomSection;
+import com.dylibso.chicory.wasm.types.UnknownSection;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -238,7 +239,7 @@ public final class Parser {
                         default:
                             {
                                 // "Skipping Section with ID due to configuration: " + sectionId
-                                listener.onSection(new Section(sectionId));
+                                listener.onSection(new UnknownSection(sectionId));
                                 break;
                             }
                     }
