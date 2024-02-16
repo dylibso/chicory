@@ -1,6 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
-public enum BlockType {
+public enum BlockKind {
     BLOCK,
     LOOP,
 }

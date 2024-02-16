@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CodeBlock {
-    private BlockType type;
+    private BlockKind kind;
     private List<Instruction> instructions;
 
-    public CodeBlock(BlockType type) {
-        this.type = type;
+    public CodeBlock(BlockKind kind) {
+        this.kind = kind;
         this.instructions = new ArrayList<>();
     }
 

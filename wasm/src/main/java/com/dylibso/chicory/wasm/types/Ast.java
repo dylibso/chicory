@@ -9,7 +9,7 @@ public class Ast {
     // private List<Instruction> instructions;
 
     public Ast() {
-        this.root = new CodeBlock(BlockType.BLOCK);
+        this.root = new CodeBlock(BlockKind.BLOCK);
         this.stack = new ArrayDeque<>();
         this.stack.push(root);
     }
@@ -24,7 +24,7 @@ public class Ast {
             case BLOCK:
                 {
                     current.addInstruction(i);
-                    var next = new CodeBlock(BlockType.BLOCK);
+                    var next = new CodeBlock(BlockKind.BLOCK);
                     i.setCodeBlock(next);
                     push(next);
                     break;
@@ -32,7 +32,7 @@ public class Ast {
             case LOOP:
                 {
                     current.addInstruction(i);
-                    var next = new CodeBlock(BlockType.LOOP);
+                    var next = new CodeBlock(BlockKind.LOOP);
                     i.setCodeBlock(next);
                     push(next);
                     break;
