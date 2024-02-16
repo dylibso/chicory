@@ -2,7 +2,6 @@ package com.dylibso.chicory.wasm.types;
 
 import static java.util.Objects.requireNonNull;
 
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;
@@ -18,8 +17,6 @@ public class Value {
     public static final Value FUNCREF_NULL = Value.funcRef(REF_NULL_VALUE);
 
     public static final Value[] EMPTY_VALUES = new Value[0];
-
-    public static final BigInteger TWO_POW_64 = new BigInteger("2").pow(64);
 
     private final ValueType type;
 
