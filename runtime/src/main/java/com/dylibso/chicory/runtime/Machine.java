@@ -1484,7 +1484,7 @@ class Machine {
     }
 
     private static void REF_NULL(MStack stack, long[] operands) {
-        var type = ValueType.byId(operands[0]);
+        var type = ValueType.forId((int) operands[0]);
         stack.push(new Value(type, (long) REF_NULL_VALUE));
     }
 
@@ -2204,7 +2204,7 @@ class Machine {
         if (typeId == 0x40) { // epsilon
             return 0;
         }
-        if (ValueType.byId(typeId) != null) {
+        if (ValueType.isValid(typeId)) {
             return 1;
         }
         return instance.type(typeId).returns().length;
@@ -2296,7 +2296,7 @@ class Machine {
                     }
                 case REF_NULL:
                     {
-                        ValueType vt = ValueType.byId(instruction.operands()[0]);
+                        ValueType vt = ValueType.refTypeForId((int) instruction.operands()[0]);
                         if (vt == ValueType.ExternRef) {
                             tos = Value.EXTREF_NULL;
                         } else if (vt == ValueType.FuncRef) {
