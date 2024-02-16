@@ -326,7 +326,7 @@ public final class Parser {
                 returns[j] = ValueType.forId((int) readVarUInt32(buffer));
             }
 
-            typeSection.addFunctionType(new FunctionType(params, returns));
+            typeSection.addFunctionType(FunctionType.of(params, returns));
         }
 
         return typeSection;
