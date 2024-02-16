@@ -4,7 +4,6 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.types.ElementType;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
@@ -1609,13 +1608,13 @@ class Machine {
 
         for (int i = offset; i < end; i++) {
             var val = getRuntimeElementValue(instance, elementidx, elemidx++);
-            if (table.elementType() == ElementType.FuncRef) {
+            if (table.elementType() == ValueType.FuncRef) {
                 if (val.asFuncRef() > instance.functionCount()) {
                     throw new WASMRuntimeException("out of bounds table access");
                 }
                 table.setRef(i, val.asFuncRef());
             } else {
-                assert table.elementType() == ElementType.ExtRef;
+                assert table.elementType() == ValueType.ExternRef;
                 table.setRef(i, val.asExtRef());
             }
         }

@@ -13,7 +13,6 @@ import com.dylibso.chicory.wasm.types.DataSection;
 import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.ElementSection;
-import com.dylibso.chicory.wasm.types.ElementType;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -421,7 +420,7 @@ public final class Parser {
 
         // Parse individual tables in the tables section
         for (int i = 0; i < tableCount; i++) {
-            var tableType = ElementType.byId(readVarUInt32(buffer));
+            var tableType = ValueType.refTypeForId((int) readVarUInt32(buffer));
             var limitType = readVarUInt32(buffer);
             assert limitType == 0x00 || limitType == 0x01;
             var min = readVarUInt32(buffer);
