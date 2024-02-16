@@ -149,15 +149,35 @@ public class Instance {
     public ExportFunction export(String name) {
         var export = module.export(name);
         if (export == null) throw new ChicoryException("Unknown export with name " + name);
-        var funcId = export.index();
-        return (args) -> {
-            this.module.logger().debug(() -> "Args: " + Arrays.toString(args));
-            try {
-                return machine.call(funcId, args, true);
-            } catch (Exception e) {
-                throw new WASMMachineException(machine.getStackTrace(), e);
-            }
-        };
+
+        switch (export.exportType()) {
+            case FUNCTION:
+                {
+                    var funcId = export.index();
+                    return (args) -> {
+                        this.module.logger().debug(() -> "Args: " + Arrays.toString(args));
+                        try {
+                            return machine.call(funcId, args, true);
+                        } catch (Exception e) {
+                            throw new WASMMachineException(machine.getStackTrace(), e);
+                        }
+                    };
+                }
+            case GLOBAL:
+                {
+                    return new ExportFunction() {
+                        @Override
+                        public Value[] apply(Value... args) throws ChicoryException {
+                            assert (args.length == 0);
+                            return new Value[] {globals[export.index()]};
+                        }
+                    };
+                }
+            default:
+                {
+                    throw new ChicoryException("not implemented");
+                }
+        }
     }
 
     public FunctionBody function(int idx) {
