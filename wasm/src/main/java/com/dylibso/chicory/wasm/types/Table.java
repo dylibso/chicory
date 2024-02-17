@@ -7,19 +7,22 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public class Table {
-    private final ElementType elementType;
+    private final ValueType elementType;
     private final Limits limits;
 
     private int[] refs;
 
-    public Table(final ElementType elementType, final Limits limits) {
+    public Table(final ValueType elementType, final Limits limits) {
         this.elementType = Objects.requireNonNull(elementType, "elementType");
+        if (!elementType.isReference()) {
+            throw new IllegalArgumentException("Table element type must be a reference type");
+        }
         this.limits = Objects.requireNonNull(limits, "limits");
         refs = new int[(int) limits.min()];
         Arrays.fill(refs, REF_NULL_VALUE);
     }
 
-    public ElementType elementType() {
+    public ValueType elementType() {
         return elementType;
     }
 
@@ -50,7 +53,7 @@ public class Table {
         } catch (IndexOutOfBoundsException e) {
             throw new ChicoryException("undefined element", e);
         }
-        if (this.elementType() == ElementType.FuncRef) {
+        if (this.elementType() == ValueType.FuncRef) {
             return Value.funcRef(res);
         } else {
             return Value.externRef(res);

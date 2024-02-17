@@ -4,7 +4,6 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.types.ElementType;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
@@ -1484,7 +1483,7 @@ class Machine {
     }
 
     private static void REF_NULL(MStack stack, long[] operands) {
-        var type = ValueType.byId(operands[0]);
+        var type = ValueType.forId((int) operands[0]);
         stack.push(new Value(type, (long) REF_NULL_VALUE));
     }
 
@@ -1609,13 +1608,13 @@ class Machine {
 
         for (int i = offset; i < end; i++) {
             var val = getRuntimeElementValue(instance, elementidx, elemidx++);
-            if (table.elementType() == ElementType.FuncRef) {
+            if (table.elementType() == ValueType.FuncRef) {
                 if (val.asFuncRef() > instance.functionCount()) {
                     throw new WASMRuntimeException("out of bounds table access");
                 }
                 table.setRef(i, val.asFuncRef());
             } else {
-                assert table.elementType() == ElementType.ExtRef;
+                assert table.elementType() == ValueType.ExternRef;
                 table.setRef(i, val.asExtRef());
             }
         }
@@ -2204,7 +2203,7 @@ class Machine {
         if (typeId == 0x40) { // epsilon
             return 0;
         }
-        if (ValueType.byId(typeId) != null) {
+        if (ValueType.isValid(typeId)) {
             return 1;
         }
         return instance.type(typeId).returns().length;
@@ -2296,7 +2295,7 @@ class Machine {
                     }
                 case REF_NULL:
                     {
-                        ValueType vt = ValueType.byId(instruction.operands()[0]);
+                        ValueType vt = ValueType.refTypeForId((int) instruction.operands()[0]);
                         if (vt == ValueType.ExternRef) {
                             tos = Value.EXTREF_NULL;
                         } else if (vt == ValueType.FuncRef) {

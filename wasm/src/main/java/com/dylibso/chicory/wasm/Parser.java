@@ -13,7 +13,6 @@ import com.dylibso.chicory.wasm.types.DataSection;
 import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.ElementSection;
-import com.dylibso.chicory.wasm.types.ElementType;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -316,7 +315,7 @@ public final class Parser {
 
             // Parse parameter types
             for (int j = 0; j < paramCount; j++) {
-                params[j] = ValueType.byId(readVarUInt32(buffer));
+                params[j] = ValueType.forId((int) readVarUInt32(buffer));
             }
 
             var returnCount = (int) readVarUInt32(buffer);
@@ -324,7 +323,7 @@ public final class Parser {
 
             // Parse return types
             for (int j = 0; j < returnCount; j++) {
-                returns[j] = ValueType.byId(readVarUInt32(buffer));
+                returns[j] = ValueType.forId((int) readVarUInt32(buffer));
             }
 
             typeSection.addFunctionType(new FunctionType(params, returns));
@@ -389,7 +388,7 @@ public final class Parser {
                         break;
                     }
                 case GLOBAL:
-                    var globalValType = ValueType.byId(readVarUInt32(buffer));
+                    var globalValType = ValueType.forId((int) readVarUInt32(buffer));
                     var globalMut = MutabilityType.byId(readVarUInt32(buffer));
                     importSection.addImport(
                             new GlobalImport(moduleName, importName, globalMut, globalValType));
@@ -421,7 +420,7 @@ public final class Parser {
 
         // Parse individual tables in the tables section
         for (int i = 0; i < tableCount; i++) {
-            var tableType = ElementType.byId(readVarUInt32(buffer));
+            var tableType = ValueType.refTypeForId((int) readVarUInt32(buffer));
             var limitType = readVarUInt32(buffer);
             assert limitType == 0x00 || limitType == 0x01;
             var min = readVarUInt32(buffer);
@@ -467,7 +466,7 @@ public final class Parser {
 
         // Parse individual globals
         for (int i = 0; i < globalCount; i++) {
-            var valueType = ValueType.byId(readVarUInt32(buffer));
+            var valueType = ValueType.forId((int) readVarUInt32(buffer));
             var mutabilityType = MutabilityType.byId(readVarUInt32(buffer));
             var init = parseExpression(buffer);
             globalSection.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
@@ -621,7 +620,7 @@ public final class Parser {
 
         for (int i = 0; i < distinctTypesCount; i++) {
             var numberOfLocals = readVarUInt32(buffer);
-            var type = ValueType.byId(readVarUInt32(buffer));
+            var type = ValueType.forId((int) readVarUInt32(buffer));
             for (int j = 0; j < numberOfLocals; j++) {
                 locals.add(type);
             }
