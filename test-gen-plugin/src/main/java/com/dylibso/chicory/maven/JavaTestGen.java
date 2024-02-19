@@ -134,7 +134,7 @@ public class JavaTestGen {
                         .map(t -> t.substring(testName.length() + 1))
                         .collect(Collectors.toList());
 
-        boolean excludeValidation = excludedValidationTests.contains(name);
+        boolean excludeValidation = excludedValidationTests.contains(name + ".wast");
 
         String currentWasmFile = null;
         for (var cmd : wast.commands()) {
