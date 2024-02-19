@@ -73,7 +73,7 @@
     <junit.version>5.10.2</junit.version>
     <spotless.version>2.43.0</spotless.version>
     <javaparser.version>3.25.8</javaparser.version>
-    <commons-compress.version>1.25.0</commons-compress.version>
+    <commons-compress.version>1.26.0</commons-compress.version>
     <jackson.version>2.16.1</jackson.version>
     <jgit.version>6.8.0.202311291450-r</jgit.version>
 
