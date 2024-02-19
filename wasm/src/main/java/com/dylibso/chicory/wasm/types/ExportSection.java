@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.io.WasmIOException;
+import com.dylibso.chicory.wasm.io.WasmInputStream;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -46,5 +48,18 @@ public final class ExportSection extends Section {
         int idx = exports.size();
         exports.add(export);
         return idx;
+    }
+
+    public void readFrom(final WasmInputStream in) throws WasmIOException {
+        var exportCount = in.u31();
+        exports.ensureCapacity(exports.size() + exportCount);
+
+        // Parse individual functions in the function section
+        for (int i = 0; i < exportCount; i++) {
+            var name = in.utf8();
+            var exportType = ExternalType.byId(in.u8());
+            var index = in.u31();
+            addExport(new Export(name, index, exportType));
+        }
     }
 }

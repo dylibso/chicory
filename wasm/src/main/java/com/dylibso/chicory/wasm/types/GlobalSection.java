@@ -1,6 +1,10 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.io.WasmIOException;
+import com.dylibso.chicory.wasm.io.WasmInputStream;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public final class GlobalSection extends Section {
@@ -50,5 +54,18 @@ public final class GlobalSection extends Section {
         int idx = globals.size();
         globals.add(global);
         return idx;
+    }
+
+    public void readFrom(final WasmInputStream in) throws WasmIOException {
+        var globalCount = in.u31();
+        globals.ensureCapacity(globals.size() + globalCount);
+
+        // Parse individual globals
+        for (int i = 0; i < globalCount; i++) {
+            var valueType = ValueType.forId(in.u8());
+            var mutabilityType = MutabilityType.forId(in.u8());
+            var init = Parser.parseExpression(in);
+            addGlobal(new Global(valueType, mutabilityType, List.of(init)));
+        }
     }
 }

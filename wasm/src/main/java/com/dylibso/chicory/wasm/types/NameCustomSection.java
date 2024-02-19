@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.io.WasmIOException;
 import com.dylibso.chicory.wasm.io.WasmInputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,76 +26,18 @@ public final class NameCustomSection extends CustomSection {
     /**
      * Construct a new, empty section instance.
      */
-    public NameCustomSection() {}
+    public NameCustomSection() {
+        this("name");
+    }
 
     /**
-     * Construct a new instance.
+     * Construct a new, empty section instance.
      *
-     * @param in the byte content of the section
+     * @param sectionName the section name, which should be {@code "name"}
      */
-    public NameCustomSection(final WasmInputStream in) {
-        this();
-
-        while (in.peekRawByteOpt() != -1) {
-            int id = in.rawByte();
-            // discard subsection size
-            try (WasmInputStream slice = in.slice(in.u32Long())) {
-                // todo: IDs 4 and 10 are reserved for the Host GC spec
-                switch (id) {
-                    case 0:
-                        {
-                            setModuleName(slice.utf8());
-                            break;
-                        }
-                    case 1:
-                        {
-                            oneLevelParse(slice, funcNames);
-                            break;
-                        }
-                    case 2:
-                        {
-                            twoLevelParse(slice, localNames);
-                            break;
-                        }
-                    case 3:
-                        {
-                            twoLevelParse(slice, labelNames);
-                            break;
-                        }
-                    case 5:
-                        {
-                            oneLevelParse(slice, tableNames);
-                            break;
-                        }
-                    case 6:
-                        {
-                            oneLevelParse(slice, memoryNames);
-                            break;
-                        }
-                    case 7:
-                        {
-                            oneLevelParse(slice, globalNames);
-                            break;
-                        }
-                    case 8:
-                        {
-                            oneLevelParse(slice, elementNames);
-                            break;
-                        }
-                    case 9:
-                        {
-                            oneLevelParse(slice, dataNames);
-                            break;
-                        }
-                    case 11:
-                        {
-                            oneLevelParse(slice, tagNames);
-                            break;
-                        }
-                    default:
-                        // ignore unknown subsection for forwards-compatibility
-                }
-            }
+    public NameCustomSection(final String sectionName) {
+        if (!sectionName.equals("name")) {
+            throw new IllegalArgumentException("Incorrect section name");
         }
     }
 
@@ -295,6 +238,70 @@ public final class NameCustomSection extends CustomSection {
      */
     public String addTagName(int tagIdx, String name) {
         return oneLevelStore(funcNames, tagIdx, name);
+    }
+
+    public void readFrom(final WasmInputStream in) throws WasmIOException {
+        while (in.peekRawByteOpt() != -1) {
+            int id = in.rawByte();
+            // discard subsection size
+            try (WasmInputStream slice = in.slice(in.u32Long())) {
+                // todo: IDs 4 and 10 are reserved for the Host GC spec
+                switch (id) {
+                    case 0:
+                        {
+                            setModuleName(slice.utf8());
+                            break;
+                        }
+                    case 1:
+                        {
+                            oneLevelParse(slice, funcNames);
+                            break;
+                        }
+                    case 2:
+                        {
+                            twoLevelParse(slice, localNames);
+                            break;
+                        }
+                    case 3:
+                        {
+                            twoLevelParse(slice, labelNames);
+                            break;
+                        }
+                    case 5:
+                        {
+                            oneLevelParse(slice, tableNames);
+                            break;
+                        }
+                    case 6:
+                        {
+                            oneLevelParse(slice, memoryNames);
+                            break;
+                        }
+                    case 7:
+                        {
+                            oneLevelParse(slice, globalNames);
+                            break;
+                        }
+                    case 8:
+                        {
+                            oneLevelParse(slice, elementNames);
+                            break;
+                        }
+                    case 9:
+                        {
+                            oneLevelParse(slice, dataNames);
+                            break;
+                        }
+                    case 11:
+                        {
+                            oneLevelParse(slice, tagNames);
+                            break;
+                        }
+                    default:
+                        // ignore unknown subsection for forwards-compatibility
+                }
+            }
+        }
     }
 
     // parsing helpers

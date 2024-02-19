@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.io.WasmIOException;
+import com.dylibso.chicory.wasm.io.WasmInputStream;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -50,5 +52,41 @@ public final class TypeSection extends Section {
         int idx = types.size();
         types.add(functionType);
         return idx;
+    }
+
+    public void readFrom(final WasmInputStream in) throws WasmIOException {
+        var typeCount = in.u31();
+        types.ensureCapacity(types.size() + typeCount);
+
+        // Parse individual types in the type section
+        for (int i = 0; i < typeCount; i++) {
+            var form = in.u8();
+
+            if (form != 0x60) {
+                throw new RuntimeException(
+                        "We don't support non func types. Form "
+                                + String.format("0x%02X", form)
+                                + " was given but we expected 0x60");
+            }
+
+            // Parse function types (form = 0x60)
+            var paramCount = in.u16();
+            var params = new ValueType[paramCount];
+
+            // Parse parameter types
+            for (int j = 0; j < paramCount; j++) {
+                params[j] = ValueType.forId(in.u8());
+            }
+
+            var returnCount = in.u16();
+            var returns = new ValueType[returnCount];
+
+            // Parse return types
+            for (int j = 0; j < returnCount; j++) {
+                returns[j] = ValueType.forId(in.u8());
+            }
+
+            addFunctionType(FunctionType.of(params, returns));
+        }
     }
 }

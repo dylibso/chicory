@@ -1,5 +1,8 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.io.WasmIOException;
+import com.dylibso.chicory.wasm.io.WasmInputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Instruction {
@@ -87,5 +90,53 @@ public class Instruction {
 
     public void setScope(Instruction scope) {
         this.scope = scope;
+    }
+
+    public static Instruction readFrom(WasmInputStream in) throws WasmIOException {
+        var address = in.position();
+        var b = in.rawByte();
+        if (b == 0xfc) { // is multi-byte
+            b = (0xfc << 8) + in.u8();
+        }
+        var op = OpCode.byOpCode(b);
+        if (op == null) {
+            throw new IllegalArgumentException("Can't find opcode for op value " + b);
+        }
+        // System.out.println("b: " + b + " op: " + op);
+        var signature = OpCode.getSignature(op);
+        if (signature.length == 0) {
+            return new Instruction((int) address, op, new long[] {});
+        }
+        var operands = new ArrayList<Long>();
+        for (var sig : signature) {
+            switch (sig) {
+                case VARUINT:
+                    operands.add(Long.valueOf(in.u32Long()));
+                    break;
+                case VARSINT32:
+                    operands.add(Long.valueOf(in.s32()));
+                    break;
+                case VARSINT64:
+                    operands.add(Long.valueOf(in.s64()));
+                    break;
+                case FLOAT64:
+                    operands.add(Long.valueOf(Double.doubleToRawLongBits(in.f64())));
+                    break;
+                case FLOAT32:
+                    operands.add(Long.valueOf(Float.floatToRawIntBits(in.f32())));
+                    break;
+                case VEC_VARUINT:
+                    {
+                        var vcount = in.u31();
+                        for (var j = 0; j < vcount; j++) {
+                            operands.add(Long.valueOf(in.u32Long()));
+                        }
+                        break;
+                    }
+            }
+        }
+        var operandsArray = new long[operands.size()];
+        for (var i = 0; i < operands.size(); i++) operandsArray[i] = operands.get(i);
+        return new Instruction((int) address, op, operandsArray);
     }
 }

@@ -1,5 +1,8 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.io.WasmIOException;
+import com.dylibso.chicory.wasm.io.WasmInputStream;
+
 public final class StartSection extends Section {
     private int startIndex;
 
@@ -13,5 +16,9 @@ public final class StartSection extends Section {
 
     public void setStartIndex(int startIndex) {
         this.startIndex = startIndex;
+    }
+
+    public void readFrom(final WasmInputStream in) throws WasmIOException {
+        setStartIndex(in.u31());
     }
 }

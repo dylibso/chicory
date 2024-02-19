@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.io.WasmIOException;
+import com.dylibso.chicory.wasm.io.WasmInputStream;
 import java.util.Arrays;
 import java.util.Objects;
 
@@ -51,10 +53,27 @@ public final class FunctionSection extends Section {
     public int addFunctionType(int typeIndex) {
         int count = this.count;
         if (count == typeIndices.length) {
-            typeIndices = Arrays.copyOf(typeIndices, count + (count >> 1));
+            ensureCapacity(count + (count >> 1));
         }
         typeIndices[count] = typeIndex;
         this.count = count + 1;
         return count;
+    }
+
+    private void ensureCapacity(int capacity) {
+        if (capacity >= typeIndices.length) {
+            typeIndices = Arrays.copyOf(typeIndices, capacity);
+        }
+    }
+
+    public void readFrom(final WasmInputStream in) throws WasmIOException {
+        var functionCount = in.u31();
+        ensureCapacity(count + functionCount);
+
+        // Parse individual functions in the function section
+        for (int i = 0; i < functionCount; i++) {
+            var typeIndex = in.u31();
+            addFunctionType(typeIndex);
+        }
     }
 }

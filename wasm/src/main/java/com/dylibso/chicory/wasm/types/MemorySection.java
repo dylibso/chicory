@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.io.WasmIOException;
+import com.dylibso.chicory.wasm.io.WasmInputStream;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -46,5 +48,16 @@ public final class MemorySection extends Section {
         int idx = memories.size();
         memories.add(memory);
         return idx;
+    }
+
+    public void readFrom(final WasmInputStream in) throws WasmIOException {
+        var memoryCount = in.u31();
+        memories.ensureCapacity(memories.size() + memoryCount);
+
+        // Parse individual memories in the memory section
+        for (int i = 0; i < memoryCount; i++) {
+            var limits = MemoryLimits.parseFrom(in);
+            addMemory(new Memory(limits));
+        }
     }
 }

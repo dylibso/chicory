@@ -1,5 +1,9 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.io.WasmIOException;
+import com.dylibso.chicory.wasm.io.WasmInputStream;
+import com.dylibso.chicory.wasm.io.WasmParseException;
+
 /**
  * Limits for memory sizes, in pages.
  * Memory limits also define whether the corresponding memory is <em>shared</em>.
@@ -133,5 +137,26 @@ public final class MemoryLimits {
             b.append(":shared");
         }
         return b;
+    }
+
+    /**
+     * Read an instance of this class from the given input stream.
+     *
+     * @param in the input stream to read from (must not be {@code null})
+     * @return the parsed memory limits (not {@code null})
+     * @throws WasmIOException if an I/O error occurs
+     */
+    public static MemoryLimits parseFrom(WasmInputStream in) throws WasmIOException {
+        var limitType = in.u8();
+        switch (limitType) {
+            case 0x00:
+                return new MemoryLimits(in.u31());
+            case 0x01:
+                return new MemoryLimits(in.u31(), in.u31());
+            case 0x03:
+                return new MemoryLimits(in.u31(), in.u31(), true);
+            default:
+                throw new WasmParseException("Invalid limit type");
+        }
     }
 }

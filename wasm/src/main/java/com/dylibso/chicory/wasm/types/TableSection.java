@@ -1,5 +1,8 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.io.WasmIOException;
+import com.dylibso.chicory.wasm.io.WasmInputStream;
+import com.dylibso.chicory.wasm.io.WasmParseException;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -46,5 +49,22 @@ public final class TableSection extends Section {
         int idx = tables.size();
         tables.add(table);
         return idx;
+    }
+
+    public void readFrom(final WasmInputStream in) throws WasmIOException {
+        var tableCount = in.u31();
+        tables.ensureCapacity(tables.size() + tableCount);
+
+        // Parse individual tables in the tables section
+        for (int i = 0; i < tableCount; i++) {
+            var tableType = ValueType.refTypeForId(in.u8());
+            var limitType = in.u32();
+            if (limitType != 0x00 && limitType != 0x01) {
+                throw new WasmParseException("Invalid limit type");
+            }
+            var min = in.u32Long();
+            var limits = limitType > 0 ? new Limits(min, in.u32Long()) : new Limits(min);
+            addTable(new Table(tableType, limits));
+        }
     }
 }
