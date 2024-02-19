@@ -83,10 +83,10 @@ class Machine {
             return null;
         }
 
-        if (type.returns().length == 0) return null;
+        if (type.returns().isEmpty()) return null;
         if (stack.size() == 0) return null;
 
-        var totalResults = type.returns().length;
+        var totalResults = type.returns().size();
         var results = new Value[totalResults];
         for (var i = totalResults - 1; i >= 0; i--) {
             results[i] = stack.pop();
@@ -2206,7 +2206,7 @@ class Machine {
         if (ValueType.isValid(typeId)) {
             return 1;
         }
-        return instance.type(typeId).returns().length;
+        return instance.type(typeId).returns().size();
     }
 
     private static void IF(StackFrame frame, MStack stack, Instruction instruction) {
@@ -2341,14 +2341,14 @@ class Machine {
         return List.copyOf(callStack);
     }
 
-    static Value[] extractArgsForParams(MStack stack, ValueType[] params) {
+    static Value[] extractArgsForParams(MStack stack, List<ValueType> params) {
         if (params == null) {
             return Value.EMPTY_VALUES;
         }
-        var args = new Value[params.length];
-        for (var i = params.length; i > 0; i--) {
+        var args = new Value[params.size()];
+        for (var i = params.size(); i > 0; i--) {
             var p = stack.pop();
-            var t = params[i - 1];
+            var t = params.get(i - 1);
             if (p.type() != t) {
                 // Similar to what is happening in WaZero
                 // https://github.com/tetratelabs/wazero/blob/36676928d22ab92c34299eb0dca7608c92c94b22/internal/wasm/gofunc.go#L109

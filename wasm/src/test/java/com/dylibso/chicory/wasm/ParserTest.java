@@ -104,7 +104,7 @@ public class ParserTest {
             var typeSection = module.typeSection();
             var types = typeSection.types();
             assertEquals(1, types.length);
-            assertEquals("(I32) -> I32", types[0].toString());
+            assertEquals("(I32) -> (I32)", types[0].toString());
 
             // check function section
             var funcSection = module.functionSection();
