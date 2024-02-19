@@ -1,9 +1,12 @@
 package com.dylibso.chicory.wasm.types;
 
-public final class PassiveDataSegment extends DataSegment {
-    public static final PassiveDataSegment EMPTY = new PassiveDataSegment(new byte[] {});
+import java.nio.ByteBuffer;
 
-    public PassiveDataSegment(byte[] data) {
+public final class PassiveDataSegment extends DataSegment {
+    public static final PassiveDataSegment EMPTY =
+            new PassiveDataSegment(ByteBuffer.allocateDirect(0));
+
+    public PassiveDataSegment(ByteBuffer data) {
         super(data);
     }
 }

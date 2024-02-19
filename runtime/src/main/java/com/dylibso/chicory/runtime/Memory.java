@@ -129,6 +129,34 @@ public final class Memory {
         write(addr, data, 0, data.length);
     }
 
+    public void write(int addr, ByteBuffer buf, int offset, int size) {
+        try {
+            // todo: JDK 13 ByteBuffer#slice(start,len)
+            int pos = buf.position();
+            int lim = buf.limit();
+            try {
+                buf.position(pos + offset);
+                buf.limit(pos + offset + size);
+                buffer.position(addr);
+                buffer.put(buf);
+            } finally {
+                buf.position(pos);
+                buf.limit(lim);
+            }
+        } catch (Exception e) {
+            throw new WASMRuntimeException("out of bounds memory access");
+        }
+    }
+
+    public void write(int addr, ByteBuffer buf) {
+        try {
+            buffer.position(addr);
+            buffer.put(buf);
+        } catch (Exception e) {
+            throw new WASMRuntimeException("out of bounds memory access");
+        }
+    }
+
     public void write(int addr, byte[] data, int offset, int size) {
         try {
             buffer.position(addr);

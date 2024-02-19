@@ -4,6 +4,7 @@ import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.io.WasmIOException;
 import com.dylibso.chicory.wasm.io.WasmInputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -65,19 +66,31 @@ public final class DataSection extends Section {
             var mode = in.u32();
             if (mode == 0) {
                 var offset = Parser.parseExpression(in);
-                byte[] data = in.byteVec();
-                addDataSegment(new ActiveDataSegment(List.of(offset), data));
+                ByteBuffer buf = readDataBytes(in);
+                addDataSegment(new ActiveDataSegment(List.of(offset), buf));
             } else if (mode == 1) {
-                byte[] data = in.byteVec();
-                addDataSegment(new PassiveDataSegment(data));
+                addDataSegment(new PassiveDataSegment(readDataBytes(in)));
             } else if (mode == 2) {
                 var memoryId = in.u31();
                 var offset = Parser.parseExpression(in);
-                byte[] data = in.byteVec();
-                addDataSegment(new ActiveDataSegment(memoryId, List.of(offset), data));
+                ByteBuffer buf = readDataBytes(in);
+                addDataSegment(new ActiveDataSegment(memoryId, List.of(offset), buf));
             } else {
                 throw new ChicoryException("Failed to parse data segment with data mode: " + mode);
             }
         }
+    }
+
+    private static ByteBuffer readDataBytes(final WasmInputStream in) {
+        int size = in.u31();
+        ByteBuffer buf;
+        if (size > 1024) {
+            // greater than 1KB; allocate off-heap
+            buf = ByteBuffer.allocateDirect(size);
+        } else {
+            buf = ByteBuffer.allocate(size);
+        }
+        in.rawBytes(buf);
+        return buf.flip();
     }
 }

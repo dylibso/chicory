@@ -55,7 +55,9 @@ public class ParserTest {
             var segment = (ActiveDataSegment) dataSection.getDataSegment(0);
             assertEquals(0, segment.index());
             assertEquals(OpCode.I32_CONST, segment.offsetInstructions().get(0).opcode());
-            assertArrayEquals(new byte[] {0x00, 0x01, 0x02, 0x03}, segment.data());
+            byte[] actual = new byte[4];
+            segment.data().get(actual);
+            assertArrayEquals(new byte[] {0x00, 0x01, 0x02, 0x03}, actual);
 
             // check start section
             var startSection = module.startSection();
