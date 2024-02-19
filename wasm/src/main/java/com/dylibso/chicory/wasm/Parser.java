@@ -279,8 +279,10 @@ public final class Parser {
     }
 
     private CustomSection parseCustomSection(ByteBuffer buffer, long sectionSize) {
-
         var name = readName(buffer);
+        if (!ParserUtil.isValidIdentifier(name)) {
+            throw new MalformedException("malformed UTF-8 encoding");
+        }
         var byteLen = name.getBytes().length;
         var size = (sectionSize - byteLen - Encoding.computeLeb128Size(byteLen));
         var remaining = buffer.limit() - buffer.position();
@@ -389,7 +391,7 @@ public final class Parser {
                     }
                 case GLOBAL:
                     var globalValType = ValueType.forId((int) readVarUInt32(buffer));
-                    var globalMut = MutabilityType.forId((int) readVarUInt32(buffer));
+                    var globalMut = getMutabilityType(buffer);
                     importSection.addImport(
                             new GlobalImport(moduleName, importName, globalMut, globalValType));
                     break;
@@ -397,6 +399,19 @@ public final class Parser {
         }
 
         return importSection;
+    }
+
+    private static MutabilityType getMutabilityType(ByteBuffer buffer) {
+        MutabilityType globalMut = null;
+        try {
+            globalMut = MutabilityType.forId((int) readVarUInt32(buffer));
+        } catch (Exception e) {
+            throw new MalformedException("Global malformed mutability");
+        }
+        if (globalMut == null) {
+            throw new MalformedException("Global malformed mutability");
+        }
+        return globalMut;
     }
 
     private static FunctionSection parseFunctionSection(ByteBuffer buffer) {
@@ -467,7 +482,7 @@ public final class Parser {
         // Parse individual globals
         for (int i = 0; i < globalCount; i++) {
             var valueType = ValueType.forId((int) readVarUInt32(buffer));
-            var mutabilityType = MutabilityType.forId((int) readVarUInt32(buffer));
+            var mutabilityType = getMutabilityType(buffer);
             var init = parseExpression(buffer);
             globalSection.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
         }

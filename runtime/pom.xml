@@ -145,6 +145,7 @@
             SpecV1AddressTest.test233, SpecV1AddressTest.test234, SpecV1AddressTest.test236,
             SpecV1AddressTest.test252, SpecV1AddressTest.test253, SpecV1AddressTest.test255
           </excludedTests>
+          <excludedValidationTests>binary,binary-leb128,custom</excludedValidationTests>
         </configuration>
         <executions>
           <execution>

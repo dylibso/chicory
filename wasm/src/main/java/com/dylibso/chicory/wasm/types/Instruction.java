@@ -3,9 +3,9 @@ package com.dylibso.chicory.wasm.types;
 import java.util.Arrays;
 
 public class Instruction {
-    private int address;
-    private OpCode opcode;
-    private long[] operands;
+    private final int address;
+    private final OpCode opcode;
+    private final long[] operands;
     private CodeBlock block;
 
     // metadata fields

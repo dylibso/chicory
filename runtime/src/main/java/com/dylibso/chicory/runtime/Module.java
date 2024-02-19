@@ -1,11 +1,14 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.wasm.ParserUtil.isValidIdentifier;
+
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
+import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.Export;
@@ -70,7 +73,7 @@ public class Module {
             var g = globalInitializers[i];
             if (g.initInstructions().size() > 2)
                 throw new RuntimeException(
-                        "We don't a global initializer with multiple instructions");
+                        "We don't support a global initializer with multiple instructions");
             var instr = g.initInstructions().get(0);
             switch (instr.opcode()) {
                 case I32_CONST:
@@ -150,6 +153,9 @@ public class Module {
             imports = new Import[cnt];
             for (int i = 0; i < cnt; i++) {
                 Import imprt = module.importSection().getImport(i);
+                if (!isValidIdentifier(imprt.name()) || !isValidIdentifier(imprt.moduleName())) {
+                    throw new MalformedException("malformed UTF-8 encoding");
+                }
                 switch (imprt.importType()) {
                     case FUNCTION:
                         {
