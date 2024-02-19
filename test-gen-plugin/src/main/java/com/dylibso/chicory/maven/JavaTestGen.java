@@ -461,7 +461,7 @@ public class JavaTestGen {
                     new SingleMemberAnnotationExpr(
                             new Name("Disabled"),
                             new StringLiteralExpr("Validation test excluded")));
-        } else if (cmd.moduleType() != null && cmd.moduleType().toLowerCase().contains("text")) {
+        } else if (cmd.moduleType() != null && cmd.moduleType().equalsIgnoreCase("text")) {
             method.addAnnotation(
                     new SingleMemberAnnotationExpr(
                             new Name("Disabled"),
