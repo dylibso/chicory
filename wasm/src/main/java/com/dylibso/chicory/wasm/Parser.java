@@ -391,7 +391,7 @@ public final class Parser {
                     }
                 case GLOBAL:
                     var globalValType = ValueType.forId((int) readVarUInt32(buffer));
-                    var globalMut = getMutabilityType(buffer);
+                    var globalMut = MutabilityType.forId(buffer.get());
                     importSection.addImport(
                             new GlobalImport(moduleName, importName, globalMut, globalValType));
                     break;
@@ -399,19 +399,6 @@ public final class Parser {
         }
 
         return importSection;
-    }
-
-    private static MutabilityType getMutabilityType(ByteBuffer buffer) {
-        MutabilityType globalMut = null;
-        try {
-            globalMut = MutabilityType.forId((int) readVarUInt32(buffer));
-        } catch (Exception e) {
-            throw new MalformedException("Global malformed mutability");
-        }
-        if (globalMut == null) {
-            throw new MalformedException("Global malformed mutability");
-        }
-        return globalMut;
     }
 
     private static FunctionSection parseFunctionSection(ByteBuffer buffer) {
@@ -482,7 +469,7 @@ public final class Parser {
         // Parse individual globals
         for (int i = 0; i < globalCount; i++) {
             var valueType = ValueType.forId((int) readVarUInt32(buffer));
-            var mutabilityType = getMutabilityType(buffer);
+            var mutabilityType = MutabilityType.forId(buffer.get());
             var init = parseExpression(buffer);
             globalSection.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
         }

@@ -476,7 +476,7 @@ public class Module {
 
         private Builder(Supplier<InputStream> inputStreamSupplier) {
             this.inputStreamSupplier = Objects.requireNonNull(inputStreamSupplier);
-            this.moduleType = ModuleType.TEXT;
+            this.moduleType = ModuleType.BINARY;
         }
 
         public Builder withLogger(Logger logger) {
@@ -497,7 +497,7 @@ public class Module {
             try (final InputStream is = inputStreamSupplier.get()) {
 
                 switch (this.moduleType) {
-                    case TEXT:
+                    case BINARY:
                         return new Module(parser.parseModule(is), logger);
                     default:
                         // TODO: implement me

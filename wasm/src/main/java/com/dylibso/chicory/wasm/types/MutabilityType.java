@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.exceptions.MalformedException;
+
 /**
  * The kind of mutability for a global variable.
  */
@@ -32,7 +34,7 @@ public enum MutabilityType {
             case ID.Var:
                 return Var;
             default:
-                throw new IllegalArgumentException("Invalid mutability type");
+                throw new MalformedException("Global malformed mutability");
         }
     }
 
