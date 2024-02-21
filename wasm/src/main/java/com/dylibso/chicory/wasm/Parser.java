@@ -168,7 +168,9 @@ public final class Parser {
                     "unexpected token: unsupported version, found: " + version + " expected: " + 1);
         }
 
+        // avoid checking if the custom section has malformed names the first time that is parsed
         var firstTime = true;
+
         while (buffer.hasRemaining()) {
             var sectionId = buffer.get();
             var sectionSize = readVarUInt32(buffer);
@@ -281,8 +283,8 @@ public final class Parser {
     }
 
     private CustomSection parseCustomSection(
-            ByteBuffer buffer, long sectionSize, boolean firstTime) {
-        var name = readName(buffer, !firstTime);
+            ByteBuffer buffer, long sectionSize, boolean checkMalformed) {
+        var name = readName(buffer, checkMalformed);
         var byteLen = name.getBytes().length;
         var size = (sectionSize - byteLen - Encoding.computeLeb128Size(byteLen));
         var remaining = buffer.limit() - buffer.position();
@@ -344,8 +346,8 @@ public final class Parser {
 
         // Parse individual imports in the import section
         for (int i = 0; i < importCount; i++) {
-            String moduleName = readName(buffer, false);
-            String importName = readName(buffer, false);
+            String moduleName = readName(buffer);
+            String importName = readName(buffer);
             var descType = ExternalType.byId((int) readVarUInt32(buffer));
             switch (descType) {
                 case FUNCTION:
@@ -487,7 +489,7 @@ public final class Parser {
 
         // Parse individual functions in the function section
         for (int i = 0; i < exportCount; i++) {
-            var name = readName(buffer, true);
+            var name = readName(buffer, false);
             var exportType = ExternalType.byId((int) readVarUInt32(buffer));
             var index = (int) readVarUInt32(buffer);
             exportSection.addExport(new Export(name, index, exportType));
@@ -934,10 +936,10 @@ public final class Parser {
      * @return
      */
     public static String readName(ByteBuffer buffer) {
-        return readName(buffer, false);
+        return readName(buffer, true);
     }
 
-    public static String readName(ByteBuffer buffer, boolean allow) {
+    public static String readName(ByteBuffer buffer, boolean checkMalformed) {
         var length = (int) readVarUInt32(buffer);
         byte[] bytes = new byte[length];
         try {
@@ -946,7 +948,7 @@ public final class Parser {
             throw new MalformedException("length out of bounds");
         }
         var name = new String(bytes, StandardCharsets.UTF_8);
-        if (!isValidIdentifier(name) && !allow) {
+        if (checkMalformed && !isValidIdentifier(name)) {
             throw new MalformedException("malformed UTF-8 encoding");
         }
         return name;
