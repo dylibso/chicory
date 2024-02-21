@@ -1,0 +1,53 @@
+name: Nightly Fuzz
+
+on:
+  schedule:
+    - cron: "0 0 * * *" # everyday
+
+permissions:
+  pull-requests: write
+
+jobs:
+  fuzz:
+    name: Fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+      - name: Setup `wasmtime`
+        uses: bytecodealliance/actions/wasmtime/setup@v1
+        with:
+          version: "v17.0.0"
+      - name: Setup `wasm-tools`
+        uses: bytecodealliance/actions/wasm-tools/setup@v1
+        with:
+          version: "1.0.57"
+      - name: Fuzz Test
+        if: github.repository_owner == 'dylibso'
+        run: |
+          # Build everything
+          mvn -B install -DskipTests
+          # Run only the fuzz tests
+          mvn -B clean verify -Pfuzz -pl fuzz -Dfuzz.test.numeric=10 -Dfuzz.test.table=10
+
+      - name: Create Pull Request with the crash repro
+        uses: peter-evans/create-pull-request@v6
+        if: failure()
+        with:
+          token: ${{secrets.GH_TOKEN}}
+          commit-message: Nightly crash
+          committer: Chicory BOT <chicory@dylibso.com>
+          author: Chicory BOT <chicory@dylibso.com>
+          signoff: false
+          branch: fuzz-crash-repro
+          branch-suffix: random
+          delete-branch: true
+          title: '[FUZZ] Crash reproducer'
+          body: Fuzz testing failed and there are new reproducers available.
+          draft: false

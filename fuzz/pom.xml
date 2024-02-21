@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.dylibso.chicory</groupId>
+    <artifactId>chicory</artifactId>
+    <version>999-SNAPSHOT</version>
+  </parent>
+  <artifactId>fuzz</artifactId>
+  <packaging>jar</packaging>
+
+  <name>Chicory - Fuzz</name>
+  <description>Fuzzying Chicory</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>runtime</artifactId>
+    </dependency>
+
+    <!-- fake dependency to make sure that the executable is available -->
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>cli</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>templating-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>filtering-java-templates</id>
+            <goals>
+              <goal>filter-sources</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

@@ -41,6 +41,7 @@
     <module>runtime</module>
     <module>wasi</module>
     <module>wasm-corpus</module>
+    <module>cli</module>
   </modules>
 
   <scm>
@@ -76,6 +77,9 @@
     <commons-compress.version>1.26.0</commons-compress.version>
     <jackson.version>2.16.1</jackson.version>
     <jgit.version>6.8.0.202311291450-r</jgit.version>
+    <picocli.version>4.7.5</picocli.version>
+    <commons-lang.version>3.14.0</commons-lang.version>
+    <commons-io.version>2.13.0</commons-io.version>
 
     <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
     <maven-plugin-annotations.version>3.11.0</maven-plugin-annotations.version>
@@ -95,6 +99,7 @@
     <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
     <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
     <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
+    <templating-maven-plugin.version>1.0.0</templating-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -119,10 +124,39 @@
         <artifactId>wasi</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>cli</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <!-- Used to build a CLI -->
+      <dependency>
+        <groupId>info.picocli</groupId>
+        <artifactId>picocli</artifactId>
+        <version>${picocli.version}</version>
+      </dependency>
+      <!-- Used in the infrastructure of Fuzz tests -->
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>${commons-lang.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${commons-io.version}</version>
+      </dependency>
 
       <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-params</artifactId>
         <version>${junit.version}</version>
         <scope>test</scope>
       </dependency>
@@ -196,6 +230,11 @@
           <groupId>org.sonatype.plugins</groupId>
           <artifactId>nexus-staging-maven-plugin</artifactId>
           <version>${nexus-staging-maven-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>templating-maven-plugin</artifactId>
+          <version>${templating-maven-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -308,6 +347,16 @@
   </build>
 
   <profiles>
+    <profile>
+      <id>fuzz</id>
+      <modules>
+        <module>fuzz</module>
+      </modules>
+      <properties>
+        <fuzz.test.numeric>10</fuzz.test.numeric>
+        <fuzz.test.table>10</fuzz.test.table>
+      </properties>
+    </profile>
     <profile>
       <id>release</id>
       <distributionManagement>

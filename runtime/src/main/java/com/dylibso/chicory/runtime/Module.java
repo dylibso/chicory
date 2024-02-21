@@ -28,6 +28,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -57,10 +58,14 @@ public class Module {
     }
 
     public Instance instantiate() {
-        return this.instantiate(new HostImports());
+        return this.instantiate(new HostImports(), true);
     }
 
     public Instance instantiate(HostImports hostImports) {
+        return this.instantiate(hostImports, true);
+    }
+
+    public Instance instantiate(HostImports hostImports, boolean start) {
         var globalInitializers = new Global[] {};
         if (this.module.globalSection() != null) {
             globalInitializers = this.module.globalSection().globals();
@@ -257,7 +262,8 @@ public class Module {
                 functionTypes,
                 mappedHostImports,
                 tables,
-                elements);
+                elements,
+                start);
     }
 
     private HostImports mapHostImports(Import[] imports, HostImports hostImports) {
@@ -371,10 +377,18 @@ public class Module {
         return this.exports.get(name);
     }
 
+    public Map<String, Export> exports() {
+        return this.exports;
+    }
+
     public NameCustomSection nameSection() {
         if (nameSec != null) return nameSec;
         nameSec = this.module.nameSection();
         return nameSec;
+    }
+
+    public com.dylibso.chicory.wasm.Module wasmModule() {
+        return this.module;
     }
 
     /**
