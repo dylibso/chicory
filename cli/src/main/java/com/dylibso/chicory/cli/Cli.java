@@ -74,16 +74,16 @@ public class Cli implements Runnable {
             var typeId = instance.functionType(exportSig.index());
             var type = instance.type(typeId);
 
-            if (arguments.length != type.params().length) {
+            if (arguments.length != type.params().size()) {
                 throw new RuntimeException(
                         "The function needs "
-                                + type.params().length
+                                + type.params().size()
                                 + " parameters, but found: "
                                 + arguments.length);
             }
-            var params = new Value[type.params().length];
-            for (var i = 0; i < type.params().length; i++) {
-                params[i] = new Value(type.params()[i], Long.valueOf(arguments[i]));
+            var params = new Value[type.params().size()];
+            for (var i = 0; i < type.params().size(); i++) {
+                params[i] = new Value(type.params().get(i), Long.valueOf(arguments[i]));
             }
 
             var result = export.apply(params);

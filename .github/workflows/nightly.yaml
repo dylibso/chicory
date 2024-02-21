@@ -1,9 +1,8 @@
 name: Nightly Fuzz
 
 on:
-  push:
-   schedule:
-     - cron: "0 0 * * *" # everyday
+  schedule:
+    - cron: "0 0 * * *" # everyday
 
 permissions:
   pull-requests: write
