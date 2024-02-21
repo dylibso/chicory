@@ -90,7 +90,7 @@ public class StackFrame {
     }
 
     public void registerStackSize(MStack stack) {
-        stackSizeBeforeBlock.push(stack.size());
+        stackSizeBeforeBlock.push(stack.depth());
     }
 
     public void jumpTo(int newPc) {
@@ -104,9 +104,9 @@ public class StackFrame {
             }
 
             int expectedStackSize = stackSizeBeforeBlock.pop();
-            while (stack.size() > expectedStackSize) {
-                stack.pop();
-            }
+            // todo: the expected stack size is often larger than the actual stack; investigate &
+            // remove min()
+            stack.resetDepth(Math.min(stack.depth(), expectedStackSize));
         }
     }
 

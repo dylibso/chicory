@@ -84,7 +84,7 @@ class Machine {
         }
 
         if (type.returns().isEmpty()) return null;
-        if (stack.size() == 0) return null;
+        if (stack.depth() == 0) return null;
 
         var totalResults = type.returns().size();
         var results = new Value[totalResults];
@@ -719,7 +719,7 @@ class Machine {
                         TABLE_GROW(stack, instance, operands);
                         break;
                     case REF_FUNC:
-                        stack.push(Value.funcRef(operands[0]));
+                        REF_FUNC(stack, instance, operands);
                         break;
                     case REF_NULL:
                         REF_NULL(stack, operands);
@@ -1482,9 +1482,28 @@ class Machine {
         stack.push(Value.fromFloat((float) tos));
     }
 
+    private static void REF_FUNC(MStack stack, Instance instance, long[] operands) {
+        // todo: the current function resolution code is not complete!
+        // In particular this will fail on imported functions.
+        // Each module should have a table of FuncRef which includes
+        // both defined and imported functions, rather than creating it on the fly.
+        Module module = instance.module();
+        stack.pushFuncRef(new FuncRef(module, (int) operands[0]));
+    }
+
     private static void REF_NULL(MStack stack, long[] operands) {
-        var type = ValueType.forId((int) operands[0]);
-        stack.push(new Value(type, (long) REF_NULL_VALUE));
+        var type = ValueType.refTypeForId((int) operands[0]);
+        switch (type) {
+            case FuncRef:
+                stack.pushFuncRef((FuncRef) null);
+                break;
+            case ExternRef:
+                stack.pushExternRef((ExternRef) null);
+                break;
+            default:
+                // should be impossible
+                throw new IllegalStateException();
+        }
     }
 
     private static void ELEM_DROP(Instance instance, long[] operands) {
@@ -1493,11 +1512,18 @@ class Machine {
     }
 
     private static void REF_IS_NULL(MStack stack) {
-        var val = stack.pop();
-        stack.push(
-                val.equals(Value.EXTREF_NULL) || val.equals(Value.FUNCREF_NULL)
-                        ? Value.TRUE
-                        : Value.FALSE);
+        switch (stack.peekType()) {
+            case ExternRef:
+                stack.pushI32(stack.popExternRef() == null);
+                break;
+            case FuncRef:
+                stack.pushI32(stack.popFuncRef() == null);
+                break;
+            default:
+                stack.drop(1);
+                stack.pushI32(false);
+                break;
+        }
     }
 
     private static void DATA_DROP(Instance instance, long[] operands) {
@@ -2151,24 +2177,19 @@ class Machine {
     }
 
     private static void SELECT(MStack stack) {
-        var pred = stack.pop().asInt();
-        var b = stack.pop();
-        var a = stack.pop();
-        if (pred == 0) {
-            stack.push(b);
+        if (stack.popI32() == 0) {
+            stack.drop(1, 1);
         } else {
-            stack.push(a);
+            stack.drop(1);
         }
     }
 
     private static void SELECT_T(MStack stack, long[] operands) {
-        var pred = stack.pop().asInt();
-        var b = stack.pop();
-        var a = stack.pop();
-        if (pred == 0) {
-            stack.push(b);
+        int cnt = operands.length;
+        if (stack.popI32() == 0) {
+            stack.drop(cnt, cnt);
         } else {
-            stack.push(a);
+            stack.drop(cnt);
         }
     }
 
@@ -2251,7 +2272,7 @@ class Machine {
 
         Value[] returns = new Value[numberOfValuesToReturn(instance, scope)];
         for (int i = 0; i < returns.length; i++) {
-            if (stack.size() > 0) returns[i] = stack.pop();
+            if (stack.depth() > 0) returns[i] = stack.pop();
         }
 
         // drop everything till the previous label

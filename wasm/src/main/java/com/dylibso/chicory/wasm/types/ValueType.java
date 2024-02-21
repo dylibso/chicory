@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
+import java.util.List;
+
 /**
  * The possible WASM value types.
  */
@@ -11,6 +13,11 @@ public enum ValueType {
     V128(ID.V128),
     FuncRef(ID.FuncRef),
     ExternRef(ID.ExternRef);
+
+    /**
+     * The possible value types, by {@linkplain #ordinal() ordinal}.
+     */
+    public static final List<ValueType> values = List.of(values());
 
     private final int id;
 
