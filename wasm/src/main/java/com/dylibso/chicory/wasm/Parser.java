@@ -168,7 +168,7 @@ public final class Parser {
                     "unexpected token: unsupported version, found: " + version + " expected: " + 1);
         }
 
-        // avoid checking if the custom section has malformed names the first time that is parsed
+        // check if the custom section has malformed names only the first time that is parsed
         var firstTime = true;
 
         while (buffer.hasRemaining()) {
