@@ -75,7 +75,7 @@ public class Module {
             var g = globalInitializers[i];
             if (g.initInstructions().size() > 2)
                 throw new RuntimeException(
-                        "We don't a global initializer with multiple instructions");
+                        "We don't support a global initializer with multiple instructions");
             var instr = g.initInstructions().get(0);
             switch (instr.opcode()) {
                 case I32_CONST:
@@ -484,7 +484,7 @@ public class Module {
 
         private Builder(Supplier<InputStream> inputStreamSupplier) {
             this.inputStreamSupplier = Objects.requireNonNull(inputStreamSupplier);
-            this.moduleType = ModuleType.TEXT;
+            this.moduleType = ModuleType.BINARY;
         }
 
         public Builder withLogger(Logger logger) {
@@ -505,7 +505,7 @@ public class Module {
             try (final InputStream is = inputStreamSupplier.get()) {
 
                 switch (this.moduleType) {
-                    case TEXT:
+                    case BINARY:
                         return new Module(parser.parseModule(is), logger);
                     default:
                         // TODO: implement me

@@ -17,7 +17,9 @@ import com.github.javaparser.ast.comments.LineComment;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import com.github.javaparser.ast.expr.Name;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
@@ -36,7 +38,6 @@ import org.apache.maven.plugin.logging.Log;
 public class JavaTestGen {
 
     private static final String TEST_MODULE_NAME = "testModule";
-    private static final String TEST_INSTANCE_NAME = "testInstance";
 
     private final Log log;
 
@@ -46,11 +47,19 @@ public class JavaTestGen {
 
     private final List<String> excludedTests;
 
-    public JavaTestGen(Log log, File baseDir, File sourceTargetFolder, List<String> excludedTests) {
+    private final List<String> excludedValidationTests;
+
+    public JavaTestGen(
+            Log log,
+            File baseDir,
+            File sourceTargetFolder,
+            List<String> excludedTests,
+            List<String> excludedValidationTests) {
         this.log = log;
         this.baseDir = baseDir;
         this.sourceTargetFolder = sourceTargetFolder;
         this.excludedTests = excludedTests;
+        this.excludedValidationTests = excludedValidationTests;
     }
 
     public CompilationUnit generate(
@@ -117,36 +126,36 @@ public class JavaTestGen {
         int testNumber = 0;
         int moduleInstantiationNumber = 0;
         String lastModuleVarName = null;
-        String lastInstanceVarName = null;
         int fallbackVarNumber = 0;
+
+        var excludedMethods =
+                excludedTests.stream()
+                        .filter(t -> t.startsWith(testName))
+                        .map(t -> t.substring(testName.length() + 1))
+                        .collect(Collectors.toList());
+
+        boolean excludeValidation = excludedValidationTests.contains(name + ".wast");
 
         String currentWasmFile = null;
         for (var cmd : wast.commands()) {
-            var excludedMethods =
-                    excludedTests.stream()
-                            .filter(t -> t.startsWith(testName))
-                            .map(t -> t.replace(testName + ".", ""))
-                            .collect(Collectors.toList());
 
             switch (cmd.type()) {
                 case MODULE:
                     currentWasmFile = getWasmFile(cmd, wasmFilesFolder);
                     lastModuleVarName = TEST_MODULE_NAME + moduleInstantiationNumber;
-                    lastInstanceVarName = lastModuleVarName + "Instance";
+                    String lastInstanceVarName = lastModuleVarName + "Instance";
                     moduleInstantiationNumber++;
                     if (cmd.name() != null) {
                         lastModuleVarName = cmd.name().replace("$", "");
                         lastInstanceVarName = cmd.name().replace("$", "") + "Instance";
                     }
+                    String hostFuncs =
+                            detectImports(importsName, lastModuleVarName, importsSourceRoot);
                     testClass.addFieldWithInitializer(
                             parseClassOrInterfaceType("TestModule"),
                             lastModuleVarName,
                             generateModuleInstantiation(
-                                    cmd,
-                                    currentWasmFile,
-                                    importsName,
-                                    lastModuleVarName,
-                                    importsSourceRoot));
+                                    cmd, currentWasmFile, importsName, hostFuncs));
                     testClass.addFieldWithInitializer(
                             "Instance",
                             lastInstanceVarName,
@@ -186,17 +195,20 @@ public class JavaTestGen {
                         }
                     }
                     break;
-                case ASSERT_INVALID:
                 case ASSERT_MALFORMED:
+                    method =
+                            createTestMethod(
+                                    testClass,
+                                    testNumber++,
+                                    excludedMethods,
+                                    ordered,
+                                    cmd,
+                                    currentWasmFile);
+                    generateAssertThrows(wasmFilesFolder, cmd, method, excludeValidation);
+                    break;
+                case ASSERT_INVALID:
                 case ASSERT_UNINSTANTIABLE:
                     testNumber++;
-                    //                    method = createTestMethod(testClass, testNumber++,
-                    // excludedMethods);
-                    //
-                    //                    for (var expr : generateAssertThrows(cmd,
-                    // wasmFilesFolder)) {
-                    //                        method.getBody().get().addStatement(expr);
-                    //                    }
                     break;
                 default:
                     // TODO we need to implement all of these
@@ -230,7 +242,9 @@ public class JavaTestGen {
         var methodName = "test" + testNumber;
         var method = testClass.addMethod(methodName, Modifier.Keyword.PUBLIC);
         if (excludedTests.contains(methodName)) {
-            method.addAnnotation("Disabled");
+            method.addAnnotation(
+                    new SingleMemberAnnotationExpr(
+                            new Name("Disabled"), new StringLiteralExpr("Test excluded")));
         }
         method.addAnnotation("Test");
         if (ordered) {
@@ -360,15 +374,21 @@ public class JavaTestGen {
         return List.of(assertDecl);
     }
 
-    private Expression generateModuleInstantiation(
-            Command cmd,
-            String wasmFile,
-            String importsName,
-            String varName,
-            SourceRoot testSourcesRoot) {
-        assert (cmd.type() == CommandType.MODULE);
+    private static NameExpr generateModuleInstantiation(
+            Command cmd, String wasmFile, String importsName, String hostFuncs) {
+        var additionalParam =
+                cmd.moduleType() == null ? "" : ", ModuleType." + cmd.moduleType().toUpperCase();
+        return new NameExpr(
+                "TestModule.of(new File(\""
+                        + wasmFile
+                        + "\")"
+                        + additionalParam
+                        + ").build().instantiate("
+                        + ((hostFuncs != null) ? importsName + "." + hostFuncs + "()" : "")
+                        + ")");
+    }
 
-        // Detect if the imports are defined
+    private String detectImports(String importsName, String varName, SourceRoot testSourcesRoot) {
         String hostFuncs = null;
         try {
             var parsed =
@@ -394,19 +414,7 @@ public class JavaTestGen {
         } catch (Exception e) {
             // ignore
         }
-
-        var additionalParam = "";
-        if (cmd.moduleType() != null) {
-            additionalParam = ", ModuleType." + cmd.moduleType().toUpperCase();
-        }
-        return new NameExpr(
-                "TestModule.of(new File(\""
-                        + wasmFile
-                        + "\")"
-                        + additionalParam
-                        + ").build().instantiate("
-                        + ((hostFuncs != null) ? importsName + "." + hostFuncs + "()" : "")
-                        + ")");
+        return hostFuncs;
     }
 
     private String getWasmFile(Command cmd, File folder) {
@@ -418,9 +426,12 @@ public class JavaTestGen {
                 .replace("\\", "\\\\"); // Win compat
     }
 
-    private List<Expression> generateAssertThrows(Command cmd, String wasmFile) {
+    private void generateAssertThrows(
+            File wasmFilesFolder, Command cmd, MethodDeclaration method, boolean excluded) {
         assert (cmd.type() == CommandType.ASSERT_INVALID
                 || cmd.type() == CommandType.ASSERT_MALFORMED);
+
+        String wasmFile = getWasmFile(cmd, wasmFilesFolder);
 
         var exceptionType = "";
         if (cmd.type() == CommandType.ASSERT_INVALID) {
@@ -437,13 +448,25 @@ public class JavaTestGen {
                                 + "assertThrows("
                                 + exceptionType
                                 + ".class, () -> "
-                                + generateModuleInstantiation(cmd, wasmFile, null, null, null)
+                                + generateModuleInstantiation(cmd, wasmFile, null, null)
                                 + ")");
 
+        method.getBody().get().addStatement(assertThrows);
         if (cmd.text() != null) {
-            return List.of(assertThrows, exceptionMessageMatch(cmd.text()));
-        } else {
-            return List.of(assertThrows);
+            method.getBody().get().addStatement(exceptionMessageMatch(cmd.text()));
+        }
+
+        if (excluded) {
+            method.addAnnotation(
+                    new SingleMemberAnnotationExpr(
+                            new Name("Disabled"),
+                            new StringLiteralExpr("Validation test excluded")));
+        } else if (cmd.moduleType() != null && cmd.moduleType().equalsIgnoreCase("text")) {
+            method.addAnnotation(
+                    new SingleMemberAnnotationExpr(
+                            new Name("Disabled"),
+                            new StringLiteralExpr(
+                                    "Parsing of textual WASM sources is not implemented yet")));
         }
     }
 

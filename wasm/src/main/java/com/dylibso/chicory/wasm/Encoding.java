@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasm;
 
+import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import java.nio.ByteBuffer;
 
 public final class Encoding {
@@ -12,7 +13,7 @@ public final class Encoding {
         int shift = 0;
         while (true) {
             if (byteBuffer.remaining() == 0) {
-                throw new IllegalArgumentException("ULEB128 reached the end of the buffer");
+                throw new MalformedException("unexpected end");
             }
 
             byte b = byteBuffer.get();

@@ -46,6 +46,7 @@ import com.dylibso.chicory.wasm.types.UnknownCustomSection;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -167,9 +168,11 @@ public final class Parser {
                     "unexpected token: unsupported version, found: " + version + " expected: " + 1);
         }
 
+        // check if the custom section has malformed names only the first time that is parsed
+        var firstTime = true;
+
         while (buffer.hasRemaining()) {
             var sectionId = buffer.get();
-            //            var sectionId = (int) readVarUInt32(buffer);
             var sectionSize = readVarUInt32(buffer);
 
             if (shouldParseSection(sectionId)) {
@@ -177,7 +180,8 @@ public final class Parser {
                 switch (sectionId) {
                     case SectionId.CUSTOM:
                         {
-                            var customSection = parseCustomSection(buffer, sectionSize);
+                            var customSection = parseCustomSection(buffer, sectionSize, firstTime);
+                            firstTime = false;
                             listener.onSection(customSection);
                             break;
                         }
@@ -278,14 +282,17 @@ public final class Parser {
         return this.includeSections.get(sectionId);
     }
 
-    private CustomSection parseCustomSection(ByteBuffer buffer, long sectionSize) {
-
-        var name = readName(buffer);
+    private CustomSection parseCustomSection(
+            ByteBuffer buffer, long sectionSize, boolean checkMalformed) {
+        var name = readName(buffer, checkMalformed);
         var byteLen = name.getBytes().length;
         var size = (sectionSize - byteLen - Encoding.computeLeb128Size(byteLen));
         var remaining = buffer.limit() - buffer.position();
         if (remaining > 0) {
             size = Math.min(remaining, size);
+        }
+        if (size < 0) {
+            throw new MalformedException("unexpected end");
         }
         var bytes = new byte[(int) size];
         buffer.get(bytes);
@@ -389,7 +396,7 @@ public final class Parser {
                     }
                 case GLOBAL:
                     var globalValType = ValueType.forId((int) readVarUInt32(buffer));
-                    var globalMut = MutabilityType.forId((int) readVarUInt32(buffer));
+                    var globalMut = MutabilityType.forId(buffer.get());
                     importSection.addImport(
                             new GlobalImport(moduleName, importName, globalMut, globalValType));
                     break;
@@ -467,7 +474,7 @@ public final class Parser {
         // Parse individual globals
         for (int i = 0; i < globalCount; i++) {
             var valueType = ValueType.forId((int) readVarUInt32(buffer));
-            var mutabilityType = MutabilityType.forId((int) readVarUInt32(buffer));
+            var mutabilityType = MutabilityType.forId(buffer.get());
             var init = parseExpression(buffer);
             globalSection.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
         }
@@ -482,7 +489,7 @@ public final class Parser {
 
         // Parse individual functions in the function section
         for (int i = 0; i < exportCount; i++) {
-            var name = readName(buffer);
+            var name = readName(buffer, false);
             var exportType = ExternalType.byId((int) readVarUInt32(buffer));
             var index = (int) readVarUInt32(buffer);
             exportSection.addExport(new Export(name, index, exportType));
@@ -929,9 +936,25 @@ public final class Parser {
      * @return
      */
     public static String readName(ByteBuffer buffer) {
+        return readName(buffer, true);
+    }
+
+    public static String readName(ByteBuffer buffer, boolean checkMalformed) {
         var length = (int) readVarUInt32(buffer);
         byte[] bytes = new byte[length];
-        buffer.get(bytes);
-        return new String(bytes, StandardCharsets.UTF_8);
+        try {
+            buffer.get(bytes);
+        } catch (BufferUnderflowException e) {
+            throw new MalformedException("length out of bounds");
+        }
+        var name = new String(bytes, StandardCharsets.UTF_8);
+        if (checkMalformed && !isValidIdentifier(name)) {
+            throw new MalformedException("malformed UTF-8 encoding");
+        }
+        return name;
+    }
+
+    private static boolean isValidIdentifier(String string) {
+        return string.chars().allMatch(ch -> ch < 0x80 || Character.isUnicodeIdentifierPart(ch));
     }
 }

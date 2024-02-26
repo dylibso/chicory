@@ -6,7 +6,6 @@ import com.dylibso.chicory.maven.wast.Wast;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.utils.SourceRoot;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.maven.plugin.AbstractMojo;
@@ -103,6 +102,9 @@ public class TestGenMojo extends AbstractMojo {
     @Parameter(required = false, defaultValue = "[]")
     private List<String> excludedTests;
 
+    @Parameter(required = false, defaultValue = "[]")
+    private List<String> excludedValidationTests;
+
     /**
      * The current Maven project.
      */
@@ -130,7 +132,11 @@ public class TestGenMojo extends AbstractMojo {
                         compiledWastTargetFolder);
         var testGen =
                 new JavaTestGen(
-                        log, project.getBasedir(), sourceDestinationFolder, clean(excludedTests));
+                        log,
+                        project.getBasedir(),
+                        sourceDestinationFolder,
+                        clean(excludedTests),
+                        clean(excludedValidationTests));
 
         // Create destination folders
         if (!compiledWastTargetFolder.mkdirs()) {
@@ -146,72 +152,21 @@ public class TestGenMojo extends AbstractMojo {
             testSuiteDownloader.downloadTestsuite(testSuiteRepo, testSuiteRepoRef, testsuiteFolder);
             wast2Json.fetch();
 
-            var allWasts = new ArrayList<String>();
-            allWasts.addAll(clean(wastToProcess));
-            var cleanedOrderedWasts = clean(orderedWastToProcess);
-            allWasts.addAll(cleanedOrderedWasts);
-
             // generate the tests
             final SourceRoot dest = new SourceRoot(sourceDestinationFolder.toPath());
             final SourceRoot importSourceRoot = new SourceRoot(importsSourcesFolder.toPath());
-            clean(allWasts).stream()
+
+            TestGenerator testGenerator =
+                    new TestGenerator(wast2Json, testGen, importSourceRoot, dest);
+
+            clean(wastToProcess).stream()
                     .parallel()
-                    .forEach(
-                            spec -> {
-                                log.debug(
-                                        "TestGen processing "
-                                                + spec
-                                                + " ordered: "
-                                                + cleanedOrderedWasts.contains(spec));
-                                var wastFile = testsuiteFolder.toPath().resolve(spec).toFile();
-                                if (!wastFile.exists()) {
-                                    throw new IllegalArgumentException(
-                                            "Wast file "
-                                                    + wastFile.getAbsolutePath()
-                                                    + " not found");
-                                }
-                                var retries = 3;
-                                File specFile = null;
-                                File wasmFilesFolder = null;
-                                Wast wast = null;
+                    .forEach(spec -> testGenerator.generateTests(spec, false));
 
-                                while (true) {
-                                    try {
-                                        wasmFilesFolder =
-                                                wast2Json.execute(
-                                                        testsuiteFolder
-                                                                .toPath()
-                                                                .resolve(spec)
-                                                                .toFile());
+            clean(orderedWastToProcess).stream()
+                    .parallel()
+                    .forEach(spec -> testGenerator.generateTests(spec, true));
 
-                                        specFile =
-                                                wasmFilesFolder
-                                                        .toPath()
-                                                        .resolve(SPEC_JSON)
-                                                        .toFile();
-
-                                        assert (specFile.exists());
-
-                                        wast = new ObjectMapper().readValue(specFile, Wast.class);
-                                        break;
-                                    } catch (Exception e) {
-                                        if (retries > 0) {
-                                            --retries;
-                                        } else {
-                                            throw new RuntimeException(e);
-                                        }
-                                    }
-                                }
-                                var name = specFile.toPath().getParent().toFile().getName();
-                                var cu =
-                                        testGen.generate(
-                                                name,
-                                                wast,
-                                                wasmFilesFolder,
-                                                cleanedOrderedWasts.contains(spec),
-                                                importSourceRoot);
-                                dest.add(cu);
-                            });
             dest.saveAll();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -219,5 +174,59 @@ public class TestGenMojo extends AbstractMojo {
 
         // Add the generated tests to the source root
         project.addTestCompileSourceRoot(sourceDestinationFolder.getAbsolutePath());
+    }
+
+    private class TestGenerator {
+
+        private final Wast2JsonWrapper wast2Json;
+        private final JavaTestGen testGen;
+        private final SourceRoot importSourceRoot;
+        private final SourceRoot dest;
+
+        private TestGenerator(
+                Wast2JsonWrapper wast2Json,
+                JavaTestGen testGen,
+                SourceRoot importSourceRoot,
+                SourceRoot dest) {
+            this.wast2Json = wast2Json;
+            this.testGen = testGen;
+            this.importSourceRoot = importSourceRoot;
+            this.dest = dest;
+        }
+
+        private void generateTests(String spec, boolean ordered) {
+            log.debug("TestGen processing " + spec + " ordered: " + ordered);
+            var wastFile = testsuiteFolder.toPath().resolve(spec).toFile();
+            if (!wastFile.exists()) {
+                throw new IllegalArgumentException(
+                        "Wast file " + wastFile.getAbsolutePath() + " not found");
+            }
+            var retries = 3;
+            File specFile = null;
+            File wasmFilesFolder = null;
+            Wast wast = null;
+
+            while (true) {
+                try {
+                    wasmFilesFolder =
+                            wast2Json.execute(testsuiteFolder.toPath().resolve(spec).toFile());
+                    specFile = wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile();
+
+                    assert (specFile.exists());
+
+                    wast = new ObjectMapper().readValue(specFile, Wast.class);
+                    break;
+                } catch (Exception e) {
+                    if (retries > 0) {
+                        --retries;
+                    } else {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+            var name = specFile.toPath().getParent().toFile().getName();
+            var cu = testGen.generate(name, wast, wasmFilesFolder, ordered, importSourceRoot);
+            dest.add(cu);
+        }
     }
 }
