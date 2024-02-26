@@ -9,7 +9,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
@@ -21,7 +20,7 @@ public class TestModule {
     ChicoryCliWrapper chicoryCli = new ChicoryCliWrapper();
 
     public List<String> paramsList(FunctionType type) {
-        return Arrays.stream(type.params()).map(p -> randomNumber()).collect(Collectors.toList());
+        return type.params().stream().map(p -> randomNumber()).collect(Collectors.toList());
     }
 
     public String randomNumber() {
