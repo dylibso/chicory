@@ -6,6 +6,7 @@ import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
+import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.Export;
@@ -42,7 +43,7 @@ public class Module {
 
     protected Module(com.dylibso.chicory.wasm.Module module, Logger logger) {
         this.logger = logger;
-        this.module = module;
+        this.module = validateModule(module);
         this.exports = new HashMap<>();
         if (module.exportSection() != null) {
             int cnt = module.exportSection().exportCount();
@@ -51,6 +52,23 @@ public class Module {
                 exports.put(e.name(), e);
             }
         }
+    }
+
+    private com.dylibso.chicory.wasm.Module validateModule(com.dylibso.chicory.wasm.Module module) {
+        var functionSectionSize =
+                module.functionSection() == null ? 0 : module.functionSection().functionCount();
+        var codeSectionSize =
+                module.codeSection() == null ? 0 : module.codeSection().functionBodyCount();
+        var dataSectionSize =
+                module.dataSection() == null ? 0 : module.dataSection().dataSegmentCount();
+        if (functionSectionSize != codeSectionSize) {
+            throw new MalformedException("function and code section have inconsistent lengths");
+        }
+        if (module.dataCountSection() != null
+                && dataSectionSize != module.dataCountSection().dataCount()) {
+            throw new MalformedException("data count and data section have inconsistent lengths");
+        }
+        return module;
     }
 
     public Logger logger() {

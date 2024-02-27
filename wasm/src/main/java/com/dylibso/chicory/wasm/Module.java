@@ -2,6 +2,7 @@ package com.dylibso.chicory.wasm;
 
 import com.dylibso.chicory.wasm.types.CodeSection;
 import com.dylibso.chicory.wasm.types.CustomSection;
+import com.dylibso.chicory.wasm.types.DataCountSection;
 import com.dylibso.chicory.wasm.types.DataSection;
 import com.dylibso.chicory.wasm.types.ElementSection;
 import com.dylibso.chicory.wasm.types.ExportSection;
@@ -31,6 +32,7 @@ public class Module {
     private ElementSection elementSection;
     private CodeSection codeSection;
     private DataSection dataSection;
+    private DataCountSection dataCountSection;
 
     public Module() {
         this.customSections = new HashMap<>();
@@ -88,8 +90,16 @@ public class Module {
         this.dataSection = dataSection;
     }
 
+    public void setDataCountSection(DataCountSection dataCountSection) {
+        this.dataCountSection = dataCountSection;
+    }
+
     public DataSection dataSection() {
         return dataSection;
+    }
+
+    public DataCountSection dataCountSection() {
+        return dataCountSection;
     }
 
     public MemorySection memorySection() {
