@@ -9,6 +9,7 @@ import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.CodeSection;
 import com.dylibso.chicory.wasm.types.CustomSection;
+import com.dylibso.chicory.wasm.types.DataCountSection;
 import com.dylibso.chicory.wasm.types.DataSection;
 import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
@@ -35,7 +36,6 @@ import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.PassiveElement;
-import com.dylibso.chicory.wasm.types.Section;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.Table;
@@ -137,6 +137,9 @@ public final class Parser {
                             break;
                         case SectionId.DATA:
                             module.setDataSection((DataSection) s);
+                            break;
+                        case SectionId.DATA_COUNT:
+                            module.setDataCountSection((DataCountSection) s);
                             break;
                         default:
                             logger.warnf("Ignoring section with id: %d", s.sectionId());
@@ -251,16 +254,15 @@ public final class Parser {
                             listener.onSection(dataSection);
                             break;
                         }
+                    case SectionId.DATA_COUNT:
+                        {
+                            var dataCountSection = parseDataCountSection(buffer);
+                            listener.onSection(dataCountSection);
+                            break;
+                        }
                     default:
                         {
-                            // "Skipping Section with ID due to configuration: " + sectionId
-                            listener.onSection(new Section(sectionId));
-                            buffer.position(
-                                    (int)
-                                            Math.min(
-                                                    buffer.limit(),
-                                                    buffer.position() + sectionSize));
-                            break;
+                            throw new MalformedException("malformed section id " + sectionId);
                         }
                 }
             } else {
@@ -284,18 +286,18 @@ public final class Parser {
 
     private CustomSection parseCustomSection(
             ByteBuffer buffer, long sectionSize, boolean checkMalformed) {
+        var sectionPos = buffer.position();
         var name = readName(buffer, checkMalformed);
-        var byteLen = name.getBytes().length;
-        var size = (sectionSize - byteLen - Encoding.computeLeb128Size(byteLen));
-        var remaining = buffer.limit() - buffer.position();
-        if (remaining > 0) {
-            size = Math.min(remaining, size);
-        }
+        var size = (sectionSize - (buffer.position() - sectionPos));
         if (size < 0) {
             throw new MalformedException("unexpected end");
         }
         var bytes = new byte[(int) size];
-        buffer.get(bytes);
+        try {
+            buffer.get(bytes);
+        } catch (BufferUnderflowException bue) {
+            throw new MalformedException("length out of bounds");
+        }
         var parser = customParsers.get(name);
         return parser == null ? new UnknownCustomSection(name, bytes) : parser.apply(bytes);
     }
@@ -808,6 +810,11 @@ public final class Parser {
         }
 
         return dataSection;
+    }
+
+    private static DataCountSection parseDataCountSection(ByteBuffer buffer) {
+        var dataCount = readVarUInt32(buffer);
+        return new DataCountSection((int) dataCount);
     }
 
     private static Instruction parseInstruction(ByteBuffer buffer) {
