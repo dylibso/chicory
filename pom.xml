@@ -75,7 +75,7 @@
     <spotless.version>2.43.0</spotless.version>
     <javaparser.version>3.25.9</javaparser.version>
     <commons-compress.version>1.26.1</commons-compress.version>
-    <jackson.version>2.16.1</jackson.version>
+    <jackson.version>2.17.0</jackson.version>
     <jgit.version>6.9.0.202403050737-r</jgit.version>
     <picocli.version>4.7.5</picocli.version>
     <commons-lang.version>3.14.0</commons-lang.version>
