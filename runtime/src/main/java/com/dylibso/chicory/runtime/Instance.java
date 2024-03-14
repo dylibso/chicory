@@ -53,7 +53,7 @@ public class Instance {
             boolean start) {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
-        this.globals = new Value[globalInitializers.length];
+        this.globals = new Value[globalInitializers.length + importedGlobalsOffset];
         this.importedGlobalsOffset = importedGlobalsOffset;
         this.importedFunctionsOffset = importedFunctionsOffset;
         this.importedTablesOffset = importedTablesOffset;
@@ -95,11 +95,11 @@ public class Instance {
             }
         }
 
-        for (var i = 0; i < globalInitializers.length; i++) {
+        for (var i = 0; i < importedGlobalsOffset + globalInitializers.length; i++) {
             var g = globalInitializers[i];
             if (g.initInstructions().size() > 2)
                 throw new RuntimeException(
-                        "We don't a global initializer with multiple instructions");
+                        "We don't support a global initializer with multiple instructions");
             var instr = g.initInstructions().get(0);
             switch (instr.opcode()) {
                 case I32_CONST:

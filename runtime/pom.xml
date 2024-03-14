@@ -128,6 +128,7 @@
             ref_func.wast,
             store.wast,
             start.wast,
+            linking.wast,
             ref_is_null.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Init Active/Passive segments -->

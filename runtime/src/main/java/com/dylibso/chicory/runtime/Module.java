@@ -88,51 +88,51 @@ public class Module {
         if (this.module.globalSection() != null) {
             globalInitializers = this.module.globalSection().globals();
         }
-        var globals = new Value[globalInitializers.length];
-        for (var i = 0; i < globalInitializers.length; i++) {
-            var g = globalInitializers[i];
-            if (g.initInstructions().size() > 2)
-                throw new RuntimeException(
-                        "We don't support a global initializer with multiple instructions");
-            var instr = g.initInstructions().get(0);
-            switch (instr.opcode()) {
-                case I32_CONST:
-                    globals[i] = Value.i32(instr.operands()[0]);
-                    break;
-                case I64_CONST:
-                    globals[i] = Value.i64(instr.operands()[0]);
-                    break;
-                case F32_CONST:
-                    globals[i] = Value.f32(instr.operands()[0]);
-                    break;
-                case F64_CONST:
-                    globals[i] = Value.f64(instr.operands()[0]);
-                    break;
-                case GLOBAL_GET:
-                    {
-                        // TODO this assumes that these are already initialized declared in order
-                        // should we make this more resilient? Should initialization happen later?
-                        var idx = (int) instr.operands()[0];
-                        globals[i] =
-                                idx < hostImports.globalCount()
-                                        ? hostImports.global(idx).value()
-                                        : globals[idx];
-                        break;
-                    }
-                case REF_NULL:
-                    globals[i] = Value.EXTREF_NULL;
-                    break;
-                case REF_FUNC:
-                    globals[i] = Value.funcRef(instr.operands()[0]);
-                    break;
-                default:
-                    throw new RuntimeException(
-                            "We only support i32.const, i64.const, f32.const, f64.const,"
-                                    + " global.get, ref.func and ref.null opcodes on global"
-                                    + " initializers right now. We failed to initialize opcode: "
-                                    + instr.opcode());
-            }
-        }
+//        var globals = new Value[globalInitializers.length];
+//        for (var i = 0; i < globalInitializers.length; i++) {
+//            var g = globalInitializers[i];
+//            if (g.initInstructions().size() > 2)
+//                throw new RuntimeException(
+//                        "We don't support a global initializer with multiple instructions");
+//            var instr = g.initInstructions().get(0);
+//            switch (instr.opcode()) {
+//                case I32_CONST:
+//                    globals[i] = Value.i32(instr.operands()[0]);
+//                    break;
+//                case I64_CONST:
+//                    globals[i] = Value.i64(instr.operands()[0]);
+//                    break;
+//                case F32_CONST:
+//                    globals[i] = Value.f32(instr.operands()[0]);
+//                    break;
+//                case F64_CONST:
+//                    globals[i] = Value.f64(instr.operands()[0]);
+//                    break;
+//                case GLOBAL_GET:
+//                    {
+//                        // TODO this assumes that these are already initialized declared in order
+//                        // should we make this more resilient? Should initialization happen later?
+//                        var idx = (int) instr.operands()[0];
+//                        globals[i] =
+//                                idx < hostImports.globalCount()
+//                                        ? hostImports.global(idx).value()
+//                                        : globals[idx];
+//                        break;
+//                    }
+//                case REF_NULL:
+//                    globals[i] = Value.EXTREF_NULL;
+//                    break;
+//                case REF_FUNC:
+//                    globals[i] = Value.funcRef(instr.operands()[0]);
+//                    break;
+//                default:
+//                    throw new RuntimeException(
+//                            "We only support i32.const, i64.const, f32.const, f64.const,"
+//                                    + " global.get, ref.func and ref.null opcodes on global"
+//                                    + " initializers right now. We failed to initialize opcode: "
+//                                    + instr.opcode());
+//            }
+//        }
 
         var dataSegments = new DataSegment[0];
         if (module.dataSection() != null) {
