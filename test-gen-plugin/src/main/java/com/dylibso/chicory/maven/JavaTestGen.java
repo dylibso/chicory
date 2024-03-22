@@ -7,6 +7,7 @@ import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import com.dylibso.chicory.maven.wast.Command;
 import com.dylibso.chicory.maven.wast.CommandType;
 import com.dylibso.chicory.maven.wast.WasmValue;
+import com.dylibso.chicory.maven.wast.WasmValueType;
 import com.dylibso.chicory.maven.wast.Wast;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
@@ -86,6 +87,7 @@ public class JavaTestGen {
             cu.addImport("org.junit.jupiter.api.TestInstance");
         }
         cu.addImport("org.junit.jupiter.api.Assertions.assertEquals", true, false);
+        cu.addImport("org.junit.jupiter.api.Assertions.assertArrayEquals", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertThrows", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertTrue", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertDoesNotThrow", true, false);
@@ -331,18 +333,23 @@ public class JavaTestGen {
             for (int i = 0; i < cmd.expected().length; i++) {
                 var expected = cmd.expected()[i];
                 var returnVar = expected.toJavaValue();
-                var typeConversion = expected.extractType();
-                var deltaParam = expected.delta();
-                exprs.add(
-                        new NameExpr(
-                                "assertEquals("
-                                        + returnVar
-                                        + ", results["
-                                        + i
-                                        + "]"
-                                        + typeConversion
-                                        + deltaParam
-                                        + ")"));
+
+                if (expected.type() == WasmValueType.VEC_REF) {
+                    exprs.add(new NameExpr("assertArrayEquals(" + returnVar + ", results" + ")"));
+                } else {
+                    var typeConversion = expected.extractType();
+                    var deltaParam = expected.delta();
+                    exprs.add(
+                            new NameExpr(
+                                    "assertEquals("
+                                            + returnVar
+                                            + ", results["
+                                            + i
+                                            + "]"
+                                            + typeConversion
+                                            + deltaParam
+                                            + ")"));
+                }
             }
 
             return exprs;

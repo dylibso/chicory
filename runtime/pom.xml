@@ -94,7 +94,8 @@
             utf8-import-field.wast,
             utf8-import-module.wast,
             utf8-invalid-encoding.wast,
-            ref_null.wast</wastToProcess>
+            ref_null.wast,
+            simd_load.wast</wastToProcess>
           <orderedWastToProcess>select.wast,
             float_memory.wast,
             memory_copy.wast,

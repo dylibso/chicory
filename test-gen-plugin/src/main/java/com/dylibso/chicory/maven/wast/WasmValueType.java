@@ -4,6 +4,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum WasmValueType {
+    @JsonProperty("i8")
+    I8("i8"),
+    @JsonProperty("i16")
+    I16("i16"),
     @JsonProperty("i32")
     I32("i32"),
     @JsonProperty("i64")
@@ -15,7 +19,9 @@ public enum WasmValueType {
     @JsonProperty("externref")
     EXTERN_REF("externref"),
     @JsonProperty("funcref")
-    FUNC_REF("funcref");
+    FUNC_REF("funcref"),
+    @JsonProperty("v128")
+    VEC_REF("v128");
 
     private final String value;
 

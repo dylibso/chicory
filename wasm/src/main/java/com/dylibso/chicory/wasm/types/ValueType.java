@@ -10,7 +10,8 @@ public enum ValueType {
     I32(ID.I32),
     V128(ID.V128),
     FuncRef(ID.FuncRef),
-    ExternRef(ID.ExternRef);
+    ExternRef(ID.ExternRef),
+    VecRef(ID.ExternRef);
 
     private final int id;
 
@@ -183,6 +184,7 @@ public enum ValueType {
     static final class ID {
         private ID() {}
 
+        static final int VecRef = 0x80;
         static final int ExternRef = 0x6f;
         static final int FuncRef = 0x70;
         static final int V128 = 0x7b;

@@ -50,6 +50,10 @@ public class Value {
         return new Value(ValueType.ExternRef, data);
     }
 
+    public static Value vecRef(long data) {
+        return new Value(ValueType.VecRef, data);
+    }
+
     public static Value funcRef(long data) {
         return new Value(ValueType.FuncRef, data);
     }
