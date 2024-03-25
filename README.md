@@ -36,13 +36,13 @@ implementation 'com.dylibso.chicory:runtime:0.0.9'
 
 ### Loading and Instantiating Code
 
-First your Wasm module must be loaded from disk and then "instantiated". Let's [download a test module](https://raw.githubusercontent.com/dylibso/chicory/main/runtime/src/test/resources/wasm/iterfact.wat.wasm) .
+First your Wasm module must be loaded from disk and then "instantiated". Let's [download a test module](https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/test/resources/compiled/iterfact.wat.wasm) .
 This module contains some code to compute factorial:
 
 Download from the link or with curl:
 
 ```bash
-curl https://raw.githubusercontent.com/dylibso/chicory/main/runtime/src/test/resources/wasm/iterfact.wat.wasm > factorial.wasm
+curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/test/resources/compiled/iterfact.wat.wasm > factorial.wasm
 ```
 
 Now let's load this module and instantiate it:
@@ -90,7 +90,7 @@ example where we have a module `count_vowels.wasm`, written in rust, that takes 
 in the string:
 
 ```bash
-curl https://raw.githubusercontent.com/dylibso/chicory/main/runtime/src/test/resources/wasm/count_vowels.rs.wasm > count_vowels.wasm
+curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/test/resources/compiled/count_vowels.rs.wasm > count_vowels.wasm
 ```
 
 Build and instantiate this module:
@@ -142,7 +142,7 @@ are and how they behave and it's written in Java.
 Let's download another example module to demonstrate this:
 
 ```bash
-curl https://raw.githubusercontent.com/dylibso/chicory/main/runtime/src/test/resources/wasm/host-function.wat.wasm > logger.wasm
+curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/test/resources/compiled/host-function.wat.wasm > logger.wasm
 ```
 
 This module expects us to fulfil an import with the name `console.log` which will allow the module to log to the stdout.
