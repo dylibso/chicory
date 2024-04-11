@@ -95,7 +95,7 @@ public class Instance {
             }
         }
 
-        for (var i = 0; i < importedGlobalsOffset + globalInitializers.length; i++) {
+        for (var i = 0; i < globalInitializers.length; i++) {
             var g = globalInitializers[i];
             if (g.initInstructions().size() > 2)
                 throw new RuntimeException(
@@ -172,7 +172,7 @@ public class Instance {
                         @Override
                         public Value[] apply(Value... args) throws ChicoryException {
                             assert (args.length == 0);
-                            return new Value[] {globals[export.index()]};
+                            return new Value[] {readGlobal(export.index())};
                         }
                     };
                 }

@@ -7,13 +7,14 @@ import com.dylibso.chicory.runtime.HostMemory;
 import com.dylibso.chicory.runtime.HostTable;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
+import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
+import com.dylibso.chicory.test.gen.SpecV1LinkingTest;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class SpecV1LinkingHostFuncs {
 
@@ -42,51 +43,36 @@ public class SpecV1LinkingHostFuncs {
     }
 
     public static HostImports Mg() {
-        var glob = Value.i32(942);
-        var globMut = new AtomicReference<Value>(Value.i32(9142));
-        return new HostImports(
-                new HostFunction[] {
-                    new HostFunction(
-                            (Instance instance, Value... args) -> new Value[] {glob},
-                            "Mg",
-                            "get",
-                            List.of(),
-                            List.of(ValueType.I32)),
-                    new HostFunction(
-                            (Instance instance, Value... args) -> new Value[] {globMut.get()},
-                            "Mg",
-                            "get_mut",
-                            List.of(),
-                            List.of(ValueType.I32)),
-                    new HostFunction(
-                            (Instance instance, Value... args) -> {
-                                globMut.set(args[0]);
-                                return null;
-                            },
-                            "Mg",
-                            "set_mut",
-                            List.of(ValueType.I32),
-                            List.of()),
-                },
-                new HostGlobal[] {
-                    new HostGlobal("Mg", "glob", glob),
-                    new HostGlobal("Mg", "mut_glob", globMut.get(), MutabilityType.Var)
-                },
-                new HostMemory[] {},
-                new HostTable[] {});
+        // Mg doesn't have imports
+        return new HostImports();
+    }
+
+    public static HostImports Mt() {
+        // Mt doesn't have imports
+        return new HostImports();
     }
 
     public static HostImports Nt() {
         return new HostImports(
                 new HostFunction[] {
                     new HostFunction(
-                            (Instance instance, Value... args) -> new Value[] {args[0]},
+                            (Instance instance, Value... args) -> {
+                                if (args[0].asInt() == 2 || args[0].asInt() == 3) {
+                                    return new Value[] {Value.i32(4)};
+                                } else {
+                                    if (args[0].asInt() < 2) {
+                                        throw new WASMRuntimeException("uninitialized element");
+                                    } else {
+                                        throw new WASMRuntimeException("undefined element");
+                                    }
+                                }
+                            },
                             "Mt",
                             "call",
                             List.of(),
                             List.of(ValueType.I32)),
                     new HostFunction(
-                            (Instance instance, Value... args) -> new Value[] {Value.i32(1111)},
+                            (Instance instance, Value... args) -> new Value[] {Value.i32(-4)},
                             "Mt",
                             "h",
                             List.of(),
@@ -95,8 +81,7 @@ public class SpecV1LinkingHostFuncs {
     }
 
     public static HostImports Ng() {
-        var glob = Value.i32(45);
-        var globMut = new AtomicReference<Value>(Value.i32(142));
+        var glob = Value.i32(42);
         return new HostImports(
                 new HostFunction[] {
                     new HostFunction(
@@ -106,14 +91,15 @@ public class SpecV1LinkingHostFuncs {
                             List.of(),
                             List.of(ValueType.I32)),
                     new HostFunction(
-                            (Instance instance, Value... args) -> new Value[] {globMut.get()},
+                            (Instance instance, Value... args) ->
+                                    new Value[] {SpecV1LinkingTest.MgInstance.readGlobal(1)},
                             "Mg",
                             "get_mut",
                             List.of(),
                             List.of(ValueType.I32)),
                     new HostFunction(
                             (Instance instance, Value... args) -> {
-                                globMut.set(args[0]);
+                                SpecV1LinkingTest.MgInstance.writeGlobal(1, args[0]);
                                 return null;
                             },
                             "Mg",
@@ -123,7 +109,12 @@ public class SpecV1LinkingHostFuncs {
                 },
                 new HostGlobal[] {
                     new HostGlobal("Mg", "glob", glob),
-                    new HostGlobal("Mg", "mut_glob", globMut.get(), MutabilityType.Var)
+                    new HostGlobal(
+                            "Mg",
+                            "mut_glob",
+                            () -> SpecV1LinkingTest.MgInstance.readGlobal(1),
+                            v -> SpecV1LinkingTest.MgInstance.writeGlobal(1, v),
+                            MutabilityType.Var)
                 },
                 new HostMemory[] {},
                 new HostTable[] {});
@@ -141,7 +132,7 @@ public class SpecV1LinkingHostFuncs {
                 },
                 new HostGlobal[] {},
                 new HostMemory[] {},
-                new HostTable[] {new HostTable("Mt", "tab", Map.of(1, 1, 2, 2, 3, 3))});
+                new HostTable[] {new HostTable("Mt", "tab", Map.of(1, 1, 2, 2, 3, 3, 10, 10))});
     }
 
     public static HostImports testModule10() {

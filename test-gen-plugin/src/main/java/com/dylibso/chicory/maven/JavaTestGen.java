@@ -155,11 +155,15 @@ public class JavaTestGen {
                             parseClassOrInterfaceType("TestModule"),
                             lastModuleVarName,
                             generateModuleInstantiation(
-                                    cmd, currentWasmFile, importsName, hostFuncs));
+                                    cmd, currentWasmFile, importsName, hostFuncs),
+                            Modifier.Keyword.PUBLIC,
+                            Modifier.Keyword.STATIC);
                     testClass.addFieldWithInitializer(
                             "Instance",
                             lastInstanceVarName,
-                            new NameExpr(lastModuleVarName + ".instance()"));
+                            new NameExpr(lastModuleVarName + ".instance()"),
+                            Modifier.Keyword.PUBLIC,
+                            Modifier.Keyword.STATIC);
                     break;
                 case ACTION:
                 case ASSERT_RETURN:
