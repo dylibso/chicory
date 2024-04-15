@@ -67,4 +67,10 @@ public class Table {
             throw new ChicoryException("out of bounds table access", e);
         }
     }
+
+    public void reset() {
+        for (int i = 0; i < refs.length; i++) {
+            this.refs[i] = REF_NULL_VALUE;
+        }
+    }
 }

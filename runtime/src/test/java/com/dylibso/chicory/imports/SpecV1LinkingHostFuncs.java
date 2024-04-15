@@ -1,5 +1,8 @@
 package com.dylibso.chicory.imports;
 
+import static com.dylibso.chicory.test.gen.SpecV1LinkingTest.MtInstance;
+
+import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.HostGlobal;
 import com.dylibso.chicory.runtime.HostImports;
@@ -7,14 +10,12 @@ import com.dylibso.chicory.runtime.HostMemory;
 import com.dylibso.chicory.runtime.HostTable;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
-import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.test.gen.SpecV1LinkingTest;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
-import java.util.Map;
 
 public class SpecV1LinkingHostFuncs {
 
@@ -52,27 +53,31 @@ public class SpecV1LinkingHostFuncs {
         return new HostImports();
     }
 
+    private static ExportFunction Mth() {
+        return MtInstance.export("h");
+    }
+
+    private static ExportFunction Mtcall() {
+        return MtInstance.export("call");
+    }
+
     public static HostImports Nt() {
         return new HostImports(
                 new HostFunction[] {
                     new HostFunction(
                             (Instance instance, Value... args) -> {
-                                if (args[0].asInt() == 2 || args[0].asInt() == 3) {
-                                    return new Value[] {Value.i32(4)};
-                                } else {
-                                    if (args[0].asInt() < 2) {
-                                        throw new WASMRuntimeException("uninitialized element");
-                                    } else {
-                                        throw new WASMRuntimeException("undefined element");
-                                    }
-                                }
+                                System.out.println("Nt instance: Mt.call " + args[0]);
+                                return Mtcall().apply(args);
                             },
                             "Mt",
                             "call",
-                            List.of(),
+                            List.of(ValueType.I32),
                             List.of(ValueType.I32)),
                     new HostFunction(
-                            (Instance instance, Value... args) -> new Value[] {Value.i32(-4)},
+                            (Instance instance, Value... args) -> {
+                                System.out.println("Nt instance: Mt.h");
+                                return Mth().apply(args);
+                            },
                             "Mt",
                             "h",
                             List.of(),
@@ -120,11 +125,18 @@ public class SpecV1LinkingHostFuncs {
                 new HostTable[] {});
     }
 
+    private static HostTable MtTable() {
+        return new HostTable("Mt", "tab", MtInstance.table(0));
+    }
+
     public static HostImports Ot() {
         return new HostImports(
                 new HostFunction[] {
                     new HostFunction(
-                            (Instance instance, Value... args) -> new Value[] {Value.i32(2)},
+                            (Instance instance, Value... args) -> {
+                                System.out.println("Ot instance: Mt.h");
+                                return Mth().apply();
+                            },
                             "Mt",
                             "h",
                             List.of(),
@@ -132,30 +144,45 @@ public class SpecV1LinkingHostFuncs {
                 },
                 new HostGlobal[] {},
                 new HostMemory[] {},
-                new HostTable[] {new HostTable("Mt", "tab", Map.of(1, 1, 2, 2, 3, 3, 10, 10))});
+                new HostTable[] {MtTable()});
     }
 
     public static HostImports testModule10() {
-        return new HostImports(new HostTable[] {new HostTable("Mt", "tab", Map.of(1, 1, 10, 10))});
+        return new HostImports(new HostTable[] {MtTable()});
     }
 
     public static HostImports G2() {
-        return new HostImports(new HostGlobal[] {new HostGlobal("G1", "g", Value.i32(1))});
+        return new HostImports(new HostGlobal[] {new HostGlobal("G1", "g", Value.i32(5))});
     }
 
+    private static HostMemory MmMem =
+            new HostMemory("Mm", "mem", new Memory(new MemoryLimits(1, 5)));
+
     public static HostImports Om() {
-        return new HostImports(
-                new HostMemory[] {new HostMemory("Mm", "mem", new Memory(new MemoryLimits(1)))});
+        return new HostImports(new HostMemory[] {MmMem});
     }
 
     public static HostImports testModule18() {
-        return new HostImports(
-                new HostMemory[] {new HostMemory("Mm", "mem", new Memory(new MemoryLimits(1)))});
+        return new HostImports(new HostMemory[] {MmMem});
     }
 
     public static HostImports Pm() {
+        return new HostImports(new HostMemory[] {MmMem});
+    }
+
+    public static HostImports Nm() {
         return new HostImports(
-                new HostMemory[] {new HostMemory("Mm", "mem", new Memory(new MemoryLimits(1)))});
+                new HostFunction[] {
+                    new HostFunction(
+                            (Instance instance, Value... args) -> {
+                                System.out.println("Nm instance: Mm.load");
+                                return new Value[] {Value.i32(2)};
+                            },
+                            "Mm",
+                            "load",
+                            List.of(ValueType.I32),
+                            List.of(ValueType.I32))
+                });
     }
 
     public static HostImports fallback() {

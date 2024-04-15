@@ -50,6 +50,7 @@ public class Instance {
             HostImports imports,
             Table[] tables,
             Element[] elements,
+            boolean initialize,
             boolean start) {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
@@ -68,10 +69,12 @@ public class Instance {
         this.elements = elements.clone();
         this.start = start;
 
-        initialize();
+        if (initialize) {
+            initialize(this.start);
+        }
     }
 
-    private void initialize() {
+    public Instance initialize(boolean start) {
         for (var el : elements) {
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
@@ -147,6 +150,8 @@ public class Instance {
         if (start && module.export(START_FUNCTION_NAME) != null) {
             export(START_FUNCTION_NAME).apply();
         }
+
+        return this;
     }
 
     public ExportFunction export(String name) {

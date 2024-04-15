@@ -85,12 +85,6 @@ public class TestGenMojo extends AbstractMojo {
     private File wabtDownloadTargetFolder;
 
     /**
-     * Include list for the wast files to be processed.
-     */
-    @Parameter(required = true)
-    private List<String> wastToProcess;
-
-    /**
      * Include list for the wast files that should generate an ordered spec.
      */
     @Parameter(required = true)
@@ -159,13 +153,9 @@ public class TestGenMojo extends AbstractMojo {
             TestGenerator testGenerator =
                     new TestGenerator(wast2Json, testGen, importSourceRoot, dest);
 
-            clean(wastToProcess).stream()
-                    .parallel()
-                    .forEach(spec -> testGenerator.generateTests(spec, false));
-
             clean(orderedWastToProcess).stream()
                     .parallel()
-                    .forEach(spec -> testGenerator.generateTests(spec, true));
+                    .forEach(spec -> testGenerator.generateTests(spec));
 
             dest.saveAll();
         } catch (Exception e) {
@@ -194,8 +184,8 @@ public class TestGenMojo extends AbstractMojo {
             this.dest = dest;
         }
 
-        private void generateTests(String spec, boolean ordered) {
-            log.debug("TestGen processing " + spec + " ordered: " + ordered);
+        private void generateTests(String spec) {
+            log.debug("TestGen processing " + spec);
             var wastFile = testsuiteFolder.toPath().resolve(spec).toFile();
             if (!wastFile.exists()) {
                 throw new IllegalArgumentException(
@@ -225,7 +215,7 @@ public class TestGenMojo extends AbstractMojo {
                 }
             }
             var name = specFile.toPath().getParent().toFile().getName();
-            var cu = testGen.generate(name, wast, wasmFilesFolder, ordered, importSourceRoot);
+            var cu = testGen.generate(name, wast, wasmFilesFolder, importSourceRoot);
             dest.add(cu);
         }
     }

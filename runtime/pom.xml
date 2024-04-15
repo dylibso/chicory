@@ -41,7 +41,7 @@
         <artifactId>test-gen-plugin</artifactId>
         <version>${project.version}</version>
         <configuration>
-          <wastToProcess>labels.wast,
+          <orderedWastToProcess>labels.wast,
             i32.wast,
             i64.wast,
             f32.wast,
@@ -52,7 +52,6 @@
             local_tee.wast,
             memory.wast,
             names.wast,
-            load.wast,
             address.wast,
             const.wast,
             align.wast,
@@ -94,8 +93,8 @@
             utf8-import-field.wast,
             utf8-import-module.wast,
             utf8-invalid-encoding.wast,
-            ref_null.wast</wastToProcess>
-          <orderedWastToProcess>select.wast,
+            ref_null.wast,
+            select.wast,
             float_memory.wast,
             memory_copy.wast,
             func.wast,
@@ -129,6 +128,7 @@
             store.wast,
             start.wast,
             linking.wast,
+            load.wast,
             ref_is_null.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Init Active/Passive segments -->
@@ -144,7 +144,10 @@
             SpecV1AddressTest.test203, SpecV1AddressTest.test211, SpecV1AddressTest.test212,
             SpecV1AddressTest.test213, SpecV1AddressTest.test214, SpecV1AddressTest.test217,
             SpecV1AddressTest.test233, SpecV1AddressTest.test234, SpecV1AddressTest.test236,
-            SpecV1AddressTest.test252, SpecV1AddressTest.test253, SpecV1AddressTest.test255
+            SpecV1AddressTest.test252, SpecV1AddressTest.test253, SpecV1AddressTest.test255,
+            <!-- Need assert trap and active/passive memory initialization to be completed -->
+            SpecV1LinkingTest.test83, SpecV1LinkingTest.test84, SpecV1LinkingTest.test86,
+            SpecV1LinkingTest.test88, SpecV1LinkingTest.test89
           </excludedTests>
           <excludedValidationTests>binary.wast,binary-leb128.wast</excludedValidationTests>
         </configuration>

@@ -38,15 +38,12 @@ public class TestModule {
     }
 
     public TestModule instantiate() {
-        if (this.instance == null) {
-            this.instance = module.instantiate();
-        }
-        return this;
+        return this.instantiate(new HostImports());
     }
 
     public TestModule instantiate(HostImports imports) {
         if (this.instance == null) {
-            this.instance = module.instantiate(imports);
+            this.instance = module.instantiate(imports, false, false);
         }
         return this;
     }

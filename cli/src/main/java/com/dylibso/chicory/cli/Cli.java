@@ -65,7 +65,7 @@ public class Cli implements Runnable {
                                                 WasiOptions.builder().inheritSystem().build())
                                         .toHostFunctions())
                         : new HostImports();
-        var instance = module.instantiate(imports, false);
+        var instance = module.instantiate(imports, true, false);
 
         if (functionName != null) {
             var exportSig = module.export(functionName);

@@ -1,7 +1,5 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
-
 import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -30,10 +28,7 @@ public class HostTable implements FromHost {
         }
 
         this.table = new Table(ValueType.FuncRef, new Limits(maxFuncRef, maxFuncRef));
-
-        for (int i = 0; i < maxFuncRef; i++) {
-            this.table.setRef(i, funcRefs.getOrDefault(i, REF_NULL_VALUE));
-        }
+        this.table.reset();
     }
 
     public String moduleName() {
