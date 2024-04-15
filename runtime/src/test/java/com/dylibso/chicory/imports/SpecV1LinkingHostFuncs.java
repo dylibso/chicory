@@ -140,11 +140,12 @@ public class SpecV1LinkingHostFuncs {
                 },
                 new HostGlobal[] {},
                 new HostMemory[] {},
-                new HostTable[] {new HostTable("Mt", "tab", MtInstance.table(0), MtInstance)});
+                new HostTable[] {new HostTable("Mt", "tab", MtInstance.table(0))});
     }
 
     public static HostImports testModule10() {
-        return new HostImports(new HostTable[] {new HostTable("Mt", "tab", MtInstance.table(0), null)});
+        return new HostImports(
+                new HostTable[] {new HostTable("Mt", "tab", MtInstance.table(0))});
     }
 
     public static HostImports G2() {

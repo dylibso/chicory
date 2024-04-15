@@ -32,7 +32,8 @@ public class Instance {
     private final FunctionType[] types;
     private final int[] functionTypes;
     private final HostImports imports;
-    private final Table[] tables;
+    private final Table[] roughTables;
+    private TableInstance[] tables;
     private final Element[] elements;
     private final boolean start;
 
@@ -65,7 +66,7 @@ public class Instance {
         this.functionTypes = functionTypes.clone();
         this.imports = imports;
         this.machine = new Machine(this);
-        this.tables = tables.clone();
+        this.roughTables = tables.clone();
         this.elements = elements.clone();
         this.start = start;
 
@@ -75,15 +76,15 @@ public class Instance {
     }
 
     public Instance initialize(boolean start) {
-        for (var tab : imports.tables()) {
-            if (tab.instance() == null) {
-                tab.setInstance(this);
-            }
+        this.tables = new TableInstance[this.roughTables.length];
+        for (var i = 0; i < this.roughTables.length; i++) {
+            this.tables[i] = new TableInstance(this.roughTables[i]);
         }
         for (var el : elements) {
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
                 var table = table(ae.tableIndex());
+
                 Value offset = computeConstantValue(this, ae.offset());
                 if (offset.type() != ValueType.I32) {
                     throw new ChicoryException("Invalid offset type in element");
@@ -91,13 +92,14 @@ public class Instance {
                 List<List<Instruction>> initializers = ae.initializers();
                 for (int i = 0; i < initializers.size(); i++) {
                     final List<Instruction> init = initializers.get(i);
+                    var index = offset.asInt() + i;
                     if (ae.type() == ValueType.FuncRef) {
                         table.setRef(
-                                offset.asInt() + i, computeConstantValue(this, init).asFuncRef());
+                                index, computeConstantValue(this, init).asFuncRef(), this);
                     } else {
                         assert ae.type() == ValueType.ExternRef;
                         table.setRef(
-                                offset.asInt() + i, computeConstantValue(this, init).asExtRef());
+                                index, computeConstantValue(this, init).asExtRef(), this);
                     }
                 }
             }
@@ -251,7 +253,7 @@ public class Instance {
         return importedTablesOffset;
     }
 
-    public Table table(int idx) {
+    public TableInstance table(int idx) {
         if (idx < importedTablesOffset) {
             return imports.table(idx).table();
         }

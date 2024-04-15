@@ -3,19 +3,19 @@ package com.dylibso.chicory.runtime;
 import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.ValueType;
+
+import java.util.Arrays;
 import java.util.Map;
 
 public class HostTable implements FromHost {
     private final String moduleName;
     private final String fieldName;
-    private final Table table;
-    private Instance instance;
+    private final TableInstance table;
 
-    public HostTable(String moduleName, String fieldName, Table table, Instance instance) {
+    public HostTable(String moduleName, String fieldName, TableInstance table) {
         this.moduleName = moduleName;
         this.fieldName = fieldName;
         this.table = table;
-        this.instance = instance;
     }
 
     public HostTable(
@@ -25,7 +25,6 @@ public class HostTable implements FromHost {
             Instance instance) {
         this.moduleName = moduleName;
         this.fieldName = fieldName;
-        this.instance = instance;
 
         long maxFuncRef = 0;
         for (var k : funcRefs.keySet()) {
@@ -34,7 +33,12 @@ public class HostTable implements FromHost {
             }
         }
 
-        this.table = new Table(ValueType.FuncRef, new Limits(maxFuncRef, maxFuncRef));
+        this.table = new TableInstance(new Table(ValueType.FuncRef, new Limits(maxFuncRef, maxFuncRef)));
+        if (instance != null) {
+            for (var i = 0; i < this.table().size(); i++) {
+                this.table.setInstance(i, instance);
+            }
+        }
         this.table.reset();
     }
 
@@ -51,15 +55,7 @@ public class HostTable implements FromHost {
         return FromHostType.TABLE;
     }
 
-    public Table table() {
+    public TableInstance table() {
         return table;
-    }
-
-    public Instance instance() {
-        return instance;
-    }
-
-    public void setInstance(Instance instance) {
-        this.instance = instance;
     }
 }

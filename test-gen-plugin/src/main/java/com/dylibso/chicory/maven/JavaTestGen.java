@@ -151,7 +151,7 @@ public class JavaTestGen {
                             Modifier.Keyword.PUBLIC,
                             Modifier.Keyword.STATIC);
 
-                    var instantiateMethodName = "testInstantiate" + lastInstanceVarName;
+                    var instantiateMethodName = "instantiate_" + lastInstanceVarName;
                     var instantiateMethod =
                             testClass.addMethod(instantiateMethodName, Modifier.Keyword.PUBLIC);
                     // It needs to be a test to be executed

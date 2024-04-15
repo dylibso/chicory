@@ -1519,7 +1519,7 @@ class Machine {
         var valValue = stack.pop();
         var val = valValue.asExtRef();
 
-        var res = table.grow(size, val);
+        var res = table.grow(size, val, instance);
         stack.push(Value.i32(res));
     }
 
@@ -1545,7 +1545,7 @@ class Machine {
         }
 
         for (int i = offset; i < end; i++) {
-            table.setRef(i, val);
+            table.setRef(i, val, instance);
         }
     }
 
@@ -1566,10 +1566,10 @@ class Machine {
         for (int i = size - 1; i >= 0; i--) {
             if (d <= s) {
                 var val = src.ref(s++);
-                dest.setRef(d++, val.asFuncRef());
+                dest.setRef(d++, val.asFuncRef(), instance);
             } else {
                 var val = src.ref(s + i);
-                dest.setRef(d + i, val.asFuncRef());
+                dest.setRef(d + i, val.asFuncRef(), instance);
             }
         }
     }
@@ -1612,10 +1612,10 @@ class Machine {
                 if (val.asFuncRef() > instance.functionCount()) {
                     throw new WASMRuntimeException("out of bounds table access");
                 }
-                table.setRef(i, val.asFuncRef());
+                table.setRef(i, val.asFuncRef(), instance);
             } else {
                 assert table.elementType() == ValueType.ExternRef;
-                table.setRef(i, val.asExtRef());
+                table.setRef(i, val.asExtRef(), instance);
             }
         }
     }
@@ -2116,7 +2116,7 @@ class Machine {
 
         var value = stack.pop().asExtRef();
         var i = stack.pop().asInt();
-        table.setRef(i, value);
+        table.setRef(i, value, instance);
     }
 
     private static void TABLE_GET(MStack stack, Instance instance, long[] operands) {
@@ -2176,9 +2176,7 @@ class Machine {
             MStack stack, Instance instance, ArrayDeque<StackFrame> callStack, long[] operands) {
         var tableIdx = (int) operands[1];
         var table = instance.table(tableIdx);
-        if (instance.importedTableCount() > tableIdx) {
-            instance = instance.imports().table(tableIdx).instance();
-        }
+        instance = table.instance(tableIdx);
 
         var typeId = (int) operands[0];
         var type = instance.type(typeId);
