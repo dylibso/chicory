@@ -75,6 +75,11 @@ public class Instance {
     }
 
     public Instance initialize(boolean start) {
+        for (var tab : imports.tables()) {
+            if (tab.instance() == null) {
+                tab.setInstance(this);
+            }
+        }
         for (var el : elements) {
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
@@ -240,6 +245,10 @@ public class Instance {
 
     public Module module() {
         return module;
+    }
+
+    public int importedTableCount() {
+        return importedTablesOffset;
     }
 
     public Table table(int idx) {

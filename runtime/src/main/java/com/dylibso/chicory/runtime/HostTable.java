@@ -9,16 +9,23 @@ public class HostTable implements FromHost {
     private final String moduleName;
     private final String fieldName;
     private final Table table;
+    private Instance instance;
 
-    public HostTable(String moduleName, String fieldName, Table table) {
+    public HostTable(String moduleName, String fieldName, Table table, Instance instance) {
         this.moduleName = moduleName;
         this.fieldName = fieldName;
         this.table = table;
+        this.instance = instance;
     }
 
-    public HostTable(String moduleName, String fieldName, Map<Integer, Integer> funcRefs) {
+    public HostTable(
+            String moduleName,
+            String fieldName,
+            Map<Integer, Integer> funcRefs,
+            Instance instance) {
         this.moduleName = moduleName;
         this.fieldName = fieldName;
+        this.instance = instance;
 
         long maxFuncRef = 0;
         for (var k : funcRefs.keySet()) {
@@ -46,5 +53,13 @@ public class HostTable implements FromHost {
 
     public Table table() {
         return table;
+    }
+
+    public Instance instance() {
+        return instance;
+    }
+
+    public void setInstance(Instance instance) {
+        this.instance = instance;
     }
 }

@@ -9,7 +9,6 @@ import java.util.Objects;
 public class Table {
     private final ValueType elementType;
     private final Limits limits;
-
     private int[] refs;
 
     public Table(final ValueType elementType, final Limits limits) {

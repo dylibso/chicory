@@ -2176,6 +2176,9 @@ class Machine {
             MStack stack, Instance instance, ArrayDeque<StackFrame> callStack, long[] operands) {
         var tableIdx = (int) operands[1];
         var table = instance.table(tableIdx);
+        if (instance.importedTableCount() > tableIdx) {
+            instance = instance.imports().table(tableIdx).instance();
+        }
 
         var typeId = (int) operands[0];
         var type = instance.type(typeId);
