@@ -52,4 +52,6 @@ jobs:
           path: main/jmh-result.json
       # Artifacts are uploaded as zip files... need to automate the generation of the JMH results
       - name: Produce a link to the visualization
-        run: echo "./scripts/show-results.sh ${{ steps.main-artifact-upload-step.outputs.artifact-id }} ${{ steps.main-artifact-upload-step.outputs.artifact-id }}"
+        run: echo "./scripts/show-results.sh ${{ steps.main-artifact-upload-step.outputs.artifact-url }} ${{ steps.artifact-upload-step.outputs.artifact-url }}"
+      - name: Script to show the results
+        run: echo "`./scripts/show-results.sh ${{ steps.main-artifact-upload-step.outputs.artifact-url }} ${{ steps.artifact-upload-step.outputs.artifact-url }}`" >> $GITHUB_STEP_SUMMARY
