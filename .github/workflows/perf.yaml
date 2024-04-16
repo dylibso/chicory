@@ -7,6 +7,7 @@ on:
 jobs:
   perf:
     name: Run JMH tests
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout sources for this branch
         uses: actions/checkout@v4
