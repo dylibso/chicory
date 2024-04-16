@@ -41,10 +41,6 @@ public class TableInstance {
         return table.ref(index);
     }
 
-    public void setRef(int index, int value) {
-        setRef(index, value, null);
-    }
-
     public void setRef(int index, int value, Instance instance) {
         table.setRef(index, value);
         if (instance != null) {

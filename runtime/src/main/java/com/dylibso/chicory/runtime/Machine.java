@@ -1545,7 +1545,7 @@ class Machine {
         }
 
         for (int i = offset; i < end; i++) {
-            table.setRef(i, val);
+            table.setRef(i, val, instance);
         }
     }
 
@@ -2179,18 +2179,19 @@ class Machine {
             MStack stack, Instance instance, ArrayDeque<StackFrame> callStack, long[] operands) {
         var tableIdx = (int) operands[1];
         var table = instance.table(tableIdx);
-        var tableInstance = table.instance(tableIdx);
+
+        var typeId = (int) operands[0];
+        int funcTableIdx = stack.pop().asInt();
+        int funcId = table.ref(funcTableIdx).asFuncRef();
+        var tableInstance = table.instance(funcTableIdx);
         if (tableInstance != null) {
             instance = tableInstance;
         }
-
-        var typeId = (int) operands[0];
-        var type = instance.type(typeId);
-        int funcTableIdx = stack.pop().asInt();
-        int funcId = table.ref(funcTableIdx).asFuncRef();
         if (funcId == REF_NULL_VALUE) {
             throw new ChicoryException("uninitialized element " + funcTableIdx);
         }
+        var type = instance.type(typeId);
+
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.params());
