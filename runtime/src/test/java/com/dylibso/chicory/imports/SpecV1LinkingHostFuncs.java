@@ -66,7 +66,6 @@ public class SpecV1LinkingHostFuncs {
                 new HostFunction[] {
                     new HostFunction(
                             (Instance instance, Value... args) -> {
-                                System.out.println("Nt instance: Mt.call " + args[0]);
                                 return Mtcall().apply(args);
                             },
                             "Mt",
@@ -75,7 +74,6 @@ public class SpecV1LinkingHostFuncs {
                             List.of(ValueType.I32)),
                     new HostFunction(
                             (Instance instance, Value... args) -> {
-                                System.out.println("Nt instance: Mt.h");
                                 return Mth().apply(args);
                             },
                             "Mt",
@@ -130,7 +128,6 @@ public class SpecV1LinkingHostFuncs {
                 new HostFunction[] {
                     new HostFunction(
                             (Instance instance, Value... args) -> {
-                                System.out.println("Ot instance: Mt.h");
                                 return Mth().apply();
                             },
                             "Mt",
@@ -171,7 +168,6 @@ public class SpecV1LinkingHostFuncs {
                 new HostFunction[] {
                     new HostFunction(
                             (Instance instance, Value... args) -> {
-                                System.out.println("Nm instance: Mm.load");
                                 return new Value[] {Value.i32(167)};
                             },
                             "Mm",

@@ -1566,7 +1566,6 @@ class Machine {
         for (int i = size - 1; i >= 0; i--) {
             if (d <= s) {
                 var val = src.ref(s++);
-                // TODO: verify again on the spec if instances are going around or not
                 var inst = src.instance(d);
                 dest.setRef(d++, val.asFuncRef(), inst);
             } else {
