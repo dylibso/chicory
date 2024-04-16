@@ -20,15 +20,17 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 @State(Scope.Benchmark)
-//@Warmup(iterations = 2)
-//@Measurement(iterations = 5)
+// @Warmup(iterations = 2)
+// @Measurement(iterations = 5)
+@Warmup(iterations = 1)
 @Measurement(iterations = 1)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @Fork(1)
 public class BenchmarkFactorialExecution {
 
-    @Param({"5",
-//            "1000"
+    @Param({
+        "5",
+        //            "1000"
     })
     private int input;
 
@@ -37,7 +39,9 @@ public class BenchmarkFactorialExecution {
     @Setup
     public void setup() throws IOException {
         var factorial =
-                Module.builder(new File("wasm-corpus/src/test/resources/wat/iterfact.wat"))
+                Module.builder(
+                                new File(
+                                        "wasm-corpus/src/test/resources/compiled/iterfact.wat.wasm"))
                         .build()
                         .instantiate();
         iterFact = factorial.export("iterFact");

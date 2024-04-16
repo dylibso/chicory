@@ -19,8 +19,9 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 @State(Scope.Benchmark)
-//@Warmup(iterations = 2)
-//@Measurement(iterations = 5)
+// @Warmup(iterations = 2)
+// @Measurement(iterations = 5)
+@Warmup(iterations = 1)
 @Measurement(iterations = 1)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @Fork(1)
@@ -28,7 +29,7 @@ public class BenchmarkParsing {
 
     @Param({
         "wasm-corpus/src/test/resources/compiled/basic.c.wasm",
-//        "wasm-corpus/src/test/resources/compiled/javy-demo.js.javy.wasm"
+        //        "wasm-corpus/src/test/resources/compiled/javy-demo.js.javy.wasm"
     })
     private String fileName;
 
