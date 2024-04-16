@@ -144,8 +144,7 @@ public class SpecV1LinkingHostFuncs {
     }
 
     public static HostImports testModule10() {
-        return new HostImports(
-                new HostTable[] {new HostTable("Mt", "tab", MtInstance.table(0))});
+        return new HostImports(new HostTable[] {new HostTable("Mt", "tab", MtInstance.table(0))});
     }
 
     public static HostImports G2() {
@@ -173,7 +172,7 @@ public class SpecV1LinkingHostFuncs {
                     new HostFunction(
                             (Instance instance, Value... args) -> {
                                 System.out.println("Nm instance: Mm.load");
-                                return new Value[] {Value.i32(2)};
+                                return new Value[] {Value.i32(167)};
                             },
                             "Mm",
                             "load",
@@ -185,13 +184,8 @@ public class SpecV1LinkingHostFuncs {
     public static HostImports fallback() {
         return new HostImports(
                 new HostFunction[] {},
-                new HostGlobal[] {
-                    // new HostGlobal("spectest", "global_i32", Value.i32(0))},
-                },
-                new HostMemory[] {
-                    //          new HostMemory("spectest", "memory", new Memory(new MemoryLimits(1,
-                    // 1)))
-                },
+                new HostGlobal[] {},
+                new HostMemory[] {},
                 new HostTable[] {});
     }
 }

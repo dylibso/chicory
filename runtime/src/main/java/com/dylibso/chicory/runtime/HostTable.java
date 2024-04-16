@@ -3,8 +3,6 @@ package com.dylibso.chicory.runtime;
 import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.ValueType;
-
-import java.util.Arrays;
 import java.util.Map;
 
 public class HostTable implements FromHost {
@@ -18,10 +16,7 @@ public class HostTable implements FromHost {
         this.table = table;
     }
 
-    public HostTable(
-            String moduleName,
-            String fieldName,
-            Map<Integer, Integer> funcRefs) {
+    public HostTable(String moduleName, String fieldName, Map<Integer, Integer> funcRefs) {
         this.moduleName = moduleName;
         this.fieldName = fieldName;
 
@@ -32,7 +27,8 @@ public class HostTable implements FromHost {
             }
         }
 
-        this.table = new TableInstance(new Table(ValueType.FuncRef, new Limits(maxFuncRef, maxFuncRef)));
+        this.table =
+                new TableInstance(new Table(ValueType.FuncRef, new Limits(maxFuncRef, maxFuncRef)));
         this.table.reset();
     }
 

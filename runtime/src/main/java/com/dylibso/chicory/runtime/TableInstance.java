@@ -1,15 +1,11 @@
 package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 public class TableInstance {
 
@@ -55,6 +51,7 @@ public class TableInstance {
     public Instance instance(int index) {
         return instances.get(index);
     }
+
     public void reset() {
         table.reset();
     }

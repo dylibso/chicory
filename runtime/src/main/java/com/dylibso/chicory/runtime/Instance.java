@@ -94,12 +94,10 @@ public class Instance {
                     final List<Instruction> init = initializers.get(i);
                     var index = offset.asInt() + i;
                     if (ae.type() == ValueType.FuncRef) {
-                        table.setRef(
-                                index, computeConstantValue(this, init).asFuncRef(), this);
+                        table.setRef(index, computeConstantValue(this, init).asFuncRef(), this);
                     } else {
                         assert ae.type() == ValueType.ExternRef;
-                        table.setRef(
-                                index, computeConstantValue(this, init).asExtRef(), this);
+                        table.setRef(index, computeConstantValue(this, init).asExtRef(), this);
                     }
                 }
             }

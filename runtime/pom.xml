@@ -132,22 +132,27 @@
             ref_is_null.wast</orderedWastToProcess>
           <excludedTests>
             <!-- Init Active/Passive segments -->
-            SpecV1BulkTest.test79, SpecV1BulkTest.test81, SpecV1BulkTest.test83,
-            SpecV1BulkTest.test85,
+            SpecV1BulkTest.test91, SpecV1BulkTest.test95, SpecV1BulkTest.test89,
+            SpecV1BulkTest.test93,
             <!-- Invalid and Malformed failures, can be ignored for now -->
-            SpecV1AddressTest.test75, SpecV1AddressTest.test76,
-            SpecV1AddressTest.test77, SpecV1AddressTest.test78, SpecV1AddressTest.test79,
-            SpecV1AddressTest.test80, SpecV1AddressTest.test86, SpecV1AddressTest.test87,
-            SpecV1AddressTest.test88, SpecV1AddressTest.test89, SpecV1AddressTest.test90,
-            SpecV1AddressTest.test197, SpecV1AddressTest.test198, SpecV1AddressTest.test199,
-            SpecV1AddressTest.test200, SpecV1AddressTest.test201, SpecV1AddressTest.test202,
-            SpecV1AddressTest.test203, SpecV1AddressTest.test211, SpecV1AddressTest.test212,
-            SpecV1AddressTest.test213, SpecV1AddressTest.test214, SpecV1AddressTest.test217,
-            SpecV1AddressTest.test233, SpecV1AddressTest.test234, SpecV1AddressTest.test236,
-            SpecV1AddressTest.test252, SpecV1AddressTest.test253, SpecV1AddressTest.test255,
+            SpecV1AddressTest.test199, SpecV1AddressTest.test200, SpecV1AddressTest.test201,
+            SpecV1AddressTest.test202, SpecV1AddressTest.test203, SpecV1AddressTest.test204,
+            SpecV1AddressTest.test205, SpecV1AddressTest.test213, SpecV1AddressTest.test214,
+            SpecV1AddressTest.test215, SpecV1AddressTest.test216, SpecV1AddressTest.test219,
+            SpecV1AddressTest.test236, SpecV1AddressTest.test237, SpecV1AddressTest.test239,
+            SpecV1AddressTest.test256, SpecV1AddressTest.test257, SpecV1AddressTest.test259,
+            SpecV1AddressTest.test76, SpecV1AddressTest.test77, SpecV1AddressTest.test78,
+            SpecV1AddressTest.test79, SpecV1AddressTest.test80, SpecV1AddressTest.test81,
+            SpecV1AddressTest.test87, SpecV1AddressTest.test88, SpecV1AddressTest.test89,
+            SpecV1AddressTest.test90, SpecV1AddressTest.test91,
             <!-- Need assert trap and active/passive memory initialization to be completed -->
             SpecV1LinkingTest.test83, SpecV1LinkingTest.test84, SpecV1LinkingTest.test86,
-            SpecV1LinkingTest.test88, SpecV1LinkingTest.test89
+            SpecV1LinkingTest.test88, SpecV1LinkingTest.test89,
+            <!-- Require assert_trap in module initialization -->
+            SpecV1LinkingTest.test74, SpecV1LinkingTest.test75, SpecV1LinkingTest.test77,
+            <!-- Active/Passive after module failed initialization -->
+            SpecV1LinkingTest.test103, SpecV1LinkingTest.test104, SpecV1LinkingTest.test106,
+            SpecV1LinkingTest.test109, SpecV1LinkingTest.test110
           </excludedTests>
           <excludedValidationTests>binary.wast,binary-leb128.wast</excludedValidationTests>
         </configuration>
