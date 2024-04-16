@@ -4,4 +4,6 @@ testsuite/
 .classpath
 .project
 .settings
-
+dependency-reduced-pom.xml
+jmh-results.json
+scripts/jmh-tmp
