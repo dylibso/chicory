@@ -40,7 +40,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         id: artifact-upload-step
         with:
-          name: results
+          name: current
           path: jmh-result.json
       - name: Run JMH on main
         working-directory: main
@@ -48,7 +48,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         id: main-artifact-upload-step
         with:
-          name: results
+          name: main
           path: main/jmh-result.json
       # Artifacts are uploaded as zip files... need to automate the generation of the JMH results
       - name: Produce a link to the visualization
