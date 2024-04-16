@@ -1545,7 +1545,7 @@ class Machine {
         }
 
         for (int i = offset; i < end; i++) {
-            table.setRef(i, val, instance);
+            table.setRef(i, val);
         }
     }
 
@@ -1566,10 +1566,13 @@ class Machine {
         for (int i = size - 1; i >= 0; i--) {
             if (d <= s) {
                 var val = src.ref(s++);
-                dest.setRef(d++, val.asFuncRef(), instance);
+                // TODO: verify again on the spec if instances are going around or not
+                var inst = src.instance(d);
+                dest.setRef(d++, val.asFuncRef(), inst);
             } else {
                 var val = src.ref(s + i);
-                dest.setRef(d + i, val.asFuncRef(), instance);
+                var inst = src.instance(d + i);
+                dest.setRef(d + i, val.asFuncRef(), inst);
             }
         }
     }
@@ -2176,7 +2179,10 @@ class Machine {
             MStack stack, Instance instance, ArrayDeque<StackFrame> callStack, long[] operands) {
         var tableIdx = (int) operands[1];
         var table = instance.table(tableIdx);
-        instance = table.instance(tableIdx);
+        var tableInstance = table.instance(tableIdx);
+        if (tableInstance != null) {
+            instance = tableInstance;
+        }
 
         var typeId = (int) operands[0];
         var type = instance.type(typeId);

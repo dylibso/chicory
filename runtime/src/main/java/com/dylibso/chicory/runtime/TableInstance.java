@@ -6,16 +6,19 @@ import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 public class TableInstance {
 
     private Table table;
-    private Instance[] instances;
+    private Map<Integer, Instance> instances;
 
     public TableInstance(Table table) {
         this.table = table;
-        this.instances = new Instance[table.size()];
+        this.instances = new HashMap<>();
     }
 
     public int size() {
@@ -31,32 +34,32 @@ public class TableInstance {
     }
 
     public int grow(int size, int value, Instance instance) {
-        var sizeBefore = this.table.size();
-        var res = this.table.grow(size, value);
-        var sizeAfter = this.table.size();
-        // TODO: implement grow for instances
-        return res;
+        return this.table.grow(size, value);
     }
 
     public Value ref(int index) {
         return table.ref(index);
     }
 
+    public void setRef(int index, int value) {
+        setRef(index, value, null);
+    }
+
     public void setRef(int index, int value, Instance instance) {
         table.setRef(index, value);
-        setInstance(index, instance);
+        if (instance != null) {
+            setInstance(index, instance);
+        }
     }
 
     public void setInstance(int index, Instance instance) {
-        instances[index] = instance;
+        instances.put(index, instance);
     }
 
     public Instance instance(int index) {
-        return instances[index];
+        return instances.get(index);
     }
     public void reset() {
-        for (int i = 0; i < table.size(); i++) {
-            this.instances[i] = null;
-        }
+        table.reset();
     }
 }

@@ -21,8 +21,7 @@ public class HostTable implements FromHost {
     public HostTable(
             String moduleName,
             String fieldName,
-            Map<Integer, Integer> funcRefs,
-            Instance instance) {
+            Map<Integer, Integer> funcRefs) {
         this.moduleName = moduleName;
         this.fieldName = fieldName;
 
@@ -34,11 +33,6 @@ public class HostTable implements FromHost {
         }
 
         this.table = new TableInstance(new Table(ValueType.FuncRef, new Limits(maxFuncRef, maxFuncRef)));
-        if (instance != null) {
-            for (var i = 0; i < this.table().size(); i++) {
-                this.table.setInstance(i, instance);
-            }
-        }
         this.table.reset();
     }
 
