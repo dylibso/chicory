@@ -15,8 +15,7 @@ jobs:
       - name: Checkout sources for this branch
         uses: actions/checkout@v4
         with:
-          # TODO: switch to main after it get merged
-          ref: initial-jmh
+          ref: main
       - name: Checkout testsuite
         uses: actions/checkout@v4
         with:
@@ -49,12 +48,6 @@ jobs:
     steps:
       - name: Checkout sources for this branch
         uses: actions/checkout@v4
-      - name: Checkout sources from main
-        uses: actions/checkout@v4
-        with:
-          # TODO: switch to main after it get merged
-          ref: initial-jmh
-          path: main
       - name: Checkout testsuite
         uses: actions/checkout@v4
         with:

@@ -38,9 +38,7 @@ fi
 
 # Serve local assets
 echo "To view results go to the following link:"
-echo -e "\n"
-echo "http://jmh.morethan.io/?sources=http://localhost:3000/main.json,http://localhost:3000/current.json"
-echo -e "\n"
+echo -e "\nhttp://jmh.morethan.io/?sources=http://localhost:3000/main.json,http://localhost:3000/current.json\n"
 echo "Hit CTRL-C to stop the server"
 (
   cd ${TEMP_DIR}
