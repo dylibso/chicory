@@ -80,7 +80,7 @@ jobs:
           path: badge.svg
       - name: Upload badge to Gist
         if: steps.publish.outputs.badge
-        uses: andymckay/append-gist-action@6e8d64427fe47cbacf4ab6b890411f1d67c07f3e
+        uses: andymckay/append-gist-action@ab30bf28df67017c7ad696500b218558c7c04db3
         with:
           token: ${{ secrets.GIST_TOKEN }}
           gistURL: https://gist.githubusercontent.com/andreaTP/69354d1cc6cf23e4c3c4a9a8daf7ea15
