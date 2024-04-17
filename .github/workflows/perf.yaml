@@ -53,4 +53,4 @@ jobs:
       - name: Produce a link to the visualization
         run: echo "./scripts/show-results.sh https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.main-artifact-upload-step.outputs.artifact-id }}.zip https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}.zip"
       - name: Show the result in the summary
-        run: echo -e '```\n./scripts/show-results.sh https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.main-artifact-upload-step.outputs.artifact-id }}.zip https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}.zip\n```" >> $GITHUB_STEP_SUMMARY
+        run: echo -e '\`\`\`\n./scripts/show-results.sh https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.main-artifact-upload-step.outputs.artifact-id }}.zip https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}.zip\n\`\`\`" >> $GITHUB_STEP_SUMMARY
