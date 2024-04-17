@@ -1,8 +1,10 @@
 package com.dylibso.chicory.imports;
 
+import static com.dylibso.chicory.test.gen.SpecV1LinkingTest.MgInstance;
 import static com.dylibso.chicory.test.gen.SpecV1LinkingTest.MtInstance;
 
 import com.dylibso.chicory.runtime.ExportFunction;
+import com.dylibso.chicory.runtime.GlobalInstance;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.HostGlobal;
 import com.dylibso.chicory.runtime.HostImports;
@@ -84,11 +86,11 @@ public class SpecV1LinkingHostFuncs {
     }
 
     public static HostImports Ng() {
-        var glob = Value.i32(42);
+        var glob = new GlobalInstance(Value.i32(42));
         return new HostImports(
                 new HostFunction[] {
                     new HostFunction(
-                            (Instance instance, Value... args) -> new Value[] {glob},
+                            (Instance instance, Value... args) -> new Value[] {glob.getValue()},
                             "Mg",
                             "get",
                             List.of(),
@@ -115,8 +117,8 @@ public class SpecV1LinkingHostFuncs {
                     new HostGlobal(
                             "Mg",
                             "mut_glob",
-                            () -> SpecV1LinkingTest.MgInstance.readGlobal(1),
-                            v -> SpecV1LinkingTest.MgInstance.writeGlobal(1, v),
+                            //                            check
+                            MgInstance.global(1),
                             MutabilityType.Var)
                 },
                 new HostMemory[] {},
@@ -145,7 +147,8 @@ public class SpecV1LinkingHostFuncs {
     }
 
     public static HostImports G2() {
-        return new HostImports(new HostGlobal[] {new HostGlobal("G1", "g", Value.i32(5))});
+        return new HostImports(
+                new HostGlobal[] {new HostGlobal("G1", "g", new GlobalInstance(Value.i32(5)))});
     }
 
     private static HostMemory MmMem =

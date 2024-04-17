@@ -25,7 +25,7 @@ public class Instance {
     private final Memory memory;
     private final DataSegment[] dataSegments;
     private final Global[] globalInitializers;
-    private final Value[] globals;
+    private final GlobalInstance[] globals;
     private final int importedGlobalsOffset;
     private final int importedFunctionsOffset;
     private final int importedTablesOffset;
@@ -55,7 +55,7 @@ public class Instance {
             boolean start) {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
-        this.globals = new Value[globalInitializers.length + importedGlobalsOffset];
+        this.globals = new GlobalInstance[globalInitializers.length + importedGlobalsOffset];
         this.importedGlobalsOffset = importedGlobalsOffset;
         this.importedFunctionsOffset = importedFunctionsOffset;
         this.importedTablesOffset = importedTablesOffset;
@@ -111,31 +111,31 @@ public class Instance {
             var instr = g.initInstructions().get(0);
             switch (instr.opcode()) {
                 case I32_CONST:
-                    globals[i] = Value.i32(instr.operands()[0]);
+                    globals[i] = new GlobalInstance((Value.i32(instr.operands()[0])));
                     break;
                 case I64_CONST:
-                    globals[i] = Value.i64(instr.operands()[0]);
+                    globals[i] = new GlobalInstance(Value.i64(instr.operands()[0]));
                     break;
                 case F32_CONST:
-                    globals[i] = Value.f32(instr.operands()[0]);
+                    globals[i] = new GlobalInstance(Value.f32(instr.operands()[0]));
                     break;
                 case F64_CONST:
-                    globals[i] = Value.f64(instr.operands()[0]);
+                    globals[i] = new GlobalInstance(Value.f64(instr.operands()[0]));
                     break;
                 case GLOBAL_GET:
                     {
                         var idx = (int) instr.operands()[0];
                         globals[i] =
                                 idx < imports.globalCount()
-                                        ? imports.global(idx).value()
+                                        ? imports.global(idx).instance()
                                         : globals[idx];
                         break;
                     }
                 case REF_NULL:
-                    globals[i] = Value.EXTREF_NULL;
+                    globals[i] = new GlobalInstance(Value.EXTREF_NULL);
                     break;
                 case REF_FUNC:
-                    globals[i] = Value.funcRef(instr.operands()[0]);
+                    globals[i] = new GlobalInstance(Value.funcRef(instr.operands()[0]));
                     break;
                 default:
                     throw new RuntimeException(
@@ -206,18 +206,25 @@ public class Instance {
         return memory;
     }
 
+    public GlobalInstance global(int idx) {
+        if (idx < importedGlobalsOffset) {
+            return imports.global(idx).instance();
+        }
+        return globals[idx - importedGlobalsOffset];
+    }
+
     public void writeGlobal(int idx, Value val) {
         if (idx < importedGlobalsOffset) {
-            imports.global(idx).setValue(val);
+            imports.global(idx).instance().setValue(val);
         }
-        globals[idx - importedGlobalsOffset] = val;
+        globals[idx - importedGlobalsOffset].setValue(val);
     }
 
     public Value readGlobal(int idx) {
         if (idx < importedGlobalsOffset) {
-            return imports.global(idx).value();
+            return imports.global(idx).instance().getValue();
         }
-        return globals[idx - importedGlobalsOffset];
+        return globals[idx - importedGlobalsOffset].getValue();
     }
 
     public Global globalInitializer(int idx) {
