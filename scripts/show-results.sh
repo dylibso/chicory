@@ -1,9 +1,19 @@
 #! /bin/bash
-# set -euxo pipefail
+set -euxo pipefail
 
 # Two options: run locally or download from GH Actions
-MAIN=${1}
-CURRENT=${2}
+TYPE=${1}
+
+if [ "$TYPE" = "local" ]; then
+  echo "Disply local results"
+elif [ "$TYPE" = "ci" ]; then
+  echo "Disply CI results"
+  MAIN=${2}
+  CURRENT=${3}
+else
+  echo "Invalid option, allowed: [ci, local]"
+  exit 1
+fi
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
@@ -12,7 +22,7 @@ TEMP_DIR=${SCRIPT_DIR}/jmh-tmp
 rm -rf ${TEMP_DIR}
 mkdir -p ${TEMP_DIR}
 
-if [ -z "$MAIN" ]
+if [ "$TYPE" = "local" ]
 then
   echo "Arguments not provided using local results - not supported in the container image."
   cp ${SCRIPT_DIR}/../main/jmh-result.json ${TEMP_DIR}/main.json

@@ -90,6 +90,6 @@ jobs:
       - name: Show the result in the summary
         run: |
           echo "Visualize JMH results using this script from the project root:" >> $GITHUB_STEP_SUMMARY
-          echo -e '<pre><code>./scripts/show-results.sh ${{ needs.perf-main.outputs.result-link }} ${{ needs.perf-current.outputs.result-link }}</code></pre>' >> $GITHUB_STEP_SUMMARY
+          echo -e '<pre><code>./scripts/show-results.sh ci ${{ needs.perf-main.outputs.result-link }} ${{ needs.perf-current.outputs.result-link }}</code></pre>' >> $GITHUB_STEP_SUMMARY
           echo "Or use a pre-built container image:" >> $GITHUB_STEP_SUMMARY
-          echo -e '<pre><code>docker run --rm -it -p 3000:3000 docker.io/andreatp/chicory-show-jmh ${{ needs.perf-main.outputs.result-link }} ${{ needs.perf-current.outputs.result-link }}</code></pre>' >> $GITHUB_STEP_SUMMARY
+          echo -e '<pre><code>docker run --rm -it -p 3000:3000 docker.io/andreatp/chicory-show-jmh ci ${{ needs.perf-main.outputs.result-link }} ${{ needs.perf-current.outputs.result-link }}</code></pre>' >> $GITHUB_STEP_SUMMARY
