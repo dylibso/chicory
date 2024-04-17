@@ -1,4 +1,4 @@
-# Build using the command:
+# Build from the repository root using the command:
 # docker build -f jmh/Dockerfile . -t docker.io/andreatp/chicory-show-jmh
 FROM node
 
