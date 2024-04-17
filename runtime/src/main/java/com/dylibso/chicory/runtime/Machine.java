@@ -1599,13 +1599,23 @@ class Machine {
 
         var table = instance.table(tableidx);
 
-        if (size < 0
-                || elementidx > instance.elementCount()
-                || instance.element(elementidx) == null
-                || !(instance.element(elementidx) instanceof PassiveElement)
-                || elemidx + size > instance.element(elementidx).elementCount()
-                || end > table.size()) {
+        var elementCount = instance.elementCount();
+        var currentElement = instance.element(elementidx);
+        var currentElementCount =
+                (currentElement instanceof PassiveElement) ? currentElement.elementCount() : 0;
+        boolean isOutOfBounds =
+                (size < 0
+                        || elementidx > elementCount
+                        || (size > 0
+                                && (currentElement == null
+                                        || !(currentElement instanceof PassiveElement)))
+                        || elemidx + size > currentElementCount
+                        || end > table.size());
+
+        if (isOutOfBounds) {
             throw new WASMRuntimeException("out of bounds table access");
+        } else if (size == 0) {
+            return;
         }
 
         for (int i = offset; i < end; i++) {
