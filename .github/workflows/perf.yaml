@@ -1,15 +1,16 @@
 name: Perf
 
 on:
-  # TODO: fix me
   push:
+    branches: [ main ]
+  pull_request:
 
 jobs:
   perf-main:
     name: JMH tests on baseline
     runs-on: ubuntu-latest
     outputs:
-      result-link: "https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}.zip"
+      result-link: "https://nightly.link/dylibso/chicory/actions/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}.zip"
     steps:
       - name: Checkout sources for this branch
         uses: actions/checkout@v4
@@ -44,7 +45,7 @@ jobs:
     name: JMH tests on current branch
     runs-on: ubuntu-latest
     outputs:
-      result-link: "https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}.zip"
+      result-link: "https://nightly.link/dylibso/chicory/actions/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}.zip"
     steps:
       - name: Checkout sources for this branch
         uses: actions/checkout@v4

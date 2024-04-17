@@ -20,18 +20,13 @@ import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 @State(Scope.Benchmark)
-// @Warmup(iterations = 2)
-// @Measurement(iterations = 5)
-@Warmup(iterations = 1)
-@Measurement(iterations = 1)
+@Warmup(iterations = 2)
+@Measurement(iterations = 5)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @Fork(1)
 public class BenchmarkFactorialExecution {
 
-    @Param({
-        "5",
-        //            "1000"
-    })
+    @Param({"5", "1000"})
     private int input;
 
     ExportFunction iterFact;
