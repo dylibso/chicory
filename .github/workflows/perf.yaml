@@ -5,8 +5,41 @@ on:
   push:
 
 jobs:
-  perf:
-    name: JMH tests
+  perf-main:
+    name: JMH tests on baseline
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources for this branch
+        uses: actions/checkout@v4
+        with:
+          # TODO: switch to main after it get merged
+          ref: initial-jmh
+      - name: Checkout testsuite
+        uses: actions/checkout@v4
+        with:
+          repository: WebAssembly/testsuite
+          path: testsuite
+          # The ref needs to stay in sync with the default value in test-gen-plugin
+          ref: c2a67a575ddc815ff2212f68301d333e5e30a923
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+
+      - name: Build JMH jars on main
+        run: ./scripts/build-jmh.sh
+      - name: Run JMH
+        run: ./scripts/run-jmh.sh
+      - uses: actions/upload-artifact@v4
+        id: main-artifact-upload-step
+        with:
+          name: main
+          path: jmh-result.json
+
+  perf-current:
+    name: JMH tests on current branch
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources for this branch
@@ -30,10 +63,8 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
           cache: maven
+
       - name: Build JMH jars
-        run: ./scripts/build-jmh.sh
-      - name: Build JMH jars on main
-        working-directory: main
         run: ./scripts/build-jmh.sh
       - name: Run JMH
         run: ./scripts/run-jmh.sh
@@ -42,14 +73,14 @@ jobs:
         with:
           name: current
           path: jmh-result.json
-      - name: Run JMH on main
-        working-directory: main
-        run: ./scripts/run-jmh.sh
-      - uses: actions/upload-artifact@v4
-        id: main-artifact-upload-step
-        with:
-          name: main
-          path: main/jmh-result.json
+
+  perf-show-results:
+    name: Show JMH tests results
+    runs-on: ubuntu-latest
+    needs:
+      - perf-main
+      - perf-current
+    steps:
       - name: Produce a link to the visualization
         run: echo "./scripts/show-results.sh https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.main-artifact-upload-step.outputs.artifact-id }}.zip https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}.zip"
       - name: Show the result in the summary
