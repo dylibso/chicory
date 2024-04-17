@@ -6,7 +6,7 @@ on:
 
 jobs:
   perf:
-    name: Run JMH tests
+    name: JMH tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sources for this branch
@@ -52,6 +52,6 @@ jobs:
           path: main/jmh-result.json
       # Artifacts are uploaded as zip files... need to automate the generation of the JMH results
       - name: Produce a link to the visualization
-        run: echo "./scripts/show-results.sh ${{ steps.main-artifact-upload-step.outputs.artifact-url }} ${{ steps.artifact-upload-step.outputs.artifact-url }}"
+        run: echo "./scripts/show-results.sh https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.main-artifact-upload-step.outputs.artifact-id }}.zip https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}.zip"
       - name: Script to show the results
-        run: echo "./scripts/show-results.sh ${{ steps.main-artifact-upload-step.outputs.artifact-url }} ${{ steps.artifact-upload-step.outputs.artifact-url }}" >> $GITHUB_STEP_SUMMARY
+        run: echo "##\n<tab><tab>./scripts/show-results.sh https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.main-artifact-upload-step.outputs.artifact-id }}.zip https://nightly.link/andreaTP/chicory/actions/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}.zip" >> $GITHUB_STEP_SUMMARY
