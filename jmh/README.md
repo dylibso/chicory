@@ -4,7 +4,7 @@ This module is used to run JMH performance tests on Chicory and make it easy to 
 
 ## Dependencies
 
-There a few additional tools that are needed to run the benchmarks:
+There a few additional tools that are needed to see the benchmark results:
 
 - `wget`
 - `http-server` install with: `npm install http-server -g`
@@ -32,11 +32,23 @@ From the current local folder you can produce the JMH results running:
 ### Show the results
 
 ```bash
-./scripts/show-results.sh
+./scripts/show-results.sh local
 ```
 and open the generated link.
 
 ## From GH Actions
 
-- Open the relevant Perf workflow.
-...
+If you run the JMH tests from a GH Action:
+
+- Open the relevant GH Action Summary view of the Perf run
+- Follow the steps described
+
+```bash
+./scripts/show-results.sh ci <link-to-baseline-results> <link-to-current-results>
+```
+
+Or using a container image:
+
+```bash
+docker run --rm -it -p 3000:3000 docker.io/andreatp/chicory-show-jmh ci <link-to-baseline-results> <link-to-current-results>
+```
