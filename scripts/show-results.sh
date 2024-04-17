@@ -1,7 +1,7 @@
 #! /bin/bash
 # set -euxo pipefail
 
-# Two options: run locally or generate a script that will download from GH Actions
+# Two options: run locally or download from GH Actions
 MAIN=${1}
 CURRENT=${2}
 
@@ -17,16 +17,6 @@ then
   echo "Arguments not provided using local results"
   cp ${SCRIPT_DIR}/../main/jmh-result.json ${TEMP_DIR}/main.json
   cp ${SCRIPT_DIR}/../jmh-result.json ${TEMP_DIR}/current.json
-
-  # Serve local assets
-  echo "To view results got to the following link:"
-  echo "http://jmh.morethan.io/?sources=http://localhost:3000/main.json,http://localhost:3000/current.json"
-  (
-    cd ${TEMP_DIR}
-    # Install http-server with:
-    # npm install http-server -g
-    http-server -p 3000 --cors
-  )
 else 
   echo "Arguments provided downloading the results"
   wget ${MAIN} -O ${TEMP_DIR}/main.zip
@@ -34,6 +24,14 @@ else
 
   unzip -p ${TEMP_DIR}/main.zip jmh-result.json > ${TEMP_DIR}/main.json
   unzip -p ${TEMP_DIR}/current.zip jmh-result.json > ${TEMP_DIR}/current.json
-
-  echo "http://jmh.morethan.io/?sources=${MAIN},${CURRENT}"
 fi
+
+# Serve local assets
+echo "To view results got to the following link:"
+echo "http://jmh.morethan.io/?sources=http://localhost:3000/main.json,http://localhost:3000/current.json"
+(
+  cd ${TEMP_DIR}
+  # Install http-server with:
+  # npm install http-server -g
+  http-server -p 3000 --cors
+)
