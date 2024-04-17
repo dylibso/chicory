@@ -27,8 +27,10 @@ else
 fi
 
 # Serve local assets
-echo "To view results got to the following link:"
+echo "To view results go to the following link:"
+echo -e "\n"
 echo "http://jmh.morethan.io/?sources=http://localhost:3000/main.json,http://localhost:3000/current.json"
+echo -e "\n"
 (
   cd ${TEMP_DIR}
   # Install http-server with:
