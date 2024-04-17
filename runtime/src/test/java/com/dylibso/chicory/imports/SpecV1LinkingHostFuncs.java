@@ -114,11 +114,7 @@ public class SpecV1LinkingHostFuncs {
                 },
                 new HostGlobal[] {
                     new HostGlobal("Mg", "glob", glob),
-                    new HostGlobal(
-                            "Mg",
-                            "mut_glob",
-                            MgInstance.global(1),
-                            MutabilityType.Var)
+                    new HostGlobal("Mg", "mut_glob", MgInstance.global(1), MutabilityType.Var)
                 },
                 new HostMemory[] {},
                 new HostTable[] {});
