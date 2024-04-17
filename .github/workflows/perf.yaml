@@ -54,4 +54,4 @@ jobs:
       - name: Produce a link to the visualization
         run: echo "./scripts/show-results.sh ${{ steps.main-artifact-upload-step.outputs.artifact-url }} ${{ steps.artifact-upload-step.outputs.artifact-url }}"
       - name: Script to show the results
-        run: echo "`./scripts/show-results.sh ${{ steps.main-artifact-upload-step.outputs.artifact-url }} ${{ steps.artifact-upload-step.outputs.artifact-url }}`" >> $GITHUB_STEP_SUMMARY
+        run: echo "./scripts/show-results.sh ${{ steps.main-artifact-upload-step.outputs.artifact-url }} ${{ steps.artifact-upload-step.outputs.artifact-url }}" >> $GITHUB_STEP_SUMMARY

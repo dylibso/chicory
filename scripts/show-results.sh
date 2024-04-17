@@ -1,5 +1,6 @@
 #! /bin/bash
 # set -euxo pipefail
+set -x
 
 # Two options: run locally or generate a script that will download from GH Actions
 MAIN=${1}
