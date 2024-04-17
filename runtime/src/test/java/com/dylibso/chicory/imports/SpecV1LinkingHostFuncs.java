@@ -117,7 +117,6 @@ public class SpecV1LinkingHostFuncs {
                     new HostGlobal(
                             "Mg",
                             "mut_glob",
-                            //                            check
                             MgInstance.global(1),
                             MutabilityType.Var)
                 },
