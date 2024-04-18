@@ -22,6 +22,11 @@
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.google.jimfs</groupId>
+      <artifactId>jimfs</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -30,5 +35,71 @@
         <directory>${project.basedir}/../wasm-corpus/src/test/resources</directory>
       </testResource>
     </testResources>
+    <plugins>
+      <plugin>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wasi-test-gen-plugin</artifactId>
+        <version>${project.version}</version>
+        <configuration>
+          <testSuiteFolder>${project.basedir}/../wasi-testsuite</testSuiteFolder>
+          <testSuiteFiles>
+            <includes>
+              <include>tests/assemblyscript/testsuite/*.wasm</include>
+              <include>tests/c/testsuite/*.wasm</include>
+              <include>tests/rust/testsuite/*.wasm</include>
+            </includes>
+            <excludes>
+              <!-- clock_getres is not implemented -->
+              <exclude>tests/c/testsuite/clock_getres-monotonic.wasm</exclude>
+              <exclude>tests/c/testsuite/clock_getres-realtime.wasm</exclude>
+              <!-- pread is not implemented -->
+              <exclude>tests/c/testsuite/pread-with-access.wasm</exclude>
+              <!-- pwrite is not implemented -->
+              <exclude>tests/c/testsuite/pwrite-with-access.wasm</exclude>
+              <exclude>tests/c/testsuite/pwrite-with-append.wasm</exclude>
+              <!-- sockets are not implemented -->
+              <exclude>tests/c/testsuite/sock_shutdown-invalid_fd.wasm</exclude>
+              <exclude>tests/c/testsuite/sock_shutdown-not_sock.wasm</exclude>
+              <!-- Java does not support READ+APPEND -->
+              <exclude>tests/rust/testsuite/fd_flags_set.wasm</exclude>
+              <!-- pread is not implemented -->
+              <exclude>tests/rust/testsuite/file_pread_pwrite.wasm</exclude>
+              <!-- poll_oneoff is not implemented -->
+              <exclude>tests/rust/testsuite/poll_oneoff_stdio.wasm</exclude>
+              <!-- TODO: triage and fix or exclude -->
+              <exclude>tests/rust/testsuite/dangling_symlink.wasm</exclude>
+              <exclude>tests/rust/testsuite/dir_fd_op_failures.wasm</exclude>
+              <exclude>tests/rust/testsuite/fd_advise.wasm</exclude>
+              <exclude>tests/rust/testsuite/fd_fdstat_set_rights.wasm</exclude>
+              <exclude>tests/rust/testsuite/fd_filestat_set.wasm</exclude>
+              <exclude>tests/rust/testsuite/file_allocate.wasm</exclude>
+              <exclude>tests/rust/testsuite/interesting_paths.wasm</exclude>
+              <exclude>tests/rust/testsuite/nofollow_errors.wasm</exclude>
+              <exclude>tests/rust/testsuite/overwrite_preopen.wasm</exclude>
+              <exclude>tests/rust/testsuite/path_exists.wasm</exclude>
+              <exclude>tests/rust/testsuite/path_filestat.wasm</exclude>
+              <exclude>tests/rust/testsuite/path_link.wasm</exclude>
+              <exclude>tests/rust/testsuite/path_open_preopen.wasm</exclude>
+              <exclude>tests/rust/testsuite/path_open_read_write.wasm</exclude>
+              <exclude>tests/rust/testsuite/path_symlink_trailing_slashes.wasm</exclude>
+              <exclude>tests/rust/testsuite/readlink.wasm</exclude>
+              <exclude>tests/rust/testsuite/renumber.wasm</exclude>
+              <exclude>tests/rust/testsuite/stdio.wasm</exclude>
+              <exclude>tests/rust/testsuite/symlink_create.wasm</exclude>
+              <exclude>tests/rust/testsuite/symlink_filestat.wasm</exclude>
+              <exclude>tests/rust/testsuite/symlink_loop.wasm</exclude>
+              <exclude>tests/rust/testsuite/truncation_rights.wasm</exclude>
+            </excludes>
+          </testSuiteFiles>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>wasi-test-gen</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </build>
 </project>

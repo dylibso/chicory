@@ -1,6 +1,7 @@
 .idea/
 target/
 testsuite/
+wasi-testsuite/
 .classpath
 .project
 .settings
