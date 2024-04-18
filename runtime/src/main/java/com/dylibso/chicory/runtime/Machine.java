@@ -2003,121 +2003,129 @@ class Machine {
         stack.push(Value.i32(nPages));
     }
 
+    private static int readMemPtr(MStack stack, long[] operands) {
+        int offset = stack.pop().asInt();
+        if (operands[1] < 0 || operands[1] >= Integer.MAX_VALUE || offset < 0) {
+            throw new WASMRuntimeException("out of bounds memory access");
+        }
+        return (int) (operands[1] + offset);
+    }
+
     private static void F64_STORE(MStack stack, Instance instance, long[] operands) {
         var value = stack.pop().asDouble();
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         instance.memory().writeF64(ptr, value);
     }
 
     private static void F32_STORE(MStack stack, Instance instance, long[] operands) {
         var value = stack.pop().asFloat();
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         instance.memory().writeF32(ptr, value);
     }
 
     private static void I64_STORE(MStack stack, Instance instance, long[] operands) {
         var value = stack.pop().asLong();
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         instance.memory().writeLong(ptr, value);
     }
 
     private static void I64_STORE16(MStack stack, Instance instance, long[] operands) {
         var value = stack.pop().asShort();
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         instance.memory().writeShort(ptr, value);
     }
 
     private static void I32_STORE(MStack stack, Instance instance, long[] operands) {
         var value = stack.pop().asInt();
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         instance.memory().writeI32(ptr, value);
     }
 
     private static void I64_LOAD32_U(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readU32(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD32_S(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI32(ptr);
         // TODO this is a bit hacky
         stack.push(Value.i64(val.asInt()));
     }
 
     private static void I64_LOAD16_U(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readU16(ptr);
         // TODO this is a bit hacky
         stack.push(Value.i64(val.asInt()));
     }
 
     private static void I32_LOAD16_U(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readU16(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD16_S(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI16(ptr);
         // TODO this is a bit hacky
         stack.push(Value.i64(val.asInt()));
     }
 
     private static void I32_LOAD16_S(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI16(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD8_U(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readU8(ptr);
         // TODO a bit hacky
         stack.push(Value.i64(val.asInt()));
     }
 
     private static void I32_LOAD8_U(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readU8(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD8_S(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI8(ptr);
         // TODO a bit hacky
         stack.push(Value.i64(val.asInt()));
     }
 
     private static void I32_LOAD8_S(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI8(ptr);
         stack.push(val);
     }
 
     private static void F64_LOAD(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readF64(ptr);
         stack.push(val);
     }
 
     private static void F32_LOAD(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readF32(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI64(ptr);
         stack.push(val);
     }
 
     private static void I32_LOAD(MStack stack, Instance instance, long[] operands) {
-        var ptr = (int) (operands[1] + stack.pop().asInt());
+        var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI32(ptr);
         stack.push(val);
     }
