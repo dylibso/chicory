@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
@@ -863,7 +864,49 @@ public final class Parser {
         }
         var operandsArray = new long[operands.size()];
         for (var i = 0; i < operands.size(); i++) operandsArray[i] = operands.get(i);
+        verifyAlignement(op, operandsArray);
         return new Instruction(address, op, operandsArray);
+    }
+
+    private static void verifyAlignement(OpCode op, long[] operands) {
+        var align = -1;
+        switch (op) {
+            case I32_LOAD8_U:
+            case I32_LOAD8_S:
+            case I64_LOAD8_U:
+            case I64_LOAD8_S:
+            case I32_STORE8:
+            case I64_STORE8:
+                align = 8;
+                break;
+            case I32_LOAD16_U:
+            case I32_LOAD16_S:
+            case I64_LOAD16_U:
+            case I64_LOAD16_S:
+            case I32_STORE16:
+            case I64_STORE16:
+                align = 16;
+                break;
+            case I32_LOAD:
+            case F32_LOAD:
+            case I64_LOAD32_U:
+            case I64_LOAD32_S:
+            case I64_STORE32:
+            case I32_STORE:
+            case F32_STORE:
+                align = 32;
+                break;
+            case I64_LOAD:
+            case F64_LOAD:
+            case I64_STORE:
+            case F64_STORE:
+                align = 64;
+                break;
+        }
+        if (align > 0 && !(Math.pow(2, operands[0]) <= align / 8)) {
+            throw new InvalidException(
+                    "alignment must not be larger than natural alignment (" + operands[0] + ")");
+        }
     }
 
     private static Instruction[] parseExpression(ByteBuffer buffer) {

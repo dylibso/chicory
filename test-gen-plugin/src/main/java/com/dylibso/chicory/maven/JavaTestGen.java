@@ -200,22 +200,24 @@ public class JavaTestGen {
                         }
                     }
                     break;
+                case REGISTER:
+                    // should be irrelevant
+                    break;
                 case ASSERT_MALFORMED:
+                case ASSERT_INVALID:
                     method =
                             createTestMethod(
                                     testClass, testNumber++, excludedMethods, cmd, currentWasmFile);
                     generateAssertThrows(wasmFilesFolder, cmd, method, excludeValidation);
                     break;
-                case ASSERT_INVALID:
                 case ASSERT_UNINSTANTIABLE:
+                case ASSERT_EXHAUSTION:
+                case ASSERT_UNLINKABLE:
                     testNumber++;
                     break;
                 default:
-                    // TODO we need to implement all of these
-                    log.info("TODO: command type not yet supported " + cmd.type());
-                    //                    throw new IllegalArgumentException(
-                    //                            "command type not yet supported " +
-                    // cmd.getType());
+                    throw new IllegalArgumentException(
+                            "command type not yet supported " + cmd.type());
             }
         }
 
