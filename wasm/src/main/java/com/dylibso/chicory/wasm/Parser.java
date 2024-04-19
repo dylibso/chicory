@@ -761,6 +761,11 @@ public final class Parser {
                                     instructions.size(), instruction);
                             currentControlFlow = currentControlFlow.parent();
 
+                            if (instructions.size() > 1) {
+                                var former = instructions.get(instructions.size() - 1);
+                                verifyReturnType(former, instruction.scope());
+                            }
+
                             if (lastInstruction && instructions.size() > 1) {
                                 var former = instructions.get(instructions.size() - 1);
                                 if (former.opcode() == OpCode.END) {
@@ -781,6 +786,35 @@ public final class Parser {
         }
 
         return codeSection;
+    }
+
+    private static void verifyReturnType(Instruction instruction, Instruction scope) {
+        if (scope.opcode() == OpCode.BLOCK) {
+            var expectedTypeValue = scope.operands()[0];
+            ValueType expectedType = null;
+            ValueType returnType = null;
+            try {
+                expectedType = (expectedTypeValue == 0x40) ? null : ValueType.forId((int) expectedTypeValue);
+
+                switch (instruction.opcode()) {
+                    case I32_CONST:
+                        returnType = ValueType.I32;
+                        break;
+                    case I64_CONST:
+                        returnType = ValueType.I64;
+                        break;
+                    default:
+                        // skip the check for now
+                        return;
+                }
+            } catch (Exception e) {
+                // WIP
+                // ignore for now
+            }
+                if (expectedType != returnType) {
+                    throw new InvalidException("type mismatch at end of block, expected [" + expectedType + "] but got [" + returnType + "] from opcode " + instruction.opcode());
+                }
+        }
     }
 
     private static DataSection parseDataSection(ByteBuffer buffer) {

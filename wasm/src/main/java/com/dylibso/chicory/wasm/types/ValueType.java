@@ -155,7 +155,7 @@ public enum ValueType {
             case ID.ExternRef:
                 return ExternRef;
             default:
-                throw new IllegalArgumentException("Invalid value type");
+                throw new IllegalArgumentException("Invalid value type " + id);
         }
     }
 
@@ -171,7 +171,7 @@ public enum ValueType {
             case ID.ExternRef:
                 return ExternRef;
             default:
-                throw new IllegalArgumentException("Invalid reference type");
+                throw new IllegalArgumentException("Invalid reference type " + id);
         }
     }
 
