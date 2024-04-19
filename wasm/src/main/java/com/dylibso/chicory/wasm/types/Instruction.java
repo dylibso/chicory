@@ -6,7 +6,6 @@ public class Instruction {
     private final int address;
     private final OpCode opcode;
     private final long[] operands;
-
     // metadata fields
     private Integer labelTrue;
     private Integer labelFalse;
