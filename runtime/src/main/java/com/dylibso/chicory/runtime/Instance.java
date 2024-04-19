@@ -25,14 +25,15 @@ public class Instance {
     private final Memory memory;
     private final DataSegment[] dataSegments;
     private final Global[] globalInitializers;
-    private final Value[] globals;
+    private final GlobalInstance[] globals;
     private final int importedGlobalsOffset;
     private final int importedFunctionsOffset;
     private final int importedTablesOffset;
     private final FunctionType[] types;
     private final int[] functionTypes;
     private final HostImports imports;
-    private final Table[] tables;
+    private final Table[] roughTables;
+    private TableInstance[] tables;
     private final Element[] elements;
     private final boolean start;
 
@@ -50,10 +51,11 @@ public class Instance {
             HostImports imports,
             Table[] tables,
             Element[] elements,
+            boolean initialize,
             boolean start) {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
-        this.globals = new Value[globalInitializers.length];
+        this.globals = new GlobalInstance[globalInitializers.length + importedGlobalsOffset];
         this.importedGlobalsOffset = importedGlobalsOffset;
         this.importedFunctionsOffset = importedFunctionsOffset;
         this.importedTablesOffset = importedTablesOffset;
@@ -64,18 +66,25 @@ public class Instance {
         this.functionTypes = functionTypes.clone();
         this.imports = imports;
         this.machine = new Machine(this);
-        this.tables = tables.clone();
+        this.roughTables = tables.clone();
         this.elements = elements.clone();
         this.start = start;
 
-        initialize();
+        if (initialize) {
+            initialize(this.start);
+        }
     }
 
-    private void initialize() {
+    public Instance initialize(boolean start) {
+        this.tables = new TableInstance[this.roughTables.length];
+        for (var i = 0; i < this.roughTables.length; i++) {
+            this.tables[i] = new TableInstance(this.roughTables[i]);
+        }
         for (var el : elements) {
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
                 var table = table(ae.tableIndex());
+
                 Value offset = computeConstantValue(this, ae.offset());
                 if (offset.type() != ValueType.I32) {
                     throw new ChicoryException("Invalid offset type in element");
@@ -83,13 +92,12 @@ public class Instance {
                 List<List<Instruction>> initializers = ae.initializers();
                 for (int i = 0; i < initializers.size(); i++) {
                     final List<Instruction> init = initializers.get(i);
+                    var index = offset.asInt() + i;
                     if (ae.type() == ValueType.FuncRef) {
-                        table.setRef(
-                                offset.asInt() + i, computeConstantValue(this, init).asFuncRef());
+                        table.setRef(index, computeConstantValue(this, init).asFuncRef(), this);
                     } else {
                         assert ae.type() == ValueType.ExternRef;
-                        table.setRef(
-                                offset.asInt() + i, computeConstantValue(this, init).asExtRef());
+                        table.setRef(index, computeConstantValue(this, init).asExtRef(), this);
                     }
                 }
             }
@@ -99,35 +107,35 @@ public class Instance {
             var g = globalInitializers[i];
             if (g.initInstructions().size() > 2)
                 throw new RuntimeException(
-                        "We don't a global initializer with multiple instructions");
+                        "We don't support a global initializer with multiple instructions");
             var instr = g.initInstructions().get(0);
             switch (instr.opcode()) {
                 case I32_CONST:
-                    globals[i] = Value.i32(instr.operands()[0]);
+                    globals[i] = new GlobalInstance((Value.i32(instr.operands()[0])));
                     break;
                 case I64_CONST:
-                    globals[i] = Value.i64(instr.operands()[0]);
+                    globals[i] = new GlobalInstance(Value.i64(instr.operands()[0]));
                     break;
                 case F32_CONST:
-                    globals[i] = Value.f32(instr.operands()[0]);
+                    globals[i] = new GlobalInstance(Value.f32(instr.operands()[0]));
                     break;
                 case F64_CONST:
-                    globals[i] = Value.f64(instr.operands()[0]);
+                    globals[i] = new GlobalInstance(Value.f64(instr.operands()[0]));
                     break;
                 case GLOBAL_GET:
                     {
                         var idx = (int) instr.operands()[0];
                         globals[i] =
                                 idx < imports.globalCount()
-                                        ? imports.global(idx).value()
+                                        ? imports.global(idx).instance()
                                         : globals[idx];
                         break;
                     }
                 case REF_NULL:
-                    globals[i] = Value.EXTREF_NULL;
+                    globals[i] = new GlobalInstance(Value.EXTREF_NULL);
                     break;
                 case REF_FUNC:
-                    globals[i] = Value.funcRef(instr.operands()[0]);
+                    globals[i] = new GlobalInstance(Value.funcRef(instr.operands()[0]));
                     break;
                 default:
                     throw new RuntimeException(
@@ -147,6 +155,8 @@ public class Instance {
         if (start && module.export(START_FUNCTION_NAME) != null) {
             export(START_FUNCTION_NAME).apply();
         }
+
+        return this;
     }
 
     public ExportFunction export(String name) {
@@ -172,7 +182,7 @@ public class Instance {
                         @Override
                         public Value[] apply(Value... args) throws ChicoryException {
                             assert (args.length == 0);
-                            return new Value[] {globals[export.index()]};
+                            return new Value[] {readGlobal(export.index())};
                         }
                     };
                 }
@@ -196,18 +206,25 @@ public class Instance {
         return memory;
     }
 
+    public GlobalInstance global(int idx) {
+        if (idx < importedGlobalsOffset) {
+            return imports.global(idx).instance();
+        }
+        return globals[idx - importedGlobalsOffset];
+    }
+
     public void writeGlobal(int idx, Value val) {
         if (idx < importedGlobalsOffset) {
-            imports.global(idx).setValue(val);
+            imports.global(idx).instance().setValue(val);
         }
-        globals[idx - importedGlobalsOffset] = val;
+        globals[idx - importedGlobalsOffset].setValue(val);
     }
 
     public Value readGlobal(int idx) {
         if (idx < importedGlobalsOffset) {
-            return imports.global(idx).value();
+            return imports.global(idx).instance().getValue();
         }
-        return globals[idx - importedGlobalsOffset];
+        return globals[idx - importedGlobalsOffset].getValue();
     }
 
     public Global globalInitializer(int idx) {
@@ -237,7 +254,11 @@ public class Instance {
         return module;
     }
 
-    public Table table(int idx) {
+    public int importedTableCount() {
+        return importedTablesOffset;
+    }
+
+    public TableInstance table(int idx) {
         if (idx < importedTablesOffset) {
             return imports.table(idx).table();
         }

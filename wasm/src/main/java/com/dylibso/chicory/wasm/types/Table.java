@@ -9,7 +9,6 @@ import java.util.Objects;
 public class Table {
     private final ValueType elementType;
     private final Limits limits;
-
     private int[] refs;
 
     public Table(final ValueType elementType, final Limits limits) {
@@ -65,6 +64,12 @@ public class Table {
             this.refs[index] = value;
         } catch (IndexOutOfBoundsException e) {
             throw new ChicoryException("out of bounds table access", e);
+        }
+    }
+
+    public void reset() {
+        for (int i = 0; i < refs.length; i++) {
+            this.refs[i] = REF_NULL_VALUE;
         }
     }
 }

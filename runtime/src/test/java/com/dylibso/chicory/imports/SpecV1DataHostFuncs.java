@@ -1,5 +1,6 @@
 package com.dylibso.chicory.imports;
 
+import com.dylibso.chicory.runtime.GlobalInstance;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.HostGlobal;
 import com.dylibso.chicory.runtime.HostImports;
@@ -14,7 +15,9 @@ public class SpecV1DataHostFuncs {
 
         return new HostImports(
                 new HostFunction[] {},
-                new HostGlobal[] {new HostGlobal("spectest", "global_i32", Value.i32(0))},
+                new HostGlobal[] {
+                    new HostGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(0)))
+                },
                 new HostMemory[] {
                     new HostMemory("spectest", "memory", new Memory(new MemoryLimits(1, 1)))
                 },

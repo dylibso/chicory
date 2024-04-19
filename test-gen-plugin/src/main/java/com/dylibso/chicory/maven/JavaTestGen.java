@@ -13,12 +13,13 @@ import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
-import com.github.javaparser.ast.comments.LineComment;
+import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.Name;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
@@ -63,11 +64,7 @@ public class JavaTestGen {
     }
 
     public CompilationUnit generate(
-            String name,
-            Wast wast,
-            File wasmFilesFolder,
-            boolean ordered,
-            SourceRoot importsSourceRoot) {
+            String name, Wast wast, File wasmFilesFolder, SourceRoot importsSourceRoot) {
         var cu = new CompilationUnit("com.dylibso.chicory.test.gen");
         var testName = "SpecV1" + capitalize(escapedCamelCase(name)) + "Test";
         var importsName = "SpecV1" + capitalize(escapedCamelCase(name)) + "HostFuncs";
@@ -79,12 +76,10 @@ public class JavaTestGen {
         cu.addImport("org.junit.jupiter.api.Disabled");
         cu.addImport("org.junit.jupiter.api.Tag");
         cu.addImport("org.junit.jupiter.api.Test");
-        if (ordered) {
-            cu.addImport("org.junit.jupiter.api.MethodOrderer");
-            cu.addImport("org.junit.jupiter.api.TestMethodOrder");
-            cu.addImport("org.junit.jupiter.api.Order");
-            cu.addImport("org.junit.jupiter.api.TestInstance");
-        }
+        cu.addImport("org.junit.jupiter.api.MethodOrderer");
+        cu.addImport("org.junit.jupiter.api.TestMethodOrder");
+        cu.addImport("org.junit.jupiter.api.Order");
+        cu.addImport("org.junit.jupiter.api.TestInstance");
         cu.addImport("org.junit.jupiter.api.Assertions.assertEquals", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertThrows", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertTrue", true, false);
@@ -110,15 +105,13 @@ public class JavaTestGen {
         cu.addImport("com.dylibso.chicory.imports.*");
 
         var testClass = cu.addClass(testName);
-        if (ordered) {
-            testClass.addSingleMemberAnnotation(
-                    "TestMethodOrder", new NameExpr("MethodOrderer.OrderAnnotation.class"));
-            testClass.addSingleMemberAnnotation(
-                    "TestInstance",
-                    new FieldAccessExpr(
-                            new FieldAccessExpr(new NameExpr("TestInstance"), "Lifecycle"),
-                            "PER_CLASS"));
-        }
+        testClass.addSingleMemberAnnotation(
+                "TestMethodOrder", new NameExpr("MethodOrderer.OrderAnnotation.class"));
+        testClass.addSingleMemberAnnotation(
+                "TestInstance",
+                new FieldAccessExpr(
+                        new FieldAccessExpr(new NameExpr("TestInstance"), "Lifecycle"),
+                        "PER_CLASS"));
 
         testClass.addAnnotation("ChicoryTest");
 
@@ -152,26 +145,38 @@ public class JavaTestGen {
                     String hostFuncs =
                             detectImports(importsName, lastModuleVarName, importsSourceRoot);
                     testClass.addFieldWithInitializer(
-                            parseClassOrInterfaceType("TestModule"),
-                            lastModuleVarName,
-                            generateModuleInstantiation(
-                                    cmd, currentWasmFile, importsName, hostFuncs));
-                    testClass.addFieldWithInitializer(
                             "Instance",
                             lastInstanceVarName,
-                            new NameExpr(lastModuleVarName + ".instance()"));
+                            new NullLiteralExpr(),
+                            Modifier.Keyword.PUBLIC,
+                            Modifier.Keyword.STATIC);
+
+                    var instantiateMethodName = "instantiate_" + lastInstanceVarName;
+                    var instantiateMethod =
+                            testClass.addMethod(instantiateMethodName, Modifier.Keyword.PUBLIC);
+                    // It needs to be a test to be executed
+                    instantiateMethod.addAnnotation("Test");
+                    instantiateMethod.addSingleMemberAnnotation(
+                            "Order", new IntegerLiteralExpr(Integer.toString(testNumber++)));
+
+                    instantiateMethod.setBody(
+                            new BlockStmt()
+                                    .addStatement(
+                                            new AssignExpr(
+                                                    new NameExpr(lastInstanceVarName),
+                                                    generateModuleInstantiation(
+                                                            cmd,
+                                                            currentWasmFile,
+                                                            importsName,
+                                                            hostFuncs),
+                                                    AssignExpr.Operator.ASSIGN)));
                     break;
                 case ACTION:
                 case ASSERT_RETURN:
                 case ASSERT_TRAP:
                     method =
                             createTestMethod(
-                                    testClass,
-                                    testNumber++,
-                                    excludedMethods,
-                                    ordered,
-                                    cmd,
-                                    currentWasmFile);
+                                    testClass, testNumber++, excludedMethods, cmd, currentWasmFile);
 
                     var baseVarName = escapedCamelCase(cmd.action().field());
                     var varNum = fallbackVarNumber++;
@@ -198,12 +203,7 @@ public class JavaTestGen {
                 case ASSERT_MALFORMED:
                     method =
                             createTestMethod(
-                                    testClass,
-                                    testNumber++,
-                                    excludedMethods,
-                                    ordered,
-                                    cmd,
-                                    currentWasmFile);
+                                    testClass, testNumber++, excludedMethods, cmd, currentWasmFile);
                     generateAssertThrows(wasmFilesFolder, cmd, method, excludeValidation);
                     break;
                 case ASSERT_INVALID:
@@ -219,16 +219,6 @@ public class JavaTestGen {
             }
         }
 
-        if (testClass.getMethods().size() == 0) {
-            var methodName = "instantiationTest";
-            var instantiationMethod = testClass.addMethod(methodName, Modifier.Keyword.PUBLIC);
-            instantiationMethod.addAnnotation("Test");
-            instantiationMethod.addOrphanComment(
-                    new LineComment("Empty test to trigger the class instances creation"));
-            instantiationMethod.setBody(
-                    new BlockStmt().addStatement(new NameExpr("assertTrue(true)")));
-        }
-
         return cu;
     }
 
@@ -236,7 +226,6 @@ public class JavaTestGen {
             ClassOrInterfaceDeclaration testClass,
             int testNumber,
             List<String> excludedTests,
-            boolean ordered,
             Command cmd,
             String currentWasmFile) {
         var methodName = "test" + testNumber;
@@ -247,10 +236,8 @@ public class JavaTestGen {
                             new Name("Disabled"), new StringLiteralExpr("Test excluded")));
         }
         method.addAnnotation("Test");
-        if (ordered) {
-            method.addSingleMemberAnnotation(
-                    "Order", new IntegerLiteralExpr(Integer.toString(testNumber)));
-        }
+        method.addSingleMemberAnnotation(
+                "Order", new IntegerLiteralExpr(Integer.toString(testNumber)));
 
         // generate Tag annotation with exported symbol as reference
         switch (cmd.type()) {
@@ -385,7 +372,7 @@ public class JavaTestGen {
                         + additionalParam
                         + ").build().instantiate("
                         + ((hostFuncs != null) ? importsName + "." + hostFuncs + "()" : "")
-                        + ")");
+                        + ").instance().initialize(true)"); // TODO: verify start = true
     }
 
     private String detectImports(String importsName, String varName, SourceRoot testSourcesRoot) {

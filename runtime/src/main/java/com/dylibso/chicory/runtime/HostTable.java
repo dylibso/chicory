@@ -1,7 +1,5 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
-
 import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -10,9 +8,9 @@ import java.util.Map;
 public class HostTable implements FromHost {
     private final String moduleName;
     private final String fieldName;
-    private final Table table;
+    private final TableInstance table;
 
-    public HostTable(String moduleName, String fieldName, Table table) {
+    public HostTable(String moduleName, String fieldName, TableInstance table) {
         this.moduleName = moduleName;
         this.fieldName = fieldName;
         this.table = table;
@@ -29,11 +27,9 @@ public class HostTable implements FromHost {
             }
         }
 
-        this.table = new Table(ValueType.FuncRef, new Limits(maxFuncRef, maxFuncRef));
-
-        for (int i = 0; i < maxFuncRef; i++) {
-            this.table.setRef(i, funcRefs.getOrDefault(i, REF_NULL_VALUE));
-        }
+        this.table =
+                new TableInstance(new Table(ValueType.FuncRef, new Limits(maxFuncRef, maxFuncRef)));
+        this.table.reset();
     }
 
     public String moduleName() {
@@ -49,7 +45,7 @@ public class HostTable implements FromHost {
         return FromHostType.TABLE;
     }
 
-    public Table table() {
+    public TableInstance table() {
         return table;
     }
 }

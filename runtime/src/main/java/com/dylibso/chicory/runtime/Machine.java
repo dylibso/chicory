@@ -1519,7 +1519,7 @@ class Machine {
         var valValue = stack.pop();
         var val = valValue.asExtRef();
 
-        var res = table.grow(size, val);
+        var res = table.grow(size, val, instance);
         stack.push(Value.i32(res));
     }
 
@@ -1545,7 +1545,7 @@ class Machine {
         }
 
         for (int i = offset; i < end; i++) {
-            table.setRef(i, val);
+            table.setRef(i, val, instance);
         }
     }
 
@@ -1566,10 +1566,12 @@ class Machine {
         for (int i = size - 1; i >= 0; i--) {
             if (d <= s) {
                 var val = src.ref(s++);
-                dest.setRef(d++, val.asFuncRef());
+                var inst = src.instance(d);
+                dest.setRef(d++, val.asFuncRef(), inst);
             } else {
                 var val = src.ref(s + i);
-                dest.setRef(d + i, val.asFuncRef());
+                var inst = src.instance(d + i);
+                dest.setRef(d + i, val.asFuncRef(), inst);
             }
         }
     }
@@ -1612,10 +1614,10 @@ class Machine {
                 if (val.asFuncRef() > instance.functionCount()) {
                     throw new WASMRuntimeException("out of bounds table access");
                 }
-                table.setRef(i, val.asFuncRef());
+                table.setRef(i, val.asFuncRef(), instance);
             } else {
                 assert table.elementType() == ValueType.ExternRef;
-                table.setRef(i, val.asExtRef());
+                table.setRef(i, val.asExtRef(), instance);
             }
         }
     }
@@ -2116,7 +2118,7 @@ class Machine {
 
         var value = stack.pop().asExtRef();
         var i = stack.pop().asInt();
-        table.setRef(i, value);
+        table.setRef(i, value, instance);
     }
 
     private static void TABLE_GET(MStack stack, Instance instance, long[] operands) {
@@ -2178,12 +2180,17 @@ class Machine {
         var table = instance.table(tableIdx);
 
         var typeId = (int) operands[0];
-        var type = instance.type(typeId);
         int funcTableIdx = stack.pop().asInt();
         int funcId = table.ref(funcTableIdx).asFuncRef();
+        var tableInstance = table.instance(funcTableIdx);
+        if (tableInstance != null) {
+            instance = tableInstance;
+        }
         if (funcId == REF_NULL_VALUE) {
             throw new ChicoryException("uninitialized element " + funcTableIdx);
         }
+        var type = instance.type(typeId);
+
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.params());
