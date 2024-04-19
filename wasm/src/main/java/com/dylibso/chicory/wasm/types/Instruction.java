@@ -6,7 +6,6 @@ public class Instruction {
     private final int address;
     private final OpCode opcode;
     private final long[] operands;
-    private CodeBlock block;
 
     // metadata fields
     private Integer labelTrue;
@@ -27,14 +26,6 @@ public class Instruction {
 
     public long[] operands() {
         return operands;
-    }
-
-    public void setCodeBlock(CodeBlock block) {
-        this.block = block;
-    }
-
-    public CodeBlock codeBlock() {
-        return block;
     }
 
     public String toString() {
