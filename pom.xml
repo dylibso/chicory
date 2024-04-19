@@ -423,7 +423,7 @@
       </build>
     </profile>
     <profile>
-      <id>jmh</id>
+      <id>benchmarks</id>
       <modules>
         <module>jmh</module>
       </modules>
