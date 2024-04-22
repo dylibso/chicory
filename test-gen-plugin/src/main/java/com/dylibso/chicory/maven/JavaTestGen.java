@@ -1,6 +1,7 @@
 package com.dylibso.chicory.maven;
 
-import static com.dylibso.chicory.maven.StringUtils.*;
+import static com.dylibso.chicory.maven.StringUtils.capitalize;
+import static com.dylibso.chicory.maven.StringUtils.escapedCamelCase;
 import static com.dylibso.chicory.maven.wast.ActionType.INVOKE;
 import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 
@@ -48,23 +49,23 @@ public class JavaTestGen {
 
     private final List<String> excludedTests;
 
-    private final List<String> excludedMalformedTests;
+    private final List<String> excludedMalformedWasts;
 
-    private final List<String> excludedInvalidTests;
+    private final List<String> excludedInvalidWasts;
 
     public JavaTestGen(
             Log log,
             File baseDir,
             File sourceTargetFolder,
             List<String> excludedTests,
-            List<String> excludedMalformedTests,
-            List<String> excludedInvalidTests) {
+            List<String> excludedMalformedWasts,
+            List<String> excludedInvalidWasts) {
         this.log = log;
         this.baseDir = baseDir;
         this.sourceTargetFolder = sourceTargetFolder;
         this.excludedTests = excludedTests;
-        this.excludedMalformedTests = excludedMalformedTests;
-        this.excludedInvalidTests = excludedInvalidTests;
+        this.excludedMalformedWasts = excludedMalformedWasts;
+        this.excludedInvalidWasts = excludedInvalidWasts;
     }
 
     public CompilationUnit generate(
@@ -131,8 +132,8 @@ public class JavaTestGen {
                         .map(t -> t.substring(testName.length() + 1))
                         .collect(Collectors.toList());
 
-        boolean excludeMalformed = excludedMalformedTests.contains(name + ".wast");
-        boolean excludeInvalid = excludedInvalidTests.contains(name + ".wast");
+        boolean excludeMalformed = excludedMalformedWasts.contains(name + ".wast");
+        boolean excludeInvalid = excludedInvalidWasts.contains(name + ".wast");
 
         String currentWasmFile = null;
         for (var cmd : wast.commands()) {

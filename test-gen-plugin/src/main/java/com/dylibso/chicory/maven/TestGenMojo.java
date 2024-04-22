@@ -6,7 +6,13 @@ import com.dylibso.chicory.maven.wast.Wast;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.utils.SourceRoot;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -88,7 +94,7 @@ public class TestGenMojo extends AbstractMojo {
      * Include list for the wast files that should generate an ordered spec.
      */
     @Parameter(required = true)
-    private List<String> orderedWastToProcess;
+    private List<String> includedWasts;
 
     /**
      * Exclude list for tests that are still failing.
@@ -96,11 +102,20 @@ public class TestGenMojo extends AbstractMojo {
     @Parameter(required = false, defaultValue = "[]")
     private List<String> excludedTests;
 
+    /**
+     * Exclude list for wast files that are still failing.
+     */
     @Parameter(required = false, defaultValue = "[]")
-    private List<String> excludedMalformedTests;
+    private List<String> excludedMalformedWasts;
 
     @Parameter(required = false, defaultValue = "[]")
-    private List<String> excludedInvalidTests;
+    private List<String> excludedInvalidWasts;
+
+    /**
+     * Exclude list for wast files that are entirely skipped.
+     */
+    @Parameter(defaultValue = "[]")
+    private List<String> excludedWasts;
 
     /**
      * The current Maven project.
@@ -108,14 +123,32 @@ public class TestGenMojo extends AbstractMojo {
     @Parameter(property = "project", required = true, readonly = true)
     private MavenProject project;
 
-    private List<String> clean(List<String> in) {
-        return in.stream()
-                .map(t -> (t != null) ? t.replace("\n", "").replace("\r", "").trim() : "")
-                .collect(Collectors.toList());
-    }
-
     @Override
     public void execute() throws MojoExecutionException {
+        // Validate config
+        validate(includedWasts, "includedWasts", true);
+        validate(excludedTests, "excludedTests", false);
+        validate(excludedMalformedWasts, "excludedMalformedWasts", true);
+        validate(excludedInvalidWasts, "excludedInvalidWasts", true);
+        validate(excludedWasts, "excludedWasts", true);
+
+        // Ensure that all wast files are included or excluded
+        Set<String> allWastFiles = new HashSet<>();
+        try (DirectoryStream<Path> stream =
+                Files.newDirectoryStream(testsuiteFolder.toPath(), "*.wast")) {
+            stream.forEach(path -> allWastFiles.add(path.getFileName().toString()));
+        } catch (IOException e) {
+            throw new MojoExecutionException("Failed to list wast files in " + testsuiteFolder, e);
+        }
+        includedWasts.forEach(allWastFiles::remove);
+        excludedMalformedWasts.forEach(allWastFiles::remove);
+        excludedInvalidWasts.forEach(allWastFiles::remove);
+        excludedWasts.forEach(allWastFiles::remove);
+        if (!allWastFiles.isEmpty()) {
+            throw new MojoExecutionException(
+                    "Some wast files are not included or excluded: " + allWastFiles);
+        }
+
         JavaParserMavenUtils.makeJavaParserLogToMavenOutput(getLog());
         // Instantiate the utilities
         var testSuiteDownloader = new TestSuiteDownloader(log);
@@ -132,9 +165,9 @@ public class TestGenMojo extends AbstractMojo {
                         log,
                         project.getBasedir(),
                         sourceDestinationFolder,
-                        clean(excludedTests),
-                        clean(excludedMalformedTests),
-                        clean(excludedInvalidTests));
+                        excludedTests,
+                        excludedMalformedWasts,
+                        excludedInvalidWasts);
 
         // Create destination folders
         if (!compiledWastTargetFolder.mkdirs()) {
@@ -157,9 +190,7 @@ public class TestGenMojo extends AbstractMojo {
             TestGenerator testGenerator =
                     new TestGenerator(wast2Json, testGen, importSourceRoot, dest);
 
-            clean(orderedWastToProcess).stream()
-                    .parallel()
-                    .forEach(spec -> testGenerator.generateTests(spec));
+            includedWasts.stream().parallel().forEach(testGenerator::generateTests);
 
             dest.saveAll();
         } catch (Exception e) {
@@ -168,6 +199,22 @@ public class TestGenMojo extends AbstractMojo {
 
         // Add the generated tests to the source root
         project.addTestCompileSourceRoot(sourceDestinationFolder.getAbsolutePath());
+    }
+
+    private static void validate(List<String> items, String name, boolean requireSorted)
+            throws MojoExecutionException {
+        Set<String> set = new HashSet<>();
+        for (String item : items) {
+            if (!set.add(item)) {
+                throw new MojoExecutionException(name + " contains duplicate: " + item);
+            }
+        }
+        if (requireSorted) {
+            List<String> sorted = items.stream().sorted().collect(Collectors.toList());
+            if (!sorted.equals(items)) {
+                throw new MojoExecutionException(name + " is not sorted. Expected: " + sorted);
+            }
+        }
     }
 
     private class TestGenerator {
