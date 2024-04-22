@@ -36,6 +36,7 @@
   <modules>
     <module>wasm-support-plugin</module>
     <module>test-gen-plugin</module>
+    <module>wasi-test-gen-plugin</module>
     <module>log</module>
     <module>wasm</module>
     <module>runtime</module>
@@ -149,6 +150,13 @@
         <groupId>commons-io</groupId>
         <artifactId>commons-io</artifactId>
         <version>${commons-io.version}</version>
+      </dependency>
+
+      <!-- Used for WASI tests -->
+      <dependency>
+        <groupId>com.google.jimfs</groupId>
+        <artifactId>jimfs</artifactId>
+        <version>1.3.0</version>
       </dependency>
 
       <dependency>

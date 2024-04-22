@@ -31,6 +31,12 @@ jobs:
           path: testsuite
           # The ref needs to stay in sync with the default value in test-gen-plugin
           ref: c2a67a575ddc815ff2212f68301d333e5e30a923
+      - name: Checkout wasi-testsuite
+        uses: actions/checkout@v4
+        with:
+          repository: WebAssembly/wasi-testsuite
+          path: wasi-testsuite
+          ref: prod/testsuite-base
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
