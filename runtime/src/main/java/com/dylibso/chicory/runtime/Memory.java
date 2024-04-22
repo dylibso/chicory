@@ -21,7 +21,7 @@ import java.util.Arrays;
 public final class Memory {
 
     /**
-     * A WebAssembly page size is 64KiB = 65,536 bits.
+     * A WebAssembly page size is 64KiB = 65,536 bytes.
      */
     public static final int PAGE_SIZE = 2 << 15;
 
