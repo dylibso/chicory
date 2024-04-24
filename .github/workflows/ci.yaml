@@ -43,6 +43,13 @@ jobs:
           distribution: 'temurin'
           java-version: '${{ matrix.version }}'
           cache: maven
+      - name: OSX Workaround
+        if: matrix.runs-on == 'macos-latest'
+        run: |
+          brew update
+          brew install openssl
+          ln -s /usr/local/opt/openssl/lib/libcrypto.1.0.0.dylib /usr/local/lib/
+          ln -s /usr/local/opt/openssl/lib/libssl.1.0.0.dylib /usr/local/lib/
       - name: Check Style
         run:  mvn -B spotless:check -Pbenchmarks -Pfuzz
       - name: Test Java
