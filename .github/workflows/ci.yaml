@@ -43,6 +43,9 @@ jobs:
           distribution: 'temurin'
           java-version: '${{ matrix.version }}'
           cache: maven
+      - name: OSX + ARM workaround
+        if: matrix.os == 'macos-latest'
+        run: brew install wabt
       - name: Check Style
         run:  mvn -B spotless:check -Pbenchmarks -Pfuzz
       - name: Test Java
