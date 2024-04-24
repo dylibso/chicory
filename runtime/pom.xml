@@ -130,16 +130,9 @@
             linking.wast,
             load.wast,
             ref_is_null.wast</orderedWastToProcess>
-          <excludedTests>
-            <!-- Need assert trap and active/passive memory initialization to be completed -->
-            SpecV1LinkingTest.test83, SpecV1LinkingTest.test84, SpecV1LinkingTest.test86,
-            SpecV1LinkingTest.test88, SpecV1LinkingTest.test89,
-            <!-- Require assert_trap in module initialization -->
-            SpecV1LinkingTest.test74, SpecV1LinkingTest.test75, SpecV1LinkingTest.test77,
-            <!-- Active/Passive after module failed initialization -->
-            SpecV1LinkingTest.test103, SpecV1LinkingTest.test104, SpecV1LinkingTest.test106,
-            SpecV1LinkingTest.test109, SpecV1LinkingTest.test110
-          </excludedTests>
+          <excludedTests>SpecV1LinkingTest.test83, SpecV1LinkingTest.test86, SpecV1LinkingTest.test94,
+            SpecV1LinkingTest.test97, SpecV1LinkingTest.test115, SpecV1LinkingTest.test116,
+            SpecV1LinkingTest.test118, SpecV1LinkingTest.test121, SpecV1LinkingTest.test122</excludedTests>
           <excludedMalformedTests>binary.wast,
             binary-leb128.wast</excludedMalformedTests>
           <excludedInvalidTests>block.wast,
