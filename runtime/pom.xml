@@ -131,9 +131,6 @@
             load.wast,
             ref_is_null.wast</orderedWastToProcess>
           <excludedTests>
-            <!-- Init Active/Passive segments -->
-            SpecV1BulkTest.test91, SpecV1BulkTest.test95, SpecV1BulkTest.test89,
-            SpecV1BulkTest.test93,
             <!-- Invalid and Malformed failures, can be ignored for now -->
             SpecV1AddressTest.test199, SpecV1AddressTest.test200, SpecV1AddressTest.test201,
             SpecV1AddressTest.test202, SpecV1AddressTest.test203, SpecV1AddressTest.test204,
