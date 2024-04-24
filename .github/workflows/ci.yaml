@@ -44,7 +44,7 @@ jobs:
           java-version: '${{ matrix.version }}'
           cache: maven
       - name: OSX Workaround
-        if: matrix.runs-on == 'macos-latest'
+        if: matrix.os == 'macos-latest'
         run: |
           brew update
           brew install openssl
