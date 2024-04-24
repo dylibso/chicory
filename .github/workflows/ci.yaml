@@ -48,9 +48,9 @@ jobs:
         run: |
           brew update
           brew reinstall openssl@3
-          mkdir -p /usr/local/lib/
-          ln -s /usr/local/opt/openssl/lib/libcrypto.3.dylib /usr/local/lib/
-          ln -s /usr/local/opt/openssl/lib/libssl.3.dylib /usr/local/lib/
+          sudo mkdir -p /usr/local/lib/
+          sudo ln -s /usr/local/opt/openssl/lib/libcrypto.3.dylib /usr/local/lib/
+          sudo ln -s /usr/local/opt/openssl/lib/libssl.3.dylib /usr/local/lib/
       - name: Check Style
         run:  mvn -B spotless:check -Pbenchmarks -Pfuzz
       - name: Test Java
