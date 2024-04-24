@@ -48,6 +48,7 @@ jobs:
         run: |
           brew update
           brew reinstall openssl@3
+          mkdir -p /usr/local/lib/
           ln -s /usr/local/opt/openssl/lib/libcrypto.3.dylib /usr/local/lib/
           ln -s /usr/local/opt/openssl/lib/libssl.3.dylib /usr/local/lib/
       - name: Check Style
