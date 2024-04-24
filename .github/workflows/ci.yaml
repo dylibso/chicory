@@ -43,14 +43,9 @@ jobs:
           distribution: 'temurin'
           java-version: '${{ matrix.version }}'
           cache: maven
-      - name: OSX Workaround
+      - name: OSX + ARM workaround
         if: matrix.os == 'macos-latest'
-        run: |
-          brew update
-          brew reinstall openssl@3
-          sudo mkdir -p /usr/local/lib/
-          sudo ln -s /usr/local/opt/openssl/lib/libcrypto.3.dylib /usr/local/lib/
-          sudo ln -s /usr/local/opt/openssl/lib/libssl.3.dylib /usr/local/lib/
+        run: brew install wabt
       - name: Check Style
         run:  mvn -B spotless:check -Pbenchmarks -Pfuzz
       - name: Test Java
