@@ -48,19 +48,23 @@ public class JavaTestGen {
 
     private final List<String> excludedTests;
 
-    private final List<String> excludedValidationTests;
+    private final List<String> excludedMalformedTests;
+
+    private final List<String> excludedInvalidTests;
 
     public JavaTestGen(
             Log log,
             File baseDir,
             File sourceTargetFolder,
             List<String> excludedTests,
-            List<String> excludedValidationTests) {
+            List<String> excludedMalformedTests,
+            List<String> excludedInvalidTests) {
         this.log = log;
         this.baseDir = baseDir;
         this.sourceTargetFolder = sourceTargetFolder;
         this.excludedTests = excludedTests;
-        this.excludedValidationTests = excludedValidationTests;
+        this.excludedMalformedTests = excludedMalformedTests;
+        this.excludedInvalidTests = excludedInvalidTests;
     }
 
     public CompilationUnit generate(
@@ -127,7 +131,8 @@ public class JavaTestGen {
                         .map(t -> t.substring(testName.length() + 1))
                         .collect(Collectors.toList());
 
-        boolean excludeValidation = excludedValidationTests.contains(name + ".wast");
+        boolean excludeMalformed = excludedMalformedTests.contains(name + ".wast");
+        boolean excludeInvalid = excludedInvalidTests.contains(name + ".wast");
 
         String currentWasmFile = null;
         for (var cmd : wast.commands()) {
@@ -200,22 +205,29 @@ public class JavaTestGen {
                         }
                     }
                     break;
+                case REGISTER:
+                    // should be irrelevant
+                    break;
                 case ASSERT_MALFORMED:
                     method =
                             createTestMethod(
                                     testClass, testNumber++, excludedMethods, cmd, currentWasmFile);
-                    generateAssertThrows(wasmFilesFolder, cmd, method, excludeValidation);
+                    generateAssertThrows(wasmFilesFolder, cmd, method, excludeMalformed);
                     break;
                 case ASSERT_INVALID:
+                    method =
+                            createTestMethod(
+                                    testClass, testNumber++, excludedMethods, cmd, currentWasmFile);
+                    generateAssertThrows(wasmFilesFolder, cmd, method, excludeInvalid);
+                    break;
                 case ASSERT_UNINSTANTIABLE:
+                case ASSERT_EXHAUSTION:
+                case ASSERT_UNLINKABLE:
                     testNumber++;
                     break;
                 default:
-                    // TODO we need to implement all of these
-                    log.info("TODO: command type not yet supported " + cmd.type());
-                    //                    throw new IllegalArgumentException(
-                    //                            "command type not yet supported " +
-                    // cmd.getType());
+                    throw new IllegalArgumentException(
+                            "command type not yet supported " + cmd.type());
             }
         }
 
@@ -446,8 +458,7 @@ public class JavaTestGen {
         if (excluded) {
             method.addAnnotation(
                     new SingleMemberAnnotationExpr(
-                            new Name("Disabled"),
-                            new StringLiteralExpr("Validation test excluded")));
+                            new Name("Disabled"), new StringLiteralExpr("Test excluded")));
         } else if (cmd.moduleType() != null && cmd.moduleType().equalsIgnoreCase("text")) {
             method.addAnnotation(
                     new SingleMemberAnnotationExpr(

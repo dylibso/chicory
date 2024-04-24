@@ -130,17 +130,63 @@
             linking.wast,
             load.wast,
             ref_is_null.wast</orderedWastToProcess>
-          <excludedTests>
-            <!-- Need assert trap and active/passive memory initialization to be completed -->
-            SpecV1LinkingTest.test83, SpecV1LinkingTest.test84, SpecV1LinkingTest.test86,
-            SpecV1LinkingTest.test88, SpecV1LinkingTest.test89,
-            <!-- Require assert_trap in module initialization -->
-            SpecV1LinkingTest.test74, SpecV1LinkingTest.test75, SpecV1LinkingTest.test77,
-            <!-- Active/Passive after module failed initialization -->
-            SpecV1LinkingTest.test103, SpecV1LinkingTest.test104, SpecV1LinkingTest.test106,
-            SpecV1LinkingTest.test109, SpecV1LinkingTest.test110
-          </excludedTests>
-          <excludedValidationTests>binary.wast,binary-leb128.wast</excludedValidationTests>
+          <excludedTests>SpecV1LinkingTest.test83, SpecV1LinkingTest.test86, SpecV1LinkingTest.test94,
+            SpecV1LinkingTest.test97, SpecV1LinkingTest.test115, SpecV1LinkingTest.test116,
+            SpecV1LinkingTest.test118, SpecV1LinkingTest.test121, SpecV1LinkingTest.test122</excludedTests>
+          <excludedMalformedTests>binary.wast,
+            binary-leb128.wast</excludedMalformedTests>
+          <excludedInvalidTests>block.wast,
+            br_if.wast,
+            br_table.wast,
+            br.wast,
+            call_indirect.wast,
+            call.wast,
+            conversions.wast,
+            data.wast,
+            exports.wast,
+            f32.wast,
+            f32_bitwise.wast,
+            f32_cmp.wast,
+            f64.wast,
+            f64_bitwise.wast,
+            f64_cmp.wast,
+            func.wast,
+            func_ptrs.wast,
+            global.wast,
+            i32.wast,
+            i64.wast,
+            if.wast,
+            imports.wast,
+            labels.wast,
+            linking.wast,
+            load.wast,
+            local_get.wast,
+            local_set.wast,
+            local_tee.wast,
+            loop.wast,
+            memory.wast,
+            memory_copy.wast,
+            memory_fill.wast,
+            memory_grow.wast,
+            memory_init.wast,
+            memory_size.wast,
+            nop.wast,
+            ref_func.wast,
+            ref_is_null.wast,
+            return.wast,
+            select.wast,
+            start.wast,
+            store.wast,
+            switch.wast,
+            table.wast,
+            table-sub.wast,
+            table_fill.wast,
+            table_get.wast,
+            table_grow.wast,
+            table_init.wast,
+            table_set.wast,
+            table_size.wast,
+            unreached-invalid.wast</excludedInvalidTests>
         </configuration>
         <executions>
           <execution>

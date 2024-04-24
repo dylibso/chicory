@@ -97,7 +97,10 @@ public class TestGenMojo extends AbstractMojo {
     private List<String> excludedTests;
 
     @Parameter(required = false, defaultValue = "[]")
-    private List<String> excludedValidationTests;
+    private List<String> excludedMalformedTests;
+
+    @Parameter(required = false, defaultValue = "[]")
+    private List<String> excludedInvalidTests;
 
     /**
      * The current Maven project.
@@ -130,7 +133,8 @@ public class TestGenMojo extends AbstractMojo {
                         project.getBasedir(),
                         sourceDestinationFolder,
                         clean(excludedTests),
-                        clean(excludedValidationTests));
+                        clean(excludedMalformedTests),
+                        clean(excludedInvalidTests));
 
         // Create destination folders
         if (!compiledWastTargetFolder.mkdirs()) {
