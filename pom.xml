@@ -97,7 +97,7 @@
     <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-clean-plugin.version>3.3.2</maven-clean-plugin.version>
-    <maven-install-plugin.version>3.1.1</maven-install-plugin.version>
+    <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
     <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
     <maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
     <maven-gpg-plugin.version>3.2.4</maven-gpg-plugin.version>
