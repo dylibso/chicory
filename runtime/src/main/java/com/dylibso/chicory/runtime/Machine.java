@@ -46,6 +46,7 @@ class Machine {
             boolean popResults)
             throws ChicoryException {
 
+        checkInterruption();
         var typeId = instance.functionType(funcId);
         var type = instance.type(typeId);
 
@@ -129,8 +130,10 @@ class Machine {
                     case IF:
                         IF(frame, stack, instruction);
                         break;
-                    case ELSE:
                     case BR:
+                        checkInterruption();
+                        // fall through
+                    case ELSE:
                         prepareControlTransfer(frame, stack, false);
                         frame.jumpTo(instruction.labelTrue());
                         break;
@@ -2397,6 +2400,18 @@ class Machine {
             throws ChicoryException {
         if (!actual.typesMatch(expected)) {
             throw new ChicoryException("indirect call type mismatch");
+        }
+    }
+
+    /**
+     * Terminate WASM execution if requested.
+     * This is called at the start of each call and at any potentially backwards branches.
+     * Forward branches and other non-branch instructions are not checked, as the
+     * execution will run until it eventually reaches a termination point.
+     */
+    private static void checkInterruption() {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new ChicoryException("Thread interrupted");
         }
     }
 }
