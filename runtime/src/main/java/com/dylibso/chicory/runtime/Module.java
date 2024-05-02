@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Module {
@@ -78,11 +79,28 @@ public class Module {
         return this.instantiate(new HostImports(), true, true);
     }
 
+    public Instance instantiate(Function<Instance, Machine> machineFactory) {
+        return this.instantiate(new HostImports(), machineFactory, true, true);
+    }
+
     public Instance instantiate(HostImports hostImports) {
         return this.instantiate(hostImports, true, true);
     }
 
+    public Instance instantiate(
+            HostImports hostImports, Function<Instance, Machine> machineFactory) {
+        return this.instantiate(hostImports, machineFactory, true, true);
+    }
+
     public Instance instantiate(HostImports hostImports, boolean initialize, boolean start) {
+        return instantiate(hostImports, InterpreterMachine::new, initialize, start);
+    }
+
+    public Instance instantiate(
+            HostImports hostImports,
+            Function<Instance, Machine> machineFactory,
+            boolean initialize,
+            boolean start) {
         var globalInitializers = new Global[] {};
         if (this.module.globalSection() != null) {
             globalInitializers = this.module.globalSection().globals();
@@ -235,6 +253,7 @@ public class Module {
                 mappedHostImports,
                 tables,
                 elements,
+                machineFactory,
                 initialize,
                 start);
     }

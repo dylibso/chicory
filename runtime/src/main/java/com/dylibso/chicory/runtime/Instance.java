@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.runtime.Machine.computeConstantValue;
+import static com.dylibso.chicory.runtime.MachineUtil.computeConstantValue;
 import static com.dylibso.chicory.runtime.Module.START_FUNCTION_NAME;
 
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
@@ -17,6 +17,7 @@ import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Function;
 
 public class Instance {
     private final Module module;
@@ -53,6 +54,42 @@ public class Instance {
             Element[] elements,
             boolean initialize,
             boolean start) {
+        this(
+                module,
+                globalInitializers,
+                importedGlobalsOffset,
+                importedFunctionsOffset,
+                importedTablesOffset,
+                memory,
+                dataSegments,
+                functions,
+                types,
+                functionTypes,
+                imports,
+                tables,
+                elements,
+                InterpreterMachine::new,
+                initialize,
+                start);
+    }
+
+    public Instance(
+            Module module,
+            Global[] globalInitializers,
+            int importedGlobalsOffset,
+            int importedFunctionsOffset,
+            int importedTablesOffset,
+            Memory memory,
+            DataSegment[] dataSegments,
+            FunctionBody[] functions,
+            FunctionType[] types,
+            int[] functionTypes,
+            HostImports imports,
+            Table[] tables,
+            Element[] elements,
+            Function<Instance, Machine> machineFactory,
+            boolean initialize,
+            boolean start) {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
         this.globals = new GlobalInstance[globalInitializers.length + importedGlobalsOffset];
@@ -65,7 +102,7 @@ public class Instance {
         this.types = types.clone();
         this.functionTypes = functionTypes.clone();
         this.imports = imports;
-        this.machine = new Machine(this);
+        this.machine = machineFactory.apply(this);
         this.roughTables = tables.clone();
         this.elements = elements.clone();
         this.start = start;
@@ -275,5 +312,9 @@ public class Instance {
 
     public void setElement(int idx, Element val) {
         elements[idx] = val;
+    }
+
+    public Machine getMachine() {
+        return machine;
     }
 }
