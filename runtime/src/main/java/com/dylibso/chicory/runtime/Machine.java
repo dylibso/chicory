@@ -2259,6 +2259,7 @@ class Machine {
     private static void BR_IF(StackFrame frame, MStack stack, Instruction instruction) {
         var predValue = prepareControlTransfer(frame, stack, true);
         var pred = predValue.asInt();
+        frame.isControlFrame = true;
 
         if (pred == 0) {
             frame.jumpTo(instruction.labelFalse());

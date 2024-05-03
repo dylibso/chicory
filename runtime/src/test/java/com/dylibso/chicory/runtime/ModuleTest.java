@@ -292,4 +292,12 @@ public class ModuleTest {
         run.apply();
         assertEquals("1: 164", logResult.get());
     }
+
+    @Test
+    public void issue294() {
+        var instance = Module.builder("compiled/issue294.wat.wasm").build().instantiate();
+
+        var main = instance.export("main");
+        assertEquals(5, main.apply(Value.i32(5))[0].asInt());
+    }
 }
