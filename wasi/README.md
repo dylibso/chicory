@@ -59,7 +59,7 @@ module.instantiate(imports);
 ```
 
 > **Note**: Take note that we don't explicitly execute the module. The module will run when you instantiate it. This
-> is part of the WASI spec. They will implicitly call `_start`. To learn more [read this blog post](https://dylibso.com/blog/wasi-command-reactor/).
+> is part of the WASI spec. They will implicitly call [`_start`](https://webassembly.github.io/spec/core/syntax/modules.html#start-function). To learn more [read this blog post](https://dylibso.com/blog/wasi-command-reactor/). 
 
 ### stdin, stdout, and stderr
 
