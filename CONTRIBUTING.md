@@ -38,7 +38,7 @@ This philosophy tends to lead us down what might seem like some non-optimal path
 to simplify things, use older versions of Java, or reject improvements that we feel
 makes things more confusing without enough measurable benefits.
 
-We don't expect to be able to maintain this forever, and some parts of the codebase will 
+We don't expect to be able to maintain this forever, and some parts of the codebase will
 inevitably suffer from necessary complexity in the name of correctness, safety, or speed.
 But we are holding the line as long as we can.
 
@@ -95,4 +95,3 @@ modified, such other license.
 ## The small print
 
 This project is an open source project. Please act responsibly, be nice, polite and enjoy!
-

@@ -42,7 +42,7 @@ these functions behave and what the module can and cannot do.
 ### Bare-Bones Instantiation
 
 So to instantiate a WASI module you need an instance of `WasiPreview1`. You can turn this instance into
-import functions which can then be passed to the Module builder. 
+import functions which can then be passed to the Module builder.
 
 ```java
 var logger = new SystemLogger();
@@ -59,7 +59,7 @@ module.instantiate(imports);
 ```
 
 > **Note**: Take note that we don't explicitly execute the module. The module will run when you instantiate it. This
-> is part of the WASI spec. They will implicitly call [`_start`](https://webassembly.github.io/spec/core/syntax/modules.html#start-function). To learn more [read this blog post](https://dylibso.com/blog/wasi-command-reactor/). 
+> is part of the WASI spec. They will implicitly call [`_start`](https://webassembly.github.io/spec/core/syntax/modules.html#start-function). To learn more [read this blog post](https://dylibso.com/blog/wasi-command-reactor/).
 
 ### stdin, stdout, and stderr
 
@@ -96,10 +96,3 @@ assertEquals(fakeStdout.toString(), "Hello, Andrea!");
 // there should be no bytes in stderr!
 assertEquals(fakeStderr.toString(), "");
 ```
-
-
-
-
-
-
-
