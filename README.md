@@ -187,7 +187,7 @@ logIt.apply();
 
 ### Why is this needed?
 
-If you'd prefer to watch a video interested of read, see our [2024 Wasm I/O](https://2024.wasmio.tech/) on the subject:
+If you'd prefer to watch a video instead of reading, see our [2024 Wasm I/O](https://2024.wasmio.tech/) on the subject:
 
 [![Wasm I/O Chicory talk](https://img.youtube.com/vi/00LYdZS0YlI/0.jpg)](https://www.youtube.com/watch?v=00LYdZS0YlI)
 
