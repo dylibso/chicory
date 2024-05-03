@@ -21,7 +21,7 @@ But first, read this page (including the small print at the end).
 
 Writing a runtime is a big challenge. We want Chicory to always be a solid foundation
 for running Wasm in Java. In order to accomplish this, it's going to take a large team
-of diverse contributors. That's why our goal up front is to aim for writing "dumb" and
+of diverse contributors. That's why our goal up front is to aim for writing
 simple code that's easy to understand and is as backwards compatible as possible.
 
 The reason is we want to optimize for:
