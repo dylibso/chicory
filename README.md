@@ -251,6 +251,7 @@ The primary goal here is to create an AOT compiler that generates JVM bytecode
 as interpreting bytecode can only be so fast.
 
 * [ ] Decouple interpreter and create separate compiler and interpreter "engines"
+  * Started by @danielperano
 * [ ] Proof of concept AOT compiler (run some subset of modules)
 * [ ] AOT engine passes all the same specs as interpreter (stretch goal)
 * [ ] Off-heap linear memory (stretch goal)
