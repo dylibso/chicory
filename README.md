@@ -256,7 +256,7 @@ as interpreting bytecode can only be so fast.
 * [ ] AOT engine passes all the same specs as interpreter (stretch goal)
 * [ ] Off-heap linear memory (stretch goal)
 
-### Make it compatible (EOY 2024)
+#### Make it compatible (EOY 2024)
 
 * [ ] WASIp1 Support (including test gen)
   * We have [partial support for wasip1](wasi/) and [test generation](wasi-test-gen-plugin/)
