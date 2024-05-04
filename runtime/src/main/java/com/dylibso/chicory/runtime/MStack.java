@@ -21,7 +21,7 @@ public class MStack {
     }
 
     public Value pop() {
-        var r = this.stack.pop();
+        var r = this.stack.pollFirst();
         if (r == null) throw new RuntimeException("Stack underflow exception");
         return r;
     }
