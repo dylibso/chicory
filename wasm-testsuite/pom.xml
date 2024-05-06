@@ -10,8 +10,8 @@
   <artifactId>wasm-testsuite</artifactId>
   <packaging>jar</packaging>
 
-  <name>Chicory - Log</name>
-  <description>WebAssembly Log Utilities</description>
+  <name>Chicory - Test Suite</name>
+  <description>WebAssembly Test Suite</description>
 
   <dependencies>
     <dependency>
