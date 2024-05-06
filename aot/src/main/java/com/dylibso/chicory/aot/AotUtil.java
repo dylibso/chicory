@@ -1,5 +1,6 @@
 package com.dylibso.chicory.aot;
 
+import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -28,6 +29,14 @@ public class AotUtil {
 
     public static Class<?> jvmType(ValueType type) {
         return Objects.requireNonNull(JVM_TYPES.get(type), "Unsupported ValueType: " + type.name());
+    }
+
+    public static ValueType localType(FunctionType type, FunctionBody body, int localIndex) {
+        if (localIndex < type.params().size()) {
+            return type.params().get(localIndex);
+        } else {
+            return body.localTypes().get(localIndex - type.params().size());
+        }
     }
 
     public static String unboxMethodName(ValueType type) {

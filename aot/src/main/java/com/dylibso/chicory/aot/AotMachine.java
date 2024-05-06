@@ -1,11 +1,16 @@
 package com.dylibso.chicory.aot;
 
+import static com.dylibso.chicory.wasm.types.OpCode.*;
+
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.StackFrame;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.lang.invoke.MethodHandle;
@@ -13,6 +18,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -26,6 +32,15 @@ public class AotMachine implements Machine {
 
     protected final Module module;
     protected final MethodHandle[] compiledFunctions;
+
+    protected static final Map<OpCode, IntrinsicEmitter> intrinsics =
+            Map.of(
+                    LOCAL_GET, AotIntrinsics::LOCAL_GET,
+                    I32_ADD, AotIntrinsics::I32_ADD,
+                    I32_SUB, AotIntrinsics::I32_SUB,
+                    I32_MUL, AotIntrinsics.intrinsify(I32_MUL, OpcodeImpl.class),
+                    I32_REM_S, AotIntrinsics.intrinsify(I32_REM_S, OpcodeImpl.class)
+                    );
 
     public AotMachine(Module module) {
         this.module = module;
@@ -71,7 +86,13 @@ public class AotMachine implements Machine {
 
         var functionName = nameFor(funcId);
         var classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        classWriter.visit(Opcodes.V11, Opcodes.ACC_PUBLIC, functionName, null, Type.getInternalName(Object.class), null);
+        classWriter.visit(
+                Opcodes.V11,
+                Opcodes.ACC_PUBLIC,
+                functionName,
+                null,
+                Type.getInternalName(Object.class),
+                null);
         classWriter.visitSource("wasm", "wasm");
 
         makeDefaultConstructor(classWriter);
@@ -108,7 +129,8 @@ public class AotMachine implements Machine {
         for (int i = 0; i < argHandlers.length; i++) {
             argHandlers[i] = filterFor(argTypes.get(i));
         }
-        return MethodHandles.filterArguments(handle, 0, argHandlers).asSpreader(Value[].class, argTypes.size());
+        return MethodHandles.filterArguments(handle, 0, argHandlers)
+                .asSpreader(Value[].class, argTypes.size());
     }
 
     private MethodHandle filterFor(ValueType type)
@@ -121,33 +143,54 @@ public class AotMachine implements Machine {
         return "fn$" + funcId;
     }
 
-    private void makeDefaultConstructor(ClassWriter cls){
-        var cons = cls.visitMethod(Opcodes.ACC_PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
+    private void makeDefaultConstructor(ClassWriter cls) {
+        var cons =
+                cls.visitMethod(
+                        Opcodes.ACC_PUBLIC,
+                        "<init>",
+                        Type.getMethodDescriptor(Type.VOID_TYPE),
+                        null,
+                        null);
         cons.visitCode();
         cons.visitVarInsn(Opcodes.ALOAD, 0);
-        cons.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getType(Object.class).getInternalName(), "<init>", Type.getMethodType(Type.VOID_TYPE).getDescriptor(), false);
+        cons.visitMethodInsn(
+                Opcodes.INVOKESPECIAL,
+                Type.getType(Object.class).getInternalName(),
+                "<init>",
+                Type.getMethodType(Type.VOID_TYPE).getDescriptor(),
+                false);
         cons.visitInsn(Opcodes.RETURN);
         cons.visitMaxs(0, 0);
         cons.visitEnd();
     }
 
+    private boolean tryEmitIntrinsic(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        var emitter = intrinsics.get(ins.opcode());
+        if (emitter != null) {
+            emitter.emit(ctx, ins, asm);
+            return true;
+        }
+        return false;
+    }
+
     private void compileBody(int funcId, FunctionType type, FunctionBody body, MethodVisitor asm) {
 
-        for(var ins : body.instructions()){
-            switch (ins.opcode()){
-                case LOCAL_GET:
-                    asm.visitVarInsn(Opcodes.ILOAD, (int)ins.operands()[0] + 1);
-                    break;
-                case I32_ADD:
-                    asm.visitInsn(Opcodes.IADD);
-                    break;
+        var ctx = new AotContext(funcId, type, body);
+
+        for (var ins : body.instructions()) {
+            switch (ins.opcode()) {
+                    // TODO - handle control flow & other "bookkeeping" opcodes here
                 case END:
                     break;
                 default:
-                    asm.visitLdcInsn(0);
+                    if (!tryEmitIntrinsic(ctx, ins, asm)) {
+                        // TODO - throw appropriate error because we couldn't match the instruction
+                    }
             }
         }
 
         asm.visitInsn(Opcodes.IRETURN);
     }
+
+    private void generateOpCodeImplHelperCall(AotContext ctx, Instruction ins, MethodVisitor asm) {}
 }

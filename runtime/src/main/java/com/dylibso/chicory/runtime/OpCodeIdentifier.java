@@ -1,4 +1,4 @@
-package com.dylibso.chicory.aot;
+package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.OpCode;
 import java.lang.annotation.ElementType;
@@ -8,7 +8,8 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface OpCodeDecorator {
+public @interface OpCodeIdentifier {
 
     OpCode value();
+
 }
