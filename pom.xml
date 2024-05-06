@@ -39,6 +39,7 @@
     <module>wasi-test-gen-plugin</module>
     <module>log</module>
     <module>wasm</module>
+    <module>wasm-testsuite</module>
     <module>runtime</module>
     <module>wasi</module>
     <module>wasm-corpus</module>
@@ -175,6 +176,12 @@
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-params</artifactId>
         <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wasm-testsuite</artifactId>
+        <version>${project.version}</version>
         <scope>test</scope>
       </dependency>
 
