@@ -2259,7 +2259,6 @@ class Machine {
     private static void BR_IF(StackFrame frame, MStack stack, Instruction instruction) {
         var predValue = prepareControlTransfer(frame, stack, true);
         var pred = predValue.asInt();
-        frame.isControlFrame = true;
 
         if (pred == 0) {
             frame.jumpTo(instruction.labelFalse());
@@ -2270,6 +2269,7 @@ class Machine {
 
     private static Value prepareControlTransfer(StackFrame frame, MStack stack, boolean consume) {
         frame.doControlTransfer = true;
+        frame.isControlFrame = true;
         return consume ? stack.pop() : null;
     }
 
