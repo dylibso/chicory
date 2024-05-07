@@ -904,66 +904,6 @@ public class WasiPreview1 implements Closeable {
                 List.of(I32));
     }
 
-    public HostFunction getAllocationState() {
-        return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("get_allocation_state: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
-                },
-                "wasi_snapshot_preview1",
-                "get_allocation_state",
-                List.of(),
-                List.of(I32));
-    }
-
-    public HostFunction getStatePtr() {
-        return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("get_state_ptr: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
-                },
-                "wasi_snapshot_preview1",
-                "get_state_ptr",
-                List.of(),
-                List.of(I32));
-    }
-
-    public HostFunction Memcpy() {
-        return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("memcpy: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
-                },
-                "wasi_snapshot_preview1",
-                "memcpy",
-                List.of(I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction Memove() {
-        return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("memcpy: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
-                },
-                "wasi_snapshot_preview1",
-                "memmove",
-                List.of(I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction Memset() {
-        return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("memset: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
-                },
-                "wasi_snapshot_preview1",
-                "memset",
-                List.of(I32, I32, I32),
-                List.of(I32));
-    }
-
     public HostFunction pathCreateDirectory() {
         return new HostFunction(
                 (Instance instance, Value... args) -> {

@@ -60,11 +60,6 @@ We also have a table:
 | fd_sync	                 | ❌         |
 | fd_tell	                 | ✅	        |
 | fd_write	                | ✅         |
-| get_allocation_state	    | 💀        |
-| get_state_ptr	           | 💀        |
-| memcpy	                  | 💀        |
-| memmove	                 | 💀        |
-| memset	                  | 💀        |
 | path_create_directory	   | ✅         |
 | path_filestat_get        | 	✅	       |
 | path_filestat_set_times	 | ❌         |
