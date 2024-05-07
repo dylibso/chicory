@@ -97,8 +97,6 @@ public class SpecV1ElemHostFuncs {
                 new HostTable[] {new HostTable("exporter", "table", mInstance.table(0))});
     }
 
-    // TODO: This test shows that we need to push the instance into the FuncRef, this enables
-    // simplifying TableInstance too
     public static HostImports testModule30() {
         return new HostImports(
                 new HostGlobal[] {new HostGlobal("module4", "f", module4Instance.global(0))});
