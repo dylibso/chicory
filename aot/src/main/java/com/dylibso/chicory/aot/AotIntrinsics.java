@@ -4,11 +4,35 @@ import com.dylibso.chicory.runtime.OpCodeIdentifier;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import java.lang.reflect.Modifier;
+import java.util.HashMap;
+import java.util.Map;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 public class AotIntrinsics {
+
+    public static class Builder {
+
+        protected final Map<OpCode, IntrinsicEmitter> intrinsics = new HashMap<>();
+
+        public Builder with(OpCode opCode, IntrinsicEmitter emitter) {
+            intrinsics.put(opCode, emitter);
+            return this;
+        }
+
+        public Builder intrinsify(OpCode opCode, Class<?> staticHelpers) {
+            return with(opCode, AotIntrinsics.intrinsify(opCode, staticHelpers));
+        }
+
+        public Map<OpCode, IntrinsicEmitter> build() {
+            return Map.copyOf(intrinsics);
+        }
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
 
     public static void LOCAL_GET(AotContext ctx, Instruction ins, MethodVisitor asm) {
         var loadIndex = (int) ins.operands()[0];

@@ -35,16 +35,24 @@ public class AotMachine implements Machine {
     protected final MethodHandle[] compiledFunctions;
 
     protected static final Map<OpCode, IntrinsicEmitter> intrinsics =
-            Map.of(
-                    LOCAL_GET, AotIntrinsics::LOCAL_GET,
-                    LOCAL_SET, AotIntrinsics::LOCAL_SET,
-                    I32_ADD, AotIntrinsics::I32_ADD,
-                    I32_SUB, AotIntrinsics::I32_SUB,
-                    I32_MUL, AotIntrinsics.intrinsify(I32_MUL, OpcodeImpl.class),
-                    I32_DIV_S, AotIntrinsics.intrinsify(I32_DIV_S, OpcodeImpl.class),
-                    I32_DIV_U, AotIntrinsics.intrinsify(I32_DIV_U, OpcodeImpl.class),
-                    I32_REM_S, AotIntrinsics.intrinsify(I32_REM_S, OpcodeImpl.class),
-                    I32_REM_U, AotIntrinsics.intrinsify(I32_REM_U, OpcodeImpl.class));
+            AotIntrinsics.builder()
+                    // ====== Locals & Globals ======
+                    .with(LOCAL_GET, AotIntrinsics::LOCAL_GET)
+                    .with(LOCAL_SET, AotIntrinsics::LOCAL_SET)
+
+                    // ====== I32 ======
+                    .with(I32_ADD, AotIntrinsics::I32_ADD)
+                    .with(I32_AND, AotIntrinsics.intrinsify(I32_AND, OpcodeImpl.class))
+                    .with(I32_SUB, AotIntrinsics::I32_SUB)
+                    .intrinsify(I32_MUL, OpcodeImpl.class)
+                    .intrinsify(I32_DIV_S, OpcodeImpl.class)
+                    .intrinsify(I32_DIV_U, OpcodeImpl.class)
+                    .intrinsify(I32_REM_S, OpcodeImpl.class)
+                    .intrinsify(I32_REM_U, OpcodeImpl.class)
+
+                    // ====== F64 ======
+                    .intrinsify(F64_CONVERT_I64_U, OpcodeImpl.class)
+                    .build();
 
     public AotMachine(Module module) {
         this.module = module;

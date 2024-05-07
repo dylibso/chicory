@@ -22,6 +22,11 @@ public class OpcodeImpl {
         return a + b;
     }
 
+    @OpCodeIdentifier(OpCode.I32_AND)
+    public static int I32_AND(int a, int b) {
+        return a & b;
+    }
+
     @OpCodeIdentifier(OpCode.I32_SUB)
     public static int I32_SUB(int a, int b) {
         return a - b;
@@ -53,5 +58,21 @@ public class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I32_REM_U)
     public static int I32_REM_U(int a, int b) {
         return (int) (asUInt(a) % asUInt(b));
+    }
+
+    @OpCodeIdentifier(OpCode.F64_CONVERT_I64_U)
+    public static double F64_CONVERT_I64_U(long tos) {
+        double d;
+        if (tos >= 0) {
+            d = tos;
+        } else {
+            // only preserve 53 bits of precision (plus one for rounding) to
+            // avoid rounding errors (64 - 53 == 11)
+            long sum = tos + 0x3ff;
+            // did the add overflow? add the MSB back on after the shift
+            long shiftIn = ((sum ^ tos) & Long.MIN_VALUE) >>> 10;
+            d = Math.scalb((double) ((sum >>> 11) | shiftIn), 11);
+        }
+        return Double.doubleToLongBits(d);
     }
 }
