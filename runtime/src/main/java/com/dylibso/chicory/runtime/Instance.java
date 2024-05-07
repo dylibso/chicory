@@ -36,6 +36,7 @@ public class Instance {
     private TableInstance[] tables;
     private final Element[] elements;
     private final boolean start;
+    private final boolean initialize;
 
     public Instance(
             Module module,
@@ -69,10 +70,30 @@ public class Instance {
         this.roughTables = tables.clone();
         this.elements = elements.clone();
         this.start = start;
+        this.initialize = initialize;
 
         if (initialize) {
             initialize(this.start);
         }
+    }
+
+    public Instance(Instance instance) {
+        this(
+                instance.module,
+                instance.globalInitializers,
+                instance.importedGlobalsOffset,
+                instance.importedFunctionsOffset,
+                instance.importedTablesOffset,
+                instance.memory,
+                instance.dataSegments,
+                instance.functions,
+                instance.types,
+                instance.functionTypes,
+                instance.imports,
+                instance.roughTables,
+                instance.elements,
+                instance.initialize,
+                instance.start);
     }
 
     public Instance initialize(boolean start) {
@@ -275,5 +296,20 @@ public class Instance {
 
     public void setElement(int idx, Element val) {
         elements[idx] = val;
+    }
+
+    /*
+     * This method is experimental and might be dropped without notice in future releases.
+     */
+    public void onExecutionUnsafe(Instruction instruction, long[] operands, MStack stack) {
+        /*
+         * WARNING:
+         *
+         * Implementing this function you will be executing code on the very hot path of the interpreter for each and every instruction.
+         * Any issue or performance degradation caused by this code is not going to be supported.
+         * This interface along with its usage is experimental and we might drop it at a later stage.
+         *
+         * If you have a specific use case for this functionality, please, open an Issue at: https://github.com/dylibso/chicory/issues
+         */
     }
 }

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
+import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -315,5 +316,37 @@ public class ModuleTest {
 
         var main = instance.export("main");
         assertEquals(4, main.apply()[0].asInt());
+    }
+
+    static class CountingInstance extends Instance {
+        private long count = 0L;
+
+        public CountingInstance(Instance instance) {
+            super(instance);
+        }
+
+        @Override
+        public void onExecutionUnsafe(Instruction instruction, long[] operands, MStack stack) {
+            count++;
+        }
+
+        public long getCount() {
+            return count;
+        }
+    }
+
+    @Test
+    public void shouldCountNumberOfInstructions() {
+        var instance =
+                new CountingInstance(
+                        Module.builder("compiled/iterfact.wat.wasm").build().instantiate());
+
+        var iterFact = instance.export("iterFact");
+
+        iterFact.apply(Value.i32(100));
+
+        // current result is: 1109
+        assertTrue(instance.getCount() > 0);
+        assertTrue(instance.getCount() < 2000);
     }
 }
