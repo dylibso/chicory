@@ -132,24 +132,6 @@ public class TestGenMojo extends AbstractMojo {
         validate(excludedInvalidWasts, "excludedInvalidWasts", true);
         validate(excludedWasts, "excludedWasts", true);
 
-        // Ensure that all wast files are included or excluded
-        Set<String> allWastFiles = new HashSet<>();
-        try (DirectoryStream<Path> stream =
-                Files.newDirectoryStream(testsuiteFolder.toPath(), "*.wast")) {
-            stream.forEach(path -> allWastFiles.add(path.getFileName().toString()));
-        } catch (IOException e) {
-            throw new MojoExecutionException("Failed to list wast files in " + testsuiteFolder, e);
-        }
-        includedWasts.forEach(allWastFiles::remove);
-        excludedMalformedWasts.forEach(allWastFiles::remove);
-        excludedInvalidWasts.forEach(allWastFiles::remove);
-        excludedWasts.forEach(allWastFiles::remove);
-        if (!allWastFiles.isEmpty()) {
-            throw new MojoExecutionException(
-                    "Some wast files are not included or excluded: " + allWastFiles);
-        }
-
-        JavaParserMavenUtils.makeJavaParserLogToMavenOutput(getLog());
         // Instantiate the utilities
         var testSuiteDownloader = new TestSuiteDownloader(log);
         var wast2Json =
@@ -169,6 +151,8 @@ public class TestGenMojo extends AbstractMojo {
                         excludedMalformedWasts,
                         excludedInvalidWasts);
 
+        JavaParserMavenUtils.makeJavaParserLogToMavenOutput(getLog());
+
         // Create destination folders
         if (!compiledWastTargetFolder.mkdirs()) {
             log.warn("Failed to create folder: " + compiledWastTargetFolder);
@@ -181,6 +165,25 @@ public class TestGenMojo extends AbstractMojo {
         try {
             // create a reproducible environment
             testSuiteDownloader.downloadTestsuite(testSuiteRepo, testSuiteRepoRef, testsuiteFolder);
+
+            // Ensure that all wast files are included or excluded
+            Set<String> allWastFiles = new HashSet<>();
+            try (DirectoryStream<Path> stream =
+                    Files.newDirectoryStream(testsuiteFolder.toPath(), "*.wast")) {
+                stream.forEach(path -> allWastFiles.add(path.getFileName().toString()));
+            } catch (IOException e) {
+                throw new MojoExecutionException(
+                        "Failed to list wast files in " + testsuiteFolder, e);
+            }
+            includedWasts.forEach(allWastFiles::remove);
+            excludedMalformedWasts.forEach(allWastFiles::remove);
+            excludedInvalidWasts.forEach(allWastFiles::remove);
+            excludedWasts.forEach(allWastFiles::remove);
+            if (!allWastFiles.isEmpty()) {
+                throw new MojoExecutionException(
+                        "Some wast files are not included or excluded: " + allWastFiles);
+            }
+
             wast2Json.fetch();
 
             // generate the tests
