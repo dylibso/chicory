@@ -21,7 +21,7 @@ public class WasiPreview1Test {
                 new WasiPreview1(this.logger, WasiOptions.builder().withStdout(fakeStdout).build());
         var imports = new HostImports(wasi.toHostFunctions());
         var module = Module.builder("compiled/hello-wasi.wat.wasm").build();
-        module.instantiate(imports);
+        module.withHostImports(imports).instantiate();
         assertEquals(fakeStdout.output().strip(), "hello world");
     }
 
@@ -33,7 +33,7 @@ public class WasiPreview1Test {
         var wasi = new WasiPreview1(this.logger, WasiOptions.builder().withStdout(stdout).build());
         var imports = new HostImports(wasi.toHostFunctions());
         var module = Module.builder("compiled/hello-wasi.rs.wasm").build();
-        module.instantiate(imports); // run _start and prints Hello, World!
+        module.withHostImports(imports).instantiate(); // run _start and prints Hello, World!
         assertEquals(expected, stdout.output().strip());
     }
 
@@ -45,7 +45,7 @@ public class WasiPreview1Test {
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
         var module = Module.builder("compiled/greet-wasi.rs.wasm").build();
-        module.instantiate(imports);
+        module.withHostImports(imports).instantiate();
     }
 
     @Test
@@ -58,7 +58,7 @@ public class WasiPreview1Test {
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
         var module = Module.builder("compiled/javy-demo.js.javy.wasm").build();
-        module.instantiate(imports);
+        module.withHostImports(imports).instantiate();
 
         assertEquals(fakeStdout.output(), "{\"foo\":3,\"newBar\":\"baz!\"}");
     }
@@ -69,7 +69,7 @@ public class WasiPreview1Test {
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
         var module = Module.builder("compiled/sum.go.tiny.wasm").build();
-        var instance = module.instantiate(imports);
+        var instance = module.withHostImports(imports).instantiate();
         var sum = instance.export("add");
         var result = sum.apply(Value.i32(20), Value.i32(22))[0];
 

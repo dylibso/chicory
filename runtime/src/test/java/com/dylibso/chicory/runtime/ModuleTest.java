@@ -91,7 +91,8 @@ public class ModuleTest {
         var instance =
                 Module.builder("compiled/host-function.wat.wasm")
                         .build()
-                        .instantiate(new HostImports(funcs));
+                        .withHostImports(new HostImports(funcs))
+                        .instantiate();
         var logIt = instance.export("logIt");
         logIt.apply();
 
@@ -140,7 +141,7 @@ public class ModuleTest {
                         List.of());
         var funcs = new HostFunction[] {func};
         var module = Module.builder("compiled/start.wat.wasm").build();
-        module.instantiate(new HostImports(funcs));
+        module.withHostImports(new HostImports(funcs)).instantiate();
 
         assertTrue(count.get() > 0);
     }
@@ -286,7 +287,7 @@ public class ModuleTest {
                         new HostGlobal[0],
                         memory,
                         new HostTable[0]);
-        var instance = module.instantiate(hostImports);
+        var instance = module.withHostImports(hostImports).instantiate();
 
         var run = instance.export("main");
         run.apply();

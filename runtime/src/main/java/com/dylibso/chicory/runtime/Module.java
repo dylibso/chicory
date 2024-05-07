@@ -40,6 +40,10 @@ public class Module {
     private final HashMap<String, Export> exports;
     private final Logger logger;
 
+    private boolean initialize = true;
+    private boolean start = true;
+    private HostImports hostImports;
+
     protected Module(com.dylibso.chicory.wasm.Module module, Logger logger) {
         this.logger = logger;
         this.module = validateModule(module);
@@ -74,15 +78,29 @@ public class Module {
         return logger;
     }
 
+    public Module withInitialize(boolean init) {
+        this.initialize = init;
+        return this;
+    }
+
+    public Module withStart(boolean s) {
+        this.start = s;
+        return this;
+    }
+
+    public Module withHostImports(HostImports hostImports) {
+        this.hostImports = hostImports;
+        return this;
+    }
+
     public Instance instantiate() {
-        return this.instantiate(new HostImports(), true, true);
+        if (hostImports == null) {
+            hostImports = new HostImports();
+        }
+        return this.instantiate(hostImports, initialize, start);
     }
 
-    public Instance instantiate(HostImports hostImports) {
-        return this.instantiate(hostImports, true, true);
-    }
-
-    public Instance instantiate(HostImports hostImports, boolean initialize, boolean start) {
+    protected Instance instantiate(HostImports hostImports, boolean initialize, boolean start) {
         var globalInitializers = new Global[] {};
         if (this.module.globalSection() != null) {
             globalInitializers = this.module.globalSection().globals();
