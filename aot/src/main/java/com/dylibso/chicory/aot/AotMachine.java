@@ -34,47 +34,47 @@ public class AotMachine implements Machine {
     protected final Module module;
     protected final MethodHandle[] compiledFunctions;
 
-    protected static final Map<OpCode, IntrinsicEmitter> intrinsics =
-            AotIntrinsics.builder()
+    protected static final Map<OpCode, BytecodeEmitter> emitters =
+            AotEmitters.builder()
                     // ====== Locals & Globals ======
-                    .with(LOCAL_GET, AotIntrinsics::LOCAL_GET)
-                    .with(LOCAL_SET, AotIntrinsics::LOCAL_SET)
+                    .intrinsic(LOCAL_GET, AotEmitters::LOCAL_GET)
+                    .intrinsic(LOCAL_SET, AotEmitters::LOCAL_SET)
 
                     // ====== I32 ======
-                    .with(I32_ADD, AotIntrinsics::I32_ADD)
-                    .with(I32_AND, AotIntrinsics::I32_AND)
-                    .intrinsify(I32_CLZ, OpcodeImpl.class)
-                    .intrinsify(I32_CTZ, OpcodeImpl.class)
-                    .intrinsify(I32_DIV_S, OpcodeImpl.class)
-                    .intrinsify(I32_DIV_U, OpcodeImpl.class)
-                    .intrinsify(I32_EQ, OpcodeImpl.class)
-                    .intrinsify(I32_EQZ, OpcodeImpl.class)
-                    .intrinsify(I32_EXTEND_8_S, OpcodeImpl.class)
-                    .intrinsify(I32_EXTEND_16_S, OpcodeImpl.class)
-                    .intrinsify(I32_GE_S, OpcodeImpl.class)
-                    .intrinsify(I32_GE_U, OpcodeImpl.class)
-                    .intrinsify(I32_GT_S, OpcodeImpl.class)
-                    .intrinsify(I32_GT_U, OpcodeImpl.class)
-                    .intrinsify(I32_LE_S, OpcodeImpl.class)
-                    .intrinsify(I32_LE_U, OpcodeImpl.class)
-                    .intrinsify(I32_LT_S, OpcodeImpl.class)
-                    .intrinsify(I32_LT_U, OpcodeImpl.class)
-                    .with(I32_MUL, AotIntrinsics::I32_MUL)
-                    .intrinsify(I32_NE, OpcodeImpl.class)
-                    .with(I32_OR, AotIntrinsics::I32_OR)
-                    .intrinsify(I32_POPCNT, OpcodeImpl.class)
-                    .with(I32_REM_S, AotIntrinsics::I32_REM_S)
-                    .intrinsify(I32_REM_U, OpcodeImpl.class)
-                    .intrinsify(I32_ROTL, OpcodeImpl.class)
-                    .intrinsify(I32_ROTR, OpcodeImpl.class)
-                    .with(I32_SHL, AotIntrinsics::I32_SHL)
-                    .with(I32_SHR_S, AotIntrinsics::I32_SHR_S)
-                    .with(I32_SHR_U, AotIntrinsics::I32_SHR_U)
-                    .with(I32_SUB, AotIntrinsics::I32_SUB)
-                    .with(I32_XOR, AotIntrinsics::I32_XOR)
+                    .intrinsic(I32_ADD, AotEmitters::I32_ADD)
+                    .intrinsic(I32_AND, AotEmitters::I32_AND)
+                    .shared(I32_CLZ, OpcodeImpl.class)
+                    .shared(I32_CTZ, OpcodeImpl.class)
+                    .shared(I32_DIV_S, OpcodeImpl.class)
+                    .shared(I32_DIV_U, OpcodeImpl.class)
+                    .shared(I32_EQ, OpcodeImpl.class)
+                    .shared(I32_EQZ, OpcodeImpl.class)
+                    .shared(I32_EXTEND_8_S, OpcodeImpl.class)
+                    .shared(I32_EXTEND_16_S, OpcodeImpl.class)
+                    .shared(I32_GE_S, OpcodeImpl.class)
+                    .shared(I32_GE_U, OpcodeImpl.class)
+                    .shared(I32_GT_S, OpcodeImpl.class)
+                    .shared(I32_GT_U, OpcodeImpl.class)
+                    .shared(I32_LE_S, OpcodeImpl.class)
+                    .shared(I32_LE_U, OpcodeImpl.class)
+                    .shared(I32_LT_S, OpcodeImpl.class)
+                    .shared(I32_LT_U, OpcodeImpl.class)
+                    .intrinsic(I32_MUL, AotEmitters::I32_MUL)
+                    .shared(I32_NE, OpcodeImpl.class)
+                    .intrinsic(I32_OR, AotEmitters::I32_OR)
+                    .shared(I32_POPCNT, OpcodeImpl.class)
+                    .intrinsic(I32_REM_S, AotEmitters::I32_REM_S)
+                    .shared(I32_REM_U, OpcodeImpl.class)
+                    .shared(I32_ROTL, OpcodeImpl.class)
+                    .shared(I32_ROTR, OpcodeImpl.class)
+                    .intrinsic(I32_SHL, AotEmitters::I32_SHL)
+                    .intrinsic(I32_SHR_S, AotEmitters::I32_SHR_S)
+                    .intrinsic(I32_SHR_U, AotEmitters::I32_SHR_U)
+                    .intrinsic(I32_SUB, AotEmitters::I32_SUB)
+                    .intrinsic(I32_XOR, AotEmitters::I32_XOR)
 
                     // ====== F64 ======
-                    .intrinsify(F64_CONVERT_I64_U, OpcodeImpl.class)
+                    .shared(F64_CONVERT_I64_U, OpcodeImpl.class)
                     .build();
 
     public AotMachine(Module module) {
@@ -214,8 +214,8 @@ public class AotMachine implements Machine {
         cons.visitEnd();
     }
 
-    private boolean tryEmitIntrinsic(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        var emitter = intrinsics.get(ins.opcode());
+    private boolean tryEmit(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        var emitter = emitters.get(ins.opcode());
         if (emitter != null) {
             emitter.emit(ctx, ins, asm);
             return true;
@@ -233,8 +233,11 @@ public class AotMachine implements Machine {
                 case END:
                     break;
                 default:
-                    if (!tryEmitIntrinsic(ctx, ins, asm)) {
-                        // TODO - throw appropriate error because we couldn't match the instruction
+                    if (!tryEmit(ctx, ins, asm)) {
+                        throw new ChicoryException(
+                                "JVM compilation failed: opcode "
+                                        + ins.opcode().name()
+                                        + " is not supported");
                     }
             }
         }

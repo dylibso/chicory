@@ -10,23 +10,23 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-public class AotIntrinsics {
+public class AotEmitters {
 
     public static class Builder {
 
-        protected final Map<OpCode, IntrinsicEmitter> intrinsics = new HashMap<>();
+        protected final Map<OpCode, BytecodeEmitter> emitters = new HashMap<>();
 
-        public Builder with(OpCode opCode, IntrinsicEmitter emitter) {
-            intrinsics.put(opCode, emitter);
+        public Builder intrinsic(OpCode opCode, BytecodeEmitter emitter) {
+            emitters.put(opCode, emitter);
             return this;
         }
 
-        public Builder intrinsify(OpCode opCode, Class<?> staticHelpers) {
-            return with(opCode, AotIntrinsics.intrinsify(opCode, staticHelpers));
+        public Builder shared(OpCode opCode, Class<?> staticHelpers) {
+            return intrinsic(opCode, AotEmitters.intrinsify(opCode, staticHelpers));
         }
 
-        public Map<OpCode, IntrinsicEmitter> build() {
-            return Map.copyOf(intrinsics);
+        public Map<OpCode, BytecodeEmitter> build() {
+            return Map.copyOf(emitters);
         }
     }
 
@@ -120,7 +120,7 @@ public class AotIntrinsics {
         asm.visitInsn(Opcodes.IXOR);
     }
 
-    public static IntrinsicEmitter intrinsify(OpCode opcode, Class<?> staticHelpers) {
+    public static BytecodeEmitter intrinsify(OpCode opcode, Class<?> staticHelpers) {
         for (var method : staticHelpers.getDeclaredMethods()) {
             if (Modifier.isStatic(method.getModifiers())
                     && method.isAnnotationPresent(OpCodeIdentifier.class)
