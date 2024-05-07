@@ -84,9 +84,43 @@ public class AotIntrinsics {
         asm.visitInsn(Opcodes.IADD);
     }
 
+    public static void I32_AND(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.IAND);
+    }
+
+    public static void I32_MUL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.IMUL);
+    }
+
+    public static void I32_OR(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.IOR);
+    }
+
+    public static void I32_REM_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.IREM);
+    }
+
+    public static void I32_SHL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.ISHL);
+    }
+
+    public static void I32_SHR_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.ISHR);
+    }
+
+    public static void I32_SHR_U(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.IUSHR);
+    }
+
     public static void I32_SUB(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.ISUB);
     }
+
+    public static void I32_XOR(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.IXOR);
+    }
+
+
 
     public static IntrinsicEmitter intrinsify(OpCode opcode, Class<?> staticHelpers) {
         for (var method : staticHelpers.getDeclaredMethods()) {

@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.runtime.BitOps.asUInt;
+import static com.dylibso.chicory.runtime.BitOps.*;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.types.OpCode;
@@ -17,24 +17,16 @@ import com.dylibso.chicory.wasm.types.OpCode;
  */
 public class OpcodeImpl {
 
-    @OpCodeIdentifier(OpCode.I32_ADD)
-    public static int I32_ADD(int a, int b) {
-        return a + b;
+    // ========= I32 =========
+
+    @OpCodeIdentifier(OpCode.I32_CLZ)
+    public static int I32_CLZ(int tos) {
+        return Integer.numberOfLeadingZeros(tos);
     }
 
-    @OpCodeIdentifier(OpCode.I32_AND)
-    public static int I32_AND(int a, int b) {
-        return a & b;
-    }
-
-    @OpCodeIdentifier(OpCode.I32_SUB)
-    public static int I32_SUB(int a, int b) {
-        return a - b;
-    }
-
-    @OpCodeIdentifier(OpCode.I32_MUL)
-    public static int I32_MUL(int a, int b) {
-        return a * b;
+    @OpCodeIdentifier(OpCode.I32_CTZ)
+    public static int I32_CTZ(int tos) {
+        return Integer.numberOfTrailingZeros(tos);
     }
 
     @OpCodeIdentifier(OpCode.I32_DIV_S)
@@ -50,9 +42,31 @@ public class OpcodeImpl {
         return (int) (asUInt(a) / asUInt(b));
     }
 
-    @OpCodeIdentifier(OpCode.I32_REM_S)
-    public static int I32_REM_S(int a, int b) {
-        return a % b;
+    @OpCodeIdentifier(OpCode.I32_EQ)
+    public static int I32_EQ(int b, int a) {
+        return a == b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_EQZ)
+    public static int I32_EQZ(int a) {
+        return a == 0 ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_EXTEND_8_S)
+    public static int I32_EXTEND_8_S(int tos) {
+        return asByte(tos);
+    }
+
+    @OpCodeIdentifier(OpCode.I32_EXTEND_16_S)
+    public static int I32_EXTEND_16_S(int tos) {
+        var original = tos & 0xFFFF;
+        if ((original & 0x8000) != 0) original |= 0xFFFF0000;
+        return (int) (original & 0xFFFFFFFFL);
+    }
+
+    @OpCodeIdentifier(OpCode.I32_POPCNT)
+    public static int I32_POPCNT(int tos) {
+        return Integer.bitCount(tos);
     }
 
     @OpCodeIdentifier(OpCode.I32_REM_U)
@@ -60,6 +74,17 @@ public class OpcodeImpl {
         return (int) (asUInt(a) % asUInt(b));
     }
 
+    @OpCodeIdentifier(OpCode.I32_ROTR)
+    public static int I32_ROTR(int v, int c) {
+        return (v >>> c) | (v << (32 - c));
+    }
+
+    @OpCodeIdentifier(OpCode.I32_ROTL)
+    public static int I32_ROTL(int v, int c) {
+        return (v << c) | (v >>> (32 - c));
+    }
+
+    // ========= F64 =========
     @OpCodeIdentifier(OpCode.F64_CONVERT_I64_U)
     public static double F64_CONVERT_I64_U(long tos) {
         double d;
