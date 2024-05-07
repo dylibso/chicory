@@ -42,7 +42,7 @@ public class OpcodeImpl {
 
     @OpCodeIdentifier(OpCode.I32_DIV_U)
     public static int I32_DIV_U(int a, int b) {
-        return a / b;
+        return (int) (asUInt(a) / asUInt(b));
     }
 
     @OpCodeIdentifier(OpCode.I32_REM_S)

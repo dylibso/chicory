@@ -33,6 +33,29 @@ public class AotIntrinsics {
         asm.visitVarInsn(opcode, loadIndex + 1); // +1 because local 0 is 'this'.
     }
 
+    public static void LOCAL_SET(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        var storeIndex = (int) ins.operands()[0];
+        var localType = AotUtil.localType(ctx.getType(), ctx.getBody(), storeIndex);
+        int opcode;
+        switch (localType) {
+            case I32:
+                opcode = Opcodes.ISTORE;
+                break;
+            case I64:
+                opcode = Opcodes.LSTORE;
+                break;
+            case F32:
+                opcode = Opcodes.FSTORE;
+                break;
+            case F64:
+                opcode = Opcodes.DSTORE;
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported store target type: " + localType);
+        }
+        asm.visitVarInsn(opcode, storeIndex + 1); // +1 because local 0 is 'this'.
+    }
+
     public static void I32_ADD(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.IADD);
     }

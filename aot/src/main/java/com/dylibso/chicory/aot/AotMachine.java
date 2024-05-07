@@ -37,6 +37,7 @@ public class AotMachine implements Machine {
     protected static final Map<OpCode, IntrinsicEmitter> intrinsics =
             Map.of(
                     LOCAL_GET, AotIntrinsics::LOCAL_GET,
+                    LOCAL_SET, AotIntrinsics::LOCAL_SET,
                     I32_ADD, AotIntrinsics::I32_ADD,
                     I32_SUB, AotIntrinsics::I32_SUB,
                     I32_MUL, AotIntrinsics.intrinsify(I32_MUL, OpcodeImpl.class),
@@ -56,13 +57,13 @@ public class AotMachine implements Machine {
         try {
             var result = (int) compiledFunctions[funcId].invoke(args);
             return new Value[] {Value.i32(result)};
-        }  catch (ChicoryException e) {
+        } catch (ChicoryException e) {
             // propagate ChicoryExceptions
             throw e;
         } catch (ArithmeticException e) {
             if (e.getMessage().equalsIgnoreCase("/ by zero")
                     || e.getMessage()
-                    .contains("divide by zero")) { // On Linux i64 throws "BigInteger divide
+                            .contains("divide by zero")) { // On Linux i64 throws "BigInteger divide
                 // by zero"
                 throw new WASMRuntimeException("integer divide by zero: " + e.getMessage(), e);
             }
@@ -71,7 +72,7 @@ public class AotMachine implements Machine {
             throw new WASMRuntimeException("undefined element " + e.getMessage(), e);
         } catch (Exception e) {
             throw new WASMRuntimeException("An underlying Java exception occurred", e);
-        } catch (Throwable e){
+        } catch (Throwable e) {
             throw new WASMRuntimeException("An underlying Java error occurred", e);
         }
     }
