@@ -48,7 +48,8 @@ public class AotIntrinsics {
                     && method.getAnnotation(OpCodeIdentifier.class).value().equals(opcode)) {
                 return (ctx, ins, asm) -> {
                     // TODO - should check above if method descriptor matches so that
-                    // registration of this intrinsic fails
+                    // registration of this intrinsic fails if the signature does not
+                    // match what is needed for this opcode.
                     asm.visitMethodInsn(
                             Opcodes.INVOKESTATIC,
                             Type.getInternalName(staticHelpers),

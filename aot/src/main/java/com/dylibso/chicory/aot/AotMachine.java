@@ -6,6 +6,7 @@ import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.StackFrame;
+import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -39,8 +40,10 @@ public class AotMachine implements Machine {
                     I32_ADD, AotIntrinsics::I32_ADD,
                     I32_SUB, AotIntrinsics::I32_SUB,
                     I32_MUL, AotIntrinsics.intrinsify(I32_MUL, OpcodeImpl.class),
-                    I32_REM_S, AotIntrinsics.intrinsify(I32_REM_S, OpcodeImpl.class)
-                    );
+                    I32_DIV_S, AotIntrinsics.intrinsify(I32_DIV_S, OpcodeImpl.class),
+                    I32_DIV_U, AotIntrinsics.intrinsify(I32_DIV_U, OpcodeImpl.class),
+                    I32_REM_S, AotIntrinsics.intrinsify(I32_REM_S, OpcodeImpl.class),
+                    I32_REM_U, AotIntrinsics.intrinsify(I32_REM_U, OpcodeImpl.class));
 
     public AotMachine(Module module) {
         this.module = module;
@@ -53,8 +56,23 @@ public class AotMachine implements Machine {
         try {
             var result = (int) compiledFunctions[funcId].invoke(args);
             return new Value[] {Value.i32(result)};
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
+        }  catch (ChicoryException e) {
+            // propagate ChicoryExceptions
+            throw e;
+        } catch (ArithmeticException e) {
+            if (e.getMessage().equalsIgnoreCase("/ by zero")
+                    || e.getMessage()
+                    .contains("divide by zero")) { // On Linux i64 throws "BigInteger divide
+                // by zero"
+                throw new WASMRuntimeException("integer divide by zero: " + e.getMessage(), e);
+            }
+            throw new WASMRuntimeException(e.getMessage(), e);
+        } catch (IndexOutOfBoundsException e) {
+            throw new WASMRuntimeException("undefined element " + e.getMessage(), e);
+        } catch (Exception e) {
+            throw new WASMRuntimeException("An underlying Java exception occurred", e);
+        } catch (Throwable e){
+            throw new WASMRuntimeException("An underlying Java error occurred", e);
         }
     }
 

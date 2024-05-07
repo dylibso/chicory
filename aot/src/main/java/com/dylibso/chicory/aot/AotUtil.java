@@ -60,7 +60,13 @@ public class AotUtil {
     }
 
     public static Class<?> jvmReturnType(FunctionType type) {
-        return int.class; // TODO
+        if (type.returns().size() == 0) {
+            return void.class;
+        } else if (type.returns().size() == 1) {
+            return jvmType(type.returns().get(0));
+        }
+        // TODO
+        throw new IllegalArgumentException("Multi-returns are not currently supported");
     }
 
     public static MethodHandle loadCallHandle(String name, FunctionType type, byte[] compiledBody)
