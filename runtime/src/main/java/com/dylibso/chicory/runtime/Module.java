@@ -42,6 +42,7 @@ public class Module {
 
     private boolean initialize = true;
     private boolean start = true;
+    private ExecutionListener listener = null;
     private HostImports hostImports;
 
     protected Module(com.dylibso.chicory.wasm.Module module, Logger logger) {
@@ -88,6 +89,11 @@ public class Module {
         return this;
     }
 
+    public Module withExecutionListener(ExecutionListener listener) {
+        this.listener = listener;
+        return this;
+    }
+
     public Module withHostImports(HostImports hostImports) {
         this.hostImports = hostImports;
         return this;
@@ -97,10 +103,14 @@ public class Module {
         if (hostImports == null) {
             hostImports = new HostImports();
         }
-        return this.instantiate(hostImports, initialize, start);
+        return this.instantiate(hostImports, initialize, start, listener);
     }
 
-    protected Instance instantiate(HostImports hostImports, boolean initialize, boolean start) {
+    protected Instance instantiate(
+            HostImports hostImports,
+            boolean initialize,
+            boolean start,
+            ExecutionListener listener) {
         var globalInitializers = new Global[] {};
         if (this.module.globalSection() != null) {
             globalInitializers = this.module.globalSection().globals();
@@ -254,7 +264,8 @@ public class Module {
                 tables,
                 elements,
                 initialize,
-                start);
+                start,
+                listener);
     }
 
     private HostImports mapHostImports(Import[] imports, HostImports hostImports) {
