@@ -292,4 +292,28 @@ public class ModuleTest {
         run.apply();
         assertEquals("1: 164", logResult.get());
     }
+
+    @Test
+    public void issue294_BRIF() {
+        var instance = Module.builder("compiled/issue294_brif.wat.wasm").build().instantiate();
+
+        var main = instance.export("main");
+        assertEquals(5, main.apply(Value.i32(5))[0].asInt());
+    }
+
+    @Test
+    public void issue294_BR() {
+        var instance = Module.builder("compiled/issue294_br.wat.wasm").build().instantiate();
+
+        var main = instance.export("main");
+        assertEquals(4, main.apply()[0].asInt());
+    }
+
+    @Test
+    public void issue294_BRTABLE() {
+        var instance = Module.builder("compiled/issue294_brtable.wat.wasm").build().instantiate();
+
+        var main = instance.export("main");
+        assertEquals(4, main.apply()[0].asInt());
+    }
 }

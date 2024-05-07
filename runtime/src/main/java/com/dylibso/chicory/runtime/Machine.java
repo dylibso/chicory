@@ -2269,6 +2269,7 @@ class Machine {
 
     private static Value prepareControlTransfer(StackFrame frame, MStack stack, boolean consume) {
         frame.doControlTransfer = true;
+        frame.isControlFrame = true;
         return consume ? stack.pop() : null;
     }
 
