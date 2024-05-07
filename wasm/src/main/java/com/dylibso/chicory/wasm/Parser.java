@@ -864,11 +864,11 @@ public final class Parser {
         }
         var operandsArray = new long[operands.size()];
         for (var i = 0; i < operands.size(); i++) operandsArray[i] = operands.get(i);
-        verifyAlignement(op, operandsArray);
+        verifyAlignment(op, operandsArray);
         return new Instruction(address, op, operandsArray);
     }
 
-    private static void verifyAlignement(OpCode op, long[] operands) {
+    private static void verifyAlignment(OpCode op, long[] operands) {
         var align = -1;
         switch (op) {
             case I32_LOAD8_U:
