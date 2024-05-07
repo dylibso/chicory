@@ -89,7 +89,10 @@ public class Module {
         return this;
     }
 
-    public Module withExecutionListener(ExecutionListener listener) {
+    /*
+     * This method is experimental and might be dropped without notice in future releases.
+     */
+    public Module withUnsafeExecutionListener(ExecutionListener listener) {
         this.listener = listener;
         return this;
     }
