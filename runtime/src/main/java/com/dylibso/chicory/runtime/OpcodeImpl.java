@@ -64,6 +64,51 @@ public class OpcodeImpl {
         return (int) (original & 0xFFFFFFFFL);
     }
 
+    @OpCodeIdentifier(OpCode.I32_GE_S)
+    public static int I32_GE_S(int a, int b) {
+        return a >= b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_GE_U)
+    public static int I32_GE_U(int a, int b) {
+        return Integer.compareUnsigned(a, b) >= 0 ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_GT_S)
+    public static int I32_GT_S(int a, int b) {
+        return a > b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_GT_U)
+    public static int I32_GT_U(int a, int b) {
+        return Integer.compareUnsigned(a, b) > 0 ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_LE_S)
+    public static int I32_LE_S(int a, int b) {
+        return a <= b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_LE_U)
+    public static int I32_LE_U(int a, int b) {
+        return Integer.compareUnsigned(a, b) <= 0 ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_LT_S)
+    public static int I32_LT_S(int a, int b) {
+        return a < b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_LT_U)
+    public static int I32_LT_U(int a, int b) {
+        return Integer.compareUnsigned(a, b) < 0 ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_NE)
+    public static int I32_NE(int b, int a) {
+        return a == b ? FALSE : TRUE;
+    }
+
     @OpCodeIdentifier(OpCode.I32_POPCNT)
     public static int I32_POPCNT(int tos) {
         return Integer.bitCount(tos);
