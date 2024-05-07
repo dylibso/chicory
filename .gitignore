@@ -1,4 +1,7 @@
-.idea/
+# IntelliJ IDEA files
+.idea
+*.iml
+
 target/
 testsuite/
 wasi-testsuite/

@@ -364,9 +364,9 @@
         </configuration>
         <executions>
           <execution>
-            <id>format</id>
+            <id>format-sources</id>
             <goals>
-              <goal>check</goal>
+              <goal>apply</goal>
             </goals>
             <phase>process-sources</phase>
           </execution>
