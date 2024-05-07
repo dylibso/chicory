@@ -14,6 +14,10 @@ import com.dylibso.chicory.wasm.types.OpCode;
  * single place that is statically accessible. If the AOT does not have an intrinsic for an opcode (and
  * the opcode is not a flow control opcode), then a static call will be generated to the method in this
  * class that implements the opcode.
+ *
+ * Note about parameter ordering: because of the JVM's calling convention, the parameters to a method
+ * are ordered such that the last value pushed is the last argument to the method, i.e.,
+ * method(tos - 2, tos - 1, tos).
  */
 public class OpcodeImpl {
 
