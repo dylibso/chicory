@@ -246,10 +246,12 @@ Some nice to have but probably separate items:
 ### Building the Runtime
 
 Contributors and other advanced users may want to build the runtime from source. To do so, you'll need to have Maven installed.
+`Java version 11+` required for a proper build. You can download and install [Java 11 Temurin](https://adoptium.net/temurin/releases/?version=11)
 
 Basic steps:
 
-* `mvn clean install` to run all of the project's tests and install the library in your local repo
+* For the 1st build you need to create `testsuite` folder manually `mkdir testsuite`
+* `mvn clean install` to run all the project's tests and install the library in your local repo
 * `mvn spotless:apply` to autoformat the code
 * `./scripts/compile-resources.sh` will recompile and regenerate the `resources/compiled` folders
 
