@@ -120,8 +120,6 @@ public class AotIntrinsics {
         asm.visitInsn(Opcodes.IXOR);
     }
 
-
-
     public static IntrinsicEmitter intrinsify(OpCode opcode, Class<?> staticHelpers) {
         for (var method : staticHelpers.getDeclaredMethods()) {
             if (Modifier.isStatic(method.getModifiers())
