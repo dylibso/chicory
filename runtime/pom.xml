@@ -58,6 +58,7 @@
             <wast>conversions.wast</wast>
             <wast>custom.wast</wast>
             <wast>data.wast</wast>
+            <wast>elem.wast</wast>
             <wast>endianness.wast</wast>
             <wast>exports.wast</wast>
             <wast>f32.wast</wast>
@@ -142,6 +143,7 @@
             <test>SpecV1LinkingTest.test118</test>
             <test>SpecV1LinkingTest.test121</test>
             <test>SpecV1LinkingTest.test122</test>
+            <test>SpecV1ElemTest.test95</test>
           </excludedTests>
           <excludedMalformedWasts>
             <wast>binary-leb128.wast</wast>
@@ -156,6 +158,7 @@
             <wast>call_indirect.wast</wast>
             <wast>conversions.wast</wast>
             <wast>data.wast</wast>
+            <wast>elem.wast</wast>
             <wast>exports.wast</wast>
             <wast>f32.wast</wast>
             <wast>f32_bitwise.wast</wast>
@@ -202,7 +205,6 @@
             <wast>unreached-invalid.wast</wast>
           </excludedInvalidWasts>
           <excludedWasts>
-            <wast>elem.wast</wast>
             <wast>simd_address.wast</wast>
             <wast>simd_align.wast</wast>
             <wast>simd_bit_shift.wast</wast>
