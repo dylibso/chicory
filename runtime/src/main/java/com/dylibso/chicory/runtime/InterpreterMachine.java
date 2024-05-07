@@ -12,6 +12,7 @@ import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -31,7 +32,6 @@ class InterpreterMachine implements Machine {
         this.callStack = new ArrayDeque<>();
     }
 
-    @Override
     public Value[] call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
         return call(stack, instance, callStack, funcId, args, null, popResults);
     }
@@ -2269,6 +2269,7 @@ class InterpreterMachine implements Machine {
 
     private static Value prepareControlTransfer(StackFrame frame, MStack stack, boolean consume) {
         frame.doControlTransfer = true;
+        frame.isControlFrame = true;
         return consume ? stack.pop() : null;
     }
 
@@ -2293,9 +2294,76 @@ class InterpreterMachine implements Machine {
         }
     }
 
+    public static Value computeConstantValue(Instance instance, Instruction[] expr) {
+        return computeConstantValue(instance, Arrays.asList(expr));
+    }
+
+    public static Value computeConstantValue(Instance instance, List<Instruction> expr) {
+        Value tos = null;
+        for (Instruction instruction : expr) {
+            switch (instruction.opcode()) {
+                case F32_CONST:
+                    {
+                        tos = Value.f32(instruction.operands()[0]);
+                        break;
+                    }
+                case F64_CONST:
+                    {
+                        tos = Value.f64(instruction.operands()[0]);
+                        break;
+                    }
+                case I32_CONST:
+                    {
+                        tos = Value.i32(instruction.operands()[0]);
+                        break;
+                    }
+                case I64_CONST:
+                    {
+                        tos = Value.i64(instruction.operands()[0]);
+                        break;
+                    }
+                case REF_NULL:
+                    {
+                        ValueType vt = ValueType.refTypeForId((int) instruction.operands()[0]);
+                        if (vt == ValueType.ExternRef) {
+                            tos = Value.EXTREF_NULL;
+                        } else if (vt == ValueType.FuncRef) {
+                            tos = Value.FUNCREF_NULL;
+                        } else {
+                            throw new IllegalStateException(
+                                    "Unexpected wrong type for ref.null instruction");
+                        }
+                        break;
+                    }
+                case REF_FUNC:
+                    {
+                        tos = Value.funcRef(instruction.operands()[0]);
+                        break;
+                    }
+                case GLOBAL_GET:
+                    {
+                        return instance.readGlobal((int) instruction.operands()[0]);
+                    }
+                case END:
+                    {
+                        break;
+                    }
+                default:
+                    {
+                        throw new ChicoryException(
+                                "Non-constant instruction encountered: " + instruction);
+                    }
+            }
+        }
+        if (tos == null) {
+            throw new ChicoryException("No constant value loaded");
+        }
+        return tos;
+    }
+
     private static Value getRuntimeElementValue(Instance instance, int elemIdx, int itemIdx) {
         var elem = instance.element(elemIdx);
-        return MachineUtil.computeConstantValue(instance, elem.initializers().get(itemIdx));
+        return computeConstantValue(instance, elem.initializers().get(itemIdx));
     }
 
     @Override
