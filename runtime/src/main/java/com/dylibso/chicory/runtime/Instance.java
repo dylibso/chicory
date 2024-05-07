@@ -1,5 +1,6 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.runtime.Machine.computeConstantInstance;
 import static com.dylibso.chicory.runtime.Machine.computeConstantValue;
 import static com.dylibso.chicory.runtime.Module.START_FUNCTION_NAME;
 
@@ -93,11 +94,13 @@ public class Instance {
                 for (int i = 0; i < initializers.size(); i++) {
                     final List<Instruction> init = initializers.get(i);
                     var index = offset.asInt() + i;
+                    var value = computeConstantValue(this, init);
+                    var inst = computeConstantInstance(this, init);
                     if (ae.type() == ValueType.FuncRef) {
-                        table.setRef(index, computeConstantValue(this, init).asFuncRef(), this);
+                        table.setRef(index, value.asFuncRef(), inst);
                     } else {
                         assert ae.type() == ValueType.ExternRef;
-                        table.setRef(index, computeConstantValue(this, init).asExtRef(), this);
+                        table.setRef(index, value.asExtRef(), inst);
                     }
                 }
             }
@@ -144,6 +147,7 @@ public class Instance {
                                     + " initializers right now. We failed to initialize opcode: "
                                     + instr.opcode());
             }
+            globals[i].setInstance(this);
         }
 
         if (memory != null) {

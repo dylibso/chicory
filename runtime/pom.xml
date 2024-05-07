@@ -143,7 +143,6 @@
             <test>SpecV1LinkingTest.test118</test>
             <test>SpecV1LinkingTest.test121</test>
             <test>SpecV1LinkingTest.test122</test>
-            <test>SpecV1ElemTest.test95</test>
           </excludedTests>
           <excludedMalformedWasts>
             <wast>binary-leb128.wast</wast>
