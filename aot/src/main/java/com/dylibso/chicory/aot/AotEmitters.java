@@ -120,6 +120,27 @@ public class AotEmitters {
         asm.visitInsn(Opcodes.IXOR);
     }
 
+    /**
+     * The AOT compiler assumes two main ways of implementing opcodes: intrinsics, and shared implementations.
+     * Intrinsics refer to WASM opcodes that are implemented in the AOT by assembling JVM bytecode that implements
+     * the logic of the opcode. Shared implementations refer to static methods in a public class that do the same,
+     * with the term "shared" referring to the fact that these implementations are intended to be used by both the AOT
+     * and the interpreter.
+     *
+     * This method takes an opcode and a class (which must have a public static method annotated as an
+     * implementation of the opcode) and creates a BytecodeEmitter that will implement the WASM opcode
+     * as a static method call to the implementation provided by the class. That is, it "intrinsifies"
+     * the shared implementation by generating a static call to it. The method implementing
+     * the opcode must have a signature that exactly matches the stack operands and result type of
+     * the opcode, and if its parameters are order-sensitive then they must be in the order that
+     * produces the expected result when the JVM's stack and calling convention are used instead of
+     * the interpreter's. That is, if order is significant they must be in the order
+     * methodName(..., tos - 2, tos - 1, tos) where "tos" is the top-of-stack value.
+     *
+     * @param opcode the WASM opcode that is implemented by an annotated static method in this class
+     * @param staticHelpers the class containing the implementation
+     * @return a BytecodeEmitter that will implement the opcode via a call to the shared implementation
+     */
     public static BytecodeEmitter intrinsify(OpCode opcode, Class<?> staticHelpers) {
         for (var method : staticHelpers.getDeclaredMethods()) {
             if (Modifier.isStatic(method.getModifiers())
