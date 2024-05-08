@@ -37,6 +37,7 @@ public class Instance {
     private TableInstance[] tables;
     private final Element[] elements;
     private final boolean start;
+    private final ExecutionListener listener;
 
     public Instance(
             Module module,
@@ -53,7 +54,8 @@ public class Instance {
             Table[] tables,
             Element[] elements,
             boolean initialize,
-            boolean start) {
+            boolean start,
+            ExecutionListener listener) {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
         this.globals = new GlobalInstance[globalInitializers.length + importedGlobalsOffset];
@@ -70,6 +72,7 @@ public class Instance {
         this.roughTables = tables.clone();
         this.elements = elements.clone();
         this.start = start;
+        this.listener = listener;
 
         if (initialize) {
             initialize(this.start);
@@ -279,5 +282,11 @@ public class Instance {
 
     public void setElement(int idx, Element val) {
         elements[idx] = val;
+    }
+
+    public void onExecution(Instruction instruction, long[] operands, MStack stack) {
+        if (listener != null) {
+            listener.onExecution(instruction, operands, stack);
+        }
     }
 }

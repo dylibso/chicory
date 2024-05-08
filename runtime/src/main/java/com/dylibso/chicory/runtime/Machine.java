@@ -118,6 +118,7 @@ class Machine {
                 //                                + stack);
                 var opcode = instruction.opcode();
                 var operands = instruction.operands();
+                instance.onExecution(instruction, operands, stack);
                 switch (opcode) {
                     case UNREACHABLE:
                         throw new TrapException("Trapped on unreachable instruction", callStack);
