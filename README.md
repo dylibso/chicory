@@ -187,6 +187,10 @@ logIt.apply();
 
 ### Why is this needed?
 
+If you'd prefer to watch a video instead of reading, see our [2024 Wasm I/O](https://2024.wasmio.tech/) on the subject:
+
+[![Wasm I/O Chicory talk](https://img.youtube.com/vi/00LYdZS0YlI/0.jpg)](https://www.youtube.com/watch?v=00LYdZS0YlI)
+
 There are a number of mature Wasm runtimes to choose from to execute a Wasm module.
 To name a few [v8](https://v8.dev/), [wasmtime](https://wasmtime.dev/), [wasmer](https://wasmer.io/), [wasmedge](https://wasmedge.org/), etc.
 
@@ -221,18 +225,43 @@ security and memory guarantees, and your tools, can stay in place.
 
 ### Roadmap
 
+Chicory development was started in September, 2023. The following are the milestones we're aiming for. These
+are subject to change but represent our best guesses with current information. These are not necessarily sequential
+and some may be happening in parallel. Unless specified, any unchecked box is still not planned or started.
+If you have an interest in working on any of these please reach out in Zulip!
+
+#### Bootstrap a bytecode interpreter and test suite (EOY 2023)
+
 * [x] Wasm binary parser [link](wasm/)
 * [x] Simple bytecode interpreter
+* [x] Establish basic coding and testing patterns
 * [x] Generate JUnit tests from wasm test suite [link](test-gen-plugin/)
-* [ ] Make all tests green with the interpreter
-* [ ] Implement validation logic
-* [ ] Performance improvements
-* [ ] AOT compiler (generate JVM bytecode from Wasm module)
 
-Some nice to have but probably separate items:
+#### Make the interpreter production ready (Summer 2024)
 
-* [ ] Off-heap linear memory
-* [ ] WASI Support
+* [ ] Make all tests green with the interpreter (important for correctness)
+  * Almost complete
+* [ ] Implement validation logic (important for safety)
+  * Started by [@andreaTP](https://github.com/andreatp)
+* [ ] Draft of the v1.0 API (important for stability and dx)
+
+#### Make it fast (EOY 2024)
+
+The primary goal here is to create an AOT compiler that generates JVM bytecode
+as interpreting bytecode can only be so fast.
+
+* [ ] Decouple interpreter and create separate compiler and interpreter "engines"
+  * Started by @danielperano
+* [ ] Proof of concept AOT compiler (run some subset of modules)
+* [ ] AOT engine passes all the same specs as interpreter (stretch goal)
+* [ ] Off-heap linear memory (stretch goal)
+
+#### Make it compatible (EOY 2024)
+
+* [ ] WASIp1 Support (including test gen)
+  * We have [partial support for wasip1](wasi/) and [test generation](wasi-test-gen-plugin/)
+* [ ] SIMD Support
+  * Started by [@zedbeit](https://github.com/zedbeit)
 * [ ] GC Support
 * [ ] Threads Support
 * [ ] Component Model Support

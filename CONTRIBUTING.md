@@ -1,33 +1,46 @@
 # Contributing guide
 
 **Want to contribute? Great!**
+
 We try to make it easy, and all contributions, even the smaller ones, are more than welcome.
 This includes bug reports, fixes, documentation, examples...
 But first, read this page (including the small print at the end).
 
-* [Legal](#legal)
-* [Reporting an issue](#reporting-an-issue)
+* [Coding Philosophy](#coding-philosophy)
 * [Before you contribute](#before-you-contribute)
   + [Code reviews](#code-reviews)
   + [Coding Guidelines](#coding-guidelines)
   + [Continuous Integration](#continuous-integration)
   + [Tests and documentation are not optional](#tests-and-documentation-are-not-optional)
   + [Current status](#current-status)
+* [Reporting an issue](#reporting-an-issue)
+* [Legal](#legal)
 * [The small print](#the-small-print)
 
+## Coding Philosophy
 
-## Legal
+Writing a runtime is a big challenge. We want Chicory to always be a solid foundation
+for running Wasm in Java. In order to accomplish this, it's going to take a large team
+of diverse contributors. That's why our goal up front is to aim for writing
+simple code that's easy to understand and is as backwards compatible as possible.
 
-All original contributions to Chicory projects are licensed under the
-[ASL - Apache License](https://www.apache.org/licenses/LICENSE-2.0),
-version 2.0 or later, or, if another license is specified as governing the file or directory being
-modified, such other license.
+The reason is we want to optimize for:
 
-## Reporting an issue
+ * attracting more contributors
+ * supporting more users
+ * supporting more platforms
 
-This project uses GitHub issues to manage the issues. Open an issue directly in GitHub.
+It's important we focus on this in the beginning phase so that we can grow a large team
+of contributors. We also want to make it possible for people with deep Wasm and runtime experience,
+but maybe not the deepest Java experience, to contribute.
 
-If you believe you found a bug, and it's likely possible, please indicate a way to reproduce it, what you are seeing and what you would expect to see.
+This philosophy tends to lead us down what might seem like some non-optimal paths. We may ask you
+to simplify things, use older versions of Java, or reject improvements that we feel
+makes things more confusing without enough measurable benefits.
+
+We don't expect to be able to maintain this forever, and some parts of the codebase will
+inevitably suffer from necessary complexity in the name of correctness, safety, or speed.
+But we are holding the line as long as we can.
 
 ## Before you contribute
 
@@ -66,14 +79,18 @@ Because we are all humans, and to ensure Chicory evolves in the right direction,
 Don't forget to include tests in your pull requests.
 Also don't forget the documentation (reference documentation, javadoc...).
 
-## Current status
+## Reporting an issue
 
-The project is still in a pre-alpha state, where a chunk of the official [testsuite](https://github.com/WebAssembly/testsuite) is not yet completed.
-Since there is some significant work to be ironed out we have been taking a few decisions to reduce the burden:
+This project uses GitHub issues to manage the issues. Open an issue directly in GitHub.
 
-- we are concentrating on the happy path: this means that we disabled most of the tests exercising validation of the input
-- we prioritize the inclusion of more `.wabt` files from the stable spec at `v1`: exception handling, GC, SIMD etc. will come in the future
-- we sync in Zulip: if you wanna contribute you are encouraged to drop a message in the chat and we are happy to assist
+If you believe you found a bug, and it's likely possible, please indicate a way to reproduce it, what you are seeing and what you would expect to see.
+
+## Legal
+
+All original contributions to Chicory projects are licensed under the
+[ASL - Apache License](https://www.apache.org/licenses/LICENSE-2.0),
+version 2.0 or later, or, if another license is specified as governing the file or directory being
+modified, such other license.
 
 ## The small print
 
