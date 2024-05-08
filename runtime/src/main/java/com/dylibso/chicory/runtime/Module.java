@@ -123,8 +123,12 @@ public class Module {
         return this.instantiate(hostImports, machineFactory, true, true, null);
     }
 
+    public Instance instantiate(HostImports hostImports, Function<Instance, Machine> machineFactory, boolean initialize, boolean start){
+        return this.instantiate(hostImports, machineFactory, initialize, start, null);
+    }
+
     public Instance instantiate(HostImports hostImports, boolean initialize, boolean start) {
-        return instantiate(hostImports, InterpreterMachine::new, initialize, start, null);
+        return this.instantiate(hostImports, InterpreterMachine::new, initialize, start, null);
     }
 
     protected Instance instantiate(
