@@ -29,7 +29,6 @@ class Machine {
     public Machine(Instance instance) {
         this.instance = instance;
         stack = new MStack();
-
         this.callStack = new ArrayDeque<>();
     }
 

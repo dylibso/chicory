@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 set -euxo pipefail
 
 # Two options: run locally or download from GH Actions
