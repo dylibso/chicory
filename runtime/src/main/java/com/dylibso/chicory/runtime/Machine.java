@@ -2298,6 +2298,18 @@ class Machine {
         return computeConstantValue(instance, Arrays.asList(expr));
     }
 
+    public static Instance computeConstantInstance(Instance instance, List<Instruction> expr) {
+        for (Instruction instruction : expr) {
+            switch (instruction.opcode()) {
+                case GLOBAL_GET:
+                    {
+                        return instance.global((int) instruction.operands()[0]).getInstance();
+                    }
+            }
+        }
+        return instance;
+    }
+
     public static Value computeConstantValue(Instance instance, List<Instruction> expr) {
         Value tos = null;
         for (Instruction instruction : expr) {
@@ -2364,6 +2376,11 @@ class Machine {
     private static Value getRuntimeElementValue(Instance instance, int elemIdx, int itemIdx) {
         var elem = instance.element(elemIdx);
         return computeConstantValue(instance, elem.initializers().get(itemIdx));
+    }
+
+    private static Instance getRuntimeInstance(Instance instance, int elemIdx, int itemIdx) {
+        var elem = instance.element(elemIdx);
+        return computeConstantInstance(instance, elem.initializers().get(itemIdx));
     }
 
     List<StackFrame> getStackTrace() {
