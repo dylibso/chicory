@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import java.io.File;
@@ -57,7 +56,7 @@ public class FuzzTest extends TestModule {
                 generateTestData(
                         "numeric-", repetitionInfo.getCurrentRepetition(), InstructionType.NUMERIC);
         var module = Module.builder(targetWasm).build();
-        var instance = module.instantiate(new HostImports(), true, false);
+        var instance = module.withInitialize(true).withStart(false).instantiate();
 
         var results = testModule(targetWasm, module, instance);
 
@@ -74,7 +73,7 @@ public class FuzzTest extends TestModule {
                 generateTestData(
                         "table-", repetitionInfo.getCurrentRepetition(), InstructionType.TABLE);
         var module = Module.builder(targetWasm).build();
-        var instance = module.instantiate(new HostImports(), true, false);
+        var instance = module.withInitialize(true).withStart(false).instantiate();
 
         var results = testModule(targetWasm, module, instance);
 

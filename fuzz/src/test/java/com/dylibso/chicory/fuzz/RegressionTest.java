@@ -3,7 +3,6 @@ package com.dylibso.chicory.fuzz;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Module;
 import java.io.File;
 import java.util.Arrays;
@@ -25,7 +24,7 @@ public class RegressionTest extends TestModule {
     void regressionTests(File folder) throws Exception {
         var targetWasm = new File(folder.getAbsolutePath() + "/test.wasm");
         var module = Module.builder(targetWasm).build();
-        var instance = module.instantiate(new HostImports(), true, false);
+        var instance = module.withInitialize(true).withStart(false).instantiate();
 
         var results = testModule(targetWasm, module, instance, false);
 
