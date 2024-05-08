@@ -2,7 +2,6 @@ package com.dylibso.chicory.fuzz;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Module;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -32,7 +31,7 @@ public class SingleReproTest extends TestModule {
                 smith.run(seed.substring(0, Math.min(seed.length(), 32)), "test.wasm", types);
 
         var module = Module.builder(targetWasm).build();
-        var instance = module.instantiate(new HostImports(), true, false);
+        var instance = module.withInitialize(true).withStart(false).instantiate();
 
         testModule(targetWasm, module, instance);
         // Sanity check that the starting function doesn't break

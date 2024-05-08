@@ -1,5 +1,6 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.runtime.MachineUtil.computeConstantInstance;
 import static com.dylibso.chicory.runtime.MachineUtil.computeConstantValue;
 import static com.dylibso.chicory.runtime.Module.START_FUNCTION_NAME;
 
@@ -37,6 +38,7 @@ public class Instance {
     private TableInstance[] tables;
     private final Element[] elements;
     private final boolean start;
+    private final ExecutionListener listener;
 
     public Instance(
             Module module,
@@ -70,7 +72,8 @@ public class Instance {
                 elements,
                 InterpreterMachine::new,
                 initialize,
-                start);
+                start,
+                null);
     }
 
     public Instance(
@@ -89,7 +92,8 @@ public class Instance {
             Element[] elements,
             Function<Instance, Machine> machineFactory,
             boolean initialize,
-            boolean start) {
+            boolean start,
+            ExecutionListener listener) {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
         this.globals = new GlobalInstance[globalInitializers.length + importedGlobalsOffset];
@@ -106,6 +110,7 @@ public class Instance {
         this.roughTables = tables.clone();
         this.elements = elements.clone();
         this.start = start;
+        this.listener = listener;
 
         if (initialize) {
             initialize(this.start);
@@ -130,11 +135,13 @@ public class Instance {
                 for (int i = 0; i < initializers.size(); i++) {
                     final List<Instruction> init = initializers.get(i);
                     var index = offset.asInt() + i;
+                    var value = computeConstantValue(this, init);
+                    var inst = computeConstantInstance(this, init);
                     if (ae.type() == ValueType.FuncRef) {
-                        table.setRef(index, computeConstantValue(this, init).asFuncRef(), this);
+                        table.setRef(index, value.asFuncRef(), inst);
                     } else {
                         assert ae.type() == ValueType.ExternRef;
-                        table.setRef(index, computeConstantValue(this, init).asExtRef(), this);
+                        table.setRef(index, value.asExtRef(), inst);
                     }
                 }
             }
@@ -181,6 +188,7 @@ public class Instance {
                                     + " initializers right now. We failed to initialize opcode: "
                                     + instr.opcode());
             }
+            globals[i].setInstance(this);
         }
 
         if (memory != null) {
@@ -316,5 +324,11 @@ public class Instance {
 
     public Machine getMachine() {
         return machine;
+    }
+
+    public void onExecution(Instruction instruction, long[] operands, MStack stack) {
+        if (listener != null) {
+            listener.onExecution(instruction, operands, stack);
+        }
     }
 }

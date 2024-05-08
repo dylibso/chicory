@@ -74,4 +74,16 @@ public class MachineUtil {
         }
         return tos;
     }
+
+    public static Instance computeConstantInstance(Instance instance, List<Instruction> expr) {
+        for (Instruction instruction : expr) {
+            switch (instruction.opcode()) {
+                case GLOBAL_GET:
+                    {
+                        return instance.global((int) instruction.operands()[0]).getInstance();
+                    }
+            }
+        }
+        return instance;
+    }
 }

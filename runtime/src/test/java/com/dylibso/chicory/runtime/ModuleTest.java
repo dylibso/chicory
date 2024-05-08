@@ -5,11 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
+import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
@@ -91,7 +93,8 @@ public class ModuleTest {
         var instance =
                 Module.builder("compiled/host-function.wat.wasm")
                         .build()
-                        .instantiate(new HostImports(funcs));
+                        .withHostImports(new HostImports(funcs))
+                        .instantiate();
         var logIt = instance.export("logIt");
         logIt.apply();
 
@@ -140,7 +143,7 @@ public class ModuleTest {
                         List.of());
         var funcs = new HostFunction[] {func};
         var module = Module.builder("compiled/start.wat.wasm").build();
-        module.instantiate(new HostImports(funcs));
+        module.withHostImports(new HostImports(funcs)).instantiate();
 
         assertTrue(count.get() > 0);
     }
@@ -286,7 +289,7 @@ public class ModuleTest {
                         new HostGlobal[0],
                         memory,
                         new HostTable[0]);
-        var instance = module.instantiate(hostImports);
+        var instance = module.withHostImports(hostImports).instantiate();
 
         var run = instance.export("main");
         run.apply();
@@ -315,5 +318,24 @@ public class ModuleTest {
 
         var main = instance.export("main");
         assertEquals(4, main.apply()[0].asInt());
+    }
+
+    @Test
+    public void shouldCountNumberOfInstructions() {
+        AtomicLong count = new AtomicLong(0);
+        var module =
+                Module.builder("compiled/iterfact.wat.wasm")
+                        .build()
+                        .withUnsafeExecutionListener(
+                                (Instruction instruction, long[] operands, MStack stack) ->
+                                        count.getAndIncrement())
+                        .instantiate();
+        var iterFact = module.export("iterFact");
+
+        iterFact.apply(Value.i32(100));
+
+        // current result is: 1109
+        assertTrue(count.get() > 0);
+        assertTrue(count.get() < 2000);
     }
 }

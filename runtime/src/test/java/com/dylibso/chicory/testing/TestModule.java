@@ -43,7 +43,11 @@ public class TestModule {
 
     public TestModule instantiate(HostImports imports) {
         if (this.instance == null) {
-            this.instance = module.instantiate(imports, false, false);
+            this.instance =
+                    module.withInitialize(false)
+                            .withStart(false)
+                            .withHostImports(imports)
+                            .instantiate();
         }
         return this;
     }

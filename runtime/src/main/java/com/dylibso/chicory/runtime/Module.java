@@ -41,6 +41,11 @@ public class Module {
     private final HashMap<String, Export> exports;
     private final Logger logger;
 
+    private boolean initialize = true;
+    private boolean start = true;
+    private ExecutionListener listener = null;
+    private HostImports hostImports;
+
     protected Module(com.dylibso.chicory.wasm.Module module, Logger logger) {
         this.logger = logger;
         this.module = validateModule(module);
@@ -75,12 +80,38 @@ public class Module {
         return logger;
     }
 
+    public Module withInitialize(boolean init) {
+        this.initialize = init;
+        return this;
+    }
+
+    public Module withStart(boolean s) {
+        this.start = s;
+        return this;
+    }
+
+    /*
+     * This method is experimental and might be dropped without notice in future releases.
+     */
+    public Module withUnsafeExecutionListener(ExecutionListener listener) {
+        this.listener = listener;
+        return this;
+    }
+
+    public Module withHostImports(HostImports hostImports) {
+        this.hostImports = hostImports;
+        return this;
+    }
+
     public Instance instantiate() {
-        return this.instantiate(new HostImports(), true, true);
+        if (hostImports == null) {
+            hostImports = new HostImports();
+        }
+        return this.instantiate(hostImports, InterpreterMachine::new, initialize, start, listener);
     }
 
     public Instance instantiate(Function<Instance, Machine> machineFactory) {
-        return this.instantiate(new HostImports(), machineFactory, true, true);
+        return this.instantiate(new HostImports(), machineFactory, true, true, null);
     }
 
     public Instance instantiate(HostImports hostImports) {
@@ -89,18 +120,19 @@ public class Module {
 
     public Instance instantiate(
             HostImports hostImports, Function<Instance, Machine> machineFactory) {
-        return this.instantiate(hostImports, machineFactory, true, true);
+        return this.instantiate(hostImports, machineFactory, true, true, null);
     }
 
     public Instance instantiate(HostImports hostImports, boolean initialize, boolean start) {
-        return instantiate(hostImports, InterpreterMachine::new, initialize, start);
+        return instantiate(hostImports, InterpreterMachine::new, initialize, start, null);
     }
 
-    public Instance instantiate(
+    protected Instance instantiate(
             HostImports hostImports,
             Function<Instance, Machine> machineFactory,
             boolean initialize,
-            boolean start) {
+            boolean start,
+            ExecutionListener listener) {
         var globalInitializers = new Global[] {};
         if (this.module.globalSection() != null) {
             globalInitializers = this.module.globalSection().globals();
@@ -255,7 +287,8 @@ public class Module {
                 elements,
                 machineFactory,
                 initialize,
-                start);
+                start,
+                listener);
     }
 
     private HostImports mapHostImports(Import[] imports, HostImports hostImports) {
