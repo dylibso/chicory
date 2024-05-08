@@ -31,57 +31,58 @@ If your module calls a wasi function that we don't support, or uses a feature th
 For the most up-to-date info, and to see what specific functions we support, see the [WasiPreview1.java](https://github.com/dylibso/chicory/blob/main/wasi/src/main/java/com/dylibso/chicory/wasi/WasiPreview1.java) class.
 We also have a table:
 
-| WASI Function            | Supported |
-|--------------------------|-----------|
-| args_get                 | ✅         |
-| args_sizes_get           | ✅         |
-| clock_res_get	           | ❌         |
-| clock_time_get           | 👷        |
-| environ_get	             | ✅	        |
-| environ_sizes_get        | 	✅	       |
-| fd_advise		              | ❌         |
-| fd_allocate	             | ❌         |
-| fd_close	                | ✅         |
-| fd_datasync	             | ❌         |
-| fd_fdstat_get            | 	✅        |
-| fd_fdstat_set_flags      | 	✅        |
-| fd_fdstat_set_rights	    | 💀         |
-| fd_filestat_get	         | ✅	        |
-| fd_filestat_set_size     | 	❌	       |
-| fd_filestat_set_times	   | ❌         |
-| fd_pread	                | ❌         |
-| fd_prestat_dir_name      | 	✅	       |
-| fd_prestat_get           | 	✅	       |
-| fd_pwrite	               | ❌	        |
-| fd_read	                 | ✅	        |
-| fd_readdir	              | ✅         |
-| fd_renumber	             | ❌         |
-| fd_seek	                 | ✅	        |
-| fd_sync	                 | ❌         |
-| fd_tell	                 | ✅	        |
-| fd_write	                | ✅         |
-| path_create_directory	   | ✅         |
-| path_filestat_get        | 	✅	       |
-| path_filestat_set_times	 | ❌         |
-| path_link	               | ❌         |
-| path_open	               | 👷        |
-| path_readlink	           | 👷        |
-| path_remove_directory    | 	✅	       |
-| path_rename              | 	✅	       |
-| path_symlink	            | ❌         |
-| path_unlink_file         | 	✅	       |
-| poll_oneoff	             | ❌         |
-| proc_exit                | 	✅	       |
-| proc_raise	              | 💀        |
-| random_get               | 	✅	       |
-| reset_adapter_state	     | ❌         |
-| sched_yield              | 	✅	       |
-| set_allocation_state	    | ❌         |
-| set_state_ptr	           | ❌         |
-| sock_accept	             | ❌         |
-| sock_recv	               | ❌         |
-| sock_send	               | ❌         |
-| sock_shutdown	           | ❌         |
+| WASI Function           | Supported | Notes                                                                                                                                                                                  |
+|-------------------------|-----------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| args_get                | ✅         |                                                                                                                                                                                        |
+| args_sizes_get          | ✅         |                                                                                                                                                                                        |
+| clock_res_get           | ❌         |                                                                                                                                                                                        |
+| clock_time_get          | 👷        | For these partially supported calls, maybe we should have a notes section. Clock IDs process_cputime_id and thread_cputime_id are not supported. realtime and monotonic are supported. |
+| environ_get             | ✅         |                                                                                                                                                                                        |
+| environ_sizes_get       | ✅         |                                                                                                                                                                                        |
+| fd_advise               | ❌         |                                                                                                                                                                                        |
+| fd_allocate             | ❌         |                                                                                                                                                                                        |
+| fd_close                | ✅         |                                                                                                                                                                                        |
+| fd_datasync             | ❌         |                                                                                                                                                                                        |
+| fd_fdstat_get           | ✅         |                                                                                                                                                                                        |
+| fd_fdstat_set_flags     | ✅         |                                                                                                                                                                                        |
+| fd_fdstat_set_rights    | 💀        |                                                                                                                                                                                        |
+| fd_filestat_get         | ✅         |                                                                                                                                                                                        |
+| fd_filestat_set_size    | ❌         |                                                                                                                                                                                        |
+| fd_filestat_set_times   | ❌         |                                                                                                                                                                                        |
+| fd_pread                | ❌         |                                                                                                                                                                                        |
+| fd_prestat_dir_name     | ✅         |                                                                                                                                                                                        |
+| fd_prestat_get          | ✅         |                                                                                                                                                                                        |
+| fd_pwrite               | ❌         |                                                                                                                                                                                        |
+| fd_read                 | ✅         |                                                                                                                                                                                        |
+| fd_readdir              | ✅         |                                                                                                                                                                                        |
+| fd_renumber             | ❌         |                                                                                                                                                                                        |
+| fd_seek                 | ✅         |                                                                                                                                                                                        |
+| fd_sync                 | ❌         |                                                                                                                                                                                        |
+| fd_tell                 | ✅         |                                                                                                                                                                                        |
+| fd_write                | ✅         |                                                                                                                                                                                        |
+| path_create_directory   | ✅         |                                                                                                                                                                                        |
+| path_filestat_get       | ✅         |                                                                                                                                                                                        |
+| path_filestat_set_times | ❌         |                                                                                                                                                                                        |
+| path_link               | ❌         |                                                                                                                                                                                        |
+| path_open               | ✅        |                                                                                                                                                                                        |
+| path_readlink           | 👷        |                                                                                                                                                                                        |
+| path_remove_directory   | ✅         |                                                                                                                                                                                        |
+| path_rename             | ✅         |                                                                                                                                                                                        |
+| path_symlink            | ❌         |                                                                                                                                                                                        |
+| path_unlink_file        | ✅         |                                                                                                                                                                                        |
+| poll_oneoff             | ❌         |                                                                                                                                                                                        |
+| proc_exit               | ✅         |                                                                                                                                                                                        |
+| proc_raise              | 💀        |                                                                                                                                                                                        |
+| random_get              | ✅         | Max size here is `100_000` bytes                                                                                                                                                       |
+| reset_adapter_state     | ❌         |                                                                                                                                                                                        |
+| sched_yield             | ✅         |                                                                                                                                                                                        |
+| set_allocation_state    | ❌         |                                                                                                                                                                                        |
+| set_state_ptr           | ❌         |                                                                                                                                                                                        |
+| sock_accept             | ❌         |                                                                                                                                                                                        |
+| sock_recv               | ❌         |                                                                                                                                                                                        |
+| sock_send               | ❌         |                                                                                                                                                                                        |
+| sock_shutdown           | ❌         |                                                                                                                                                                                        |
+
 
 > **Note**: 💀 means the function is no longer part of WASI.
 
