@@ -123,7 +123,11 @@ public class Module {
         return this.instantiate(hostImports, machineFactory, true, true, null);
     }
 
-    public Instance instantiate(HostImports hostImports, Function<Instance, Machine> machineFactory, boolean initialize, boolean start){
+    public Instance instantiate(
+            HostImports hostImports,
+            Function<Instance, Machine> machineFactory,
+            boolean initialize,
+            boolean start) {
         return this.instantiate(hostImports, machineFactory, initialize, start, null);
     }
 
