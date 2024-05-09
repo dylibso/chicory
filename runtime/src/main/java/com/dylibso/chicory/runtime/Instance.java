@@ -38,6 +38,7 @@ public class Instance {
     private TableInstance[] tables;
     private final Element[] elements;
     private final boolean start;
+    private final boolean typeValidation;
     private final ExecutionListener listener;
 
     public Instance(
@@ -55,7 +56,8 @@ public class Instance {
             Table[] tables,
             Element[] elements,
             boolean initialize,
-            boolean start) {
+            boolean start,
+            boolean typeValidation) {
         this(
                 module,
                 globalInitializers,
@@ -73,6 +75,7 @@ public class Instance {
                 InterpreterMachine::new,
                 initialize,
                 start,
+                typeValidation,
                 null);
     }
 
@@ -93,6 +96,7 @@ public class Instance {
             Function<Instance, Machine> machineFactory,
             boolean initialize,
             boolean start,
+            boolean typeValidation,
             ExecutionListener listener) {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
@@ -111,6 +115,7 @@ public class Instance {
         this.elements = elements.clone();
         this.start = start;
         this.listener = listener;
+        this.typeValidation = typeValidation;
 
         if (initialize) {
             initialize(this.start);
@@ -199,6 +204,17 @@ public class Instance {
 
         if (start && module.export(START_FUNCTION_NAME) != null) {
             export(START_FUNCTION_NAME).apply();
+        }
+
+        // Type validation needs to remain optional until it's finished
+        if (typeValidation) {
+            // TODO: can be parallelized?
+            for (int i = 0; i < this.functions.length; i++) {
+                if (this.function(i) != null) {
+                    new TypeValidator()
+                            .validate(this.function(i), this.types[this.functionType(i)], this);
+                }
+            }
         }
 
         return this;
