@@ -43,6 +43,7 @@
     <module>wasi</module>
     <module>wasm-corpus</module>
     <module>cli</module>
+    <module>scriptengine</module>
   </modules>
 
   <scm>
