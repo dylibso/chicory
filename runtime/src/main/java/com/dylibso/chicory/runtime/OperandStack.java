@@ -8,10 +8,10 @@ import java.util.ArrayDeque;
  * It allows us to assert non-nulls as well as throw stack under and overflow exceptions
  * We should replace with something more idiomatic and performant.
  */
-public class MStack {
+public class OperandStack {
     private final ArrayDeque<Value> stack;
 
-    public MStack() {
+    public OperandStack() {
         this.stack = new ArrayDeque<>();
     }
 

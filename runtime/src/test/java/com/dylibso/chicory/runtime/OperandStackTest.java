@@ -6,11 +6,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.dylibso.chicory.wasm.types.Value;
 import org.junit.jupiter.api.Test;
 
-public class MStackTest {
+public class OperandStackTest {
 
     @Test
     public void push() {
-        var stack = new MStack();
+        var stack = new OperandStack();
 
         assertEquals(0, stack.size());
 
@@ -22,7 +22,7 @@ public class MStackTest {
 
     @Test
     public void pushWithResizing() {
-        var stack = new MStack();
+        var stack = new OperandStack();
 
         for (int i = 0; i < 30; ++i) {
             stack.push(Value.i32(i));
@@ -33,7 +33,7 @@ public class MStackTest {
 
     @Test
     public void pushNullValueThrowsException() {
-        var stack = new MStack();
+        var stack = new OperandStack();
 
         RuntimeException ex = assertThrows(RuntimeException.class, () -> stack.push(null));
 
@@ -42,7 +42,7 @@ public class MStackTest {
 
     @Test
     public void pushWithPeekAndPoll() {
-        var stack = new MStack();
+        var stack = new OperandStack();
 
         for (int i = 0; i < 10; ++i) {
             stack.push(Value.i32(i));
@@ -62,7 +62,7 @@ public class MStackTest {
 
     @Test
     public void peekFromEmptyStackThrowsException() {
-        var stack = new MStack();
+        var stack = new OperandStack();
 
         RuntimeException ex = assertThrows(RuntimeException.class, stack::peek);
 
@@ -71,7 +71,7 @@ public class MStackTest {
 
     @Test
     public void popFromEmptyStackThrowsException() {
-        var stack = new MStack();
+        var stack = new OperandStack();
 
         stack.push(Value.TRUE);
         stack.push(Value.FALSE);

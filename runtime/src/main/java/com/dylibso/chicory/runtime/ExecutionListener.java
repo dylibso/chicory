@@ -13,5 +13,5 @@ public interface ExecutionListener {
      *
      * If you have a specific use case for this functionality, please, open an Issue at: https://github.com/dylibso/chicory/issues
      */
-    void onExecution(Instruction instruction, long[] operands, MStack stack);
+    void onExecution(Instruction instruction, long[] operands, OperandStack stack);
 }

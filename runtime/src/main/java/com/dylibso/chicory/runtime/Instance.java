@@ -284,7 +284,7 @@ public class Instance {
         elements[idx] = val;
     }
 
-    public void onExecution(Instruction instruction, long[] operands, MStack stack) {
+    public void onExecution(Instruction instruction, long[] operands, OperandStack stack) {
         if (listener != null) {
             listener.onExecution(instruction, operands, stack);
         }

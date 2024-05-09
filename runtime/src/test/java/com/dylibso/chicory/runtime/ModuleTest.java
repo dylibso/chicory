@@ -327,7 +327,7 @@ public class ModuleTest {
                 Module.builder("compiled/iterfact.wat.wasm")
                         .build()
                         .withUnsafeExecutionListener(
-                                (Instruction instruction, long[] operands, MStack stack) ->
+                                (Instruction instruction, long[] operands, OperandStack stack) ->
                                         count.getAndIncrement())
                         .instantiate();
         var iterFact = module.export("iterFact");
