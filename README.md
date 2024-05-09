@@ -24,14 +24,14 @@ to your dependency management system.
 <dependency>
   <groupId>com.dylibso.chicory</groupId>
   <artifactId>runtime</artifactId>
-  <version>0.0.9</version>
+  <version>0.0.10</version>
 </dependency>
 ```
 
 #### Gradle
 
 ```groovy
-implementation 'com.dylibso.chicory:runtime:0.0.9'
+implementation 'com.dylibso.chicory:runtime:0.0.10'
 ```
 
 ### Loading and Instantiating Code
