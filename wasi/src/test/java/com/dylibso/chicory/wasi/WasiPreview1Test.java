@@ -1,24 +1,13 @@
 package com.dylibso.chicory.wasi;
 
-import static java.nio.file.Files.copy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wasm.types.Value;
-import com.google.common.jimfs.Configuration;
-import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.nio.file.FileSystem;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class WasiPreview1Test {
@@ -85,12 +74,5 @@ public class WasiPreview1Test {
         var result = sum.apply(Value.i32(20), Value.i32(22))[0];
 
         assertEquals(result.asInt(), 42);
-    }
-
-    private Value[] wasiResult(WasiErrno errno) {
-        if (errno != WasiErrno.ESUCCESS) {
-            logger.info("result = " + errno.name());
-        }
-        return new Value[] {Value.i32(errno.ordinal())};
     }
 }
