@@ -34,6 +34,7 @@
   </developers>
 
   <modules>
+    <module>wat2wasm</module>
     <module>wasm-support-plugin</module>
     <module>test-gen-plugin</module>
     <module>wasi-test-gen-plugin</module>
@@ -113,6 +114,11 @@
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wat2wasm</artifactId>
+        <version>${project.version}</version>
+      </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>log</artifactId>

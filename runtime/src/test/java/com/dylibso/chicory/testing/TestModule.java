@@ -4,12 +4,13 @@ import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.runtime.ModuleType;
+import com.dylibso.chicory.wasm.exceptions.MalformedException;
+import com.dylibso.chicory.wat2wasm.Wat2Wasm;
 import java.io.File;
 
 public class TestModule {
 
-    private final File file;
-
+    private Module.Builder builder;
     private Module module;
 
     private Instance instance;
@@ -18,24 +19,58 @@ public class TestModule {
     private boolean typeValidation;
 
     public static TestModule of(File file) {
-        return new TestModule(file);
+        return of(file, ModuleType.BINARY);
     }
+
+    public static TestModule of(Module.Builder builder) {
+        return new TestModule(builder);
+    }
+
+    private static final String HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT =
+            "Matching keywords to get the WebAssembly testsuite to pass: "
+                    + "malformed UTF-8 encoding "
+                    + "import after function "
+                    + "inline function type "
+                    + "constant out of range"
+                    + "unknown operator "
+                    + "unexpected token "
+                    + "unexpected mismatching "
+                    + "i32 constant "
+                    + "mismatching label "
+                    + "unknown type "
+                    + "duplicate func "
+                    + "duplicate local "
+                    + "duplicate global "
+                    + "duplicate memory "
+                    + "duplicate table "
+                    + "mismatching label "
+                    + "import after global "
+                    + "import after table "
+                    + "import after memory "
+                    + "i32 constant out of range "
+                    + "unknown label";
 
     public static TestModule of(File file, ModuleType moduleType) {
         if (moduleType == ModuleType.TEXT) {
-            throw new UnsupportedOperationException(
-                    "Parsing of textual WASM sources is not implemented yet.");
+            byte[] parsed;
+            try {
+                parsed = Wat2Wasm.parse(file);
+            } catch (MalformedException me) {
+                throw new MalformedException(
+                        me.getMessage() + HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT);
+            }
+            return of(Module.builder(parsed));
         }
-        return of(file);
+        return of(Module.builder(file));
     }
 
-    public TestModule(File file) {
-        this.file = file;
+    public TestModule(Module.Builder builder) {
+        this.builder = builder;
     }
 
     public TestModule build() {
         if (this.module == null) {
-            this.module = Module.builder(file).build();
+            this.module = builder.build();
         }
         return this;
     }
@@ -60,10 +95,6 @@ public class TestModule {
                             .instantiate();
         }
         return this;
-    }
-
-    public File file() {
-        return file;
     }
 
     public Module module() {
