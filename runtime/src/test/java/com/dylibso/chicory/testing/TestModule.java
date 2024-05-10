@@ -35,7 +35,6 @@ public class TestModule {
                     + "unknown operator "
                     + "unexpected token "
                     + "unexpected mismatching "
-                    + "i32 constant "
                     + "mismatching label "
                     + "unknown type "
                     + "duplicate func "
