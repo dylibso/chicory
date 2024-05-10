@@ -19,6 +19,7 @@
       <artifactId>wasi</artifactId>
       <!-- Using the latest published version to avoid circular dependencies -->
       <version>0.0.10</version>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.google.jimfs</groupId>
@@ -43,11 +44,29 @@
             <phase>package</phase>
             <configuration>
               <shadedClassifierName>shaded</shadedClassifierName>
+              <minimizeJar>true</minimizeJar>
+              <relocations>
+                <relocation>
+                  <pattern>com.dylibso.chicory.log</pattern>
+                  <shadedPattern>shaded.com.dylibso.chicory.log</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.dylibso.chicory.runtime</pattern>
+                  <shadedPattern>shaded.com.dylibso.chicory.runtime</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.dylibso.chicory.wasm</pattern>
+                  <shadedPattern>shaded.com.dylibso.chicory.wasm</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.dylibso.chicory.wasi</pattern>
+                  <shadedPattern>shaded.com.dylibso.chicory.wasi</shadedPattern>
+                </relocation>
+              </relocations>
             </configuration>
           </execution>
         </executions>
       </plugin>
     </plugins>
   </build>
-
 </project>
