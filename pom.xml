@@ -26,6 +26,7 @@
 
   <developers>
     <developer>
+      <id>chicorians</id>
       <name>The Chicory Authors</name>
       <email>oss@dylibso.com</email>
       <organization>Dylibso, Inc.</organization>
@@ -83,6 +84,7 @@
     <commons-lang.version>3.14.0</commons-lang.version>
     <commons-io.version>2.16.1</commons-io.version>
     <jmh.version>1.37</jmh.version>
+    <sundrio.version>0.200.0</sundrio.version>
 
     <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
     <maven-plugin-annotations.version>3.13.0</maven-plugin-annotations.version>
@@ -369,6 +371,27 @@
               <goal>check</goal>
             </goals>
             <phase>process-sources</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>io.sundr</groupId>
+        <artifactId>sundr-maven-plugin</artifactId>
+        <version>${sundrio.version}</version>
+        <configuration>
+          <boms>
+            <bom>
+              <artifactId>bom</artifactId>
+              <name>Chicory - BOM</name>
+              <description>Bill of Materials (BOM)</description>
+            </bom>
+          </boms>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate-bom</goal>
+            </goals>
           </execution>
         </executions>
       </plugin>
