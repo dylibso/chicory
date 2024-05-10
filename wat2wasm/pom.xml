@@ -13,12 +13,40 @@
   <name>Chicory - wat2wasm</name>
   <description>wat2wasm running in pure Java with shaded Chicory</description>
 
+  <properties>
+    <!-- Using the latest published version to avoid circular dependencies -->
+    <chicory.latest.version>0.0.10</chicory.latest.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm</artifactId>
+      <version>${chicory.latest.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>log</artifactId>
+      <version>${chicory.latest.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>log</artifactId>
+      <version>${chicory.latest.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>runtime</artifactId>
+      <version>${chicory.latest.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasi</artifactId>
-      <!-- Using the latest published version to avoid circular dependencies -->
-      <version>0.0.10</version>
+      <version>${chicory.latest.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
