@@ -4,8 +4,8 @@ set -euxo pipefail
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 (
-  cd "${SCRIPT_DIR}/.." || exit 1
+  cd "${SCRIPT_DIR}/.."
   rm -rf main
-  git clone --depth 1 --branch main https://github.com/dylibso/chicory.git main || exit 1
-  mvn -Pbenchmarks spotless:apply clean package -DskipTests || exit 1
+  git clone --depth 1 --branch main https://github.com/dylibso/chicory.git main
+  mvn -Pbenchmarks spotless:apply clean package -DskipTests
 )

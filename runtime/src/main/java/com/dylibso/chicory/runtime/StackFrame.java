@@ -89,7 +89,7 @@ public class StackFrame {
         return pc >= code.size();
     }
 
-    public void registerStackSize(OperandStack stack) {
+    public void registerStackSize(MStack stack) {
         stackSizeBeforeBlock.push(stack.size());
     }
 
@@ -97,7 +97,7 @@ public class StackFrame {
         pc = newPc;
     }
 
-    public void dropValuesOutOfBlock(OperandStack stack) {
+    public void dropValuesOutOfBlock(MStack stack) {
         if (currentInstruction.depth() > 0) {
             while (stackSizeBeforeBlock.size() > currentInstruction.depth()) {
                 stackSizeBeforeBlock.pop();
