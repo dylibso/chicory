@@ -135,7 +135,11 @@ public final class Memory {
     }
 
     public void writeCString(int offset, String str) {
-        writeString(offset, str + '\0');
+        writeCString(offset, str, StandardCharsets.UTF_8);
+    }
+
+    public void writeCString(int offset, String str, Charset charSet) {
+        writeString(offset, str + '\0', charSet);
     }
 
     public String readCString(int addr, Charset charSet) {
