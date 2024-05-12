@@ -11,6 +11,7 @@ import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.Value;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
@@ -117,12 +118,36 @@ public final class Memory {
         write(dest, segment.data(), offset, size);
     }
 
+    public void writeString(int offset, String data, Charset charSet) {
+        write(offset, data.getBytes(charSet));
+    }
+
     public void writeString(int offset, String data) {
-        write(offset, data.getBytes(StandardCharsets.UTF_8));
+        writeString(offset, data, StandardCharsets.UTF_8);
     }
 
     public String readString(int addr, int len) {
-        return new String(readBytes(addr, len), StandardCharsets.UTF_8);
+        return readString(addr, len, StandardCharsets.UTF_8);
+    }
+
+    public String readString(int addr, int len, Charset charSet) {
+        return new String(readBytes(addr, len), charSet);
+    }
+
+    public void writeCString(int offset, String str) {
+        writeString(offset, str + '\0');
+    }
+
+    public String readCString(int addr, Charset charSet) {
+        int c = addr;
+        while (read(c) != '\0') {
+            c++;
+        }
+        return new String(readBytes(addr, c - addr), charSet);
+    }
+
+    public String readCString(int addr) {
+        return readCString(addr, StandardCharsets.UTF_8);
     }
 
     public void write(int addr, byte[] data) {
