@@ -1,7 +1,7 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.runtime.MachineUtil.computeConstantInstance;
-import static com.dylibso.chicory.runtime.MachineUtil.computeConstantValue;
+import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantInstance;
+import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static com.dylibso.chicory.runtime.Module.START_FUNCTION_NAME;
 
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
