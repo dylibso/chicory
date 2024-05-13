@@ -99,7 +99,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("adapter_close_badfd: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: adapter_close_badfd");
                     // return new Value[] { Value.i32(0) };
                 },
                 "wasi_snapshot_preview1",
@@ -112,7 +113,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("adapter_open_badfd: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: adapter_open_badfd");
                     // return new Value[] { Value.i32(0) };
                 },
                 "wasi_snapshot_preview1",
@@ -168,7 +170,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("clock_res_get: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: clock_res_get");
                     // return new Value[] { Value.i32(0) };
                 },
                 "wasi_snapshot_preview1",
@@ -267,7 +270,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("fd_advise: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: fd_advise");
                     // return new Value[] { Value.i32(0) };
                 },
                 "wasi_snapshot_preview1",
@@ -280,7 +284,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("fd_allocate: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: fd_allocate");
                     // return new Value[] { Value.i32(0) };
                 },
                 "wasi_snapshot_preview1",
@@ -321,7 +326,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("fd_datasync: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: fd_datasync");
                     // return new Value[] { Value.i32(0) };
                 },
                 "wasi_snapshot_preview1",
@@ -418,7 +424,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("fd_fdstat_set_rights: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: fd_fdstat_set_rightsn");
                     // return new Value[] { Value.i32(0) };
                 },
                 "wasi_snapshot_preview1",
@@ -485,7 +492,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("fd_filestat_set_size: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: fd_filestat_set_size");
                     // return new Value[] { Value.i32(0) };
                 },
                 "wasi_snapshot_preview1",
@@ -498,7 +506,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("fd_filestat_set_times: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: fd_filestat_set_times");
                     // return new Value[] { Value.i32(0) };
                 },
                 "wasi_snapshot_preview1",
@@ -511,7 +520,7 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("fd_pread: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException("We don't yet support this WASI call: fd_pread");
                     // return new Value[] { Value.i32(0) };
                 },
                 "wasi_snapshot_preview1",
@@ -583,7 +592,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("fd_pwrite: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: fd_pwrite");
                     // return new Value[] { Value.i32(0) };
                 },
                 "wasi_snapshot_preview1",
@@ -734,7 +744,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("fd_renumber: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: fd_renumber");
                 },
                 "wasi_snapshot_preview1",
                 "fd_renumber",
@@ -804,7 +815,7 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("fd_sync: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException("We don't yet support this WASI call: fd_sync");
                     // return new Value[] {Value.i32(0)};
                 },
                 "wasi_snapshot_preview1",
@@ -999,7 +1010,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("path_filestat_set_times: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: path_filestat_set_times");
                 },
                 "wasi_snapshot_preview1",
                 "path_filestat_set_times",
@@ -1011,7 +1023,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("path_link: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: path_link");
                 },
                 "wasi_snapshot_preview1",
                 "path_link",
@@ -1265,7 +1278,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("path_symlink: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: path_symlink");
                 },
                 "wasi_snapshot_preview1",
                 "path_symlink",
@@ -1325,7 +1339,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("poll_oneoff: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: poll_oneoff");
                 },
                 "wasi_snapshot_preview1",
                 "poll_oneoff",
@@ -1350,7 +1365,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("proc_raise: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: proc_raise");
                 },
                 "wasi_snapshot_preview1",
                 "proc_raise",
@@ -1387,7 +1403,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("reset_adapter_state: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: reset_adapter_state");
                 },
                 "wasi_snapshot_preview1",
                 "reset_adapter_state",
@@ -1412,7 +1429,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("set_allocation_state: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: set_allocation_state");
                 },
                 "wasi_snapshot_preview1",
                 "set_allocation_state",
@@ -1424,7 +1442,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("set_state_ptr: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: set_state_ptr");
                 },
                 "wasi_snapshot_preview1",
                 "set_state_ptr",
@@ -1436,7 +1455,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("sock_accept: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: sock_accept");
                 },
                 "wasi_snapshot_preview1",
                 "sock_accept",
@@ -1448,7 +1468,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("sock_recv: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: sock_recv");
                 },
                 "wasi_snapshot_preview1",
                 "sock_recv",
@@ -1460,7 +1481,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("sock_send: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: sock_send");
                 },
                 "wasi_snapshot_preview1",
                 "sock_send",
@@ -1472,7 +1494,8 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("sock_shutdown: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call");
+                    throw new WASMRuntimeException(
+                            "We don't yet support this WASI call: sock_shutdown");
                 },
                 "wasi_snapshot_preview1",
                 "sock_shutdown",

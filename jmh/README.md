@@ -6,7 +6,7 @@ This module is used to run JMH performance tests on Chicory and make it easy to 
 
 There a few additional tools that are needed to see the benchmark results:
 
-- `wget`
+- [wget](https://www.gnu.org/software/wget/)
 - `http-server` install with: `npm install http-server -g`
 
 ## Locally

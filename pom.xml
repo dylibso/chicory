@@ -45,6 +45,7 @@
     <module>wasm-corpus</module>
     <module>cli</module>
     <module>aot</module>
+    <module>bom</module>
   </modules>
 
   <scm>
@@ -106,6 +107,7 @@
     <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
     <templating-maven-plugin.version>3.0.0</templating-maven-plugin.version>
     <maven-shade-plugin.version>3.5.3</maven-shade-plugin.version>
+    <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
   </properties>
 
   <dependencyManagement>
@@ -277,6 +279,11 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
           <version>${maven-shade-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>flatten-maven-plugin</artifactId>
+          <version>${flatten-maven-plugin.version}</version>
         </plugin>
       </plugins>
     </pluginManagement>

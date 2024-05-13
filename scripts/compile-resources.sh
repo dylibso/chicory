@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 set -euxo pipefail
 
 CONTAINER_IMAGE="docker.io/andreatp/chicory-compilation-support"

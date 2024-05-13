@@ -36,7 +36,7 @@ We also have a table:
 | args_get                | ✅         |                                                                                                                                                                                        |
 | args_sizes_get          | ✅         |                                                                                                                                                                                        |
 | clock_res_get           | ❌         |                                                                                                                                                                                        |
-| clock_time_get          | 👷        | For these partially supported calls, maybe we should have a notes section. Clock IDs process_cputime_id and thread_cputime_id are not supported. realtime and monotonic are supported. |
+| clock_time_get          | 👷        | Clock IDs process_cputime_id and thread_cputime_id are not supported. realtime and monotonic are supported. |
 | environ_get             | ✅         |                                                                                                                                                                                        |
 | environ_sizes_get       | ✅         |                                                                                                                                                                                        |
 | fd_advise               | ❌         |                                                                                                                                                                                        |
