@@ -535,7 +535,9 @@ public class Module {
                     case BINARY:
                         return new Module(parser.parseModule(is), logger);
                     default:
-                        throw new InvalidException("Text format parsing is not implemented, but you can use wat2wasm through Chicory.");
+                        throw new InvalidException(
+                                "Text format parsing is not implemented, but you can use wat2wasm"
+                                        + " through Chicory.");
                 }
             } catch (IOException e) {
                 throw new WASMRuntimeException(e);
