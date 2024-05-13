@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public class Module {
@@ -106,11 +107,37 @@ public class Module {
         if (hostImports == null) {
             hostImports = new HostImports();
         }
-        return this.instantiate(hostImports, initialize, start, listener);
+        return this.instantiate(hostImports, InterpreterMachine::new, initialize, start, listener);
+    }
+
+    public Instance instantiate(Function<Instance, Machine> machineFactory) {
+        return this.instantiate(new HostImports(), machineFactory, true, true, null);
+    }
+
+    public Instance instantiate(HostImports hostImports) {
+        return this.instantiate(hostImports, true, true);
+    }
+
+    public Instance instantiate(
+            HostImports hostImports, Function<Instance, Machine> machineFactory) {
+        return this.instantiate(hostImports, machineFactory, true, true, null);
+    }
+
+    public Instance instantiate(
+            HostImports hostImports,
+            Function<Instance, Machine> machineFactory,
+            boolean initialize,
+            boolean start) {
+        return this.instantiate(hostImports, machineFactory, initialize, start, null);
+    }
+
+    public Instance instantiate(HostImports hostImports, boolean initialize, boolean start) {
+        return this.instantiate(hostImports, InterpreterMachine::new, initialize, start, null);
     }
 
     protected Instance instantiate(
             HostImports hostImports,
+            Function<Instance, Machine> machineFactory,
             boolean initialize,
             boolean start,
             ExecutionListener listener) {
@@ -266,6 +293,7 @@ public class Module {
                 mappedHostImports,
                 tables,
                 elements,
+                machineFactory,
                 initialize,
                 start,
                 listener);

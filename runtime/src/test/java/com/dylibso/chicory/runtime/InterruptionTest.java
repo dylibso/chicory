@@ -57,7 +57,7 @@ public class InterruptionTest {
             }
 
             for (StackTraceElement element : thread.getStackTrace()) {
-                if (element.getClassName().equals(Machine.class.getName())
+                if (element.getClassName().equals(InterpreterMachine.class.getName())
                         && element.getMethodName().equals("eval")) {
                     return;
                 }

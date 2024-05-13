@@ -53,19 +53,23 @@ public class JavaTestGen {
 
     private final List<String> excludedInvalidWasts;
 
+    private final boolean useAot;
+
     public JavaTestGen(
             Log log,
             File baseDir,
             File sourceTargetFolder,
             List<String> excludedTests,
             List<String> excludedMalformedWasts,
-            List<String> excludedInvalidWasts) {
+            List<String> excludedInvalidWasts,
+            boolean useAot) {
         this.log = log;
         this.baseDir = baseDir;
         this.sourceTargetFolder = sourceTargetFolder;
         this.excludedTests = excludedTests;
         this.excludedMalformedWasts = excludedMalformedWasts;
         this.excludedInvalidWasts = excludedInvalidWasts;
+        this.useAot = useAot;
     }
 
     public CompilationUnit generate(
@@ -92,7 +96,7 @@ public class JavaTestGen {
 
         // testing imports
         cu.addImport("com.dylibso.chicory.testing.ChicoryTest");
-        cu.addImport("com.dylibso.chicory.testing.TestModule");
+        cu.addImport("com.dylibso.chicory.testing." + testModuleClassName());
 
         // runtime imports
         cu.addImport("com.dylibso.chicory.wasm.exceptions.ChicoryException");
@@ -174,7 +178,8 @@ public class JavaTestGen {
                                                             cmd,
                                                             currentWasmFile,
                                                             importsName,
-                                                            hostFuncs),
+                                                            hostFuncs,
+                                                            useAot),
                                                     AssignExpr.Operator.ASSIGN)));
                     break;
                 case ACTION:
@@ -375,11 +380,12 @@ public class JavaTestGen {
     }
 
     private static NameExpr generateModuleInstantiation(
-            Command cmd, String wasmFile, String importsName, String hostFuncs) {
+            Command cmd, String wasmFile, String importsName, String hostFuncs, boolean useAot) {
         var additionalParam =
                 cmd.moduleType() == null ? "" : ", ModuleType." + cmd.moduleType().toUpperCase();
         return new NameExpr(
-                "TestModule.of(new File(\""
+                testModuleClassName(useAot)
+                        + ".of(new File(\""
                         + wasmFile
                         + "\")"
                         + additionalParam
@@ -448,7 +454,7 @@ public class JavaTestGen {
                                 + "assertThrows("
                                 + exceptionType
                                 + ".class, () -> "
-                                + generateModuleInstantiation(cmd, wasmFile, null, null)
+                                + generateModuleInstantiation(cmd, wasmFile, null, null, useAot)
                                 + ")");
 
         method.getBody().get().addStatement(assertThrows);
@@ -476,5 +482,13 @@ public class JavaTestGen {
                         + "\"), \"'\" + exception.getMessage() + \"' doesn't contains: '"
                         + text
                         + "\")");
+    }
+
+    private String testModuleClassName() {
+        return testModuleClassName(useAot);
+    }
+
+    private static String testModuleClassName(boolean useAot) {
+        return useAot ? "AotTestModule" : "TestModule";
     }
 }

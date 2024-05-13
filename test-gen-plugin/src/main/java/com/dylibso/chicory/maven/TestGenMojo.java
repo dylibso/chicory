@@ -117,6 +117,9 @@ public class TestGenMojo extends AbstractMojo {
     @Parameter(defaultValue = "[]")
     private List<String> excludedWasts;
 
+    @Parameter(required = false, defaultValue = "false")
+    private boolean useAot;
+
     /**
      * The current Maven project.
      */
@@ -149,7 +152,8 @@ public class TestGenMojo extends AbstractMojo {
                         sourceDestinationFolder,
                         excludedTests,
                         excludedMalformedWasts,
-                        excludedInvalidWasts);
+                        excludedInvalidWasts,
+                        useAot);
 
         JavaParserMavenUtils.makeJavaParserLogToMavenOutput(getLog());
 
