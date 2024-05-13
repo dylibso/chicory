@@ -34,6 +34,43 @@ to your dependency management system.
 implementation 'com.dylibso.chicory:runtime:0.0.10'
 ```
 
+<!--
+```java
+//DEPS com.dylibso.chicory:runtime:999-SNAPSHOT
+```
+-->
+
+<!--
+```java
+public void copyFileFromWasmCorpus(String sourceName, String destName) throws Exception {
+  var dest = new File(".").toPath().resolve(destName);
+  if (dest.toFile().exists()) {
+    dest.toFile().delete();
+  }
+  Files.copy(new File(".").toPath()
+          .resolve("wasm-corpus")
+          .resolve("src")
+          .resolve("test")
+          .resolve("resources")
+          .resolve("compiled")
+          .resolve(sourceName),
+          dest,
+          StandardCopyOption.REPLACE_EXISTING);
+}
+
+var readmeResults = "readme-results";
+new File(readmeResults).mkdirs();
+
+public void writeResultFile(String name, String content) throws Exception {
+  FileWriter fileWriter = new FileWriter(new File(".").toPath().resolve(readmeResults).resolve(name).toFile());
+  PrintWriter printWriter = new PrintWriter(fileWriter);
+  printWriter.print(content);
+  printWriter.flush();
+  printWriter.close();
+}
+```
+-->
+
 ### Loading and Instantiating Code
 
 First your Wasm module must be loaded from disk and then "instantiated". Let's [download a test module](https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/test/resources/compiled/iterfact.wat.wasm) .
@@ -44,6 +81,12 @@ Download from the link or with curl:
 ```bash
 curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/test/resources/compiled/iterfact.wat.wasm > factorial.wasm
 ```
+
+<!--
+```java
+copyFileFromWasmCorpus("iterfact.wat.wasm", "factorial.wasm");
+```
+-->
 
 Now let's load this module and instantiate it:
 
@@ -80,6 +123,12 @@ Value result = iterFact.apply(Value.i32(5))[0];
 System.out.println("Result: " + result.asInt()); // should print 120 (5!)
 ```
 
+<!--
+```java
+writeResultFile("factorial.result", "" + result.asInt());
+```
+-->
+
 > *Note*: Functions in Wasm can have multiple returns but here we're just taking the first returned value.
 
 ### Memory and Complex Types
@@ -92,6 +141,12 @@ in the string:
 ```bash
 curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/test/resources/compiled/count_vowels.rs.wasm > count_vowels.wasm
 ```
+
+<!--
+```java
+copyFileFromWasmCorpus("count_vowels.rs.wasm", "count_vowels.wasm");
+```
+-->
 
 Build and instantiate this module:
 
@@ -111,6 +166,7 @@ ExportFunction dealloc = instance.export("dealloc");
 Let's allocate Wasm memory for a string and put in the instance's memory. We can do this with `Memory#put`:
 
 ```java
+import com.dylibso.chicory.runtime.Memory;
 Memory memory = instance.memory();
 String message = "Hello, World!";
 int len = message.getBytes().length;
@@ -126,8 +182,14 @@ call `dealloc` to free that memory in the module. Though the module could do thi
 ```java
 Value result = countVowels.apply(Value.i32(ptr), Value.i32(len))[0];
 dealloc.apply(Value.i32(ptr), Value.i32(len));
-assertEquals(3, result.asInt()); // 3 vowels in Hello, World!
+assert(3 == result.asInt()); // 3 vowels in Hello, World!
 ```
+
+<!--
+```java
+writeResultFile("countVowels.result", "" + result.asInt());
+```
+-->
 
 ### Host Functions
 
@@ -145,16 +207,34 @@ Let's download another example module to demonstrate this:
 curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/test/resources/compiled/host-function.wat.wasm > logger.wasm
 ```
 
+<!--
+```java
+copyFileFromWasmCorpus("host-function.wat.wasm", "logger.wasm");
+```
+-->
+
 This module expects us to fulfil an import with the name `console.log` which will allow the module to log to the stdout.
 Let's write that host function:
 
+<!--
 ```java
+public String hostFunctionResult = "";
+public void println(String value) {
+  hostFunctionResult += value + "\n";
+}
+```
+-->
+
+
+```java
+import com.dylibso.chicory.runtime.HostFunction;
+import com.dylibso.chicory.wasm.types.ValueType;
 var func = new HostFunction(
     (Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
         var len = args[0].asInt();
         var offset = args[1].asInt();
         var message = instance.memory().readString(offset, len);
-        System.out.println(message);
+        println(message);
         return null;
     },
     "console",
@@ -176,12 +256,19 @@ Note that the HostFunction needs 3 things:
 Now we just need to pass this host function in during our instantiation phase:
 
 ```java
-var funcs = new HostFunction[] {func};
-var instance = Module.builder(new File("./logger.wasm")).build().instantiate(funcs);
+import com.dylibso.chicory.runtime.HostImports;
+var imports = new HostImports(new HostFunction[] {func});
+var instance = Module.builder(new File("./logger.wasm")).build().withHostImports(imports).instantiate();
 var logIt = instance.export("logIt");
 logIt.apply();
 // should print "Hello, World!" 10 times
 ```
+
+<!--
+```java
+writeResultFile("hostFunction.result", hostFunctionResult);
+```
+-->
 
 ## Development
 
