@@ -21,19 +21,7 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wasm</artifactId>
-      <version>${chicory.latest.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>log</artifactId>
-      <version>${chicory.latest.version}</version>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>log</artifactId>
+      <artifactId>wasi</artifactId>
       <version>${chicory.latest.version}</version>
       <scope>compile</scope>
     </dependency>
@@ -45,7 +33,13 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wasi</artifactId>
+      <artifactId>log</artifactId>
+      <version>${chicory.latest.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm</artifactId>
       <version>${chicory.latest.version}</version>
       <scope>compile</scope>
     </dependency>
