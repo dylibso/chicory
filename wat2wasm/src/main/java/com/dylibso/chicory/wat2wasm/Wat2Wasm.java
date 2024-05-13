@@ -25,9 +25,9 @@ import java.util.List;
 
 public class Wat2Wasm {
     private static final Logger logger = new SystemLogger();
+    private static final Module module = Module.builder("wat2wasm").build();
 
     public static byte[] parse(File file) {
-        var module = Module.builder("wat2wasm").build();
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
                 ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
             try (FileInputStream fis = new FileInputStream(file);
