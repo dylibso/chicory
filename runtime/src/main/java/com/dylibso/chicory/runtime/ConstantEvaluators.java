@@ -7,7 +7,7 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 import java.util.List;
 
-public class MachineUtil {
+public class ConstantEvaluators {
     public static Value computeConstantValue(Instance instance, Instruction[] expr) {
         return computeConstantValue(instance, Arrays.asList(expr));
     }

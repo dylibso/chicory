@@ -45,7 +45,11 @@ public class AotTestModule {
     public AotTestModule instantiate(HostImports imports) {
         if (this.instance == null) {
             this.instance =
-                    module.instantiate(imports, ins -> new AotMachine(module), false, false);
+                    module.withMachineFactory(ins -> new AotMachine(module))
+                            .withInitialize(false)
+                            .withStart(false)
+                            .withHostImports(imports)
+                            .instantiate();
         }
         return this;
     }

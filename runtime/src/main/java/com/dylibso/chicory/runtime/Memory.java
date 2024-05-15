@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.runtime.MachineUtil.computeConstantValue;
+import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;

@@ -45,6 +45,7 @@ public class Module {
     private boolean start = true;
     private ExecutionListener listener = null;
     private HostImports hostImports;
+    private Function<Instance, Machine> machineFactory;
 
     protected Module(com.dylibso.chicory.wasm.Module module, Logger logger) {
         this.logger = logger;
@@ -103,41 +104,21 @@ public class Module {
         return this;
     }
 
+    public Module withMachineFactory(Function<Instance, Machine> machineFactory) {
+        this.machineFactory = machineFactory;
+        return this;
+    }
+
     public Instance instantiate() {
         if (hostImports == null) {
             hostImports = new HostImports();
         }
-        return this.instantiate(hostImports, InterpreterMachine::new, initialize, start, listener);
-    }
 
-    public Instance instantiate(Function<Instance, Machine> machineFactory) {
-        return this.instantiate(new HostImports(), machineFactory, true, true, null);
-    }
-
-    public Instance instantiate(HostImports hostImports) {
-        return this.instantiate(hostImports, true, true);
-    }
-
-    public Instance instantiate(
-            HostImports hostImports, Function<Instance, Machine> machineFactory) {
-        return this.instantiate(hostImports, machineFactory, true, true, null);
-    }
-
-    public Instance instantiate(
-            HostImports hostImports,
-            Function<Instance, Machine> machineFactory,
-            boolean initialize,
-            boolean start) {
-        return this.instantiate(hostImports, machineFactory, initialize, start, null);
-    }
-
-    public Instance instantiate(HostImports hostImports, boolean initialize, boolean start) {
-        return this.instantiate(hostImports, InterpreterMachine::new, initialize, start, null);
+        return this.instantiate(hostImports, initialize, start, listener);
     }
 
     protected Instance instantiate(
             HostImports hostImports,
-            Function<Instance, Machine> machineFactory,
             boolean initialize,
             boolean start,
             ExecutionListener listener) {
@@ -277,6 +258,10 @@ public class Module {
                 default:
                     break;
             }
+        }
+
+        if (machineFactory == null) {
+            machineFactory = InterpreterMachine::new;
         }
 
         return new Instance(
