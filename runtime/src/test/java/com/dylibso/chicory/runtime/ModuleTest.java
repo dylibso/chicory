@@ -1,5 +1,6 @@
 package com.dylibso.chicory.runtime;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -337,5 +338,15 @@ public class ModuleTest {
         // current result is: 1109
         assertTrue(count.get() > 0);
         assertTrue(count.get() < 2000);
+    }
+
+    @Test
+    public void shouldValidateTypes() {
+        assertDoesNotThrow(
+                () ->
+                        Module.builder("compiled/i32.wat.wasm")
+                                .build()
+                                .withTypeValidation(true)
+                                .instantiate());
     }
 }

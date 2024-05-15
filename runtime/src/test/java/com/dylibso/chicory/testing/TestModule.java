@@ -14,6 +14,9 @@ public class TestModule {
 
     private Instance instance;
 
+    private HostImports imports;
+    private boolean typeValidation;
+
     public static TestModule of(File file) {
         return new TestModule(file);
     }
@@ -37,16 +40,23 @@ public class TestModule {
         return this;
     }
 
-    public TestModule instantiate() {
-        return this.instantiate(new HostImports());
+    public TestModule withHostImports(HostImports imports) {
+        this.imports = imports;
+        return this;
     }
 
-    public TestModule instantiate(HostImports imports) {
+    public TestModule withTypeValidation(boolean v) {
+        this.typeValidation = v;
+        return this;
+    }
+
+    public TestModule instantiate() {
         if (this.instance == null) {
             this.instance =
                     module.withInitialize(false)
                             .withStart(false)
                             .withHostImports(imports)
+                            .withTypeValidation(typeValidation)
                             .instantiate();
         }
         return this;

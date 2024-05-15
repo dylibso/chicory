@@ -179,7 +179,7 @@ public class JavaTestGen {
                                                             currentWasmFile,
                                                             importsName,
                                                             hostFuncs,
-                                                            useAot),
+                                                            excludeInvalid),
                                                     AssignExpr.Operator.ASSIGN)));
                     break;
                 case ACTION:
@@ -379,18 +379,43 @@ public class JavaTestGen {
         return List.of(assertDecl);
     }
 
+    private static final String TAB = "  ";
+    private static final String INDENT = TAB + TAB + TAB + TAB + TAB;
+
     private static NameExpr generateModuleInstantiation(
-            Command cmd, String wasmFile, String importsName, String hostFuncs, boolean useAot) {
+            Command cmd,
+            String wasmFile,
+            String importsName,
+            String hostFuncs,
+            boolean excludeInvalid) {
         var additionalParam =
                 cmd.moduleType() == null ? "" : ", ModuleType." + cmd.moduleType().toUpperCase();
         return new NameExpr(
-                "TestModule.of(new File(\""
+                "TestModule.of(\n"
+                        + INDENT
+                        + TAB
+                        + "new File(\""
                         + wasmFile
                         + "\")"
                         + additionalParam
-                        + ").build().instantiate("
-                        + ((hostFuncs != null) ? importsName + "." + hostFuncs + "()" : "")
-                        + ").instance().initialize(true)"); // TODO: verify start = true
+                        + ")\n"
+                        + INDENT
+                        + ".build()\n"
+                        + ((excludeInvalid) ? "" : INDENT + ".withTypeValidation(true)\n")
+                        + ((hostFuncs != null)
+                                ? INDENT
+                                        + ".withHostImports("
+                                        + importsName
+                                        + "."
+                                        + hostFuncs
+                                        + "())"
+                                : "")
+                        + INDENT
+                        + ".instantiate()\n"
+                        + INDENT
+                        + ".instance()\n"
+                        + INDENT
+                        + ".initialize(true)"); // TODO: verify start = true
     }
 
     private String detectImports(String importsName, String varName, SourceRoot testSourcesRoot) {
@@ -453,7 +478,7 @@ public class JavaTestGen {
                                 + "assertThrows("
                                 + exceptionType
                                 + ".class, () -> "
-                                + generateModuleInstantiation(cmd, wasmFile, null, null, useAot)
+                                + generateModuleInstantiation(cmd, wasmFile, null, null, false)
                                 + ")");
 
         method.getBody().get().addStatement(assertThrows);

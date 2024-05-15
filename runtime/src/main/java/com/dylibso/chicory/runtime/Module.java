@@ -43,6 +43,9 @@ public class Module {
 
     private boolean initialize = true;
     private boolean start = true;
+    // TODO: turn the default to true
+    // Type validation needs to remain optional until it's finished
+    private boolean typeValidation = false;
     private ExecutionListener listener = null;
     private HostImports hostImports;
     private Function<Instance, Machine> machineFactory;
@@ -88,6 +91,11 @@ public class Module {
 
     public Module withStart(boolean s) {
         this.start = s;
+        return this;
+    }
+
+    public Module withTypeValidation(boolean v) {
+        this.typeValidation = v;
         return this;
     }
 
@@ -281,6 +289,7 @@ public class Module {
                 machineFactory,
                 initialize,
                 start,
+                typeValidation,
                 listener);
     }
 

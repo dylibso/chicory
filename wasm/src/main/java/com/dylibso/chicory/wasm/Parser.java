@@ -777,7 +777,8 @@ public final class Parser {
                 // instruction);
             } while (!lastInstruction);
 
-            codeSection.addFunctionBody(new FunctionBody(locals, instructions));
+            var functionBody = new FunctionBody(locals, instructions);
+            codeSection.addFunctionBody(functionBody);
         }
 
         return codeSection;
