@@ -96,7 +96,7 @@ public class JavaTestGen {
 
         // testing imports
         cu.addImport("com.dylibso.chicory.testing.ChicoryTest");
-        cu.addImport("com.dylibso.chicory.testing." + testModuleClassName());
+        cu.addImport("com.dylibso.chicory.testing.TestModule");
 
         // runtime imports
         cu.addImport("com.dylibso.chicory.wasm.exceptions.ChicoryException");
@@ -384,8 +384,7 @@ public class JavaTestGen {
         var additionalParam =
                 cmd.moduleType() == null ? "" : ", ModuleType." + cmd.moduleType().toUpperCase();
         return new NameExpr(
-                testModuleClassName(useAot)
-                        + ".of(new File(\""
+                "TestModule.of(new File(\""
                         + wasmFile
                         + "\")"
                         + additionalParam
@@ -482,13 +481,5 @@ public class JavaTestGen {
                         + "\"), \"'\" + exception.getMessage() + \"' doesn't contains: '"
                         + text
                         + "\")");
-    }
-
-    private String testModuleClassName() {
-        return testModuleClassName(useAot);
-    }
-
-    private static String testModuleClassName(boolean useAot) {
-        return useAot ? "AotTestModule" : "TestModule";
     }
 }
