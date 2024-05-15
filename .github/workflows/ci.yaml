@@ -96,3 +96,41 @@ jobs:
           token: ${{ secrets.GIST_TOKEN }}
           gistURL: https://gist.githubusercontent.com/andreaTP/69354d1cc6cf23e4c3c4a9a8daf7ea15
           file: badge.svg
+
+  readme-ci:
+    runs-on: ubuntu-latest
+    name: CI - Readme
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: Checkout testsuite
+        uses: actions/checkout@v4
+        with:
+          repository: WebAssembly/testsuite
+          path: testsuite
+          # The ref needs to stay in sync with the default value in test-gen-plugin
+          ref: c2a67a575ddc815ff2212f68301d333e5e30a923
+      - name: Checkout wasi-testsuite
+        uses: actions/checkout@v4
+        with:
+          repository: WebAssembly/wasi-testsuite
+          path: wasi-testsuite
+          ref: prod/testsuite-base
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: maven
+      - name: Build Chicory
+        run: mvn clean install -DskipTests
+        env:
+          MAVEN_OPTS: "-Dmaven.repo.local=${{ github.workspace }}/repository"
+      - name: jbang
+        uses: jbangdev/jbang-action@74844c9631cf1f35650427323e9bb3ffa41dfbd9 # tag=v0.115.0
+        with:
+          script: README.md
+        env:
+          JBANG_REPO: "${{ github.workspace }}/repository"
+      - name: compare results
+        run: diff -r ./readme-approved-results ./readme-results

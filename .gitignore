@@ -12,3 +12,6 @@ dependency-reduced-pom.xml
 jmh-result.json
 scripts/jmh-tmp
 /main/
+
+/*.wasm
+readme-results
