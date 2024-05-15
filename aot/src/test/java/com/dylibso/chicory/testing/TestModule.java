@@ -7,7 +7,7 @@ import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.runtime.ModuleType;
 import java.io.File;
 
-public class AotTestModule {
+public class TestModule {
 
     private final File file;
 
@@ -15,11 +15,11 @@ public class AotTestModule {
 
     private Instance instance;
 
-    public static AotTestModule of(File file) {
-        return new AotTestModule(file);
+    public static TestModule of(File file) {
+        return new TestModule(file);
     }
 
-    public static AotTestModule of(File file, ModuleType moduleType) {
+    public static TestModule of(File file, ModuleType moduleType) {
         if (moduleType == ModuleType.TEXT) {
             throw new UnsupportedOperationException(
                     "Parsing of textual WASM sources is not implemented yet.");
@@ -27,22 +27,22 @@ public class AotTestModule {
         return of(file);
     }
 
-    public AotTestModule(File file) {
+    public TestModule(File file) {
         this.file = file;
     }
 
-    public AotTestModule build() {
+    public TestModule build() {
         if (this.module == null) {
             this.module = Module.builder(file).build();
         }
         return this;
     }
 
-    public AotTestModule instantiate() {
+    public TestModule instantiate() {
         return this.instantiate(new HostImports());
     }
 
-    public AotTestModule instantiate(HostImports imports) {
+    public TestModule instantiate(HostImports imports) {
         if (this.instance == null) {
             this.instance =
                     module.withMachineFactory(ins -> new AotMachine(module))
