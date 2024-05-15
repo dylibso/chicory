@@ -490,12 +490,6 @@ public class JavaTestGen {
             method.addAnnotation(
                     new SingleMemberAnnotationExpr(
                             new Name("Disabled"), new StringLiteralExpr("Test excluded")));
-        } else if (cmd.moduleType() != null && cmd.moduleType().equalsIgnoreCase("text")) {
-            method.addAnnotation(
-                    new SingleMemberAnnotationExpr(
-                            new Name("Disabled"),
-                            new StringLiteralExpr(
-                                    "Parsing of textual WASM sources is not implemented yet")));
         }
     }
 
