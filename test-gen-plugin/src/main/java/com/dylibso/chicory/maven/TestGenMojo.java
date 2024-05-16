@@ -168,7 +168,7 @@ public class TestGenMojo extends AbstractMojo {
 
             TestGenerator testGenerator = new TestGenerator(testGen, importSourceRoot, dest);
 
-            includedWasts.stream().parallel().forEach(testGenerator::generateTests);
+            includedWasts.parallelStream().forEach(testGenerator::generateTests);
 
             dest.saveAll();
         } catch (Exception e) {
