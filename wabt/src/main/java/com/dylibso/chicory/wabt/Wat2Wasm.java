@@ -1,4 +1,4 @@
-package com.dylibso.chicory.wat2wasm;
+package com.dylibso.chicory.wabt;
 
 import static java.nio.file.Files.copy;
 
@@ -44,7 +44,7 @@ public class Wat2Wasm {
 
                 Path target = fs.getPath("tmp");
                 java.nio.file.Files.createDirectory(target);
-                Path path = target.resolve("file.wat");
+                Path path = target.resolve(file.getName());
                 copy(fis, path, StandardCopyOption.REPLACE_EXISTING);
                 wasiOpts.withDirectory(target.toString(), target);
 
