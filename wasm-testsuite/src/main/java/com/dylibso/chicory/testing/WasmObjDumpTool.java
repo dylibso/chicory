@@ -11,7 +11,6 @@ public class WasmObjDumpTool {
     }
 
     public static void dump(String wasmFilePath, String symbolFilter) {
-
         System.out.printf("Module: %s%n", wasmFilePath);
         System.out.printf("Filter: %s%n", symbolFilter == null ? "NONE" : symbolFilter);
 
