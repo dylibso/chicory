@@ -238,7 +238,7 @@ public class TestGenMojo extends AbstractMojo {
                 }
             }
             if (retry <= 0) {
-                throw new IllegalArgumentException("WTF");
+                throw new RuntimeException("Failed to generate test sources");
             }
 
             var name = specFile.toPath().getParent().toFile().getName();

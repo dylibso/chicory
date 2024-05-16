@@ -12,10 +12,10 @@ public class Wast2JsonTest {
     @Test
     public void shouldRunWast2Json(@TempDir Path tempDir) throws Exception {
         // Arrange
-        var outputFile = tempDir.resolve("i32").resolve("spec.json").toFile();
+        var outputFile = tempDir.resolve("fac").resolve("spec.json").toFile();
         var wast2Json =
                 Wast2Json.builder()
-                        .withFile(new File("src/test/resources/i32.wast"))
+                        .withFile(new File("src/test/resources/fac.wast"))
                         .withOutput(outputFile)
                         .build();
 

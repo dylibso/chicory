@@ -124,11 +124,6 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>wasm-objdump</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.dylibso.chicory</groupId>
         <artifactId>log</artifactId>
         <version>${project.version}</version>
       </dependency>
