@@ -53,23 +53,19 @@ public class JavaTestGen {
 
     private final List<String> excludedInvalidWasts;
 
-    private final boolean useAot;
-
     public JavaTestGen(
             Log log,
             File baseDir,
             File sourceTargetFolder,
             List<String> excludedTests,
             List<String> excludedMalformedWasts,
-            List<String> excludedInvalidWasts,
-            boolean useAot) {
+            List<String> excludedInvalidWasts) {
         this.log = log;
         this.baseDir = baseDir;
         this.sourceTargetFolder = sourceTargetFolder;
         this.excludedTests = excludedTests;
         this.excludedMalformedWasts = excludedMalformedWasts;
         this.excludedInvalidWasts = excludedInvalidWasts;
-        this.useAot = useAot;
     }
 
     public CompilationUnit generate(

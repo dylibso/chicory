@@ -16,7 +16,7 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wat2wasm</artifactId>
+      <artifactId>wabt</artifactId>
       <exclusions>
         <exclusion>
           <groupId>com.dylibso.chicory</groupId>

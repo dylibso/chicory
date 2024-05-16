@@ -5,8 +5,8 @@ import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.runtime.ModuleType;
+import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
-import com.dylibso.chicory.wat2wasm.Wat2Wasm;
 import java.io.File;
 
 public class TestModule {

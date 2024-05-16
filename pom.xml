@@ -34,7 +34,7 @@
   </developers>
 
   <modules>
-    <module>wat2wasm</module>
+    <module>wabt</module>
     <module>wasm-support-plugin</module>
     <module>test-gen-plugin</module>
     <module>wasi-test-gen-plugin</module>
@@ -89,6 +89,9 @@
     <commons-io.version>2.16.1</commons-io.version>
     <jmh.version>1.37</jmh.version>
 
+    <!-- Latest published version of Chicory used to run wabt tools -->
+    <chicory.latest.version>0.0.10</chicory.latest.version>
+
     <maven-plugin-api.version>3.9.6</maven-plugin-api.version>
     <maven-plugin-annotations.version>3.13.0</maven-plugin-annotations.version>
 
@@ -116,7 +119,12 @@
     <dependencies>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>wat2wasm</artifactId>
+        <artifactId>wabt</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wasm-objdump</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
