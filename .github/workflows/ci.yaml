@@ -127,7 +127,7 @@ jobs:
         env:
           MAVEN_OPTS: "-Dmaven.repo.local=${{ github.workspace }}/repository"
       - name: jbang
-        uses: jbangdev/jbang-action@74844c9631cf1f35650427323e9bb3ffa41dfbd9 # tag=v0.115.0
+        uses: jbangdev/jbang-action@af7fa6ef596426856b6efc3e3a9d6e4652db2487 # tag=v0.116.0
         with:
           script: README.md
         env:
