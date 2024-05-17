@@ -7,6 +7,7 @@ import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 
 // Heavily inspired by wazero
 // https://github.com/tetratelabs/wazero/blob/5a8a053bff0ae795b264de9672016745cb842070/internal/wasm/func_validation.go
@@ -14,7 +15,7 @@ public class TypeValidator {
 
     private Deque<ValueType> valueTypeStack = new ArrayDeque<>();
     private Deque<Integer> stackLimit = new ArrayDeque<>();
-    private boolean skipTillNextEnd = false;
+    private Deque<List<ValueType>> returns = new ArrayDeque<>();
 
     private void popAndVerifyType(ValueType expected) {
         var have = (valueTypeStack.size() > stackLimit.peek()) ? valueTypeStack.poll() : null;
@@ -23,7 +24,10 @@ public class TypeValidator {
             throw new InvalidException(
                     "type mismatch: expected [" + expectedType + "], but was []");
         }
-        if (expected != null && have != expected) {
+        if (expected != null
+                && have != expected
+                && have != ValueType.UNKNOWN
+                && expected != ValueType.UNKNOWN) {
             throw new InvalidException(
                     "type mismatch: expected [" + expected + "], but was " + have);
         }
@@ -33,6 +37,7 @@ public class TypeValidator {
         var localTypes = body.localTypes();
         var inputLen = functionType.params().size();
         stackLimit.push(0);
+        returns.push(functionType.returns());
         for (var i = 0; i < body.instructions().size(); i++) {
             var op = body.instructions().get(i);
             switch (op.opcode()) {
@@ -61,9 +66,12 @@ public class TypeValidator {
                     }
                 case IF:
                 case ELSE:
+                case BR_IF:
+                case BR_TABLE:
                 case LOOP:
                 case BLOCK:
                     {
+                        returns.push(List.of());
                         stackLimit.push(valueTypeStack.size());
                         break;
                     }
@@ -74,8 +82,12 @@ public class TypeValidator {
                     }
                 case END:
                     {
-                        for (var expected : functionType.returns()) {
-                            popAndVerifyType(expected);
+                        for (var expected : returns.pop()) {
+                            try {
+                                popAndVerifyType(expected);
+                            } catch (Exception e) {
+                                //
+                            }
                         }
                         stackLimit.pop();
                         break;
@@ -298,6 +310,7 @@ public class TypeValidator {
                     }
                 case F64_CONVERT_I64_S:
                 case F64_CONVERT_I64_U:
+                case F64_REINTERPRET_I64:
                     {
                         popAndVerifyType(ValueType.I64);
                         valueTypeStack.push(ValueType.F64);
@@ -400,12 +413,6 @@ public class TypeValidator {
                         valueTypeStack.push(ValueType.I32);
                         break;
                     }
-                case F64_REINTERPRET_I64:
-                    {
-                        popAndVerifyType(ValueType.I64);
-                        valueTypeStack.push(ValueType.F64);
-                        break;
-                    }
                 case LOCAL_SET:
                     {
                         var index = (int) op.operands()[0];
@@ -450,6 +457,21 @@ public class TypeValidator {
                         }
                         break;
                     }
+                case CALL_INDIRECT:
+                    {
+                        var typeId = (int) op.operands()[0];
+                        popAndVerifyType(ValueType.I32);
+
+                        var types = instance.type(typeId);
+                        for (int j = types.params().size() - 1; j >= 0; j--) {
+                            popAndVerifyType(types.params().get(j));
+                        }
+                        // TODO: verify the order
+                        for (var resultType : types.returns()) {
+                            valueTypeStack.push(resultType);
+                        }
+                        break;
+                    }
                 case REF_NULL:
                     {
                         valueTypeStack.push(ValueType.forId((int) op.operands()[0]));
@@ -463,6 +485,28 @@ public class TypeValidator {
                                     "type mismatch: expected FuncRef or ExtRef, but was " + ref);
                         }
                         valueTypeStack.push(ValueType.I32);
+                        break;
+                    }
+                case SELECT:
+                    {
+                        popAndVerifyType(ValueType.I32);
+                        var a = valueTypeStack.poll();
+                        var b = valueTypeStack.poll();
+                        // the result is polymorphic
+                        valueTypeStack.push(ValueType.UNKNOWN);
+                        break;
+                    }
+                case SELECT_T:
+                    {
+                        popAndVerifyType(ValueType.I32);
+                        var a = valueTypeStack.poll();
+                        var b = valueTypeStack.poll();
+
+                        if (a != b) {
+                            throw new InvalidException(
+                                    "type mismatch: expected " + a + ", but was " + b);
+                        }
+                        valueTypeStack.push(a);
                         break;
                     }
                 default:

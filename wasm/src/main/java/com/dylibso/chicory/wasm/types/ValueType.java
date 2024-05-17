@@ -4,6 +4,7 @@ package com.dylibso.chicory.wasm.types;
  * The possible WASM value types.
  */
 public enum ValueType {
+    UNKNOWN(-1),
     F64(ID.F64),
     F32(ID.F32),
     I64(ID.I64),
