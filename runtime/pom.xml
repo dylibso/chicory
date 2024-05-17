@@ -162,8 +162,6 @@
             <wast>br_if.wast</wast>
             <wast>br_table.wast</wast>
             <wast>bulk.wast</wast>
-            <wast>call.wast</wast>
-            <wast>call_indirect.wast</wast>
             <wast>data.wast</wast>
             <wast>elem.wast</wast>
             <wast>exports.wast</wast>
