@@ -33,6 +33,12 @@ public class TypeValidator {
         }
     }
 
+    private void validateMemory(Instance instance) {
+        if (instance.memory() == null) {
+            throw new InvalidException("unknown memory 0");
+        }
+    }
+
     public void validate(FunctionBody body, FunctionType functionType, Instance instance) {
         var localTypes = body.localTypes();
         var inputLen = functionType.params().size();
@@ -40,6 +46,43 @@ public class TypeValidator {
         returns.push(functionType.returns());
         for (var i = 0; i < body.instructions().size(); i++) {
             var op = body.instructions().get(i);
+
+            // memory validation
+            switch (op.opcode()) {
+                case MEMORY_GROW:
+                case MEMORY_COPY:
+                case MEMORY_FILL:
+                case MEMORY_SIZE:
+                case MEMORY_INIT:
+                case I32_LOAD:
+                case I32_LOAD8_U:
+                case I32_LOAD8_S:
+                case I32_LOAD16_U:
+                case I32_LOAD16_S:
+                case I64_LOAD:
+                case I64_LOAD8_S:
+                case I64_LOAD8_U:
+                case I64_LOAD16_S:
+                case I64_LOAD16_U:
+                case I64_LOAD32_S:
+                case I64_LOAD32_U:
+                case F32_LOAD:
+                case F64_LOAD:
+                case I32_STORE:
+                case I32_STORE8:
+                case I32_STORE16:
+                case I64_STORE:
+                case I64_STORE8:
+                case I64_STORE16:
+                case I64_STORE32:
+                case F32_STORE:
+                case F64_STORE:
+                    validateMemory(instance);
+                    break;
+                default:
+                    break;
+            }
+
             switch (op.opcode()) {
                 case NOP:
                     break;
@@ -66,6 +109,7 @@ public class TypeValidator {
                     }
                 case IF:
                 case ELSE:
+                case BR:
                 case BR_IF:
                 case BR_TABLE:
                 case LOOP:
@@ -111,12 +155,14 @@ public class TypeValidator {
                 case I32_EXTEND_8_S:
                 case I32_EXTEND_16_S:
                 case I32_EQZ:
+                case MEMORY_GROW:
                     {
                         popAndVerifyType(ValueType.I32);
                         valueTypeStack.push(ValueType.I32);
                         break;
                     }
                 case I32_CONST:
+                case MEMORY_SIZE:
                     {
                         valueTypeStack.push(ValueType.I32);
                         break;
@@ -507,6 +553,14 @@ public class TypeValidator {
                                     "type mismatch: expected " + a + ", but was " + b);
                         }
                         valueTypeStack.push(a);
+                        break;
+                    }
+                case MEMORY_COPY:
+                case MEMORY_FILL:
+                    {
+                        popAndVerifyType(ValueType.I32);
+                        popAndVerifyType(ValueType.I32);
+                        popAndVerifyType(ValueType.I32);
                         break;
                     }
                 default:

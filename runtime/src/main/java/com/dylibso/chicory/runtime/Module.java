@@ -226,11 +226,9 @@ public class Module {
 
         Memory memory = null;
         if (module.memorySection() != null) {
-            assert (mappedHostImports.memoryCount() == 0);
-
             var memories = module.memorySection();
-            if (memories.memoryCount() > 1) {
-                throw new ChicoryException("Multiple memories are not supported");
+            if (memories.memoryCount() + mappedHostImports.memoryCount() > 1) {
+                throw new InvalidException("multiple memories are not supported");
             }
             if (memories.memoryCount() > 0) {
                 memory = new Memory(memories.getMemory(0).memoryLimits());

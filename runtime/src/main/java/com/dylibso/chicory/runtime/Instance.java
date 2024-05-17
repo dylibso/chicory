@@ -6,6 +6,8 @@ import static com.dylibso.chicory.runtime.Module.START_FUNCTION_NAME;
 
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.exceptions.InvalidException;
+import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.Element;
@@ -200,10 +202,8 @@ public class Instance {
             memory.initialize(this, dataSegments);
         } else if (imports.memories().length > 0) {
             imports.memories()[0].memory().initialize(this, dataSegments);
-        }
-
-        if (start && module.export(START_FUNCTION_NAME) != null) {
-            export(START_FUNCTION_NAME).apply();
+        } else if (Arrays.stream(dataSegments).anyMatch(ds -> ds instanceof ActiveDataSegment)) {
+            throw new InvalidException("unknown memory");
         }
 
         // Type validation needs to remain optional until it's finished
@@ -215,6 +215,10 @@ public class Instance {
                             .validate(this.function(i), this.types[this.functionType(i)], this);
                 }
             }
+        }
+
+        if (start && module.export(START_FUNCTION_NAME) != null) {
+            export(START_FUNCTION_NAME).apply();
         }
 
         return this;

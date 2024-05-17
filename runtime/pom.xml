@@ -162,10 +162,16 @@
             <wast>br_if.wast</wast>
             <wast>br_table.wast</wast>
             <wast>bulk.wast</wast>
+            <wast>call.wast</wast>
+            <wast>call_indirect.wast</wast>
             <wast>data.wast</wast>
             <wast>elem.wast</wast>
             <wast>exports.wast</wast>
+            <wast>fac.wast</wast>
+            <wast>float_exprs.wast</wast>
             <wast>forward.wast</wast>
+            <wast>func.wast</wast>
+            <wast>func_ptrs.wast</wast>
             <wast>global.wast</wast>
             <wast>if.wast</wast>
             <wast>imports.wast</wast>
@@ -173,9 +179,10 @@
             <wast>left-to-right.wast</wast>
             <wast>linking.wast</wast>
             <wast>load.wast</wast>
+            <wast>local_get.wast</wast>
+            <wast>local_set.wast</wast>
+            <wast>local_tee.wast</wast>
             <wast>loop.wast</wast>
-            <wast>memory.wast</wast>
-            <wast>memory_copy.wast</wast>
             <wast>memory_fill.wast</wast>
             <wast>memory_grow.wast</wast>
             <wast>memory_init.wast</wast>
@@ -184,6 +191,7 @@
             <wast>nop.wast</wast>
             <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
+            <wast>select.wast</wast>
             <wast>skip-stack-guard-page.wast</wast>
             <wast>stack.wast</wast>
             <wast>start.wast</wast>
