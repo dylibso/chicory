@@ -44,43 +44,47 @@ public class TypeValidator {
         var inputLen = functionType.params().size();
         stackLimit.push(0);
         returns.push(functionType.returns());
+
+        boolean validateMemory = false;
         for (var i = 0; i < body.instructions().size(); i++) {
             var op = body.instructions().get(i);
 
             // memory validation
-            switch (op.opcode()) {
-                case MEMORY_GROW:
-                case MEMORY_COPY:
-                case MEMORY_FILL:
-                case MEMORY_SIZE:
-                case MEMORY_INIT:
-                case I32_LOAD:
-                case I32_LOAD8_U:
-                case I32_LOAD8_S:
-                case I32_LOAD16_U:
-                case I32_LOAD16_S:
-                case I64_LOAD:
-                case I64_LOAD8_S:
-                case I64_LOAD8_U:
-                case I64_LOAD16_S:
-                case I64_LOAD16_U:
-                case I64_LOAD32_S:
-                case I64_LOAD32_U:
-                case F32_LOAD:
-                case F64_LOAD:
-                case I32_STORE:
-                case I32_STORE8:
-                case I32_STORE16:
-                case I64_STORE:
-                case I64_STORE8:
-                case I64_STORE16:
-                case I64_STORE32:
-                case F32_STORE:
-                case F64_STORE:
-                    validateMemory(instance);
-                    break;
-                default:
-                    break;
+            if (!validateMemory) {
+                switch (op.opcode()) {
+                    case MEMORY_GROW:
+                    case MEMORY_COPY:
+                    case MEMORY_FILL:
+                    case MEMORY_SIZE:
+                    case MEMORY_INIT:
+                    case I32_LOAD:
+                    case I32_LOAD8_U:
+                    case I32_LOAD8_S:
+                    case I32_LOAD16_U:
+                    case I32_LOAD16_S:
+                    case I64_LOAD:
+                    case I64_LOAD8_S:
+                    case I64_LOAD8_U:
+                    case I64_LOAD16_S:
+                    case I64_LOAD16_U:
+                    case I64_LOAD32_S:
+                    case I64_LOAD32_U:
+                    case F32_LOAD:
+                    case F64_LOAD:
+                    case I32_STORE:
+                    case I32_STORE8:
+                    case I32_STORE16:
+                    case I64_STORE:
+                    case I64_STORE8:
+                    case I64_STORE16:
+                    case I64_STORE32:
+                    case F32_STORE:
+                    case F64_STORE:
+                        validateMemory = true;
+                        break;
+                    default:
+                        break;
+                }
             }
 
             switch (op.opcode()) {
@@ -567,6 +571,10 @@ public class TypeValidator {
                     throw new IllegalArgumentException(
                             "Missing type validation opcode handling for " + op.opcode());
             }
+        }
+
+        if (validateMemory && instance.memory() == null) {
+            throw new InvalidException("unknown memory 0");
         }
     }
 }
