@@ -26,6 +26,12 @@
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wabt</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>com.dylibso.chicory</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

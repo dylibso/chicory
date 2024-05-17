@@ -28,19 +28,7 @@
       <exclusions>
         <exclusion>
           <groupId>com.dylibso.chicory</groupId>
-          <artifactId>wasm</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.dylibso.chicory</groupId>
-          <artifactId>log</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.dylibso.chicory</groupId>
-          <artifactId>runtime</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.dylibso.chicory</groupId>
-          <artifactId>wasi</artifactId>
+          <artifactId>*</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
