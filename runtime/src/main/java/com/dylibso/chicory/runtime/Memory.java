@@ -1,6 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
+import static java.lang.Math.min;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
@@ -24,7 +25,14 @@ public final class Memory {
     /**
      * A WebAssembly page size is 64KiB = 65,536 bytes.
      */
-    public static final int PAGE_SIZE = 2 << 15;
+    public static final int PAGE_SIZE = 65536;
+
+    /**
+     * Maximum number of pages allowed by the runtime.
+     * WASM supports 2^16 pages, but we must limit based on the maximum JVM array size.
+     * This limit is {@code Integer.MAX_VALUE / PAGE_SIZE}.
+     */
+    private static final int RUNTIME_MAX_PAGES = 32767;
 
     private final MemoryLimits limits;
 
@@ -56,7 +64,7 @@ public final class Memory {
         var prevPages = nPages;
         var numPages = prevPages + size;
 
-        if (numPages > limits.maximumPages()) {
+        if (numPages > maximumPages() || numPages < prevPages) {
             return -1;
         }
 
@@ -78,7 +86,7 @@ public final class Memory {
     }
 
     public int maximumPages() {
-        return this.limits.maximumPages();
+        return min(this.limits.maximumPages(), RUNTIME_MAX_PAGES);
     }
 
     /**
