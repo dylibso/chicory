@@ -18,6 +18,12 @@
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wabt</artifactId>
       <scope>compile</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>com.dylibso.chicory</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.github.javaparser</groupId>
