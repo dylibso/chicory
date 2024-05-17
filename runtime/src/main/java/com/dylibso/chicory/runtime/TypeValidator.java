@@ -131,11 +131,7 @@ public class TypeValidator {
                 case END:
                     {
                         for (var expected : returns.pop()) {
-                            try {
-                                popAndVerifyType(expected);
-                            } catch (Exception e) {
-                                //
-                            }
+                            popAndVerifyType(expected);
                         }
                         stackLimit.pop();
                         break;
