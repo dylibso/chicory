@@ -28,10 +28,8 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.utils.SourceRoot;
 import com.github.javaparser.utils.StringEscapeUtils;
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -79,7 +77,6 @@ public class JavaTestGen {
         // junit imports
         cu.addImport("java.io.File");
         cu.addImport("org.junit.jupiter.api.Disabled");
-        cu.addImport("org.junit.jupiter.api.Tag");
         cu.addImport("org.junit.jupiter.api.Test");
         cu.addImport("org.junit.jupiter.api.MethodOrderer");
         cu.addImport("org.junit.jupiter.api.TestMethodOrder");
@@ -91,7 +88,6 @@ public class JavaTestGen {
         cu.addImport("org.junit.jupiter.api.Assertions.assertDoesNotThrow", true, false);
 
         // testing imports
-        cu.addImport("com.dylibso.chicory.testing.ChicoryTest");
         cu.addImport("com.dylibso.chicory.testing.TestModule");
 
         // runtime imports
@@ -117,8 +113,6 @@ public class JavaTestGen {
                 new FieldAccessExpr(
                         new FieldAccessExpr(new NameExpr("TestInstance"), "Lifecycle"),
                         "PER_CLASS"));
-
-        testClass.addAnnotation("ChicoryTest");
 
         MethodDeclaration method;
         int testNumber = 0;
@@ -181,9 +175,7 @@ public class JavaTestGen {
                 case ACTION:
                 case ASSERT_RETURN:
                 case ASSERT_TRAP:
-                    method =
-                            createTestMethod(
-                                    testClass, testNumber++, excludedMethods, cmd, currentWasmFile);
+                    method = createTestMethod(testClass, testNumber++, excludedMethods);
 
                     var baseVarName = escapedCamelCase(cmd.action().field());
                     var varNum = fallbackVarNumber++;
@@ -211,15 +203,11 @@ public class JavaTestGen {
                     // should be irrelevant
                     break;
                 case ASSERT_MALFORMED:
-                    method =
-                            createTestMethod(
-                                    testClass, testNumber++, excludedMethods, cmd, currentWasmFile);
+                    method = createTestMethod(testClass, testNumber++, excludedMethods);
                     generateAssertThrows(wasmFilesFolder, cmd, method, excludeMalformed);
                     break;
                 case ASSERT_INVALID:
-                    method =
-                            createTestMethod(
-                                    testClass, testNumber++, excludedMethods, cmd, currentWasmFile);
+                    method = createTestMethod(testClass, testNumber++, excludedMethods);
                     generateAssertThrows(wasmFilesFolder, cmd, method, excludeInvalid);
                     break;
                 case ASSERT_UNINSTANTIABLE:
@@ -237,11 +225,7 @@ public class JavaTestGen {
     }
 
     private MethodDeclaration createTestMethod(
-            ClassOrInterfaceDeclaration testClass,
-            int testNumber,
-            List<String> excludedTests,
-            Command cmd,
-            String currentWasmFile) {
+            ClassOrInterfaceDeclaration testClass, int testNumber, List<String> excludedTests) {
         var methodName = "test" + testNumber;
         var method = testClass.addMethod(methodName, Modifier.Keyword.PUBLIC);
         if (excludedTests.contains(methodName)) {
@@ -252,27 +236,6 @@ public class JavaTestGen {
         method.addAnnotation("Test");
         method.addSingleMemberAnnotation(
                 "Order", new IntegerLiteralExpr(Integer.toString(testNumber)));
-
-        // generate Tag annotation with exported symbol as reference
-        switch (cmd.type()) {
-            case ACTION:
-            case ASSERT_RETURN:
-            case ASSERT_TRAP:
-                {
-                    // some characters that are allowed in wasm symbol names are not allowed in the
-                    // Tag annotation, thus we use base64 encoding.
-                    String export = cmd.action().field();
-                    String base64EncodedExport =
-                            Base64.getEncoder()
-                                    .encodeToString(export.getBytes(StandardCharsets.UTF_8));
-                    method.addSingleMemberAnnotation(
-                            "Tag", new StringLiteralExpr("export=" + base64EncodedExport));
-                    method.addSingleMemberAnnotation(
-                            "Tag", new StringLiteralExpr("wasm=" + currentWasmFile));
-                }
-
-                break;
-        }
 
         return method;
     }

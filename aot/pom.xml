@@ -25,7 +25,7 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wasm-testsuite</artifactId>
+      <artifactId>wabt</artifactId>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

@@ -40,7 +40,6 @@
     <module>wasi-test-gen-plugin</module>
     <module>log</module>
     <module>wasm</module>
-    <module>wasm-testsuite</module>
     <module>runtime</module>
     <module>wasi</module>
     <module>wasm-corpus</module>
@@ -119,11 +118,6 @@
     <dependencies>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>wabt</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.dylibso.chicory</groupId>
         <artifactId>log</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -151,6 +145,31 @@
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>cli</artifactId>
         <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wabt</artifactId>
+        <version>${project.version}</version>
+        <scope>test</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>com.dylibso.chicory</groupId>
+            <artifactId>wasm</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.dylibso.chicory</groupId>
+            <artifactId>log</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.dylibso.chicory</groupId>
+            <artifactId>runtime</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>com.dylibso.chicory</groupId>
+            <artifactId>wasi</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
 
       <!-- Used by AOT compiler -->
@@ -195,12 +214,6 @@
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-params</artifactId>
         <version>${junit.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>wasm-testsuite</artifactId>
-        <version>${project.version}</version>
         <scope>test</scope>
       </dependency>
 

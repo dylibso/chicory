@@ -17,24 +17,7 @@
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wabt</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>com.dylibso.chicory</groupId>
-          <artifactId>wasm</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.dylibso.chicory</groupId>
-          <artifactId>log</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.dylibso.chicory</groupId>
-          <artifactId>runtime</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.dylibso.chicory</groupId>
-          <artifactId>wasi</artifactId>
-        </exclusion>
-      </exclusions>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.github.javaparser</groupId>
