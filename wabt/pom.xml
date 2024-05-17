@@ -18,25 +18,21 @@
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasi</artifactId>
       <version>${chicory.latest.version}</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>runtime</artifactId>
       <version>${chicory.latest.version}</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>log</artifactId>
       <version>${chicory.latest.version}</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm</artifactId>
       <version>${chicory.latest.version}</version>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.google.jimfs</groupId>
@@ -45,6 +41,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
+      <scope>provided</scope>
     </dependency>
   </dependencies>
 
@@ -62,6 +59,15 @@
             <configuration>
               <shadedClassifierName>shaded</shadedClassifierName>
               <minimizeJar>true</minimizeJar>
+              <entryPoints>
+                <entryPoint>com.dylibso.chicory.wabt.Wast2Json</entryPoint>
+                <entryPoint>com.dylibso.chicory.wabt.Wat2Wasm</entryPoint>
+              </entryPoints>
+              <artifactSet>
+                <includes>
+                  <include>com.dylibso.chicory:*</include>
+                </includes>
+              </artifactSet>
               <relocations>
                 <relocation>
                   <pattern>com.dylibso.chicory.log</pattern>
@@ -80,6 +86,14 @@
                   <shadedPattern>shaded.com.dylibso.chicory.wasi</shadedPattern>
                 </relocation>
               </relocations>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/MANIFEST.MF</exclude>
+                  </excludes>
+                </filter>
+              </filters>
             </configuration>
           </execution>
         </executions>

@@ -152,24 +152,6 @@
         <artifactId>wabt</artifactId>
         <version>${project.version}</version>
         <scope>test</scope>
-        <exclusions>
-          <exclusion>
-            <groupId>com.dylibso.chicory</groupId>
-            <artifactId>wasm</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.dylibso.chicory</groupId>
-            <artifactId>log</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.dylibso.chicory</groupId>
-            <artifactId>runtime</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.dylibso.chicory</groupId>
-            <artifactId>wasi</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
 
       <!-- Used by AOT compiler -->
