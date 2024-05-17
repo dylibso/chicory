@@ -33,9 +33,17 @@ public class TypeValidator {
         }
     }
 
-    private void validateMemory(Instance instance) {
-        if (instance.memory() == null) {
-            throw new InvalidException("unknown memory 0");
+    private static void validateMemory(Instance instance, int memIds) {
+        validateMemory(instance, memIds, -1);
+    }
+
+    private static void validateMemory(Instance instance, int memIds, int dataSegmentIdx) {
+        if (instance.memory() == null || memIds > 0) {
+            throw new InvalidException("unknown memory " + memIds);
+        }
+        if (instance.memory().dataSegments() == null
+                || dataSegmentIdx >= instance.memory().dataSegments().length) {
+            throw new InvalidException("unknown data segment " + dataSegmentIdx);
         }
     }
 
@@ -45,52 +53,59 @@ public class TypeValidator {
         stackLimit.push(0);
         returns.push(functionType.returns());
 
-        boolean validateMemory = false;
         for (var i = 0; i < body.instructions().size(); i++) {
             var op = body.instructions().get(i);
 
             // memory validation
-            if (!validateMemory) {
-                switch (op.opcode()) {
-                    case MEMORY_GROW:
-                    case MEMORY_COPY:
-                    case MEMORY_FILL:
-                    case MEMORY_SIZE:
-                    case MEMORY_INIT:
-                    case I32_LOAD:
-                    case I32_LOAD8_U:
-                    case I32_LOAD8_S:
-                    case I32_LOAD16_U:
-                    case I32_LOAD16_S:
-                    case I64_LOAD:
-                    case I64_LOAD8_S:
-                    case I64_LOAD8_U:
-                    case I64_LOAD16_S:
-                    case I64_LOAD16_U:
-                    case I64_LOAD32_S:
-                    case I64_LOAD32_U:
-                    case F32_LOAD:
-                    case F64_LOAD:
-                    case I32_STORE:
-                    case I32_STORE8:
-                    case I32_STORE16:
-                    case I64_STORE:
-                    case I64_STORE8:
-                    case I64_STORE16:
-                    case I64_STORE32:
-                    case F32_STORE:
-                    case F64_STORE:
-                        validateMemory = true;
-                        break;
-                    default:
-                        break;
-                }
+            switch (op.opcode()) {
+                case MEMORY_COPY:
+                    validateMemory(instance, (int) op.operands()[0]);
+                    validateMemory(instance, (int) op.operands()[1]);
+                    break;
+                case MEMORY_FILL:
+                    validateMemory(instance, (int) op.operands()[0]);
+                    break;
+                case MEMORY_INIT:
+                    validateMemory(instance, (int) op.operands()[1], (int) op.operands()[0]);
+                    break;
+                case MEMORY_SIZE:
+                case MEMORY_GROW:
+                case I32_LOAD:
+                case I32_LOAD8_U:
+                case I32_LOAD8_S:
+                case I32_LOAD16_U:
+                case I32_LOAD16_S:
+                case I64_LOAD:
+                case I64_LOAD8_S:
+                case I64_LOAD8_U:
+                case I64_LOAD16_S:
+                case I64_LOAD16_U:
+                case I64_LOAD32_S:
+                case I64_LOAD32_U:
+                case F32_LOAD:
+                case F64_LOAD:
+                case I32_STORE:
+                case I32_STORE8:
+                case I32_STORE16:
+                case I64_STORE:
+                case I64_STORE8:
+                case I64_STORE16:
+                case I64_STORE32:
+                case F32_STORE:
+                case F64_STORE:
+                    validateMemory(instance, 0);
+                    break;
+                default:
+                    break;
             }
 
             switch (op.opcode()) {
                 case NOP:
-                    break;
                 case UNREACHABLE:
+                    break;
+                case BR:
+                case BR_IF:
+                case BR_TABLE:
                 case RETURN:
                     {
                         // TODO: verify is it's needed to implement a polymorphic stack?
@@ -103,24 +118,36 @@ public class TypeValidator {
                         }
                         // go to the next END
                         i = i + nextEndOffset;
-                        for (var expected : functionType.returns()) {
+
+                        var rets =
+                                (op.opcode() == OpCode.RETURN)
+                                        ? functionType.returns()
+                                        : returns.peek();
+                        for (var expected : rets) {
                             popAndVerifyType(expected);
                         }
-                        for (var expected : functionType.returns()) {
+                        for (var expected : rets) {
                             valueTypeStack.push(expected);
                         }
                         break;
                     }
                 case IF:
                 case ELSE:
-                case BR:
-                case BR_IF:
-                case BR_TABLE:
                 case LOOP:
                 case BLOCK:
                     {
                         returns.push(List.of());
                         stackLimit.push(valueTypeStack.size());
+                        break;
+                    }
+                case DATA_DROP:
+                    {
+                        var index = (int) op.operands()[0];
+                        if (instance.memory() == null
+                                || instance.memory().dataSegments() == null
+                                || index >= instance.memory().dataSegments().length) {
+                            throw new InvalidException("unknown data segment");
+                        }
                         break;
                     }
                 case DROP:
@@ -134,6 +161,11 @@ public class TypeValidator {
                             popAndVerifyType(expected);
                         }
                         stackLimit.pop();
+
+                        // last return
+                        if (stackLimit.isEmpty() && !valueTypeStack.isEmpty()) {
+                            throw new InvalidException("type mismatch: expected [], but was [...]");
+                        }
                         break;
                     }
                 case I32_STORE:
@@ -479,6 +511,17 @@ public class TypeValidator {
                         valueTypeStack.push(expectedType);
                         break;
                     }
+                case LOCAL_TEE:
+                    {
+                        var index = (int) op.operands()[0];
+                        ValueType expectedType =
+                                (index < inputLen)
+                                        ? functionType.params().get(index)
+                                        : localTypes.get(index - inputLen);
+                        popAndVerifyType(expectedType);
+                        valueTypeStack.push(expectedType);
+                        break;
+                    }
                 case GLOBAL_GET:
                     {
                         var type = instance.readGlobal((int) op.operands()[0]).type();
@@ -557,6 +600,7 @@ public class TypeValidator {
                     }
                 case MEMORY_COPY:
                 case MEMORY_FILL:
+                case MEMORY_INIT:
                     {
                         popAndVerifyType(ValueType.I32);
                         popAndVerifyType(ValueType.I32);
@@ -567,10 +611,6 @@ public class TypeValidator {
                     throw new IllegalArgumentException(
                             "Missing type validation opcode handling for " + op.opcode());
             }
-        }
-
-        if (validateMemory && instance.memory() == null) {
-            throw new InvalidException("unknown memory 0");
         }
     }
 }

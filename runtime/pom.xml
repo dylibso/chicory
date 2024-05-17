@@ -183,11 +183,6 @@
             <wast>local_set.wast</wast>
             <wast>local_tee.wast</wast>
             <wast>loop.wast</wast>
-            <wast>memory_fill.wast</wast>
-            <wast>memory_grow.wast</wast>
-            <wast>memory_init.wast</wast>
-            <wast>memory_size.wast</wast>
-            <wast>memory_trap.wast</wast>
             <wast>nop.wast</wast>
             <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
