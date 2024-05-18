@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.utils.SourceRoot;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -214,36 +215,27 @@ public class TestGenMojo extends AbstractMojo {
                 throw new IllegalArgumentException(
                         "Wast file " + wastFile.getAbsolutePath() + " not found");
             }
-            File specFile = null;
-            Wast wast = null;
 
             var plainName = wastFile.getName().replace(".wast", "");
             File wasmFilesFolder = compiledWastTargetFolder.toPath().resolve(plainName).toFile();
-            specFile = wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile();
+            File specFile = wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile();
             if (!wasmFilesFolder.mkdirs()) {
                 log.warn("Could not create folder: " + wasmFilesFolder);
             }
 
-            // High parallelism introduces some flakiness
-            var retry = 3;
-            while (retry > 0) {
-                try {
-                    var wast2json =
-                            Wast2Json.builder().withFile(wastFile).withOutput(specFile).build();
-                    wast2json.process();
-                    wast = new ObjectMapper().readValue(specFile, Wast.class);
-                    break;
-                } catch (Exception e) {
-                    retry--;
-                }
-            }
-            if (retry <= 0) {
-                throw new RuntimeException("Failed to generate test sources");
-            }
+            Wast2Json.builder().withFile(wastFile).withOutput(specFile).build().process();
 
             var name = specFile.toPath().getParent().toFile().getName();
-            var cu = testGen.generate(name, wast, wasmFilesFolder, importSourceRoot);
+            var cu = testGen.generate(name, readWast(specFile), wasmFilesFolder, importSourceRoot);
             dest.add(cu);
+        }
+
+        private Wast readWast(File file) {
+            try {
+                return new ObjectMapper().readValue(file, Wast.class);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 }
