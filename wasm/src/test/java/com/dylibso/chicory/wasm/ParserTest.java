@@ -124,7 +124,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseAllFiles() {
-        File compiledDir = new File("../wasm-corpus/src/test/resources/compiled/");
+        File compiledDir = new File("../wasm-corpus/src/main/resources/compiled/");
 
         List<File> files = new ArrayList<>();
         files.addAll(

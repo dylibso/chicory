@@ -11,7 +11,7 @@ public class Wat2WasmTest {
 
     @Test
     public void shouldRunWat2Wasm() throws Exception {
-        var result = Wat2Wasm.parse(new File("../wasm-corpus/src/test/resources/wat/iterfact.wat"));
+        var result = Wat2Wasm.parse(new File("../wasm-corpus/src/main/resources/wat/iterfact.wat"));
 
         assertTrue(result.length > 0);
         assertTrue(new String(result).contains("iterFact"));

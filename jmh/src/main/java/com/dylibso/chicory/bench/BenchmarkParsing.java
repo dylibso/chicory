@@ -26,8 +26,8 @@ import org.openjdk.jmh.infra.Blackhole;
 public class BenchmarkParsing {
 
     @Param({
-        "wasm-corpus/src/test/resources/compiled/basic.c.wasm",
-        "wasm-corpus/src/test/resources/compiled/javy-demo.js.javy.wasm"
+        "wasm-corpus/src/main/resources/compiled/basic.c.wasm",
+        "wasm-corpus/src/main/resources/compiled/javy-demo.js.javy.wasm"
     })
     private String fileName;
 

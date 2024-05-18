@@ -149,6 +149,11 @@
         <artifactId>cli</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wasm-corpus</artifactId>
+        <version>${project.version}</version>
+      </dependency>
 
       <!-- Used by AOT compiler -->
       <dependency>

@@ -36,7 +36,7 @@ public class BenchmarkFactorialExecution {
         var factorial =
                 Module.builder(
                                 new File(
-                                        "wasm-corpus/src/test/resources/compiled/iterfact.wat.wasm"))
+                                        "wasm-corpus/src/main/resources/compiled/iterfact.wat.wasm"))
                         .build()
                         .instantiate();
         iterFact = factorial.export("iterFact");

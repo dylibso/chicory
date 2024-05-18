@@ -8,5 +8,5 @@ if [[ "$1" = "rebuild" ]]; then
 else
   # Optionally takes the args `lang` (ex: wat, rust) and `file` (ex: br.wat)
   # both default to all
-  docker run --platform linux/amd64 -v $(pwd)/src/test/resources:/usr/code --rm chicory/wasm-corpus $1 $2
+  docker run --platform linux/amd64 -v $(pwd)/src/main/resources:/usr/code --rm chicory/wasm-corpus $1 $2
 fi
