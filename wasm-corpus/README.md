@@ -5,7 +5,7 @@ This is a central place for all of our guest source code. It can be included in 
 resources bundle.
 
 If you want to add or edit guest modules for tests, you'll need to compile here. Add the program to the subfolder
-for the appropriate source language. Example: src/test/resources/rust.
+for the appropriate source language. Example: src/main/resources/rust.
 
 You can use docker to compile everything. The run.sh script can orchestrate this for you:
 
@@ -27,7 +27,7 @@ If you want to run on your host machine you can run the `compile.sh` subscript y
 It has the same arguments (assumes you have WASI_SDK_PATH set for compiling c:
 
 ```bash
-cd wasm-corpus/src/test/resources
+cd wasm-corpus/src/main/resources
 
 # example
 ./compile.sh rust

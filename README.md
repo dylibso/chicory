@@ -50,7 +50,7 @@ public void copyFileFromWasmCorpus(String sourceName, String destName) throws Ex
   Files.copy(new File(".").toPath()
           .resolve("wasm-corpus")
           .resolve("src")
-          .resolve("test")
+          .resolve("main")
           .resolve("resources")
           .resolve("compiled")
           .resolve(sourceName),
@@ -73,13 +73,13 @@ public void writeResultFile(String name, String content) throws Exception {
 
 ### Loading and Instantiating Code
 
-First your Wasm module must be loaded from disk and then "instantiated". Let's [download a test module](https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/test/resources/compiled/iterfact.wat.wasm) .
+First your Wasm module must be loaded from disk and then "instantiated". Let's [download a test module](https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/main/resources/compiled/iterfact.wat.wasm) .
 This module contains some code to compute factorial:
 
 Download from the link or with curl:
 
 ```bash
-curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/test/resources/compiled/iterfact.wat.wasm > factorial.wasm
+curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/main/resources/compiled/iterfact.wat.wasm > factorial.wasm
 ```
 
 <!--
@@ -139,7 +139,7 @@ example where we have a module `count_vowels.wasm`, written in rust, that takes 
 in the string:
 
 ```bash
-curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/test/resources/compiled/count_vowels.rs.wasm > count_vowels.wasm
+curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/main/resources/compiled/count_vowels.rs.wasm > count_vowels.wasm
 ```
 
 <!--
@@ -204,7 +204,7 @@ are and how they behave and it's written in Java.
 Let's download another example module to demonstrate this:
 
 ```bash
-curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/test/resources/compiled/host-function.wat.wasm > logger.wasm
+curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/main/resources/compiled/host-function.wat.wasm > logger.wasm
 ```
 
 <!--
