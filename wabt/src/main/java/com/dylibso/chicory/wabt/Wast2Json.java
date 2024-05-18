@@ -1,6 +1,8 @@
 package com.dylibso.chicory.wabt;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
+import static java.nio.file.Files.createDirectories;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
@@ -15,8 +17,8 @@ import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -31,7 +33,6 @@ public class Wast2Json {
                     return false;
                 }
             };
-    private static final Module module = Module.builder("wast2json").build();
 
     private final File input;
     private final File output;
@@ -48,6 +49,7 @@ public class Wast2Json {
     }
 
     public void process() {
+        Module module = Module.builder("wast2json").build();
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
                 ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
             try (FileInputStream fis = new FileInputStream(input);
@@ -80,25 +82,23 @@ public class Wast2Json {
                 args.addAll(List.of(options));
                 wasiOpts.withArguments(args);
 
-                var wasi = new WasiPreview1(logger, wasiOpts.build());
-                var imports = new HostImports(wasi.toHostFunctions());
+                try (var wasi = new WasiPreview1(logger, wasiOpts.build())) {
+                    HostImports imports = new HostImports(wasi.toHostFunctions());
+                    module.withHostImports(imports).instantiate();
+                }
 
-                module.withHostImports(imports).instantiate();
-
-                output.toPath().getParent().toFile().mkdirs();
+                createDirectories(output.toPath().getParent());
                 Files.copyDirectory(outputFolder, output.toPath().getParent());
             } catch (WASMMachineException e) {
-                assert (e.getCause() instanceof WasiExitException);
-                var stdout = new String(stdoutStream.toByteArray());
-                var stderr = new String(stderrStream.toByteArray());
+                if (!(e.getCause() instanceof WasiExitException)) {
+                    throw e;
+                }
+                var stdout = stdoutStream.toString(UTF_8);
+                var stderr = stderrStream.toString(UTF_8);
                 throw new RuntimeException(stdout + "\n" + stderr);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 
@@ -149,8 +149,7 @@ public class Wast2Json {
         }
 
         public Wast2Json build() {
-            List<String> options = new ArrayList<>();
-            return new Wast2Json(input, output, options.toArray(new String[0]));
+            return new Wast2Json(input, output, new String[0]);
         }
     }
 }

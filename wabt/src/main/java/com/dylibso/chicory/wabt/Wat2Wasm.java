@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wabt;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
 
 import com.dylibso.chicory.log.Logger;
@@ -16,18 +17,20 @@ import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 
-public class Wat2Wasm {
+public final class Wat2Wasm {
     private static final Logger logger = new SystemLogger();
-    private static final Module module = Module.builder("wat2wasm").build();
+
+    private Wat2Wasm() {}
 
     public static byte[] parse(File file) {
+        Module module = Module.builder("wat2wasm").build();
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
                 ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
             try (FileInputStream fis = new FileInputStream(file);
@@ -50,24 +53,22 @@ public class Wat2Wasm {
 
                 wasiOpts.withArguments(List.of("wat2wasm", path.toString(), "--output=-"));
 
-                var wasi = new WasiPreview1(logger, wasiOpts.build());
-                var imports = new HostImports(wasi.toHostFunctions());
-
-                module.withHostImports(imports).instantiate();
+                try (var wasi = new WasiPreview1(logger, wasiOpts.build())) {
+                    HostImports imports = new HostImports(wasi.toHostFunctions());
+                    module.withHostImports(imports).instantiate();
+                }
 
                 return stdoutStream.toByteArray();
             } catch (WASMMachineException e) {
-                assert (e.getCause() instanceof WasiExitException);
-                var stdout = new String(stdoutStream.toByteArray());
-                var stderr = new String(stderrStream.toByteArray());
+                if (!(e.getCause() instanceof WasiExitException)) {
+                    throw e;
+                }
+                var stdout = stdoutStream.toString(UTF_8);
+                var stderr = stderrStream.toString(UTF_8);
                 throw new MalformedException(stdout + "\n" + stderr);
-            } catch (FileNotFoundException e) {
-                throw new RuntimeException(e);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new UncheckedIOException(e);
         }
     }
 }
