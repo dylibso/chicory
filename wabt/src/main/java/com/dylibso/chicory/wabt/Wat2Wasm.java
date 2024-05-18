@@ -30,7 +30,7 @@ public final class Wat2Wasm {
     private Wat2Wasm() {}
 
     public static byte[] parse(File file) {
-        Module module = Module.builder("wat2wasm").build();
+        Module module = Module.builder(Wat2Wasm.class.getResourceAsStream("/wat2wasm")).build();
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
                 ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
             try (FileInputStream fis = new FileInputStream(file);

@@ -49,7 +49,7 @@ public class Wast2Json {
     }
 
     public void process() {
-        Module module = Module.builder("wast2json").build();
+        Module module = Module.builder(getClass().getResourceAsStream("/wast2json")).build();
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
                 ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
             try (FileInputStream fis = new FileInputStream(input);
