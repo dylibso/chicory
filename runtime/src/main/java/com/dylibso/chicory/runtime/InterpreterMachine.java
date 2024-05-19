@@ -887,9 +887,9 @@ class InterpreterMachine implements Machine {
     }
 
     private static void I32_DIV_U(MStack stack) {
-        var b = stack.pop().asUInt();
-        var a = stack.pop().asUInt();
-        stack.push(Value.i32(a / b));
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        stack.push(Value.i32(Integer.divideUnsigned(a, b)));
     }
 
     private static void I64_EXTEND_8_S(MStack stack) {
@@ -1186,9 +1186,9 @@ class InterpreterMachine implements Machine {
     }
 
     private static void I32_REM_U(MStack stack) {
-        var b = stack.pop().asUInt();
-        var a = stack.pop().asUInt();
-        stack.push(Value.i32(a % b));
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        stack.push(Value.i32(Integer.remainderUnsigned(a, b)));
     }
 
     private static void I32_REM_S(MStack stack) {
@@ -1357,9 +1357,8 @@ class InterpreterMachine implements Machine {
     }
 
     private static void I32_EXTEND_16_S(MStack stack) {
-        var original = stack.pop().asInt() & 0xFFFF;
-        if ((original & 0x8000) != 0) original |= 0xFFFF0000;
-        stack.push(Value.i32(original & 0xFFFFFFFFL));
+        var tos = stack.pop().asShort();
+        stack.push(Value.i32(tos));
     }
 
     private static void I64_TRUNC_F64_S(MStack stack) {

@@ -2,8 +2,6 @@ package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.runtime.BitOps.FALSE;
 import static com.dylibso.chicory.runtime.BitOps.TRUE;
-import static com.dylibso.chicory.runtime.BitOps.asByte;
-import static com.dylibso.chicory.runtime.BitOps.asUInt;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.types.OpCode;
@@ -46,7 +44,7 @@ public class OpcodeImpl {
 
     @OpCodeIdentifier(OpCode.I32_DIV_U)
     public static int I32_DIV_U(int a, int b) {
-        return (int) (asUInt(a) / asUInt(b));
+        return Integer.divideUnsigned(a, b);
     }
 
     @OpCodeIdentifier(OpCode.I32_EQ)
@@ -61,14 +59,12 @@ public class OpcodeImpl {
 
     @OpCodeIdentifier(OpCode.I32_EXTEND_8_S)
     public static int I32_EXTEND_8_S(int tos) {
-        return asByte(tos);
+        return (byte) tos;
     }
 
     @OpCodeIdentifier(OpCode.I32_EXTEND_16_S)
     public static int I32_EXTEND_16_S(int tos) {
-        var original = tos & 0xFFFF;
-        if ((original & 0x8000) != 0) original |= 0xFFFF0000;
-        return (int) (original & 0xFFFFFFFFL);
+        return (short) tos;
     }
 
     @OpCodeIdentifier(OpCode.I32_GE_S)
@@ -123,7 +119,7 @@ public class OpcodeImpl {
 
     @OpCodeIdentifier(OpCode.I32_REM_U)
     public static int I32_REM_U(int a, int b) {
-        return (int) (asUInt(a) % asUInt(b));
+        return Integer.remainderUnsigned(a, b);
     }
 
     @OpCodeIdentifier(OpCode.I32_ROTR)
