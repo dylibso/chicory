@@ -30,6 +30,10 @@ public class Value {
         return Value.f64(Double.doubleToRawLongBits(data));
     }
 
+    public static Value i32(int data) {
+        return i32((long) data);
+    }
+
     public static Value i32(long data) {
         return new Value(ValueType.I32, data);
     }

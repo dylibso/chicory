@@ -1,6 +1,11 @@
 package com.dylibso.chicory.aot;
 
+import static com.dylibso.chicory.aot.AotUtil.boxer;
+import static com.dylibso.chicory.aot.AotUtil.jvmReturnType;
+import static com.dylibso.chicory.aot.AotUtil.unboxer;
 import static com.dylibso.chicory.wasm.types.OpCode.*;
+import static java.lang.invoke.MethodHandles.filterArguments;
+import static java.lang.invoke.MethodHandles.filterReturnValue;
 
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Module;
@@ -13,9 +18,7 @@ import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValueType;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
@@ -73,6 +76,40 @@ public class AotMachine implements Machine {
                     .intrinsic(I32_SUB, AotEmitters::I32_SUB)
                     .intrinsic(I32_XOR, AotEmitters::I32_XOR)
 
+                    // ====== I64 ======
+                    .intrinsic(I64_ADD, AotEmitters::I64_ADD)
+                    .intrinsic(I64_AND, AotEmitters::I64_AND)
+                    .shared(I64_CLZ, OpcodeImpl.class)
+                    .shared(I64_CTZ, OpcodeImpl.class)
+                    .shared(I64_DIV_S, OpcodeImpl.class)
+                    .shared(I64_DIV_U, OpcodeImpl.class)
+                    .shared(I64_EQ, OpcodeImpl.class)
+                    .shared(I64_EQZ, OpcodeImpl.class)
+                    .shared(I64_EXTEND_8_S, OpcodeImpl.class)
+                    .shared(I64_EXTEND_16_S, OpcodeImpl.class)
+                    .shared(I64_EXTEND_32_S, OpcodeImpl.class)
+                    .shared(I64_GE_S, OpcodeImpl.class)
+                    .shared(I64_GE_U, OpcodeImpl.class)
+                    .shared(I64_GT_S, OpcodeImpl.class)
+                    .shared(I64_GT_U, OpcodeImpl.class)
+                    .shared(I64_LE_S, OpcodeImpl.class)
+                    .shared(I64_LE_U, OpcodeImpl.class)
+                    .shared(I64_LT_S, OpcodeImpl.class)
+                    .shared(I64_LT_U, OpcodeImpl.class)
+                    .intrinsic(I64_MUL, AotEmitters::I64_MUL)
+                    .shared(I64_NE, OpcodeImpl.class)
+                    .intrinsic(I64_OR, AotEmitters::I64_OR)
+                    .shared(I64_POPCNT, OpcodeImpl.class)
+                    .intrinsic(I64_REM_S, AotEmitters::I64_REM_S)
+                    .shared(I64_REM_U, OpcodeImpl.class)
+                    .shared(I64_ROTL, OpcodeImpl.class)
+                    .shared(I64_ROTR, OpcodeImpl.class)
+                    .intrinsic(I64_SHL, AotEmitters::I64_SHL)
+                    .intrinsic(I64_SHR_S, AotEmitters::I64_SHR_S)
+                    .intrinsic(I64_SHR_U, AotEmitters::I64_SHR_U)
+                    .intrinsic(I64_SUB, AotEmitters::I64_SUB)
+                    .intrinsic(I64_XOR, AotEmitters::I64_XOR)
+
                     // ====== F64 ======
                     .shared(F64_CONVERT_I64_U, OpcodeImpl.class)
                     .build();
@@ -86,8 +123,8 @@ public class AotMachine implements Machine {
     @Override
     public Value[] call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
         try {
-            var result = (int) compiledFunctions[funcId].invoke(args);
-            return new Value[] {Value.i32(result)};
+            Value result = (Value) compiledFunctions[funcId].invoke(args);
+            return new Value[] {result};
         } catch (ChicoryException e) {
             // propagate ChicoryExceptions
             throw e;
@@ -152,7 +189,7 @@ public class AotMachine implements Machine {
                         Opcodes.ACC_PUBLIC,
                         "call",
                         Type.getMethodDescriptor(
-                                Type.getType(AotUtil.jvmReturnType(type)),
+                                Type.getType(jvmReturnType(type)),
                                 Arrays.stream(AotUtil.jvmParameterTypes(type))
                                         .map(Type::getType)
                                         .toArray(Type[]::new)),
@@ -177,15 +214,11 @@ public class AotMachine implements Machine {
         var argTypes = type.params();
         var argHandlers = new MethodHandle[type.params().size()];
         for (int i = 0; i < argHandlers.length; i++) {
-            argHandlers[i] = filterFor(argTypes.get(i));
+            argHandlers[i] = unboxer(argTypes.get(i));
         }
-        return MethodHandles.filterArguments(handle, 0, argHandlers)
-                .asSpreader(Value[].class, argTypes.size());
-    }
-
-    private MethodHandle filterFor(ValueType type)
-            throws NoSuchMethodException, IllegalAccessException {
-        return AotUtil.unboxer(type);
+        MethodHandle result = filterArguments(handle, 0, argHandlers);
+        result = result.asSpreader(Value[].class, argTypes.size());
+        return filterReturnValue(result, boxer(type.returns().get(0)));
     }
 
     private String nameFor(int funcId) {
@@ -242,8 +275,23 @@ public class AotMachine implements Machine {
             }
         }
 
-        asm.visitInsn(Opcodes.IRETURN);
+        asm.visitInsn(returnTypeOpcode(type));
     }
 
-    private void generateOpCodeImplHelperCall(AotContext ctx, Instruction ins, MethodVisitor asm) {}
+    private static int returnTypeOpcode(FunctionType type) {
+        Class<?> returnType = jvmReturnType(type);
+        if (returnType == int.class) {
+            return Opcodes.IRETURN;
+        }
+        if (returnType == long.class) {
+            return Opcodes.LRETURN;
+        }
+        if (returnType == float.class) {
+            return Opcodes.FRETURN;
+        }
+        if (returnType == double.class) {
+            return Opcodes.DRETURN;
+        }
+        throw new ChicoryException("Unsupported return type: " + returnType.getName());
+    }
 }

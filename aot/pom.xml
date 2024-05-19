@@ -52,6 +52,7 @@
         <configuration>
           <includedWasts>
             <wast>i32.wast</wast>
+            <wast>i64.wast</wast>
           </includedWasts>
           <excludedTests>
             <test>SpecV1LinkingTest.test83</test>
@@ -157,7 +158,6 @@
             <wast>func.wast</wast>
             <wast>func_ptrs.wast</wast>
             <wast>global.wast</wast>
-            <wast>i64.wast</wast>
             <wast>if.wast</wast>
             <wast>imports.wast</wast>
             <wast>inline-module.wast</wast>
@@ -274,7 +274,6 @@
             <wast>utf8-import-module.wast</wast>
             <wast>utf8-invalid-encoding.wast</wast>
           </excludedWasts>
-          <useAot>true</useAot>
         </configuration>
         <executions>
           <execution>

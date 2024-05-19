@@ -1,6 +1,9 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.runtime.BitOps.*;
+import static com.dylibso.chicory.runtime.BitOps.FALSE;
+import static com.dylibso.chicory.runtime.BitOps.TRUE;
+import static com.dylibso.chicory.runtime.BitOps.asByte;
+import static com.dylibso.chicory.runtime.BitOps.asUInt;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.types.OpCode;
@@ -131,6 +134,120 @@ public class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I32_ROTL)
     public static int I32_ROTL(int v, int c) {
         return (v << c) | (v >>> (32 - c));
+    }
+
+    // ========= I64 =========
+    @OpCodeIdentifier(OpCode.I64_CLZ)
+    public static long I64_CLZ(long tos) {
+        return Long.numberOfLeadingZeros(tos);
+    }
+
+    @OpCodeIdentifier(OpCode.I64_CTZ)
+    public static long I64_CTZ(long tos) {
+        return Long.numberOfTrailingZeros(tos);
+    }
+
+    @OpCodeIdentifier(OpCode.I64_DIV_S)
+    public static long I64_DIV_S(long a, long b) {
+        if (a == Long.MIN_VALUE && b == -1) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        return a / b;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_DIV_U)
+    public static long I64_DIV_U(long a, long b) {
+        return Long.divideUnsigned(a, b);
+    }
+
+    @OpCodeIdentifier(OpCode.I64_EQ)
+    public static int I64_EQ(long b, long a) {
+        return a == b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_EQZ)
+    public static int I64_EQZ(long a) {
+        return a == 0 ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_EXTEND_8_S)
+    public static long I64_EXTEND_8_S(long tos) {
+        return (byte) tos;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_EXTEND_16_S)
+    public static long I64_EXTEND_16_S(long tos) {
+        return (short) tos;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_EXTEND_32_S)
+    public static long I64_EXTEND_32_S(long tos) {
+        return (int) tos;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_GE_S)
+    public static int I64_GE_S(long a, long b) {
+        return a >= b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_GE_U)
+    public static int I64_GE_U(long a, long b) {
+        return Long.compareUnsigned(a, b) >= 0 ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_GT_S)
+    public static int I64_GT_S(long a, long b) {
+        return a > b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_GT_U)
+    public static int I64_GT_U(long a, long b) {
+        return Long.compareUnsigned(a, b) > 0 ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_LE_S)
+    public static int I64_LE_S(long a, long b) {
+        return a <= b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_LE_U)
+    public static int I64_LE_U(long a, long b) {
+        return Long.compareUnsigned(a, b) <= 0 ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_LT_S)
+    public static int I64_LT_S(long a, long b) {
+        return a < b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_LT_U)
+    public static int I64_LT_U(long a, long b) {
+        return Long.compareUnsigned(a, b) < 0 ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_NE)
+    public static int I64_NE(long b, long a) {
+        return a == b ? FALSE : TRUE;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_POPCNT)
+    public static long I64_POPCNT(long tos) {
+        return Long.bitCount(tos);
+    }
+
+    @OpCodeIdentifier(OpCode.I64_REM_U)
+    public static long I64_REM_U(long a, long b) {
+        return Long.remainderUnsigned(a, b);
+    }
+
+    @OpCodeIdentifier(OpCode.I64_ROTR)
+    public static long I64_ROTR(long v, long c) {
+        return (v >>> c) | (v << (64 - c));
+    }
+
+    @OpCodeIdentifier(OpCode.I64_ROTL)
+    public static long I64_ROTL(long v, long c) {
+        return (v << c) | (v >>> (64 - c));
     }
 
     // ========= F64 =========

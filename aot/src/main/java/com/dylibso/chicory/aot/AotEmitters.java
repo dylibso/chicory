@@ -54,7 +54,7 @@ public class AotEmitters {
             default:
                 throw new IllegalArgumentException("Unsupported load target type: " + localType);
         }
-        asm.visitVarInsn(opcode, loadIndex + 1); // +1 because local 0 is 'this'.
+        asm.visitVarInsn(opcode, ctx.slotIndex(loadIndex + 1)); // +1 because local 0 is 'this'.
     }
 
     public static void LOCAL_SET(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -77,7 +77,7 @@ public class AotEmitters {
             default:
                 throw new IllegalArgumentException("Unsupported store target type: " + localType);
         }
-        asm.visitVarInsn(opcode, storeIndex + 1); // +1 because local 0 is 'this'.
+        asm.visitVarInsn(opcode, ctx.slotIndex(storeIndex + 1)); // +1 because local 0 is 'this'.
     }
 
     public static void I32_ADD(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -118,6 +118,49 @@ public class AotEmitters {
 
     public static void I32_XOR(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.IXOR);
+    }
+
+    public static void I64_ADD(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LADD);
+    }
+
+    public static void I64_AND(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LAND);
+    }
+
+    public static void I64_MUL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LMUL);
+    }
+
+    public static void I64_OR(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LOR);
+    }
+
+    public static void I64_REM_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LREM);
+    }
+
+    public static void I64_SHL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.L2I);
+        asm.visitInsn(Opcodes.LSHL);
+    }
+
+    public static void I64_SHR_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.L2I);
+        asm.visitInsn(Opcodes.LSHR);
+    }
+
+    public static void I64_SHR_U(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.L2I);
+        asm.visitInsn(Opcodes.LUSHR);
+    }
+
+    public static void I64_SUB(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LSUB);
+    }
+
+    public static void I64_XOR(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LXOR);
     }
 
     /**

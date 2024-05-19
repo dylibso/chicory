@@ -27,6 +27,13 @@ public class AotUtil {
                     ValueType.F32, "asFloat",
                     ValueType.F64, "asDouble");
 
+    private static final Map<ValueType, String> BOX_METHODS =
+            Map.of(
+                    ValueType.I32, "i32",
+                    ValueType.I64, "i64",
+                    ValueType.F32, "fromFloat",
+                    ValueType.F64, "fromDouble");
+
     public static Class<?> jvmType(ValueType type) {
         return Objects.requireNonNull(JVM_TYPES.get(type), "Unsupported ValueType: " + type.name());
     }
@@ -49,6 +56,20 @@ public class AotUtil {
         return MethodHandles.lookup()
                 .findVirtual(
                         Value.class, unboxMethodName(type), MethodType.methodType(jvmType(type)));
+    }
+
+    public static String boxMethodName(ValueType type) {
+        return Objects.requireNonNull(
+                BOX_METHODS.get(type), "Unsupported ValueType: " + type.name());
+    }
+
+    public static MethodHandle boxer(ValueType type)
+            throws NoSuchMethodException, IllegalAccessException {
+        return MethodHandles.lookup()
+                .findStatic(
+                        Value.class,
+                        boxMethodName(type),
+                        MethodType.methodType(Value.class, jvmType(type)));
     }
 
     public static MethodType methodTypeFor(FunctionType type) {
