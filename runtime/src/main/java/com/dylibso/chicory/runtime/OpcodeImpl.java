@@ -249,17 +249,14 @@ public class OpcodeImpl {
     // ========= F64 =========
     @OpCodeIdentifier(OpCode.F64_CONVERT_I64_U)
     public static double F64_CONVERT_I64_U(long tos) {
-        double d;
         if (tos >= 0) {
-            d = tos;
-        } else {
-            // only preserve 53 bits of precision (plus one for rounding) to
-            // avoid rounding errors (64 - 53 == 11)
-            long sum = tos + 0x3ff;
-            // did the add overflow? add the MSB back on after the shift
-            long shiftIn = ((sum ^ tos) & Long.MIN_VALUE) >>> 10;
-            d = Math.scalb((double) ((sum >>> 11) | shiftIn), 11);
+            return tos;
         }
-        return Double.doubleToLongBits(d);
+        // only preserve 53 bits of precision (plus one for rounding) to
+        // avoid rounding errors (64 - 53 == 11)
+        long sum = tos + 0x3ff;
+        // did the add overflow? add the MSB back on after the shift
+        long shiftIn = ((sum ^ tos) & Long.MIN_VALUE) >>> 10;
+        return Math.scalb((double) ((sum >>> 11) | shiftIn), 11);
     }
 }
