@@ -187,6 +187,26 @@ public class AotEmitters {
         asm.visitInsn(Opcodes.FSUB);
     }
 
+    public static void F64_ADD(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.DADD);
+    }
+
+    public static void F64_DIV(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.DDIV);
+    }
+
+    public static void F64_MUL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.DMUL);
+    }
+
+    public static void F64_NEG(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.DNEG);
+    }
+
+    public static void F64_SUB(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.DSUB);
+    }
+
     /**
      * The AOT compiler assumes two main ways of implementing opcodes: intrinsics, and shared implementations.
      * Intrinsics refer to WASM opcodes that are implemented in the AOT by assembling JVM bytecode that implements

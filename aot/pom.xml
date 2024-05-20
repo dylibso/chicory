@@ -54,6 +54,9 @@
             <wast>f32.wast</wast>
             <wast>f32_bitwise.wast</wast>
             <wast>f32_cmp.wast</wast>
+            <wast>f64.wast</wast>
+            <wast>f64_bitwise.wast</wast>
+            <wast>f64_cmp.wast</wast>
             <wast>i32.wast</wast>
             <wast>i64.wast</wast>
           </includedWasts>
@@ -146,9 +149,6 @@
             <wast>elem.wast</wast>
             <wast>endianness.wast</wast>
             <wast>exports.wast</wast>
-            <wast>f64.wast</wast>
-            <wast>f64_bitwise.wast</wast>
-            <wast>f64_cmp.wast</wast>
             <wast>fac.wast</wast>
             <wast>float_exprs.wast</wast>
             <wast>float_literals.wast</wast>

@@ -138,7 +138,30 @@ public class AotMachine implements Machine {
                     .shared(F32_TRUNC, OpcodeImpl.class)
 
                     // ====== F64 ======
+                    .shared(F64_ABS, OpcodeImpl.class)
+                    .intrinsic(F64_ADD, AotEmitters::F64_ADD)
+                    .shared(F64_CEIL, OpcodeImpl.class)
+                    .shared(F64_CONVERT_I32_S, OpcodeImpl.class)
+                    .shared(F64_CONVERT_I32_U, OpcodeImpl.class)
+                    .shared(F64_CONVERT_I64_S, OpcodeImpl.class)
                     .shared(F64_CONVERT_I64_U, OpcodeImpl.class)
+                    .shared(F64_COPYSIGN, OpcodeImpl.class)
+                    .intrinsic(F64_DIV, AotEmitters::F64_DIV)
+                    .shared(F64_EQ, OpcodeImpl.class)
+                    .shared(F64_FLOOR, OpcodeImpl.class)
+                    .shared(F64_GE, OpcodeImpl.class)
+                    .shared(F64_GT, OpcodeImpl.class)
+                    .shared(F64_LE, OpcodeImpl.class)
+                    .shared(F64_LT, OpcodeImpl.class)
+                    .shared(F64_MAX, OpcodeImpl.class)
+                    .shared(F64_MIN, OpcodeImpl.class)
+                    .intrinsic(F64_MUL, AotEmitters::F64_MUL)
+                    .shared(F64_NE, OpcodeImpl.class)
+                    .intrinsic(F64_NEG, AotEmitters::F64_NEG)
+                    .shared(F64_NEAREST, OpcodeImpl.class)
+                    .shared(F64_SQRT, OpcodeImpl.class)
+                    .intrinsic(F64_SUB, AotEmitters::F64_SUB)
+                    .shared(F64_TRUNC, OpcodeImpl.class)
                     .build();
 
     public AotMachine(Module module) {

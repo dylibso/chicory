@@ -357,6 +357,31 @@ public class OpcodeImpl {
     }
 
     // ========= F64 =========
+    @OpCodeIdentifier(OpCode.F64_ABS)
+    public static double F64_ABS(double x) {
+        return Math.abs(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F64_CEIL)
+    public static double F64_CEIL(double x) {
+        return Math.ceil(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F64_CONVERT_I32_S)
+    public static double F64_CONVERT_I32_S(int x) {
+        return x;
+    }
+
+    @OpCodeIdentifier(OpCode.F64_CONVERT_I32_U)
+    public static double F64_CONVERT_I32_U(int x) {
+        return Integer.toUnsignedLong(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F64_CONVERT_I64_S)
+    public static double F64_CONVERT_I64_S(long x) {
+        return x;
+    }
+
     @OpCodeIdentifier(OpCode.F64_CONVERT_I64_U)
     public static double F64_CONVERT_I64_U(long tos) {
         if (tos >= 0) {
@@ -368,5 +393,76 @@ public class OpcodeImpl {
         // did the add overflow? add the MSB back on after the shift
         long shiftIn = ((sum ^ tos) & Long.MIN_VALUE) >>> 10;
         return Math.scalb((double) ((sum >>> 11) | shiftIn), 11);
+    }
+
+    @OpCodeIdentifier(OpCode.F64_COPYSIGN)
+    public static double F64_COPYSIGN(double a, double b) {
+        if (b == 0xFFC0000000000000L) { // +NaN
+            return Math.copySign(a, -1);
+        }
+        if (b == 0x7FC0000000000000L) { // -NaN
+            return Math.copySign(a, +1);
+        }
+        return Math.copySign(a, b);
+    }
+
+    @OpCodeIdentifier(OpCode.F64_EQ)
+    public static int F64_EQ(double a, double b) {
+        return a == b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.F64_FLOOR)
+    public static double F64_FLOOR(double x) {
+        return Math.floor(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F64_GE)
+    public static int F64_GE(double a, double b) {
+        return a >= b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.F64_GT)
+    public static int F64_GT(double a, double b) {
+        return a > b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.F64_LE)
+    public static int F64_LE(double a, double b) {
+        return a <= b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.F64_LT)
+    public static int F64_LT(double a, double b) {
+        return a < b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.F64_MAX)
+    public static double F64_MAX(double a, double b) {
+        return Math.max(a, b);
+    }
+
+    @OpCodeIdentifier(OpCode.F64_MIN)
+    public static double F64_MIN(double a, double b) {
+        return Math.min(a, b);
+    }
+
+    @OpCodeIdentifier(OpCode.F64_NE)
+    public static int F64_NE(double a, double b) {
+        return a == b ? FALSE : TRUE;
+    }
+
+    @OpCodeIdentifier(OpCode.F64_NEAREST)
+    public static double F64_NEAREST(double x) {
+        return Math.rint(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F64_SQRT)
+    public static double F64_SQRT(double x) {
+        return Math.sqrt(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F64_TRUNC)
+    public static double F64_TRUNC(double x) {
+        return (x < 0) ? Math.ceil(x) : Math.floor(x);
     }
 }
