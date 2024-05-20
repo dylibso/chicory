@@ -1895,28 +1895,12 @@ class InterpreterMachine implements Machine {
 
     private static void F64_NEG(MStack stack) {
         var tos = stack.pop().asDouble();
-
-        double result;
-        if (Double.isNaN(tos)) {
-            result = Double.longBitsToDouble(Double.doubleToRawLongBits(tos) ^ 0x8000000000000000L);
-        } else {
-            result = -1.0d * tos;
-        }
-
-        stack.push(Value.fromDouble(result));
+        stack.push(Value.fromDouble(-tos));
     }
 
     private static void F32_NEG(MStack stack) {
         var tos = stack.pop().asFloat();
-
-        float result;
-        if (Float.isNaN(tos)) {
-            result = Float.intBitsToFloat(Float.floatToRawIntBits(tos) ^ 0x80000000);
-        } else {
-            result = -1.0f * tos;
-        }
-
-        stack.push(Value.fromFloat(result));
+        stack.push(Value.fromFloat(-tos));
     }
 
     private static void MEMORY_FILL(MStack stack, Instance instance, long[] operands) {
