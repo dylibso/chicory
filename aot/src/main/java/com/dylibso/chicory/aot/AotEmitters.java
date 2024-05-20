@@ -88,6 +88,10 @@ public class AotEmitters {
         asm.visitInsn(Opcodes.IAND);
     }
 
+    public static void I32_CONST(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn((int) ins.operands()[0]);
+    }
+
     public static void I32_MUL(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.IMUL);
     }
@@ -126,6 +130,10 @@ public class AotEmitters {
 
     public static void I64_AND(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.LAND);
+    }
+
+    public static void I64_CONST(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn(ins.operands()[0]);
     }
 
     public static void I64_MUL(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -167,6 +175,10 @@ public class AotEmitters {
         asm.visitInsn(Opcodes.FADD);
     }
 
+    public static void F32_CONST(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn(Float.intBitsToFloat((int) ins.operands()[0]));
+    }
+
     public static void F32_DEMOTE_F64(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.D2F);
     }
@@ -189,6 +201,10 @@ public class AotEmitters {
 
     public static void F64_ADD(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.DADD);
+    }
+
+    public static void F64_CONST(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn(Double.longBitsToDouble(ins.operands()[0]));
     }
 
     public static void F64_DIV(AotContext ctx, Instruction ins, MethodVisitor asm) {
