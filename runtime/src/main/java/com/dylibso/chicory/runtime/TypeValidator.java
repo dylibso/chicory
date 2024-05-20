@@ -103,10 +103,40 @@ public class TypeValidator {
                 case NOP:
                 case UNREACHABLE:
                     break;
+                case RETURN:
+                    {
+                        // Straight to the last END
+                        i = body.instructions().size() - 2;
+
+                        var maxStack = stackLimit.peek();
+
+                        while (returns.size() > 1) {
+                            returns.pop();
+                        }
+                        while (stackLimit.size() > 1) {
+                            stackLimit.pop();
+                        }
+
+                        var finalResultsSize = returns.peek();
+                        var stackValues = valueTypeStack.size() - maxStack;
+                        var finalResult = new ValueType[finalResultsSize.size()];
+
+                        var finalSize = Math.min(finalResultsSize.size(), stackValues);
+
+                        for (int j = 0; j < finalSize; j++) {
+                            finalResult[j] = valueTypeStack.pop();
+                        }
+                        while (!valueTypeStack.isEmpty()) {
+                            valueTypeStack.pop();
+                        }
+                        for (int x = finalSize - 1; x >= 0; x--) {
+                            valueTypeStack.push(finalResult[x]);
+                        }
+                        break;
+                    }
                 case BR:
                 case BR_IF:
                 case BR_TABLE:
-                case RETURN:
                     {
                         // TODO: verify is it's needed to implement a polymorphic stack?
                         // TODO: verify this logic not completely convinced about it
@@ -134,10 +164,47 @@ public class TypeValidator {
                 case IF:
                 case ELSE:
                 case LOOP:
-                case BLOCK:
                     {
                         returns.push(List.of());
                         stackLimit.push(valueTypeStack.size());
+                        break;
+                    }
+                case BLOCK:
+                    {
+                        var blockType = (int) op.operands()[0];
+                        if (blockType == 0x40) {
+                            returns.push(List.of());
+                        } else {
+                            try {
+                                returns.push(List.of(ValueType.forId(blockType)));
+                            } catch (IllegalArgumentException e) {
+                                throw new InvalidException(
+                                        "type mismatch: expected a valid type, but was ["
+                                                + blockType
+                                                + "]");
+                            }
+                        }
+                        stackLimit.push(valueTypeStack.size());
+                        break;
+                    }
+                case END:
+                    {
+                        var results = returns.pop();
+                        for (var expected : results) {
+                            popAndVerifyType(expected);
+                        }
+                        // returning values go back on the stack
+                        if (!returns.isEmpty()) {
+                            for (var expected : results) {
+                                valueTypeStack.push(expected);
+                            }
+                        }
+
+                        var maxStack = stackLimit.pop();
+
+                        if (returns.isEmpty() && valueTypeStack.size() > maxStack) {
+                            throw new InvalidException("type mismatch: expected [], but was [...]");
+                        }
                         break;
                     }
                 case DATA_DROP:
@@ -153,19 +220,6 @@ public class TypeValidator {
                 case DROP:
                     {
                         popAndVerifyType(null);
-                        break;
-                    }
-                case END:
-                    {
-                        for (var expected : returns.pop()) {
-                            popAndVerifyType(expected);
-                        }
-                        stackLimit.pop();
-
-                        // last return
-                        if (stackLimit.isEmpty() && !valueTypeStack.isEmpty()) {
-                            throw new InvalidException("type mismatch: expected [], but was [...]");
-                        }
                         break;
                     }
                 case I32_STORE:
