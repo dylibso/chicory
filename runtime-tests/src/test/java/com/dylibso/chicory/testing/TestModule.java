@@ -1,6 +1,5 @@
 package com.dylibso.chicory.testing;
 
-import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Module;
@@ -18,10 +17,6 @@ public class TestModule {
 
     private HostImports imports;
     private boolean typeValidation;
-
-    public TestModule(Module.Builder builder) {
-        this.builder = builder;
-    }
 
     public static TestModule of(File file) {
         return of(file, ModuleType.BINARY);
@@ -68,6 +63,10 @@ public class TestModule {
         return of(Module.builder(file));
     }
 
+    public TestModule(Module.Builder builder) {
+        this.builder = builder;
+    }
+
     public TestModule build() {
         if (this.module == null) {
             this.module = builder.build();
@@ -88,10 +87,10 @@ public class TestModule {
     public TestModule instantiate() {
         if (this.instance == null) {
             this.instance =
-                    module.withMachineFactory(ins -> new AotMachine(module))
-                            .withInitialize(false)
+                    module.withInitialize(false)
                             .withStart(false)
                             .withHostImports(imports)
+                            .withTypeValidation(typeValidation)
                             .instantiate();
         }
         return this;

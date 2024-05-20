@@ -8,16 +8,15 @@
     <version>999-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>aot</artifactId>
+  <artifactId>runtime-tests</artifactId>
   <packaging>jar</packaging>
-
-  <name>Chicory - AOT</name>
-  <description>Experimental AOT for Chicory</description>
+  <name>Chicory - Runtime tests</name>
+  <description>Tests for the Chicory runtime using the WebAssembly testsuite</description>
 
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>runtime</artifactId>
+      <artifactId>log</artifactId>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
@@ -30,10 +29,6 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.ow2.asm</groupId>
-      <artifactId>asm</artifactId>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
@@ -50,85 +45,6 @@
         <version>${project.version}</version>
         <configuration>
           <includedWasts>
-            <wast>f32.wast</wast>
-            <wast>f32_bitwise.wast</wast>
-            <wast>f32_cmp.wast</wast>
-            <wast>f64.wast</wast>
-            <wast>f64_bitwise.wast</wast>
-            <wast>f64_cmp.wast</wast>
-            <wast>i32.wast</wast>
-            <wast>i64.wast</wast>
-          </includedWasts>
-          <excludedTests>
-            <test>SpecV1LinkingTest.test83</test>
-            <test>SpecV1LinkingTest.test86</test>
-            <test>SpecV1LinkingTest.test94</test>
-            <test>SpecV1LinkingTest.test97</test>
-            <test>SpecV1LinkingTest.test115</test>
-            <test>SpecV1LinkingTest.test116</test>
-            <test>SpecV1LinkingTest.test118</test>
-            <test>SpecV1LinkingTest.test121</test>
-            <test>SpecV1LinkingTest.test122</test>
-          </excludedTests>
-          <excludedMalformedWasts>
-            <wast>binary-leb128.wast</wast>
-            <wast>binary.wast</wast>
-          </excludedMalformedWasts>
-          <excludedInvalidWasts>
-            <wast>block.wast</wast>
-            <wast>br.wast</wast>
-            <wast>br_if.wast</wast>
-            <wast>br_table.wast</wast>
-            <wast>call.wast</wast>
-            <wast>call_indirect.wast</wast>
-            <wast>conversions.wast</wast>
-            <wast>data.wast</wast>
-            <wast>exports.wast</wast>
-            <wast>f32.wast</wast>
-            <wast>f32_bitwise.wast</wast>
-            <wast>f32_cmp.wast</wast>
-            <wast>f64.wast</wast>
-            <wast>f64_bitwise.wast</wast>
-            <wast>f64_cmp.wast</wast>
-            <wast>func.wast</wast>
-            <wast>func_ptrs.wast</wast>
-            <wast>global.wast</wast>
-            <wast>i32.wast</wast>
-            <wast>i64.wast</wast>
-            <wast>if.wast</wast>
-            <wast>imports.wast</wast>
-            <wast>labels.wast</wast>
-            <wast>linking.wast</wast>
-            <wast>load.wast</wast>
-            <wast>local_get.wast</wast>
-            <wast>local_set.wast</wast>
-            <wast>local_tee.wast</wast>
-            <wast>loop.wast</wast>
-            <wast>memory.wast</wast>
-            <wast>memory_copy.wast</wast>
-            <wast>memory_fill.wast</wast>
-            <wast>memory_grow.wast</wast>
-            <wast>memory_init.wast</wast>
-            <wast>memory_size.wast</wast>
-            <wast>nop.wast</wast>
-            <wast>ref_func.wast</wast>
-            <wast>ref_is_null.wast</wast>
-            <wast>return.wast</wast>
-            <wast>select.wast</wast>
-            <wast>start.wast</wast>
-            <wast>store.wast</wast>
-            <wast>switch.wast</wast>
-            <wast>table-sub.wast</wast>
-            <wast>table.wast</wast>
-            <wast>table_fill.wast</wast>
-            <wast>table_get.wast</wast>
-            <wast>table_grow.wast</wast>
-            <wast>table_init.wast</wast>
-            <wast>table_set.wast</wast>
-            <wast>table_size.wast</wast>
-            <wast>unreached-invalid.wast</wast>
-          </excludedInvalidWasts>
-          <excludedWasts>
             <wast>address.wast</wast>
             <wast>align.wast</wast>
             <wast>binary-leb128.wast</wast>
@@ -148,6 +64,12 @@
             <wast>elem.wast</wast>
             <wast>endianness.wast</wast>
             <wast>exports.wast</wast>
+            <wast>f32.wast</wast>
+            <wast>f32_bitwise.wast</wast>
+            <wast>f32_cmp.wast</wast>
+            <wast>f64.wast</wast>
+            <wast>f64_bitwise.wast</wast>
+            <wast>f64_cmp.wast</wast>
             <wast>fac.wast</wast>
             <wast>float_exprs.wast</wast>
             <wast>float_literals.wast</wast>
@@ -157,6 +79,8 @@
             <wast>func.wast</wast>
             <wast>func_ptrs.wast</wast>
             <wast>global.wast</wast>
+            <wast>i32.wast</wast>
+            <wast>i64.wast</wast>
             <wast>if.wast</wast>
             <wast>imports.wast</wast>
             <wast>inline-module.wast</wast>
@@ -185,8 +109,111 @@
             <wast>ref_null.wast</wast>
             <wast>return.wast</wast>
             <wast>select.wast</wast>
-
-            <!-- Include above to match compliance with interpreter -->
+            <wast>skip-stack-guard-page.wast</wast>
+            <wast>stack.wast</wast>
+            <wast>start.wast</wast>
+            <wast>store.wast</wast>
+            <wast>switch.wast</wast>
+            <wast>table-sub.wast</wast>
+            <wast>table.wast</wast>
+            <wast>table_copy.wast</wast>
+            <wast>table_fill.wast</wast>
+            <wast>table_get.wast</wast>
+            <wast>table_grow.wast</wast>
+            <wast>table_init.wast</wast>
+            <wast>table_set.wast</wast>
+            <wast>table_size.wast</wast>
+            <wast>token.wast</wast>
+            <wast>tokens.wast</wast>
+            <wast>traps.wast</wast>
+            <wast>type.wast</wast>
+            <wast>unreachable.wast</wast>
+            <wast>unreached-invalid.wast</wast>
+            <wast>unreached-valid.wast</wast>
+            <wast>unwind.wast</wast>
+            <wast>utf8-custom-section-id.wast</wast>
+            <wast>utf8-import-field.wast</wast>
+            <wast>utf8-import-module.wast</wast>
+            <wast>utf8-invalid-encoding.wast</wast>
+          </includedWasts>
+          <excludedTests>
+            <test>SpecV1LinkingTest.test83</test>
+            <test>SpecV1LinkingTest.test86</test>
+            <test>SpecV1LinkingTest.test94</test>
+            <test>SpecV1LinkingTest.test97</test>
+            <test>SpecV1LinkingTest.test115</test>
+            <test>SpecV1LinkingTest.test116</test>
+            <test>SpecV1LinkingTest.test118</test>
+            <test>SpecV1LinkingTest.test121</test>
+            <test>SpecV1LinkingTest.test122</test>
+          </excludedTests>
+          <excludedMalformedWasts>
+            <wast>binary-leb128.wast</wast>
+            <wast>binary.wast</wast>
+          </excludedMalformedWasts>
+          <excludedInvalidWasts>
+            <wast>align.wast</wast>
+            <wast>binary-leb128.wast</wast>
+            <wast>binary.wast</wast>
+            <wast>block.wast</wast>
+            <wast>br.wast</wast>
+            <wast>br_if.wast</wast>
+            <wast>br_table.wast</wast>
+            <wast>bulk.wast</wast>
+            <wast>call.wast</wast>
+            <wast>call_indirect.wast</wast>
+            <wast>data.wast</wast>
+            <wast>elem.wast</wast>
+            <wast>exports.wast</wast>
+            <wast>fac.wast</wast>
+            <wast>float_exprs.wast</wast>
+            <wast>forward.wast</wast>
+            <wast>func.wast</wast>
+            <wast>func_ptrs.wast</wast>
+            <wast>global.wast</wast>
+            <wast>if.wast</wast>
+            <wast>imports.wast</wast>
+            <wast>labels.wast</wast>
+            <wast>left-to-right.wast</wast>
+            <wast>linking.wast</wast>
+            <wast>load.wast</wast>
+            <wast>local_get.wast</wast>
+            <wast>local_set.wast</wast>
+            <wast>local_tee.wast</wast>
+            <wast>loop.wast</wast>
+            <wast>memory.wast</wast>
+            <wast>memory_copy.wast</wast>
+            <wast>memory_fill.wast</wast>
+            <wast>memory_grow.wast</wast>
+            <wast>memory_init.wast</wast>
+            <wast>memory_size.wast</wast>
+            <wast>memory_trap.wast</wast>
+            <wast>nop.wast</wast>
+            <wast>ref_func.wast</wast>
+            <wast>ref_is_null.wast</wast>
+            <wast>select.wast</wast>
+            <wast>skip-stack-guard-page.wast</wast>
+            <wast>stack.wast</wast>
+            <wast>start.wast</wast>
+            <wast>store.wast</wast>
+            <wast>switch.wast</wast>
+            <wast>table-sub.wast</wast>
+            <wast>table.wast</wast>
+            <wast>table_copy.wast</wast>
+            <wast>table_fill.wast</wast>
+            <wast>table_get.wast</wast>
+            <wast>table_grow.wast</wast>
+            <wast>table_init.wast</wast>
+            <wast>table_set.wast</wast>
+            <wast>table_size.wast</wast>
+            <wast>tokens.wast</wast>
+            <wast>traps.wast</wast>
+            <wast>unreachable.wast</wast>
+            <wast>unreached-invalid.wast</wast>
+            <wast>unreached-valid.wast</wast>
+            <wast>unwind.wast</wast>
+          </excludedInvalidWasts>
+          <excludedWasts>
             <wast>simd_address.wast</wast>
             <wast>simd_align.wast</wast>
             <wast>simd_bit_shift.wast</wast>
@@ -244,34 +271,6 @@
             <wast>simd_store32_lane.wast</wast>
             <wast>simd_store64_lane.wast</wast>
             <wast>simd_store8_lane.wast</wast>
-
-            <!-- Include below to match compliance with interpreter -->
-            <wast>skip-stack-guard-page.wast</wast>
-            <wast>stack.wast</wast>
-            <wast>start.wast</wast>
-            <wast>store.wast</wast>
-            <wast>switch.wast</wast>
-            <wast>table-sub.wast</wast>
-            <wast>table.wast</wast>
-            <wast>table_copy.wast</wast>
-            <wast>table_fill.wast</wast>
-            <wast>table_get.wast</wast>
-            <wast>table_grow.wast</wast>
-            <wast>table_init.wast</wast>
-            <wast>table_set.wast</wast>
-            <wast>table_size.wast</wast>
-            <wast>token.wast</wast>
-            <wast>tokens.wast</wast>
-            <wast>traps.wast</wast>
-            <wast>type.wast</wast>
-            <wast>unreachable.wast</wast>
-            <wast>unreached-invalid.wast</wast>
-            <wast>unreached-valid.wast</wast>
-            <wast>unwind.wast</wast>
-            <wast>utf8-custom-section-id.wast</wast>
-            <wast>utf8-import-field.wast</wast>
-            <wast>utf8-import-module.wast</wast>
-            <wast>utf8-invalid-encoding.wast</wast>
           </excludedWasts>
         </configuration>
         <executions>

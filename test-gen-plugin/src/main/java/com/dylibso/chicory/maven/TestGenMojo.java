@@ -3,10 +3,12 @@ package com.dylibso.chicory.maven;
 import static com.dylibso.chicory.maven.Constants.SPEC_JSON;
 
 import com.dylibso.chicory.maven.wast.Wast;
+import com.dylibso.chicory.wabt.Wast2Json;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.utils.SourceRoot;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -76,21 +78,6 @@ public class TestGenMojo extends AbstractMojo {
     private File compiledWastTargetFolder;
 
     /**
-     * Wabt version
-     * Accepts a specific version or "latest" to query the GH API
-     */
-    @Parameter(required = true, property = "wabtVersion", defaultValue = "1.0.34")
-    private String wabtVersion;
-
-    @Parameter(
-            required = true,
-            defaultValue = "https://github.com/WebAssembly/wabt/releases/download/")
-    private String wabtReleasesURL;
-
-    @Parameter(required = true, defaultValue = "${project.build.directory}/wabt")
-    private File wabtDownloadTargetFolder;
-
-    /**
      * Include list for the wast files that should generate an ordered spec.
      */
     @Parameter(required = true)
@@ -117,9 +104,6 @@ public class TestGenMojo extends AbstractMojo {
     @Parameter(defaultValue = "[]")
     private List<String> excludedWasts;
 
-    @Parameter(required = false, defaultValue = "false")
-    private boolean useAot;
-
     /**
      * The current Maven project.
      */
@@ -137,14 +121,6 @@ public class TestGenMojo extends AbstractMojo {
 
         // Instantiate the utilities
         var testSuiteDownloader = new TestSuiteDownloader(log);
-        var wast2Json =
-                new Wast2JsonWrapper(
-                        log,
-                        wabtDownloadTargetFolder,
-                        wabtReleasesURL,
-                        wabtVersion,
-                        osName,
-                        compiledWastTargetFolder);
         var testGen =
                 new JavaTestGen(
                         log,
@@ -152,8 +128,7 @@ public class TestGenMojo extends AbstractMojo {
                         sourceDestinationFolder,
                         excludedTests,
                         excludedMalformedWasts,
-                        excludedInvalidWasts,
-                        useAot);
+                        excludedInvalidWasts);
 
         JavaParserMavenUtils.makeJavaParserLogToMavenOutput(getLog());
 
@@ -188,16 +163,13 @@ public class TestGenMojo extends AbstractMojo {
                         "Some wast files are not included or excluded: " + allWastFiles);
             }
 
-            wast2Json.fetch();
-
             // generate the tests
             final SourceRoot dest = new SourceRoot(sourceDestinationFolder.toPath());
             final SourceRoot importSourceRoot = new SourceRoot(importsSourcesFolder.toPath());
 
-            TestGenerator testGenerator =
-                    new TestGenerator(wast2Json, testGen, importSourceRoot, dest);
+            TestGenerator testGenerator = new TestGenerator(testGen, importSourceRoot, dest);
 
-            includedWasts.stream().parallel().forEach(testGenerator::generateTests);
+            includedWasts.parallelStream().forEach(testGenerator::generateTests);
 
             dest.saveAll();
         } catch (Exception e) {
@@ -226,17 +198,11 @@ public class TestGenMojo extends AbstractMojo {
 
     private class TestGenerator {
 
-        private final Wast2JsonWrapper wast2Json;
         private final JavaTestGen testGen;
         private final SourceRoot importSourceRoot;
         private final SourceRoot dest;
 
-        private TestGenerator(
-                Wast2JsonWrapper wast2Json,
-                JavaTestGen testGen,
-                SourceRoot importSourceRoot,
-                SourceRoot dest) {
-            this.wast2Json = wast2Json;
+        private TestGenerator(JavaTestGen testGen, SourceRoot importSourceRoot, SourceRoot dest) {
             this.testGen = testGen;
             this.importSourceRoot = importSourceRoot;
             this.dest = dest;
@@ -249,32 +215,27 @@ public class TestGenMojo extends AbstractMojo {
                 throw new IllegalArgumentException(
                         "Wast file " + wastFile.getAbsolutePath() + " not found");
             }
-            var retries = 3;
-            File specFile = null;
-            File wasmFilesFolder = null;
-            Wast wast = null;
 
-            while (true) {
-                try {
-                    wasmFilesFolder =
-                            wast2Json.execute(testsuiteFolder.toPath().resolve(spec).toFile());
-                    specFile = wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile();
-
-                    assert (specFile.exists());
-
-                    wast = new ObjectMapper().readValue(specFile, Wast.class);
-                    break;
-                } catch (Exception e) {
-                    if (retries > 0) {
-                        --retries;
-                    } else {
-                        throw new RuntimeException(e);
-                    }
-                }
+            var plainName = wastFile.getName().replace(".wast", "");
+            File wasmFilesFolder = compiledWastTargetFolder.toPath().resolve(plainName).toFile();
+            File specFile = wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile();
+            if (!wasmFilesFolder.mkdirs()) {
+                log.warn("Could not create folder: " + wasmFilesFolder);
             }
+
+            Wast2Json.builder().withFile(wastFile).withOutput(specFile).build().process();
+
             var name = specFile.toPath().getParent().toFile().getName();
-            var cu = testGen.generate(name, wast, wasmFilesFolder, importSourceRoot);
+            var cu = testGen.generate(name, readWast(specFile), wasmFilesFolder, importSourceRoot);
             dest.add(cu);
+        }
+
+        private Wast readWast(File file) {
+            try {
+                return new ObjectMapper().readValue(file, Wast.class);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 }
