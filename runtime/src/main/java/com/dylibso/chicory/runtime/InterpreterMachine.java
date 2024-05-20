@@ -760,85 +760,82 @@ class InterpreterMachine implements Machine {
     private static void I32_GE_U(MStack stack) {
         var b = stack.pop().asInt();
         var a = stack.pop().asInt();
-        stack.push(Integer.compareUnsigned(a, b) >= 0 ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I32_GE_U(a, b)));
     }
 
     private static void I64_GT_U(MStack stack) {
         var b = stack.pop().asLong();
         var a = stack.pop().asLong();
-        stack.push(Long.compareUnsigned(a, b) > 0 ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i64(OpcodeImpl.I64_GT_U(a, b)));
     }
 
     private static void I32_GE_S(MStack stack) {
         var b = stack.pop().asInt();
         var a = stack.pop().asInt();
-        stack.push(a >= b ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I32_GE_S(a, b)));
     }
 
     private static void I64_GE_U(MStack stack) {
         var b = stack.pop().asLong();
         var a = stack.pop().asLong();
-        stack.push(Long.compareUnsigned(a, b) >= 0 ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i64(OpcodeImpl.I64_GE_U(a, b)));
     }
 
     private static void I64_GE_S(MStack stack) {
         var b = stack.pop().asLong();
         var a = stack.pop().asLong();
-        stack.push(a >= b ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i64(OpcodeImpl.I64_GE_S(a, b)));
     }
 
     private static void I32_LE_S(MStack stack) {
         var b = stack.pop().asInt();
         var a = stack.pop().asInt();
-        stack.push(a <= b ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I32_LE_S(a, b)));
     }
 
     private static void I32_LE_U(MStack stack) {
         var b = stack.pop().asInt();
         var a = stack.pop().asInt();
-        stack.push(Integer.compareUnsigned(a, b) <= 0 ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I32_LE_U(a, b)));
     }
 
     private static void I64_LE_S(MStack stack) {
         var b = stack.pop().asLong();
         var a = stack.pop().asLong();
-        stack.push(a <= b ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i64(OpcodeImpl.I64_LE_S(a, b)));
     }
 
     private static void I64_LE_U(MStack stack) {
         var b = stack.pop().asLong();
         var a = stack.pop().asLong();
-        stack.push(Long.compareUnsigned(a, b) <= 0 ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i64(OpcodeImpl.I64_LE_U(a, b)));
     }
 
     private static void F32_EQ(MStack stack) {
-        var a = stack.pop().asFloat();
         var b = stack.pop().asFloat();
-        stack.push(a == b ? Value.TRUE : Value.FALSE);
+        var a = stack.pop().asFloat();
+        stack.push(Value.i32(OpcodeImpl.F32_EQ(a, b)));
     }
 
     private static void F64_EQ(MStack stack) {
-        var a = stack.pop().asDouble();
         var b = stack.pop().asDouble();
-        stack.push(a == b ? Value.TRUE : Value.FALSE);
+        var a = stack.pop().asDouble();
+        stack.push(Value.i32(OpcodeImpl.F64_EQ(a, b)));
     }
 
     private static void I32_CLZ(MStack stack) {
         var tos = stack.pop().asInt();
-        var count = Integer.numberOfLeadingZeros(tos);
-        stack.push(Value.i32(count));
+        stack.push(Value.i32(OpcodeImpl.I32_CLZ(tos)));
     }
 
     private static void I32_CTZ(MStack stack) {
         var tos = stack.pop().asInt();
-        var count = Integer.numberOfTrailingZeros(tos);
-        stack.push(Value.i32(count));
+        stack.push(Value.i32(OpcodeImpl.I32_CTZ(tos)));
     }
 
     private static void I32_POPCNT(MStack stack) {
         var tos = stack.pop().asInt();
-        var count = Integer.bitCount(tos);
-        stack.push(Value.i32(count));
+        stack.push(Value.i32(OpcodeImpl.I32_POPCNT(tos)));
     }
 
     private static void I32_ADD(MStack stack) {
@@ -880,131 +877,117 @@ class InterpreterMachine implements Machine {
     private static void I32_DIV_S(MStack stack) {
         var b = stack.pop().asInt();
         var a = stack.pop().asInt();
-        if (a == Integer.MIN_VALUE && b == -1) {
-            throw new WASMRuntimeException("integer overflow");
-        }
-        stack.push(Value.i32(a / b));
+        stack.push(Value.i32(OpcodeImpl.I32_DIV_S(a, b)));
     }
 
     private static void I32_DIV_U(MStack stack) {
-        var b = stack.pop().asUInt();
-        var a = stack.pop().asUInt();
-        stack.push(Value.i32(a / b));
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        stack.push(Value.i32(OpcodeImpl.I32_DIV_U(a, b)));
     }
 
     private static void I64_EXTEND_8_S(MStack stack) {
-        var tos = stack.pop().asByte();
-        stack.push(Value.i64(tos));
+        var tos = stack.pop().asLong();
+        stack.push(Value.i64(OpcodeImpl.I64_EXTEND_8_S(tos)));
     }
 
     private static void I64_EXTEND_16_S(MStack stack) {
-        var tos = stack.pop().asShort();
-        stack.push(Value.i64(tos));
+        var tos = stack.pop().asLong();
+        stack.push(Value.i64(OpcodeImpl.I64_EXTEND_16_S(tos)));
     }
 
     private static void I64_EXTEND_32_S(MStack stack) {
-        var tos = stack.pop().asInt();
-        stack.push(Value.i64(tos));
+        var tos = stack.pop().asLong();
+        stack.push(Value.i64(OpcodeImpl.I64_EXTEND_32_S(tos)));
     }
 
     private static void F64_CONVERT_I64_U(MStack stack) {
         var tos = stack.pop().asLong();
-        double d;
-        if (tos >= 0) {
-            d = tos;
-        } else {
-            // only preserve 53 bits of precision (plus one for rounding) to
-            // avoid rounding errors (64 - 53 == 11)
-            long sum = tos + 0x3ff;
-            // did the add overflow? add the MSB back on after the shift
-            long shiftIn = ((sum ^ tos) & Long.MIN_VALUE) >>> 10;
-            d = Math.scalb((double) ((sum >>> 11) | shiftIn), 11);
-        }
-        stack.push(Value.f64(Double.doubleToLongBits(d)));
+        stack.push(Value.fromDouble(OpcodeImpl.F64_CONVERT_I64_U(tos)));
     }
 
     private static void F64_CONVERT_I32_U(MStack stack) {
-        long tos = stack.pop().asUInt();
-        stack.push(Value.f64(Double.doubleToLongBits(tos)));
+        var tos = stack.pop().asInt();
+        stack.push(Value.fromDouble(OpcodeImpl.F64_CONVERT_I32_U(tos)));
     }
 
     private static void F64_CONVERT_I32_S(MStack stack) {
         var tos = stack.pop().asInt();
-        stack.push(Value.fromDouble(tos));
+        stack.push(Value.fromDouble(OpcodeImpl.F64_CONVERT_I32_S(tos)));
     }
 
     private static void I32_EXTEND_8_S(MStack stack) {
-        var tos = stack.pop().asByte();
-        stack.push(Value.i32(tos));
+        var tos = stack.pop().asInt();
+        stack.push(Value.i32(OpcodeImpl.I32_EXTEND_8_S(tos)));
     }
 
     private static void F64_NEAREST(MStack stack) {
         var val = stack.pop().asDouble();
-        stack.push(Value.fromDouble(Math.rint(val)));
+        stack.push(Value.fromDouble(OpcodeImpl.F64_NEAREST(val)));
     }
 
     private static void F32_NEAREST(MStack stack) {
         var val = stack.pop().asFloat();
-        stack.push(Value.fromFloat((float) Math.rint(val)));
+        stack.push(Value.fromFloat(OpcodeImpl.F32_NEAREST(val)));
     }
 
     private static void F64_TRUNC(MStack stack) {
         var val = stack.pop().asDouble();
-        stack.push(Value.fromDouble((val < 0) ? Math.ceil(val) : Math.floor(val)));
+        stack.push(Value.fromDouble(OpcodeImpl.F64_TRUNC(val)));
     }
 
     private static void F64_CEIL(MStack stack) {
         var val = stack.pop().asDouble();
-        stack.push(Value.fromDouble(Math.ceil(val)));
+        stack.push(Value.fromDouble(OpcodeImpl.F64_CEIL(val)));
     }
 
     private static void F32_CEIL(MStack stack) {
         var val = stack.pop().asFloat();
-        stack.push(Value.fromFloat((float) Math.ceil(val)));
+        stack.push(Value.fromFloat(OpcodeImpl.F32_CEIL(val)));
     }
 
     private static void F64_FLOOR(MStack stack) {
         var val = stack.pop().asDouble();
-        stack.push(Value.fromDouble(Math.floor(val)));
+        stack.push(Value.fromDouble(OpcodeImpl.F64_FLOOR(val)));
     }
 
     private static void F32_FLOOR(MStack stack) {
         var val = stack.pop().asFloat();
-        stack.push(Value.fromFloat((float) Math.floor(val)));
+        stack.push(Value.fromFloat(OpcodeImpl.F32_FLOOR(val)));
     }
 
     private static void F64_SQRT(MStack stack) {
         var val = stack.pop().asDouble();
-        stack.push(Value.fromDouble(Math.sqrt(val)));
+        stack.push(Value.fromDouble(OpcodeImpl.F64_SQRT(val)));
     }
 
     private static void F32_SQRT(MStack stack) {
         var val = stack.pop().asFloat();
-        stack.push(Value.fromFloat((float) Math.sqrt(val)));
+        stack.push(Value.fromFloat(OpcodeImpl.F32_SQRT(val)));
     }
 
     private static void F64_MAX(MStack stack) {
         var a = stack.pop().asDouble();
         var b = stack.pop().asDouble();
-        stack.push(Value.fromDouble(Math.max(a, b)));
+        stack.push(Value.fromDouble(OpcodeImpl.F64_MAX(a, b)));
     }
 
     private static void F32_MAX(MStack stack) {
         var a = stack.pop().asFloat();
         var b = stack.pop().asFloat();
-        stack.push(Value.fromFloat(Math.max(a, b)));
+        stack.push(Value.fromFloat(OpcodeImpl.F32_MAX(a, b)));
     }
 
     private static void F64_MIN(MStack stack) {
         var a = stack.pop().asDouble();
         var b = stack.pop().asDouble();
-        stack.push(Value.fromDouble(Math.min(a, b)));
+        stack.push(Value.fromDouble(OpcodeImpl.F64_MIN(a, b)));
     }
 
     private static void F32_MIN(MStack stack) {
         var a = stack.pop().asFloat();
         var b = stack.pop().asFloat();
-        stack.push(Value.fromFloat(Math.min(a, b)));
+        stack.push(Value.fromFloat(OpcodeImpl.F32_MIN(a, b)));
     }
 
     private static void F64_DIV(MStack stack) {
@@ -1058,15 +1041,13 @@ class InterpreterMachine implements Machine {
     private static void I32_ROTR(MStack stack) {
         var c = stack.pop().asInt();
         var v = stack.pop().asInt();
-        var z = (v >>> c) | (v << (32 - c));
-        stack.push(Value.i32(z));
+        stack.push(Value.i32(OpcodeImpl.I32_ROTR(v, c)));
     }
 
     private static void I32_ROTL(MStack stack) {
         var c = stack.pop().asInt();
         var v = stack.pop().asInt();
-        var z = (v << c) | (v >>> (32 - c));
-        stack.push(Value.i32(z));
+        stack.push(Value.i32(OpcodeImpl.I32_ROTL(v, c)));
     }
 
     private static void I32_SHR_U(MStack stack) {
@@ -1107,40 +1088,35 @@ class InterpreterMachine implements Machine {
 
     private static void I64_POPCNT(MStack stack) {
         var tos = stack.pop().asLong();
-        var count = Long.bitCount(tos);
-        stack.push(Value.i64(count));
+        stack.push(Value.i64(OpcodeImpl.I64_POPCNT(tos)));
     }
 
     private static void I64_CTZ(MStack stack) {
         var tos = stack.pop();
-        var count = Long.numberOfTrailingZeros(tos.asLong());
-        stack.push(Value.i64(count));
+        stack.push(Value.i64(OpcodeImpl.I64_CTZ(tos.asLong())));
     }
 
     private static void I64_CLZ(MStack stack) {
         var tos = stack.pop();
-        var count = Long.numberOfLeadingZeros(tos.asLong());
-        stack.push(Value.i64(count));
+        stack.push(Value.i64(OpcodeImpl.I64_CLZ(tos.asLong())));
     }
 
     private static void I64_ROTR(MStack stack) {
         var c = stack.pop().asLong();
         var v = stack.pop().asLong();
-        var z = (v >>> c) | (v << (64 - c));
-        stack.push(Value.i64(z));
+        stack.push(Value.i64(OpcodeImpl.I64_ROTR(v, c)));
     }
 
     private static void I64_ROTL(MStack stack) {
         var c = stack.pop().asLong();
         var v = stack.pop().asLong();
-        var z = (v << c) | (v >>> (64 - c));
-        stack.push(Value.i64(z));
+        stack.push(Value.i64(OpcodeImpl.I64_ROTL(v, c)));
     }
 
     private static void I64_REM_U(MStack stack) {
         var b = stack.pop().asLong();
         var a = stack.pop().asLong();
-        stack.push(Value.i64(Long.remainderUnsigned(a, b)));
+        stack.push(Value.i64(OpcodeImpl.I64_REM_U(a, b)));
     }
 
     private static void I64_REM_S(MStack stack) {
@@ -1186,9 +1162,9 @@ class InterpreterMachine implements Machine {
     }
 
     private static void I32_REM_U(MStack stack) {
-        var b = stack.pop().asUInt();
-        var a = stack.pop().asUInt();
-        stack.push(Value.i32(a % b));
+        var b = stack.pop().asInt();
+        var a = stack.pop().asInt();
+        stack.push(Value.i32(OpcodeImpl.I32_REM_U(a, b)));
     }
 
     private static void I32_REM_S(MStack stack) {
@@ -1200,92 +1176,89 @@ class InterpreterMachine implements Machine {
     private static void I64_DIV_U(MStack stack) {
         var b = stack.pop().asLong();
         var a = stack.pop().asLong();
-        stack.push(Value.i64(Long.divideUnsigned(a, b)));
+        stack.push(Value.i64(OpcodeImpl.I64_DIV_U(a, b)));
     }
 
     private static void I64_DIV_S(MStack stack) {
         var b = stack.pop().asLong();
         var a = stack.pop().asLong();
-        if (a == Long.MIN_VALUE && b == -1L) {
-            throw new WASMRuntimeException("integer overflow");
-        }
-        stack.push(Value.i64(a / b));
+        stack.push(Value.i64(OpcodeImpl.I64_DIV_S(a, b)));
     }
 
     private static void I64_GT_S(MStack stack) {
         var b = stack.pop().asLong();
         var a = stack.pop().asLong();
-        stack.push(a > b ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I64_GT_S(a, b)));
     }
 
     private static void I32_GT_U(MStack stack) {
         var b = stack.pop().asInt();
         var a = stack.pop().asInt();
-        stack.push(Integer.compareUnsigned(a, b) > 0 ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I32_GT_U(a, b)));
     }
 
     private static void I32_GT_S(MStack stack) {
         var b = stack.pop().asInt();
         var a = stack.pop().asInt();
-        stack.push(a > b ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I32_GT_S(a, b)));
     }
 
     private static void I64_LT_U(MStack stack) {
         var b = stack.pop().asLong();
         var a = stack.pop().asLong();
-        stack.push(Long.compareUnsigned(a, b) < 0 ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I64_LT_U(a, b)));
     }
 
     private static void I64_LT_S(MStack stack) {
         var b = stack.pop().asLong();
         var a = stack.pop().asLong();
-        stack.push(a < b ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I64_LT_S(a, b)));
     }
 
     private static void I32_LT_U(MStack stack) {
         var b = stack.pop().asInt();
         var a = stack.pop().asInt();
-        stack.push(Integer.compareUnsigned(a, b) < 0 ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I32_LT_U(a, b)));
     }
 
     private static void I32_LT_S(MStack stack) {
         var b = stack.pop().asInt();
         var a = stack.pop().asInt();
-        stack.push(a < b ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I32_LT_S(a, b)));
     }
 
     private static void I64_EQZ(MStack stack) {
         var a = stack.pop().asLong();
-        stack.push(a == 0L ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I64_EQZ(a)));
     }
 
     private static void I32_EQZ(MStack stack) {
         var a = stack.pop().asInt();
-        stack.push(a == 0 ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I32_EQZ(a)));
     }
 
     private static void I64_NE(MStack stack) {
         var a = stack.pop().asLong();
         var b = stack.pop().asLong();
-        stack.push(a == b ? Value.FALSE : Value.TRUE);
+        stack.push(Value.i32(OpcodeImpl.I64_NE(a, b)));
     }
 
     private static void I32_NE(MStack stack) {
         var a = stack.pop().asInt();
         var b = stack.pop().asInt();
-        stack.push(a == b ? Value.FALSE : Value.TRUE);
+        stack.push(Value.i32(OpcodeImpl.I32_NE(a, b)));
     }
 
     private static void I64_EQ(MStack stack) {
         var a = stack.pop().asLong();
         var b = stack.pop().asLong();
-        stack.push(a == b ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I64_EQ(a, b)));
     }
 
     private static void I32_EQ(MStack stack) {
         var a = stack.pop().asInt();
         var b = stack.pop().asInt();
-        stack.push(a == b ? Value.TRUE : Value.FALSE);
+        stack.push(Value.i32(OpcodeImpl.I32_EQ(a, b)));
     }
 
     private static void MEMORY_SIZE(MStack stack, Instance instance) {
@@ -1353,13 +1326,12 @@ class InterpreterMachine implements Machine {
 
     private static void F32_CONVERT_I32_S(MStack stack) {
         var tos = stack.pop().asInt();
-        stack.push(Value.fromFloat((float) tos));
+        stack.push(Value.fromFloat(OpcodeImpl.F32_CONVERT_I32_S(tos)));
     }
 
     private static void I32_EXTEND_16_S(MStack stack) {
-        var original = stack.pop().asInt() & 0xFFFF;
-        if ((original & 0x8000) != 0) original |= 0xFFFF0000;
-        stack.push(Value.i32(original & 0xFFFFFFFFL));
+        var tos = stack.pop().asInt();
+        stack.push(Value.i32(OpcodeImpl.I32_EXTEND_16_S(tos)));
     }
 
     private static void I64_TRUNC_F64_S(MStack stack) {
@@ -1380,110 +1352,89 @@ class InterpreterMachine implements Machine {
     }
 
     private static void F32_COPYSIGN(MStack stack) {
-        var a = stack.pop().asFloat();
         var b = stack.pop().asFloat();
-
-        if (a == 0xFFC00000L) { // +NaN
-            stack.push(Value.fromFloat(Math.copySign(b, -1)));
-        } else if (a == 0x7FC00000L) { // -NaN
-            stack.push(Value.fromFloat(Math.copySign(b, +1)));
-        } else {
-            stack.push(Value.fromFloat(Math.copySign(b, a)));
-        }
+        var a = stack.pop().asFloat();
+        stack.push(Value.fromFloat(OpcodeImpl.F32_COPYSIGN(a, b)));
     }
 
     private static void F32_ABS(MStack stack) {
         var val = stack.pop().asFloat();
-
-        stack.push(Value.fromFloat(Math.abs(val)));
+        stack.push(Value.fromFloat(OpcodeImpl.F32_ABS(val)));
     }
 
     private static void F64_ABS(MStack stack) {
         var val = stack.pop().asDouble();
-
-        stack.push(Value.fromDouble(Math.abs(val)));
+        stack.push(Value.fromDouble(OpcodeImpl.F64_ABS(val)));
     }
 
     private static void F32_NE(MStack stack) {
-        var a = stack.pop().asFloat();
         var b = stack.pop().asFloat();
-
-        stack.push(a == b ? Value.FALSE : Value.TRUE);
+        var a = stack.pop().asFloat();
+        stack.push(Value.i32(OpcodeImpl.F32_NE(a, b)));
     }
 
     private static void F64_NE(MStack stack) {
-        var a = stack.pop().asDouble();
         var b = stack.pop().asDouble();
-
-        stack.push(a == b ? Value.FALSE : Value.TRUE);
+        var a = stack.pop().asDouble();
+        stack.push(Value.i32(OpcodeImpl.F64_NE(a, b)));
     }
 
     private static void F32_LT(MStack stack) {
-        var a = stack.pop().asFloat();
         var b = stack.pop().asFloat();
-
-        stack.push(a > b ? Value.TRUE : Value.FALSE);
+        var a = stack.pop().asFloat();
+        stack.push(Value.i32(OpcodeImpl.F32_LT(a, b)));
     }
 
     private static void F64_LT(MStack stack) {
-        var a = stack.pop().asDouble();
         var b = stack.pop().asDouble();
-
-        stack.push(a > b ? Value.TRUE : Value.FALSE);
+        var a = stack.pop().asDouble();
+        stack.push(Value.i32(OpcodeImpl.F64_LT(a, b)));
     }
 
     private static void F32_LE(MStack stack) {
-        var a = stack.pop().asFloat();
         var b = stack.pop().asFloat();
-
-        stack.push(a >= b ? Value.TRUE : Value.FALSE);
+        var a = stack.pop().asFloat();
+        stack.push(Value.i32(OpcodeImpl.F32_LE(a, b)));
     }
 
     private static void F64_LE(MStack stack) {
-        var a = stack.pop().asDouble();
         var b = stack.pop().asDouble();
-
-        stack.push(a >= b ? Value.TRUE : Value.FALSE);
+        var a = stack.pop().asDouble();
+        stack.push(Value.i32(OpcodeImpl.F64_LE(a, b)));
     }
 
     private static void F32_GE(MStack stack) {
-        var a = stack.pop().asFloat();
         var b = stack.pop().asFloat();
-
-        stack.push(a <= b ? Value.TRUE : Value.FALSE);
+        var a = stack.pop().asFloat();
+        stack.push(Value.i32(OpcodeImpl.F32_GE(a, b)));
     }
 
     private static void F64_GE(MStack stack) {
-        var a = stack.pop().asDouble();
         var b = stack.pop().asDouble();
-
-        stack.push(a <= b ? Value.TRUE : Value.FALSE);
+        var a = stack.pop().asDouble();
+        stack.push(Value.i32(OpcodeImpl.F64_GE(a, b)));
     }
 
     private static void F32_GT(MStack stack) {
-        var a = stack.pop().asFloat();
         var b = stack.pop().asFloat();
-
-        stack.push(a < b ? Value.TRUE : Value.FALSE);
+        var a = stack.pop().asFloat();
+        stack.push(Value.i32(OpcodeImpl.F32_GT(a, b)));
     }
 
     private static void F64_GT(MStack stack) {
-        var a = stack.pop().asDouble();
         var b = stack.pop().asDouble();
-
-        stack.push(a < b ? Value.TRUE : Value.FALSE);
+        var a = stack.pop().asDouble();
+        stack.push(Value.i32(OpcodeImpl.F64_GT(a, b)));
     }
 
     private static void F32_CONVERT_I32_U(MStack stack) {
-        var tos = stack.pop().asUInt();
-
-        stack.push(Value.fromFloat((float) tos));
+        var tos = stack.pop().asInt();
+        stack.push(Value.fromFloat(OpcodeImpl.F32_CONVERT_I32_U(tos)));
     }
 
     private static void F32_CONVERT_I64_S(MStack stack) {
         var tos = stack.pop().asLong();
-
-        stack.push(Value.fromFloat((float) tos));
+        stack.push(Value.fromFloat(OpcodeImpl.F32_CONVERT_I64_S(tos)));
     }
 
     private static void REF_NULL(MStack stack, long[] operands) {
@@ -1511,8 +1462,7 @@ class InterpreterMachine implements Machine {
 
     private static void F64_CONVERT_I64_S(MStack stack) {
         var tos = stack.pop().asLong();
-
-        stack.push(Value.fromDouble((double) tos));
+        stack.push(Value.fromDouble(OpcodeImpl.F64_CONVERT_I64_S(tos)));
     }
 
     private static void TABLE_GROW(MStack stack, Instance instance, long[] operands) {
@@ -1832,20 +1782,7 @@ class InterpreterMachine implements Machine {
 
     private static void F32_CONVERT_I64_U(MStack stack) {
         var tos = stack.pop().asLong();
-
-        float f;
-        if (tos >= 0) {
-            f = tos;
-        } else {
-            // only preserve 24 bits of precision (plus one for rounding) to
-            // avoid rounding errors (64 - 24 == 40)
-            long sum = tos + 0xff_ffff_ffffL;
-            // did the add overflow? add the MSB back on after the shift
-            long shiftIn = ((sum ^ tos) & Long.MIN_VALUE) >>> 39;
-            f = Math.scalb((float) ((sum >>> 40) | shiftIn), 40);
-        }
-
-        stack.push(Value.f32(Float.floatToIntBits(f)));
+        stack.push(Value.fromFloat(OpcodeImpl.F32_CONVERT_I64_U(tos)));
     }
 
     private static void I32_TRUNC_F32_U(MStack stack) {
@@ -1935,21 +1872,14 @@ class InterpreterMachine implements Machine {
     }
 
     private static void F64_COPYSIGN(MStack stack) {
-        var a = stack.pop().asDouble();
         var b = stack.pop().asDouble();
-
-        if (a == 0xFFC0000000000000L) { // +NaN
-            stack.push(Value.fromDouble(Math.copySign(b, -1)));
-        } else if (a == 0x7FC0000000000000L) { // -NaN
-            stack.push(Value.fromDouble(Math.copySign(b, +1)));
-        } else {
-            stack.push(Value.fromDouble(Math.copySign(b, a)));
-        }
+        var a = stack.pop().asDouble();
+        stack.push(Value.fromDouble(OpcodeImpl.F64_COPYSIGN(a, b)));
     }
 
     private static void F32_TRUNC(MStack stack) {
         var val = stack.pop().asFloat();
-        stack.push(Value.fromFloat((float) ((val < 0) ? Math.ceil(val) : Math.floor(val))));
+        stack.push(Value.fromFloat(OpcodeImpl.F32_TRUNC(val)));
     }
 
     private static void CALL(
@@ -1965,28 +1895,12 @@ class InterpreterMachine implements Machine {
 
     private static void F64_NEG(MStack stack) {
         var tos = stack.pop().asDouble();
-
-        double result;
-        if (Double.isNaN(tos)) {
-            result = Double.longBitsToDouble(Double.doubleToRawLongBits(tos) ^ 0x8000000000000000L);
-        } else {
-            result = -1.0d * tos;
-        }
-
-        stack.push(Value.fromDouble(result));
+        stack.push(Value.fromDouble(-tos));
     }
 
     private static void F32_NEG(MStack stack) {
         var tos = stack.pop().asFloat();
-
-        float result;
-        if (Float.isNaN(tos)) {
-            result = Float.intBitsToFloat(Float.floatToRawIntBits(tos) ^ 0x80000000);
-        } else {
-            result = -1.0f * tos;
-        }
-
-        stack.push(Value.fromFloat(result));
+        stack.push(Value.fromFloat(-tos));
     }
 
     private static void MEMORY_FILL(MStack stack, Instance instance, long[] operands) {

@@ -1,6 +1,11 @@
 package com.dylibso.chicory.aot;
 
+import static com.dylibso.chicory.aot.AotUtil.boxer;
+import static com.dylibso.chicory.aot.AotUtil.jvmReturnType;
+import static com.dylibso.chicory.aot.AotUtil.unboxer;
 import static com.dylibso.chicory.wasm.types.OpCode.*;
+import static java.lang.invoke.MethodHandles.filterArguments;
+import static java.lang.invoke.MethodHandles.filterReturnValue;
 
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Module;
@@ -13,9 +18,7 @@ import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValueType;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
@@ -44,6 +47,7 @@ public class AotMachine implements Machine {
                     .intrinsic(I32_ADD, AotEmitters::I32_ADD)
                     .intrinsic(I32_AND, AotEmitters::I32_AND)
                     .shared(I32_CLZ, OpcodeImpl.class)
+                    .intrinsic(I32_CONST, AotEmitters::I32_CONST)
                     .shared(I32_CTZ, OpcodeImpl.class)
                     .shared(I32_DIV_S, OpcodeImpl.class)
                     .shared(I32_DIV_U, OpcodeImpl.class)
@@ -73,8 +77,95 @@ public class AotMachine implements Machine {
                     .intrinsic(I32_SUB, AotEmitters::I32_SUB)
                     .intrinsic(I32_XOR, AotEmitters::I32_XOR)
 
+                    // ====== I64 ======
+                    .intrinsic(I64_ADD, AotEmitters::I64_ADD)
+                    .intrinsic(I64_AND, AotEmitters::I64_AND)
+                    .shared(I64_CLZ, OpcodeImpl.class)
+                    .intrinsic(I64_CONST, AotEmitters::I64_CONST)
+                    .shared(I64_CTZ, OpcodeImpl.class)
+                    .shared(I64_DIV_S, OpcodeImpl.class)
+                    .shared(I64_DIV_U, OpcodeImpl.class)
+                    .shared(I64_EQ, OpcodeImpl.class)
+                    .shared(I64_EQZ, OpcodeImpl.class)
+                    .shared(I64_EXTEND_8_S, OpcodeImpl.class)
+                    .shared(I64_EXTEND_16_S, OpcodeImpl.class)
+                    .shared(I64_EXTEND_32_S, OpcodeImpl.class)
+                    .shared(I64_GE_S, OpcodeImpl.class)
+                    .shared(I64_GE_U, OpcodeImpl.class)
+                    .shared(I64_GT_S, OpcodeImpl.class)
+                    .shared(I64_GT_U, OpcodeImpl.class)
+                    .shared(I64_LE_S, OpcodeImpl.class)
+                    .shared(I64_LE_U, OpcodeImpl.class)
+                    .shared(I64_LT_S, OpcodeImpl.class)
+                    .shared(I64_LT_U, OpcodeImpl.class)
+                    .intrinsic(I64_MUL, AotEmitters::I64_MUL)
+                    .shared(I64_NE, OpcodeImpl.class)
+                    .intrinsic(I64_OR, AotEmitters::I64_OR)
+                    .shared(I64_POPCNT, OpcodeImpl.class)
+                    .intrinsic(I64_REM_S, AotEmitters::I64_REM_S)
+                    .shared(I64_REM_U, OpcodeImpl.class)
+                    .shared(I64_ROTL, OpcodeImpl.class)
+                    .shared(I64_ROTR, OpcodeImpl.class)
+                    .intrinsic(I64_SHL, AotEmitters::I64_SHL)
+                    .intrinsic(I64_SHR_S, AotEmitters::I64_SHR_S)
+                    .intrinsic(I64_SHR_U, AotEmitters::I64_SHR_U)
+                    .intrinsic(I64_SUB, AotEmitters::I64_SUB)
+                    .intrinsic(I64_XOR, AotEmitters::I64_XOR)
+
+                    // ====== F32 ======
+                    .shared(F32_ABS, OpcodeImpl.class)
+                    .intrinsic(F32_ADD, AotEmitters::F32_ADD)
+                    .shared(F32_CEIL, OpcodeImpl.class)
+                    .intrinsic(F32_CONST, AotEmitters::F32_CONST)
+                    .shared(F32_CONVERT_I32_S, OpcodeImpl.class)
+                    .shared(F32_CONVERT_I32_U, OpcodeImpl.class)
+                    .shared(F32_CONVERT_I64_S, OpcodeImpl.class)
+                    .shared(F32_CONVERT_I64_U, OpcodeImpl.class)
+                    .shared(F32_COPYSIGN, OpcodeImpl.class)
+                    .intrinsic(F32_DEMOTE_F64, AotEmitters::F32_DEMOTE_F64)
+                    .intrinsic(F32_DIV, AotEmitters::F32_DIV)
+                    .shared(F32_EQ, OpcodeImpl.class)
+                    .shared(F32_FLOOR, OpcodeImpl.class)
+                    .shared(F32_GE, OpcodeImpl.class)
+                    .shared(F32_GT, OpcodeImpl.class)
+                    .shared(F32_LE, OpcodeImpl.class)
+                    .shared(F32_LT, OpcodeImpl.class)
+                    .shared(F32_MAX, OpcodeImpl.class)
+                    .shared(F32_MIN, OpcodeImpl.class)
+                    .intrinsic(F32_MUL, AotEmitters::F32_MUL)
+                    .shared(F32_NE, OpcodeImpl.class)
+                    .intrinsic(F32_NEG, AotEmitters::F32_NEG)
+                    .shared(F32_NEAREST, OpcodeImpl.class)
+                    .shared(F32_SQRT, OpcodeImpl.class)
+                    .intrinsic(F32_SUB, AotEmitters::F32_SUB)
+                    .shared(F32_TRUNC, OpcodeImpl.class)
+
                     // ====== F64 ======
+                    .shared(F64_ABS, OpcodeImpl.class)
+                    .intrinsic(F64_ADD, AotEmitters::F64_ADD)
+                    .shared(F64_CEIL, OpcodeImpl.class)
+                    .intrinsic(F64_CONST, AotEmitters::F64_CONST)
+                    .shared(F64_CONVERT_I32_S, OpcodeImpl.class)
+                    .shared(F64_CONVERT_I32_U, OpcodeImpl.class)
+                    .shared(F64_CONVERT_I64_S, OpcodeImpl.class)
                     .shared(F64_CONVERT_I64_U, OpcodeImpl.class)
+                    .shared(F64_COPYSIGN, OpcodeImpl.class)
+                    .intrinsic(F64_DIV, AotEmitters::F64_DIV)
+                    .shared(F64_EQ, OpcodeImpl.class)
+                    .shared(F64_FLOOR, OpcodeImpl.class)
+                    .shared(F64_GE, OpcodeImpl.class)
+                    .shared(F64_GT, OpcodeImpl.class)
+                    .shared(F64_LE, OpcodeImpl.class)
+                    .shared(F64_LT, OpcodeImpl.class)
+                    .shared(F64_MAX, OpcodeImpl.class)
+                    .shared(F64_MIN, OpcodeImpl.class)
+                    .intrinsic(F64_MUL, AotEmitters::F64_MUL)
+                    .shared(F64_NE, OpcodeImpl.class)
+                    .intrinsic(F64_NEG, AotEmitters::F64_NEG)
+                    .shared(F64_NEAREST, OpcodeImpl.class)
+                    .shared(F64_SQRT, OpcodeImpl.class)
+                    .intrinsic(F64_SUB, AotEmitters::F64_SUB)
+                    .shared(F64_TRUNC, OpcodeImpl.class)
                     .build();
 
     public AotMachine(Module module) {
@@ -86,8 +177,8 @@ public class AotMachine implements Machine {
     @Override
     public Value[] call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
         try {
-            var result = (int) compiledFunctions[funcId].invoke(args);
-            return new Value[] {Value.i32(result)};
+            Value result = (Value) compiledFunctions[funcId].invoke(args);
+            return new Value[] {result};
         } catch (ChicoryException e) {
             // propagate ChicoryExceptions
             throw e;
@@ -152,7 +243,7 @@ public class AotMachine implements Machine {
                         Opcodes.ACC_PUBLIC,
                         "call",
                         Type.getMethodDescriptor(
-                                Type.getType(AotUtil.jvmReturnType(type)),
+                                Type.getType(jvmReturnType(type)),
                                 Arrays.stream(AotUtil.jvmParameterTypes(type))
                                         .map(Type::getType)
                                         .toArray(Type[]::new)),
@@ -177,15 +268,11 @@ public class AotMachine implements Machine {
         var argTypes = type.params();
         var argHandlers = new MethodHandle[type.params().size()];
         for (int i = 0; i < argHandlers.length; i++) {
-            argHandlers[i] = filterFor(argTypes.get(i));
+            argHandlers[i] = unboxer(argTypes.get(i));
         }
-        return MethodHandles.filterArguments(handle, 0, argHandlers)
-                .asSpreader(Value[].class, argTypes.size());
-    }
-
-    private MethodHandle filterFor(ValueType type)
-            throws NoSuchMethodException, IllegalAccessException {
-        return AotUtil.unboxer(type);
+        MethodHandle result = filterArguments(handle, 0, argHandlers);
+        result = result.asSpreader(Value[].class, argTypes.size());
+        return filterReturnValue(result, boxer(type.returns().get(0)));
     }
 
     private String nameFor(int funcId) {
@@ -242,8 +329,23 @@ public class AotMachine implements Machine {
             }
         }
 
-        asm.visitInsn(Opcodes.IRETURN);
+        asm.visitInsn(returnTypeOpcode(type));
     }
 
-    private void generateOpCodeImplHelperCall(AotContext ctx, Instruction ins, MethodVisitor asm) {}
+    private static int returnTypeOpcode(FunctionType type) {
+        Class<?> returnType = jvmReturnType(type);
+        if (returnType == int.class) {
+            return Opcodes.IRETURN;
+        }
+        if (returnType == long.class) {
+            return Opcodes.LRETURN;
+        }
+        if (returnType == float.class) {
+            return Opcodes.FRETURN;
+        }
+        if (returnType == double.class) {
+            return Opcodes.DRETURN;
+        }
+        throw new ChicoryException("Unsupported return type: " + returnType.getName());
+    }
 }

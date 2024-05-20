@@ -50,7 +50,14 @@
         <version>${project.version}</version>
         <configuration>
           <includedWasts>
+            <wast>f32.wast</wast>
+            <wast>f32_bitwise.wast</wast>
+            <wast>f32_cmp.wast</wast>
+            <wast>f64.wast</wast>
+            <wast>f64_bitwise.wast</wast>
+            <wast>f64_cmp.wast</wast>
             <wast>i32.wast</wast>
+            <wast>i64.wast</wast>
           </includedWasts>
           <excludedTests>
             <test>SpecV1LinkingTest.test83</test>
@@ -141,12 +148,6 @@
             <wast>elem.wast</wast>
             <wast>endianness.wast</wast>
             <wast>exports.wast</wast>
-            <wast>f32.wast</wast>
-            <wast>f32_bitwise.wast</wast>
-            <wast>f32_cmp.wast</wast>
-            <wast>f64.wast</wast>
-            <wast>f64_bitwise.wast</wast>
-            <wast>f64_cmp.wast</wast>
             <wast>fac.wast</wast>
             <wast>float_exprs.wast</wast>
             <wast>float_literals.wast</wast>
@@ -156,7 +157,6 @@
             <wast>func.wast</wast>
             <wast>func_ptrs.wast</wast>
             <wast>global.wast</wast>
-            <wast>i64.wast</wast>
             <wast>if.wast</wast>
             <wast>imports.wast</wast>
             <wast>inline-module.wast</wast>
@@ -273,7 +273,6 @@
             <wast>utf8-import-module.wast</wast>
             <wast>utf8-invalid-encoding.wast</wast>
           </excludedWasts>
-          <useAot>true</useAot>
         </configuration>
         <executions>
           <execution>

@@ -54,7 +54,7 @@ public class AotEmitters {
             default:
                 throw new IllegalArgumentException("Unsupported load target type: " + localType);
         }
-        asm.visitVarInsn(opcode, loadIndex + 1); // +1 because local 0 is 'this'.
+        asm.visitVarInsn(opcode, ctx.slotIndex(loadIndex + 1)); // +1 because local 0 is 'this'.
     }
 
     public static void LOCAL_SET(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -77,7 +77,7 @@ public class AotEmitters {
             default:
                 throw new IllegalArgumentException("Unsupported store target type: " + localType);
         }
-        asm.visitVarInsn(opcode, storeIndex + 1); // +1 because local 0 is 'this'.
+        asm.visitVarInsn(opcode, ctx.slotIndex(storeIndex + 1)); // +1 because local 0 is 'this'.
     }
 
     public static void I32_ADD(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -86,6 +86,10 @@ public class AotEmitters {
 
     public static void I32_AND(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.IAND);
+    }
+
+    public static void I32_CONST(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn((int) ins.operands()[0]);
     }
 
     public static void I32_MUL(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -118,6 +122,105 @@ public class AotEmitters {
 
     public static void I32_XOR(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.IXOR);
+    }
+
+    public static void I64_ADD(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LADD);
+    }
+
+    public static void I64_AND(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LAND);
+    }
+
+    public static void I64_CONST(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn(ins.operands()[0]);
+    }
+
+    public static void I64_MUL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LMUL);
+    }
+
+    public static void I64_OR(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LOR);
+    }
+
+    public static void I64_REM_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LREM);
+    }
+
+    public static void I64_SHL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.L2I);
+        asm.visitInsn(Opcodes.LSHL);
+    }
+
+    public static void I64_SHR_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.L2I);
+        asm.visitInsn(Opcodes.LSHR);
+    }
+
+    public static void I64_SHR_U(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.L2I);
+        asm.visitInsn(Opcodes.LUSHR);
+    }
+
+    public static void I64_SUB(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LSUB);
+    }
+
+    public static void I64_XOR(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.LXOR);
+    }
+
+    public static void F32_ADD(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.FADD);
+    }
+
+    public static void F32_CONST(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn(Float.intBitsToFloat((int) ins.operands()[0]));
+    }
+
+    public static void F32_DEMOTE_F64(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.D2F);
+    }
+
+    public static void F32_DIV(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.FDIV);
+    }
+
+    public static void F32_MUL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.FMUL);
+    }
+
+    public static void F32_NEG(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.FNEG);
+    }
+
+    public static void F32_SUB(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.FSUB);
+    }
+
+    public static void F64_ADD(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.DADD);
+    }
+
+    public static void F64_CONST(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn(Double.longBitsToDouble(ins.operands()[0]));
+    }
+
+    public static void F64_DIV(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.DDIV);
+    }
+
+    public static void F64_MUL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.DMUL);
+    }
+
+    public static void F64_NEG(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.DNEG);
+    }
+
+    public static void F64_SUB(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.DSUB);
     }
 
     /**
