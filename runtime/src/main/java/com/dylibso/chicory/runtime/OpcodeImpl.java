@@ -246,6 +246,116 @@ public class OpcodeImpl {
         return (v << c) | (v >>> (64 - c));
     }
 
+    // ========= F32 =========
+    @OpCodeIdentifier(OpCode.F32_ABS)
+    public static float F32_ABS(float x) {
+        return Math.abs(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F32_CEIL)
+    public static float F32_CEIL(float x) {
+        return (float) Math.ceil(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F32_CONVERT_I32_S)
+    public static float F32_CONVERT_I32_S(int x) {
+        return x;
+    }
+
+    @OpCodeIdentifier(OpCode.F32_CONVERT_I32_U)
+    public static float F32_CONVERT_I32_U(int x) {
+        return Integer.toUnsignedLong(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F32_CONVERT_I64_S)
+    public static float F32_CONVERT_I64_S(long x) {
+        return x;
+    }
+
+    @OpCodeIdentifier(OpCode.F32_CONVERT_I64_U)
+    public static float F32_CONVERT_I64_U(long x) {
+        if (x >= 0) {
+            return x;
+        }
+        // only preserve 24 bits of precision (plus one for rounding) to
+        // avoid rounding errors (64 - 24 == 40)
+        long sum = x + 0xff_ffff_ffffL;
+        // did the add overflow? add the MSB back on after the shift
+        long shiftIn = ((sum ^ x) & Long.MIN_VALUE) >>> 39;
+        return Math.scalb((float) ((sum >>> 40) | shiftIn), 40);
+    }
+
+    @OpCodeIdentifier(OpCode.F32_COPYSIGN)
+    public static float F32_COPYSIGN(float a, float b) {
+        if (b == 0xFFC00000L) { // +NaN
+            return Math.copySign(a, -1);
+        }
+        if (b == 0x7FC00000L) { // -NaN
+            return Math.copySign(a, +1);
+        }
+        return Math.copySign(a, b);
+    }
+
+    @OpCodeIdentifier(OpCode.F32_EQ)
+    public static int F32_EQ(float a, float b) {
+        return a == b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.F32_FLOOR)
+    public static float F32_FLOOR(float x) {
+        return (float) Math.floor(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F32_GE)
+    public static int F32_GE(float a, float b) {
+        return a >= b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.F32_GT)
+    public static int F32_GT(float a, float b) {
+        return a > b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.F32_LE)
+    public static int F32_LE(float a, float b) {
+        return a <= b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.F32_LT)
+    public static int F32_LT(float a, float b) {
+        return a < b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.F32_MAX)
+    public static float F32_MAX(float a, float b) {
+        return Math.max(a, b);
+    }
+
+    @OpCodeIdentifier(OpCode.F32_MIN)
+    public static float F32_MIN(float a, float b) {
+        return Math.min(a, b);
+    }
+
+    @OpCodeIdentifier(OpCode.F32_NE)
+    public static int F32_NE(float a, float b) {
+        return a == b ? FALSE : TRUE;
+    }
+
+    @OpCodeIdentifier(OpCode.F32_NEAREST)
+    public static float F32_NEAREST(float x) {
+        return (float) Math.rint(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F32_SQRT)
+    public static float F32_SQRT(float x) {
+        return (float) Math.sqrt(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F32_TRUNC)
+    public static float F32_TRUNC(float x) {
+        return (float) ((x < 0) ? Math.ceil(x) : Math.floor(x));
+    }
+
     // ========= F64 =========
     @OpCodeIdentifier(OpCode.F64_CONVERT_I64_U)
     public static double F64_CONVERT_I64_U(long tos) {

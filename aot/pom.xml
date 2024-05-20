@@ -51,6 +51,9 @@
         <version>${project.version}</version>
         <configuration>
           <includedWasts>
+            <wast>f32.wast</wast>
+            <wast>f32_bitwise.wast</wast>
+            <wast>f32_cmp.wast</wast>
             <wast>i32.wast</wast>
             <wast>i64.wast</wast>
           </includedWasts>
@@ -143,9 +146,6 @@
             <wast>elem.wast</wast>
             <wast>endianness.wast</wast>
             <wast>exports.wast</wast>
-            <wast>f32.wast</wast>
-            <wast>f32_bitwise.wast</wast>
-            <wast>f32_cmp.wast</wast>
             <wast>f64.wast</wast>
             <wast>f64_bitwise.wast</wast>
             <wast>f64_cmp.wast</wast>

@@ -110,6 +110,33 @@ public class AotMachine implements Machine {
                     .intrinsic(I64_SUB, AotEmitters::I64_SUB)
                     .intrinsic(I64_XOR, AotEmitters::I64_XOR)
 
+                    // ====== F32 ======
+                    .shared(F32_ABS, OpcodeImpl.class)
+                    .intrinsic(F32_ADD, AotEmitters::F32_ADD)
+                    .shared(F32_CEIL, OpcodeImpl.class)
+                    .shared(F32_CONVERT_I32_S, OpcodeImpl.class)
+                    .shared(F32_CONVERT_I32_U, OpcodeImpl.class)
+                    .shared(F32_CONVERT_I64_S, OpcodeImpl.class)
+                    .shared(F32_CONVERT_I64_U, OpcodeImpl.class)
+                    .shared(F32_COPYSIGN, OpcodeImpl.class)
+                    .intrinsic(F32_DEMOTE_F64, AotEmitters::F32_DEMOTE_F64)
+                    .intrinsic(F32_DIV, AotEmitters::F32_DIV)
+                    .shared(F32_EQ, OpcodeImpl.class)
+                    .shared(F32_FLOOR, OpcodeImpl.class)
+                    .shared(F32_GE, OpcodeImpl.class)
+                    .shared(F32_GT, OpcodeImpl.class)
+                    .shared(F32_LE, OpcodeImpl.class)
+                    .shared(F32_LT, OpcodeImpl.class)
+                    .shared(F32_MAX, OpcodeImpl.class)
+                    .shared(F32_MIN, OpcodeImpl.class)
+                    .intrinsic(F32_MUL, AotEmitters::F32_MUL)
+                    .shared(F32_NE, OpcodeImpl.class)
+                    .intrinsic(F32_NEG, AotEmitters::F32_NEG)
+                    .shared(F32_NEAREST, OpcodeImpl.class)
+                    .shared(F32_SQRT, OpcodeImpl.class)
+                    .intrinsic(F32_SUB, AotEmitters::F32_SUB)
+                    .shared(F32_TRUNC, OpcodeImpl.class)
+
                     // ====== F64 ======
                     .shared(F64_CONVERT_I64_U, OpcodeImpl.class)
                     .build();
