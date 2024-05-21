@@ -178,15 +178,11 @@ public class TypeValidator {
                             ValueType[] rets = new ValueType[expected.size()];
                             for (int j = 0; j < rets.length; j++) {
                                 rets[j] = valueTypeStack.poll();
-                                verifyType(expected.get(j), rets[j]);
+                                verifyType(expected.get(rets.length - j - 1), rets[j]);
                             }
 
                             // drop everything till the previous label
-                            if (!stackLimit.isEmpty()) {
-                                while (valueTypeStack.size() > limit) {
-                                    valueTypeStack.pop();
-                                }
-                            } else {
+                            if (stackLimit.isEmpty() || op.scope().opcode() == OpCode.BLOCK) {
                                 // The stack should be empty here
                                 if (!valueTypeStack.isEmpty()) {
                                     throw new InvalidException(
@@ -195,6 +191,10 @@ public class TypeValidator {
                                                             .map(v -> v.toString())
                                                             .collect(Collectors.joining(", "))
                                                     + " ]");
+                                }
+                            } else {
+                                while (valueTypeStack.size() > limit) {
+                                    valueTypeStack.pop();
                                 }
                             }
 
