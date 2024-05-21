@@ -123,16 +123,10 @@ public class TypeValidator {
                         break;
                     }
                 case IF:
-                {
-                    popAndVerifyType(ValueType.I32);
-                    stackLimit.push(valueTypeStack.size());
-                    returns.push(List.of());
-                    break;
-                }
-                case BR_IF:
-                case BR_TABLE:
                     {
                         popAndVerifyType(ValueType.I32);
+                        stackLimit.push(valueTypeStack.size());
+                        returns.push(List.of());
                         break;
                     }
                 case ELSE:
@@ -162,40 +156,44 @@ public class TypeValidator {
                         }
                         break;
                     }
-                case BR:
+                case BR_IF:
+                case BR_TABLE:
                 {
-                    // Verify that the jump will end up with the correct results
-                    var expected = returns.pop();
-                    var limit = stackLimit.pop();
-
-                    ValueType[] rets = new ValueType[expected.size()];
-                    for (int j = 0; j < rets.length; j++) {
-                        if (valueTypeStack.size() <= limit) {
-                            throw new InvalidException(
-                                    "type mismatch: expected [" + expected.get(rets.length - j - 1) + "], but was []");
-                        }
-                        rets[j] = valueTypeStack.poll();
-                        verifyType(expected.get(rets.length - j - 1), rets[j]);
-                    }
-
-                    for (int j = 0; j < rets.length; j++) {
-                        ValueType valueType = rets[rets.length - 1 - j];
-                        if (valueType != null) {
-                            valueTypeStack.push(valueType);
-                        }
-                    }
-
-                    returns.push(expected);
-                    // TODO: verify if this is "limit"
-                    stackLimit.push(valueTypeStack.size());
-                    break;
+                    popAndVerifyType(ValueType.I32);
+                    // fallthrough
                 }
+                case BR:
+                    {
+                        // Verify that the jump will end up with the correct results
+                        var expected = returns.pop();
+                        var limit = stackLimit.pop();
+
+                        ValueType[] rets = new ValueType[expected.size()];
+                        for (int j = 0; j < rets.length; j++) {
+                            if (valueTypeStack.size() <= limit) {
+                                throw new InvalidException(
+                                        "type mismatch: expected ["
+                                                + expected.get(rets.length - j - 1)
+                                                + "], but was []");
+                            }
+                            rets[j] = valueTypeStack.poll();
+                            verifyType(expected.get(rets.length - j - 1), rets[j]);
+                        }
+
+                        for (int j = 0; j < rets.length; j++) {
+                            ValueType valueType = rets[rets.length - 1 - j];
+                            if (valueType != null) {
+                                valueTypeStack.push(valueType);
+                            }
+                        }
+
+                        returns.push(expected);
+                        // TODO: verify if this is "limit"
+                        stackLimit.push(valueTypeStack.size());
+                        break;
+                    }
                 case END:
                     {
-                        // TODO: is IF the only non control frame instruction?
-                        // TODO: the final END gets the scope of the last block?
-                        if (op.scope().opcode() != OpCode.IF ||
-                                (i == body.instructions().size() - 1)) {
                             var expected = returns.pop();
                             var limit = stackLimit.pop();
 
@@ -203,7 +201,9 @@ public class TypeValidator {
                             for (int j = 0; j < rets.length; j++) {
                                 if (valueTypeStack.size() <= limit) {
                                     throw new InvalidException(
-                                            "type mismatch: expected [" + expected.get(rets.length - j - 1) + "], but was []");
+                                            "type mismatch: expected ["
+                                                    + expected.get(rets.length - j - 1)
+                                                    + "], but was []");
                                 }
                                 rets[j] = valueTypeStack.poll();
                                 verifyType(expected.get(rets.length - j - 1), rets[j]);
@@ -232,7 +232,6 @@ public class TypeValidator {
                                     valueTypeStack.push(valueType);
                                 }
                             }
-                        }
                         break;
                     }
                 case DATA_DROP:
