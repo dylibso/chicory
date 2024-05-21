@@ -3,6 +3,7 @@ package com.dylibso.chicory.runtime;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
@@ -58,10 +59,11 @@ public class TypeValidator {
         stackLimit.push(0);
         returns.push(functionType.returns());
 
+        boolean skipTillEnd = false;
+
         for (var i = 0; i < body.instructions().size(); i++) {
             var op = body.instructions().get(i);
 
-            // memory validation
             switch (op.opcode()) {
                 case MEMORY_COPY:
                     validateMemory(instance, (int) op.operands()[0]);
@@ -152,13 +154,23 @@ public class TypeValidator {
                             popAndVerifyType(ret);
                         }
 
-                        while (valueTypeStack.size() > limit) {
-                            valueTypeStack.pop();
-                        }
+                        Instruction tmpInstruction;
+                        var offset = 0;
+                        do {
+                            offset++;
+                            if (body.instructions().size() > (i + offset)) {
+                                tmpInstruction = body.instructions().get(i + offset);
+                            } else {
+                                break;
+                            }
+                        } while (tmpInstruction.depth() == 0 && tmpInstruction.opcode() == OpCode.END);
 
                         for (var ret : functionType.returns()) {
                             valueTypeStack.push(ret);
                         }
+
+                        // jump!
+                        i = i + offset;
                         break;
                     }
                 case BR_IF:
@@ -184,6 +196,12 @@ public class TypeValidator {
                             rets[j] = valueTypeStack.poll();
                             verifyType(expected.get(rets.length - j - 1), rets[j]);
                         }
+
+                        // TODO: verify!
+                        //  drop everything in the middle???
+//                        while (valueTypeStack.size() > limit) {
+//                            valueTypeStack.pop();
+//                        }
 
                         for (int j = 0; j < rets.length; j++) {
                             ValueType valueType = rets[rets.length - 1 - j];
@@ -218,18 +236,15 @@ public class TypeValidator {
 //                            if (stackLimit.isEmpty() || // last END anything left on the stack is spurious?
 //                                    (op.scope().opcode() == OpCode.BLOCK ||
 //                                            op.scope().opcode() == OpCode.IF)) {
-//                                if (stackLimit.isEmpty() || // last END anything left on the stack is spurious?
-//                                        (op.scope().opcode() == OpCode.BLOCK ||
-//                                                op.scope().opcode() == OpCode.IF)) {
-                                // The stack should be empty here
-                                if (!valueTypeStack.isEmpty()) {
-                                    throw new InvalidException(
-                                            "type mismatch: expected [], but was [ "
-                                                    + valueTypeStack.stream()
-                                                            .map(v -> v.toString())
-                                                            .collect(Collectors.joining(", "))
-                                                    + " ]");
-                                }
+                            // The stack should be empty here
+                            if (!valueTypeStack.isEmpty()) {
+                                throw new InvalidException(
+                                        "type mismatch: expected [], but was [ "
+                                                + valueTypeStack.stream()
+                                                        .map(v -> v.toString())
+                                                        .collect(Collectors.joining(", "))
+                                                + " ]");
+                            }
 //                            } else {
 //                                while (valueTypeStack.size() > limit) {
 //                                    valueTypeStack.pop();
@@ -256,7 +271,8 @@ public class TypeValidator {
                     }
                 case DROP:
                     {
-                        popAndVerifyType(null);
+                        valueTypeStack.poll();
+//                        popAndVerifyType(null);
                         break;
                     }
                 case I32_STORE:
