@@ -123,6 +123,12 @@ public class TypeValidator {
                         break;
                     }
                 case IF:
+                {
+                    popAndVerifyType(ValueType.I32);
+                    stackLimit.push(valueTypeStack.size());
+                    returns.push(List.of());
+                    break;
+                }
                 case BR_IF:
                 case BR_TABLE:
                     {
@@ -130,22 +136,42 @@ public class TypeValidator {
                         break;
                     }
                 case BR:
+                {
+                    break;
+                }
                 case ELSE:
                     {
+                        // remove everything accumulated in the if branch
+                        var limit = stackLimit.pop();
+                        while (valueTypeStack.size() > limit) {
+                            valueTypeStack.pop();
+                        }
+                        stackLimit.push(limit);
                         // i = op.labelTrue();
                         break;
                     }
                 case RETURN:
                     {
+                        var limit = stackLimit.peek();
+
+                        if (functionType.returns().size() < (valueTypeStack.size() - limit)) {
+                            throw new InvalidException("type mismatch, not enough return values");
+                        }
+
                         for (var ret : functionType.returns()) {
                             popAndVerifyType(ret);
+                        }
+                        for (var ret : functionType.returns()) {
+                            valueTypeStack.push(ret);
                         }
                         break;
                     }
                 case END:
                     {
                         // TODO: is IF the only non control frame instruction?
-                        if (op.scope().opcode() != OpCode.IF) {
+                        // TODO: the final END gets the scope of the last block?
+                        if (op.scope().opcode() != OpCode.IF ||
+                                (i == body.instructions().size() - 1)) {
                             var expected = returns.pop();
                             var limit = stackLimit.pop();
 
