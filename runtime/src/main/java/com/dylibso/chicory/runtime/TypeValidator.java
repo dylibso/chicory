@@ -151,6 +151,11 @@ public class TypeValidator {
                         for (var ret : functionType.returns()) {
                             popAndVerifyType(ret);
                         }
+
+                        while (valueTypeStack.size() > limit) {
+                            valueTypeStack.pop();
+                        }
+
                         for (var ret : functionType.returns()) {
                             valueTypeStack.push(ret);
                         }
@@ -210,7 +215,12 @@ public class TypeValidator {
                             }
 
                             // drop everything till the previous label
-                            if (stackLimit.isEmpty() || op.scope().opcode() == OpCode.BLOCK) {
+//                            if (stackLimit.isEmpty() || // last END anything left on the stack is spurious?
+//                                    (op.scope().opcode() == OpCode.BLOCK ||
+//                                            op.scope().opcode() == OpCode.IF)) {
+//                                if (stackLimit.isEmpty() || // last END anything left on the stack is spurious?
+//                                        (op.scope().opcode() == OpCode.BLOCK ||
+//                                                op.scope().opcode() == OpCode.IF)) {
                                 // The stack should be empty here
                                 if (!valueTypeStack.isEmpty()) {
                                     throw new InvalidException(
@@ -220,11 +230,11 @@ public class TypeValidator {
                                                             .collect(Collectors.joining(", "))
                                                     + " ]");
                                 }
-                            } else {
-                                while (valueTypeStack.size() > limit) {
-                                    valueTypeStack.pop();
-                                }
-                            }
+//                            } else {
+//                                while (valueTypeStack.size() > limit) {
+//                                    valueTypeStack.pop();
+//                                }
+//                            }
 
                             for (int j = 0; j < rets.length; j++) {
                                 ValueType valueType = rets[rets.length - 1 - j];
