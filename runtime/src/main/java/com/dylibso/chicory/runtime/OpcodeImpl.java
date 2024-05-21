@@ -15,7 +15,7 @@ import com.dylibso.chicory.wasm.types.OpCode;
  * single place that is statically accessible. If the AOT does not have an intrinsic for an opcode (and
  * the opcode is not a flow control opcode), then a static call will be generated to the method in this
  * class that implements the opcode.
- *
+ * <p>
  * Note about parameter ordering: because of the JVM's calling convention, the parameters to a method
  * are ordered such that the last value pushed is the last argument to the method, i.e.,
  * method(tos - 2, tos - 1, tos).
@@ -117,6 +117,11 @@ public class OpcodeImpl {
         return Integer.bitCount(tos);
     }
 
+    @OpCodeIdentifier(OpCode.I32_REINTERPRET_F32)
+    public static int I32_REINTERPRET_F32(float x) {
+        return Float.floatToRawIntBits(x);
+    }
+
     @OpCodeIdentifier(OpCode.I32_REM_U)
     public static int I32_REM_U(int a, int b) {
         return Integer.remainderUnsigned(a, b);
@@ -130,6 +135,103 @@ public class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I32_ROTL)
     public static int I32_ROTL(int v, int c) {
         return (v << c) | (v >>> (32 - c));
+    }
+
+    @OpCodeIdentifier(OpCode.I32_TRUNC_F32_S)
+    public static int I32_TRUNC_F32_S(float x) {
+        if (Float.isNaN(x)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+        if (x < Integer.MIN_VALUE || x >= Integer.MAX_VALUE) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        return (int) x;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_TRUNC_F32_U)
+    public static int I32_TRUNC_F32_U(float x) {
+        if (Float.isNaN(x)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+        long v = (long) x;
+        if (v < 0 || v >= 0xFFFFFFFFL) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        return (int) v;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_TRUNC_F64_S)
+    public static int I32_TRUNC_F64_S(double tos) {
+        if (Double.isNaN(tos)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+        var v = (long) tos;
+        if (v < Integer.MIN_VALUE || v > Integer.MAX_VALUE) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        return (int) v;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_TRUNC_F64_U)
+    public static int I32_TRUNC_F64_U(double tos) {
+        if (Double.isNaN(tos)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+        var v = (long) tos;
+        if (v < 0 || v > 0xFFFFFFFFL) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        return (int) v;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_TRUNC_SAT_F32_S)
+    public static int I32_TRUNC_SAT_F32_S(float x) {
+        if (Float.isNaN(x)) {
+            return 0;
+        }
+        if (x < Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
+        }
+        if (x > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) x;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_TRUNC_SAT_F32_U)
+    public static int I32_TRUNC_SAT_F32_U(float x) {
+        if (Float.isNaN(x) || x < 0) {
+            return 0;
+        }
+        if (x >= 0xFFFFFFFFL) {
+            return 0xFFFFFFFF;
+        }
+        return (int) (long) x;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_TRUNC_SAT_F64_S)
+    public static int I32_TRUNC_SAT_F64_S(double x) {
+        if (Double.isNaN(x)) {
+            return 0;
+        }
+        if (x < Integer.MIN_VALUE) {
+            return Integer.MIN_VALUE;
+        }
+        if (x > Integer.MAX_VALUE) {
+            return Integer.MAX_VALUE;
+        }
+        return (int) x;
+    }
+
+    @OpCodeIdentifier(OpCode.I32_TRUNC_SAT_F64_U)
+    public static int I32_TRUNC_SAT_F64_U(double x) {
+        if (Double.isNaN(x) || x < 0) {
+            return 0;
+        }
+        if (x > 0xFFFFFFFFL) {
+            return 0xFFFFFFFF;
+        }
+        return (int) (long) x;
     }
 
     // ========= I64 =========
@@ -179,6 +281,11 @@ public class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I64_EXTEND_32_S)
     public static long I64_EXTEND_32_S(long tos) {
         return (int) tos;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_EXTEND_I32_U)
+    public static long I64_EXTEND_I32_U(int x) {
+        return Integer.toUnsignedLong(x);
     }
 
     @OpCodeIdentifier(OpCode.I64_GE_S)
@@ -231,6 +338,11 @@ public class OpcodeImpl {
         return Long.bitCount(tos);
     }
 
+    @OpCodeIdentifier(OpCode.I64_REINTERPRET_F64)
+    public static long I64_REINTERPRET_F64(double x) {
+        return Double.doubleToRawLongBits(x);
+    }
+
     @OpCodeIdentifier(OpCode.I64_REM_U)
     public static long I64_REM_U(long a, long b) {
         return Long.remainderUnsigned(a, b);
@@ -244,6 +356,161 @@ public class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I64_ROTL)
     public static long I64_ROTL(long v, long c) {
         return (v << c) | (v >>> (64 - c));
+    }
+
+    @OpCodeIdentifier(OpCode.I64_TRUNC_F32_S)
+    public static long I64_TRUNC_F32_S(float x) {
+        if (Float.isNaN(x)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+        if (x < Long.MIN_VALUE || x >= Long.MAX_VALUE) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        return (long) x;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_TRUNC_F32_U)
+    public static long I64_TRUNC_F32_U(float x) {
+        if (Float.isNaN(x)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+        if (x >= 2 * (float) Long.MAX_VALUE) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+
+        if (x < Long.MAX_VALUE) {
+            long v = (long) x;
+            if (v < 0) {
+                throw new WASMRuntimeException("integer overflow");
+            }
+            return v;
+        }
+
+        // This works for getting the unsigned value because binary addition
+        // yields the correct interpretation in both unsigned and 2's-complement,
+        // no matter which the operands are considered to be.
+        long v = Long.MAX_VALUE + (long) (x - (float) Long.MAX_VALUE) + 1;
+
+        // Java's comparison operators assume signed integers. In the case
+        // that we're in the range of unsigned values where the sign bit
+        // is set, Java considers these values to be negative, so we have
+        // to check for >= 0 to detect overflow.
+        if (v >= 0) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        return v;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_TRUNC_F64_S)
+    public static long I64_TRUNC_F64_S(double x) {
+        if (Double.isNaN(x)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+        if (x == (double) Long.MIN_VALUE) {
+            return Long.MIN_VALUE;
+        }
+        long v = (long) x;
+        if (v == Long.MIN_VALUE || v == Long.MAX_VALUE) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        return v;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_TRUNC_F64_U)
+    public static long I64_TRUNC_F64_U(double x) {
+        if (Double.isNaN(x)) {
+            throw new WASMRuntimeException("invalid conversion to integer");
+        }
+        if (x >= 2 * (double) Long.MAX_VALUE) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+
+        if (x < Long.MAX_VALUE) {
+            long v = (long) x;
+            if (v < 0) {
+                throw new WASMRuntimeException("integer overflow");
+            }
+            return v;
+        }
+
+        // See I64_TRUNC_F32_U for notes on implementation.
+        // This is the double-based equivalent of that.
+        long v = Long.MAX_VALUE + (long) (x - (double) Long.MAX_VALUE) + 1;
+        if (v >= 0) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        return v;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_TRUNC_SAT_F32_S)
+    public static long I64_TRUNC_SAT_F32_S(float x) {
+        if (Float.isNaN(x)) {
+            return 0;
+        }
+        if (x <= Long.MIN_VALUE) {
+            return Long.MIN_VALUE;
+        }
+        if (x >= Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+        return (long) x;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_TRUNC_SAT_F32_U)
+    public static long I64_TRUNC_SAT_F32_U(float x) {
+        if (Float.isNaN(x) || x < 0) {
+            return 0;
+        }
+        if (x > Math.pow(2, 64) - 1) {
+            return 0xFFFFFFFFFFFFFFFFL;
+        }
+        if (x < Long.MAX_VALUE) {
+            return (long) x;
+        }
+
+        // See I64_TRUNC_F32_U for notes on implementation.
+        // This is the double-based equivalent of that.
+        long v = Long.MAX_VALUE + (long) (x - (double) Long.MAX_VALUE) + 1;
+        if (v >= 0) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        return v;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_TRUNC_SAT_F64_S)
+    public static long I64_TRUNC_SAT_F64_S(double x) {
+        if (Double.isNaN(x)) {
+            return 0;
+        }
+        if (x <= Long.MIN_VALUE) {
+            return Long.MIN_VALUE;
+        }
+        if (x >= Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+        return (long) x;
+    }
+
+    @OpCodeIdentifier(OpCode.I64_TRUNC_SAT_F64_U)
+    public static long I64_TRUNC_SAT_F64_U(double x) {
+        long v;
+        if (Double.isNaN(x) || x < 0) {
+            return 0L;
+        }
+        if (x > Math.pow(2, 64) - 1) {
+            return 0xFFFFFFFFFFFFFFFFL;
+        }
+        if (x < Long.MAX_VALUE) {
+            return (long) x;
+        }
+
+        // See I64_TRUNC_F32_U for notes on implementation.
+        // This is the double-based equivalent of that.
+        v = Long.MAX_VALUE + (long) (x - (double) Long.MAX_VALUE) + 1;
+        if (v >= 0) {
+            throw new WASMRuntimeException("integer overflow");
+        }
+        return v;
     }
 
     // ========= F32 =========
@@ -344,6 +611,11 @@ public class OpcodeImpl {
     @OpCodeIdentifier(OpCode.F32_NEAREST)
     public static float F32_NEAREST(float x) {
         return (float) Math.rint(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F32_REINTERPRET_I32)
+    public static float F32_REINTERPRET_I32(int x) {
+        return Float.intBitsToFloat(x);
     }
 
     @OpCodeIdentifier(OpCode.F32_SQRT)
@@ -454,6 +726,11 @@ public class OpcodeImpl {
     @OpCodeIdentifier(OpCode.F64_NEAREST)
     public static double F64_NEAREST(double x) {
         return Math.rint(x);
+    }
+
+    @OpCodeIdentifier(OpCode.F64_REINTERPRET_I64)
+    public static double F64_REINTERPRET_I64(long x) {
+        return Double.longBitsToDouble(x);
     }
 
     @OpCodeIdentifier(OpCode.F64_SQRT)

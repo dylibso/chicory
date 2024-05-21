@@ -651,7 +651,7 @@ class InterpreterMachine implements Machine {
                         I32_TRUNC_SAT_F32_U(stack);
                         break;
                     case I32_TRUNC_SAT_F64_S:
-                        I32_TRUNC_SAY_F64_S(stack);
+                        I32_TRUNC_SAT_F64_S(stack);
                         break;
                     case I32_TRUNC_SAT_F64_U:
                         I32_TRUNC_SAT_F64_U(stack);
@@ -744,9 +744,8 @@ class InterpreterMachine implements Machine {
             throw e;
         } catch (ArithmeticException e) {
             if (e.getMessage().equalsIgnoreCase("/ by zero")
-                    || e.getMessage()
-                            .contains("divide by zero")) { // On Linux i64 throws "BigInteger divide
-                // by zero"
+                    // On Linux i64 throws "BigInteger divide by zero"
+                    || e.getMessage().contains("divide by zero")) {
                 throw new WASMRuntimeException("integer divide by zero: " + e.getMessage(), e);
             }
             throw new WASMRuntimeException(e.getMessage(), e);
@@ -1284,8 +1283,8 @@ class InterpreterMachine implements Machine {
     }
 
     private static void F64_REINTERPRET_I64(MStack stack) {
-        var tos = stack.pop();
-        stack.push(Value.f64(tos.asLong()));
+        long tos = stack.pop().asLong();
+        stack.push(Value.fromDouble(OpcodeImpl.F64_REINTERPRET_I64(tos)));
     }
 
     private static void I32_WRAP_I64(MStack stack) {
@@ -1299,23 +1298,23 @@ class InterpreterMachine implements Machine {
     }
 
     private static void I64_EXTEND_I32_U(MStack stack) {
-        var tos = stack.pop();
-        stack.push(Value.i64(tos.asUInt()));
+        int tos = stack.pop().asInt();
+        stack.push(Value.i64(OpcodeImpl.I64_EXTEND_I32_U(tos)));
     }
 
     private static void I32_REINTERPRET_F32(MStack stack) {
-        var tos = stack.pop();
-        stack.push(Value.i32(tos.asInt()));
+        float tos = stack.pop().asFloat();
+        stack.push(Value.i32(OpcodeImpl.I32_REINTERPRET_F32(tos)));
     }
 
     private static void I64_REINTERPRET_F64(MStack stack) {
-        var tos = stack.pop();
-        stack.push(Value.i64(tos.asLong()));
+        double tos = stack.pop().asDouble();
+        stack.push(Value.i64(OpcodeImpl.I64_REINTERPRET_F64(tos)));
     }
 
     private static void F32_REINTERPRET_I32(MStack stack) {
-        var tos = stack.pop();
-        stack.push(Value.f32(tos.asInt()));
+        int tos = stack.pop().asInt();
+        stack.push(Value.fromFloat(OpcodeImpl.F32_REINTERPRET_I32(tos)));
     }
 
     private static void F32_DEMOTE_F64(MStack stack) {
@@ -1336,19 +1335,7 @@ class InterpreterMachine implements Machine {
 
     private static void I64_TRUNC_F64_S(MStack stack) {
         double tos = stack.pop().asDouble();
-
-        if (Double.isNaN(tos)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
-        }
-
-        long tosL = (long) tos;
-        if (tos == (double) Long.MIN_VALUE) {
-            tosL = Long.MIN_VALUE;
-        } else if (tosL == Long.MIN_VALUE || tosL == Long.MAX_VALUE) {
-            throw new WASMRuntimeException("integer overflow");
-        }
-
-        stack.push(Value.i64(tosL));
+        stack.push(Value.i64(OpcodeImpl.I64_TRUNC_F64_S(tos)));
     }
 
     private static void F32_COPYSIGN(MStack stack) {
@@ -1599,185 +1586,47 @@ class InterpreterMachine implements Machine {
 
     private static void I64_TRUNC_F32_S(MStack stack) {
         var tos = stack.pop().asFloat();
-
-        if (Float.isNaN(tos)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
-        }
-
-        if (tos < Long.MIN_VALUE || tos >= Long.MAX_VALUE) {
-            throw new WASMRuntimeException("integer overflow");
-        }
-
-        stack.push(Value.i64((long) tos));
+        stack.push(Value.i64(OpcodeImpl.I64_TRUNC_F32_S(tos)));
     }
 
     private static void I32_TRUNC_F64_U(MStack stack) {
         double tos = stack.pop().asDouble();
-        if (Double.isNaN(tos)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
-        }
-
-        var tosL = (long) tos;
-        if (tosL < 0 || tosL > 0xFFFFFFFFL) {
-            throw new WASMRuntimeException("integer overflow");
-        }
-        stack.push(Value.i32(tosL & 0xFFFFFFFFL));
+        stack.push(Value.i32(OpcodeImpl.I32_TRUNC_F64_U(tos)));
     }
 
     private static void I32_TRUNC_F64_S(MStack stack) {
         var tos = stack.pop().asDouble();
-
-        if (Double.isNaN(tos)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
-        }
-
-        var tosL = (long) tos;
-        if (tosL < Integer.MIN_VALUE || tosL > Integer.MAX_VALUE) {
-            throw new WASMRuntimeException("integer overflow");
-        }
-
-        stack.push(Value.i32(tosL));
+        stack.push(Value.i32(OpcodeImpl.I32_TRUNC_F64_S(tos)));
     }
 
     private static void I64_TRUNC_SAT_F64_U(MStack stack) {
         double tos = stack.pop().asDouble();
-
-        long tosL;
-        if (Double.isNaN(tos) || tos < 0) {
-            tosL = 0L;
-        } else if (tos > Math.pow(2, 64) - 1) {
-            tosL = 0xFFFFFFFFFFFFFFFFL;
-        } else {
-            if (tos < Long.MAX_VALUE) {
-                tosL = (long) tos;
-            } else {
-                // See I64_TRUNC_F32_U for notes on implementation. This is
-                // the double-based equivalent of that.
-                tosL = Long.MAX_VALUE + (long) (tos - (double) Long.MAX_VALUE) + 1;
-                if (tosL >= 0) {
-                    throw new WASMRuntimeException("integer overflow");
-                }
-            }
-        }
-
-        stack.push(Value.i64(tosL));
+        stack.push(Value.i64(OpcodeImpl.I64_TRUNC_SAT_F64_U(tos)));
     }
 
     private static void I64_TRUNC_SAT_F64_S(MStack stack) {
         var tos = stack.pop().asDouble();
-
-        if (Double.isNaN(tos)) {
-            tos = 0;
-        } else if (tos <= Long.MIN_VALUE) {
-            tos = Long.MIN_VALUE;
-        } else if (tos >= Long.MAX_VALUE) {
-            tos = Long.MAX_VALUE;
-        }
-
-        stack.push(Value.i64((long) tos));
+        stack.push(Value.i64(OpcodeImpl.I64_TRUNC_SAT_F64_S(tos)));
     }
 
     private static void I64_TRUNC_SAT_F32_U(MStack stack) {
         var tos = stack.pop().asFloat();
-
-        long tosL;
-        if (Float.isNaN(tos) || tos < 0) {
-            tosL = 0L;
-        } else if (tos > Math.pow(2, 64) - 1) {
-            tosL = 0xFFFFFFFFFFFFFFFFL;
-        } else {
-            if (tos < Long.MAX_VALUE) {
-                tosL = (long) tos;
-            } else {
-                // See I64_TRUNC_F32_U for notes on implementation. This is
-                // the double-based equivalent of that.
-                tosL = Long.MAX_VALUE + (long) (tos - (double) Long.MAX_VALUE) + 1;
-                if (tosL >= 0) {
-                    throw new WASMRuntimeException("integer overflow");
-                }
-            }
-        }
-
-        stack.push(Value.i64(tosL));
+        stack.push(Value.i64(OpcodeImpl.I64_TRUNC_SAT_F32_U(tos)));
     }
 
     private static void I64_TRUNC_SAT_F32_S(MStack stack) {
         var tos = stack.pop().asFloat();
-
-        if (Float.isNaN(tos)) {
-            tos = 0;
-        } else if (tos <= Long.MIN_VALUE) {
-            tos = Long.MIN_VALUE;
-        } else if (tos >= Long.MAX_VALUE) {
-            tos = Long.MAX_VALUE;
-        }
-
-        stack.push(Value.i64((long) tos));
+        stack.push(Value.i64(OpcodeImpl.I64_TRUNC_SAT_F32_S(tos)));
     }
 
     private static void I64_TRUNC_F64_U(MStack stack) {
         var tos = stack.pop().asDouble();
-
-        if (Double.isNaN(tos)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
-        }
-
-        if (tos >= 2 * (double) Long.MAX_VALUE) {
-            throw new WASMRuntimeException("integer overflow");
-        }
-
-        long tosL;
-        if (tos < Long.MAX_VALUE) {
-            tosL = (long) tos;
-            if (tosL < 0) {
-                throw new WASMRuntimeException("integer overflow");
-            }
-        } else {
-            // See I64_TRUNC_F32_U for notes on implementation. This is
-            // the double-based equivalent of that.
-            tosL = Long.MAX_VALUE + (long) (tos - (double) Long.MAX_VALUE) + 1;
-            if (tosL >= 0) {
-                throw new WASMRuntimeException("integer overflow");
-            }
-        }
-
-        stack.push(Value.i64(tosL));
+        stack.push(Value.i64(OpcodeImpl.I64_TRUNC_F64_U(tos)));
     }
 
     private static void I64_TRUNC_F32_U(MStack stack) {
         var tos = stack.pop().asFloat();
-
-        if (Float.isNaN(tos)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
-        }
-
-        if (tos >= 2 * (float) Long.MAX_VALUE) {
-            throw new WASMRuntimeException("integer overflow");
-        }
-
-        long tosL;
-        if (tos < Long.MAX_VALUE) {
-            tosL = (long) tos;
-            if (tosL < 0) {
-                throw new WASMRuntimeException("integer overflow");
-            }
-        } else {
-            // This works for getting the unsigned value because binary addition
-            // yields the correct interpretation in both unsigned &
-            // 2's-complement
-            // no matter which the operands are considered to be.
-            tosL = Long.MAX_VALUE + (long) (tos - (float) Long.MAX_VALUE) + 1;
-            if (tosL >= 0) {
-                // Java's comparison operators assume signed integers. In the
-                // case
-                // that we're in the range of unsigned values where the sign bit
-                // is set, Java considers these values to be negative so we have
-                // to check for >= 0 to detect overflow.
-                throw new WASMRuntimeException("integer overflow");
-            }
-        }
-
-        stack.push(Value.i64(tosL));
+        stack.push(Value.i64(OpcodeImpl.I64_TRUNC_F32_U(tos)));
     }
 
     private static void F32_CONVERT_I64_U(MStack stack) {
@@ -1787,88 +1636,32 @@ class InterpreterMachine implements Machine {
 
     private static void I32_TRUNC_F32_U(MStack stack) {
         var tos = stack.pop().asFloat();
-
-        if (Float.isNaN(tos)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
-        }
-
-        long tosL = (long) tos;
-        if (tosL < 0 || tosL >= 0xFFFFFFFFL) {
-            throw new WASMRuntimeException("integer overflow");
-        }
-
-        stack.push(Value.i32(tosL));
+        stack.push(Value.i32(OpcodeImpl.I32_TRUNC_F32_U(tos)));
     }
 
     private static void I32_TRUNC_SAT_F64_U(MStack stack) {
         double tos = Double.longBitsToDouble(stack.pop().asLong());
-
-        long tosL;
-        if (Double.isNaN(tos) || tos < 0) {
-            tosL = 0;
-        } else if (tos > 0xFFFFFFFFL) {
-            tosL = 0xFFFFFFFFL;
-        } else {
-            tosL = (long) tos;
-        }
-        stack.push(Value.i32(tosL));
+        stack.push(Value.i32(OpcodeImpl.I32_TRUNC_SAT_F64_U(tos)));
     }
 
-    private static void I32_TRUNC_SAY_F64_S(MStack stack) {
+    private static void I32_TRUNC_SAT_F64_S(MStack stack) {
         var tos = stack.pop().asDouble();
-
-        if (Double.isNaN(tos)) {
-            tos = 0;
-        } else if (tos <= Integer.MIN_VALUE) {
-            tos = Integer.MIN_VALUE;
-        } else if (tos >= Integer.MAX_VALUE) {
-            tos = Integer.MAX_VALUE;
-        }
-
-        stack.push(Value.i32((int) tos));
+        stack.push(Value.i32(OpcodeImpl.I32_TRUNC_SAT_F64_S(tos)));
     }
 
     private static void I32_TRUNC_SAT_F32_U(MStack stack) {
         var tos = stack.pop().asFloat();
-
-        long tosL;
-        if (Float.isNaN(tos) || tos < 0) {
-            tosL = 0L;
-        } else if (tos >= 0xFFFFFFFFL) {
-            tosL = 0xFFFFFFFFL;
-        } else {
-            tosL = (long) tos;
-        }
-
-        stack.push(Value.i32(tosL));
+        stack.push(Value.i32(OpcodeImpl.I32_TRUNC_SAT_F32_U(tos)));
     }
 
     private static void I32_TRUNC_SAT_F32_S(MStack stack) {
         var tos = stack.pop().asFloat();
-
-        if (Float.isNaN(tos)) {
-            tos = 0;
-        } else if (tos < Integer.MIN_VALUE) {
-            tos = Integer.MIN_VALUE;
-        } else if (tos > Integer.MAX_VALUE) {
-            tos = Integer.MAX_VALUE;
-        }
-
-        stack.push(Value.i32((int) tos));
+        stack.push(Value.i32(OpcodeImpl.I32_TRUNC_SAT_F32_S(tos)));
     }
 
     private static void I32_TRUNC_F32_S(MStack stack) {
         float tos = stack.pop().asFloat();
-
-        if (Float.isNaN(tos)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
-        }
-
-        if (tos < Integer.MIN_VALUE || tos >= Integer.MAX_VALUE) {
-            throw new WASMRuntimeException("integer overflow");
-        }
-
-        stack.push(Value.i32((long) tos));
+        stack.push(Value.i32(OpcodeImpl.I32_TRUNC_F32_S(tos)));
     }
 
     private static void F64_COPYSIGN(MStack stack) {

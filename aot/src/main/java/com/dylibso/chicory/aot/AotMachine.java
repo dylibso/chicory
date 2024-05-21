@@ -67,6 +67,7 @@ public class AotMachine implements Machine {
                     .shared(I32_NE, OpcodeImpl.class)
                     .intrinsic(I32_OR, AotEmitters::I32_OR)
                     .shared(I32_POPCNT, OpcodeImpl.class)
+                    .shared(I32_REINTERPRET_F32, OpcodeImpl.class)
                     .intrinsic(I32_REM_S, AotEmitters::I32_REM_S)
                     .shared(I32_REM_U, OpcodeImpl.class)
                     .shared(I32_ROTL, OpcodeImpl.class)
@@ -75,6 +76,15 @@ public class AotMachine implements Machine {
                     .intrinsic(I32_SHR_S, AotEmitters::I32_SHR_S)
                     .intrinsic(I32_SHR_U, AotEmitters::I32_SHR_U)
                     .intrinsic(I32_SUB, AotEmitters::I32_SUB)
+                    .shared(I32_TRUNC_F32_S, OpcodeImpl.class)
+                    .shared(I32_TRUNC_F32_U, OpcodeImpl.class)
+                    .shared(I32_TRUNC_F64_S, OpcodeImpl.class)
+                    .shared(I32_TRUNC_F64_U, OpcodeImpl.class)
+                    .shared(I32_TRUNC_SAT_F32_S, OpcodeImpl.class)
+                    .shared(I32_TRUNC_SAT_F32_U, OpcodeImpl.class)
+                    .shared(I32_TRUNC_SAT_F64_S, OpcodeImpl.class)
+                    .shared(I32_TRUNC_SAT_F64_U, OpcodeImpl.class)
+                    .intrinsic(I32_WRAP_I64, AotEmitters::I32_WRAP_I64)
                     .intrinsic(I32_XOR, AotEmitters::I32_XOR)
 
                     // ====== I64 ======
@@ -90,6 +100,8 @@ public class AotMachine implements Machine {
                     .shared(I64_EXTEND_8_S, OpcodeImpl.class)
                     .shared(I64_EXTEND_16_S, OpcodeImpl.class)
                     .shared(I64_EXTEND_32_S, OpcodeImpl.class)
+                    .intrinsic(I64_EXTEND_I32_S, AotEmitters::I64_EXTEND_I32_S)
+                    .shared(I64_EXTEND_I32_U, OpcodeImpl.class)
                     .shared(I64_GE_S, OpcodeImpl.class)
                     .shared(I64_GE_U, OpcodeImpl.class)
                     .shared(I64_GT_S, OpcodeImpl.class)
@@ -110,6 +122,15 @@ public class AotMachine implements Machine {
                     .intrinsic(I64_SHR_S, AotEmitters::I64_SHR_S)
                     .intrinsic(I64_SHR_U, AotEmitters::I64_SHR_U)
                     .intrinsic(I64_SUB, AotEmitters::I64_SUB)
+                    .shared(I64_REINTERPRET_F64, OpcodeImpl.class)
+                    .shared(I64_TRUNC_F32_S, OpcodeImpl.class)
+                    .shared(I64_TRUNC_F32_U, OpcodeImpl.class)
+                    .shared(I64_TRUNC_F64_S, OpcodeImpl.class)
+                    .shared(I64_TRUNC_F64_U, OpcodeImpl.class)
+                    .shared(I64_TRUNC_SAT_F32_S, OpcodeImpl.class)
+                    .shared(I64_TRUNC_SAT_F32_U, OpcodeImpl.class)
+                    .shared(I64_TRUNC_SAT_F64_S, OpcodeImpl.class)
+                    .shared(I64_TRUNC_SAT_F64_U, OpcodeImpl.class)
                     .intrinsic(I64_XOR, AotEmitters::I64_XOR)
 
                     // ====== F32 ======
@@ -136,6 +157,7 @@ public class AotMachine implements Machine {
                     .shared(F32_NE, OpcodeImpl.class)
                     .intrinsic(F32_NEG, AotEmitters::F32_NEG)
                     .shared(F32_NEAREST, OpcodeImpl.class)
+                    .shared(F32_REINTERPRET_I32, OpcodeImpl.class)
                     .shared(F32_SQRT, OpcodeImpl.class)
                     .intrinsic(F32_SUB, AotEmitters::F32_SUB)
                     .shared(F32_TRUNC, OpcodeImpl.class)
@@ -163,6 +185,8 @@ public class AotMachine implements Machine {
                     .shared(F64_NE, OpcodeImpl.class)
                     .intrinsic(F64_NEG, AotEmitters::F64_NEG)
                     .shared(F64_NEAREST, OpcodeImpl.class)
+                    .intrinsic(F64_PROMOTE_F32, AotEmitters::F64_PROMOTE_F32)
+                    .shared(F64_REINTERPRET_I64, OpcodeImpl.class)
                     .shared(F64_SQRT, OpcodeImpl.class)
                     .intrinsic(F64_SUB, AotEmitters::F64_SUB)
                     .shared(F64_TRUNC, OpcodeImpl.class)
@@ -184,9 +208,8 @@ public class AotMachine implements Machine {
             throw e;
         } catch (ArithmeticException e) {
             if (e.getMessage().equalsIgnoreCase("/ by zero")
-                    || e.getMessage()
-                            .contains("divide by zero")) { // On Linux i64 throws "BigInteger divide
-                // by zero"
+                    // On Linux i64 throws "BigInteger divide by zero"
+                    || e.getMessage().contains("divide by zero")) {
                 throw new WASMRuntimeException("integer divide by zero: " + e.getMessage(), e);
             }
             throw new WASMRuntimeException(e.getMessage(), e);

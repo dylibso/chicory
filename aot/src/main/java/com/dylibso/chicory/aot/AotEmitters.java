@@ -120,6 +120,10 @@ public class AotEmitters {
         asm.visitInsn(Opcodes.ISUB);
     }
 
+    public static void I32_WRAP_I64(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.L2I);
+    }
+
     public static void I32_XOR(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.IXOR);
     }
@@ -134,6 +138,10 @@ public class AotEmitters {
 
     public static void I64_CONST(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitLdcInsn(ins.operands()[0]);
+    }
+
+    public static void I64_EXTEND_I32_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.I2L);
     }
 
     public static void I64_MUL(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -219,6 +227,10 @@ public class AotEmitters {
         asm.visitInsn(Opcodes.DNEG);
     }
 
+    public static void F64_PROMOTE_F32(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitInsn(Opcodes.F2D);
+    }
+
     public static void F64_SUB(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.DSUB);
     }
@@ -229,7 +241,7 @@ public class AotEmitters {
      * the logic of the opcode. Shared implementations refer to static methods in a public class that do the same,
      * with the term "shared" referring to the fact that these implementations are intended to be used by both the AOT
      * and the interpreter.
-     *
+     * <p>
      * This method takes an opcode and a class (which must have a public static method annotated as an
      * implementation of the opcode) and creates a BytecodeEmitter that will implement the WASM opcode
      * as a static method call to the implementation provided by the class. That is, it "intrinsifies"
