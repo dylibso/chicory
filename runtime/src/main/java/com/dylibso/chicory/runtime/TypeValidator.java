@@ -8,6 +8,7 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.stream.Collectors;
 
 // Heavily inspired by wazero
 // https://github.com/tetratelabs/wazero/blob/5a8a053bff0ae795b264de9672016745cb842070/internal/wasm/func_validation.go
@@ -19,6 +20,10 @@ public class TypeValidator {
 
     private void popAndVerifyType(ValueType expected) {
         var have = (valueTypeStack.size() > stackLimit.peek()) ? valueTypeStack.poll() : null;
+        verifyType(expected, have);
+    }
+
+    private void verifyType(ValueType expected, ValueType have) {
         if (have == null) {
             var expectedType = (expected == null) ? "any" : expected.name();
             throw new InvalidException(
@@ -103,107 +108,76 @@ public class TypeValidator {
                 case NOP:
                 case UNREACHABLE:
                     break;
-                case RETURN:
+                case LOOP:
+                case BLOCK:
                     {
-                        // Straight to the last END
-                        i = body.instructions().size() - 2;
-
-                        var maxStack = stackLimit.peek();
-
-                        while (returns.size() > 1) {
-                            returns.pop();
-                        }
-                        while (stackLimit.size() > 1) {
-                            stackLimit.pop();
-                        }
-
-                        var finalResultsSize = returns.peek();
-                        var stackValues = valueTypeStack.size() - maxStack;
-                        var finalResult = new ValueType[finalResultsSize.size()];
-
-                        var finalSize = Math.min(finalResultsSize.size(), stackValues);
-
-                        for (int j = 0; j < finalSize; j++) {
-                            finalResult[j] = valueTypeStack.pop();
-                        }
-                        while (!valueTypeStack.isEmpty()) {
-                            valueTypeStack.pop();
-                        }
-                        for (int x = finalSize - 1; x >= 0; x--) {
-                            valueTypeStack.push(finalResult[x]);
-                        }
-                        break;
-                    }
-                case BR:
-                case BR_IF:
-                case BR_TABLE:
-                    {
-                        // TODO: verify is it's needed to implement a polymorphic stack?
-                        // TODO: verify this logic not completely convinced about it
-                        var nextEndOffset = 1;
-                        var tmpOp = body.instructions().get(i + nextEndOffset);
-                        while (tmpOp.opcode() != OpCode.END) {
-                            nextEndOffset++;
-                            tmpOp = body.instructions().get(i + nextEndOffset);
-                        }
-                        // go to the next END
-                        i = i + nextEndOffset;
-
-                        var rets =
-                                (op.opcode() == OpCode.RETURN)
-                                        ? functionType.returns()
-                                        : returns.peek();
-                        for (var expected : rets) {
-                            popAndVerifyType(expected);
-                        }
-                        for (var expected : rets) {
-                            valueTypeStack.push(expected);
+                        var typeId = (int) op.operands()[0];
+                        stackLimit.push(valueTypeStack.size());
+                        if (typeId == 0x40) { // epsilon
+                            returns.push(List.of());
+                        } else if (ValueType.isValid(typeId)) {
+                            returns.push(List.of(ValueType.forId(typeId)));
+                        } else {
+                            returns.push(instance.type(typeId).returns());
                         }
                         break;
                     }
                 case IF:
-                case ELSE:
-                case LOOP:
+                case BR_IF:
+                case BR_TABLE:
                     {
-                        returns.push(List.of());
-                        stackLimit.push(valueTypeStack.size());
+                        popAndVerifyType(ValueType.I32);
                         break;
                     }
-                case BLOCK:
+                case BR:
+                case ELSE:
                     {
-                        var blockType = (int) op.operands()[0];
-                        if (blockType == 0x40) {
-                            returns.push(List.of());
-                        } else {
-                            try {
-                                returns.push(List.of(ValueType.forId(blockType)));
-                            } catch (IllegalArgumentException e) {
-                                throw new InvalidException(
-                                        "type mismatch: expected a valid type, but was ["
-                                                + blockType
-                                                + "]");
-                            }
+                        // i = op.labelTrue();
+                        break;
+                    }
+                case RETURN:
+                    {
+                        for (var ret : functionType.returns()) {
+                            popAndVerifyType(ret);
                         }
-                        stackLimit.push(valueTypeStack.size());
                         break;
                     }
                 case END:
                     {
-                        var results = returns.pop();
-                        for (var expected : results) {
-                            popAndVerifyType(expected);
-                        }
-                        // returning values go back on the stack
-                        if (!returns.isEmpty()) {
-                            for (var expected : results) {
-                                valueTypeStack.push(expected);
+                        // TODO: is IF the only non control frame instruction?
+                        if (op.scope().opcode() != OpCode.IF) {
+                            var expected = returns.pop();
+                            var limit = stackLimit.pop();
+
+                            ValueType[] rets = new ValueType[expected.size()];
+                            for (int j = 0; j < rets.length; j++) {
+                                rets[j] = valueTypeStack.poll();
+                                verifyType(expected.get(j), rets[j]);
                             }
-                        }
 
-                        var maxStack = stackLimit.pop();
+                            // drop everything till the previous label
+                            if (!stackLimit.isEmpty()) {
+                                while (valueTypeStack.size() > limit) {
+                                    valueTypeStack.pop();
+                                }
+                            } else {
+                                // The stack should be empty here
+                                if (!valueTypeStack.isEmpty()) {
+                                    throw new InvalidException(
+                                            "type mismatch: expected [], but was [ "
+                                                    + valueTypeStack.stream()
+                                                            .map(v -> v.toString())
+                                                            .collect(Collectors.joining(", "))
+                                                    + " ]");
+                                }
+                            }
 
-                        if (returns.isEmpty() && valueTypeStack.size() > maxStack) {
-                            throw new InvalidException("type mismatch: expected [], but was [...]");
+                            for (int j = 0; j < rets.length; j++) {
+                                ValueType valueType = rets[rets.length - 1 - j];
+                                if (valueType != null) {
+                                    valueTypeStack.push(valueType);
+                                }
+                            }
                         }
                         break;
                     }

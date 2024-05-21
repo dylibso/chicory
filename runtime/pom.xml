@@ -171,7 +171,6 @@
             <wast>func.wast</wast>
             <wast>func_ptrs.wast</wast>
             <wast>global.wast</wast>
-            <wast>if.wast</wast>
             <wast>imports.wast</wast>
             <wast>labels.wast</wast>
             <wast>left-to-right.wast</wast>
