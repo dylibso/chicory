@@ -135,13 +135,9 @@ public class TypeValidator {
                         popAndVerifyType(ValueType.I32);
                         break;
                     }
-                case BR:
-                {
-                    break;
-                }
                 case ELSE:
                     {
-                        // remove everything accumulated in the if branch
+                        // remove everything accumulated in the "if" branch
                         var limit = stackLimit.pop();
                         while (valueTypeStack.size() > limit) {
                             valueTypeStack.pop();
@@ -166,6 +162,34 @@ public class TypeValidator {
                         }
                         break;
                     }
+                case BR:
+                {
+                    // Verify that the jump will end up with the correct results
+                    var expected = returns.pop();
+                    var limit = stackLimit.pop();
+
+                    ValueType[] rets = new ValueType[expected.size()];
+                    for (int j = 0; j < rets.length; j++) {
+                        if (valueTypeStack.size() <= limit) {
+                            throw new InvalidException(
+                                    "type mismatch: expected [" + expected.get(rets.length - j - 1) + "], but was []");
+                        }
+                        rets[j] = valueTypeStack.poll();
+                        verifyType(expected.get(rets.length - j - 1), rets[j]);
+                    }
+
+                    for (int j = 0; j < rets.length; j++) {
+                        ValueType valueType = rets[rets.length - 1 - j];
+                        if (valueType != null) {
+                            valueTypeStack.push(valueType);
+                        }
+                    }
+
+                    returns.push(expected);
+                    // TODO: verify if this is "limit"
+                    stackLimit.push(valueTypeStack.size());
+                    break;
+                }
                 case END:
                     {
                         // TODO: is IF the only non control frame instruction?
@@ -177,6 +201,10 @@ public class TypeValidator {
 
                             ValueType[] rets = new ValueType[expected.size()];
                             for (int j = 0; j < rets.length; j++) {
+                                if (valueTypeStack.size() <= limit) {
+                                    throw new InvalidException(
+                                            "type mismatch: expected [" + expected.get(rets.length - j - 1) + "], but was []");
+                                }
                                 rets[j] = valueTypeStack.poll();
                                 verifyType(expected.get(rets.length - j - 1), rets[j]);
                             }
