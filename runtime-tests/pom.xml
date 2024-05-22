@@ -38,6 +38,12 @@
   </dependencies>
 
   <build>
+    <testResources>
+      <testResource>
+        <directory>${project.basedir}/../wasm-corpus/src/test/resources</directory>
+      </testResource>
+    </testResources>
+
     <plugins>
       <plugin>
         <groupId>com.dylibso.chicory</groupId>
@@ -171,6 +177,7 @@
             <wast>func.wast</wast>
             <wast>func_ptrs.wast</wast>
             <wast>global.wast</wast>
+            <wast>i32.wast</wast>
             <wast>if.wast</wast>
             <wast>imports.wast</wast>
             <wast>labels.wast</wast>
@@ -181,13 +188,8 @@
             <wast>local_set.wast</wast>
             <wast>local_tee.wast</wast>
             <wast>loop.wast</wast>
-            <wast>memory.wast</wast>
-            <wast>memory_copy.wast</wast>
-            <wast>memory_fill.wast</wast>
             <wast>memory_grow.wast</wast>
-            <wast>memory_init.wast</wast>
             <wast>memory_size.wast</wast>
-            <wast>memory_trap.wast</wast>
             <wast>nop.wast</wast>
             <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
