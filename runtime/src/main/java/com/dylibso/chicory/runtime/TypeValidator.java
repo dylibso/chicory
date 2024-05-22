@@ -53,16 +53,137 @@ public class TypeValidator {
         }
     }
 
+    private void validateReturns(List<ValueType> returns, int limit) {
+        if (returns.size() > (valueTypeStack.size() - limit)) {
+            throw new InvalidException("type mismatch, not enough values to return");
+        }
+
+        for (var ret : returns) {
+            popAndVerifyType(ret);
+        }
+
+        for (int j = 0; j < returns.size(); j++) {
+            ValueType valueType = returns.get(returns.size() - 1 - j);
+            if (valueType != null) {
+                valueTypeStack.push(valueType);
+            } else {
+                throw new IllegalArgumentException("should not happen");
+            }
+        }
+    }
+
+    private int jumpToNextEndOrElse(List<Instruction> instructions, Instruction op, int currentPos) {
+        Instruction tmpInstruction;
+        var offset = 0;
+        do {
+            offset++;
+            if (instructions.size() > (currentPos + offset)) {
+                tmpInstruction = instructions.get(currentPos + offset);
+            } else {
+                break;
+            }
+        } while (tmpInstruction.depth() == op.depth() &&
+                 tmpInstruction.opcode() != OpCode.END &&
+                 tmpInstruction.opcode() != OpCode.ELSE);
+
+        return offset + currentPos - 1;
+    }
+
     public void validate(FunctionBody body, FunctionType functionType, Instance instance) {
         var localTypes = body.localTypes();
         var inputLen = functionType.params().size();
         stackLimit.push(0);
         returns.push(functionType.returns());
 
-        boolean skipTillEnd = false;
-
         for (var i = 0; i < body.instructions().size(); i++) {
             var op = body.instructions().get(i);
+
+            // control flow instructions handling
+            switch (op.opcode()) {
+                case LOOP:
+                case BLOCK:
+                {
+                    var typeId = (int) op.operands()[0];
+                    stackLimit.push(valueTypeStack.size());
+                    if (typeId == 0x40) { // epsilon
+                        returns.push(List.of());
+                    } else if (ValueType.isValid(typeId)) {
+                        returns.push(List.of(ValueType.forId(typeId)));
+                    } else {
+                        returns.push(instance.type(typeId).returns());
+                    }
+                    break;
+                }
+                case IF:
+                {
+                    popAndVerifyType(ValueType.I32);
+                    stackLimit.push(valueTypeStack.size());
+                    returns.push(List.of());
+                    break;
+                }
+                case ELSE:
+                {
+                    var limit = stackLimit.pop();
+                    // remove anything evaluated in the IF branch
+                    while (valueTypeStack.size() > limit) {
+                        valueTypeStack.pop();
+                    }
+                    stackLimit.push(limit);
+                    break;
+                }
+                case RETURN:
+                {
+                    var limit = stackLimit.peek();
+
+                    validateReturns(functionType.returns(), limit);
+
+                    i = jumpToNextEndOrElse(body.instructions(), op, i);
+                    break;
+                }
+                case BR:
+                {
+                    // targetReturn should come from the label
+                    // peek is likely wrong, we should check the tracking destination label
+                    var expected = returns.peek();
+                    var limit = stackLimit.peek();
+
+//                    validateReturns(expected, limit);
+
+                    i = op.labelTrue();
+                    break;
+                }
+                case BR_IF:
+                case BR_TABLE:
+                {
+                    popAndVerifyType(ValueType.I32);
+                    var expected = returns.peek();
+                    var limit = stackLimit.peek();
+
+//                    validateReturns(expected, limit);
+                    break;
+                }
+                case END:
+                {
+                    var expected = returns.pop();
+                    var limit = stackLimit.pop();
+
+                    while (valueTypeStack.size() > limit) {
+                        valueTypeStack.pop();
+                    }
+
+                    if (!valueTypeStack.isEmpty()) {
+                        throw new InvalidException(
+                                "type mismatch on END: expected [], but was [ "
+                                        + valueTypeStack.stream()
+                                        .map(v -> v.toString())
+                                        .collect(Collectors.joining(", "))
+                                        + " ]");
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
 
             switch (op.opcode()) {
                 case MEMORY_COPY:
@@ -109,156 +230,16 @@ public class TypeValidator {
             switch (op.opcode()) {
                 case NOP:
                 case UNREACHABLE:
-                    break;
                 case LOOP:
                 case BLOCK:
-                    {
-                        var typeId = (int) op.operands()[0];
-                        stackLimit.push(valueTypeStack.size());
-                        if (typeId == 0x40) { // epsilon
-                            returns.push(List.of());
-                        } else if (ValueType.isValid(typeId)) {
-                            returns.push(List.of(ValueType.forId(typeId)));
-                        } else {
-                            returns.push(instance.type(typeId).returns());
-                        }
-                        break;
-                    }
                 case IF:
-                    {
-                        popAndVerifyType(ValueType.I32);
-                        stackLimit.push(valueTypeStack.size());
-                        returns.push(List.of());
-                        break;
-                    }
                 case ELSE:
-                    {
-                        // remove everything accumulated in the "if" branch
-                        var limit = stackLimit.pop();
-                        while (valueTypeStack.size() > limit) {
-                            valueTypeStack.pop();
-                        }
-                        stackLimit.push(limit);
-                        // i = op.labelTrue();
-                        break;
-                    }
                 case RETURN:
-                    {
-                        var limit = stackLimit.peek();
-
-                        if (functionType.returns().size() < (valueTypeStack.size() - limit)) {
-                            throw new InvalidException("type mismatch, not enough return values");
-                        }
-
-                        for (var ret : functionType.returns()) {
-                            popAndVerifyType(ret);
-                        }
-
-                        Instruction tmpInstruction;
-                        var offset = 0;
-                        do {
-                            offset++;
-                            if (body.instructions().size() > (i + offset)) {
-                                tmpInstruction = body.instructions().get(i + offset);
-                            } else {
-                                break;
-                            }
-                        } while (tmpInstruction.depth() == 0 && tmpInstruction.opcode() == OpCode.END);
-
-                        for (var ret : functionType.returns()) {
-                            valueTypeStack.push(ret);
-                        }
-
-                        // jump!
-                        i = i + offset;
-                        break;
-                    }
                 case BR_IF:
                 case BR_TABLE:
-                {
-                    popAndVerifyType(ValueType.I32);
-                    // fallthrough
-                }
                 case BR:
-                    {
-                        // Verify that the jump will end up with the correct results
-                        var expected = returns.pop();
-                        var limit = stackLimit.pop();
-
-                        ValueType[] rets = new ValueType[expected.size()];
-                        for (int j = 0; j < rets.length; j++) {
-                            if (valueTypeStack.size() <= limit) {
-                                throw new InvalidException(
-                                        "type mismatch: expected ["
-                                                + expected.get(rets.length - j - 1)
-                                                + "], but was []");
-                            }
-                            rets[j] = valueTypeStack.poll();
-                            verifyType(expected.get(rets.length - j - 1), rets[j]);
-                        }
-
-                        // TODO: verify!
-                        //  drop everything in the middle???
-//                        while (valueTypeStack.size() > limit) {
-//                            valueTypeStack.pop();
-//                        }
-
-                        for (int j = 0; j < rets.length; j++) {
-                            ValueType valueType = rets[rets.length - 1 - j];
-                            if (valueType != null) {
-                                valueTypeStack.push(valueType);
-                            }
-                        }
-
-                        returns.push(expected);
-                        // TODO: verify if this is "limit"
-                        stackLimit.push(valueTypeStack.size());
-                        break;
-                    }
                 case END:
-                    {
-                            var expected = returns.pop();
-                            var limit = stackLimit.pop();
-
-                            ValueType[] rets = new ValueType[expected.size()];
-                            for (int j = 0; j < rets.length; j++) {
-                                if (valueTypeStack.size() <= limit) {
-                                    throw new InvalidException(
-                                            "type mismatch: expected ["
-                                                    + expected.get(rets.length - j - 1)
-                                                    + "], but was []");
-                                }
-                                rets[j] = valueTypeStack.poll();
-                                verifyType(expected.get(rets.length - j - 1), rets[j]);
-                            }
-
-                            // drop everything till the previous label
-//                            if (stackLimit.isEmpty() || // last END anything left on the stack is spurious?
-//                                    (op.scope().opcode() == OpCode.BLOCK ||
-//                                            op.scope().opcode() == OpCode.IF)) {
-                            // The stack should be empty here
-                            if (!valueTypeStack.isEmpty()) {
-                                throw new InvalidException(
-                                        "type mismatch: expected [], but was [ "
-                                                + valueTypeStack.stream()
-                                                        .map(v -> v.toString())
-                                                        .collect(Collectors.joining(", "))
-                                                + " ]");
-                            }
-//                            } else {
-//                                while (valueTypeStack.size() > limit) {
-//                                    valueTypeStack.pop();
-//                                }
-//                            }
-
-                            for (int j = 0; j < rets.length; j++) {
-                                ValueType valueType = rets[rets.length - 1 - j];
-                                if (valueType != null) {
-                                    valueTypeStack.push(valueType);
-                                }
-                            }
-                        break;
-                    }
+                    break;
                 case DATA_DROP:
                     {
                         var index = (int) op.operands()[0];
