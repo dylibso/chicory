@@ -9,7 +9,6 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
-import java.util.stream.Collectors;
 
 // Heavily inspired by wazero
 // https://github.com/tetratelabs/wazero/blob/5a8a053bff0ae795b264de9672016745cb842070/internal/wasm/func_validation.go
@@ -72,7 +71,8 @@ public class TypeValidator {
         }
     }
 
-    private int jumpToNextEndOrElse(List<Instruction> instructions, Instruction op, int currentPos) {
+    private int jumpToNextEndOrElse(
+            List<Instruction> instructions, Instruction op, int currentPos) {
         Instruction tmpInstruction;
         var offset = 0;
         do {
@@ -82,9 +82,9 @@ public class TypeValidator {
             } else {
                 break;
             }
-        } while (tmpInstruction.depth() == op.depth() &&
-                 tmpInstruction.opcode() != OpCode.END &&
-                 tmpInstruction.opcode() != OpCode.ELSE);
+        } while (tmpInstruction.depth() == op.depth()
+                && tmpInstruction.opcode() != OpCode.END
+                && tmpInstruction.opcode() != OpCode.ELSE);
 
         return offset + currentPos - 1;
     }
@@ -102,85 +102,77 @@ public class TypeValidator {
             switch (op.opcode()) {
                 case LOOP:
                 case BLOCK:
-                {
-                    var typeId = (int) op.operands()[0];
-                    stackLimit.push(valueTypeStack.size());
-                    if (typeId == 0x40) { // epsilon
-                        returns.push(List.of());
-                    } else if (ValueType.isValid(typeId)) {
-                        returns.push(List.of(ValueType.forId(typeId)));
-                    } else {
-                        returns.push(instance.type(typeId).returns());
+                    {
+                        var typeId = (int) op.operands()[0];
+                        stackLimit.push(valueTypeStack.size());
+                        if (typeId == 0x40) { // epsilon
+                            returns.push(List.of());
+                        } else if (ValueType.isValid(typeId)) {
+                            returns.push(List.of(ValueType.forId(typeId)));
+                        } else {
+                            returns.push(instance.type(typeId).returns());
+                        }
+                        break;
                     }
-                    break;
-                }
                 case IF:
-                {
-                    popAndVerifyType(ValueType.I32);
-                    stackLimit.push(valueTypeStack.size());
-                    returns.push(List.of());
-                    break;
-                }
-                case ELSE:
-                {
-                    var limit = stackLimit.pop();
-                    // remove anything evaluated in the IF branch
-                    while (valueTypeStack.size() > limit) {
-                        valueTypeStack.pop();
+                    {
+                        popAndVerifyType(ValueType.I32);
+                        stackLimit.push(valueTypeStack.size());
+                        returns.push(List.of());
+                        break;
                     }
-                    stackLimit.push(limit);
-                    break;
-                }
+                case ELSE:
+                    {
+                        var limit = stackLimit.pop();
+                        // remove anything evaluated in the IF branch
+                        while (valueTypeStack.size() > limit) {
+                            valueTypeStack.pop();
+                        }
+                        stackLimit.push(limit);
+                        break;
+                    }
                 case RETURN:
-                {
-                    var limit = stackLimit.peek();
+                    {
+                        var limit = stackLimit.peek();
 
-                    validateReturns(functionType.returns(), limit);
+                        validateReturns(functionType.returns(), limit);
 
-                    i = jumpToNextEndOrElse(body.instructions(), op, i);
-                    break;
-                }
+                        i = jumpToNextEndOrElse(body.instructions(), op, i);
+                        break;
+                    }
                 case BR:
-                {
-                    // targetReturn should come from the label
-                    // peek is likely wrong, we should check the tracking destination label
-                    var expected = returns.peek();
-                    var limit = stackLimit.peek();
+                    {
+                        // targetReturn should come from the label
+                        // peek is likely wrong, we should check the tracking destination label
+                        var expected = returns.peek();
+                        var limit = stackLimit.peek();
 
-//                    validateReturns(expected, limit);
+                        //                    validateReturns(expected, limit);
 
-                    i = op.labelTrue();
-                    break;
-                }
+                        i = op.labelTrue();
+                        break;
+                    }
                 case BR_IF:
                 case BR_TABLE:
-                {
-                    popAndVerifyType(ValueType.I32);
-                    var expected = returns.peek();
-                    var limit = stackLimit.peek();
+                    {
+                        popAndVerifyType(ValueType.I32);
+                        var expected = returns.peek();
+                        var limit = stackLimit.peek();
 
-//                    validateReturns(expected, limit);
-                    break;
-                }
+                        //                    validateReturns(expected, limit);
+                        break;
+                    }
                 case END:
-                {
-                    var expected = returns.pop();
-                    var limit = stackLimit.pop();
+                    {
+                        var expected = returns.pop();
+                        var limit = stackLimit.pop();
 
-                    while (valueTypeStack.size() > limit) {
-                        valueTypeStack.pop();
+                        // TODO: here there are missing checks
+                        while (valueTypeStack.size() > limit) {
+                            valueTypeStack.pop();
+                        }
+                        break;
                     }
-
-                    if (!valueTypeStack.isEmpty()) {
-                        throw new InvalidException(
-                                "type mismatch on END: expected [], but was [ "
-                                        + valueTypeStack.stream()
-                                        .map(v -> v.toString())
-                                        .collect(Collectors.joining(", "))
-                                        + " ]");
-                    }
-                    break;
-                }
                 default:
                     break;
             }
@@ -252,8 +244,7 @@ public class TypeValidator {
                     }
                 case DROP:
                     {
-                        valueTypeStack.poll();
-//                        popAndVerifyType(null);
+                        popAndVerifyType(null);
                         break;
                     }
                 case I32_STORE:

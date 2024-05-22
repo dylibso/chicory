@@ -157,6 +157,10 @@
             <wast>align.wast</wast>
             <wast>binary-leb128.wast</wast>
             <wast>binary.wast</wast>
+            <wast>block.wast</wast>
+            <wast>br.wast</wast>
+            <wast>br_if.wast</wast>
+            <wast>br_table.wast</wast>
             <wast>bulk.wast</wast>
             <wast>call.wast</wast>
             <wast>call_indirect.wast</wast>
@@ -169,6 +173,7 @@
             <wast>func.wast</wast>
             <wast>func_ptrs.wast</wast>
             <wast>global.wast</wast>
+            <wast>if.wast</wast>
             <wast>imports.wast</wast>
             <wast>labels.wast</wast>
             <wast>left-to-right.wast</wast>
@@ -178,6 +183,12 @@
             <wast>local_set.wast</wast>
             <wast>local_tee.wast</wast>
             <wast>loop.wast</wast>
+            <wast>memory_copy.wast</wast>
+            <wast>memory_fill.wast</wast>
+            <wast>memory_grow.wast</wast>
+            <wast>memory_init.wast</wast>
+            <wast>memory_size.wast</wast>
+            <wast>memory_trap.wast</wast>
             <wast>nop.wast</wast>
             <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
