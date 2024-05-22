@@ -19,7 +19,14 @@ public class TypeValidator {
     private Deque<List<ValueType>> returns = new ArrayDeque<>();
 
     private void popAndVerifyType(ValueType expected) {
-        var have = (valueTypeStack.size() > stackLimit.peek()) ? valueTypeStack.poll() : null;
+        var have =
+                (valueTypeStack.size() > stackLimit.peek())
+                        ? valueTypeStack.poll()
+                        :
+                        // FIXME: skipping unwinding checks
+                        // a block can consume outside it's size but those values should be restored
+                        // on the stack during END
+                        ValueType.UNKNOWN;
         verifyType(expected, have);
     }
 
@@ -149,7 +156,8 @@ public class TypeValidator {
 
                         //                    validateReturns(expected, limit);
 
-                        i = op.labelTrue();
+                        // the remaining instructions are not going to be evaluated ever
+                        i = op.labelTrue() - 1;
                         break;
                     }
                 case BR_IF:
@@ -167,9 +175,14 @@ public class TypeValidator {
                         var expected = returns.pop();
                         var limit = stackLimit.pop();
 
-                        // TODO: here there are missing checks
+                        // TODO: here there are a ton of missing checks
                         while (valueTypeStack.size() > limit) {
                             valueTypeStack.pop();
+                        }
+
+                        // need to push on the stack the results
+                        for (var ret : expected) {
+                            valueTypeStack.push(ret);
                         }
                         break;
                     }
