@@ -17,16 +17,18 @@ public class TypeValidator {
     private Deque<ValueType> valueTypeStack = new ArrayDeque<>();
     private Deque<Integer> stackLimit = new ArrayDeque<>();
     private Deque<List<ValueType>> returns = new ArrayDeque<>();
+    private Deque<Deque<ValueType>> unwindStack = new ArrayDeque<>();
 
     private void popAndVerifyType(ValueType expected) {
-        var have =
-                (valueTypeStack.size() > stackLimit.peek())
-                        ? valueTypeStack.poll()
-                        :
-                        // FIXME: skipping unwinding checks
-                        // a block can consume outside it's size but those values should be restored
-                        // on the stack during END
-                        ValueType.UNKNOWN;
+        ValueType have = null;
+        if (valueTypeStack.size() > stackLimit.peek()) {
+            have = valueTypeStack.poll();
+        } else if (valueTypeStack.size() > 0) {
+            // a block can consume elements outside of it
+            // but they should be restored on exit
+            have = valueTypeStack.poll();
+            unwindStack.peek().push(have);
+        }
         verifyType(expected, have);
     }
 
@@ -101,6 +103,7 @@ public class TypeValidator {
         var inputLen = functionType.params().size();
         stackLimit.push(0);
         returns.push(functionType.returns());
+        unwindStack.push(new ArrayDeque<>());
 
         for (var i = 0; i < body.instructions().size(); i++) {
             var op = body.instructions().get(i);
@@ -119,6 +122,7 @@ public class TypeValidator {
                         } else {
                             returns.push(instance.type(typeId).returns());
                         }
+                        unwindStack.push(new ArrayDeque<>());
                         break;
                     }
                 case IF:
@@ -126,6 +130,7 @@ public class TypeValidator {
                         popAndVerifyType(ValueType.I32);
                         stackLimit.push(valueTypeStack.size());
                         returns.push(List.of());
+                        unwindStack.push(new ArrayDeque<>());
                         break;
                     }
                 case ELSE:
@@ -178,6 +183,10 @@ public class TypeValidator {
                         // TODO: here there are a ton of missing checks
                         while (valueTypeStack.size() > limit) {
                             valueTypeStack.pop();
+                        }
+                        var unwind = unwindStack.pop();
+                        while (unwind.size() > 0) {
+                            valueTypeStack.push(unwind.pop());
                         }
 
                         // need to push on the stack the results
