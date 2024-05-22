@@ -34,6 +34,23 @@ to your dependency management system.
 implementation 'com.dylibso.chicory:runtime:0.0.10'
 ```
 
+### Install the CLI (experimental)
+
+The Java generator CLI is available for download on Maven at the link:
+
+```
+https://repo1.maven.org/maven2/com/dylibso/chicory/cli/<version>/cli-<version>.sh
+```
+
+you can download the latest version and use it locally with few lines:
+
+```bash
+export VERSION=$(wget -q -O - https://api.github.com/repos/dylibso/chicory/tags --header "Accept: application/json" | jq -r '.[0].name')
+wget -O chicory https://repo1.maven.org/maven2/com/dylibso/chicory/cli/${VERSION}/cli-${VERSION}.sh
+chmod a+x chicory
+./chicory
+```
+
 <!--
 ```java
 //DEPS com.dylibso.chicory:runtime:999-SNAPSHOT
