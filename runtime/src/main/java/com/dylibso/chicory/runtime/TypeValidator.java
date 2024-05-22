@@ -162,7 +162,10 @@ public class TypeValidator {
                         //                    validateReturns(expected, limit);
 
                         // the remaining instructions are not going to be evaluated ever
-                        i = op.labelTrue() - 1;
+                        // but, if we are in an IF we should validate the other branch
+                        // if we are in a BLOCK should we follow the jump out instead?
+                        i = jumpToNextEndOrElse(body.instructions(), op, i);
+                        // i = op.labelTrue() - 1;
                         break;
                     }
                 case BR_IF:
