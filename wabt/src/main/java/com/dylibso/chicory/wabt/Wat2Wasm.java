@@ -14,11 +14,17 @@ import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
+
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringBufferInputStream;
+import java.io.StringReader;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -30,30 +36,42 @@ public final class Wat2Wasm {
     private Wat2Wasm() {}
 
     public static byte[] parse(File file) {
+        try (InputStream is = new FileInputStream(file)) {
+            return parse(is, file.getName());
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public static byte[] parse(String wat) {
+        try (InputStream is = new ByteArrayInputStream(wat.getBytes(StandardCharsets.UTF_8))) {
+            return parse(is, "temp.wast");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    private static byte[] parse(InputStream is, String fileName) {
         Module module = Module.builder(Wat2Wasm.class.getResourceAsStream("/wat2wasm")).build();
+
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
-                ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
-            try (FileInputStream fis = new FileInputStream(file);
-                    FileSystem fs =
-                            Jimfs.newFileSystem(
-                                    Configuration.unix().toBuilder()
-                                            .setAttributeViews("unix")
-                                            .build())) {
+             ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
 
-                var wasiOpts = WasiOptions.builder();
-
-                wasiOpts.withStdout(stdoutStream);
-                wasiOpts.withStderr(stdoutStream);
+            try (FileSystem fs = Jimfs.newFileSystem(Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
 
                 Path target = fs.getPath("tmp");
                 java.nio.file.Files.createDirectory(target);
-                Path path = target.resolve(file.getName());
-                copy(fis, path, StandardCopyOption.REPLACE_EXISTING);
-                wasiOpts.withDirectory(target.toString(), target);
+                Path path = target.resolve("test.wast");
+                copy(is, path, StandardCopyOption.REPLACE_EXISTING);
 
-                wasiOpts.withArguments(List.of("wat2wasm", path.toString(), "--output=-"));
+                WasiOptions wasiOpts = WasiOptions.builder()
+                        .withStdout(stdoutStream)
+                        .withStderr(stdoutStream)
+                        .withDirectory(target.toString(), target)
+                        .withArguments(List.of("wat2wasm", path.toString(), "--output=-"))
+                        .build();
 
-                try (var wasi = new WasiPreview1(logger, wasiOpts.build())) {
+                try (var wasi = new WasiPreview1(logger, wasiOpts)) {
                     HostImports imports = new HostImports(wasi.toHostFunctions());
                     module.withHostImports(imports).instantiate();
                 }
@@ -71,4 +89,5 @@ public final class Wat2Wasm {
             throw new UncheckedIOException(e);
         }
     }
+
 }
