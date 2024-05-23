@@ -50,12 +50,15 @@
         <version>${project.version}</version>
         <configuration>
           <includedWasts>
+            <wast>conversions.wast</wast>
             <wast>f32.wast</wast>
             <wast>f32_bitwise.wast</wast>
             <wast>f32_cmp.wast</wast>
             <wast>f64.wast</wast>
             <wast>f64_bitwise.wast</wast>
             <wast>f64_cmp.wast</wast>
+            <wast>float_literals.wast</wast>
+            <wast>float_misc.wast</wast>
             <wast>i32.wast</wast>
             <wast>i64.wast</wast>
           </includedWasts>
@@ -142,7 +145,6 @@
             <wast>call_indirect.wast</wast>
             <wast>comments.wast</wast>
             <wast>const.wast</wast>
-            <wast>conversions.wast</wast>
             <wast>custom.wast</wast>
             <wast>data.wast</wast>
             <wast>elem.wast</wast>
@@ -150,9 +152,7 @@
             <wast>exports.wast</wast>
             <wast>fac.wast</wast>
             <wast>float_exprs.wast</wast>
-            <wast>float_literals.wast</wast>
             <wast>float_memory.wast</wast>
-            <wast>float_misc.wast</wast>
             <wast>forward.wast</wast>
             <wast>func.wast</wast>
             <wast>func_ptrs.wast</wast>
