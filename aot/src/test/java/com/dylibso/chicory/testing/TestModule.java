@@ -88,7 +88,7 @@ public class TestModule {
     public TestModule instantiate() {
         if (this.instance == null) {
             this.instance =
-                    module.withMachineFactory(ins -> new AotMachine(module))
+                    module.withMachineFactory(instance -> new AotMachine(module, instance))
                             .withInitialize(false)
                             .withStart(false)
                             .withHostImports(imports)

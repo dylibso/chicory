@@ -7,9 +7,13 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.InvocationTargetException;
 
 public class AotUtil {
+
+    public enum StackSize {
+        ONE,
+        TWO
+    }
 
     public static Class<?> jvmType(ValueType type) {
         switch (type) {
@@ -98,14 +102,33 @@ public class AotUtil {
         throw new IllegalArgumentException("Multi-returns are not currently supported");
     }
 
-    public static MethodHandle loadCallHandle(String name, FunctionType type, byte[] compiledBody)
-            throws NoSuchMethodException,
-                    InvocationTargetException,
-                    InstantiationException,
-                    IllegalAccessException {
-        var loader = new ByteArrayClassLoader(AotUtil.class.getClassLoader());
-        var cls = loader.loadFromBytes(name, compiledBody);
-        var ins = cls.getConstructor().newInstance();
-        return MethodHandles.lookup().findVirtual(cls, "call", methodTypeFor(type)).bindTo(ins);
+    public static Object defaultValue(ValueType type) {
+        switch (type) {
+            case I32:
+                return 0;
+            case I64:
+                return 0L;
+            case F32:
+                return 0.0f;
+            case F64:
+                return 0.0d;
+            default:
+                throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
+        }
+    }
+
+    @SuppressWarnings("ResultOfMethodCallIgnored")
+    public static void validateArgumentType(Class<?> clazz) {
+        stackSize(clazz);
+    }
+
+    public static StackSize stackSize(Class<?> clazz) {
+        if (clazz == int.class || clazz == float.class) {
+            return StackSize.ONE;
+        }
+        if (clazz == long.class || clazz == double.class) {
+            return StackSize.TWO;
+        }
+        throw new IllegalArgumentException("Unsupported JVM type: " + clazz);
     }
 }
