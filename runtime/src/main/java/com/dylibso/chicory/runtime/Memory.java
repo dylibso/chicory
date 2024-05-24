@@ -206,20 +206,20 @@ public final class Memory {
         }
     }
 
-    public Value readI32(int addr) {
+    public int readInt(int addr) {
         try {
-            return Value.i32(buffer.getInt(addr));
+            return buffer.getInt(addr);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
+    public Value readI32(int addr) {
+        return Value.i32(readInt(addr));
+    }
+
     public Value readU32(int addr) {
-        try {
-            return Value.i32(buffer.getInt(addr) & 0xffffffffL);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
-        }
+        return Value.i32(Integer.toUnsignedLong(readInt(addr)));
     }
 
     public void writeLong(int addr, long data) {
@@ -230,12 +230,16 @@ public final class Memory {
         }
     }
 
-    public Value readI64(int addr) {
+    public long readLong(int addr) {
         try {
-            return Value.i64(buffer.getLong(addr));
+            return buffer.getLong(addr);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
+    }
+
+    public Value readI64(int addr) {
+        return Value.i64(readLong(addr));
     }
 
     public void writeShort(int addr, short data) {
@@ -246,12 +250,16 @@ public final class Memory {
         }
     }
 
-    public Value readI16(int addr) {
+    public short readShort(int addr) {
         try {
-            return Value.i32(buffer.getShort(addr));
+            return buffer.getShort(addr);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
+    }
+
+    public Value readI16(int addr) {
+        return Value.i32(readShort(addr));
     }
 
     public Value readU16(int addr) {
@@ -302,9 +310,25 @@ public final class Memory {
         }
     }
 
+    public float readFloat(int addr) {
+        try {
+            return buffer.getFloat(addr);
+        } catch (IndexOutOfBoundsException e) {
+            throw new WASMRuntimeException("out of bounds memory access");
+        }
+    }
+
     public void writeF64(int addr, double data) {
         try {
             buffer.putDouble(addr, data);
+        } catch (IndexOutOfBoundsException e) {
+            throw new WASMRuntimeException("out of bounds memory access");
+        }
+    }
+
+    public double readDouble(int addr) {
+        try {
+            return buffer.getDouble(addr);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
