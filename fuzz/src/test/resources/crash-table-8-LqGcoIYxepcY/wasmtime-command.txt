@@ -1,0 +1,1 @@
+wasmtime /home/runner/work/chicory/chicory/fuzz/src/test/resources/crash-table-8-LqGcoIYxepcY/test.wasm --invoke JPpaktbfdzsZekHHihiaUurDCZMvkOXHuojaIdHEuCepcbpwCLWjNSCbVXRHhOEbzDeSgDofAqjqiTXRnmgdHDVPiBzmcIFEyqMQhKlWGHkWmzLwQVpXfVzYDrzACcnNXWctRqNmnOSesvZnRFrFTKlEfKOwrAJUfDWQvCHiAHnhEOFF
