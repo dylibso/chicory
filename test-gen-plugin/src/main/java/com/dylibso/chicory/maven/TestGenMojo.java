@@ -12,6 +12,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -161,6 +162,16 @@ public class TestGenMojo extends AbstractMojo {
             if (!allWastFiles.isEmpty()) {
                 throw new MojoExecutionException(
                         "Some wast files are not included or excluded: " + allWastFiles);
+            }
+            List<String> includedExcludedWasts = new ArrayList<>();
+            for (String includedWast : includedWasts) {
+                if (excludedWasts.contains(includedWast)) {
+                    includedExcludedWasts.add(includedWast);
+                }
+            }
+            if (!includedExcludedWasts.isEmpty()) {
+                throw new MojoExecutionException(
+                        "Some wast files are both included and excluded: " + includedExcludedWasts);
             }
 
             // generate the tests
