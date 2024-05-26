@@ -32,8 +32,9 @@ class InterpreterMachine implements Machine {
         this.callStack = new ArrayDeque<>();
     }
 
-    public Value[] call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
-        return call(stack, instance, callStack, funcId, args, null, popResults);
+    @Override
+    public Value[] call(int funcId, Value[] args) throws ChicoryException {
+        return call(stack, instance, callStack, funcId, args, null, true);
     }
 
     public static Value[] call(
