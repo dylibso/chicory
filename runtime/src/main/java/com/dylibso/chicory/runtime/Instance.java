@@ -235,7 +235,7 @@ public class Instance {
                     return (args) -> {
                         this.module.logger().debug(() -> "Args: " + Arrays.toString(args));
                         try {
-                            return machine.call(funcId, args, true);
+                            return machine.call(funcId, args);
                         } catch (Exception e) {
                             throw new WASMMachineException(machine.getStackTrace(), e);
                         }

@@ -199,7 +199,7 @@ public class AotMachine implements Machine {
     }
 
     @Override
-    public Value[] call(int funcId, Value[] args, boolean popResults) throws ChicoryException {
+    public Value[] call(int funcId, Value[] args) throws ChicoryException {
         try {
             Value result = (Value) compiledFunctions[funcId].invoke(args);
             return new Value[] {result};

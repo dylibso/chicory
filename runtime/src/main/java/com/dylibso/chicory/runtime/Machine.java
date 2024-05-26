@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface Machine {
 
-    Value[] call(int funcId, Value[] args, boolean popResults) throws ChicoryException;
+    Value[] call(int funcId, Value[] args) throws ChicoryException;
 
     List<StackFrame> getStackTrace();
 }
