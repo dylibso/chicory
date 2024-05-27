@@ -367,7 +367,7 @@ public class JavaTestGen {
                                         + importsName
                                         + "."
                                         + hostFuncs
-                                        + "())"
+                                        + "())\n"
                                 : "")
                         + INDENT
                         + ".instantiate()\n"
