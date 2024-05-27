@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm;
 
+import static java.util.Objects.requireNonNull;
+
 import com.dylibso.chicory.wasm.types.CodeSection;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.DataCountSection;
@@ -23,7 +25,7 @@ public class Module {
 
     private TypeSection typeSection;
     private ImportSection importSection;
-    private FunctionSection functionSection;
+    private FunctionSection functionSection = new FunctionSection();
     private TableSection tableSection;
     private MemorySection memorySection;
     private GlobalSection globalSection;
@@ -43,7 +45,7 @@ public class Module {
     }
 
     public void setFunctionSection(FunctionSection functionSection) {
-        this.functionSection = functionSection;
+        this.functionSection = requireNonNull(functionSection);
     }
 
     public void setExportSection(ExportSection exportSection) {

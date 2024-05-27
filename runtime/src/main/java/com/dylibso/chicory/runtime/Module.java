@@ -64,8 +64,7 @@ public class Module {
     }
 
     private com.dylibso.chicory.wasm.Module validateModule(com.dylibso.chicory.wasm.Module module) {
-        var functionSectionSize =
-                module.functionSection() == null ? 0 : module.functionSection().functionCount();
+        var functionSectionSize = module.functionSection().functionCount();
         var codeSectionSize =
                 module.codeSection() == null ? 0 : module.codeSection().functionBodyCount();
         var dataSectionSize =
@@ -146,11 +145,7 @@ public class Module {
             types = module.typeSection().types();
         }
 
-        var numFuncTypes = 0;
-        var funcSection = module.functionSection();
-        if (funcSection != null) {
-            numFuncTypes = funcSection.functionCount();
-        }
+        var numFuncTypes = module.functionSection().functionCount();
         if (module.importSection() != null) {
             numFuncTypes +=
                     module.importSection().stream()
@@ -203,11 +198,8 @@ public class Module {
             exports.put(START_FUNCTION_NAME, export);
         }
 
-        if (module.functionSection() != null) {
-            int cnt = module.functionSection().functionCount();
-            for (int i = 0; i < cnt; i++) {
-                functionTypes[funcIdx++] = module.functionSection().getFunctionType(i);
-            }
+        for (int i = 0; i < module.functionSection().functionCount(); i++) {
+            functionTypes[funcIdx++] = module.functionSection().getFunctionType(i);
         }
 
         Table[] tables = new Table[0];
