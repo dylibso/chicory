@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.exceptions.InvalidException;
+
 /**
  * Limits for memory sizes, in pages.
  * Memory limits also define whether the corresponding memory is <em>shared</em>.
@@ -63,14 +65,12 @@ public final class MemoryLimits {
      * @param shared {@code true} if the limits apply to a shared memory segment, or {@code false} otherwise
      */
     public MemoryLimits(int initial, int maximum, boolean shared) {
-        if (initial < 0 || initial > maximum) {
-            throw new IllegalArgumentException(
-                    "initial must be >= 0 and <= maximum, but was " + initial);
+        if (initial > MAX_PAGES || maximum > MAX_PAGES || initial < 0 || maximum < 0) {
+            throw new InvalidException("memory size must be at most 65536 pages (4GiB)");
+        } else if (initial > maximum) {
+            throw new InvalidException("size minimum must not be greater than maximum");
         }
 
-        if (maximum > MAX_PAGES) {
-            throw new IllegalArgumentException("maximum must be <= MAX_PAGES, but was " + maximum);
-        }
         this.initial = initial;
         this.maximum = maximum;
         this.shared = shared;

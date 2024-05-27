@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import org.junit.jupiter.api.Test;
 
 class MemoryLimitsTest {
@@ -18,9 +19,9 @@ class MemoryLimitsTest {
 
     @Test
     public void shouldThrowOnInvalidMemoryLimits() {
-        assertThrows(IllegalArgumentException.class, () -> new MemoryLimits(-1, -1));
-        assertThrows(IllegalArgumentException.class, () -> new MemoryLimits(0, -1));
-        assertThrows(IllegalArgumentException.class, () -> new MemoryLimits(2, 1));
-        assertThrows(IllegalArgumentException.class, () -> new MemoryLimits(2, Integer.MAX_VALUE));
+        assertThrows(InvalidException.class, () -> new MemoryLimits(-1, -1));
+        assertThrows(InvalidException.class, () -> new MemoryLimits(0, -1));
+        assertThrows(InvalidException.class, () -> new MemoryLimits(2, 1));
+        assertThrows(InvalidException.class, () -> new MemoryLimits(2, Integer.MAX_VALUE));
     }
 }
