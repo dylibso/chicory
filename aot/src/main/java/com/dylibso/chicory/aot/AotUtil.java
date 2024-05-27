@@ -8,34 +8,22 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Map;
-import java.util.Objects;
 
 public class AotUtil {
 
-    private static final Map<ValueType, Class<?>> JVM_TYPES =
-            Map.of(
-                    ValueType.I32, int.class,
-                    ValueType.I64, long.class,
-                    ValueType.F32, float.class,
-                    ValueType.F64, double.class);
-
-    private static final Map<ValueType, String> UNBOX_METHODS =
-            Map.of(
-                    ValueType.I32, "asInt",
-                    ValueType.I64, "asLong",
-                    ValueType.F32, "asFloat",
-                    ValueType.F64, "asDouble");
-
-    private static final Map<ValueType, String> BOX_METHODS =
-            Map.of(
-                    ValueType.I32, "i32",
-                    ValueType.I64, "i64",
-                    ValueType.F32, "fromFloat",
-                    ValueType.F64, "fromDouble");
-
     public static Class<?> jvmType(ValueType type) {
-        return Objects.requireNonNull(JVM_TYPES.get(type), "Unsupported ValueType: " + type.name());
+        switch (type) {
+            case I32:
+                return int.class;
+            case I64:
+                return long.class;
+            case F32:
+                return float.class;
+            case F64:
+                return double.class;
+            default:
+                throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
+        }
     }
 
     public static ValueType localType(FunctionType type, FunctionBody body, int localIndex) {
@@ -47,8 +35,18 @@ public class AotUtil {
     }
 
     public static String unboxMethodName(ValueType type) {
-        return Objects.requireNonNull(
-                UNBOX_METHODS.get(type), "Unsupported ValueType: " + type.name());
+        switch (type) {
+            case I32:
+                return "asInt";
+            case I64:
+                return "asLong";
+            case F32:
+                return "asFloat";
+            case F64:
+                return "asDouble";
+            default:
+                throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
+        }
     }
 
     public static MethodHandle unboxer(ValueType type)
@@ -59,8 +57,18 @@ public class AotUtil {
     }
 
     public static String boxMethodName(ValueType type) {
-        return Objects.requireNonNull(
-                BOX_METHODS.get(type), "Unsupported ValueType: " + type.name());
+        switch (type) {
+            case I32:
+                return "i32";
+            case I64:
+                return "i64";
+            case F32:
+                return "fromFloat";
+            case F64:
+                return "fromDouble";
+            default:
+                throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
+        }
     }
 
     public static MethodHandle boxer(ValueType type)
