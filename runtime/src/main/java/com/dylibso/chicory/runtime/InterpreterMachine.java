@@ -743,13 +743,6 @@ class InterpreterMachine implements Machine {
         } catch (ChicoryException e) {
             // propagate ChicoryExceptions
             throw e;
-        } catch (ArithmeticException e) {
-            if (e.getMessage().equalsIgnoreCase("/ by zero")
-                    // On Linux i64 throws "BigInteger divide by zero"
-                    || e.getMessage().contains("divide by zero")) {
-                throw new WASMRuntimeException("integer divide by zero: " + e.getMessage(), e);
-            }
-            throw new WASMRuntimeException(e.getMessage(), e);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("undefined element " + e.getMessage(), e);
         } catch (Exception e) {
@@ -1122,7 +1115,7 @@ class InterpreterMachine implements Machine {
     private static void I64_REM_S(MStack stack) {
         var b = stack.pop().asLong();
         var a = stack.pop().asLong();
-        stack.push(Value.i64(a % b));
+        stack.push(Value.i64(OpcodeImpl.I64_REM_S(a, b)));
     }
 
     private static void I64_SHR_U(MStack stack) {
@@ -1170,7 +1163,7 @@ class InterpreterMachine implements Machine {
     private static void I32_REM_S(MStack stack) {
         var b = stack.pop().asInt();
         var a = stack.pop().asInt();
-        stack.push(Value.i32(a % b));
+        stack.push(Value.i32(OpcodeImpl.I32_REM_S(a, b)));
     }
 
     private static void I64_DIV_U(MStack stack) {

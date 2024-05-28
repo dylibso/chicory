@@ -100,10 +100,6 @@ public class AotEmitters {
         asm.visitInsn(Opcodes.IOR);
     }
 
-    public static void I32_REM_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        asm.visitInsn(Opcodes.IREM);
-    }
-
     public static void I32_SHL(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.ISHL);
     }
@@ -150,10 +146,6 @@ public class AotEmitters {
 
     public static void I64_OR(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.LOR);
-    }
-
-    public static void I64_REM_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        asm.visitInsn(Opcodes.LREM);
     }
 
     public static void I64_SHL(AotContext ctx, Instruction ins, MethodVisitor asm) {

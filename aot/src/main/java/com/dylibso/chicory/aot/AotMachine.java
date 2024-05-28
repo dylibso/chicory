@@ -68,7 +68,7 @@ public class AotMachine implements Machine {
                     .intrinsic(I32_OR, AotEmitters::I32_OR)
                     .shared(I32_POPCNT, OpcodeImpl.class)
                     .shared(I32_REINTERPRET_F32, OpcodeImpl.class)
-                    .intrinsic(I32_REM_S, AotEmitters::I32_REM_S)
+                    .shared(I32_REM_S, OpcodeImpl.class)
                     .shared(I32_REM_U, OpcodeImpl.class)
                     .shared(I32_ROTL, OpcodeImpl.class)
                     .shared(I32_ROTR, OpcodeImpl.class)
@@ -114,7 +114,7 @@ public class AotMachine implements Machine {
                     .shared(I64_NE, OpcodeImpl.class)
                     .intrinsic(I64_OR, AotEmitters::I64_OR)
                     .shared(I64_POPCNT, OpcodeImpl.class)
-                    .intrinsic(I64_REM_S, AotEmitters::I64_REM_S)
+                    .shared(I64_REM_S, OpcodeImpl.class)
                     .shared(I64_REM_U, OpcodeImpl.class)
                     .shared(I64_ROTL, OpcodeImpl.class)
                     .shared(I64_ROTR, OpcodeImpl.class)
@@ -206,13 +206,6 @@ public class AotMachine implements Machine {
         } catch (ChicoryException e) {
             // propagate ChicoryExceptions
             throw e;
-        } catch (ArithmeticException e) {
-            if (e.getMessage().equalsIgnoreCase("/ by zero")
-                    // On Linux i64 throws "BigInteger divide by zero"
-                    || e.getMessage().contains("divide by zero")) {
-                throw new WASMRuntimeException("integer divide by zero: " + e.getMessage(), e);
-            }
-            throw new WASMRuntimeException(e.getMessage(), e);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("undefined element " + e.getMessage(), e);
         } catch (Exception e) {
