@@ -60,7 +60,7 @@ public final class Wat2Wasm {
 
                 Path target = fs.getPath("tmp");
                 java.nio.file.Files.createDirectory(target);
-                Path path = target.resolve("test.wast");
+                Path path = target.resolve(fileName);
                 copy(is, path, StandardCopyOption.REPLACE_EXISTING);
 
                 WasiOptions wasiOpts =

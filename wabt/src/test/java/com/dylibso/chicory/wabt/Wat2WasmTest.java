@@ -1,9 +1,12 @@
 package com.dylibso.chicory.wabt;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
+import com.dylibso.chicory.wasm.types.Value;
 import java.io.File;
 import org.junit.jupiter.api.Test;
 
@@ -15,6 +18,27 @@ public class Wat2WasmTest {
 
         assertTrue(result.length > 0);
         assertTrue(new String(result).contains("iterFact"));
+    }
+
+    @Test
+    public void shouldRunWat2WasmOnString() {
+        var moduleInstance =
+                Module.builder(
+                                Wat2Wasm.parse(
+                                        "(module (func (export \"add\") (param $x i32) (param $y"
+                                                + " i32) (result i32) (i32.add (local.get $x)"
+                                                + " (local.get $y))))"))
+                        .build()
+                        .withTypeValidation(true)
+                        .instantiate()
+                        .initialize(true);
+
+        var addFunction = moduleInstance.export("add");
+        var results =
+                addFunction.apply(
+                        Value.i32(Integer.parseUnsignedInt("1")),
+                        Value.i32(Integer.parseUnsignedInt("41")));
+        assertEquals(Integer.parseUnsignedInt("42"), results[0].asInt());
     }
 
     @Test
