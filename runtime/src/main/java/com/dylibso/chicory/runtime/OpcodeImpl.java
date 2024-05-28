@@ -39,12 +39,20 @@ public class OpcodeImpl {
         if (a == Integer.MIN_VALUE && b == -1) {
             throw new WASMRuntimeException("integer overflow");
         }
-        return a / b;
+        try {
+            return a / b;
+        } catch (ArithmeticException e) {
+            throw new WASMRuntimeException("integer divide by zero", e);
+        }
     }
 
     @OpCodeIdentifier(OpCode.I32_DIV_U)
     public static int I32_DIV_U(int a, int b) {
-        return Integer.divideUnsigned(a, b);
+        try {
+            return Integer.divideUnsigned(a, b);
+        } catch (ArithmeticException e) {
+            throw new WASMRuntimeException("integer divide by zero", e);
+        }
     }
 
     @OpCodeIdentifier(OpCode.I32_EQ)
@@ -122,9 +130,22 @@ public class OpcodeImpl {
         return Float.floatToRawIntBits(x);
     }
 
+    @OpCodeIdentifier(OpCode.I32_REM_S)
+    public static int I32_REM_S(int a, int b) {
+        try {
+            return a % b;
+        } catch (ArithmeticException e) {
+            throw new WASMRuntimeException("integer divide by zero", e);
+        }
+    }
+
     @OpCodeIdentifier(OpCode.I32_REM_U)
     public static int I32_REM_U(int a, int b) {
-        return Integer.remainderUnsigned(a, b);
+        try {
+            return Integer.remainderUnsigned(a, b);
+        } catch (ArithmeticException e) {
+            throw new WASMRuntimeException("integer divide by zero", e);
+        }
     }
 
     @OpCodeIdentifier(OpCode.I32_ROTR)
@@ -250,12 +271,20 @@ public class OpcodeImpl {
         if (a == Long.MIN_VALUE && b == -1) {
             throw new WASMRuntimeException("integer overflow");
         }
-        return a / b;
+        try {
+            return a / b;
+        } catch (ArithmeticException e) {
+            throw new WASMRuntimeException("integer divide by zero", e);
+        }
     }
 
     @OpCodeIdentifier(OpCode.I64_DIV_U)
     public static long I64_DIV_U(long a, long b) {
-        return Long.divideUnsigned(a, b);
+        try {
+            return Long.divideUnsigned(a, b);
+        } catch (ArithmeticException e) {
+            throw new WASMRuntimeException("integer divide by zero", e);
+        }
     }
 
     @OpCodeIdentifier(OpCode.I64_EQ)
@@ -343,9 +372,22 @@ public class OpcodeImpl {
         return Double.doubleToRawLongBits(x);
     }
 
+    @OpCodeIdentifier(OpCode.I64_REM_S)
+    public static long I64_REM_S(long a, long b) {
+        try {
+            return a % b;
+        } catch (ArithmeticException e) {
+            throw new WASMRuntimeException("integer divide by zero", e);
+        }
+    }
+
     @OpCodeIdentifier(OpCode.I64_REM_U)
     public static long I64_REM_U(long a, long b) {
-        return Long.remainderUnsigned(a, b);
+        try {
+            return Long.remainderUnsigned(a, b);
+        } catch (ArithmeticException e) {
+            throw new WASMRuntimeException("integer divide by zero", e);
+        }
     }
 
     @OpCodeIdentifier(OpCode.I64_ROTR)
