@@ -106,7 +106,7 @@
     <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
     <maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
     <maven-gpg-plugin.version>3.2.4</maven-gpg-plugin.version>
-    <nexus-staging-maven-plugin.version>1.6.13</nexus-staging-maven-plugin.version>
+    <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <templating-maven-plugin.version>3.0.0</templating-maven-plugin.version>
     <maven-shade-plugin.version>3.5.3</maven-shade-plugin.version>
     <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
