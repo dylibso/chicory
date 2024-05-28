@@ -322,6 +322,17 @@ public class ModuleTest {
     }
 
     @Test
+    public void fuzzCrashReproY4ye0lx() {
+        var instance = Module.builder("compiled/fuzz-crash-repro-y4ye0lx.wat.wasm").build().instantiate();
+
+        var repro = instance.export("repro");
+        var result = repro.apply();
+
+        assertEquals(Double.longBitsToDouble(Long.parseUnsignedLong("10318438020585182")), result[0].asDouble());
+        assertEquals(Float.intBitsToFloat(Integer.parseUnsignedInt("4668147000000000000000000000")), result[1].asFloat());
+    }
+
+    @Test
     public void shouldCountNumberOfInstructions() {
         AtomicLong count = new AtomicLong(0);
         var module =
