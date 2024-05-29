@@ -1,11 +1,17 @@
 package com.dylibso.chicory.aot;
 
+import static org.objectweb.asm.Type.getInternalName;
+import static org.objectweb.asm.Type.getMethodDescriptor;
+
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 public class AotUtil {
 
@@ -137,5 +143,26 @@ public class AotUtil {
             return StackSize.TWO;
         }
         throw new IllegalArgumentException("Unsupported JVM type: " + clazz);
+    }
+
+    public static void emitInvokeStatic(MethodVisitor asm, Method method) {
+        assert Modifier.isStatic(method.getModifiers());
+        asm.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                getInternalName(method.getDeclaringClass()),
+                method.getName(),
+                getMethodDescriptor(method),
+                false);
+    }
+
+    public static void emitInvokeVirtual(MethodVisitor asm, Method method) {
+        assert !Modifier.isStatic(method.getModifiers());
+        assert !method.getDeclaringClass().isInterface();
+        asm.visitMethodInsn(
+                Opcodes.INVOKEVIRTUAL,
+                getInternalName(method.getDeclaringClass()),
+                method.getName(),
+                getMethodDescriptor(method),
+                false);
     }
 }

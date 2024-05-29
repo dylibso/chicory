@@ -1,34 +1,23 @@
 package com.dylibso.chicory.aot;
 
+import static com.dylibso.chicory.aot.AotMethods.*;
+import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
+import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
 import static com.dylibso.chicory.aot.AotUtil.stackSize;
 import static com.dylibso.chicory.aot.AotUtil.validateArgumentType;
-import static org.objectweb.asm.Type.BYTE_TYPE;
-import static org.objectweb.asm.Type.DOUBLE_TYPE;
-import static org.objectweb.asm.Type.FLOAT_TYPE;
-import static org.objectweb.asm.Type.INT_TYPE;
-import static org.objectweb.asm.Type.LONG_TYPE;
-import static org.objectweb.asm.Type.SHORT_TYPE;
-import static org.objectweb.asm.Type.VOID_TYPE;
-import static org.objectweb.asm.Type.getInternalName;
-import static org.objectweb.asm.Type.getMethodDescriptor;
-import static org.objectweb.asm.Type.getType;
 
 import com.dylibso.chicory.aot.AotUtil.StackSize;
-import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpCodeIdentifier;
-import com.dylibso.chicory.runtime.TrapException;
-import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 
 public class AotEmitters {
 
@@ -282,11 +271,11 @@ public class AotEmitters {
     }
 
     public static void I32_LOAD(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitRead(ctx, ins, asm, "readInt", INT_TYPE);
+        emitRead(ctx, ins, asm, MEMORY_READ_INT);
     }
 
     public static void I32_LOAD8_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitRead(ctx, ins, asm, "read", BYTE_TYPE);
+        emitRead(ctx, ins, asm, MEMORY_READ_BYTE);
     }
 
     public static void I32_LOAD8_U(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -296,7 +285,7 @@ public class AotEmitters {
     }
 
     public static void I32_LOAD16_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitRead(ctx, ins, asm, "readShort", SHORT_TYPE);
+        emitRead(ctx, ins, asm, MEMORY_READ_SHORT);
     }
 
     public static void I32_LOAD16_U(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -306,11 +295,11 @@ public class AotEmitters {
     }
 
     public static void F32_LOAD(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitRead(ctx, ins, asm, "readFloat", FLOAT_TYPE);
+        emitRead(ctx, ins, asm, MEMORY_READ_FLOAT);
     }
 
     public static void I64_LOAD(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitRead(ctx, ins, asm, "readLong", LONG_TYPE);
+        emitRead(ctx, ins, asm, MEMORY_READ_LONG);
     }
 
     public static void I64_LOAD8_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -346,21 +335,15 @@ public class AotEmitters {
     }
 
     public static void F64_LOAD(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitRead(ctx, ins, asm, "readDouble", DOUBLE_TYPE);
+        emitRead(ctx, ins, asm, MEMORY_READ_DOUBLE);
     }
 
-    public static void emitRead(
-            AotContext ctx,
-            Instruction ins,
-            MethodVisitor asm,
-            String readMethod,
-            Type returnType) {
-
+    public static void emitRead(AotContext ctx, Instruction ins, MethodVisitor asm, Method method) {
         long offset = ins.operands()[1];
         emitThrowIfInvalidOffset(asm, offset);
 
         asm.visitInsn(Opcodes.DUP);
-        emitValidateBase(asm);
+        emitInvokeStatic(asm, VALIDATE_BASE);
 
         // int address = base + offset;
         asm.visitLdcInsn((int) offset);
@@ -369,30 +352,25 @@ public class AotEmitters {
         // memory.readType(address)
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
         asm.visitInsn(Opcodes.SWAP);
-        asm.visitMethodInsn(
-                Opcodes.INVOKEVIRTUAL,
-                getInternalName(Memory.class),
-                readMethod,
-                getMethodDescriptor(returnType, INT_TYPE),
-                false);
+        emitInvokeVirtual(asm, method);
     }
 
     public static void I32_STORE(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitX32Store(ctx, ins, asm, "writeI32", INT_TYPE);
+        emitX32Store(ctx, ins, asm, MEMORY_WRITE_INT);
     }
 
     public static void I32_STORE8(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.I2B);
-        emitX32Store(ctx, ins, asm, "writeByte", BYTE_TYPE);
+        emitX32Store(ctx, ins, asm, MEMORY_WRITE_BYTE);
     }
 
     public static void I32_STORE16(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.I2S);
-        emitX32Store(ctx, ins, asm, "writeShort", SHORT_TYPE);
+        emitX32Store(ctx, ins, asm, MEMORY_WRITE_SHORT);
     }
 
     public static void F32_STORE(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitX32Store(ctx, ins, asm, "writeF32", FLOAT_TYPE);
+        emitX32Store(ctx, ins, asm, MEMORY_WRITE_FLOAT);
     }
 
     public static void I64_STORE8(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -407,11 +385,11 @@ public class AotEmitters {
 
     public static void I64_STORE32(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.L2I);
-        emitX32Store(ctx, ins, asm, "writeI32", INT_TYPE);
+        emitX32Store(ctx, ins, asm, MEMORY_WRITE_INT);
     }
 
     private static void emitX32Store(
-            AotContext ctx, Instruction ins, MethodVisitor asm, String writeMethod, Type argType) {
+            AotContext ctx, Instruction ins, MethodVisitor asm, Method method) {
 
         long offset = ins.operands()[1];
         emitThrowIfInvalidOffset(asm, offset);
@@ -419,7 +397,7 @@ public class AotEmitters {
         // validateBase(base);
         asm.visitInsn(Opcodes.SWAP);
         asm.visitInsn(Opcodes.DUP);
-        emitValidateBase(asm);
+        emitInvokeStatic(asm, VALIDATE_BASE);
 
         // int address = base + offset;
         asm.visitLdcInsn((int) offset);
@@ -430,12 +408,7 @@ public class AotEmitters {
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
         asm.visitInsn(Opcodes.DUP_X2);
         asm.visitInsn(Opcodes.POP);
-        asm.visitMethodInsn(
-                Opcodes.INVOKEVIRTUAL,
-                getInternalName(Memory.class),
-                writeMethod,
-                getMethodDescriptor(VOID_TYPE, INT_TYPE, argType),
-                false);
+        emitInvokeVirtual(asm, method);
     }
 
     public static void I64_STORE(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -446,12 +419,7 @@ public class AotEmitters {
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
         asm.visitInsn(Opcodes.SWAP);
         asm.visitVarInsn(Opcodes.LLOAD, ctx.longSlot());
-        asm.visitMethodInsn(
-                Opcodes.INVOKEVIRTUAL,
-                getInternalName(Memory.class),
-                "writeLong",
-                getMethodDescriptor(VOID_TYPE, INT_TYPE, LONG_TYPE),
-                false);
+        emitInvokeVirtual(asm, MEMORY_WRITE_LONG);
     }
 
     public static void F64_STORE(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -462,12 +430,7 @@ public class AotEmitters {
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
         asm.visitInsn(Opcodes.SWAP);
         asm.visitVarInsn(Opcodes.DLOAD, ctx.doubleSlot());
-        asm.visitMethodInsn(
-                Opcodes.INVOKEVIRTUAL,
-                getInternalName(Memory.class),
-                "writeF64",
-                getMethodDescriptor(VOID_TYPE, INT_TYPE, DOUBLE_TYPE),
-                false);
+        emitInvokeVirtual(asm, MEMORY_WRITE_DOUBLE);
     }
 
     private static void emitX64StoreSetup(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -478,7 +441,7 @@ public class AotEmitters {
         asm.visitInsn(Opcodes.DUP2_X1);
         asm.visitInsn(Opcodes.POP2);
         asm.visitInsn(Opcodes.DUP);
-        emitValidateBase(asm);
+        emitInvokeStatic(asm, VALIDATE_BASE);
 
         // int address = base + offset;
         asm.visitLdcInsn((int) offset);
@@ -526,12 +489,7 @@ public class AotEmitters {
                     // TODO - should check above if method descriptor matches so that
                     // registration of this intrinsic fails if the signature does not
                     // match what is needed for this opcode.
-                    asm.visitMethodInsn(
-                            Opcodes.INVOKESTATIC,
-                            getInternalName(staticHelpers),
-                            method.getName(),
-                            getMethodDescriptor(method),
-                            false);
+                    emitInvokeStatic(asm, method);
 
                     for (int i = 0; i < popCount; i++) {
                         ctx.popStackSize();
@@ -644,54 +602,14 @@ public class AotEmitters {
 
     private static void emitThrowIfInvalidOffset(MethodVisitor asm, long offset) {
         if (offset < 0 || offset >= Integer.MAX_VALUE) {
-            emitThrowOutOfBoundsMemoryAccess(asm);
+            emitInvokeStatic(asm, THROW_OUT_OF_BOUNDS_MEMORY_ACCESS);
+            asm.visitInsn(Opcodes.ATHROW);
             throw new EmitterTrapException();
         }
     }
 
-    private static void emitValidateBase(MethodVisitor asm) {
-        asm.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                getInternalName(AotEmitters.class),
-                "validateBase",
-                getMethodDescriptor(VOID_TYPE, INT_TYPE),
-                false);
-    }
-
-    private static void emitThrowOutOfBoundsMemoryAccess(MethodVisitor asm) {
-        asm.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                getInternalName(AotEmitters.class),
-                "throwOutOfBoundsMemoryAccess",
-                getMethodDescriptor(getType(RuntimeException.class)),
-                false);
-        asm.visitInsn(Opcodes.ATHROW);
-    }
-
     public static void emitThrowTrapException(MethodVisitor asm) {
-        asm.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                getInternalName(AotEmitters.class),
-                "throwTrapException",
-                getMethodDescriptor(getType(RuntimeException.class)),
-                false);
+        emitInvokeStatic(asm, THROW_TRAP_EXCEPTION);
         asm.visitInsn(Opcodes.ATHROW);
-    }
-
-    @UsedByGeneratedCode
-    public static void validateBase(int base) {
-        if (base < 0) {
-            throwOutOfBoundsMemoryAccess();
-        }
-    }
-
-    @UsedByGeneratedCode
-    public static RuntimeException throwOutOfBoundsMemoryAccess() {
-        throw new WASMRuntimeException("out of bounds memory access");
-    }
-
-    @UsedByGeneratedCode
-    public static RuntimeException throwTrapException() {
-        throw new TrapException("Trapped on unreachable instruction", List.of());
     }
 }
