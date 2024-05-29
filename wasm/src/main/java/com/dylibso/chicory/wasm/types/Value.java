@@ -20,7 +20,7 @@ public class Value {
 
     private final ValueType type;
 
-    private long data;
+    private final long data;
 
     public static Value fromFloat(float data) {
         return Value.f32(Float.floatToRawIntBits(data));

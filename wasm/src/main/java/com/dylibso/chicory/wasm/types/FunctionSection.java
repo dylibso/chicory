@@ -1,17 +1,16 @@
 package com.dylibso.chicory.wasm.types;
 
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.ArrayList;
+import java.util.List;
 
 public class FunctionSection extends Section {
-    private int[] typeIndices;
-    private int count;
+    private final List<Integer> typeIndices;
 
     /**
      * Construct a new, empty section instance.
      */
     public FunctionSection() {
-        this(new int[8]);
+        this(new ArrayList());
     }
 
     /**
@@ -20,22 +19,20 @@ public class FunctionSection extends Section {
      * @param estimatedSize the estimated number of functions to reserve space for
      */
     public FunctionSection(int estimatedSize) {
-        this(new int[Math.max(8, estimatedSize)]);
+        this(new ArrayList<>(estimatedSize));
     }
 
-    private FunctionSection(int[] typeIndices) {
+    private FunctionSection(ArrayList<Integer> typeIndices) {
         super(SectionId.FUNCTION);
         this.typeIndices = typeIndices;
-        count = 0;
-    }
-
-    public int functionCount() {
-        return count;
     }
 
     public int getFunctionType(int idx) {
-        Objects.checkIndex(idx, count);
-        return typeIndices[idx];
+        return typeIndices.get(idx);
+    }
+
+    public int functionCount() {
+        return typeIndices.size();
     }
 
     public FunctionType getFunctionType(int idx, TypeSection typeSection) {
@@ -49,12 +46,8 @@ public class FunctionSection extends Section {
      * @return the index of the function whose type index was added
      */
     public int addFunctionType(int typeIndex) {
-        int count = this.count;
-        if (count == typeIndices.length) {
-            typeIndices = Arrays.copyOf(typeIndices, count + (count >> 1));
-        }
-        typeIndices[count] = typeIndex;
-        this.count = count + 1;
-        return count;
+        int idx = typeIndices.size();
+        typeIndices.add(typeIndex);
+        return idx;
     }
 }
