@@ -12,6 +12,7 @@ import static com.dylibso.chicory.aot.AotUtil.unboxer;
 import static com.dylibso.chicory.wasm.types.OpCode.*;
 import static java.lang.invoke.MethodHandles.filterArguments;
 import static java.lang.invoke.MethodHandles.filterReturnValue;
+import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.util.Objects.requireNonNull;
 import static org.objectweb.asm.Type.VOID_TYPE;
 import static org.objectweb.asm.Type.getDescriptor;
@@ -368,19 +369,19 @@ public class AotMachine implements Machine {
         }
     }
 
-    private MethodHandle adaptSignature(FunctionType type, MethodHandle handle)
-            throws NoSuchMethodException, IllegalAccessException {
+    private static MethodHandle adaptSignature(FunctionType type, MethodHandle handle)
+            throws IllegalAccessException {
         var argTypes = type.params();
         var argHandlers = new MethodHandle[type.params().size()];
         for (int i = 0; i < argHandlers.length; i++) {
-            argHandlers[i] = unboxer(argTypes.get(i));
+            argHandlers[i] = publicLookup().unreflect(unboxer(argTypes.get(i)));
         }
         MethodHandle result = filterArguments(handle, 0, argHandlers);
         result = result.asSpreader(Value[].class, argTypes.size());
         if (type.returns().isEmpty()) {
             return result;
         }
-        return filterReturnValue(result, boxer(type.returns().get(0)));
+        return filterReturnValue(result, publicLookup().unreflect(boxer(type.returns().get(0))));
     }
 
     private static String classNameFor(int funcId) {
