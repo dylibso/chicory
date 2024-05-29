@@ -12,30 +12,59 @@ import java.util.function.ToIntFunction;
  */
 public class NameCustomSection extends CustomSection {
 
-    private String moduleName;
-    private final ArrayList<NameEntry> funcNames = new ArrayList<>();
-    private final ArrayList<ListEntry<NameEntry>> localNames = new ArrayList<>();
-    private final ArrayList<ListEntry<NameEntry>> labelNames = new ArrayList<>();
-    private final ArrayList<NameEntry> tableNames = new ArrayList<>();
-    private final ArrayList<NameEntry> memoryNames = new ArrayList<>();
-    private final ArrayList<NameEntry> globalNames = new ArrayList<>();
-    private final ArrayList<NameEntry> elementNames = new ArrayList<>();
-    private final ArrayList<NameEntry> dataNames = new ArrayList<>();
-    private final ArrayList<NameEntry> tagNames = new ArrayList<>();
+    private final String moduleName;
+    private final List<NameEntry> funcNames;
+    private final List<ListEntry<NameEntry>> localNames;
+    private final List<ListEntry<NameEntry>> labelNames;
+    private final List<NameEntry> tableNames;
+    private final List<NameEntry> memoryNames;
+    private final List<NameEntry> globalNames;
+    private final List<NameEntry> elementNames;
+    private final List<NameEntry> dataNames;
+    private final List<NameEntry> tagNames;
 
     /**
-     * Construct a new, empty section instance.
+     * Construct a section instance from the specified contents.
      */
-    public NameCustomSection() {}
+    public NameCustomSection(
+            String moduleName,
+            List<NameEntry> funcNames,
+            List<ListEntry<NameEntry>> localNames,
+            List<ListEntry<NameEntry>> labelNames,
+            List<NameEntry> tableNames,
+            List<NameEntry> memoryNames,
+            List<NameEntry> globalNames,
+            List<NameEntry> elementNames,
+            List<NameEntry> dataNames,
+            List<NameEntry> tagNames) {
+        this.moduleName = moduleName;
+        this.funcNames = funcNames;
+        this.localNames = localNames;
+        this.labelNames = labelNames;
+        this.tableNames = tableNames;
+        this.memoryNames = memoryNames;
+        this.globalNames = globalNames;
+        this.elementNames = elementNames;
+        this.dataNames = dataNames;
+        this.tagNames = tagNames;
+    }
 
     /**
-     * Construct a new instance.
+     * Parse a new instance from a byte array.
      *
      * @param bytes the byte content of the section
      */
-    public NameCustomSection(final byte[] bytes) {
-        this();
-
+    public static NameCustomSection parse(byte[] bytes) {
+        String moduleName = null;
+        List<NameEntry> funcNames = new ArrayList<>();
+        List<ListEntry<NameEntry>> localNames = new ArrayList<>();
+        List<ListEntry<NameEntry>> labelNames = new ArrayList<>();
+        List<NameEntry> tableNames = new ArrayList<>();
+        List<NameEntry> memoryNames = new ArrayList<>();
+        List<NameEntry> globalNames = new ArrayList<>();
+        List<NameEntry> elementNames = new ArrayList<>();
+        List<NameEntry> dataNames = new ArrayList<>();
+        List<NameEntry> tagNames = new ArrayList<>();
         ByteBuffer buf = ByteBuffer.wrap(bytes);
 
         while (buf.hasRemaining()) {
@@ -46,7 +75,8 @@ public class NameCustomSection extends CustomSection {
             switch (id) {
                 case 0:
                     {
-                        setModuleName(Parser.readName(slice));
+                        assert (moduleName == null);
+                        moduleName = Parser.readName(slice);
                         break;
                     }
                 case 1:
@@ -98,6 +128,18 @@ public class NameCustomSection extends CustomSection {
                     // ignore unknown subsection for forwards-compatibility
             }
         }
+
+        return new NameCustomSection(
+                moduleName,
+                funcNames,
+                localNames,
+                labelNames,
+                tableNames,
+                memoryNames,
+                globalNames,
+                elementNames,
+                dataNames,
+                tagNames);
     }
 
     public String name() {
@@ -182,20 +224,6 @@ public class NameCustomSection extends CustomSection {
      */
     public String nameOfTag(int tagIdx) {
         return oneLevelSearch(tagNames, tagIdx);
-    }
-
-    /**
-     * Set the module name.
-     *
-     * @param moduleName the module name to set (must not be {@code null})
-     * @return the previously set name, or {@code null} if there was none
-     */
-    public String setModuleName(final String moduleName) {
-        try {
-            return this.moduleName;
-        } finally {
-            this.moduleName = Objects.requireNonNull(moduleName, "moduleName");
-        }
     }
 
     /**
@@ -301,14 +329,15 @@ public class NameCustomSection extends CustomSection {
 
     // parsing helpers
 
-    private void oneLevelParse(final ByteBuffer slice, final ArrayList<NameEntry> list) {
+    private static void oneLevelParse(final ByteBuffer slice, final List<NameEntry> list) {
         int cnt = (int) Parser.readVarUInt32(slice);
         for (int i = 0; i < cnt; i++) {
             oneLevelStore(list, (int) Parser.readVarUInt32(slice), Parser.readName(slice));
         }
     }
 
-    private void twoLevelParse(final ByteBuffer slice, final ArrayList<ListEntry<NameEntry>> list) {
+    private static void twoLevelParse(
+            final ByteBuffer slice, final List<ListEntry<NameEntry>> list) {
         int listCnt = (int) Parser.readVarUInt32(slice);
         for (int i = 0; i < listCnt; i++) {
             int groupIdx = (int) Parser.readVarUInt32(slice);
@@ -320,7 +349,7 @@ public class NameCustomSection extends CustomSection {
         }
     }
 
-    private ByteBuffer slice(final ByteBuffer buf, final int size) {
+    private static ByteBuffer slice(final ByteBuffer buf, final int size) {
         int pos = buf.position();
         int lim = buf.limit();
         try {
@@ -334,13 +363,13 @@ public class NameCustomSection extends CustomSection {
 
     // searching
 
-    private static String oneLevelSearch(ArrayList<NameEntry> list, int searchIdx) {
+    private static String oneLevelSearch(List<NameEntry> list, int searchIdx) {
         int idx = binarySearch(list, searchIdx, NameEntry::index);
         return idx < 0 ? null : list.get(idx).name();
     }
 
     private static String twoLevelSearch(
-            ArrayList<ListEntry<NameEntry>> listList, int groupIdx, int subIdx) {
+            List<ListEntry<NameEntry>> listList, int groupIdx, int subIdx) {
         int fi = binarySearch(listList, groupIdx, ListEntry::index);
         if (fi < 0) {
             return null;
@@ -350,7 +379,7 @@ public class NameCustomSection extends CustomSection {
         return li < 0 ? null : subList.get(li).name;
     }
 
-    private static String oneLevelStore(ArrayList<NameEntry> list, int storeIdx, String name) {
+    private static String oneLevelStore(List<NameEntry> list, int storeIdx, String name) {
         Objects.requireNonNull(name);
         int idx = binarySearch(list, storeIdx, NameEntry::index);
         if (idx < 0) {
@@ -364,7 +393,7 @@ public class NameCustomSection extends CustomSection {
     }
 
     private static String twoLevelStore(
-            ArrayList<ListEntry<NameEntry>> listList, int groupIdx, int subIdx, String name) {
+            List<ListEntry<NameEntry>> listList, int groupIdx, int subIdx, String name) {
         Objects.requireNonNull(name);
         int fi = binarySearch(listList, groupIdx, ListEntry::index);
         ListEntry<NameEntry> subList;

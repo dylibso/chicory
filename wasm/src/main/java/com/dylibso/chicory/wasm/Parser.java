@@ -74,7 +74,7 @@ public final class Parser {
     }
 
     public Parser(Logger logger, BitSet includeSections) {
-        this(logger, includeSections, Map.of("name", NameCustomSection::new));
+        this(logger, includeSections, Map.of("name", NameCustomSection::parse));
     }
 
     public Parser(
@@ -502,10 +502,7 @@ public final class Parser {
     }
 
     private static StartSection parseStartSection(ByteBuffer buffer) {
-
-        var startSection = new StartSection();
-        startSection.setStartIndex(readVarUInt32(buffer));
-        return startSection;
+        return new StartSection(readVarUInt32(buffer));
     }
 
     private static ElementSection parseElementSection(ByteBuffer buffer, long sectionSize) {
