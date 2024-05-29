@@ -1,24 +1,29 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
 
 public class TableInstance {
 
     private Table table;
-    private Map<Integer, Instance> instances;
+    private Instance[] instances;
+    private int[] refs;
 
     public TableInstance(Table table) {
         this.table = table;
-        this.instances = new HashMap<>();
+        this.instances = new Instance[(int) table.limits().min()];
+        refs = new int[(int) table.limits().min()];
+        Arrays.fill(refs, REF_NULL_VALUE);
     }
 
     public int size() {
-        return table.size();
+        return refs.length;
     }
 
     public ValueType elementType() {
@@ -30,29 +35,58 @@ public class TableInstance {
     }
 
     public int grow(int size, int value, Instance instance) {
-        return this.table.grow(size, value);
+        var oldSize = refs.length;
+        var targetSize = oldSize + size;
+        if (size < 0 || targetSize > limits().max()) {
+            return -1;
+        }
+        var newRefs = Arrays.copyOf(refs, targetSize);
+        Arrays.fill(newRefs, oldSize, targetSize, value);
+        var newInstances = Arrays.copyOf(instances, targetSize);
+        Arrays.fill(newInstances, oldSize, targetSize, instance);
+        refs = newRefs;
+        instances = newInstances;
+        return oldSize;
     }
 
     public Value ref(int index) {
-        return table.ref(index);
-    }
-
-    public void setRef(int index, int value, Instance instance) {
-        table.setRef(index, value);
-        if (instance != null) {
-            setInstance(index, instance);
+        int res;
+        try {
+            res = this.refs[index];
+        } catch (IndexOutOfBoundsException e) {
+            throw new ChicoryException("undefined element", e);
+        }
+        if (this.elementType() == ValueType.FuncRef) {
+            return Value.funcRef(res);
+        } else {
+            return Value.externRef(res);
         }
     }
 
-    public void setInstance(int index, Instance instance) {
-        instances.put(index, instance);
+    public void setRef(int index, int value, Instance instance) {
+        try {
+            this.refs[index] = value;
+            this.instances[index] = instance;
+        } catch (IndexOutOfBoundsException e) {
+            throw new ChicoryException("out of bounds table access", e);
+        }
     }
 
     public Instance instance(int index) {
-        return instances.get(index);
+        return instances[index];
+    }
+
+    public void setRef(int index, int value) {
+        try {
+            this.refs[index] = value;
+        } catch (IndexOutOfBoundsException e) {
+            throw new ChicoryException("out of bounds table access", e);
+        }
     }
 
     public void reset() {
-        table.reset();
+        for (int i = 0; i < refs.length; i++) {
+            this.refs[i] = REF_NULL_VALUE;
+        }
     }
 }
