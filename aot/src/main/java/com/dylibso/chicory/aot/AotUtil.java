@@ -4,15 +4,38 @@ import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
 
 public class AotUtil {
 
     public enum StackSize {
         ONE,
         TWO
+    }
+
+    private static final Method UNBOX_I32;
+    private static final Method UNBOX_I64;
+    private static final Method UNBOX_F32;
+    private static final Method UNBOX_F64;
+    private static final Method BOX_I32;
+    private static final Method BOX_I64;
+    private static final Method BOX_F32;
+    private static final Method BOX_F64;
+
+    static {
+        try {
+            UNBOX_I32 = Value.class.getMethod("asInt");
+            UNBOX_I64 = Value.class.getMethod("asLong");
+            UNBOX_F32 = Value.class.getMethod("asFloat");
+            UNBOX_F64 = Value.class.getMethod("asDouble");
+            BOX_I32 = Value.class.getMethod("i32", int.class);
+            BOX_I64 = Value.class.getMethod("i64", long.class);
+            BOX_F32 = Value.class.getMethod("fromFloat", float.class);
+            BOX_F64 = Value.class.getMethod("fromDouble", double.class);
+        } catch (NoSuchMethodException e) {
+            throw new AssertionError(e);
+        }
     }
 
     public static Class<?> jvmType(ValueType type) {
@@ -38,50 +61,34 @@ public class AotUtil {
         }
     }
 
-    public static String unboxMethodName(ValueType type) {
+    public static Method unboxer(ValueType type) {
         switch (type) {
             case I32:
-                return "asInt";
+                return UNBOX_I32;
             case I64:
-                return "asLong";
+                return UNBOX_I64;
             case F32:
-                return "asFloat";
+                return UNBOX_F32;
             case F64:
-                return "asDouble";
+                return UNBOX_F64;
             default:
                 throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
         }
     }
 
-    public static MethodHandle unboxer(ValueType type)
-            throws NoSuchMethodException, IllegalAccessException {
-        return MethodHandles.lookup()
-                .findVirtual(
-                        Value.class, unboxMethodName(type), MethodType.methodType(jvmType(type)));
-    }
-
-    public static String boxMethodName(ValueType type) {
+    public static Method boxer(ValueType type) {
         switch (type) {
             case I32:
-                return "i32";
+                return BOX_I32;
             case I64:
-                return "i64";
+                return BOX_I64;
             case F32:
-                return "fromFloat";
+                return BOX_F32;
             case F64:
-                return "fromDouble";
+                return BOX_F64;
             default:
                 throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
         }
-    }
-
-    public static MethodHandle boxer(ValueType type)
-            throws NoSuchMethodException, IllegalAccessException {
-        return MethodHandles.lookup()
-                .findStatic(
-                        Value.class,
-                        boxMethodName(type),
-                        MethodType.methodType(Value.class, jvmType(type)));
     }
 
     public static MethodType methodTypeFor(FunctionType type) {
