@@ -186,7 +186,7 @@ public class Instance {
                     globals[i] = new GlobalInstance(Value.EXTREF_NULL);
                     break;
                 case REF_FUNC:
-                    globals[i] = new GlobalInstance(Value.funcRef(instr.operands()[0]));
+                    globals[i] = new GlobalInstance(Value.funcRef((int) instr.operands()[0]));
                     break;
                 default:
                     throw new RuntimeException(

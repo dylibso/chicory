@@ -724,7 +724,7 @@ class InterpreterMachine implements Machine {
                         TABLE_GROW(stack, instance, operands);
                         break;
                     case REF_FUNC:
-                        stack.push(Value.funcRef(operands[0]));
+                        stack.push(Value.funcRef((int) operands[0]));
                         break;
                     case REF_NULL:
                         REF_NULL(stack, operands);

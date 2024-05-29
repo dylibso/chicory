@@ -50,11 +50,11 @@ public class Value {
         return new Value(ValueType.F64, data);
     }
 
-    public static Value externRef(long data) {
+    public static Value externRef(int data) {
         return new Value(ValueType.ExternRef, data);
     }
 
-    public static Value funcRef(long data) {
+    public static Value funcRef(int data) {
         return new Value(ValueType.FuncRef, data);
     }
 
@@ -69,11 +69,15 @@ public class Value {
     }
 
     private static ValueType ensure32bitValueType(ValueType type) {
-        if (ValueType.I32.equals(type) || ValueType.F32.equals(type)) {
-            return type;
+        switch (type) {
+            case I32:
+            case F32:
+            case ExternRef:
+            case FuncRef:
+                return type;
+            default:
+                throw new IllegalArgumentException("Invalid type for 32 bit value: " + type);
         }
-        throw new IllegalArgumentException(
-                "Invalid type for 32 bit value, only I32 or F32 are allowed, given: " + type);
     }
 
     /**
