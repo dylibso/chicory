@@ -51,7 +51,7 @@ public class ConstantEvaluators {
                     }
                 case REF_FUNC:
                     {
-                        tos = Value.funcRef(instruction.operands()[0]);
+                        tos = Value.funcRef((int) instruction.operands()[0]);
                         break;
                     }
                 case GLOBAL_GET:
