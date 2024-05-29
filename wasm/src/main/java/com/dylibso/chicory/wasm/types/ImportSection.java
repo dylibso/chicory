@@ -40,6 +40,10 @@ public class ImportSection extends Section {
         return imports.stream();
     }
 
+    public int count(ExternalType type) {
+        return (int) imports.stream().filter(i -> i.importType() == type).count();
+    }
+
     /**
      * Add an import definition to this section.
      *
