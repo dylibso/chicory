@@ -23,17 +23,17 @@ import java.util.List;
 public class Module {
     private final HashMap<String, CustomSection> customSections;
 
-    private TypeSection typeSection;
-    private ImportSection importSection;
+    private TypeSection typeSection = new TypeSection();
+    private ImportSection importSection = new ImportSection();
     private FunctionSection functionSection = new FunctionSection();
-    private TableSection tableSection;
+    private TableSection tableSection = new TableSection();
     private MemorySection memorySection;
-    private GlobalSection globalSection;
-    private ExportSection exportSection;
+    private GlobalSection globalSection = new GlobalSection();
+    private ExportSection exportSection = new ExportSection();
     private StartSection startSection;
-    private ElementSection elementSection;
-    private CodeSection codeSection;
-    private DataSection dataSection;
+    private ElementSection elementSection = new ElementSection();
+    private CodeSection codeSection = new CodeSection();
+    private DataSection dataSection = new DataSection();
     private DataCountSection dataCountSection;
 
     public Module() {
@@ -41,7 +41,7 @@ public class Module {
     }
 
     public void setTypeSection(TypeSection typeSection) {
-        this.typeSection = typeSection;
+        this.typeSection = requireNonNull(typeSection);
     }
 
     public void setFunctionSection(FunctionSection functionSection) {
@@ -49,7 +49,7 @@ public class Module {
     }
 
     public void setExportSection(ExportSection exportSection) {
-        this.exportSection = exportSection;
+        this.exportSection = requireNonNull(exportSection);
     }
 
     public TypeSection typeSection() {
@@ -77,7 +77,7 @@ public class Module {
     }
 
     public void setImportSection(ImportSection importSection) {
-        this.importSection = importSection;
+        this.importSection = requireNonNull(importSection);
     }
 
     public CodeSection codeSection() {
@@ -85,11 +85,11 @@ public class Module {
     }
 
     public void setCodeSection(CodeSection codeSection) {
-        this.codeSection = codeSection;
+        this.codeSection = requireNonNull(codeSection);
     }
 
     public void setDataSection(DataSection dataSection) {
-        this.dataSection = dataSection;
+        this.dataSection = requireNonNull(dataSection);
     }
 
     public void setDataCountSection(DataCountSection dataCountSection) {
@@ -117,7 +117,7 @@ public class Module {
     }
 
     public void setGlobalSection(GlobalSection globalSection) {
-        this.globalSection = globalSection;
+        this.globalSection = requireNonNull(globalSection);
     }
 
     public TableSection tableSection() {
@@ -125,7 +125,7 @@ public class Module {
     }
 
     public void setTableSection(TableSection tableSection) {
-        this.tableSection = tableSection;
+        this.tableSection = requireNonNull(tableSection);
     }
 
     public void addCustomSection(CustomSection customSection) {
@@ -149,6 +149,6 @@ public class Module {
     }
 
     public void setElementSection(ElementSection elementSection) {
-        this.elementSection = elementSection;
+        this.elementSection = requireNonNull(elementSection);
     }
 }

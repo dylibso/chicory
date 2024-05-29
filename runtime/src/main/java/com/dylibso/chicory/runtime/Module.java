@@ -7,14 +7,11 @@ import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
-import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
-import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.Import;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.Table;
@@ -65,21 +62,17 @@ public class Module {
         this.typeValidation = typeValidation;
         this.module = validateModule(module);
         this.exports = new HashMap<>();
-        if (module.exportSection() != null) {
-            int cnt = module.exportSection().exportCount();
-            for (int i = 0; i < cnt; i++) {
-                Export e = module.exportSection().getExport(i);
-                exports.put(e.name(), e);
-            }
+        int cnt = module.exportSection().exportCount();
+        for (int i = 0; i < cnt; i++) {
+            Export e = module.exportSection().getExport(i);
+            exports.put(e.name(), e);
         }
     }
 
     private com.dylibso.chicory.wasm.Module validateModule(com.dylibso.chicory.wasm.Module module) {
         var functionSectionSize = module.functionSection().functionCount();
-        var codeSectionSize =
-                module.codeSection() == null ? 0 : module.codeSection().functionBodyCount();
-        var dataSectionSize =
-                module.dataSection() == null ? 0 : module.dataSection().dataSegmentCount();
+        var codeSectionSize = module.codeSection().functionBodyCount();
+        var dataSectionSize = module.dataSection().dataSegmentCount();
         if (functionSectionSize != codeSectionSize) {
             throw new MalformedException("function and code section have inconsistent lengths");
         }
@@ -95,61 +88,41 @@ public class Module {
     }
 
     public Instance instantiate() {
-        var globalInitializers = new Global[] {};
-        if (this.module.globalSection() != null) {
-            globalInitializers = this.module.globalSection().globals();
-        }
+        var globalInitializers = module.globalSection().globals();
 
-        var dataSegments = new DataSegment[0];
-        if (module.dataSection() != null) {
-            dataSegments = module.dataSection().dataSegments();
-        }
+        var dataSegments = module.dataSection().dataSegments();
 
-        var types = new FunctionType[0];
         // TODO i guess we should explode if this is the case, is this possible?
-        if (module.typeSection() != null) {
-            types = module.typeSection().types();
-        }
+        var types = module.typeSection().types();
 
-        var numFuncTypes = module.functionSection().functionCount();
-        if (module.importSection() != null) {
-            numFuncTypes +=
-                    module.importSection().stream()
-                            .filter(is -> is.importType() == ExternalType.FUNCTION)
-                            .count();
-        }
+        int numFuncTypes =
+                module.functionSection().functionCount()
+                        + module.importSection().count(ExternalType.FUNCTION);
 
-        FunctionBody[] functions = new FunctionBody[0];
-        var codeSection = module.codeSection();
-        if (codeSection != null) {
-            functions = module.codeSection().functionBodies();
-        }
+        FunctionBody[] functions = module.codeSection().functionBodies();
 
         int importId = 0;
         var functionTypes = new int[numFuncTypes];
-        var imports = new Import[0];
         var funcIdx = 0;
 
-        if (module.importSection() != null) {
-            int cnt = module.importSection().importCount();
-            imports = new Import[cnt];
-            for (int i = 0; i < cnt; i++) {
-                Import imprt = module.importSection().getImport(i);
-                switch (imprt.importType()) {
-                    case FUNCTION:
-                        {
-                            var type = ((FunctionImport) imprt).typeIndex();
-                            functionTypes[funcIdx] = type;
-                            // The global function id increases on this table
-                            // function ids are assigned on imports first
-                            imports[importId++] = imprt;
-                            funcIdx++;
-                            break;
-                        }
-                    default:
+        int importCount = module.importSection().importCount();
+        var imports = new Import[importCount];
+        for (int i = 0; i < importCount; i++) {
+            Import imprt = module.importSection().getImport(i);
+            switch (imprt.importType()) {
+                case FUNCTION:
+                    {
+                        var type = ((FunctionImport) imprt).typeIndex();
+                        functionTypes[funcIdx] = type;
+                        // The global function id increases on this table
+                        // function ids are assigned on imports first
                         imports[importId++] = imprt;
+                        funcIdx++;
                         break;
-                }
+                    }
+                default:
+                    imports[importId++] = imprt;
+                    break;
             }
         }
 
@@ -168,19 +141,13 @@ public class Module {
             functionTypes[funcIdx++] = module.functionSection().getFunctionType(i);
         }
 
-        Table[] tables = new Table[0];
-        if (module.tableSection() != null) {
-            var tableLength = module.tableSection().tableCount();
-            tables = new Table[tableLength];
-            for (int i = 0; i < tableLength; i++) {
-                tables[i] = module.tableSection().getTable(i);
-            }
+        var tableLength = module.tableSection().tableCount();
+        Table[] tables = new Table[tableLength];
+        for (int i = 0; i < tableLength; i++) {
+            tables[i] = module.tableSection().getTable(i);
         }
 
-        Element[] elements = new Element[0];
-        if (module.elementSection() != null) {
-            elements = module.elementSection().elements();
-        }
+        Element[] elements = module.elementSection().elements();
 
         Memory memory = null;
         if (module.memorySection() != null) {
