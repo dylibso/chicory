@@ -93,8 +93,8 @@ public class ModuleTest {
         var funcs = new HostFunction[] {func};
         var instance =
                 Module.builder("compiled/host-function.wat.wasm")
-                        .build()
                         .withHostImports(new HostImports(funcs))
+                        .build()
                         .instantiate();
         var logIt = instance.export("logIt");
         logIt.apply();
@@ -143,8 +143,11 @@ public class ModuleTest {
                         List.of(ValueType.I32),
                         List.of());
         var funcs = new HostFunction[] {func};
-        var module = Module.builder("compiled/start.wat.wasm").build();
-        module.withHostImports(new HostImports(funcs)).instantiate();
+        var module =
+                Module.builder("compiled/start.wat.wasm")
+                        .withHostImports(new HostImports(funcs))
+                        .build();
+        module.instantiate();
 
         assertTrue(count.get() > 0);
     }
@@ -283,14 +286,17 @@ public class ModuleTest {
                         List.of());
         var memory = new HostMemory("env", "memory", new Memory(new MemoryLimits(1)));
 
-        var module = Module.builder("compiled/mixed-imports.wat.wasm").build();
         var hostImports =
                 new HostImports(
                         new HostFunction[] {cbrtFunc, logFunc},
                         new HostGlobal[0],
                         memory,
                         new HostTable[0]);
-        var instance = module.withHostImports(hostImports).instantiate();
+        var module =
+                Module.builder("compiled/mixed-imports.wat.wasm")
+                        .withHostImports(hostImports)
+                        .build();
+        var instance = module.instantiate();
 
         var run = instance.export("main");
         run.apply();
@@ -324,14 +330,14 @@ public class ModuleTest {
     @Test
     public void shouldCountNumberOfInstructions() {
         AtomicLong count = new AtomicLong(0);
-        var module =
+        var instance =
                 Module.builder("compiled/iterfact.wat.wasm")
-                        .build()
                         .withUnsafeExecutionListener(
                                 (Instruction instruction, long[] operands, MStack stack) ->
                                         count.getAndIncrement())
+                        .build()
                         .instantiate();
-        var iterFact = module.export("iterFact");
+        var iterFact = instance.export("iterFact");
 
         iterFact.apply(Value.i32(100));
 
@@ -345,8 +351,8 @@ public class ModuleTest {
         assertDoesNotThrow(
                 () ->
                         Module.builder("compiled/i32.wat.wasm")
-                                .build()
                                 .withTypeValidation(true)
+                                .build()
                                 .instantiate());
     }
 }

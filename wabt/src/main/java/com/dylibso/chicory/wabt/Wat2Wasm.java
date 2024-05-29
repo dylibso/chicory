@@ -29,6 +29,12 @@ import java.util.List;
 
 public final class Wat2Wasm {
     private static final Logger logger = new SystemLogger();
+    private static final com.dylibso.chicory.wasm.Module wasmModule =
+            Module.builder(Wat2Wasm.class.getResourceAsStream("/wat2wasm"))
+                    .withInitialize(false)
+                    .withStart(false)
+                    .build()
+                    .wasmModule();
 
     private Wat2Wasm() {}
 
@@ -49,8 +55,6 @@ public final class Wat2Wasm {
     }
 
     private static byte[] parse(InputStream is, String fileName) {
-        Module module = Module.builder(Wat2Wasm.class.getResourceAsStream("/wat2wasm")).build();
-
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
                 ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
 
@@ -73,7 +77,8 @@ public final class Wat2Wasm {
 
                 try (var wasi = new WasiPreview1(logger, wasiOpts)) {
                     HostImports imports = new HostImports(wasi.toHostFunctions());
-                    module.withHostImports(imports).instantiate();
+                    Module module = Module.builder(wasmModule).withHostImports(imports).build();
+                    module.instantiate();
                 }
 
                 return stdoutStream.toByteArray();

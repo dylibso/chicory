@@ -28,10 +28,10 @@ public class Wat2WasmTest {
                                         "(module (func (export \"add\") (param $x i32) (param $y"
                                                 + " i32) (result i32) (i32.add (local.get $x)"
                                                 + " (local.get $y))))"))
-                        .build()
                         .withTypeValidation(true)
-                        .instantiate()
-                        .initialize(true);
+                        .withInitialize(true)
+                        .build()
+                        .instantiate();
 
         var addFunction = moduleInstance.export("add");
         var results =

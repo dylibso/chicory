@@ -358,8 +358,6 @@ public class JavaTestGen {
                         + "\")"
                         + additionalParam
                         + ")\n"
-                        + INDENT
-                        + ".build()\n"
                         + ((excludeInvalid) ? "" : INDENT + ".withTypeValidation(true)\n")
                         + ((hostFuncs != null)
                                 ? INDENT
@@ -369,6 +367,8 @@ public class JavaTestGen {
                                         + hostFuncs
                                         + "())\n"
                                 : "")
+                        + INDENT
+                        + ".build()\n"
                         + INDENT
                         + ".instantiate()\n"
                         + INDENT

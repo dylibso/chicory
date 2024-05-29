@@ -33,6 +33,12 @@ public class Wast2Json {
                     return false;
                 }
             };
+    private static final com.dylibso.chicory.wasm.Module wasmModule =
+            Module.builder(Wast2Json.class.getResourceAsStream("/wast2json"))
+                    .withInitialize(false)
+                    .withStart(false)
+                    .build()
+                    .wasmModule();
 
     private final File input;
     private final File output;
@@ -49,7 +55,6 @@ public class Wast2Json {
     }
 
     public void process() {
-        Module module = Module.builder(getClass().getResourceAsStream("/wast2json")).build();
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
                 ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
             try (FileInputStream fis = new FileInputStream(input);
@@ -84,7 +89,8 @@ public class Wast2Json {
 
                 try (var wasi = new WasiPreview1(logger, wasiOpts.build())) {
                     HostImports imports = new HostImports(wasi.toHostFunctions());
-                    module.withHostImports(imports).instantiate();
+                    Module module = Module.builder(wasmModule).withHostImports(imports).build();
+                    module.instantiate();
                 }
 
                 createDirectories(output.toPath().getParent());

@@ -36,22 +36,33 @@ import java.util.function.Supplier;
 public class Module {
     public static final String START_FUNCTION_NAME = "_start";
     private final com.dylibso.chicory.wasm.Module module;
-    private NameCustomSection nameSec;
 
     private final HashMap<String, Export> exports;
     private final Logger logger;
 
-    private boolean initialize = true;
-    private boolean start = true;
-    // TODO: turn the default to true
-    // Type validation needs to remain optional until it's finished
-    private boolean typeValidation = false;
-    private ExecutionListener listener = null;
-    private HostImports hostImports;
-    private Function<Instance, Machine> machineFactory;
+    private final boolean initialize;
+    private final boolean start;
+    private final boolean typeValidation;
+    private final ExecutionListener listener;
+    private final HostImports hostImports;
+    private final Function<Instance, Machine> machineFactory;
 
-    protected Module(com.dylibso.chicory.wasm.Module module, Logger logger) {
+    private Module(
+            com.dylibso.chicory.wasm.Module module,
+            Logger logger,
+            Function<Instance, Machine> machineFactory,
+            HostImports hostImports,
+            ExecutionListener listener,
+            boolean initialize,
+            boolean start,
+            boolean typeValidation) {
         this.logger = logger;
+        this.machineFactory = machineFactory;
+        this.hostImports = hostImports;
+        this.listener = listener;
+        this.initialize = initialize;
+        this.start = start;
+        this.typeValidation = typeValidation;
         this.module = validateModule(module);
         this.exports = new HashMap<>();
         if (module.exportSection() != null) {
@@ -83,52 +94,7 @@ public class Module {
         return logger;
     }
 
-    public Module withInitialize(boolean init) {
-        this.initialize = init;
-        return this;
-    }
-
-    public Module withStart(boolean s) {
-        this.start = s;
-        return this;
-    }
-
-    public Module withTypeValidation(boolean v) {
-        this.typeValidation = v;
-        return this;
-    }
-
-    /*
-     * This method is experimental and might be dropped without notice in future releases.
-     */
-    public Module withUnsafeExecutionListener(ExecutionListener listener) {
-        this.listener = listener;
-        return this;
-    }
-
-    public Module withHostImports(HostImports hostImports) {
-        this.hostImports = hostImports;
-        return this;
-    }
-
-    public Module withMachineFactory(Function<Instance, Machine> machineFactory) {
-        this.machineFactory = machineFactory;
-        return this;
-    }
-
     public Instance instantiate() {
-        if (hostImports == null) {
-            hostImports = new HostImports();
-        }
-
-        return this.instantiate(hostImports, initialize, start, listener);
-    }
-
-    protected Instance instantiate(
-            HostImports hostImports,
-            boolean initialize,
-            boolean start,
-            ExecutionListener listener) {
         var globalInitializers = new Global[] {};
         if (this.module.globalSection() != null) {
             globalInitializers = this.module.globalSection().globals();
@@ -256,10 +222,6 @@ public class Module {
                 default:
                     break;
             }
-        }
-
-        if (machineFactory == null) {
-            machineFactory = InterpreterMachine::new;
         }
 
         return new Instance(
@@ -399,9 +361,7 @@ public class Module {
     }
 
     public NameCustomSection nameSection() {
-        if (nameSec != null) return nameSec;
-        nameSec = this.module.nameSection();
-        return nameSec;
+        return this.module.nameSection();
     }
 
     public com.dylibso.chicory.wasm.Module wasmModule() {
@@ -416,6 +376,16 @@ public class Module {
      */
     public static Builder builder(InputStream input) {
         return new Builder(() -> input);
+    }
+
+    /**
+     * Creates a {@link Builder} for the specified {@link com.dylibso.chicory.wasm.Module}
+     *
+     * @param wasmModule the already parsed Wasm module
+     * @return a {@link Builder} for reading the module definition from the specified input stream
+     */
+    public static Builder builder(com.dylibso.chicory.wasm.Module wasmModule) {
+        return new Builder(wasmModule);
     }
 
     /**
@@ -495,12 +465,29 @@ public class Module {
     }
 
     public static class Builder {
+        private final com.dylibso.chicory.wasm.Module parsed;
         private final Supplier<InputStream> inputStreamSupplier;
         private Logger logger;
         private ModuleType moduleType;
 
+        private boolean initialize = true;
+        private boolean start = true;
+        // TODO: turn the default to true
+        // Type validation needs to remain optional until it's finished
+        private boolean typeValidation = false;
+        private ExecutionListener listener = null;
+        private HostImports hostImports = null;
+        private Function<Instance, Machine> machineFactory = null;
+
         private Builder(Supplier<InputStream> inputStreamSupplier) {
             this.inputStreamSupplier = Objects.requireNonNull(inputStreamSupplier);
+            this.parsed = null;
+            this.moduleType = ModuleType.BINARY;
+        }
+
+        private Builder(com.dylibso.chicory.wasm.Module parsed) {
+            this.parsed = Objects.requireNonNull(parsed);
+            this.inputStreamSupplier = null;
             this.moduleType = ModuleType.BINARY;
         }
 
@@ -514,23 +501,71 @@ public class Module {
             return this;
         }
 
-        public Module build() {
+        public Builder withInitialize(boolean init) {
+            this.initialize = init;
+            return this;
+        }
 
+        public Builder withStart(boolean s) {
+            this.start = s;
+            return this;
+        }
+
+        public Builder withTypeValidation(boolean v) {
+            this.typeValidation = v;
+            return this;
+        }
+
+        /*
+         * This method is experimental and might be dropped without notice in future releases.
+         */
+        public Builder withUnsafeExecutionListener(ExecutionListener listener) {
+            this.listener = listener;
+            return this;
+        }
+
+        public Builder withHostImports(HostImports hostImports) {
+            this.hostImports = hostImports;
+            return this;
+        }
+
+        public Builder withMachineFactory(Function<Instance, Machine> machineFactory) {
+            this.machineFactory = machineFactory;
+            return this;
+        }
+
+        public Module build() {
             final Logger logger = this.logger != null ? this.logger : new SystemLogger();
+            final HostImports hostImports =
+                    this.hostImports != null ? this.hostImports : new HostImports();
+            final Function<Instance, Machine> machineFactory =
+                    this.machineFactory != null ? this.machineFactory : InterpreterMachine::new;
             final Parser parser = new Parser(logger);
 
-            try (final InputStream is = inputStreamSupplier.get()) {
-
-                switch (this.moduleType) {
-                    case BINARY:
-                        return new Module(parser.parseModule(is), logger);
-                    default:
-                        throw new InvalidException(
-                                "Text format parsing is not implemented, but you can use wat2wasm"
-                                        + " through Chicory.");
+            com.dylibso.chicory.wasm.Module parsed = this.parsed;
+            if (parsed == null) {
+                try (final InputStream is = inputStreamSupplier.get()) {
+                    parsed = parser.parseModule(is);
+                } catch (IOException e) {
+                    throw new WASMRuntimeException(e);
                 }
-            } catch (IOException e) {
-                throw new WASMRuntimeException(e);
+            }
+
+            switch (this.moduleType) {
+                case BINARY:
+                    return new Module(
+                            parsed,
+                            logger,
+                            machineFactory,
+                            hostImports,
+                            this.listener,
+                            this.initialize,
+                            this.start,
+                            this.typeValidation);
+                default:
+                    throw new InvalidException(
+                            "Text format parsing is not implemented, but you can use wat2wasm"
+                                    + " through Chicory.");
             }
         }
     }

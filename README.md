@@ -275,7 +275,7 @@ Now we just need to pass this host function in during our instantiation phase:
 ```java
 import com.dylibso.chicory.runtime.HostImports;
 var imports = new HostImports(new HostFunction[] {func});
-var instance = Module.builder(new File("./logger.wasm")).build().withHostImports(imports).instantiate();
+var instance = Module.builder(new File("./logger.wasm")).withHostImports(imports).build().instantiate();
 var logIt = instance.export("logIt");
 logIt.apply();
 // should print "Hello, World!" 10 times
