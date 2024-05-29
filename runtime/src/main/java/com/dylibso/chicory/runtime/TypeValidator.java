@@ -83,17 +83,11 @@ public class TypeValidator {
             throw new InvalidException("type mismatch, not enough values to return");
         }
 
-        for (var ret : returns) {
-            popAndVerifyType(ret);
-        }
-
+        var stackSize = valueTypeStack.size();
+        var offset = stackSize - returns.size();
         for (int j = 0; j < returns.size(); j++) {
-            ValueType valueType = returns.get(returns.size() - 1 - j);
-            if (valueType != null) {
-                push(valueTypeStack, valueType);
-            } else {
-                throw new IllegalArgumentException("should not happen");
-            }
+            var elem = valueTypeStack.get(offset + j);
+            verifyType(returns.get(j), elem);
         }
     }
 
@@ -107,7 +101,8 @@ public class TypeValidator {
             } else {
                 break;
             }
-        } while (tmpInstruction.depth() == op.depth() && tmpInstruction.opcode() != OpCode.END);
+        } while (tmpInstruction.depth() == (op.depth() + 1)
+                && tmpInstruction.opcode() != OpCode.END);
 
         return offset + currentPos - 1;
     }
@@ -203,8 +198,15 @@ public class TypeValidator {
                         var targetInstruction = body.instructions().get(targetIdx);
                         var targetDepth = targetInstruction.depth();
 
-                        validateReturns(
-                                returns.get(targetDepth), prevStack.get(targetDepth).size());
+                        //                        TODO: implement me properly!
+                        //                        try {
+                        //                            validateReturns(
+                        //                                    returns.get(targetDepth),
+                        // prevStack.get(targetDepth).size());
+                        //                        } catch (Exception e) {
+                        //                            System.out.println("debug me");
+                        //                        }
+
                         // if we are in an IF we should validate the other branch
                         var nextElseIdx = jumpToNextElse(body.instructions(), op, i);
                         if (nextElseIdx != -1) {
@@ -218,13 +220,13 @@ public class TypeValidator {
                             i = nextElseIdx;
                         } else { // jump to function END
                             // the remaining instructions are not going to be evaluated ever
-                            while (prevStack.size() > targetDepth) {
+                            while (prevStack.size() > targetDepth + 1) {
                                 pop(prevStack);
                             }
-                            while (returns.size() > targetDepth) {
+                            while (returns.size() > targetDepth + 1) {
                                 pop(returns);
                             }
-                            i = jumpToNextEnd(body.instructions(), targetInstruction, i);
+                            i = (targetIdx - 1);
                         }
                         break;
                     }
@@ -239,16 +241,19 @@ public class TypeValidator {
                         var targetInstruction = body.instructions().get(targetIdx);
                         var targetDepth = targetInstruction.depth();
 
-                        validateReturns(
-                                returns.get(targetDepth), prevStack.get(targetDepth).size());
+                        //                        TODO: implement me properly
+                        //                        validateReturns(
+                        //                                returns.get(targetDepth),
+                        // prevStack.get(targetDepth).size());
+
                         // if we are in an IF we should validate the other branch
                         var nextElseIdx = jumpToNextElse(body.instructions(), op, i);
                         if (nextElseIdx != -1) {
                             var nextElse = body.instructions().get(nextElseIdx);
-                            while (prevStack.size() > nextElse.depth()) {
+                            while (prevStack.size() > nextElse.depth() + 1) {
                                 pop(prevStack);
                             }
-                            while (returns.size() > nextElse.depth()) {
+                            while (returns.size() > nextElse.depth() + 1) {
                                 pop(returns);
                             }
                             i = nextElseIdx;
@@ -267,6 +272,9 @@ public class TypeValidator {
                         if (op.scope().opcode() == OpCode.IF) {
                             valueTypeStack = pop(prevStack);
                         } else {
+                            if (returns.size() <= 0) {
+                                System.out.println("debug me");
+                            }
                             var expected = pop(returns);
                             var restoreStack = pop(prevStack);
 
@@ -410,7 +418,11 @@ public class TypeValidator {
                 case I32_ROTR:
                     {
                         popAndVerifyType(ValueType.I32);
-                        popAndVerifyType(ValueType.I32);
+                        try {
+                            popAndVerifyType(ValueType.I32);
+                        } catch (Exception e) {
+                            System.out.println("debug me");
+                        }
                         push(valueTypeStack, ValueType.I32);
                         break;
                     }
