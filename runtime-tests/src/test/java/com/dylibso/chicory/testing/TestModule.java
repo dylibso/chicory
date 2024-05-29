@@ -12,7 +12,6 @@ public class TestModule {
 
     private Module.Builder builder;
     private Module module;
-
     private Instance instance;
 
     private HostImports imports;
@@ -68,9 +67,12 @@ public class TestModule {
     }
 
     public TestModule build() {
-        if (this.module == null) {
-            this.module = builder.build();
-        }
+        this.module =
+                builder.withInitialize(false)
+                        .withStart(false)
+                        .withTypeValidation(typeValidation)
+                        .withHostImports(imports)
+                        .build();
         return this;
     }
 
@@ -86,12 +88,7 @@ public class TestModule {
 
     public TestModule instantiate() {
         if (this.instance == null) {
-            this.instance =
-                    module.withInitialize(false)
-                            .withStart(false)
-                            .withHostImports(imports)
-                            .withTypeValidation(typeValidation)
-                            .instantiate();
+            this.instance = module.instantiate();
         }
         return this;
     }

@@ -69,9 +69,14 @@ public class TestModule {
     }
 
     public TestModule build() {
-        if (this.module == null) {
-            this.module = builder.build();
-        }
+        this.module =
+                builder.withInitialize(false)
+                        .withStart(false)
+                        // TODO: enable me!
+                        .withTypeValidation(false)
+                        .withHostImports(imports)
+                        .withMachineFactory(instance -> new AotMachine(module, instance))
+                        .build();
         return this;
     }
 
@@ -87,12 +92,7 @@ public class TestModule {
 
     public TestModule instantiate() {
         if (this.instance == null) {
-            this.instance =
-                    module.withMachineFactory(instance -> new AotMachine(module, instance))
-                            .withInitialize(false)
-                            .withStart(false)
-                            .withHostImports(imports)
-                            .instantiate();
+            this.instance = module.instantiate();
         }
         return this;
     }

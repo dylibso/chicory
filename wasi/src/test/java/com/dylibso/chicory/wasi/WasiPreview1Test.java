@@ -20,8 +20,9 @@ public class WasiPreview1Test {
         var wasi =
                 new WasiPreview1(this.logger, WasiOptions.builder().withStdout(fakeStdout).build());
         var imports = new HostImports(wasi.toHostFunctions());
-        var module = Module.builder("compiled/hello-wasi.wat.wasm").build();
-        module.withHostImports(imports).instantiate();
+        var module =
+                Module.builder("compiled/hello-wasi.wat.wasm").withHostImports(imports).build();
+        module.instantiate();
         assertEquals(fakeStdout.output().strip(), "hello world");
     }
 
@@ -32,8 +33,8 @@ public class WasiPreview1Test {
         var stdout = new MockPrintStream();
         var wasi = new WasiPreview1(this.logger, WasiOptions.builder().withStdout(stdout).build());
         var imports = new HostImports(wasi.toHostFunctions());
-        var module = Module.builder("compiled/hello-wasi.rs.wasm").build();
-        module.withHostImports(imports).instantiate(); // run _start and prints Hello, World!
+        var module = Module.builder("compiled/hello-wasi.rs.wasm").withHostImports(imports).build();
+        module.instantiate(); // run _start and prints Hello, World!
         assertEquals(expected, stdout.output().strip());
     }
 
@@ -44,8 +45,8 @@ public class WasiPreview1Test {
         var wasiOpts = WasiOptions.builder().withStdout(System.out).withStdin(fakeStdin).build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
-        var module = Module.builder("compiled/greet-wasi.rs.wasm").build();
-        module.withHostImports(imports).instantiate();
+        var module = Module.builder("compiled/greet-wasi.rs.wasm").withHostImports(imports).build();
+        module.instantiate();
     }
 
     @Test
@@ -57,8 +58,9 @@ public class WasiPreview1Test {
         var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStdin(fakeStdin).build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
-        var module = Module.builder("compiled/javy-demo.js.javy.wasm").build();
-        module.withHostImports(imports).instantiate();
+        var module =
+                Module.builder("compiled/javy-demo.js.javy.wasm").withHostImports(imports).build();
+        module.instantiate();
 
         assertEquals(fakeStdout.output(), "{\"foo\":3,\"newBar\":\"baz!\"}");
     }
@@ -68,8 +70,8 @@ public class WasiPreview1Test {
         var wasiOpts = WasiOptions.builder().build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
-        var module = Module.builder("compiled/sum.go.tiny.wasm").build();
-        var instance = module.withHostImports(imports).instantiate();
+        var module = Module.builder("compiled/sum.go.tiny.wasm").withHostImports(imports).build();
+        var instance = module.instantiate();
         var sum = instance.export("add");
         var result = sum.apply(Value.i32(20), Value.i32(22))[0];
 
