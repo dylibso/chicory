@@ -62,12 +62,7 @@ class InterpreterMachine implements Machine {
             eval(stack, instance, callStack);
         } else {
             callStack.push(new StackFrame(instance, funcId, args, List.of()));
-            var imprt = instance.imports().function(funcId);
-            if (imprt == null) {
-                throw new ChicoryException("Missing host import, number: " + funcId);
-            }
-            var hostFunc = imprt.handle();
-            var results = hostFunc.apply(instance, args);
+            var results = instance.callHostFunction(funcId, args);
             // a host function can return null or an array of ints
             // which we will push onto the stack
             if (results != null) {

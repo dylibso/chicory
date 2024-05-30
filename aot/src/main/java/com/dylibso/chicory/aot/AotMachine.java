@@ -28,6 +28,7 @@ import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.StackFrame;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
@@ -244,8 +245,8 @@ public class AotMachine implements Machine {
     public AotMachine(Module module, Instance instance) {
         this.module = module;
         this.instance = requireNonNull(instance, "instance");
-        compiledFunctions = new MethodHandle[module.wasmModule().functionSection().functionCount()];
-        compile();
+
+        this.compiledFunctions = compile();
     }
 
     @Override
@@ -270,19 +271,29 @@ public class AotMachine implements Machine {
         return List.of();
     }
 
-    private void compile() {
+    private MethodHandle[] compile() {
+        int importCount = module.wasmModule().importSection().count(ExternalType.FUNCTION);
         var functions = module.wasmModule().functionSection();
+        var compiled = new MethodHandle[importCount + functions.functionCount()];
+
+        for (int i = 0; i < importCount; i++) {
+            compiled[i] = HostFunctionInvoker.HANDLE.bindTo(instance);
+        }
+
         for (int i = 0; i < functions.functionCount(); i++) {
             var type = functions.getFunctionType(i, module.wasmModule().typeSection());
             var body = module.wasmModule().codeSection().getFunctionBody(i);
+            var funcId = importCount + i;
             try {
-                compiledFunctions[i] = compile(i, type, body);
+                compiled[funcId] = compile(funcId, type, body);
             } catch (NoSuchMethodException | IllegalAccessException e) {
                 throw new ChicoryException(e);
             } catch (InvocationTargetException | InstantiationException e) {
                 throw new RuntimeException(e);
             }
         }
+
+        return compiled;
     }
 
     private MethodHandle compile(int funcId, FunctionType type, FunctionBody body)
