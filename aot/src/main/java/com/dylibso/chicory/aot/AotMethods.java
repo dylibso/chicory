@@ -35,9 +35,13 @@ public final class AotMethods {
             MEMORY_WRITE_BYTE = Memory.class.getMethod("writeByte", int.class, byte.class);
             MEMORY_WRITE_SHORT = Memory.class.getMethod("writeShort", int.class, short.class);
             MEMORY_WRITE_INT = Memory.class.getMethod("writeI32", int.class, int.class);
-            MEMORY_WRITE_LONG = Memory.class.getMethod("writeLong", int.class, long.class);
+            MEMORY_WRITE_LONG =
+                    AotMethods.class.getMethod(
+                            "memoryWriteLong", long.class, int.class, Memory.class);
             MEMORY_WRITE_FLOAT = Memory.class.getMethod("writeF32", int.class, float.class);
-            MEMORY_WRITE_DOUBLE = Memory.class.getMethod("writeF64", int.class, double.class);
+            MEMORY_WRITE_DOUBLE =
+                    AotMethods.class.getMethod(
+                            "memoryWriteDouble", double.class, int.class, Memory.class);
             VALIDATE_BASE = AotMethods.class.getMethod("validateBase", int.class);
             THROW_OUT_OF_BOUNDS_MEMORY_ACCESS =
                     AotMethods.class.getMethod("throwOutOfBoundsMemoryAccess");
@@ -48,6 +52,16 @@ public final class AotMethods {
     }
 
     private AotMethods() {}
+
+    @UsedByGeneratedCode
+    public static void memoryWriteLong(long value, int address, Memory memory) {
+        memory.writeLong(address, value);
+    }
+
+    @UsedByGeneratedCode
+    public static void memoryWriteDouble(double value, int address, Memory memory) {
+        memory.writeF64(address, value);
+    }
 
     @UsedByGeneratedCode
     public static void validateBase(int base) {

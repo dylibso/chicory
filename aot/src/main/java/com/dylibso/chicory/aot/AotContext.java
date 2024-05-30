@@ -19,8 +19,6 @@ public class AotContext {
     protected final FunctionBody body;
     protected final List<Integer> slots;
     protected final int memorySlot;
-    protected final int longSlot;
-    protected final int doubleSlot;
     protected final Deque<StackSize> stackSizes = new ArrayDeque<>();
 
     public AotContext(int funcId, FunctionType type, FunctionBody body) {
@@ -29,8 +27,6 @@ public class AotContext {
         this.body = body;
         this.slots = computeSlots(type, body);
         this.memorySlot = slots.get(slots.size() - 1);
-        this.longSlot = memorySlot + 1;
-        this.doubleSlot = longSlot + 2;
     }
 
     public int getId() {
@@ -51,14 +47,6 @@ public class AotContext {
 
     public int memorySlot() {
         return memorySlot;
-    }
-
-    public int longSlot() {
-        return longSlot;
-    }
-
-    public int doubleSlot() {
-        return doubleSlot;
     }
 
     public Deque<StackSize> stackSizes() {

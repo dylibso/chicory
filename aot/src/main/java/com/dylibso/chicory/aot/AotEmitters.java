@@ -412,28 +412,15 @@ public class AotEmitters {
     }
 
     public static void I64_STORE(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitX64StoreSetup(ctx, ins, asm);
-
-        // memory.writeLong(address, value)
-        asm.visitVarInsn(Opcodes.LSTORE, ctx.longSlot());
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
-        asm.visitInsn(Opcodes.SWAP);
-        asm.visitVarInsn(Opcodes.LLOAD, ctx.longSlot());
-        emitInvokeVirtual(asm, MEMORY_WRITE_LONG);
+        emitX64Store(ctx, ins, asm, MEMORY_WRITE_LONG);
     }
 
     public static void F64_STORE(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitX64StoreSetup(ctx, ins, asm);
-
-        // memory.writeF64(address, value)
-        asm.visitVarInsn(Opcodes.DSTORE, ctx.doubleSlot());
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
-        asm.visitInsn(Opcodes.SWAP);
-        asm.visitVarInsn(Opcodes.DLOAD, ctx.doubleSlot());
-        emitInvokeVirtual(asm, MEMORY_WRITE_DOUBLE);
+        emitX64Store(ctx, ins, asm, MEMORY_WRITE_DOUBLE);
     }
 
-    private static void emitX64StoreSetup(AotContext ctx, Instruction ins, MethodVisitor asm) {
+    private static void emitX64Store(
+            AotContext ctx, Instruction ins, MethodVisitor asm, Method method) {
         long offset = ins.operands()[1];
         emitThrowIfInvalidOffset(asm, offset);
 
@@ -447,9 +434,9 @@ public class AotEmitters {
         asm.visitLdcInsn((int) offset);
         asm.visitInsn(Opcodes.IADD);
 
-        // move value to top of stack
-        asm.visitInsn(Opcodes.DUP_X2);
-        asm.visitInsn(Opcodes.POP);
+        // memory.writeType(address, value)
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
+        emitInvokeStatic(asm, method);
     }
 
     /**
