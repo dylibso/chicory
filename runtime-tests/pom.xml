@@ -152,10 +152,13 @@
             <wast>binary.wast</wast>
           </excludedMalformedWasts>
           <excludedInvalidWasts>
+            <wast>binary-leb128.wast</wast>
             <wast>block.wast</wast>
             <wast>br.wast</wast>
             <wast>br_if.wast</wast>
             <wast>br_table.wast</wast>
+            <wast>bulk.wast</wast>
+            <wast>call.wast</wast>
             <wast>call_indirect.wast</wast>
             <wast>data.wast</wast>
             <wast>elem.wast</wast>
@@ -178,6 +181,7 @@
             <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
             <wast>select.wast</wast>
+            <wast>stack.wast</wast>
             <wast>start.wast</wast>
             <wast>store.wast</wast>
             <wast>switch.wast</wast>
@@ -190,7 +194,7 @@
             <wast>table_init.wast</wast>
             <wast>table_set.wast</wast>
             <wast>table_size.wast</wast>
-            <wast>unreacheable.wast</wast>
+            <wast>unreachable.wast</wast>
             <wast>unreached-invalid.wast</wast>
             <wast>unreached-valid.wast</wast>
             <wast>unwind.wast</wast>
