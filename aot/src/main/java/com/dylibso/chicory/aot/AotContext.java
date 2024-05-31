@@ -14,19 +14,28 @@ import java.util.List;
  */
 public class AotContext {
 
+    protected final List<ValueType> globalTypes;
     protected final int funcId;
     protected final FunctionType type;
     protected final FunctionBody body;
     protected final List<Integer> slots;
     protected final int memorySlot;
+    protected final int instanceSlot;
     protected final Deque<StackSize> stackSizes = new ArrayDeque<>();
 
-    public AotContext(int funcId, FunctionType type, FunctionBody body) {
+    public AotContext(
+            List<ValueType> globalTypes, int funcId, FunctionType type, FunctionBody body) {
+        this.globalTypes = globalTypes;
         this.funcId = funcId;
         this.type = type;
         this.body = body;
         this.slots = computeSlots(type, body);
         this.memorySlot = slots.get(slots.size() - 1);
+        this.instanceSlot = memorySlot + 1;
+    }
+
+    public List<ValueType> globalTypes() {
+        return globalTypes;
     }
 
     public int getId() {
@@ -47,6 +56,10 @@ public class AotContext {
 
     public int memorySlot() {
         return memorySlot;
+    }
+
+    public int instanceSlot() {
+        return instanceSlot;
     }
 
     public Deque<StackSize> stackSizes() {
@@ -87,6 +100,8 @@ public class AotContext {
         switch (type) {
             case I32:
             case F32:
+            case ExternRef:
+            case FuncRef:
                 return 1;
             case I64:
             case F64:

@@ -1,5 +1,6 @@
 package com.dylibso.chicory.aot;
 
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 
@@ -24,10 +25,14 @@ public class AotUtil {
     private static final Method UNBOX_I64;
     private static final Method UNBOX_F32;
     private static final Method UNBOX_F64;
+    private static final Method UNBOX_EXTREF;
+    private static final Method UNBOX_FUNCREF;
     private static final Method BOX_I32;
     private static final Method BOX_I64;
     private static final Method BOX_F32;
     private static final Method BOX_F64;
+    private static final Method BOX_EXTREF;
+    private static final Method BOX_FUNCREF;
 
     static {
         try {
@@ -35,10 +40,14 @@ public class AotUtil {
             UNBOX_I64 = Value.class.getMethod("asLong");
             UNBOX_F32 = Value.class.getMethod("asFloat");
             UNBOX_F64 = Value.class.getMethod("asDouble");
+            UNBOX_EXTREF = Value.class.getMethod("asExtRef");
+            UNBOX_FUNCREF = Value.class.getMethod("asFuncRef");
             BOX_I32 = Value.class.getMethod("i32", int.class);
             BOX_I64 = Value.class.getMethod("i64", long.class);
             BOX_F32 = Value.class.getMethod("fromFloat", float.class);
             BOX_F64 = Value.class.getMethod("fromDouble", double.class);
+            BOX_EXTREF = Value.class.getMethod("externRef", int.class);
+            BOX_FUNCREF = Value.class.getMethod("funcRef", int.class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }
@@ -47,6 +56,8 @@ public class AotUtil {
     public static Class<?> jvmType(ValueType type) {
         switch (type) {
             case I32:
+            case ExternRef:
+            case FuncRef:
                 return int.class;
             case I64:
                 return long.class;
@@ -77,6 +88,10 @@ public class AotUtil {
                 return UNBOX_F32;
             case F64:
                 return UNBOX_F64;
+            case ExternRef:
+                return UNBOX_EXTREF;
+            case FuncRef:
+                return UNBOX_FUNCREF;
             default:
                 throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
         }
@@ -92,6 +107,10 @@ public class AotUtil {
                 return BOX_F32;
             case F64:
                 return BOX_F64;
+            case ExternRef:
+                return BOX_EXTREF;
+            case FuncRef:
+                return BOX_FUNCREF;
             default:
                 throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
         }
@@ -125,6 +144,9 @@ public class AotUtil {
                 return 0.0f;
             case F64:
                 return 0.0d;
+            case ExternRef:
+            case FuncRef:
+                return REF_NULL_VALUE;
             default:
                 throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
         }

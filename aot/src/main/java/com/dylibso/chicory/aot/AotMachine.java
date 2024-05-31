@@ -14,6 +14,7 @@ import static java.lang.invoke.MethodHandles.filterArguments;
 import static java.lang.invoke.MethodHandles.filterReturnValue;
 import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.objectweb.asm.Type.VOID_TYPE;
 import static org.objectweb.asm.Type.getDescriptor;
 import static org.objectweb.asm.Type.getInternalName;
@@ -31,9 +32,12 @@ import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.Global;
+import com.dylibso.chicory.wasm.types.GlobalImport;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -41,7 +45,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -57,16 +63,44 @@ public class AotMachine implements Machine {
     protected final Module module;
     protected final Instance instance;
     protected final MethodHandle[] compiledFunctions;
+    protected final List<ValueType> globalTypes;
 
     protected static final Map<OpCode, BytecodeEmitter> emitters =
             AotEmitters.builder()
                     // ====== Misc ======
                     .intrinsic(DROP, AotEmitters::DROP)
+                    .intrinsic(ELEM_DROP, AotEmitters::ELEM_DROP)
                     .intrinsic(SELECT, AotEmitters::SELECT)
+                    .intrinsic(SELECT_T, AotEmitters::SELECT)
+
+                    // ====== References ======
+                    .intrinsic(REF_FUNC, AotEmitters::REF_FUNC)
+                    .intrinsic(REF_NULL, AotEmitters::REF_NULL)
+                    .intrinsic(REF_IS_NULL, AotEmitters::REF_IS_NULL)
 
                     // ====== Locals & Globals ======
                     .intrinsic(LOCAL_GET, AotEmitters::LOCAL_GET)
                     .intrinsic(LOCAL_SET, AotEmitters::LOCAL_SET)
+                    .intrinsic(LOCAL_TEE, AotEmitters::LOCAL_TEE)
+                    .intrinsic(GLOBAL_GET, AotEmitters::GLOBAL_GET)
+                    .intrinsic(GLOBAL_SET, AotEmitters::GLOBAL_SET)
+
+                    // ====== Tables ======
+                    .intrinsic(TABLE_GET, AotEmitters::TABLE_GET)
+                    .intrinsic(TABLE_SET, AotEmitters::TABLE_SET)
+                    .intrinsic(TABLE_SIZE, AotEmitters::TABLE_SIZE)
+                    .intrinsic(TABLE_GROW, AotEmitters::TABLE_GROW)
+                    .intrinsic(TABLE_FILL, AotEmitters::TABLE_FILL)
+                    .intrinsic(TABLE_COPY, AotEmitters::TABLE_COPY)
+                    .intrinsic(TABLE_INIT, AotEmitters::TABLE_INIT)
+
+                    // ====== Memory ======
+                    .intrinsic(MEMORY_INIT, AotEmitters::MEMORY_INIT)
+                    .intrinsic(MEMORY_COPY, AotEmitters::MEMORY_COPY)
+                    .intrinsic(MEMORY_FILL, AotEmitters::MEMORY_FILL)
+                    .intrinsic(MEMORY_GROW, AotEmitters::MEMORY_GROW)
+                    .intrinsic(MEMORY_SIZE, AotEmitters::MEMORY_SIZE)
+                    .intrinsic(DATA_DROP, AotEmitters::DATA_DROP)
 
                     // ====== Load & Store ======
                     .intrinsic(I32_LOAD, AotEmitters::I32_LOAD)
@@ -246,6 +280,15 @@ public class AotMachine implements Machine {
         this.module = module;
         this.instance = requireNonNull(instance, "instance");
 
+        var importedGlobals =
+                module.wasmModule().importSection().stream()
+                        .filter(GlobalImport.class::isInstance)
+                        .map(GlobalImport.class::cast)
+                        .map(GlobalImport::type);
+        var globals =
+                Stream.of(module.wasmModule().globalSection().globals()).map(Global::valueType);
+        this.globalTypes = Stream.concat(importedGlobals, globals).collect(toUnmodifiableList());
+
         this.compiledFunctions = compile();
     }
 
@@ -323,6 +366,14 @@ public class AotMachine implements Machine {
                 null,
                 null);
 
+        // private final Instance instance;
+        classWriter.visitField(
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
+                "instance",
+                getDescriptor(Instance.class),
+                null,
+                null);
+
         emitConstructor(internalClassName, classWriter);
 
         var implWriter =
@@ -347,7 +398,9 @@ public class AotMachine implements Machine {
         classWriter.visitEnd();
 
         Class<?> clazz = loadClass(className, classWriter.toByteArray());
-        Object target = clazz.getConstructor(Memory.class).newInstance(instance.memory());
+        Object target =
+                clazz.getConstructor(Memory.class, Instance.class)
+                        .newInstance(instance.memory(), instance);
         MethodHandle handle =
                 MethodHandles.lookup()
                         .findVirtual(clazz, "call", methodTypeFor(type))
@@ -400,12 +453,13 @@ public class AotMachine implements Machine {
         return "com.dylibso.chicory.$gen.Function$" + funcId;
     }
 
-    private static void emitConstructor(String internalClassName, ClassWriter writer) {
+    private static void emitConstructor(String internalClassName, ClassVisitor writer) {
         var cons =
                 writer.visitMethod(
                         Opcodes.ACC_PUBLIC,
                         "<init>",
-                        getMethodDescriptor(VOID_TYPE, getType(Memory.class)),
+                        getMethodDescriptor(
+                                VOID_TYPE, getType(Memory.class), getType(Instance.class)),
                         null,
                         null);
         cons.visitCode();
@@ -424,6 +478,12 @@ public class AotMachine implements Machine {
         cons.visitVarInsn(Opcodes.ALOAD, 1);
         cons.visitFieldInsn(
                 Opcodes.PUTFIELD, internalClassName, "memory", getDescriptor(Memory.class));
+
+        // this.instance = instance;
+        cons.visitVarInsn(Opcodes.ALOAD, 0);
+        cons.visitVarInsn(Opcodes.ALOAD, 2);
+        cons.visitFieldInsn(
+                Opcodes.PUTFIELD, internalClassName, "instance", getDescriptor(Instance.class));
 
         cons.visitInsn(Opcodes.RETURN);
         cons.visitMaxs(0, 0);
@@ -444,14 +504,14 @@ public class AotMachine implements Machine {
         }
     }
 
-    private static void compileBody(
+    private void compileBody(
             String internalClassName,
             int funcId,
             FunctionType type,
             FunctionBody body,
             MethodVisitor asm) {
 
-        var ctx = new AotContext(funcId, type, body);
+        var ctx = new AotContext(globalTypes, funcId, type, body);
 
         // initialize local variables to their default values
         int localsCount = type.params().size() + body.localTypes().size();
@@ -466,6 +526,13 @@ public class AotMachine implements Machine {
                 Opcodes.GETFIELD, internalClassName, "memory", getDescriptor(Memory.class));
         asm.visitVarInsn(Opcodes.ASTORE, ctx.memorySlot());
 
+        // instance = this.instance;
+        asm.visitVarInsn(Opcodes.ALOAD, 0);
+        asm.visitFieldInsn(
+                Opcodes.GETFIELD, internalClassName, "instance", getDescriptor(Instance.class));
+        asm.visitVarInsn(Opcodes.ASTORE, ctx.instanceSlot());
+
+        // compile the function body
         for (var ins : body.instructions()) {
             switch (ins.opcode()) {
                     // TODO - handle control flow & other "bookkeeping" opcodes here

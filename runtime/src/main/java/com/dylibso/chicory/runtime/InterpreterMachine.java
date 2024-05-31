@@ -1,6 +1,5 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
@@ -9,7 +8,6 @@ import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
-import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
@@ -1466,17 +1464,8 @@ class InterpreterMachine implements Machine {
         var size = stack.pop().asInt();
         var val = stack.pop().asExtRef();
         var offset = stack.pop().asInt();
-        var end = offset + size;
 
-        var table = instance.table(tableidx);
-
-        if (size < 0 || end > table.size()) {
-            throw new WASMRuntimeException("out of bounds table access");
-        }
-
-        for (int i = offset; i < end; i++) {
-            table.setRef(i, val, instance);
-        }
+        OpcodeImpl.TABLE_FILL(instance, tableidx, size, val, offset);
     }
 
     private static void TABLE_COPY(MStack stack, Instance instance, long[] operands) {
@@ -1486,24 +1475,8 @@ class InterpreterMachine implements Machine {
         var size = stack.pop().asInt();
         var s = stack.pop().asInt();
         var d = stack.pop().asInt();
-        var src = instance.table(tableidxSrc);
-        var dest = instance.table(tableidxDst);
 
-        if (size < 0 || (s < 0 || (size + s) > src.size()) || (d < 0 || (size + d) > dest.size())) {
-            throw new WASMRuntimeException("out of bounds table access");
-        }
-
-        for (int i = size - 1; i >= 0; i--) {
-            if (d <= s) {
-                var val = src.ref(s++);
-                var inst = src.instance(d);
-                dest.setRef(d++, val.asFuncRef(), inst);
-            } else {
-                var val = src.ref(s + i);
-                var inst = src.instance(d + i);
-                dest.setRef(d + i, val.asFuncRef(), inst);
-            }
-        }
+        OpcodeImpl.TABLE_COPY(instance, tableidxSrc, tableidxDst, size, s, d);
     }
 
     private static void MEMORY_COPY(MStack stack, Instance instance, long[] operands) {
@@ -1525,41 +1498,8 @@ class InterpreterMachine implements Machine {
         var size = stack.pop().asInt();
         var elemidx = stack.pop().asInt();
         var offset = stack.pop().asInt();
-        var end = offset + size;
 
-        var table = instance.table(tableidx);
-
-        var elementCount = instance.elementCount();
-        var currentElement = instance.element(elementidx);
-        var currentElementCount =
-                (currentElement instanceof PassiveElement) ? currentElement.elementCount() : 0;
-        boolean isOutOfBounds =
-                (size < 0
-                        || elementidx > elementCount
-                        || (size > 0
-                                && (currentElement == null
-                                        || !(currentElement instanceof PassiveElement)))
-                        || elemidx + size > currentElementCount
-                        || end > table.size());
-
-        if (isOutOfBounds) {
-            throw new WASMRuntimeException("out of bounds table access");
-        } else if (size == 0) {
-            return;
-        }
-
-        for (int i = offset; i < end; i++) {
-            var val = getRuntimeElementValue(instance, elementidx, elemidx++);
-            if (table.elementType() == ValueType.FuncRef) {
-                if (val.asFuncRef() > instance.functionCount()) {
-                    throw new WASMRuntimeException("out of bounds table access");
-                }
-                table.setRef(i, val.asFuncRef(), instance);
-            } else {
-                assert table.elementType() == ValueType.ExternRef;
-                table.setRef(i, val.asExtRef(), instance);
-            }
-        }
+        OpcodeImpl.TABLE_INIT(instance, tableidx, elementidx, size, elemidx, offset);
     }
 
     private static void MEMORY_INIT(MStack stack, Instance instance, long[] operands) {
@@ -1841,13 +1781,8 @@ class InterpreterMachine implements Machine {
 
     private static void TABLE_GET(MStack stack, Instance instance, long[] operands) {
         var idx = (int) operands[0];
-        var table = instance.table(idx);
-
         var i = stack.pop().asInt();
-        if (i < 0 || i >= table.limits().max() || i >= table.size()) {
-            throw new WASMRuntimeException("out of bounds table access");
-        }
-        stack.push(table.ref(i));
+        stack.push(OpcodeImpl.TABLE_GET(instance, idx, i));
     }
 
     private static void GLOBAL_SET(MStack stack, Instance instance, long[] operands) {
@@ -1989,11 +1924,6 @@ class InterpreterMachine implements Machine {
                 stack.push(value);
             }
         }
-    }
-
-    private static Value getRuntimeElementValue(Instance instance, int elemIdx, int itemIdx) {
-        var elem = instance.element(elemIdx);
-        return computeConstantValue(instance, elem.initializers().get(itemIdx));
     }
 
     @Override
