@@ -1,10 +1,13 @@
 package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.aot.AotMethods.*;
+import static com.dylibso.chicory.aot.AotUtil.boxer;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
 import static com.dylibso.chicory.aot.AotUtil.stackSize;
+import static com.dylibso.chicory.aot.AotUtil.unboxer;
 import static com.dylibso.chicory.aot.AotUtil.validateArgumentType;
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.aot.AotUtil.StackSize;
 import com.dylibso.chicory.runtime.OpCodeIdentifier;
@@ -53,6 +56,14 @@ public class AotEmitters {
         emitPop(asm, ctx.popStackSize());
     }
 
+    public static void ELEM_DROP(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        int index = (int) ins.operands()[0];
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        asm.visitLdcInsn(index);
+        asm.visitInsn(Opcodes.ACONST_NULL);
+        emitInvokeVirtual(asm, INSTANCE_SET_ELEMENT);
+    }
+
     public static void SELECT(AotContext ctx, Instruction ins, MethodVisitor asm) {
         ctx.popStackSize();
         StackSize stackSize = ctx.popStackSize();
@@ -69,12 +80,26 @@ public class AotEmitters {
         emitPop(asm, stackSize);
     }
 
+    public static void REF_FUNC(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn((int) ins.operands()[0]);
+    }
+
+    public static void REF_NULL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn(REF_NULL_VALUE);
+    }
+
+    public static void REF_IS_NULL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        emitInvokeStatic(asm, REF_IS_NULL);
+    }
+
     public static void LOCAL_GET(AotContext ctx, Instruction ins, MethodVisitor asm) {
         var loadIndex = (int) ins.operands()[0];
         var localType = AotUtil.localType(ctx.getType(), ctx.getBody(), loadIndex);
         int opcode;
         switch (localType) {
             case I32:
+            case ExternRef:
+            case FuncRef:
                 opcode = Opcodes.ILOAD;
                 ctx.pushStackSize(StackSize.ONE);
                 break;
@@ -98,7 +123,6 @@ public class AotEmitters {
 
     public static void LOCAL_SET(AotContext ctx, Instruction ins, MethodVisitor asm) {
         emitLocalStore(ctx, asm, (int) ins.operands()[0]);
-        ctx.popStackSize();
     }
 
     public static void emitLocalStore(AotContext ctx, MethodVisitor asm, int storeIndex) {
@@ -106,6 +130,8 @@ public class AotEmitters {
         int opcode;
         switch (localType) {
             case I32:
+            case ExternRef:
+            case FuncRef:
                 opcode = Opcodes.ISTORE;
                 break;
             case I64:
@@ -121,6 +147,117 @@ public class AotEmitters {
                 throw new IllegalArgumentException("Unsupported store target type: " + localType);
         }
         asm.visitVarInsn(opcode, ctx.localSlotIndex(storeIndex));
+    }
+
+    public static void LOCAL_TEE(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        StackSize stackSize = ctx.popStackSize();
+        emitPop(asm, stackSize);
+        ctx.pushStackSize(stackSize);
+
+        LOCAL_SET(ctx, ins, asm);
+    }
+
+    public static void GLOBAL_GET(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        int globalIndex = (int) ins.operands()[0];
+
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        asm.visitLdcInsn(globalIndex);
+        emitInvokeVirtual(asm, INSTANCE_READ_GLOBAL);
+
+        Method unboxer = unboxer(ctx.globalTypes().get(globalIndex));
+        emitInvokeVirtual(asm, unboxer);
+
+        ctx.pushStackSize(stackSize(unboxer.getReturnType()));
+    }
+
+    public static void GLOBAL_SET(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        int globalIndex = (int) ins.operands()[0];
+
+        emitInvokeStatic(asm, boxer(ctx.globalTypes().get(globalIndex)));
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        asm.visitInsn(Opcodes.SWAP);
+        asm.visitLdcInsn(globalIndex);
+        asm.visitInsn(Opcodes.SWAP);
+        emitInvokeVirtual(asm, INSTANCE_WRITE_GLOBAL);
+    }
+
+    public static void TABLE_GET(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        emitInvokeStatic(asm, TABLE_GET);
+    }
+
+    public static void TABLE_SET(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        emitInvokeStatic(asm, TABLE_SET);
+    }
+
+    public static void TABLE_SIZE(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        emitInvokeStatic(asm, TABLE_SIZE);
+    }
+
+    public static void TABLE_GROW(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        emitInvokeStatic(asm, TABLE_GROW);
+    }
+
+    public static void TABLE_FILL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        emitInvokeStatic(asm, TABLE_FILL);
+    }
+
+    public static void TABLE_COPY(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitLdcInsn((int) ins.operands()[1]);
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        emitInvokeStatic(asm, TABLE_COPY);
+    }
+
+    public static void TABLE_INIT(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitLdcInsn((int) ins.operands()[1]);
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        emitInvokeStatic(asm, TABLE_INIT);
+    }
+
+    public static void MEMORY_INIT(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        int segmentId = (int) ins.operands()[0];
+        asm.visitLdcInsn(segmentId);
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
+        emitInvokeStatic(asm, MEMORY_INIT);
+    }
+
+    public static void MEMORY_COPY(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
+        emitInvokeStatic(asm, MEMORY_COPY);
+    }
+
+    public static void MEMORY_FILL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
+        emitInvokeStatic(asm, MEMORY_FILL);
+    }
+
+    public static void MEMORY_GROW(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
+        asm.visitInsn(Opcodes.SWAP);
+        emitInvokeVirtual(asm, MEMORY_GROW);
+    }
+
+    public static void MEMORY_SIZE(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
+        emitInvokeVirtual(asm, MEMORY_PAGES);
+    }
+
+    public static void DATA_DROP(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        int segmentId = (int) ins.operands()[0];
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
+        asm.visitLdcInsn(segmentId);
+        emitInvokeVirtual(asm, MEMORY_DROP);
     }
 
     public static void I32_ADD(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -494,6 +631,9 @@ public class AotEmitters {
 
     private static void updateStackSize(AotContext ctx, OpCode opCode) {
         switch (opCode) {
+            case TABLE_GROW:
+            case LOCAL_SET:
+            case GLOBAL_SET:
             case I32_ADD:
             case I32_AND:
             case I32_MUL:
@@ -524,6 +664,7 @@ public class AotEmitters {
             case F64_SUB:
                 ctx.popStackSize();
                 break;
+            case TABLE_SET:
             case I32_STORE:
             case I32_STORE8:
             case I32_STORE16:
@@ -536,6 +677,20 @@ public class AotEmitters {
                 ctx.popStackSize();
                 ctx.popStackSize();
                 break;
+            case MEMORY_COPY:
+            case MEMORY_FILL:
+            case MEMORY_INIT:
+            case TABLE_FILL:
+            case TABLE_COPY:
+            case TABLE_INIT:
+                ctx.popStackSize();
+                ctx.popStackSize();
+                ctx.popStackSize();
+                break;
+            case REF_FUNC:
+            case REF_NULL:
+            case MEMORY_SIZE:
+            case TABLE_SIZE:
             case I32_CONST:
             case F32_CONST:
                 ctx.pushStackSize(StackSize.ONE);
@@ -562,6 +717,12 @@ public class AotEmitters {
                 ctx.popStackSize();
                 ctx.pushStackSize(StackSize.TWO);
                 break;
+            case ELEM_DROP:
+            case REF_IS_NULL:
+            case TABLE_GET:
+            case MEMORY_GROW:
+            case DATA_DROP:
+            case LOCAL_TEE:
             case F32_NEG:
             case F64_NEG:
             case I32_LOAD:
@@ -574,8 +735,9 @@ public class AotEmitters {
                 break;
             case DROP:
             case SELECT:
+            case SELECT_T:
             case LOCAL_GET:
-            case LOCAL_SET:
+            case GLOBAL_GET:
                 // handled in the opcode implementation
                 break;
             default:

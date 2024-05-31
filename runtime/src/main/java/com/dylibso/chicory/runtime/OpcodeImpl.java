@@ -2,9 +2,13 @@ package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.runtime.BitOps.FALSE;
 import static com.dylibso.chicory.runtime.BitOps.TRUE;
+import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.PassiveElement;
+import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
 
 /**
  * Note: Some opcodes are easy or trivial to implement as compiler intrinsics (local.get, i32.add, etc).
@@ -256,6 +260,7 @@ public class OpcodeImpl {
     }
 
     // ========= I64 =========
+
     @OpCodeIdentifier(OpCode.I64_CLZ)
     public static long I64_CLZ(long tos) {
         return Long.numberOfLeadingZeros(tos);
@@ -556,6 +561,7 @@ public class OpcodeImpl {
     }
 
     // ========= F32 =========
+
     @OpCodeIdentifier(OpCode.F32_ABS)
     public static float F32_ABS(float x) {
         return Math.abs(x);
@@ -671,6 +677,7 @@ public class OpcodeImpl {
     }
 
     // ========= F64 =========
+
     @OpCodeIdentifier(OpCode.F64_ABS)
     public static double F64_ABS(double x) {
         return Math.abs(x);
@@ -783,5 +790,89 @@ public class OpcodeImpl {
     @OpCodeIdentifier(OpCode.F64_TRUNC)
     public static double F64_TRUNC(double x) {
         return (x < 0) ? Math.ceil(x) : Math.floor(x);
+    }
+
+    // ========= Tables =========
+
+    public static Value TABLE_GET(Instance instance, int tableIndex, int index) {
+        TableInstance table = instance.table(tableIndex);
+        if (index < 0 || index >= table.limits().max() || index >= table.size()) {
+            throw new WASMRuntimeException("out of bounds table access");
+        }
+        return table.ref(index);
+    }
+
+    public static void TABLE_FILL(
+            Instance instance, int tableIndex, int size, int value, int offset) {
+        int end = offset + size;
+        var table = instance.table(tableIndex);
+
+        if (size < 0 || end > table.size()) {
+            throw new WASMRuntimeException("out of bounds table access");
+        }
+
+        for (int i = offset; i < end; i++) {
+            table.setRef(i, value, instance);
+        }
+    }
+
+    public static void TABLE_COPY(
+            Instance instance, int srcTableIndex, int dstTableIndex, int size, int s, int d) {
+        var src = instance.table(srcTableIndex);
+        var dest = instance.table(dstTableIndex);
+
+        if (size < 0 || (s < 0 || (size + s) > src.size()) || (d < 0 || (size + d) > dest.size())) {
+            throw new WASMRuntimeException("out of bounds table access");
+        }
+
+        for (int i = size - 1; i >= 0; i--) {
+            if (d <= s) {
+                var val = src.ref(s++);
+                var inst = src.instance(d);
+                dest.setRef(d++, val.asFuncRef(), inst);
+            } else {
+                var val = src.ref(s + i);
+                var inst = src.instance(d + i);
+                dest.setRef(d + i, val.asFuncRef(), inst);
+            }
+        }
+    }
+
+    public static void TABLE_INIT(
+            Instance instance, int tableidx, int elementidx, int size, int elemidx, int offset) {
+        var end = offset + size;
+        var table = instance.table(tableidx);
+
+        var elementCount = instance.elementCount();
+        var currentElement = instance.element(elementidx);
+        var currentElementCount =
+                (currentElement instanceof PassiveElement) ? currentElement.elementCount() : 0;
+        boolean isOutOfBounds =
+                (size < 0
+                        || elementidx > elementCount
+                        || (size > 0 && !(currentElement instanceof PassiveElement))
+                        || elemidx + size > currentElementCount
+                        || end > table.size());
+
+        if (isOutOfBounds) {
+            throw new WASMRuntimeException("out of bounds table access");
+        }
+        if (size == 0) {
+            return;
+        }
+
+        for (int i = offset; i < end; i++) {
+            var elem = instance.element(elementidx);
+            var val = computeConstantValue(instance, elem.initializers().get(elemidx++));
+            if (table.elementType() == ValueType.FuncRef) {
+                if (val.asFuncRef() > instance.functionCount()) {
+                    throw new WASMRuntimeException("out of bounds table access");
+                }
+                table.setRef(i, val.asFuncRef(), instance);
+            } else {
+                assert table.elementType() == ValueType.ExternRef;
+                table.setRef(i, val.asExtRef(), instance);
+            }
+        }
     }
 }
