@@ -29,11 +29,10 @@ public class AotEmitters {
         protected final Map<OpCode, BytecodeEmitter> emitters = new EnumMap<>(OpCode.class);
 
         public Builder intrinsic(OpCode opCode, BytecodeEmitter emitter) {
-            BytecodeEmitter wrapped =
-                    (ctx, ins, asm) -> {
-                        emitter.emit(ctx, ins, asm);
-                        updateStackSize(ctx, opCode);
-                    };
+            BytecodeEmitter wrapped = (ctx, ins, asm) -> {
+                emitter.emit(ctx, ins, asm);
+                updateStackSize(ctx, opCode);
+            };
             emitters.put(opCode, wrapped);
             return this;
         }
@@ -622,11 +621,10 @@ public class AotEmitters {
                 };
             }
         }
-        throw new IllegalArgumentException(
-                "Static helper "
-                        + staticHelpers.getName()
-                        + " does not provide an implementation of opcode "
-                        + opcode.name());
+        throw new IllegalArgumentException("Static helper "
+                + staticHelpers.getName()
+                + " does not provide an implementation of opcode "
+                + opcode.name());
     }
 
     private static void updateStackSize(AotContext ctx, OpCode opCode) {

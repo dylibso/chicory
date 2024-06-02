@@ -153,21 +153,20 @@ class InterpreterMachine implements Machine {
                     case SELECT_T:
                         SELECT_T(stack, operands);
                         break;
-                    case END:
-                        {
-                            if (frame.doControlTransfer && frame.isControlFrame) {
-                                doControlTransfer(instance, stack, frame, instruction.scope());
-                            } else {
-                                frame.endOfNonControlBlock();
-                            }
-
-                            // if this is the last end, then we're done with
-                            // the function
-                            if (frame.isLastBlock()) {
-                                break loop;
-                            }
-                            break;
+                    case END: {
+                        if (frame.doControlTransfer && frame.isControlFrame) {
+                            doControlTransfer(instance, stack, frame, instruction.scope());
+                        } else {
+                            frame.endOfNonControlBlock();
                         }
+
+                        // if this is the last end, then we're done with
+                        // the function
+                        if (frame.isLastBlock()) {
+                            break loop;
+                        }
+                        break;
+                    }
                     case LOCAL_GET:
                         stack.push(frame.local((int) operands[0]));
                         break;
@@ -1787,10 +1786,9 @@ class InterpreterMachine implements Machine {
 
     private static void GLOBAL_SET(MStack stack, Instance instance, long[] operands) {
         var id = (int) operands[0];
-        var mutabilityType =
-                (instance.globalInitializer(id) == null)
-                        ? instance.imports().global(id).mutabilityType()
-                        : instance.globalInitializer(id);
+        var mutabilityType = (instance.globalInitializer(id) == null)
+                ? instance.imports().global(id).mutabilityType()
+                : instance.globalInitializer(id);
         if (mutabilityType == MutabilityType.Const) {
             throw new RuntimeException("Can't call GLOBAL_SET on immutable global");
         }

@@ -30,13 +30,12 @@ public class InterruptionTest {
 
     private static void assertInterruption(Runnable function) throws InterruptedException {
         AtomicBoolean interrupted = new AtomicBoolean();
-        Runnable runnable =
-                () -> {
-                    var e = assertThrows(WASMMachineException.class, function::run);
-                    var ex = assertInstanceOf(ChicoryException.class, e.getCause());
-                    assertEquals("Thread interrupted", ex.getMessage());
-                    interrupted.set(true);
-                };
+        Runnable runnable = () -> {
+            var e = assertThrows(WASMMachineException.class, function::run);
+            var ex = assertInstanceOf(ChicoryException.class, e.getCause());
+            assertEquals("Thread interrupted", ex.getMessage());
+            interrupted.set(true);
+        };
 
         // start the thread and wait for WASM execution
         Thread thread = new Thread(runnable);

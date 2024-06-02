@@ -71,14 +71,9 @@ public class WasiPreview1 implements Closeable {
         this.logger = requireNonNull(logger);
         this.arguments =
                 opts.arguments().stream().map(value -> value.getBytes(UTF_8)).collect(toList());
-        this.environment =
-                opts.environment().entrySet().stream()
-                        .map(
-                                x ->
-                                        Map.entry(
-                                                x.getKey().getBytes(UTF_8),
-                                                x.getValue().getBytes(UTF_8)))
-                        .collect(toList());
+        this.environment = opts.environment().entrySet().stream()
+                .map(x -> Map.entry(x.getKey().getBytes(UTF_8), x.getValue().getBytes(UTF_8)))
+                .collect(toList());
 
         descriptors.allocate(new InStream(opts.stdin()));
         descriptors.allocate(new OutStream(opts.stdout()));
@@ -251,10 +246,9 @@ public class WasiPreview1 implements Closeable {
                     int environCount = args[0].asInt();
                     int environBufSize = args[1].asInt();
 
-                    int bufSize =
-                            environment.stream()
-                                    .mapToInt(x -> x.getKey().length + x.getValue().length + 2)
-                                    .sum();
+                    int bufSize = environment.stream()
+                            .mapToInt(x -> x.getKey().length + x.getValue().length + 2)
+                            .sum();
                     Memory memory = instance.memory();
                     memory.writeI32(environCount, environment.size());
                     memory.writeI32(environBufSize, bufSize);
@@ -447,15 +441,14 @@ public class WasiPreview1 implements Closeable {
                     }
 
                     if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
-                        Map<String, Object> attributes =
-                                Map.of(
-                                        "dev", 0L,
-                                        "ino", 0L,
-                                        "nlink", 1L,
-                                        "size", 0L,
-                                        "lastAccessTime", FileTime.from(Instant.EPOCH),
-                                        "lastModifiedTime", FileTime.from(Instant.EPOCH),
-                                        "ctime", FileTime.from(Instant.EPOCH));
+                        Map<String, Object> attributes = Map.of(
+                                "dev", 0L,
+                                "ino", 0L,
+                                "nlink", 1L,
+                                "size", 0L,
+                                "lastAccessTime", FileTime.from(Instant.EPOCH),
+                                "lastModifiedTime", FileTime.from(Instant.EPOCH),
+                                "ctime", FileTime.from(Instant.EPOCH));
                         writeFileStat(
                                 instance.memory(), buf, attributes, WasiFileType.CHARACTER_DEVICE);
                         return wasiResult(WasiErrno.ESUCCESS);
@@ -705,9 +698,8 @@ public class WasiPreview1 implements Closeable {
                                 continue;
                             }
 
-                            ByteBuffer entry =
-                                    ByteBuffer.allocate(24 + name.length)
-                                            .order(ByteOrder.LITTLE_ENDIAN);
+                            ByteBuffer entry = ByteBuffer.allocate(24 + name.length)
+                                    .order(ByteOrder.LITTLE_ENDIAN);
                             entry.putLong(0, cookie);
                             entry.putLong(8, ((Number) attributes.get("ino")).longValue());
                             entry.putInt(16, name.length);
@@ -1178,9 +1170,8 @@ public class WasiPreview1 implements Closeable {
                     }
 
                     try {
-                        var attributes =
-                                Files.readAttributes(
-                                        path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+                        var attributes = Files.readAttributes(
+                                path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
                         if (!attributes.isDirectory()) {
                             return wasiResult(WasiErrno.ENOTDIR);
                         }
@@ -1312,9 +1303,8 @@ public class WasiPreview1 implements Closeable {
                     }
 
                     try {
-                        var attributes =
-                                Files.readAttributes(
-                                        path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+                        var attributes = Files.readAttributes(
+                                path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
                         if (attributes.isDirectory()) {
                             return wasiResult(WasiErrno.EISDIR);
                         }
@@ -1630,6 +1620,7 @@ public class WasiPreview1 implements Closeable {
     }
 
     private static RuntimeException unhandledDescriptor(Descriptor descriptor) {
-        return new WASMRuntimeException("Unhandled descriptor: " + descriptor.getClass().getName());
+        return new WASMRuntimeException(
+                "Unhandled descriptor: " + descriptor.getClass().getName());
     }
 }

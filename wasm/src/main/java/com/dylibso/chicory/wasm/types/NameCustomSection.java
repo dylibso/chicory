@@ -73,57 +73,47 @@ public class NameCustomSection extends CustomSection {
             ByteBuffer slice = slice(buf, (int) Parser.readVarUInt32(buf));
             // todo: IDs 4 and 10 are reserved for the Host GC spec
             switch (id) {
-                case 0:
-                    {
-                        assert (moduleName == null);
-                        moduleName = Parser.readName(slice);
-                        break;
-                    }
-                case 1:
-                    {
-                        oneLevelParse(slice, funcNames);
-                        break;
-                    }
-                case 2:
-                    {
-                        twoLevelParse(slice, localNames);
-                        break;
-                    }
-                case 3:
-                    {
-                        twoLevelParse(slice, labelNames);
-                        break;
-                    }
-                case 5:
-                    {
-                        oneLevelParse(slice, tableNames);
-                        break;
-                    }
-                case 6:
-                    {
-                        oneLevelParse(slice, memoryNames);
-                        break;
-                    }
-                case 7:
-                    {
-                        oneLevelParse(slice, globalNames);
-                        break;
-                    }
-                case 8:
-                    {
-                        oneLevelParse(slice, elementNames);
-                        break;
-                    }
-                case 9:
-                    {
-                        oneLevelParse(slice, dataNames);
-                        break;
-                    }
-                case 11:
-                    {
-                        oneLevelParse(slice, tagNames);
-                        break;
-                    }
+                case 0: {
+                    assert (moduleName == null);
+                    moduleName = Parser.readName(slice);
+                    break;
+                }
+                case 1: {
+                    oneLevelParse(slice, funcNames);
+                    break;
+                }
+                case 2: {
+                    twoLevelParse(slice, localNames);
+                    break;
+                }
+                case 3: {
+                    twoLevelParse(slice, labelNames);
+                    break;
+                }
+                case 5: {
+                    oneLevelParse(slice, tableNames);
+                    break;
+                }
+                case 6: {
+                    oneLevelParse(slice, memoryNames);
+                    break;
+                }
+                case 7: {
+                    oneLevelParse(slice, globalNames);
+                    break;
+                }
+                case 8: {
+                    oneLevelParse(slice, elementNames);
+                    break;
+                }
+                case 9: {
+                    oneLevelParse(slice, dataNames);
+                    break;
+                }
+                case 11: {
+                    oneLevelParse(slice, tagNames);
+                    break;
+                }
                 default:
                     // ignore unknown subsection for forwards-compatibility
             }

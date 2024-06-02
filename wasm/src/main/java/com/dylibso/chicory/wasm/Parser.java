@@ -99,54 +99,52 @@ public final class Parser {
     public Module parseModule(InputStream in) {
         Module module = new Module();
 
-        parse(
-                in,
-                (s) -> {
-                    switch (s.sectionId()) {
-                        case SectionId.CUSTOM:
-                            module.addCustomSection((CustomSection) s);
-                            break;
-                        case SectionId.TYPE:
-                            module.setTypeSection((TypeSection) s);
-                            break;
-                        case SectionId.IMPORT:
-                            module.setImportSection((ImportSection) s);
-                            break;
-                        case SectionId.FUNCTION:
-                            module.setFunctionSection((FunctionSection) s);
-                            break;
-                        case SectionId.TABLE:
-                            module.setTableSection((TableSection) s);
-                            break;
-                        case SectionId.MEMORY:
-                            module.setMemorySection((MemorySection) s);
-                            break;
-                        case SectionId.GLOBAL:
-                            module.setGlobalSection((GlobalSection) s);
-                            break;
-                        case SectionId.EXPORT:
-                            module.setExportSection((ExportSection) s);
-                            break;
-                        case SectionId.START:
-                            module.setStartSection((StartSection) s);
-                            break;
-                        case SectionId.ELEMENT:
-                            module.setElementSection((ElementSection) s);
-                            break;
-                        case SectionId.CODE:
-                            module.setCodeSection((CodeSection) s);
-                            break;
-                        case SectionId.DATA:
-                            module.setDataSection((DataSection) s);
-                            break;
-                        case SectionId.DATA_COUNT:
-                            module.setDataCountSection((DataCountSection) s);
-                            break;
-                        default:
-                            logger.warnf("Ignoring section with id: %d", s.sectionId());
-                            break;
-                    }
-                });
+        parse(in, (s) -> {
+            switch (s.sectionId()) {
+                case SectionId.CUSTOM:
+                    module.addCustomSection((CustomSection) s);
+                    break;
+                case SectionId.TYPE:
+                    module.setTypeSection((TypeSection) s);
+                    break;
+                case SectionId.IMPORT:
+                    module.setImportSection((ImportSection) s);
+                    break;
+                case SectionId.FUNCTION:
+                    module.setFunctionSection((FunctionSection) s);
+                    break;
+                case SectionId.TABLE:
+                    module.setTableSection((TableSection) s);
+                    break;
+                case SectionId.MEMORY:
+                    module.setMemorySection((MemorySection) s);
+                    break;
+                case SectionId.GLOBAL:
+                    module.setGlobalSection((GlobalSection) s);
+                    break;
+                case SectionId.EXPORT:
+                    module.setExportSection((ExportSection) s);
+                    break;
+                case SectionId.START:
+                    module.setStartSection((StartSection) s);
+                    break;
+                case SectionId.ELEMENT:
+                    module.setElementSection((ElementSection) s);
+                    break;
+                case SectionId.CODE:
+                    module.setCodeSection((CodeSection) s);
+                    break;
+                case SectionId.DATA:
+                    module.setDataSection((DataSection) s);
+                    break;
+                case SectionId.DATA_COUNT:
+                    module.setDataCountSection((DataCountSection) s);
+                    break;
+                default:
+                    logger.warnf("Ignoring section with id: %d", s.sectionId());
+                    break;
+            }
+        });
 
         return module;
     }
@@ -160,11 +158,10 @@ public final class Parser {
 
         int magicNumber = buffer.getInt();
         if (magicNumber != MAGIC_BYTES) {
-            throw new MalformedException(
-                    "unexpected token: magic number mismatch, found: "
-                            + magicNumber
-                            + " expected: "
-                            + MAGIC_BYTES);
+            throw new MalformedException("unexpected token: magic number mismatch, found: "
+                    + magicNumber
+                    + " expected: "
+                    + MAGIC_BYTES);
         }
         int version = buffer.getInt();
         if (version != 1) {
@@ -182,89 +179,75 @@ public final class Parser {
             if (shouldParseSection(sectionId)) {
                 // Process different section types based on the sectionId
                 switch (sectionId) {
-                    case SectionId.CUSTOM:
-                        {
-                            var customSection = parseCustomSection(buffer, sectionSize, firstTime);
-                            firstTime = false;
-                            listener.onSection(customSection);
-                            break;
-                        }
-                    case SectionId.TYPE:
-                        {
-                            var typeSection = parseTypeSection(buffer);
-                            listener.onSection(typeSection);
-                            break;
-                        }
-                    case SectionId.IMPORT:
-                        {
-                            var importSection = parseImportSection(buffer);
-                            listener.onSection(importSection);
-                            break;
-                        }
-                    case SectionId.FUNCTION:
-                        {
-                            var funcSection = parseFunctionSection(buffer);
-                            listener.onSection(funcSection);
-                            break;
-                        }
-                    case SectionId.TABLE:
-                        {
-                            var tableSection = parseTableSection(buffer);
-                            listener.onSection(tableSection);
-                            break;
-                        }
-                    case SectionId.MEMORY:
-                        {
-                            var memorySection = parseMemorySection(buffer);
-                            listener.onSection(memorySection);
-                            break;
-                        }
-                    case SectionId.GLOBAL:
-                        {
-                            var globalSection = parseGlobalSection(buffer);
-                            listener.onSection(globalSection);
-                            break;
-                        }
-                    case SectionId.EXPORT:
-                        {
-                            var exportSection = parseExportSection(buffer);
-                            listener.onSection(exportSection);
-                            break;
-                        }
-                    case SectionId.START:
-                        {
-                            var startSection = parseStartSection(buffer);
-                            listener.onSection(startSection);
-                            break;
-                        }
-                    case SectionId.ELEMENT:
-                        {
-                            var elementSection = parseElementSection(buffer, sectionSize);
-                            listener.onSection(elementSection);
-                            break;
-                        }
-                    case SectionId.CODE:
-                        {
-                            var codeSection = parseCodeSection(buffer);
-                            listener.onSection(codeSection);
-                            break;
-                        }
-                    case SectionId.DATA:
-                        {
-                            var dataSection = parseDataSection(buffer);
-                            listener.onSection(dataSection);
-                            break;
-                        }
-                    case SectionId.DATA_COUNT:
-                        {
-                            var dataCountSection = parseDataCountSection(buffer);
-                            listener.onSection(dataCountSection);
-                            break;
-                        }
-                    default:
-                        {
-                            throw new MalformedException("malformed section id " + sectionId);
-                        }
+                    case SectionId.CUSTOM: {
+                        var customSection = parseCustomSection(buffer, sectionSize, firstTime);
+                        firstTime = false;
+                        listener.onSection(customSection);
+                        break;
+                    }
+                    case SectionId.TYPE: {
+                        var typeSection = parseTypeSection(buffer);
+                        listener.onSection(typeSection);
+                        break;
+                    }
+                    case SectionId.IMPORT: {
+                        var importSection = parseImportSection(buffer);
+                        listener.onSection(importSection);
+                        break;
+                    }
+                    case SectionId.FUNCTION: {
+                        var funcSection = parseFunctionSection(buffer);
+                        listener.onSection(funcSection);
+                        break;
+                    }
+                    case SectionId.TABLE: {
+                        var tableSection = parseTableSection(buffer);
+                        listener.onSection(tableSection);
+                        break;
+                    }
+                    case SectionId.MEMORY: {
+                        var memorySection = parseMemorySection(buffer);
+                        listener.onSection(memorySection);
+                        break;
+                    }
+                    case SectionId.GLOBAL: {
+                        var globalSection = parseGlobalSection(buffer);
+                        listener.onSection(globalSection);
+                        break;
+                    }
+                    case SectionId.EXPORT: {
+                        var exportSection = parseExportSection(buffer);
+                        listener.onSection(exportSection);
+                        break;
+                    }
+                    case SectionId.START: {
+                        var startSection = parseStartSection(buffer);
+                        listener.onSection(startSection);
+                        break;
+                    }
+                    case SectionId.ELEMENT: {
+                        var elementSection = parseElementSection(buffer, sectionSize);
+                        listener.onSection(elementSection);
+                        break;
+                    }
+                    case SectionId.CODE: {
+                        var codeSection = parseCodeSection(buffer);
+                        listener.onSection(codeSection);
+                        break;
+                    }
+                    case SectionId.DATA: {
+                        var dataSection = parseDataSection(buffer);
+                        listener.onSection(dataSection);
+                        break;
+                    }
+                    case SectionId.DATA_COUNT: {
+                        var dataCountSection = parseDataCountSection(buffer);
+                        listener.onSection(dataCountSection);
+                        break;
+                    }
+                    default: {
+                        throw new MalformedException("malformed section id " + sectionId);
+                    }
                 }
             } else {
                 System.out.println("Skipping Section with ID due to configuration: " + sectionId);
@@ -313,10 +296,9 @@ public final class Parser {
             var form = readVarUInt32(buffer);
 
             if (form != 0x60) {
-                throw new RuntimeException(
-                        "We don't support non func types. Form "
-                                + String.format("0x%02X", form)
-                                + " was given but we expected 0x60");
+                throw new RuntimeException("We don't support non func types. Form "
+                        + String.format("0x%02X", form)
+                        + " was given but we expected 0x60");
             }
 
             // Parse function types (form = 0x60)
@@ -353,50 +335,40 @@ public final class Parser {
             String importName = readName(buffer);
             var descType = ExternalType.byId((int) readVarUInt32(buffer));
             switch (descType) {
-                case FUNCTION:
-                    {
-                        importSection.addImport(
-                                new FunctionImport(
-                                        moduleName, importName, (int) readVarUInt32(buffer)));
-                        break;
-                    }
-                case TABLE:
-                    {
-                        var rawTableType = readVarUInt32(buffer);
-                        assert rawTableType == 0x70 || rawTableType == 0x6F;
-                        var tableType =
-                                (rawTableType == 0x70) ? ValueType.FuncRef : ValueType.ExternRef;
+                case FUNCTION: {
+                    importSection.addImport(new FunctionImport(
+                            moduleName, importName, (int) readVarUInt32(buffer)));
+                    break;
+                }
+                case TABLE: {
+                    var rawTableType = readVarUInt32(buffer);
+                    assert rawTableType == 0x70 || rawTableType == 0x6F;
+                    var tableType =
+                            (rawTableType == 0x70) ? ValueType.FuncRef : ValueType.ExternRef;
 
-                        var limitType = (int) readVarUInt32(buffer);
-                        assert limitType == 0x00 || limitType == 0x01;
-                        var min = (int) readVarUInt32(buffer);
-                        var limits =
-                                limitType > 0
-                                        ? new Limits(min, readVarUInt32(buffer))
-                                        : new Limits(min);
+                    var limitType = (int) readVarUInt32(buffer);
+                    assert limitType == 0x00 || limitType == 0x01;
+                    var min = (int) readVarUInt32(buffer);
+                    var limits = limitType > 0
+                            ? new Limits(min, readVarUInt32(buffer))
+                            : new Limits(min);
 
-                        importSection.addImport(
-                                new TableImport(moduleName, importName, tableType, limits));
-                        break;
-                    }
-                case MEMORY:
-                    {
-                        var limitType = (int) readVarUInt32(buffer);
-                        assert limitType == 0x00 || limitType == 0x01;
-                        var min = (int) Math.min(MemoryLimits.MAX_PAGES, readVarUInt32(buffer));
-                        var limits =
-                                limitType > 0
-                                        ? new MemoryLimits(
-                                                min,
-                                                (int)
-                                                        Math.min(
-                                                                MemoryLimits.MAX_PAGES,
-                                                                readVarUInt32(buffer)))
-                                        : new MemoryLimits(min, MemoryLimits.MAX_PAGES);
+                    importSection.addImport(
+                            new TableImport(moduleName, importName, tableType, limits));
+                    break;
+                }
+                case MEMORY: {
+                    var limitType = (int) readVarUInt32(buffer);
+                    assert limitType == 0x00 || limitType == 0x01;
+                    var min = (int) Math.min(MemoryLimits.MAX_PAGES, readVarUInt32(buffer));
+                    var limits = limitType > 0
+                            ? new MemoryLimits(min, (int)
+                                    Math.min(MemoryLimits.MAX_PAGES, readVarUInt32(buffer)))
+                            : new MemoryLimits(min, MemoryLimits.MAX_PAGES);
 
-                        importSection.addImport(new MemoryImport(moduleName, importName, limits));
-                        break;
-                    }
+                    importSection.addImport(new MemoryImport(moduleName, importName, limits));
+                    break;
+                }
                 case GLOBAL:
                     var globalValType = ValueType.forId((int) readVarUInt32(buffer));
                     var globalMut = MutabilityType.forId(buffer.get());
@@ -561,15 +533,13 @@ public final class Parser {
         } else if (hasElemKind) {
             int ek = (int) readVarUInt32(buffer);
             switch (ek) {
-                case 0x00:
-                    {
-                        type = ValueType.FuncRef;
-                        break;
-                    }
-                default:
-                    {
-                        throw new ChicoryException("Invalid element kind");
-                    }
+                case 0x00: {
+                    type = ValueType.FuncRef;
+                    break;
+                }
+                default: {
+                    throw new ChicoryException("Invalid element kind");
+                }
             }
         } else {
             assert hasRefType;
@@ -585,11 +555,9 @@ public final class Parser {
         } else {
             // read function references, and compose them as instruction lists
             for (int i = 0; i < initCnt; i++) {
-                inits.add(
-                        List.of(
-                                new Instruction(
-                                        -1, OpCode.REF_FUNC, new long[] {readVarUInt32(buffer)}),
-                                new Instruction(-1, OpCode.END, new long[0])));
+                inits.add(List.of(
+                        new Instruction(-1, OpCode.REF_FUNC, new long[] {readVarUInt32(buffer)}),
+                        new Instruction(-1, OpCode.END, new long[0])));
             }
         }
         if (declarative) {
@@ -663,109 +631,96 @@ public final class Parser {
                 switch (instruction.opcode()) {
                     case BLOCK:
                     case LOOP:
-                    case IF:
-                        {
-                            instruction.setDepth(++depth);
-                            blockScope.push(instruction);
-                            instruction.setScope(blockScope.peek());
-                            break;
-                        }
-                    case END:
-                        {
-                            instruction.setDepth(depth--);
-                            instruction.setScope(
-                                    blockScope.isEmpty() ? instruction : blockScope.pop());
-                            break;
-                        }
-                    default:
-                        {
-                            instruction.setDepth(depth);
-                            break;
-                        }
+                    case IF: {
+                        instruction.setDepth(++depth);
+                        blockScope.push(instruction);
+                        instruction.setScope(blockScope.peek());
+                        break;
+                    }
+                    case END: {
+                        instruction.setDepth(depth--);
+                        instruction.setScope(blockScope.isEmpty() ? instruction : blockScope.pop());
+                        break;
+                    }
+                    default: {
+                        instruction.setDepth(depth);
+                        break;
+                    }
                 }
 
                 // control-flow
                 switch (instruction.opcode()) {
                     case BLOCK:
-                    case LOOP:
-                        {
-                            currentControlFlow =
-                                    currentControlFlow.spawn(instructions.size(), instruction);
-                            break;
-                        }
-                    case IF:
-                        {
-                            currentControlFlow =
-                                    currentControlFlow.spawn(instructions.size(), instruction);
+                    case LOOP: {
+                        currentControlFlow =
+                                currentControlFlow.spawn(instructions.size(), instruction);
+                        break;
+                    }
+                    case IF: {
+                        currentControlFlow =
+                                currentControlFlow.spawn(instructions.size(), instruction);
 
-                            var defaultJmp = instructions.size() + 1;
-                            currentControlFlow.addCallback(
-                                    end -> {
-                                        // check that there is no "else" branch
-                                        if (instruction.labelFalse() == defaultJmp) {
-                                            instruction.setLabelFalse(end);
-                                        }
-                                    });
+                        var defaultJmp = instructions.size() + 1;
+                        currentControlFlow.addCallback(end -> {
+                            // check that there is no "else" branch
+                            if (instruction.labelFalse() == defaultJmp) {
+                                instruction.setLabelFalse(end);
+                            }
+                        });
 
-                            // defaults
-                            instruction.setLabelTrue(defaultJmp);
-                            instruction.setLabelFalse(defaultJmp);
-                            break;
-                        }
-                    case ELSE:
-                        {
-                            assert (currentControlFlow.instruction().opcode() == OpCode.IF);
-                            currentControlFlow.instruction().setLabelFalse(instructions.size() + 1);
+                        // defaults
+                        instruction.setLabelTrue(defaultJmp);
+                        instruction.setLabelFalse(defaultJmp);
+                        break;
+                    }
+                    case ELSE: {
+                        assert (currentControlFlow.instruction().opcode() == OpCode.IF);
+                        currentControlFlow.instruction().setLabelFalse(instructions.size() + 1);
 
-                            currentControlFlow.addCallback(instruction::setLabelTrue);
+                        currentControlFlow.addCallback(instruction::setLabelTrue);
 
-                            break;
+                        break;
+                    }
+                    case BR_IF: {
+                        instruction.setLabelFalse(instructions.size() + 1);
+                    }
+                    case BR: {
+                        var offset = (int) instruction.operands()[0];
+                        ControlTree reference = currentControlFlow;
+                        while (offset > 0) {
+                            reference = reference.parent();
+                            offset--;
                         }
-                    case BR_IF:
-                        {
-                            instruction.setLabelFalse(instructions.size() + 1);
-                        }
-                    case BR:
-                        {
-                            var offset = (int) instruction.operands()[0];
+                        reference.addCallback(instruction::setLabelTrue);
+                        break;
+                    }
+                    case BR_TABLE: {
+                        instruction.setLabelTable(new int[instruction.operands().length]);
+                        for (var idx = 0; idx < instruction.labelTable().length; idx++) {
+                            var offset = (int) instruction.operands()[idx];
                             ControlTree reference = currentControlFlow;
                             while (offset > 0) {
                                 reference = reference.parent();
                                 offset--;
                             }
-                            reference.addCallback(instruction::setLabelTrue);
-                            break;
+                            int finalIdx = idx;
+                            reference.addCallback(end -> instruction.labelTable()[finalIdx] = end);
                         }
-                    case BR_TABLE:
-                        {
-                            instruction.setLabelTable(new int[instruction.operands().length]);
-                            for (var idx = 0; idx < instruction.labelTable().length; idx++) {
-                                var offset = (int) instruction.operands()[idx];
-                                ControlTree reference = currentControlFlow;
-                                while (offset > 0) {
-                                    reference = reference.parent();
-                                    offset--;
-                                }
-                                int finalIdx = idx;
-                                reference.addCallback(
-                                        end -> instruction.labelTable()[finalIdx] = end);
-                            }
-                            break;
-                        }
-                    case END:
-                        {
-                            currentControlFlow.setFinalInstructionNumber(
-                                    instructions.size(), instruction);
-                            currentControlFlow = currentControlFlow.parent();
+                        break;
+                    }
+                    case END: {
+                        currentControlFlow.setFinalInstructionNumber(
+                                instructions.size(), instruction);
+                        currentControlFlow = currentControlFlow.parent();
 
-                            if (lastInstruction && instructions.size() > 1) {
-                                var former = instructions.get(instructions.size() - 1);
-                                if (former.opcode() == OpCode.END) {
-                                    instruction.setScope(former.scope());
-                                }
+                        if (lastInstruction && instructions.size() > 1) {
+                            var former = instructions.get(instructions.size() - 1);
+                            if (former.opcode() == OpCode.END) {
+                                instruction.setScope(former.scope());
                             }
-                            break;
                         }
+                        break;
+                    }
                 }
 
                 instructions.add(instruction);
@@ -850,14 +805,13 @@ public final class Parser {
                 case FLOAT32:
                     operands.add(readFloat32(buffer));
                     break;
-                case VEC_VARUINT:
-                    {
-                        var vcount = (int) readVarUInt32(buffer);
-                        for (var j = 0; j < vcount; j++) {
-                            operands.add(readVarUInt32(buffer));
-                        }
-                        break;
+                case VEC_VARUINT: {
+                    var vcount = (int) readVarUInt32(buffer);
+                    for (var j = 0; j < vcount; j++) {
+                        operands.add(readVarUInt32(buffer));
                     }
+                    break;
+                }
             }
         }
         var operandsArray = new long[operands.size()];

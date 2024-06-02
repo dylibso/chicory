@@ -67,12 +67,11 @@ public class TestModule {
     }
 
     public TestModule build() {
-        this.module =
-                builder.withInitialize(false)
-                        .withStart(false)
-                        .withTypeValidation(typeValidation)
-                        .withHostImports(imports)
-                        .build();
+        this.module = builder.withInitialize(false)
+                .withStart(false)
+                .withTypeValidation(typeValidation)
+                .withHostImports(imports)
+                .build();
         return this;
     }
 

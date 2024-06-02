@@ -122,14 +122,13 @@ public class TestGenMojo extends AbstractMojo {
 
         // Instantiate the utilities
         var testSuiteDownloader = new TestSuiteDownloader(log);
-        var testGen =
-                new JavaTestGen(
-                        log,
-                        project.getBasedir(),
-                        sourceDestinationFolder,
-                        excludedTests,
-                        excludedMalformedWasts,
-                        excludedInvalidWasts);
+        var testGen = new JavaTestGen(
+                log,
+                project.getBasedir(),
+                sourceDestinationFolder,
+                excludedTests,
+                excludedMalformedWasts,
+                excludedInvalidWasts);
 
         JavaParserMavenUtils.makeJavaParserLogToMavenOutput(getLog());
 
@@ -228,7 +227,8 @@ public class TestGenMojo extends AbstractMojo {
             }
 
             var plainName = wastFile.getName().replace(".wast", "");
-            File wasmFilesFolder = compiledWastTargetFolder.toPath().resolve(plainName).toFile();
+            File wasmFilesFolder =
+                    compiledWastTargetFolder.toPath().resolve(plainName).toFile();
             File specFile = wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile();
             if (!wasmFilesFolder.mkdirs()) {
                 log.warn("Could not create folder: " + wasmFilesFolder);

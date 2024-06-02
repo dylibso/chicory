@@ -29,12 +29,12 @@ import java.util.List;
 
 public final class Wat2Wasm {
     private static final Logger logger = new SystemLogger();
-    private static final com.dylibso.chicory.wasm.Module wasmModule =
-            Module.builder(Wat2Wasm.class.getResourceAsStream("/wat2wasm"))
-                    .withInitialize(false)
-                    .withStart(false)
-                    .build()
-                    .wasmModule();
+    private static final com.dylibso.chicory.wasm.Module wasmModule = Module.builder(
+                    Wat2Wasm.class.getResourceAsStream("/wat2wasm"))
+            .withInitialize(false)
+            .withStart(false)
+            .build()
+            .wasmModule();
 
     private Wat2Wasm() {}
 
@@ -58,26 +58,25 @@ public final class Wat2Wasm {
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
                 ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
 
-            try (FileSystem fs =
-                    Jimfs.newFileSystem(
-                            Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
+            try (FileSystem fs = Jimfs.newFileSystem(
+                    Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
 
                 Path target = fs.getPath("tmp");
                 java.nio.file.Files.createDirectory(target);
                 Path path = target.resolve(fileName);
                 copy(is, path, StandardCopyOption.REPLACE_EXISTING);
 
-                WasiOptions wasiOpts =
-                        WasiOptions.builder()
-                                .withStdout(stdoutStream)
-                                .withStderr(stdoutStream)
-                                .withDirectory(target.toString(), target)
-                                .withArguments(List.of("wat2wasm", path.toString(), "--output=-"))
-                                .build();
+                WasiOptions wasiOpts = WasiOptions.builder()
+                        .withStdout(stdoutStream)
+                        .withStderr(stdoutStream)
+                        .withDirectory(target.toString(), target)
+                        .withArguments(List.of("wat2wasm", path.toString(), "--output=-"))
+                        .build();
 
                 try (var wasi = new WasiPreview1(logger, wasiOpts)) {
                     HostImports imports = new HostImports(wasi.toHostFunctions());
-                    Module module = Module.builder(wasmModule).withHostImports(imports).build();
+                    Module module =
+                            Module.builder(wasmModule).withHostImports(imports).build();
                     module.instantiate();
                 }
 

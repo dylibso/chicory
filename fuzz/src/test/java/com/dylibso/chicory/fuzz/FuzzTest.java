@@ -44,17 +44,15 @@ public class FuzzTest extends TestModule {
 
         int totalRepetitions = repetitionInfo.getTotalRepetitions();
         String methodName = testInfo.getTestMethod().get().getName();
-        logger.info(
-                String.format(
-                        "About to execute repetition %d of %d for %s", //
-                        currentRepetition, totalRepetitions, methodName));
+        logger.info(String.format(
+                "About to execute repetition %d of %d for %s", //
+                currentRepetition, totalRepetitions, methodName));
     }
 
     @RepeatedTest(value = FUZZ_TEST_NUMERIC, failureThreshold = 1) // stop on first failure
     public void numericOnlyFuzz(RepetitionInfo repetitionInfo) throws Exception {
-        var targetWasm =
-                generateTestData(
-                        "numeric-", repetitionInfo.getCurrentRepetition(), InstructionType.NUMERIC);
+        var targetWasm = generateTestData(
+                "numeric-", repetitionInfo.getCurrentRepetition(), InstructionType.NUMERIC);
         var module = Module.builder(targetWasm).build();
         var instance = module.withInitialize(true).withStart(false).instantiate();
 
@@ -69,9 +67,8 @@ public class FuzzTest extends TestModule {
 
     @RepeatedTest(value = FUZZ_TEST_TABLE, failureThreshold = 1) // stop on first failure
     public void tableOnlyFuzz(RepetitionInfo repetitionInfo) throws Exception {
-        var targetWasm =
-                generateTestData(
-                        "table-", repetitionInfo.getCurrentRepetition(), InstructionType.TABLE);
+        var targetWasm = generateTestData(
+                "table-", repetitionInfo.getCurrentRepetition(), InstructionType.TABLE);
         var module = Module.builder(targetWasm).build();
         var instance = module.withInitialize(true).withStart(false).instantiate();
 

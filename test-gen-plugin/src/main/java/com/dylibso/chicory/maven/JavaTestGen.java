@@ -120,11 +120,10 @@ public class JavaTestGen {
         String lastModuleVarName = null;
         int fallbackVarNumber = 0;
 
-        var excludedMethods =
-                excludedTests.stream()
-                        .filter(t -> t.startsWith(testName))
-                        .map(t -> t.substring(testName.length() + 1))
-                        .collect(Collectors.toList());
+        var excludedMethods = excludedTests.stream()
+                .filter(t -> t.startsWith(testName))
+                .map(t -> t.substring(testName.length() + 1))
+                .collect(Collectors.toList());
 
         boolean excludeMalformed = excludedMalformedWasts.contains(name + ".wast");
         boolean excludeInvalid = excludedInvalidWasts.contains(name + ".wast");
@@ -159,18 +158,16 @@ public class JavaTestGen {
                     instantiateMethod.addSingleMemberAnnotation(
                             "Order", new IntegerLiteralExpr(Integer.toString(testNumber++)));
 
-                    instantiateMethod.setBody(
-                            new BlockStmt()
-                                    .addStatement(
-                                            new AssignExpr(
-                                                    new NameExpr(lastInstanceVarName),
-                                                    generateModuleInstantiation(
-                                                            cmd,
-                                                            currentWasmFile,
-                                                            importsName,
-                                                            hostFuncs,
-                                                            excludeInvalid),
-                                                    AssignExpr.Operator.ASSIGN)));
+                    instantiateMethod.setBody(new BlockStmt()
+                            .addStatement(new AssignExpr(
+                                    new NameExpr(lastInstanceVarName),
+                                    generateModuleInstantiation(
+                                            cmd,
+                                            currentWasmFile,
+                                            importsName,
+                                            hostFuncs,
+                                            excludeInvalid),
+                                    AssignExpr.Operator.ASSIGN)));
                     break;
                 case ACTION:
                 case ASSERT_RETURN:
@@ -229,9 +226,8 @@ public class JavaTestGen {
         var methodName = "test" + testNumber;
         var method = testClass.addMethod(methodName, Modifier.Keyword.PUBLIC);
         if (excludedTests.contains(methodName)) {
-            method.addAnnotation(
-                    new SingleMemberAnnotationExpr(
-                            new Name("Disabled"), new StringLiteralExpr("Test excluded")));
+            method.addAnnotation(new SingleMemberAnnotationExpr(
+                    new Name("Disabled"), new StringLiteralExpr("Test excluded")));
         }
         method.addAnnotation("Test");
         method.addSingleMemberAnnotation(
@@ -243,17 +239,13 @@ public class JavaTestGen {
     private Optional<Expression> generateFieldExport(
             String varName, Command cmd, String moduleName) {
         if (cmd.action() != null && cmd.action().field() != null) {
-            var declarator =
-                    new VariableDeclarator()
-                            .setName(varName)
-                            .setType(parseClassOrInterfaceType("ExportFunction"))
-                            .setInitializer(
-                                    new NameExpr(
-                                            moduleName
-                                                    + "Instance.export(\""
-                                                    + StringEscapeUtils.escapeJava(
-                                                            cmd.action().field())
-                                                    + "\")"));
+            var declarator = new VariableDeclarator()
+                    .setName(varName)
+                    .setType(parseClassOrInterfaceType("ExportFunction"))
+                    .setInitializer(new NameExpr(moduleName
+                            + "Instance.export(\""
+                            + StringEscapeUtils.escapeJava(cmd.action().field())
+                            + "\")"));
             Expression varDecl = new VariableDeclarationExpr(declarator);
             return Optional.of(varDecl);
         } else {
@@ -267,22 +259,19 @@ public class JavaTestGen {
         assert (cmd.expected().length > 0);
         assert (cmd.action().type() == INVOKE);
 
-        var args =
-                (cmd.action().args() != null)
-                        ? Arrays.stream(cmd.action().args())
-                                .map(WasmValue::toWasmValue)
-                                .collect(Collectors.joining(", "))
-                        : "";
+        var args = (cmd.action().args() != null)
+                ? Arrays.stream(cmd.action().args())
+                        .map(WasmValue::toWasmValue)
+                        .collect(Collectors.joining(", "))
+                : "";
 
         var invocationMethod = ".apply(" + args + ")";
         if (cmd.type() == CommandType.ASSERT_TRAP) {
-            var assertDecl =
-                    new NameExpr(
-                            "var exception ="
-                                    + " assertThrows(ChicoryException.class, () -> "
-                                    + varName
-                                    + invocationMethod
-                                    + ")");
+            var assertDecl = new NameExpr("var exception ="
+                    + " assertThrows(ChicoryException.class, () -> "
+                    + varName
+                    + invocationMethod
+                    + ")");
             if (cmd.text() != null) {
                 return List.of(assertDecl, exceptionMessageMatch(cmd.text()));
             } else {
@@ -297,16 +286,14 @@ public class JavaTestGen {
                 var returnVar = expected.toJavaValue();
                 var typeConversion = expected.extractType();
                 var deltaParam = expected.delta();
-                exprs.add(
-                        new NameExpr(
-                                "assertEquals("
-                                        + returnVar
-                                        + ", results["
-                                        + i
-                                        + "]"
-                                        + typeConversion
-                                        + deltaParam
-                                        + ")"));
+                exprs.add(new NameExpr("assertEquals("
+                        + returnVar
+                        + ", results["
+                        + i
+                        + "]"
+                        + typeConversion
+                        + deltaParam
+                        + ")"));
             }
 
             return exprs;
@@ -320,21 +307,17 @@ public class JavaTestGen {
 
         String invocationMethod;
         if (cmd.action().type() == INVOKE) {
-            var args =
-                    Arrays.stream(cmd.action().args())
-                            .map(WasmValue::toWasmValue)
-                            .collect(Collectors.joining(", "));
+            var args = Arrays.stream(cmd.action().args())
+                    .map(WasmValue::toWasmValue)
+                    .collect(Collectors.joining(", "));
             invocationMethod = ".apply(" + args + ")";
         } else {
-            throw new IllegalArgumentException("Unhandled action type " + cmd.action().type());
+            throw new IllegalArgumentException(
+                    "Unhandled action type " + cmd.action().type());
         }
 
-        var assertDecl =
-                new NameExpr(
-                        "var exception = assertDoesNotThrow(() -> "
-                                + varName
-                                + invocationMethod
-                                + ")");
+        var assertDecl = new NameExpr(
+                "var exception = assertDoesNotThrow(() -> " + varName + invocationMethod + ")");
         return List.of(assertDecl);
     }
 
@@ -347,45 +330,42 @@ public class JavaTestGen {
             String importsName,
             String hostFuncs,
             boolean excludeInvalid) {
-        var additionalParam =
-                cmd.moduleType() == null ? "" : ", ModuleType." + cmd.moduleType().toUpperCase();
-        return new NameExpr(
-                "TestModule.of(\n"
-                        + INDENT
-                        + TAB
-                        + "new File(\""
-                        + wasmFile
-                        + "\")"
-                        + additionalParam
-                        + ")\n"
-                        + ((excludeInvalid) ? "" : INDENT + ".withTypeValidation(true)\n")
-                        + ((hostFuncs != null)
-                                ? INDENT
-                                        + ".withHostImports("
-                                        + importsName
-                                        + "."
-                                        + hostFuncs
-                                        + "())\n"
-                                : "")
-                        + INDENT
-                        + ".build()\n"
-                        + INDENT
-                        + ".instantiate()\n"
-                        + INDENT
-                        + ".instance()\n"
-                        + INDENT
-                        + ".initialize(true)"); // TODO: verify start = true
+        var additionalParam = cmd.moduleType() == null
+                ? ""
+                : ", ModuleType." + cmd.moduleType().toUpperCase();
+        return new NameExpr("TestModule.of(\n"
+                + INDENT
+                + TAB
+                + "new File(\""
+                + wasmFile
+                + "\")"
+                + additionalParam
+                + ")\n"
+                + ((excludeInvalid) ? "" : INDENT + ".withTypeValidation(true)\n")
+                + ((hostFuncs != null)
+                        ? INDENT + ".withHostImports(" + importsName + "." + hostFuncs + "())\n"
+                        : "")
+                + INDENT
+                + ".build()\n"
+                + INDENT
+                + ".instantiate()\n"
+                + INDENT
+                + ".instance()\n"
+                + INDENT
+                + ".initialize(true)"); // TODO: verify start = true
     }
 
     private String detectImports(String importsName, String varName, SourceRoot testSourcesRoot) {
         String hostFuncs = null;
         try {
-            var parsed =
-                    testSourcesRoot.tryToParse(
-                            "com.dylibso.chicory.imports", importsName + ".java");
+            var parsed = testSourcesRoot.tryToParse(
+                    "com.dylibso.chicory.imports", importsName + ".java");
             if (parsed.isSuccessful()) {
-                var methods =
-                        parsed.getResult().get().getClassByName(importsName).get().getMethods();
+                var methods = parsed.getResult()
+                        .get()
+                        .getClassByName(importsName)
+                        .get()
+                        .getMethods();
 
                 for (int i = 0; i < methods.size(); i++) {
                     if (methods.get(i).getName().asString().equals(varName)) {
@@ -431,14 +411,12 @@ public class JavaTestGen {
 
         var assignementStmt = (cmd.text() != null) ? "var exception = " : "";
 
-        var assertThrows =
-                new NameExpr(
-                        assignementStmt
-                                + "assertThrows("
-                                + exceptionType
-                                + ".class, () -> "
-                                + generateModuleInstantiation(cmd, wasmFile, null, null, false)
-                                + ")");
+        var assertThrows = new NameExpr(assignementStmt
+                + "assertThrows("
+                + exceptionType
+                + ".class, () -> "
+                + generateModuleInstantiation(cmd, wasmFile, null, null, false)
+                + ")");
 
         method.getBody().get().addStatement(assertThrows);
         if (cmd.text() != null) {
@@ -446,18 +424,16 @@ public class JavaTestGen {
         }
 
         if (excluded) {
-            method.addAnnotation(
-                    new SingleMemberAnnotationExpr(
-                            new Name("Disabled"), new StringLiteralExpr("Test excluded")));
+            method.addAnnotation(new SingleMemberAnnotationExpr(
+                    new Name("Disabled"), new StringLiteralExpr("Test excluded")));
         }
     }
 
     private Expression exceptionMessageMatch(String text) {
-        return new NameExpr(
-                "assertTrue(exception.getMessage().contains(\""
-                        + text
-                        + "\"), \"'\" + exception.getMessage() + \"' doesn't contains: '"
-                        + text
-                        + "\")");
+        return new NameExpr("assertTrue(exception.getMessage().contains(\""
+                + text
+                + "\"), \"'\" + exception.getMessage() + \"' doesn't contains: '"
+                + text
+                + "\")");
     }
 }

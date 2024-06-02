@@ -20,42 +20,39 @@ public final class Files {
     private Files() {}
 
     public static void copyDirectory(Path source, Path target) throws IOException {
-        walkFileTree(
-                source,
-                new SimpleFileVisitor<>() {
-                    @Override
-                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                            throws IOException {
-                        if (isSymbolicLink(dir)) {
-                            return FileVisitResult.SKIP_SUBTREE;
-                        }
+        walkFileTree(source, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                    throws IOException {
+                if (isSymbolicLink(dir)) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
 
-                        Path directory = target.resolve(source.relativize(dir).toString());
+                Path directory = target.resolve(source.relativize(dir).toString());
 
-                        if (!directory.toString().equals("/")) {
-                            FileAttribute<?>[] attributes = new FileAttribute[0];
-                            var attributeView =
-                                    getFileAttributeView(dir, PosixFileAttributeView.class);
-                            if (attributeView != null) {
-                                var permissions = attributeView.readAttributes().permissions();
-                                var attribute = PosixFilePermissions.asFileAttribute(permissions);
-                                attributes = new FileAttribute[] {attribute};
-                            }
-
-                            createDirectory(directory, attributes);
-                        }
-
-                        return FileVisitResult.CONTINUE;
+                if (!directory.toString().equals("/")) {
+                    FileAttribute<?>[] attributes = new FileAttribute[0];
+                    var attributeView = getFileAttributeView(dir, PosixFileAttributeView.class);
+                    if (attributeView != null) {
+                        var permissions = attributeView.readAttributes().permissions();
+                        var attribute = PosixFilePermissions.asFileAttribute(permissions);
+                        attributes = new FileAttribute[] {attribute};
                     }
 
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                            throws IOException {
-                        String relative = source.relativize(file).toString().replace("\\", "/");
-                        Path path = target.resolve(relative);
-                        copy(file, path, StandardCopyOption.COPY_ATTRIBUTES);
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
+                    createDirectory(directory, attributes);
+                }
+
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                String relative = source.relativize(file).toString().replace("\\", "/");
+                Path path = target.resolve(relative);
+                copy(file, path, StandardCopyOption.COPY_ATTRIBUTES);
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 }

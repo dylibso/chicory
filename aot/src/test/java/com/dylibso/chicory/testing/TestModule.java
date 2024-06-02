@@ -69,14 +69,13 @@ public class TestModule {
     }
 
     public TestModule build() {
-        this.module =
-                builder.withInitialize(false)
-                        .withStart(false)
-                        // TODO: enable me!
-                        .withTypeValidation(false)
-                        .withHostImports(imports)
-                        .withMachineFactory(instance -> new AotMachine(module, instance))
-                        .build();
+        this.module = builder.withInitialize(false)
+                .withStart(false)
+                // TODO: enable me!
+                .withTypeValidation(false)
+                .withHostImports(imports)
+                .withMachineFactory(instance -> new AotMachine(module, instance))
+                .build();
         return this;
     }
 

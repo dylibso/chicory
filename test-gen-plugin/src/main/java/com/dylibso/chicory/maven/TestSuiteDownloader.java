@@ -32,11 +32,10 @@ public class TestSuiteDownloader {
         if (!testSuiteFolder.exists()) {
             log.warn("Cloning the testsuite at ref: " + testSuiteRepoRef);
             SystemReader.getInstance().getUserConfig().clear();
-            try (Git git =
-                    Git.cloneRepository()
-                            .setURI(testSuiteRepo)
-                            .setDirectory(testSuiteFolder)
-                            .call()) {
+            try (Git git = Git.cloneRepository()
+                    .setURI(testSuiteRepo)
+                    .setDirectory(testSuiteFolder)
+                    .call()) {
                 git.checkout().setName(testSuiteRepoRef).call();
                 log.warn("Cloned the testsuite at ref: " + testSuiteRepoRef);
             }

@@ -71,31 +71,28 @@ public class ModuleTest {
         final AtomicInteger count = new AtomicInteger();
         final String expected = "Hello, World!";
 
-        var func =
-                new HostFunction(
-                        (Instance instance,
-                                Value... args) -> { // decompiled is: console_log(13, 0);
-                            Memory memory = instance.memory();
-                            var len = args[0].asInt();
-                            var offset = args[1].asInt();
-                            var message = memory.readString(offset, len);
+        var func = new HostFunction(
+                (Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
+                    Memory memory = instance.memory();
+                    var len = args[0].asInt();
+                    var offset = args[1].asInt();
+                    var message = memory.readString(offset, len);
 
-                            if (expected.equals(message)) {
-                                count.incrementAndGet();
-                            }
+                    if (expected.equals(message)) {
+                        count.incrementAndGet();
+                    }
 
-                            return null;
-                        },
-                        "console",
-                        "log",
-                        List.of(ValueType.I32, ValueType.I32),
-                        List.of());
+                    return null;
+                },
+                "console",
+                "log",
+                List.of(ValueType.I32, ValueType.I32),
+                List.of());
         var funcs = new HostFunction[] {func};
-        var instance =
-                Module.builder("compiled/host-function.wat.wasm")
-                        .withHostImports(new HostImports(funcs))
-                        .build()
-                        .instantiate();
+        var instance = Module.builder("compiled/host-function.wat.wasm")
+                .withHostImports(new HostImports(funcs))
+                .build()
+                .instantiate();
         var logIt = instance.export("logIt");
         logIt.apply();
 
@@ -127,26 +124,24 @@ public class ModuleTest {
     public void shouldWorkWithStartFunction() {
         final AtomicInteger count = new AtomicInteger();
 
-        var func =
-                new HostFunction(
-                        (Instance instance, Value... args) -> {
-                            var val = args[0];
+        var func = new HostFunction(
+                (Instance instance, Value... args) -> {
+                    var val = args[0];
 
-                            if (val.asInt() == 42) {
-                                count.incrementAndGet();
-                            }
+                    if (val.asInt() == 42) {
+                        count.incrementAndGet();
+                    }
 
-                            return null;
-                        },
-                        "env",
-                        "gotit",
-                        List.of(ValueType.I32),
-                        List.of());
+                    return null;
+                },
+                "env",
+                "gotit",
+                List.of(ValueType.I32),
+                List.of());
         var funcs = new HostFunction[] {func};
-        var module =
-                Module.builder("compiled/start.wat.wasm")
-                        .withHostImports(new HostImports(funcs))
-                        .build();
+        var module = Module.builder("compiled/start.wat.wasm")
+                .withHostImports(new HostImports(funcs))
+                .build();
         module.instantiate();
 
         assertTrue(count.get() > 0);
@@ -260,42 +255,38 @@ public class ModuleTest {
 
     @Test
     public void shouldRunMixedImports() {
-        var cbrtFunc =
-                new HostFunction(
-                        (Instance instance, Value... args) -> {
-                            var x = args[0].asInt();
-                            var cbrt = Math.cbrt(x);
-                            return new Value[] {Value.fromDouble(cbrt)};
-                        },
-                        "env",
-                        "cbrt",
-                        List.of(ValueType.I32),
-                        List.of(ValueType.F64));
+        var cbrtFunc = new HostFunction(
+                (Instance instance, Value... args) -> {
+                    var x = args[0].asInt();
+                    var cbrt = Math.cbrt(x);
+                    return new Value[] {Value.fromDouble(cbrt)};
+                },
+                "env",
+                "cbrt",
+                List.of(ValueType.I32),
+                List.of(ValueType.F64));
         var logResult = new AtomicReference<String>(null);
-        var logFunc =
-                new HostFunction(
-                        (Instance instance, Value... args) -> {
-                            var logLevel = args[0].asInt();
-                            var value = (int) args[1].asDouble();
-                            logResult.set(logLevel + ": " + value);
-                            return null;
-                        },
-                        "env",
-                        "log",
-                        List.of(ValueType.I32, ValueType.F64),
-                        List.of());
+        var logFunc = new HostFunction(
+                (Instance instance, Value... args) -> {
+                    var logLevel = args[0].asInt();
+                    var value = (int) args[1].asDouble();
+                    logResult.set(logLevel + ": " + value);
+                    return null;
+                },
+                "env",
+                "log",
+                List.of(ValueType.I32, ValueType.F64),
+                List.of());
         var memory = new HostMemory("env", "memory", new Memory(new MemoryLimits(1)));
 
-        var hostImports =
-                new HostImports(
-                        new HostFunction[] {cbrtFunc, logFunc},
-                        new HostGlobal[0],
-                        memory,
-                        new HostTable[0]);
-        var module =
-                Module.builder("compiled/mixed-imports.wat.wasm")
-                        .withHostImports(hostImports)
-                        .build();
+        var hostImports = new HostImports(
+                new HostFunction[] {cbrtFunc, logFunc},
+                new HostGlobal[0],
+                memory,
+                new HostTable[0]);
+        var module = Module.builder("compiled/mixed-imports.wat.wasm")
+                .withHostImports(hostImports)
+                .build();
         var instance = module.instantiate();
 
         var run = instance.export("main");
@@ -321,7 +312,8 @@ public class ModuleTest {
 
     @Test
     public void issue294_BRTABLE() {
-        var instance = Module.builder("compiled/issue294_brtable.wat.wasm").build().instantiate();
+        var instance =
+                Module.builder("compiled/issue294_brtable.wat.wasm").build().instantiate();
 
         var main = instance.export("main");
         assertEquals(4, main.apply()[0].asInt());
@@ -330,13 +322,12 @@ public class ModuleTest {
     @Test
     public void shouldCountNumberOfInstructions() {
         AtomicLong count = new AtomicLong(0);
-        var instance =
-                Module.builder("compiled/iterfact.wat.wasm")
-                        .withUnsafeExecutionListener(
-                                (Instruction instruction, long[] operands, MStack stack) ->
-                                        count.getAndIncrement())
-                        .build()
-                        .instantiate();
+        var instance = Module.builder("compiled/iterfact.wat.wasm")
+                .withUnsafeExecutionListener(
+                        (Instruction instruction, long[] operands, MStack stack) ->
+                                count.getAndIncrement())
+                .build()
+                .instantiate();
         var iterFact = instance.export("iterFact");
 
         iterFact.apply(Value.i32(100));
@@ -348,11 +339,9 @@ public class ModuleTest {
 
     @Test
     public void shouldValidateTypes() {
-        assertDoesNotThrow(
-                () ->
-                        Module.builder("compiled/i32.wat.wasm")
-                                .withTypeValidation(true)
-                                .build()
-                                .instantiate());
+        assertDoesNotThrow(() -> Module.builder("compiled/i32.wat.wasm")
+                .withTypeValidation(true)
+                .build()
+                .instantiate());
     }
 }

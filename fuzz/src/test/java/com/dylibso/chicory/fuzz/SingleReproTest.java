@@ -23,9 +23,8 @@ public class SingleReproTest extends TestModule {
     @Test
     @EnabledIf("enableSingleReproducer")
     void singleReproducer() throws Exception {
-        var seed =
-                FileUtils.readFileToString(
-                        new File(System.getenv(CHICORY_FUZZ_SEED_KEY)), StandardCharsets.UTF_8);
+        var seed = FileUtils.readFileToString(
+                new File(System.getenv(CHICORY_FUZZ_SEED_KEY)), StandardCharsets.UTF_8);
         var types = InstructionTypes.fromString(System.getenv(CHICORY_FUZZ_TYPES_KEY));
         var targetWasm =
                 smith.run(seed.substring(0, Math.min(seed.length(), 32)), "test.wasm", types);

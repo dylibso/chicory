@@ -847,12 +847,11 @@ public class OpcodeImpl {
         var currentElement = instance.element(elementidx);
         var currentElementCount =
                 (currentElement instanceof PassiveElement) ? currentElement.elementCount() : 0;
-        boolean isOutOfBounds =
-                (size < 0
-                        || elementidx > elementCount
-                        || (size > 0 && !(currentElement instanceof PassiveElement))
-                        || elemidx + size > currentElementCount
-                        || end > table.size());
+        boolean isOutOfBounds = (size < 0
+                || elementidx > elementCount
+                || (size > 0 && !(currentElement instanceof PassiveElement))
+                || elemidx + size > currentElementCount
+                || end > table.size());
 
         if (isOutOfBounds) {
             throw new WASMRuntimeException("out of bounds table access");

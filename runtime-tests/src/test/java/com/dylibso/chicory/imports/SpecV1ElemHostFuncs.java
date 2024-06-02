@@ -19,37 +19,33 @@ public class SpecV1ElemHostFuncs {
     }
 
     public static HostImports testModule3() {
-        return new HostImports(
-                new HostTable[] {
-                    new HostTable(
-                            "spectest",
-                            "table",
-                            new TableInstance(new Table(ValueType.FuncRef, new Limits(1))))
-                });
+        return new HostImports(new HostTable[] {
+            new HostTable(
+                    "spectest",
+                    "table",
+                    new TableInstance(new Table(ValueType.FuncRef, new Limits(1))))
+        });
     }
 
     public static HostImports testModule5() {
-        return new HostImports(
-                new HostTable[] {
-                    new HostTable(
-                            "spectest",
-                            "table",
-                            new TableInstance(new Table(ValueType.FuncRef, new Limits(10))))
-                });
+        return new HostImports(new HostTable[] {
+            new HostTable(
+                    "spectest",
+                    "table",
+                    new TableInstance(new Table(ValueType.FuncRef, new Limits(10))))
+        });
     }
 
     public static HostImports testModule6() {
-        return new HostImports(
-                new HostGlobal[] {
-                    new HostGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(123)))
-                });
+        return new HostImports(new HostGlobal[] {
+            new HostGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(123)))
+        });
     }
 
     public static HostImports testModule7() {
-        return new HostImports(
-                new HostGlobal[] {
-                    new HostGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(321)))
-                });
+        return new HostImports(new HostGlobal[] {
+            new HostGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(321)))
+        });
     }
 
     public static HostImports testModule11() {

@@ -173,15 +173,13 @@ public class Instance {
                 case F64_CONST:
                     globals[i] = new GlobalInstance(Value.f64(instr.operands()[0]));
                     break;
-                case GLOBAL_GET:
-                    {
-                        var idx = (int) instr.operands()[0];
-                        globals[i] =
-                                idx < imports.globalCount()
-                                        ? imports.global(idx).instance()
-                                        : globals[idx];
-                        break;
-                    }
+                case GLOBAL_GET: {
+                    var idx = (int) instr.operands()[0];
+                    globals[i] = idx < imports.globalCount()
+                            ? imports.global(idx).instance()
+                            : globals[idx];
+                    break;
+                }
                 case REF_NULL:
                     globals[i] = new GlobalInstance(Value.EXTREF_NULL);
                     break;
@@ -229,32 +227,29 @@ public class Instance {
         if (export == null) throw new ChicoryException("Unknown export with name " + name);
 
         switch (export.exportType()) {
-            case FUNCTION:
-                {
-                    var funcId = export.index();
-                    return (args) -> {
-                        this.module.logger().debug(() -> "Args: " + Arrays.toString(args));
-                        try {
-                            return machine.call(funcId, args);
-                        } catch (Exception e) {
-                            throw new WASMMachineException(machine.getStackTrace(), e);
-                        }
-                    };
-                }
-            case GLOBAL:
-                {
-                    return new ExportFunction() {
-                        @Override
-                        public Value[] apply(Value... args) throws ChicoryException {
-                            assert (args.length == 0);
-                            return new Value[] {readGlobal(export.index())};
-                        }
-                    };
-                }
-            default:
-                {
-                    throw new ChicoryException("not implemented");
-                }
+            case FUNCTION: {
+                var funcId = export.index();
+                return (args) -> {
+                    this.module.logger().debug(() -> "Args: " + Arrays.toString(args));
+                    try {
+                        return machine.call(funcId, args);
+                    } catch (Exception e) {
+                        throw new WASMMachineException(machine.getStackTrace(), e);
+                    }
+                };
+            }
+            case GLOBAL: {
+                return new ExportFunction() {
+                    @Override
+                    public Value[] apply(Value... args) throws ChicoryException {
+                        assert (args.length == 0);
+                        return new Value[] {readGlobal(export.index())};
+                    }
+                };
+            }
+            default: {
+                throw new ChicoryException("not implemented");
+            }
         }
     }
 

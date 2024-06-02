@@ -52,15 +52,12 @@ public final class AotMethods {
             INSTANCE_READ_GLOBAL = Instance.class.getMethod("readGlobal", int.class);
             INSTANCE_WRITE_GLOBAL = Instance.class.getMethod("writeGlobal", int.class, Value.class);
             INSTANCE_SET_ELEMENT = Instance.class.getMethod("setElement", int.class, Element.class);
-            MEMORY_COPY =
-                    AotMethods.class.getMethod(
-                            "memoryCopy", int.class, int.class, int.class, Memory.class);
-            MEMORY_FILL =
-                    AotMethods.class.getMethod(
-                            "memoryFill", int.class, byte.class, int.class, Memory.class);
-            MEMORY_INIT =
-                    AotMethods.class.getMethod(
-                            "memoryInit", int.class, int.class, int.class, int.class, Memory.class);
+            MEMORY_COPY = AotMethods.class.getMethod(
+                    "memoryCopy", int.class, int.class, int.class, Memory.class);
+            MEMORY_FILL = AotMethods.class.getMethod(
+                    "memoryFill", int.class, byte.class, int.class, Memory.class);
+            MEMORY_INIT = AotMethods.class.getMethod(
+                    "memoryInit", int.class, int.class, int.class, int.class, Memory.class);
             MEMORY_GROW = Memory.class.getMethod("grow", int.class);
             MEMORY_DROP = Memory.class.getMethod("drop", int.class);
             MEMORY_PAGES = Memory.class.getMethod("pages");
@@ -73,49 +70,37 @@ public final class AotMethods {
             MEMORY_WRITE_BYTE = Memory.class.getMethod("writeByte", int.class, byte.class);
             MEMORY_WRITE_SHORT = Memory.class.getMethod("writeShort", int.class, short.class);
             MEMORY_WRITE_INT = Memory.class.getMethod("writeI32", int.class, int.class);
-            MEMORY_WRITE_LONG =
-                    AotMethods.class.getMethod(
-                            "memoryWriteLong", long.class, int.class, Memory.class);
+            MEMORY_WRITE_LONG = AotMethods.class.getMethod(
+                    "memoryWriteLong", long.class, int.class, Memory.class);
             MEMORY_WRITE_FLOAT = Memory.class.getMethod("writeF32", int.class, float.class);
-            MEMORY_WRITE_DOUBLE =
-                    AotMethods.class.getMethod(
-                            "memoryWriteDouble", double.class, int.class, Memory.class);
+            MEMORY_WRITE_DOUBLE = AotMethods.class.getMethod(
+                    "memoryWriteDouble", double.class, int.class, Memory.class);
             REF_IS_NULL = AotMethods.class.getMethod("isRefNull", int.class);
             TABLE_GET =
                     AotMethods.class.getMethod("tableGet", int.class, int.class, Instance.class);
-            TABLE_SET =
-                    AotMethods.class.getMethod(
-                            "tableSet", int.class, int.class, int.class, Instance.class);
+            TABLE_SET = AotMethods.class.getMethod(
+                    "tableSet", int.class, int.class, int.class, Instance.class);
             TABLE_SIZE = AotMethods.class.getMethod("tableSize", int.class, Instance.class);
-            TABLE_GROW =
-                    AotMethods.class.getMethod(
-                            "tableGrow", int.class, int.class, int.class, Instance.class);
-            TABLE_FILL =
-                    AotMethods.class.getMethod(
-                            "tableFill",
-                            int.class,
-                            int.class,
-                            int.class,
-                            int.class,
-                            Instance.class);
-            TABLE_COPY =
-                    AotMethods.class.getMethod(
-                            "tableCopy",
-                            int.class,
-                            int.class,
-                            int.class,
-                            int.class,
-                            int.class,
-                            Instance.class);
-            TABLE_INIT =
-                    AotMethods.class.getMethod(
-                            "tableInit",
-                            int.class,
-                            int.class,
-                            int.class,
-                            int.class,
-                            int.class,
-                            Instance.class);
+            TABLE_GROW = AotMethods.class.getMethod(
+                    "tableGrow", int.class, int.class, int.class, Instance.class);
+            TABLE_FILL = AotMethods.class.getMethod(
+                    "tableFill", int.class, int.class, int.class, int.class, Instance.class);
+            TABLE_COPY = AotMethods.class.getMethod(
+                    "tableCopy",
+                    int.class,
+                    int.class,
+                    int.class,
+                    int.class,
+                    int.class,
+                    Instance.class);
+            TABLE_INIT = AotMethods.class.getMethod(
+                    "tableInit",
+                    int.class,
+                    int.class,
+                    int.class,
+                    int.class,
+                    int.class,
+                    Instance.class);
             VALIDATE_BASE = AotMethods.class.getMethod("validateBase", int.class);
             THROW_OUT_OF_BOUNDS_MEMORY_ACCESS =
                     AotMethods.class.getMethod("throwOutOfBoundsMemoryAccess");

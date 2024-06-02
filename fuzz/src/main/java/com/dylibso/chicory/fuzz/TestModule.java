@@ -40,68 +40,59 @@ public class TestModule {
 
         for (var export : module.exports().entrySet()) {
             switch (export.getValue().exportType()) {
-                case FUNCTION:
-                    {
-                        logger.info("Going to test export " + export.getKey());
-                        var exportSig = module.export(export.getKey());
-                        var typeId = instance.functionType(exportSig.index());
-                        var type = instance.type(typeId);
-                        var params = paramsList(type);
+                case FUNCTION: {
+                    logger.info("Going to test export " + export.getKey());
+                    var exportSig = module.export(export.getKey());
+                    var typeId = instance.functionType(exportSig.index());
+                    var type = instance.type(typeId);
+                    var params = paramsList(type);
 
-                        String oracleResult = null;
-                        try {
-                            oracleResult = wasmtime.run(targetWasm, export.getKey(), params);
-                        } catch (Exception e) {
-                            // If the oracle failed we can skip ...
-                            logger.error("Failed to run the oracle, skip the check on Chicory");
-                            continue;
-                        }
-
-                        // Running Chicory on the command line to compare the results
-                        String chicoryResult = null;
-                        try {
-                            chicoryResult = chicoryCli.run(targetWasm, export.getKey(), params);
-                        } catch (Exception e) {
-                            logger.warn("Failed to run chicory, but wasmtime succeeded: " + e);
-                        }
-                        // To be used for files generation
-                        var truncatedExportName =
-                                export.getKey()
-                                        .substring(0, Math.min(export.getKey().length(), 32));
-
-                        if (!oracleResult.isEmpty() || !chicoryResult.isEmpty()) {
-                            System.err.println("\u001B[31mOracle:\n" + oracleResult + "\u001B[0m");
-                            System.err.println(
-                                    "\u001B[31mChicory:\n" + chicoryResult + "\u001B[0m");
-                            try (var outputStream =
-                                    new FileOutputStream(
-                                            targetWasm.getParentFile()
-                                                    + "/result-"
-                                                    + truncatedExportName
-                                                    + ".txt")) {
-                                outputStream.write(
-                                        ("Oracle:\n"
-                                                        + oracleResult
-                                                        + "\nChicory:\n"
-                                                        + chicoryResult)
-                                                .getBytes(StandardCharsets.UTF_8));
-                                outputStream.flush();
-                            }
-                        }
-                        // The test is going to fail, copy folders
-                        if (commitOnFailure && !oracleResult.equals(chicoryResult)) {
-                            FileUtils.copyDirectory(
-                                    targetWasm.getParentFile(),
-                                    new File(
-                                            "src/test/resources/crash-"
-                                                    + targetWasm.getParentFile().getName()
-                                                    + "-"
-                                                    + truncatedExportName));
-                        }
-
-                        results.add(new TestResult(oracleResult, chicoryResult));
-                        break;
+                    String oracleResult = null;
+                    try {
+                        oracleResult = wasmtime.run(targetWasm, export.getKey(), params);
+                    } catch (Exception e) {
+                        // If the oracle failed we can skip ...
+                        logger.error("Failed to run the oracle, skip the check on Chicory");
+                        continue;
                     }
+
+                    // Running Chicory on the command line to compare the results
+                    String chicoryResult = null;
+                    try {
+                        chicoryResult = chicoryCli.run(targetWasm, export.getKey(), params);
+                    } catch (Exception e) {
+                        logger.warn("Failed to run chicory, but wasmtime succeeded: " + e);
+                    }
+                    // To be used for files generation
+                    var truncatedExportName = export.getKey()
+                            .substring(0, Math.min(export.getKey().length(), 32));
+
+                    if (!oracleResult.isEmpty() || !chicoryResult.isEmpty()) {
+                        System.err.println("\u001B[31mOracle:\n" + oracleResult + "\u001B[0m");
+                        System.err.println("\u001B[31mChicory:\n" + chicoryResult + "\u001B[0m");
+                        try (var outputStream = new FileOutputStream(targetWasm.getParentFile()
+                                + "/result-"
+                                + truncatedExportName
+                                + ".txt")) {
+                            outputStream.write(
+                                    ("Oracle:\n" + oracleResult + "\nChicory:\n" + chicoryResult)
+                                            .getBytes(StandardCharsets.UTF_8));
+                            outputStream.flush();
+                        }
+                    }
+                    // The test is going to fail, copy folders
+                    if (commitOnFailure && !oracleResult.equals(chicoryResult)) {
+                        FileUtils.copyDirectory(
+                                targetWasm.getParentFile(),
+                                new File("src/test/resources/crash-"
+                                        + targetWasm.getParentFile().getName()
+                                        + "-"
+                                        + truncatedExportName));
+                    }
+
+                    results.add(new TestResult(oracleResult, chicoryResult));
+                    break;
+                }
                 default:
                     // ignored for now
                     logger.info("Skipping export " + export.getKey());

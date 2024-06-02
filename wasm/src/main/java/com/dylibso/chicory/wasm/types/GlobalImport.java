@@ -61,7 +61,11 @@ public final class GlobalImport extends Import {
     }
 
     public StringBuilder toString(final StringBuilder b) {
-        b.append("global (type=").append(type).append(",mut=").append(mutabilityType).append(')');
+        b.append("global (type=")
+                .append(type)
+                .append(",mut=")
+                .append(mutabilityType)
+                .append(')');
         return super.toString(b);
     }
 }

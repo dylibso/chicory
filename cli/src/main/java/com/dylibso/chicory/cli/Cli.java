@@ -48,31 +48,26 @@ public class Cli implements Runnable {
     @Override
     public void run() {
         // TODO: improve the handling of the logLevel
-        try (var is =
-                new ByteArrayInputStream(
-                        (".level = " + logLevel).getBytes(StandardCharsets.UTF_8))) {
+        try (var is = new ByteArrayInputStream(
+                (".level = " + logLevel).getBytes(StandardCharsets.UTF_8))) {
             LogManager.getLogManager().readConfiguration(is);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         var logger = new SystemLogger();
         var module = Module.builder(file).withLogger(logger).build();
-        var imports =
-                wasi
-                        ? new HostImports(
-                                new WasiPreview1(
-                                                logger,
-                                                WasiOptions.builder().inheritSystem().build())
-                                        .toHostFunctions())
-                        : new HostImports();
-        var instance =
-                Module.builder(file)
-                        .withLogger(logger)
-                        .withInitialize(true)
-                        .withStart(false)
-                        .withHostImports(imports)
-                        .build()
-                        .instantiate();
+        var imports = wasi
+                ? new HostImports(new WasiPreview1(
+                                logger, WasiOptions.builder().inheritSystem().build())
+                        .toHostFunctions())
+                : new HostImports();
+        var instance = Module.builder(file)
+                .withLogger(logger)
+                .withInitialize(true)
+                .withStart(false)
+                .withHostImports(imports)
+                .build()
+                .instantiate();
 
         if (functionName != null) {
             var exportSig = module.export(functionName);
@@ -82,11 +77,10 @@ public class Cli implements Runnable {
             var type = instance.type(typeId);
 
             if (arguments.length != type.params().size()) {
-                throw new RuntimeException(
-                        "The function needs "
-                                + type.params().size()
-                                + " parameters, but found: "
-                                + arguments.length);
+                throw new RuntimeException("The function needs "
+                        + type.params().size()
+                        + " parameters, but found: "
+                        + arguments.length);
             }
             var params = new Value[type.params().size()];
             for (var i = 0; i < type.params().size(); i++) {

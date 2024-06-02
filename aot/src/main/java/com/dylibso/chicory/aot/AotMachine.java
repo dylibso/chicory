@@ -65,226 +65,224 @@ public class AotMachine implements Machine {
     protected final MethodHandle[] compiledFunctions;
     protected final List<ValueType> globalTypes;
 
-    protected static final Map<OpCode, BytecodeEmitter> emitters =
-            AotEmitters.builder()
-                    // ====== Misc ======
-                    .intrinsic(DROP, AotEmitters::DROP)
-                    .intrinsic(ELEM_DROP, AotEmitters::ELEM_DROP)
-                    .intrinsic(SELECT, AotEmitters::SELECT)
-                    .intrinsic(SELECT_T, AotEmitters::SELECT)
+    protected static final Map<OpCode, BytecodeEmitter> emitters = AotEmitters.builder()
+            // ====== Misc ======
+            .intrinsic(DROP, AotEmitters::DROP)
+            .intrinsic(ELEM_DROP, AotEmitters::ELEM_DROP)
+            .intrinsic(SELECT, AotEmitters::SELECT)
+            .intrinsic(SELECT_T, AotEmitters::SELECT)
 
-                    // ====== References ======
-                    .intrinsic(REF_FUNC, AotEmitters::REF_FUNC)
-                    .intrinsic(REF_NULL, AotEmitters::REF_NULL)
-                    .intrinsic(REF_IS_NULL, AotEmitters::REF_IS_NULL)
+            // ====== References ======
+            .intrinsic(REF_FUNC, AotEmitters::REF_FUNC)
+            .intrinsic(REF_NULL, AotEmitters::REF_NULL)
+            .intrinsic(REF_IS_NULL, AotEmitters::REF_IS_NULL)
 
-                    // ====== Locals & Globals ======
-                    .intrinsic(LOCAL_GET, AotEmitters::LOCAL_GET)
-                    .intrinsic(LOCAL_SET, AotEmitters::LOCAL_SET)
-                    .intrinsic(LOCAL_TEE, AotEmitters::LOCAL_TEE)
-                    .intrinsic(GLOBAL_GET, AotEmitters::GLOBAL_GET)
-                    .intrinsic(GLOBAL_SET, AotEmitters::GLOBAL_SET)
+            // ====== Locals & Globals ======
+            .intrinsic(LOCAL_GET, AotEmitters::LOCAL_GET)
+            .intrinsic(LOCAL_SET, AotEmitters::LOCAL_SET)
+            .intrinsic(LOCAL_TEE, AotEmitters::LOCAL_TEE)
+            .intrinsic(GLOBAL_GET, AotEmitters::GLOBAL_GET)
+            .intrinsic(GLOBAL_SET, AotEmitters::GLOBAL_SET)
 
-                    // ====== Tables ======
-                    .intrinsic(TABLE_GET, AotEmitters::TABLE_GET)
-                    .intrinsic(TABLE_SET, AotEmitters::TABLE_SET)
-                    .intrinsic(TABLE_SIZE, AotEmitters::TABLE_SIZE)
-                    .intrinsic(TABLE_GROW, AotEmitters::TABLE_GROW)
-                    .intrinsic(TABLE_FILL, AotEmitters::TABLE_FILL)
-                    .intrinsic(TABLE_COPY, AotEmitters::TABLE_COPY)
-                    .intrinsic(TABLE_INIT, AotEmitters::TABLE_INIT)
+            // ====== Tables ======
+            .intrinsic(TABLE_GET, AotEmitters::TABLE_GET)
+            .intrinsic(TABLE_SET, AotEmitters::TABLE_SET)
+            .intrinsic(TABLE_SIZE, AotEmitters::TABLE_SIZE)
+            .intrinsic(TABLE_GROW, AotEmitters::TABLE_GROW)
+            .intrinsic(TABLE_FILL, AotEmitters::TABLE_FILL)
+            .intrinsic(TABLE_COPY, AotEmitters::TABLE_COPY)
+            .intrinsic(TABLE_INIT, AotEmitters::TABLE_INIT)
 
-                    // ====== Memory ======
-                    .intrinsic(MEMORY_INIT, AotEmitters::MEMORY_INIT)
-                    .intrinsic(MEMORY_COPY, AotEmitters::MEMORY_COPY)
-                    .intrinsic(MEMORY_FILL, AotEmitters::MEMORY_FILL)
-                    .intrinsic(MEMORY_GROW, AotEmitters::MEMORY_GROW)
-                    .intrinsic(MEMORY_SIZE, AotEmitters::MEMORY_SIZE)
-                    .intrinsic(DATA_DROP, AotEmitters::DATA_DROP)
+            // ====== Memory ======
+            .intrinsic(MEMORY_INIT, AotEmitters::MEMORY_INIT)
+            .intrinsic(MEMORY_COPY, AotEmitters::MEMORY_COPY)
+            .intrinsic(MEMORY_FILL, AotEmitters::MEMORY_FILL)
+            .intrinsic(MEMORY_GROW, AotEmitters::MEMORY_GROW)
+            .intrinsic(MEMORY_SIZE, AotEmitters::MEMORY_SIZE)
+            .intrinsic(DATA_DROP, AotEmitters::DATA_DROP)
 
-                    // ====== Load & Store ======
-                    .intrinsic(I32_LOAD, AotEmitters::I32_LOAD)
-                    .intrinsic(I32_LOAD8_S, AotEmitters::I32_LOAD8_S)
-                    .intrinsic(I32_LOAD8_U, AotEmitters::I32_LOAD8_U)
-                    .intrinsic(I32_LOAD16_S, AotEmitters::I32_LOAD16_S)
-                    .intrinsic(I32_LOAD16_U, AotEmitters::I32_LOAD16_U)
-                    .intrinsic(I64_LOAD, AotEmitters::I64_LOAD)
-                    .intrinsic(I64_LOAD8_S, AotEmitters::I64_LOAD8_S)
-                    .intrinsic(I64_LOAD8_U, AotEmitters::I64_LOAD8_U)
-                    .intrinsic(I64_LOAD16_S, AotEmitters::I64_LOAD16_S)
-                    .intrinsic(I64_LOAD16_U, AotEmitters::I64_LOAD16_U)
-                    .intrinsic(I64_LOAD32_S, AotEmitters::I64_LOAD32_S)
-                    .intrinsic(I64_LOAD32_U, AotEmitters::I64_LOAD32_U)
-                    .intrinsic(F32_LOAD, AotEmitters::F32_LOAD)
-                    .intrinsic(F64_LOAD, AotEmitters::F64_LOAD)
-                    .intrinsic(I32_STORE, AotEmitters::I32_STORE)
-                    .intrinsic(I32_STORE8, AotEmitters::I32_STORE8)
-                    .intrinsic(I32_STORE16, AotEmitters::I32_STORE16)
-                    .intrinsic(I64_STORE, AotEmitters::I64_STORE)
-                    .intrinsic(I64_STORE8, AotEmitters::I64_STORE8)
-                    .intrinsic(I64_STORE16, AotEmitters::I64_STORE16)
-                    .intrinsic(I64_STORE32, AotEmitters::I64_STORE32)
-                    .intrinsic(F32_STORE, AotEmitters::F32_STORE)
-                    .intrinsic(F64_STORE, AotEmitters::F64_STORE)
+            // ====== Load & Store ======
+            .intrinsic(I32_LOAD, AotEmitters::I32_LOAD)
+            .intrinsic(I32_LOAD8_S, AotEmitters::I32_LOAD8_S)
+            .intrinsic(I32_LOAD8_U, AotEmitters::I32_LOAD8_U)
+            .intrinsic(I32_LOAD16_S, AotEmitters::I32_LOAD16_S)
+            .intrinsic(I32_LOAD16_U, AotEmitters::I32_LOAD16_U)
+            .intrinsic(I64_LOAD, AotEmitters::I64_LOAD)
+            .intrinsic(I64_LOAD8_S, AotEmitters::I64_LOAD8_S)
+            .intrinsic(I64_LOAD8_U, AotEmitters::I64_LOAD8_U)
+            .intrinsic(I64_LOAD16_S, AotEmitters::I64_LOAD16_S)
+            .intrinsic(I64_LOAD16_U, AotEmitters::I64_LOAD16_U)
+            .intrinsic(I64_LOAD32_S, AotEmitters::I64_LOAD32_S)
+            .intrinsic(I64_LOAD32_U, AotEmitters::I64_LOAD32_U)
+            .intrinsic(F32_LOAD, AotEmitters::F32_LOAD)
+            .intrinsic(F64_LOAD, AotEmitters::F64_LOAD)
+            .intrinsic(I32_STORE, AotEmitters::I32_STORE)
+            .intrinsic(I32_STORE8, AotEmitters::I32_STORE8)
+            .intrinsic(I32_STORE16, AotEmitters::I32_STORE16)
+            .intrinsic(I64_STORE, AotEmitters::I64_STORE)
+            .intrinsic(I64_STORE8, AotEmitters::I64_STORE8)
+            .intrinsic(I64_STORE16, AotEmitters::I64_STORE16)
+            .intrinsic(I64_STORE32, AotEmitters::I64_STORE32)
+            .intrinsic(F32_STORE, AotEmitters::F32_STORE)
+            .intrinsic(F64_STORE, AotEmitters::F64_STORE)
 
-                    // ====== I32 ======
-                    .intrinsic(I32_ADD, AotEmitters::I32_ADD)
-                    .intrinsic(I32_AND, AotEmitters::I32_AND)
-                    .shared(I32_CLZ, OpcodeImpl.class)
-                    .intrinsic(I32_CONST, AotEmitters::I32_CONST)
-                    .shared(I32_CTZ, OpcodeImpl.class)
-                    .shared(I32_DIV_S, OpcodeImpl.class)
-                    .shared(I32_DIV_U, OpcodeImpl.class)
-                    .shared(I32_EQ, OpcodeImpl.class)
-                    .shared(I32_EQZ, OpcodeImpl.class)
-                    .shared(I32_EXTEND_8_S, OpcodeImpl.class)
-                    .shared(I32_EXTEND_16_S, OpcodeImpl.class)
-                    .shared(I32_GE_S, OpcodeImpl.class)
-                    .shared(I32_GE_U, OpcodeImpl.class)
-                    .shared(I32_GT_S, OpcodeImpl.class)
-                    .shared(I32_GT_U, OpcodeImpl.class)
-                    .shared(I32_LE_S, OpcodeImpl.class)
-                    .shared(I32_LE_U, OpcodeImpl.class)
-                    .shared(I32_LT_S, OpcodeImpl.class)
-                    .shared(I32_LT_U, OpcodeImpl.class)
-                    .intrinsic(I32_MUL, AotEmitters::I32_MUL)
-                    .shared(I32_NE, OpcodeImpl.class)
-                    .intrinsic(I32_OR, AotEmitters::I32_OR)
-                    .shared(I32_POPCNT, OpcodeImpl.class)
-                    .shared(I32_REINTERPRET_F32, OpcodeImpl.class)
-                    .shared(I32_REM_S, OpcodeImpl.class)
-                    .shared(I32_REM_U, OpcodeImpl.class)
-                    .shared(I32_ROTL, OpcodeImpl.class)
-                    .shared(I32_ROTR, OpcodeImpl.class)
-                    .intrinsic(I32_SHL, AotEmitters::I32_SHL)
-                    .intrinsic(I32_SHR_S, AotEmitters::I32_SHR_S)
-                    .intrinsic(I32_SHR_U, AotEmitters::I32_SHR_U)
-                    .intrinsic(I32_SUB, AotEmitters::I32_SUB)
-                    .shared(I32_TRUNC_F32_S, OpcodeImpl.class)
-                    .shared(I32_TRUNC_F32_U, OpcodeImpl.class)
-                    .shared(I32_TRUNC_F64_S, OpcodeImpl.class)
-                    .shared(I32_TRUNC_F64_U, OpcodeImpl.class)
-                    .shared(I32_TRUNC_SAT_F32_S, OpcodeImpl.class)
-                    .shared(I32_TRUNC_SAT_F32_U, OpcodeImpl.class)
-                    .shared(I32_TRUNC_SAT_F64_S, OpcodeImpl.class)
-                    .shared(I32_TRUNC_SAT_F64_U, OpcodeImpl.class)
-                    .intrinsic(I32_WRAP_I64, AotEmitters::I32_WRAP_I64)
-                    .intrinsic(I32_XOR, AotEmitters::I32_XOR)
+            // ====== I32 ======
+            .intrinsic(I32_ADD, AotEmitters::I32_ADD)
+            .intrinsic(I32_AND, AotEmitters::I32_AND)
+            .shared(I32_CLZ, OpcodeImpl.class)
+            .intrinsic(I32_CONST, AotEmitters::I32_CONST)
+            .shared(I32_CTZ, OpcodeImpl.class)
+            .shared(I32_DIV_S, OpcodeImpl.class)
+            .shared(I32_DIV_U, OpcodeImpl.class)
+            .shared(I32_EQ, OpcodeImpl.class)
+            .shared(I32_EQZ, OpcodeImpl.class)
+            .shared(I32_EXTEND_8_S, OpcodeImpl.class)
+            .shared(I32_EXTEND_16_S, OpcodeImpl.class)
+            .shared(I32_GE_S, OpcodeImpl.class)
+            .shared(I32_GE_U, OpcodeImpl.class)
+            .shared(I32_GT_S, OpcodeImpl.class)
+            .shared(I32_GT_U, OpcodeImpl.class)
+            .shared(I32_LE_S, OpcodeImpl.class)
+            .shared(I32_LE_U, OpcodeImpl.class)
+            .shared(I32_LT_S, OpcodeImpl.class)
+            .shared(I32_LT_U, OpcodeImpl.class)
+            .intrinsic(I32_MUL, AotEmitters::I32_MUL)
+            .shared(I32_NE, OpcodeImpl.class)
+            .intrinsic(I32_OR, AotEmitters::I32_OR)
+            .shared(I32_POPCNT, OpcodeImpl.class)
+            .shared(I32_REINTERPRET_F32, OpcodeImpl.class)
+            .shared(I32_REM_S, OpcodeImpl.class)
+            .shared(I32_REM_U, OpcodeImpl.class)
+            .shared(I32_ROTL, OpcodeImpl.class)
+            .shared(I32_ROTR, OpcodeImpl.class)
+            .intrinsic(I32_SHL, AotEmitters::I32_SHL)
+            .intrinsic(I32_SHR_S, AotEmitters::I32_SHR_S)
+            .intrinsic(I32_SHR_U, AotEmitters::I32_SHR_U)
+            .intrinsic(I32_SUB, AotEmitters::I32_SUB)
+            .shared(I32_TRUNC_F32_S, OpcodeImpl.class)
+            .shared(I32_TRUNC_F32_U, OpcodeImpl.class)
+            .shared(I32_TRUNC_F64_S, OpcodeImpl.class)
+            .shared(I32_TRUNC_F64_U, OpcodeImpl.class)
+            .shared(I32_TRUNC_SAT_F32_S, OpcodeImpl.class)
+            .shared(I32_TRUNC_SAT_F32_U, OpcodeImpl.class)
+            .shared(I32_TRUNC_SAT_F64_S, OpcodeImpl.class)
+            .shared(I32_TRUNC_SAT_F64_U, OpcodeImpl.class)
+            .intrinsic(I32_WRAP_I64, AotEmitters::I32_WRAP_I64)
+            .intrinsic(I32_XOR, AotEmitters::I32_XOR)
 
-                    // ====== I64 ======
-                    .intrinsic(I64_ADD, AotEmitters::I64_ADD)
-                    .intrinsic(I64_AND, AotEmitters::I64_AND)
-                    .shared(I64_CLZ, OpcodeImpl.class)
-                    .intrinsic(I64_CONST, AotEmitters::I64_CONST)
-                    .shared(I64_CTZ, OpcodeImpl.class)
-                    .shared(I64_DIV_S, OpcodeImpl.class)
-                    .shared(I64_DIV_U, OpcodeImpl.class)
-                    .shared(I64_EQ, OpcodeImpl.class)
-                    .shared(I64_EQZ, OpcodeImpl.class)
-                    .shared(I64_EXTEND_8_S, OpcodeImpl.class)
-                    .shared(I64_EXTEND_16_S, OpcodeImpl.class)
-                    .shared(I64_EXTEND_32_S, OpcodeImpl.class)
-                    .intrinsic(I64_EXTEND_I32_S, AotEmitters::I64_EXTEND_I32_S)
-                    .shared(I64_EXTEND_I32_U, OpcodeImpl.class)
-                    .shared(I64_GE_S, OpcodeImpl.class)
-                    .shared(I64_GE_U, OpcodeImpl.class)
-                    .shared(I64_GT_S, OpcodeImpl.class)
-                    .shared(I64_GT_U, OpcodeImpl.class)
-                    .shared(I64_LE_S, OpcodeImpl.class)
-                    .shared(I64_LE_U, OpcodeImpl.class)
-                    .shared(I64_LT_S, OpcodeImpl.class)
-                    .shared(I64_LT_U, OpcodeImpl.class)
-                    .intrinsic(I64_MUL, AotEmitters::I64_MUL)
-                    .shared(I64_NE, OpcodeImpl.class)
-                    .intrinsic(I64_OR, AotEmitters::I64_OR)
-                    .shared(I64_POPCNT, OpcodeImpl.class)
-                    .shared(I64_REM_S, OpcodeImpl.class)
-                    .shared(I64_REM_U, OpcodeImpl.class)
-                    .shared(I64_ROTL, OpcodeImpl.class)
-                    .shared(I64_ROTR, OpcodeImpl.class)
-                    .intrinsic(I64_SHL, AotEmitters::I64_SHL)
-                    .intrinsic(I64_SHR_S, AotEmitters::I64_SHR_S)
-                    .intrinsic(I64_SHR_U, AotEmitters::I64_SHR_U)
-                    .intrinsic(I64_SUB, AotEmitters::I64_SUB)
-                    .shared(I64_REINTERPRET_F64, OpcodeImpl.class)
-                    .shared(I64_TRUNC_F32_S, OpcodeImpl.class)
-                    .shared(I64_TRUNC_F32_U, OpcodeImpl.class)
-                    .shared(I64_TRUNC_F64_S, OpcodeImpl.class)
-                    .shared(I64_TRUNC_F64_U, OpcodeImpl.class)
-                    .shared(I64_TRUNC_SAT_F32_S, OpcodeImpl.class)
-                    .shared(I64_TRUNC_SAT_F32_U, OpcodeImpl.class)
-                    .shared(I64_TRUNC_SAT_F64_S, OpcodeImpl.class)
-                    .shared(I64_TRUNC_SAT_F64_U, OpcodeImpl.class)
-                    .intrinsic(I64_XOR, AotEmitters::I64_XOR)
+            // ====== I64 ======
+            .intrinsic(I64_ADD, AotEmitters::I64_ADD)
+            .intrinsic(I64_AND, AotEmitters::I64_AND)
+            .shared(I64_CLZ, OpcodeImpl.class)
+            .intrinsic(I64_CONST, AotEmitters::I64_CONST)
+            .shared(I64_CTZ, OpcodeImpl.class)
+            .shared(I64_DIV_S, OpcodeImpl.class)
+            .shared(I64_DIV_U, OpcodeImpl.class)
+            .shared(I64_EQ, OpcodeImpl.class)
+            .shared(I64_EQZ, OpcodeImpl.class)
+            .shared(I64_EXTEND_8_S, OpcodeImpl.class)
+            .shared(I64_EXTEND_16_S, OpcodeImpl.class)
+            .shared(I64_EXTEND_32_S, OpcodeImpl.class)
+            .intrinsic(I64_EXTEND_I32_S, AotEmitters::I64_EXTEND_I32_S)
+            .shared(I64_EXTEND_I32_U, OpcodeImpl.class)
+            .shared(I64_GE_S, OpcodeImpl.class)
+            .shared(I64_GE_U, OpcodeImpl.class)
+            .shared(I64_GT_S, OpcodeImpl.class)
+            .shared(I64_GT_U, OpcodeImpl.class)
+            .shared(I64_LE_S, OpcodeImpl.class)
+            .shared(I64_LE_U, OpcodeImpl.class)
+            .shared(I64_LT_S, OpcodeImpl.class)
+            .shared(I64_LT_U, OpcodeImpl.class)
+            .intrinsic(I64_MUL, AotEmitters::I64_MUL)
+            .shared(I64_NE, OpcodeImpl.class)
+            .intrinsic(I64_OR, AotEmitters::I64_OR)
+            .shared(I64_POPCNT, OpcodeImpl.class)
+            .shared(I64_REM_S, OpcodeImpl.class)
+            .shared(I64_REM_U, OpcodeImpl.class)
+            .shared(I64_ROTL, OpcodeImpl.class)
+            .shared(I64_ROTR, OpcodeImpl.class)
+            .intrinsic(I64_SHL, AotEmitters::I64_SHL)
+            .intrinsic(I64_SHR_S, AotEmitters::I64_SHR_S)
+            .intrinsic(I64_SHR_U, AotEmitters::I64_SHR_U)
+            .intrinsic(I64_SUB, AotEmitters::I64_SUB)
+            .shared(I64_REINTERPRET_F64, OpcodeImpl.class)
+            .shared(I64_TRUNC_F32_S, OpcodeImpl.class)
+            .shared(I64_TRUNC_F32_U, OpcodeImpl.class)
+            .shared(I64_TRUNC_F64_S, OpcodeImpl.class)
+            .shared(I64_TRUNC_F64_U, OpcodeImpl.class)
+            .shared(I64_TRUNC_SAT_F32_S, OpcodeImpl.class)
+            .shared(I64_TRUNC_SAT_F32_U, OpcodeImpl.class)
+            .shared(I64_TRUNC_SAT_F64_S, OpcodeImpl.class)
+            .shared(I64_TRUNC_SAT_F64_U, OpcodeImpl.class)
+            .intrinsic(I64_XOR, AotEmitters::I64_XOR)
 
-                    // ====== F32 ======
-                    .shared(F32_ABS, OpcodeImpl.class)
-                    .intrinsic(F32_ADD, AotEmitters::F32_ADD)
-                    .shared(F32_CEIL, OpcodeImpl.class)
-                    .intrinsic(F32_CONST, AotEmitters::F32_CONST)
-                    .shared(F32_CONVERT_I32_S, OpcodeImpl.class)
-                    .shared(F32_CONVERT_I32_U, OpcodeImpl.class)
-                    .shared(F32_CONVERT_I64_S, OpcodeImpl.class)
-                    .shared(F32_CONVERT_I64_U, OpcodeImpl.class)
-                    .shared(F32_COPYSIGN, OpcodeImpl.class)
-                    .intrinsic(F32_DEMOTE_F64, AotEmitters::F32_DEMOTE_F64)
-                    .intrinsic(F32_DIV, AotEmitters::F32_DIV)
-                    .shared(F32_EQ, OpcodeImpl.class)
-                    .shared(F32_FLOOR, OpcodeImpl.class)
-                    .shared(F32_GE, OpcodeImpl.class)
-                    .shared(F32_GT, OpcodeImpl.class)
-                    .shared(F32_LE, OpcodeImpl.class)
-                    .shared(F32_LT, OpcodeImpl.class)
-                    .shared(F32_MAX, OpcodeImpl.class)
-                    .shared(F32_MIN, OpcodeImpl.class)
-                    .intrinsic(F32_MUL, AotEmitters::F32_MUL)
-                    .shared(F32_NE, OpcodeImpl.class)
-                    .intrinsic(F32_NEG, AotEmitters::F32_NEG)
-                    .shared(F32_NEAREST, OpcodeImpl.class)
-                    .shared(F32_REINTERPRET_I32, OpcodeImpl.class)
-                    .shared(F32_SQRT, OpcodeImpl.class)
-                    .intrinsic(F32_SUB, AotEmitters::F32_SUB)
-                    .shared(F32_TRUNC, OpcodeImpl.class)
+            // ====== F32 ======
+            .shared(F32_ABS, OpcodeImpl.class)
+            .intrinsic(F32_ADD, AotEmitters::F32_ADD)
+            .shared(F32_CEIL, OpcodeImpl.class)
+            .intrinsic(F32_CONST, AotEmitters::F32_CONST)
+            .shared(F32_CONVERT_I32_S, OpcodeImpl.class)
+            .shared(F32_CONVERT_I32_U, OpcodeImpl.class)
+            .shared(F32_CONVERT_I64_S, OpcodeImpl.class)
+            .shared(F32_CONVERT_I64_U, OpcodeImpl.class)
+            .shared(F32_COPYSIGN, OpcodeImpl.class)
+            .intrinsic(F32_DEMOTE_F64, AotEmitters::F32_DEMOTE_F64)
+            .intrinsic(F32_DIV, AotEmitters::F32_DIV)
+            .shared(F32_EQ, OpcodeImpl.class)
+            .shared(F32_FLOOR, OpcodeImpl.class)
+            .shared(F32_GE, OpcodeImpl.class)
+            .shared(F32_GT, OpcodeImpl.class)
+            .shared(F32_LE, OpcodeImpl.class)
+            .shared(F32_LT, OpcodeImpl.class)
+            .shared(F32_MAX, OpcodeImpl.class)
+            .shared(F32_MIN, OpcodeImpl.class)
+            .intrinsic(F32_MUL, AotEmitters::F32_MUL)
+            .shared(F32_NE, OpcodeImpl.class)
+            .intrinsic(F32_NEG, AotEmitters::F32_NEG)
+            .shared(F32_NEAREST, OpcodeImpl.class)
+            .shared(F32_REINTERPRET_I32, OpcodeImpl.class)
+            .shared(F32_SQRT, OpcodeImpl.class)
+            .intrinsic(F32_SUB, AotEmitters::F32_SUB)
+            .shared(F32_TRUNC, OpcodeImpl.class)
 
-                    // ====== F64 ======
-                    .shared(F64_ABS, OpcodeImpl.class)
-                    .intrinsic(F64_ADD, AotEmitters::F64_ADD)
-                    .shared(F64_CEIL, OpcodeImpl.class)
-                    .intrinsic(F64_CONST, AotEmitters::F64_CONST)
-                    .shared(F64_CONVERT_I32_S, OpcodeImpl.class)
-                    .shared(F64_CONVERT_I32_U, OpcodeImpl.class)
-                    .shared(F64_CONVERT_I64_S, OpcodeImpl.class)
-                    .shared(F64_CONVERT_I64_U, OpcodeImpl.class)
-                    .shared(F64_COPYSIGN, OpcodeImpl.class)
-                    .intrinsic(F64_DIV, AotEmitters::F64_DIV)
-                    .shared(F64_EQ, OpcodeImpl.class)
-                    .shared(F64_FLOOR, OpcodeImpl.class)
-                    .shared(F64_GE, OpcodeImpl.class)
-                    .shared(F64_GT, OpcodeImpl.class)
-                    .shared(F64_LE, OpcodeImpl.class)
-                    .shared(F64_LT, OpcodeImpl.class)
-                    .shared(F64_MAX, OpcodeImpl.class)
-                    .shared(F64_MIN, OpcodeImpl.class)
-                    .intrinsic(F64_MUL, AotEmitters::F64_MUL)
-                    .shared(F64_NE, OpcodeImpl.class)
-                    .intrinsic(F64_NEG, AotEmitters::F64_NEG)
-                    .shared(F64_NEAREST, OpcodeImpl.class)
-                    .intrinsic(F64_PROMOTE_F32, AotEmitters::F64_PROMOTE_F32)
-                    .shared(F64_REINTERPRET_I64, OpcodeImpl.class)
-                    .shared(F64_SQRT, OpcodeImpl.class)
-                    .intrinsic(F64_SUB, AotEmitters::F64_SUB)
-                    .shared(F64_TRUNC, OpcodeImpl.class)
-                    .build();
+            // ====== F64 ======
+            .shared(F64_ABS, OpcodeImpl.class)
+            .intrinsic(F64_ADD, AotEmitters::F64_ADD)
+            .shared(F64_CEIL, OpcodeImpl.class)
+            .intrinsic(F64_CONST, AotEmitters::F64_CONST)
+            .shared(F64_CONVERT_I32_S, OpcodeImpl.class)
+            .shared(F64_CONVERT_I32_U, OpcodeImpl.class)
+            .shared(F64_CONVERT_I64_S, OpcodeImpl.class)
+            .shared(F64_CONVERT_I64_U, OpcodeImpl.class)
+            .shared(F64_COPYSIGN, OpcodeImpl.class)
+            .intrinsic(F64_DIV, AotEmitters::F64_DIV)
+            .shared(F64_EQ, OpcodeImpl.class)
+            .shared(F64_FLOOR, OpcodeImpl.class)
+            .shared(F64_GE, OpcodeImpl.class)
+            .shared(F64_GT, OpcodeImpl.class)
+            .shared(F64_LE, OpcodeImpl.class)
+            .shared(F64_LT, OpcodeImpl.class)
+            .shared(F64_MAX, OpcodeImpl.class)
+            .shared(F64_MIN, OpcodeImpl.class)
+            .intrinsic(F64_MUL, AotEmitters::F64_MUL)
+            .shared(F64_NE, OpcodeImpl.class)
+            .intrinsic(F64_NEG, AotEmitters::F64_NEG)
+            .shared(F64_NEAREST, OpcodeImpl.class)
+            .intrinsic(F64_PROMOTE_F32, AotEmitters::F64_PROMOTE_F32)
+            .shared(F64_REINTERPRET_I64, OpcodeImpl.class)
+            .shared(F64_SQRT, OpcodeImpl.class)
+            .intrinsic(F64_SUB, AotEmitters::F64_SUB)
+            .shared(F64_TRUNC, OpcodeImpl.class)
+            .build();
 
     public AotMachine(Module module, Instance instance) {
         this.module = module;
         this.instance = requireNonNull(instance, "instance");
 
-        var importedGlobals =
-                module.wasmModule().importSection().stream()
-                        .filter(GlobalImport.class::isInstance)
-                        .map(GlobalImport.class::cast)
-                        .map(GlobalImport::type);
+        var importedGlobals = module.wasmModule().importSection().stream()
+                .filter(GlobalImport.class::isInstance)
+                .map(GlobalImport.class::cast)
+                .map(GlobalImport::type);
         var globals =
                 Stream.of(module.wasmModule().globalSection().globals()).map(Global::valueType);
         this.globalTypes = Stream.concat(importedGlobals, globals).collect(toUnmodifiableList());
@@ -340,9 +338,7 @@ public class AotMachine implements Machine {
     }
 
     private MethodHandle compile(int funcId, FunctionType type, FunctionBody body)
-            throws NoSuchMethodException,
-                    IllegalAccessException,
-                    InvocationTargetException,
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException,
                     InstantiationException {
 
         var className = classNameFor(funcId);
@@ -376,17 +372,16 @@ public class AotMachine implements Machine {
 
         emitConstructor(internalClassName, classWriter);
 
-        var implWriter =
-                classWriter.visitMethod(
-                        Opcodes.ACC_PUBLIC,
-                        "call",
-                        getMethodDescriptor(
-                                getType(jvmReturnType(type)),
-                                Arrays.stream(jvmParameterTypes(type))
-                                        .map(Type::getType)
-                                        .toArray(Type[]::new)),
-                        null,
-                        null);
+        var implWriter = classWriter.visitMethod(
+                Opcodes.ACC_PUBLIC,
+                "call",
+                getMethodDescriptor(
+                        getType(jvmReturnType(type)),
+                        Arrays.stream(jvmParameterTypes(type))
+                                .map(Type::getType)
+                                .toArray(Type[]::new)),
+                null,
+                null);
 
         implWriter.visitCode();
 
@@ -398,22 +393,19 @@ public class AotMachine implements Machine {
         classWriter.visitEnd();
 
         Class<?> clazz = loadClass(className, classWriter.toByteArray());
-        Object target =
-                clazz.getConstructor(Memory.class, Instance.class)
-                        .newInstance(instance.memory(), instance);
-        MethodHandle handle =
-                MethodHandles.lookup()
-                        .findVirtual(clazz, "call", methodTypeFor(type))
-                        .bindTo(target);
+        Object target = clazz.getConstructor(Memory.class, Instance.class)
+                .newInstance(instance.memory(), instance);
+        MethodHandle handle = MethodHandles.lookup()
+                .findVirtual(clazz, "call", methodTypeFor(type))
+                .bindTo(target);
 
         return adaptSignature(type, handle);
     }
 
     private Class<?> loadClass(String className, byte[] classBytes) {
         try {
-            Class<?> clazz =
-                    new ByteArrayClassLoader(getClass().getClassLoader())
-                            .loadFromBytes(className, classBytes);
+            Class<?> clazz = new ByteArrayClassLoader(getClass().getClassLoader())
+                    .loadFromBytes(className, classBytes);
             // force initialization to run JVM verifier
             Class.forName(clazz.getName(), true, clazz.getClassLoader());
             return clazz;
@@ -445,7 +437,8 @@ public class AotMachine implements Machine {
         if (type.returns().isEmpty()) {
             return result;
         }
-        return filterReturnValue(result, publicLookup().unreflect(boxer(type.returns().get(0))));
+        return filterReturnValue(
+                result, publicLookup().unreflect(boxer(type.returns().get(0))));
     }
 
     private static String classNameFor(int funcId) {
@@ -454,14 +447,12 @@ public class AotMachine implements Machine {
     }
 
     private static void emitConstructor(String internalClassName, ClassVisitor writer) {
-        var cons =
-                writer.visitMethod(
-                        Opcodes.ACC_PUBLIC,
-                        "<init>",
-                        getMethodDescriptor(
-                                VOID_TYPE, getType(Memory.class), getType(Instance.class)),
-                        null,
-                        null);
+        var cons = writer.visitMethod(
+                Opcodes.ACC_PUBLIC,
+                "<init>",
+                getMethodDescriptor(VOID_TYPE, getType(Memory.class), getType(Instance.class)),
+                null,
+                null);
         cons.visitCode();
 
         // super();

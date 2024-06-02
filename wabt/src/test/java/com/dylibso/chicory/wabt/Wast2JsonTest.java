@@ -13,11 +13,10 @@ public class Wast2JsonTest {
     public void shouldRunWast2Json(@TempDir Path tempDir) throws Exception {
         // Arrange
         var outputFile = tempDir.resolve("fac").resolve("spec.json").toFile();
-        var wast2Json =
-                Wast2Json.builder()
-                        .withFile(new File("src/test/resources/fac.wast"))
-                        .withOutput(outputFile)
-                        .build();
+        var wast2Json = Wast2Json.builder()
+                .withFile(new File("src/test/resources/fac.wast"))
+                .withOutput(outputFile)
+                .build();
 
         // Act
         wast2Json.process();
@@ -25,6 +24,7 @@ public class Wast2JsonTest {
         System.out.println(outputFile.getAbsolutePath());
         // Assert
         assertTrue(outputFile.exists());
-        assertTrue(outputFile.toPath().getParent().resolve("spec.0.wasm").toFile().exists());
+        assertTrue(
+                outputFile.toPath().getParent().resolve("spec.0.wasm").toFile().exists());
     }
 }

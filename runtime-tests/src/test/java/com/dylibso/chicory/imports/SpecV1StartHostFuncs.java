@@ -9,24 +9,23 @@ import java.util.List;
 
 public class SpecV1StartHostFuncs {
     public static HostImports fallback() {
-        return new HostImports(
-                new HostFunction[] {
-                    new HostFunction(
-                            (Instance instance, Value... args) -> {
-                                return null;
-                            },
-                            "spectest",
-                            "print_i32",
-                            List.of(ValueType.I32),
-                            List.of()),
-                    new HostFunction(
-                            (Instance instance, Value... args) -> {
-                                return null;
-                            },
-                            "spectest",
-                            "print",
-                            List.of(ValueType.I32),
-                            List.of())
-                });
+        return new HostImports(new HostFunction[] {
+            new HostFunction(
+                    (Instance instance, Value... args) -> {
+                        return null;
+                    },
+                    "spectest",
+                    "print_i32",
+                    List.of(ValueType.I32),
+                    List.of()),
+            new HostFunction(
+                    (Instance instance, Value... args) -> {
+                        return null;
+                    },
+                    "spectest",
+                    "print",
+                    List.of(ValueType.I32),
+                    List.of())
+        });
     }
 }

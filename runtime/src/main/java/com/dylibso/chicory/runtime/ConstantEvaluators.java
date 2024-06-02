@@ -16,57 +16,48 @@ public class ConstantEvaluators {
         Value tos = null;
         for (Instruction instruction : expr) {
             switch (instruction.opcode()) {
-                case F32_CONST:
-                    {
-                        tos = Value.f32(instruction.operands()[0]);
-                        break;
+                case F32_CONST: {
+                    tos = Value.f32(instruction.operands()[0]);
+                    break;
+                }
+                case F64_CONST: {
+                    tos = Value.f64(instruction.operands()[0]);
+                    break;
+                }
+                case I32_CONST: {
+                    tos = Value.i32(instruction.operands()[0]);
+                    break;
+                }
+                case I64_CONST: {
+                    tos = Value.i64(instruction.operands()[0]);
+                    break;
+                }
+                case REF_NULL: {
+                    ValueType vt = ValueType.refTypeForId((int) instruction.operands()[0]);
+                    if (vt == ValueType.ExternRef) {
+                        tos = Value.EXTREF_NULL;
+                    } else if (vt == ValueType.FuncRef) {
+                        tos = Value.FUNCREF_NULL;
+                    } else {
+                        throw new IllegalStateException(
+                                "Unexpected wrong type for ref.null instruction");
                     }
-                case F64_CONST:
-                    {
-                        tos = Value.f64(instruction.operands()[0]);
-                        break;
-                    }
-                case I32_CONST:
-                    {
-                        tos = Value.i32(instruction.operands()[0]);
-                        break;
-                    }
-                case I64_CONST:
-                    {
-                        tos = Value.i64(instruction.operands()[0]);
-                        break;
-                    }
-                case REF_NULL:
-                    {
-                        ValueType vt = ValueType.refTypeForId((int) instruction.operands()[0]);
-                        if (vt == ValueType.ExternRef) {
-                            tos = Value.EXTREF_NULL;
-                        } else if (vt == ValueType.FuncRef) {
-                            tos = Value.FUNCREF_NULL;
-                        } else {
-                            throw new IllegalStateException(
-                                    "Unexpected wrong type for ref.null instruction");
-                        }
-                        break;
-                    }
-                case REF_FUNC:
-                    {
-                        tos = Value.funcRef((int) instruction.operands()[0]);
-                        break;
-                    }
-                case GLOBAL_GET:
-                    {
-                        return instance.readGlobal((int) instruction.operands()[0]);
-                    }
-                case END:
-                    {
-                        break;
-                    }
-                default:
-                    {
-                        throw new ChicoryException(
-                                "Non-constant instruction encountered: " + instruction);
-                    }
+                    break;
+                }
+                case REF_FUNC: {
+                    tos = Value.funcRef((int) instruction.operands()[0]);
+                    break;
+                }
+                case GLOBAL_GET: {
+                    return instance.readGlobal((int) instruction.operands()[0]);
+                }
+                case END: {
+                    break;
+                }
+                default: {
+                    throw new ChicoryException(
+                            "Non-constant instruction encountered: " + instruction);
+                }
             }
         }
         if (tos == null) {
@@ -78,10 +69,9 @@ public class ConstantEvaluators {
     public static Instance computeConstantInstance(Instance instance, List<Instruction> expr) {
         for (Instruction instruction : expr) {
             switch (instruction.opcode()) {
-                case GLOBAL_GET:
-                    {
-                        return instance.global((int) instruction.operands()[0]).getInstance();
-                    }
+                case GLOBAL_GET: {
+                    return instance.global((int) instruction.operands()[0]).getInstance();
+                }
             }
         }
         return instance;

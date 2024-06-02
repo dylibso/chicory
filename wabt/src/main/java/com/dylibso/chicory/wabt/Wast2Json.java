@@ -26,19 +26,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Wast2Json {
-    private static final Logger logger =
-            new SystemLogger() {
-                @Override
-                public boolean isLoggable(Logger.Level level) {
-                    return false;
-                }
-            };
-    private static final com.dylibso.chicory.wasm.Module wasmModule =
-            Module.builder(Wast2Json.class.getResourceAsStream("/wast2json"))
-                    .withInitialize(false)
-                    .withStart(false)
-                    .build()
-                    .wasmModule();
+    private static final Logger logger = new SystemLogger() {
+        @Override
+        public boolean isLoggable(Logger.Level level) {
+            return false;
+        }
+    };
+    private static final com.dylibso.chicory.wasm.Module wasmModule = Module.builder(
+                    Wast2Json.class.getResourceAsStream("/wast2json"))
+            .withInitialize(false)
+            .withStart(false)
+            .build()
+            .wasmModule();
 
     private final File input;
     private final File output;
@@ -58,11 +57,9 @@ public class Wast2Json {
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
                 ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
             try (FileInputStream fis = new FileInputStream(input);
-                    FileSystem fs =
-                            Jimfs.newFileSystem(
-                                    Configuration.unix().toBuilder()
-                                            .setAttributeViews("unix")
-                                            .build())) {
+                    FileSystem fs = Jimfs.newFileSystem(Configuration.unix().toBuilder()
+                            .setAttributeViews("unix")
+                            .build())) {
 
                 var wasiOpts = WasiOptions.builder();
 
@@ -89,7 +86,8 @@ public class Wast2Json {
 
                 try (var wasi = new WasiPreview1(logger, wasiOpts.build())) {
                     HostImports imports = new HostImports(wasi.toHostFunctions());
-                    Module module = Module.builder(wasmModule).withHostImports(imports).build();
+                    Module module =
+                            Module.builder(wasmModule).withHostImports(imports).build();
                     module.instantiate();
                 }
 

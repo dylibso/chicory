@@ -9,24 +9,22 @@ import org.apache.maven.plugin.logging.Log;
 public class JavaParserMavenUtils {
 
     public static void makeJavaParserLogToMavenOutput(Log log) {
-        com.github.javaparser.utils.Log.setAdapter(
-                new com.github.javaparser.utils.Log.Adapter() {
-                    @Override
-                    public void info(Supplier<String> message) {
-                        log.info(message.get());
-                    }
+        com.github.javaparser.utils.Log.setAdapter(new com.github.javaparser.utils.Log.Adapter() {
+            @Override
+            public void info(Supplier<String> message) {
+                log.info(message.get());
+            }
 
-                    @Override
-                    public void trace(Supplier<String> message) {
-                        log.debug(message.get());
-                    }
+            @Override
+            public void trace(Supplier<String> message) {
+                log.debug(message.get());
+            }
 
-                    @Override
-                    public void error(
-                            Supplier<Throwable> throwableSupplier,
-                            Supplier<String> messageSupplier) {
-                        log.error(messageSupplier.get(), throwableSupplier.get());
-                    }
-                });
+            @Override
+            public void error(
+                    Supplier<Throwable> throwableSupplier, Supplier<String> messageSupplier) {
+                log.error(messageSupplier.get(), throwableSupplier.get());
+            }
+        });
     }
 }

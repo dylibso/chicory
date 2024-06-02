@@ -95,9 +95,8 @@ public class Module {
         // TODO i guess we should explode if this is the case, is this possible?
         var types = module.typeSection().types();
 
-        int numFuncTypes =
-                module.functionSection().functionCount()
-                        + module.importSection().count(ExternalType.FUNCTION);
+        int numFuncTypes = module.functionSection().functionCount()
+                + module.importSection().count(ExternalType.FUNCTION);
 
         FunctionBody[] functions = module.codeSection().functionBodies();
 
@@ -110,16 +109,15 @@ public class Module {
         for (int i = 0; i < importCount; i++) {
             Import imprt = module.importSection().getImport(i);
             switch (imprt.importType()) {
-                case FUNCTION:
-                    {
-                        var type = ((FunctionImport) imprt).typeIndex();
-                        functionTypes[funcIdx] = type;
-                        // The global function id increases on this table
-                        // function ids are assigned on imports first
-                        imports[importId++] = imprt;
-                        funcIdx++;
-                        break;
-                    }
+                case FUNCTION: {
+                    var type = ((FunctionImport) imprt).typeIndex();
+                    functionTypes[funcIdx] = type;
+                    // The global function id increases on this table
+                    // function ids are assigned on imports first
+                    imports[importId++] = imprt;
+                    funcIdx++;
+                    break;
+                }
                 default:
                     imports[importId++] = imprt;
                     break;
@@ -129,11 +127,10 @@ public class Module {
         var mappedHostImports = mapHostImports(imports, hostImports);
 
         if (module.startSection() != null) {
-            var export =
-                    new Export(
-                            START_FUNCTION_NAME,
-                            (int) module.startSection().startIndex(),
-                            ExternalType.FUNCTION);
+            var export = new Export(
+                    START_FUNCTION_NAME,
+                    (int) module.startSection().startIndex(),
+                    ExternalType.FUNCTION);
             exports.put(START_FUNCTION_NAME, export);
         }
 
@@ -382,15 +379,13 @@ public class Module {
      * @return a {@link Builder} for reading the module definition from the specified file
      */
     public static Builder builder(File file) {
-        return new Builder(
-                () -> {
-                    try {
-                        return new FileInputStream(file);
-                    } catch (FileNotFoundException e) {
-                        throw new IllegalArgumentException(
-                                "File not found at path: " + file.getPath(), e);
-                    }
-                });
+        return new Builder(() -> {
+            try {
+                return new FileInputStream(file);
+            } catch (FileNotFoundException e) {
+                throw new IllegalArgumentException("File not found at path: " + file.getPath(), e);
+            }
+        });
     }
 
     /**
@@ -400,18 +395,16 @@ public class Module {
      * @return a {@link Builder}  for reading the module definition from the specified resource
      */
     public static Builder builder(String classpathResource) {
-        return new Builder(
-                () -> {
-                    InputStream is =
-                            Thread.currentThread()
-                                    .getContextClassLoader()
-                                    .getResourceAsStream(classpathResource);
-                    if (is == null) {
-                        throw new IllegalArgumentException(
-                                "Resource not found at classpath: " + classpathResource);
-                    }
-                    return is;
-                });
+        return new Builder(() -> {
+            InputStream is = Thread.currentThread()
+                    .getContextClassLoader()
+                    .getResourceAsStream(classpathResource);
+            if (is == null) {
+                throw new IllegalArgumentException(
+                        "Resource not found at classpath: " + classpathResource);
+            }
+            return is;
+        });
     }
 
     /**
@@ -421,14 +414,13 @@ public class Module {
      * @return a {@link Builder} for reading the module definition from the specified path
      */
     public static Builder builder(Path path) {
-        return new Builder(
-                () -> {
-                    try {
-                        return Files.newInputStream(path);
-                    } catch (IOException e) {
-                        throw new IllegalArgumentException("Error opening file: " + path, e);
-                    }
-                });
+        return new Builder(() -> {
+            try {
+                return Files.newInputStream(path);
+            } catch (IOException e) {
+                throw new IllegalArgumentException("Error opening file: " + path, e);
+            }
+        });
     }
 
     public static class Builder {

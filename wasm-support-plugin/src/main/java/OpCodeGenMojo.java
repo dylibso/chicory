@@ -60,24 +60,22 @@ public class OpCodeGenMojo extends AbstractMojo {
         sourceDestinationFolder.mkdirs();
         List<String[]> lines = null;
         try {
-            lines =
-                    Files.lines(instructionsFile.toPath())
-                            .map(line -> line.split("\t"))
-                            .collect(Collectors.toList());
+            lines = Files.lines(instructionsFile.toPath())
+                    .map(line -> line.split("\t"))
+                    .collect(Collectors.toList());
         } catch (IOException e) {
             throw new MojoExecutionException(e);
         }
 
         var cu = new CompilationUnit("com.dylibso.chicory.wasm.types");
-        var destFile =
-                Path.of(
-                        sourceDestinationFolder.getAbsolutePath(),
-                        "com",
-                        "dylibso",
-                        "chicory",
-                        "wasm",
-                        "types",
-                        "OpCode.java");
+        var destFile = Path.of(
+                sourceDestinationFolder.getAbsolutePath(),
+                "com",
+                "dylibso",
+                "chicory",
+                "wasm",
+                "types",
+                "OpCode.java");
         cu.setStorage(destFile);
 
         cu.addImport("java.util.HashMap");
@@ -100,18 +98,15 @@ public class OpCodeGenMojo extends AbstractMojo {
             enumDef.addOrphanComment(new LineComment(line[0]));
             enumDef.addEntry(enumConstantDecl);
 
-            var staticAssignmentParams =
-                    Arrays.stream(line[0].split(" "))
-                            .skip(1)
-                            .map(a -> getType(a))
-                            .collect(Collectors.joining(", "));
-            staticAssignement.add(
-                    new NameExpr(
-                            "signature.put("
-                                    + enumName
-                                    + ", new WasmEncoding[] {"
-                                    + staticAssignmentParams
-                                    + "})"));
+            var staticAssignmentParams = Arrays.stream(line[0].split(" "))
+                    .skip(1)
+                    .map(a -> getType(a))
+                    .collect(Collectors.joining(", "));
+            staticAssignement.add(new NameExpr("signature.put("
+                    + enumName
+                    + ", new WasmEncoding[] {"
+                    + staticAssignmentParams
+                    + "})"));
         }
 
         var opcodeField =
@@ -119,23 +114,20 @@ public class OpCodeGenMojo extends AbstractMojo {
 
         var constructor = enumDef.addConstructor();
         constructor.addParameter("int", "opcode");
-        constructor.setBody(
-                new BlockStmt()
-                        .addStatement(
-                                new AssignExpr(
-                                        new NameExpr("this.opcode"),
-                                        new NameExpr("opcode"),
-                                        AssignExpr.Operator.ASSIGN)));
+        constructor.setBody(new BlockStmt()
+                .addStatement(new AssignExpr(
+                        new NameExpr("this.opcode"),
+                        new NameExpr("opcode"),
+                        AssignExpr.Operator.ASSIGN)));
         opcodeField.createGetter().setName("opcode");
 
-        var byOpCodeMap =
-                enumDef.addFieldWithInitializer(
-                        "Map<Integer, OpCode>",
-                        "byOpCode",
-                        new NameExpr("new HashMap<>()"),
-                        Modifier.Keyword.PRIVATE,
-                        Modifier.Keyword.STATIC,
-                        Modifier.Keyword.FINAL);
+        var byOpCodeMap = enumDef.addFieldWithInitializer(
+                "Map<Integer, OpCode>",
+                "byOpCode",
+                new NameExpr("new HashMap<>()"),
+                Modifier.Keyword.PRIVATE,
+                Modifier.Keyword.STATIC,
+                Modifier.Keyword.FINAL);
 
         var byOpCode =
                 enumDef.addMethod("byOpCode", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
@@ -144,14 +136,13 @@ public class OpCodeGenMojo extends AbstractMojo {
         byOpCode.setBody(
                 new BlockStmt().addStatement(new ReturnStmt(new NameExpr("byOpCode.get(opcode)"))));
 
-        var signature =
-                enumDef.addFieldWithInitializer(
-                        "Map<OpCode, WasmEncoding[]>",
-                        "signature",
-                        new NameExpr("new HashMap<>()"),
-                        Modifier.Keyword.PRIVATE,
-                        Modifier.Keyword.STATIC,
-                        Modifier.Keyword.FINAL);
+        var signature = enumDef.addFieldWithInitializer(
+                "Map<OpCode, WasmEncoding[]>",
+                "signature",
+                new NameExpr("new HashMap<>()"),
+                Modifier.Keyword.PRIVATE,
+                Modifier.Keyword.STATIC,
+                Modifier.Keyword.FINAL);
 
         var getSignature =
                 enumDef.addMethod("getSignature", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
@@ -163,9 +154,8 @@ public class OpCodeGenMojo extends AbstractMojo {
         var staticBlock = enumDef.addStaticInitializer();
 
         // byOpCode initialization
-        staticBlock.addStatement(
-                new NameExpr(
-                        "for (OpCode e: OpCode.values()) {" + " byOpCode.put(e.opcode(), e); }"));
+        staticBlock.addStatement(new NameExpr(
+                "for (OpCode e: OpCode.values()) {" + " byOpCode.put(e.opcode(), e); }"));
         for (var assign : staticAssignement) {
             staticBlock.addStatement(assign);
         }

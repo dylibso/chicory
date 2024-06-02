@@ -127,10 +127,8 @@ public class ParserTest {
         File compiledDir = new File("../wasm-corpus/src/main/resources/compiled/");
 
         List<File> files = new ArrayList<>();
-        files.addAll(
-                Arrays.asList(
-                        compiledDir.listFiles(
-                                (ignored, name) -> name.toLowerCase().endsWith(".wasm"))));
+        files.addAll(Arrays.asList(
+                compiledDir.listFiles((ignored, name) -> name.toLowerCase().endsWith(".wasm"))));
 
         if (files.isEmpty()) {
             throw new RuntimeException("Could not find files");
@@ -154,17 +152,15 @@ public class ParserTest {
 
         try (InputStream is = getClass().getResourceAsStream("/compiled/count_vowels.rs.wasm")) {
             parser.includeSection(SectionId.CUSTOM);
-            parser.parse(
-                    is,
-                    s -> {
-                        if (s.sectionId() == SectionId.CUSTOM) {
-                            var customSection = (CustomSection) s;
-                            var name = customSection.name();
-                            assertFalse(name.isEmpty());
-                        } else {
-                            fail("Should not have received section with id: " + s.sectionId());
-                        }
-                    });
+            parser.parse(is, s -> {
+                if (s.sectionId() == SectionId.CUSTOM) {
+                    var customSection = (CustomSection) s;
+                    var name = customSection.name();
+                    assertFalse(name.isEmpty());
+                } else {
+                    fail("Should not have received section with id: " + s.sectionId());
+                }
+            });
         }
     }
 

@@ -22,27 +22,25 @@ import java.util.List;
 public class SpecV1LinkingHostFuncs {
 
     public static HostImports Mf() {
-        return new HostImports(
-                new HostFunction[] {
-                    new HostFunction(
-                            (Instance instance, Value... args) -> new Value[] {Value.i32(2)},
-                            "Mf",
-                            "call",
-                            List.of(),
-                            List.of(ValueType.I32))
-                });
+        return new HostImports(new HostFunction[] {
+            new HostFunction(
+                    (Instance instance, Value... args) -> new Value[] {Value.i32(2)},
+                    "Mf",
+                    "call",
+                    List.of(),
+                    List.of(ValueType.I32))
+        });
     }
 
     public static HostImports Nf() {
-        return new HostImports(
-                new HostFunction[] {
-                    new HostFunction(
-                            (Instance instance, Value... args) -> new Value[] {Value.i32(2)},
-                            "Mf",
-                            "call",
-                            List.of(),
-                            List.of(ValueType.I32))
-                });
+        return new HostImports(new HostFunction[] {
+            new HostFunction(
+                    (Instance instance, Value... args) -> new Value[] {Value.i32(2)},
+                    "Mf",
+                    "call",
+                    List.of(),
+                    List.of(ValueType.I32))
+        });
     }
 
     public static HostImports Mg() {
@@ -64,25 +62,24 @@ public class SpecV1LinkingHostFuncs {
     }
 
     public static HostImports Nt() {
-        return new HostImports(
-                new HostFunction[] {
-                    new HostFunction(
-                            (Instance instance, Value... args) -> {
-                                return Mtcall().apply(args);
-                            },
-                            "Mt",
-                            "call",
-                            List.of(ValueType.I32),
-                            List.of(ValueType.I32)),
-                    new HostFunction(
-                            (Instance instance, Value... args) -> {
-                                return Mth().apply(args);
-                            },
-                            "Mt",
-                            "h",
-                            List.of(),
-                            List.of(ValueType.I32))
-                });
+        return new HostImports(new HostFunction[] {
+            new HostFunction(
+                    (Instance instance, Value... args) -> {
+                        return Mtcall().apply(args);
+                    },
+                    "Mt",
+                    "call",
+                    List.of(ValueType.I32),
+                    List.of(ValueType.I32)),
+            new HostFunction(
+                    (Instance instance, Value... args) -> {
+                        return Mth().apply(args);
+                    },
+                    "Mt",
+                    "h",
+                    List.of(),
+                    List.of(ValueType.I32))
+        });
     }
 
     public static HostImports Ng() {
@@ -162,17 +159,16 @@ public class SpecV1LinkingHostFuncs {
     }
 
     public static HostImports Nm() {
-        return new HostImports(
-                new HostFunction[] {
-                    new HostFunction(
-                            (Instance instance, Value... args) -> {
-                                return new Value[] {Value.i32(167)};
-                            },
-                            "Mm",
-                            "load",
-                            List.of(ValueType.I32),
-                            List.of(ValueType.I32))
-                });
+        return new HostImports(new HostFunction[] {
+            new HostFunction(
+                    (Instance instance, Value... args) -> {
+                        return new Value[] {Value.i32(167)};
+                    },
+                    "Mm",
+                    "load",
+                    List.of(ValueType.I32),
+                    List.of(ValueType.I32))
+        });
     }
 
     public static HostImports fallback() {

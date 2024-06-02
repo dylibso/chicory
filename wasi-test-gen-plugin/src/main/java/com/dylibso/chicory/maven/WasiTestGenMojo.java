@@ -102,11 +102,10 @@ public class WasiTestGenMojo extends AbstractMojo {
         // find all *.wasm test cases
         FileSetManager fileSetManager = new FileSetManager();
         String[] includedFiles = fileSetManager.getIncludedFiles(testSuiteFiles);
-        List<File> allFiles =
-                Stream.of(includedFiles)
-                        .map(file -> new File(testSuiteFiles.getDirectory(), file))
-                        .sorted()
-                        .collect(toList());
+        List<File> allFiles = Stream.of(includedFiles)
+                .map(file -> new File(testSuiteFiles.getDirectory(), file))
+                .sorted()
+                .collect(toList());
         if (allFiles.isEmpty()) {
             throw new MojoExecutionException("No files found in the test suite");
         }
@@ -122,7 +121,9 @@ public class WasiTestGenMojo extends AbstractMojo {
                 throw new MojoExecutionException("Invalid test suite file path: " + path);
             }
             String suiteName = path.getParent().getParent().getFileName().toString();
-            filesBySuite.computeIfAbsent(suiteName, ignored -> new ArrayList<>()).add(file);
+            filesBySuite
+                    .computeIfAbsent(suiteName, ignored -> new ArrayList<>())
+                    .add(file);
         }
 
         // create source root
@@ -142,9 +143,9 @@ public class WasiTestGenMojo extends AbstractMojo {
             String packageName = "com.dylibso.chicory.wasi.test";
             var cu = new CompilationUnit(packageName);
 
-            var destFile =
-                    Path.of(sourceDestinationFolder.getAbsolutePath(), packageName.split("\\."))
-                            .resolve("Suite" + capitalize(testSuite) + "Test.java");
+            var destFile = Path.of(
+                            sourceDestinationFolder.getAbsolutePath(), packageName.split("\\."))
+                    .resolve("Suite" + capitalize(testSuite) + "Test.java");
             cu.setStorage(destFile);
 
             cu.addImport(WASI_TEST_RUNNER);
@@ -162,58 +163,45 @@ public class WasiTestGenMojo extends AbstractMojo {
                 Specification specification =
                         readSpecification(new File(file.getParentFile(), baseName + ".json"));
 
-                var method =
-                        testClass.addMethod(
-                                "test" + escapedCamelCase(baseName), Modifier.Keyword.PUBLIC);
+                var method = testClass.addMethod(
+                        "test" + escapedCamelCase(baseName), Modifier.Keyword.PUBLIC);
                 method.addAnnotation("Test");
 
                 method.getBody()
                         .orElseThrow()
-                        .addStatement(
-                                new AssignExpr(
-                                        new NameExpr("var test"),
-                                        new NameExpr("new File(\"" + relativePath(file) + "\")"),
-                                        AssignExpr.Operator.ASSIGN))
-                        .addStatement(
-                                new AssignExpr(
-                                        new NameExpr("List<String> args"),
-                                        new NameExpr(listOf(specification.args())),
-                                        AssignExpr.Operator.ASSIGN))
-                        .addStatement(
-                                new AssignExpr(
-                                        new NameExpr("List<String> dirs"),
-                                        new NameExpr(listOf(specification.dirs())),
-                                        AssignExpr.Operator.ASSIGN))
-                        .addStatement(
-                                new AssignExpr(
-                                        new NameExpr("Map<String, String> env"),
-                                        new NameExpr(mapOf(specification.env())),
-                                        AssignExpr.Operator.ASSIGN))
-                        .addStatement(
-                                new AssignExpr(
-                                        new NameExpr("var exitCode"),
-                                        new NameExpr(String.valueOf(specification.exitCode())),
-                                        AssignExpr.Operator.ASSIGN))
-                        .addStatement(
-                                new AssignExpr(
-                                        new NameExpr("var stderr"),
-                                        new NameExpr(
-                                                javaString(
-                                                        requireNonNullElse(
-                                                                specification.stderr(), ""))),
-                                        AssignExpr.Operator.ASSIGN))
-                        .addStatement(
-                                new AssignExpr(
-                                        new NameExpr("var stdout"),
-                                        new NameExpr(
-                                                javaString(
-                                                        requireNonNullElse(
-                                                                specification.stdout(), ""))),
-                                        AssignExpr.Operator.ASSIGN))
-                        .addStatement(
+                        .addStatement(new AssignExpr(
+                                new NameExpr("var test"),
+                                new NameExpr("new File(\"" + relativePath(file) + "\")"),
+                                AssignExpr.Operator.ASSIGN))
+                        .addStatement(new AssignExpr(
+                                new NameExpr("List<String> args"),
+                                new NameExpr(listOf(specification.args())),
+                                AssignExpr.Operator.ASSIGN))
+                        .addStatement(new AssignExpr(
+                                new NameExpr("List<String> dirs"),
+                                new NameExpr(listOf(specification.dirs())),
+                                AssignExpr.Operator.ASSIGN))
+                        .addStatement(new AssignExpr(
+                                new NameExpr("Map<String, String> env"),
+                                new NameExpr(mapOf(specification.env())),
+                                AssignExpr.Operator.ASSIGN))
+                        .addStatement(new AssignExpr(
+                                new NameExpr("var exitCode"),
+                                new NameExpr(String.valueOf(specification.exitCode())),
+                                AssignExpr.Operator.ASSIGN))
+                        .addStatement(new AssignExpr(
+                                new NameExpr("var stderr"),
                                 new NameExpr(
-                                        "WasiTestRunner.execute(test, args, dirs, env, exitCode,"
-                                                + " stderr, stdout)"));
+                                        javaString(requireNonNullElse(specification.stderr(), ""))),
+                                AssignExpr.Operator.ASSIGN))
+                        .addStatement(new AssignExpr(
+                                new NameExpr("var stdout"),
+                                new NameExpr(
+                                        javaString(requireNonNullElse(specification.stdout(), ""))),
+                                AssignExpr.Operator.ASSIGN))
+                        .addStatement(new NameExpr(
+                                "WasiTestRunner.execute(test, args, dirs, env, exitCode,"
+                                        + " stderr, stdout)"));
             }
 
             dest.add(cu);
@@ -245,11 +233,8 @@ public class WasiTestGenMojo extends AbstractMojo {
     private static String mapOf(Map<String, String> map) {
         return "Map.of("
                 + map.entrySet().stream()
-                        .map(
-                                entry ->
-                                        javaString(entry.getKey())
-                                                + ", "
-                                                + javaString(entry.getValue()))
+                        .map(entry ->
+                                javaString(entry.getKey()) + ", " + javaString(entry.getValue()))
                         .collect(Collectors.joining(", "))
                 + ")";
     }

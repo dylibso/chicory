@@ -24,17 +24,14 @@ public class InstructionTypes {
 
     // Extract the types from an env var
     public static InstructionTypes fromString(String values) {
-        return new InstructionTypes(
-                Arrays.stream(values.trim().split(","))
-                        .map(
-                                v -> {
-                                    var res = InstructionType.byValue(v.toLowerCase());
-                                    if (res == null) {
-                                        throw new RuntimeException(
-                                                "Cannot find a matching type for " + v);
-                                    }
-                                    return res;
-                                })
-                        .collect(Collectors.toSet()));
+        return new InstructionTypes(Arrays.stream(values.trim().split(","))
+                .map(v -> {
+                    var res = InstructionType.byValue(v.toLowerCase());
+                    if (res == null) {
+                        throw new RuntimeException("Cannot find a matching type for " + v);
+                    }
+                    return res;
+                })
+                .collect(Collectors.toSet()));
     }
 }

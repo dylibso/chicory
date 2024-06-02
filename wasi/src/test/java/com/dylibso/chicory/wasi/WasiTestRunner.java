@@ -32,9 +32,8 @@ public final class WasiTestRunner {
             String stderr,
             String stdout) {
 
-        try (FileSystem fs =
-                Jimfs.newFileSystem(
-                        Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
+        try (FileSystem fs = Jimfs.newFileSystem(
+                Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
 
             var stdoutStream = new MockPrintStream();
             var stderrStream = new MockPrintStream();
@@ -43,11 +42,10 @@ public final class WasiTestRunner {
             allArgs.add("test");
             allArgs.addAll(args);
 
-            WasiOptions.Builder options =
-                    WasiOptions.builder()
-                            .withStdout(stdoutStream)
-                            .withStderr(stderrStream)
-                            .withArguments(allArgs);
+            WasiOptions.Builder options = WasiOptions.builder()
+                    .withStdout(stdoutStream)
+                    .withStderr(stderrStream)
+                    .withArguments(allArgs);
 
             env.forEach(options::withEnvironment);
 
@@ -81,10 +79,9 @@ public final class WasiTestRunner {
 
     private static int execute(File test, WasiOptions wasiOptions) {
         try (var wasi = new WasiPreview1(LOGGER, wasiOptions)) {
-            Module module =
-                    Module.builder(test)
-                            .withHostImports(new HostImports(wasi.toHostFunctions()))
-                            .build();
+            Module module = Module.builder(test)
+                    .withHostImports(new HostImports(wasi.toHostFunctions()))
+                    .build();
             module.instantiate();
         } catch (WASMMachineException e) {
             if (e.getCause() instanceof WasiExitException) {

@@ -47,10 +47,9 @@ public class WasmSmithWrapper {
         var command = new ArrayList<>(BINARY_NAME);
         // --ensure-termination true -> breaks the execution
         var defaultProperties = new ArrayList<String>();
-        var propsFile =
-                new String(
-                        getClass().getResourceAsStream(smithProperties).readAllBytes(),
-                        StandardCharsets.UTF_8);
+        var propsFile = new String(
+                getClass().getResourceAsStream(smithProperties).readAllBytes(),
+                StandardCharsets.UTF_8);
         var props = propsFile.split("\n");
         for (var prop : props) {
             if (!prop.isEmpty()) {
@@ -60,17 +59,15 @@ public class WasmSmithWrapper {
             }
         }
         command.addAll(defaultProperties);
-        command.addAll(
-                List.of(
-                        "--allowed-instructions",
-                        instructionTypes.toString(),
-                        "--output",
-                        targetFile.getAbsolutePath()));
-        logger.info(
-                "Going to execute command:\n"
-                        + String.join(" ", command)
-                        + " < "
-                        + seedFile.getAbsolutePath());
+        command.addAll(List.of(
+                "--allowed-instructions",
+                instructionTypes.toString(),
+                "--output",
+                targetFile.getAbsolutePath()));
+        logger.info("Going to execute command:\n"
+                + String.join(" ", command)
+                + " < "
+                + seedFile.getAbsolutePath());
 
         var retry = 3;
         // Trying to use the smallest possible seed for speed reasons
