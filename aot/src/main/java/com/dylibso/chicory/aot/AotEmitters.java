@@ -524,8 +524,7 @@ public class AotEmitters {
         emitX32Store(ctx, ins, asm, MEMORY_WRITE_INT);
     }
 
-    private static void emitX32Store(
-            AotContext ctx, Instruction ins, MethodVisitor asm, Method method) {
+    private static void emitX32Store(AotContext ctx, Instruction ins, MethodVisitor asm, Method method) {
 
         long offset = ins.operands()[1];
         emitThrowIfInvalidOffset(asm, offset);
@@ -555,8 +554,7 @@ public class AotEmitters {
         emitX64Store(ctx, ins, asm, MEMORY_WRITE_DOUBLE);
     }
 
-    private static void emitX64Store(
-            AotContext ctx, Instruction ins, MethodVisitor asm, Method method) {
+    private static void emitX64Store(AotContext ctx, Instruction ins, MethodVisitor asm, Method method) {
         long offset = ins.operands()[1];
         emitThrowIfInvalidOffset(asm, offset);
 

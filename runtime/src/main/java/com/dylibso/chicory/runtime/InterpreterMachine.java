@@ -55,8 +55,7 @@ class InterpreterMachine implements Machine {
 
         var func = instance.function(funcId);
         if (func != null) {
-            callStack.push(
-                    new StackFrame(func.instructions(), instance, funcId, args, func.localTypes()));
+            callStack.push(new StackFrame(func.instructions(), instance, funcId, args, func.localTypes()));
             eval(stack, instance, callStack);
         } else {
             callStack.push(new StackFrame(instance, funcId, args, List.of()));
@@ -89,8 +88,7 @@ class InterpreterMachine implements Machine {
         return results;
     }
 
-    static void eval(MStack stack, Instance instance, ArrayDeque<StackFrame> callStack)
-            throws ChicoryException {
+    static void eval(MStack stack, Instance instance, ArrayDeque<StackFrame> callStack) throws ChicoryException {
 
         try {
             var frame = callStack.peek();
@@ -728,8 +726,7 @@ class InterpreterMachine implements Machine {
                         ELEM_DROP(instance, operands);
                         break;
                     default:
-                        throw new RuntimeException(
-                                "Machine doesn't recognize Instruction " + instruction);
+                        throw new RuntimeException("Machine doesn't recognize Instruction " + instruction);
                 }
             }
         } catch (ChicoryException e) {
@@ -1422,10 +1419,7 @@ class InterpreterMachine implements Machine {
 
     private static void REF_IS_NULL(MStack stack) {
         var val = stack.pop();
-        stack.push(
-                val.equals(Value.EXTREF_NULL) || val.equals(Value.FUNCREF_NULL)
-                        ? Value.TRUE
-                        : Value.FALSE);
+        stack.push(val.equals(Value.EXTREF_NULL) || val.equals(Value.FUNCREF_NULL) ? Value.TRUE : Value.FALSE);
     }
 
     private static void DATA_DROP(Instance instance, long[] operands) {
@@ -1504,8 +1498,7 @@ class InterpreterMachine implements Machine {
     private static void MEMORY_INIT(MStack stack, Instance instance, long[] operands) {
         var segmentId = (int) operands[0];
         var memidx = (int) operands[1];
-        if (memidx != 0)
-            throw new WASMRuntimeException("We don't support non zero index for memory: " + memidx);
+        if (memidx != 0) throw new WASMRuntimeException("We don't support non zero index for memory: " + memidx);
         var size = stack.pop().asInt();
         var offset = stack.pop().asInt();
         var destination = stack.pop().asInt();
@@ -1603,8 +1596,7 @@ class InterpreterMachine implements Machine {
         stack.push(Value.fromFloat(OpcodeImpl.F32_TRUNC(val)));
     }
 
-    private static void CALL(
-            MStack stack, Instance instance, ArrayDeque<StackFrame> callStack, long[] operands) {
+    private static void CALL(MStack stack, Instance instance, ArrayDeque<StackFrame> callStack, long[] operands) {
         var funcId = (int) operands[0];
         var typeId = instance.functionType(funcId);
         var type = instance.type(typeId);
@@ -1903,8 +1895,7 @@ class InterpreterMachine implements Machine {
         return consume ? stack.pop() : null;
     }
 
-    private static void doControlTransfer(
-            Instance instance, MStack stack, StackFrame frame, Instruction scope) {
+    private static void doControlTransfer(Instance instance, MStack stack, StackFrame frame, Instruction scope) {
         // reset the control transfer
         frame.doControlTransfer = false;
 
@@ -1956,8 +1947,7 @@ class InterpreterMachine implements Machine {
         return args;
     }
 
-    protected static void verifyIndirectCall(FunctionType actual, FunctionType expected)
-            throws ChicoryException {
+    protected static void verifyIndirectCall(FunctionType actual, FunctionType expected) throws ChicoryException {
         if (!actual.typesMatch(expected)) {
             throw new ChicoryException("indirect call type mismatch");
         }

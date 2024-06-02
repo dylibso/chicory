@@ -64,9 +64,7 @@ public class TestGenMojo extends AbstractMojo {
     /**
      * Location for the junit generated sources.
      */
-    @Parameter(
-            required = true,
-            defaultValue = "${project.build.directory}/generated-test-sources/test-gen")
+    @Parameter(required = true, defaultValue = "${project.build.directory}/generated-test-sources/test-gen")
     private File sourceDestinationFolder;
 
     /**
@@ -147,20 +145,17 @@ public class TestGenMojo extends AbstractMojo {
 
             // Ensure that all wast files are included or excluded
             Set<String> allWastFiles = new HashSet<>();
-            try (DirectoryStream<Path> stream =
-                    Files.newDirectoryStream(testsuiteFolder.toPath(), "*.wast")) {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(testsuiteFolder.toPath(), "*.wast")) {
                 stream.forEach(path -> allWastFiles.add(path.getFileName().toString()));
             } catch (IOException e) {
-                throw new MojoExecutionException(
-                        "Failed to list wast files in " + testsuiteFolder, e);
+                throw new MojoExecutionException("Failed to list wast files in " + testsuiteFolder, e);
             }
             includedWasts.forEach(allWastFiles::remove);
             excludedMalformedWasts.forEach(allWastFiles::remove);
             excludedInvalidWasts.forEach(allWastFiles::remove);
             excludedWasts.forEach(allWastFiles::remove);
             if (!allWastFiles.isEmpty()) {
-                throw new MojoExecutionException(
-                        "Some wast files are not included or excluded: " + allWastFiles);
+                throw new MojoExecutionException("Some wast files are not included or excluded: " + allWastFiles);
             }
             List<String> includedExcludedWasts = new ArrayList<>();
             for (String includedWast : includedWasts) {
@@ -190,8 +185,7 @@ public class TestGenMojo extends AbstractMojo {
         project.addTestCompileSourceRoot(sourceDestinationFolder.getAbsolutePath());
     }
 
-    private static void validate(List<String> items, String name, boolean requireSorted)
-            throws MojoExecutionException {
+    private static void validate(List<String> items, String name, boolean requireSorted) throws MojoExecutionException {
         Set<String> set = new HashSet<>();
         for (String item : items) {
             if (!set.add(item)) {
@@ -222,8 +216,7 @@ public class TestGenMojo extends AbstractMojo {
             log.debug("TestGen processing " + spec);
             var wastFile = testsuiteFolder.toPath().resolve(spec).toFile();
             if (!wastFile.exists()) {
-                throw new IllegalArgumentException(
-                        "Wast file " + wastFile.getAbsolutePath() + " not found");
+                throw new IllegalArgumentException("Wast file " + wastFile.getAbsolutePath() + " not found");
             }
 
             var plainName = wastFile.getName().replace(".wast", "");

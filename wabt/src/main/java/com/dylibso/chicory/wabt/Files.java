@@ -17,8 +17,7 @@ public final class Files {
     public static void copyDirectory(Path source, Path target) throws IOException {
         walkFileTree(source, new SimpleFileVisitor<>() {
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 String relative = source.relativize(file).toString().replace("\\", "/");
                 Path path = target.resolve(relative);
                 copy(file, path, StandardCopyOption.REPLACE_EXISTING);

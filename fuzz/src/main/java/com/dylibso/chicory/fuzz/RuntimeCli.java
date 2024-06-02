@@ -31,8 +31,7 @@ public abstract class RuntimeCli {
         logger.info("Going to execute command:\n" + String.join(" ", command));
         // write the command to a file to make it reproducible
         // TODO: centralize the management of folders/files it's too scattered
-        try (var outputStream =
-                new FileOutputStream(file.getParentFile() + "/" + cmdName + "-command.txt")) {
+        try (var outputStream = new FileOutputStream(file.getParentFile() + "/" + cmdName + "-command.txt")) {
             outputStream.write(String.join(" ", command).getBytes(StandardCharsets.UTF_8));
             outputStream.flush();
         }

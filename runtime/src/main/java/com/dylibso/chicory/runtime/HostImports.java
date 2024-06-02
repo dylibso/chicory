@@ -54,19 +54,14 @@ public class HostImports {
         this.tables = tables.clone();
     }
 
-    public HostImports(
-            HostFunction[] functions, HostGlobal[] globals, HostMemory memory, HostTable[] tables) {
+    public HostImports(HostFunction[] functions, HostGlobal[] globals, HostMemory memory, HostTable[] tables) {
         this.functions = functions.clone();
         this.globals = globals.clone();
         this.memories = new HostMemory[] {memory};
         this.tables = tables.clone();
     }
 
-    public HostImports(
-            HostFunction[] functions,
-            HostGlobal[] globals,
-            HostMemory[] memories,
-            HostTable[] tables) {
+    public HostImports(HostFunction[] functions, HostGlobal[] globals, HostMemory[] memories, HostTable[] tables) {
         this.functions = functions.clone();
         this.globals = globals.clone();
         this.memories = memories.clone();

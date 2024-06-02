@@ -16,18 +16,15 @@ public class SingleReproTest extends TestModule {
     WasmSmithWrapper smith = new WasmSmithWrapper();
 
     boolean enableSingleReproducer() {
-        return System.getenv(CHICORY_FUZZ_SEED_KEY) != null
-                && System.getenv(CHICORY_FUZZ_TYPES_KEY) != null;
+        return System.getenv(CHICORY_FUZZ_SEED_KEY) != null && System.getenv(CHICORY_FUZZ_TYPES_KEY) != null;
     }
 
     @Test
     @EnabledIf("enableSingleReproducer")
     void singleReproducer() throws Exception {
-        var seed = FileUtils.readFileToString(
-                new File(System.getenv(CHICORY_FUZZ_SEED_KEY)), StandardCharsets.UTF_8);
+        var seed = FileUtils.readFileToString(new File(System.getenv(CHICORY_FUZZ_SEED_KEY)), StandardCharsets.UTF_8);
         var types = InstructionTypes.fromString(System.getenv(CHICORY_FUZZ_TYPES_KEY));
-        var targetWasm =
-                smith.run(seed.substring(0, Math.min(seed.length(), 32)), "test.wasm", types);
+        var targetWasm = smith.run(seed.substring(0, Math.min(seed.length(), 32)), "test.wasm", types);
 
         var module = Module.builder(targetWasm).build();
         var instance = module.withInitialize(true).withStart(false).instantiate();

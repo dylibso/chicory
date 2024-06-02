@@ -19,20 +19,17 @@ public class FuzzTest extends TestModule {
     private static final Logger logger = new SystemLogger();
     WasmSmithWrapper smith = new WasmSmithWrapper();
 
-    File generateTestData(String prefix, int num, InstructionType... instructionTypes)
-            throws Exception {
+    File generateTestData(String prefix, int num, InstructionType... instructionTypes) throws Exception {
         var atLeastOneExportedFunction = false;
 
         File targetWasm = null;
         while (!atLeastOneExportedFunction) {
-            targetWasm =
-                    smith.run(prefix + num, "test.wasm", new InstructionTypes(instructionTypes));
+            targetWasm = smith.run(prefix + num, "test.wasm", new InstructionTypes(instructionTypes));
 
-            atLeastOneExportedFunction =
-                    Module.builder(targetWasm).build().exports().values().stream()
-                            .filter(e -> e.exportType() == ExternalType.FUNCTION)
-                            .findAny()
-                            .isPresent();
+            atLeastOneExportedFunction = Module.builder(targetWasm).build().exports().values().stream()
+                    .filter(e -> e.exportType() == ExternalType.FUNCTION)
+                    .findAny()
+                    .isPresent();
         }
 
         return targetWasm;
@@ -51,8 +48,7 @@ public class FuzzTest extends TestModule {
 
     @RepeatedTest(value = FUZZ_TEST_NUMERIC, failureThreshold = 1) // stop on first failure
     public void numericOnlyFuzz(RepetitionInfo repetitionInfo) throws Exception {
-        var targetWasm = generateTestData(
-                "numeric-", repetitionInfo.getCurrentRepetition(), InstructionType.NUMERIC);
+        var targetWasm = generateTestData("numeric-", repetitionInfo.getCurrentRepetition(), InstructionType.NUMERIC);
         var module = Module.builder(targetWasm).build();
         var instance = module.withInitialize(true).withStart(false).instantiate();
 
@@ -67,8 +63,7 @@ public class FuzzTest extends TestModule {
 
     @RepeatedTest(value = FUZZ_TEST_TABLE, failureThreshold = 1) // stop on first failure
     public void tableOnlyFuzz(RepetitionInfo repetitionInfo) throws Exception {
-        var targetWasm = generateTestData(
-                "table-", repetitionInfo.getCurrentRepetition(), InstructionType.TABLE);
+        var targetWasm = generateTestData("table-", repetitionInfo.getCurrentRepetition(), InstructionType.TABLE);
         var module = Module.builder(targetWasm).build();
         var instance = module.withInitialize(true).withStart(false).instantiate();
 

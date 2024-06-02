@@ -33,8 +33,7 @@ public class BenchmarkFactorialExecution {
 
     @Setup
     public void setup() throws IOException {
-        var factorial = Module.builder(
-                        new File("wasm-corpus/src/main/resources/compiled/iterfact.wat.wasm"))
+        var factorial = Module.builder(new File("wasm-corpus/src/main/resources/compiled/iterfact.wat.wasm"))
                 .build()
                 .instantiate();
         iterFact = factorial.export("iterFact");

@@ -379,7 +379,7 @@
             </includes>
             <palantirJavaFormat>
               <version>2.47.0</version>
-              <style>AOSP</style>
+              <style>PALANTIR</style>
               <formatJavadoc>false</formatJavadoc>
             </palantirJavaFormat>
             <importOrder></importOrder>

@@ -36,12 +36,7 @@ public class StackFrame {
         this(Collections.emptyList(), instance, funcId, args, localTypes);
     }
 
-    public StackFrame(
-            List<Instruction> code,
-            Instance instance,
-            int funcId,
-            Value[] args,
-            List<ValueType> localTypes) {
+    public StackFrame(List<Instruction> code, Instance instance, int funcId, Value[] args, List<ValueType> localTypes) {
         this.code = code;
         this.instance = instance;
         this.funcId = funcId;

@@ -283,8 +283,7 @@ public class AotMachine implements Machine {
                 .filter(GlobalImport.class::isInstance)
                 .map(GlobalImport.class::cast)
                 .map(GlobalImport::type);
-        var globals =
-                Stream.of(module.wasmModule().globalSection().globals()).map(Global::valueType);
+        var globals = Stream.of(module.wasmModule().globalSection().globals()).map(Global::valueType);
         this.globalTypes = Stream.concat(importedGlobals, globals).collect(toUnmodifiableList());
 
         this.compiledFunctions = compile();
@@ -338,37 +337,23 @@ public class AotMachine implements Machine {
     }
 
     private MethodHandle compile(int funcId, FunctionType type, FunctionBody body)
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException,
-                    InstantiationException {
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
 
         var className = classNameFor(funcId);
         var internalClassName = className.replace('.', '/');
 
         var classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         classWriter.visit(
-                Opcodes.V11,
-                Opcodes.ACC_PUBLIC,
-                internalClassName,
-                null,
-                getInternalName(Object.class),
-                null);
+                Opcodes.V11, Opcodes.ACC_PUBLIC, internalClassName, null, getInternalName(Object.class), null);
         classWriter.visitSource("wasm", "wasm");
 
         // private final Memory memory;
         classWriter.visitField(
-                Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
-                "memory",
-                getDescriptor(Memory.class),
-                null,
-                null);
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL, "memory", getDescriptor(Memory.class), null, null);
 
         // private final Instance instance;
         classWriter.visitField(
-                Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
-                "instance",
-                getDescriptor(Instance.class),
-                null,
-                null);
+                Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL, "instance", getDescriptor(Instance.class), null, null);
 
         emitConstructor(internalClassName, classWriter);
 
@@ -393,8 +378,7 @@ public class AotMachine implements Machine {
         classWriter.visitEnd();
 
         Class<?> clazz = loadClass(className, classWriter.toByteArray());
-        Object target = clazz.getConstructor(Memory.class, Instance.class)
-                .newInstance(instance.memory(), instance);
+        Object target = clazz.getConstructor(Memory.class, Instance.class).newInstance(instance.memory(), instance);
         MethodHandle handle = MethodHandles.lookup()
                 .findVirtual(clazz, "call", methodTypeFor(type))
                 .bindTo(target);
@@ -404,8 +388,7 @@ public class AotMachine implements Machine {
 
     private Class<?> loadClass(String className, byte[] classBytes) {
         try {
-            Class<?> clazz = new ByteArrayClassLoader(getClass().getClassLoader())
-                    .loadFromBytes(className, classBytes);
+            Class<?> clazz = new ByteArrayClassLoader(getClass().getClassLoader()).loadFromBytes(className, classBytes);
             // force initialization to run JVM verifier
             Class.forName(clazz.getName(), true, clazz.getClassLoader());
             return clazz;
@@ -425,8 +408,7 @@ public class AotMachine implements Machine {
         }
     }
 
-    private static MethodHandle adaptSignature(FunctionType type, MethodHandle handle)
-            throws IllegalAccessException {
+    private static MethodHandle adaptSignature(FunctionType type, MethodHandle handle) throws IllegalAccessException {
         var argTypes = type.params();
         var argHandlers = new MethodHandle[type.params().size()];
         for (int i = 0; i < argHandlers.length; i++) {
@@ -458,23 +440,17 @@ public class AotMachine implements Machine {
         // super();
         cons.visitVarInsn(Opcodes.ALOAD, 0);
         cons.visitMethodInsn(
-                Opcodes.INVOKESPECIAL,
-                getInternalName(Object.class),
-                "<init>",
-                getMethodDescriptor(VOID_TYPE),
-                false);
+                Opcodes.INVOKESPECIAL, getInternalName(Object.class), "<init>", getMethodDescriptor(VOID_TYPE), false);
 
         // this.memory = memory;
         cons.visitVarInsn(Opcodes.ALOAD, 0);
         cons.visitVarInsn(Opcodes.ALOAD, 1);
-        cons.visitFieldInsn(
-                Opcodes.PUTFIELD, internalClassName, "memory", getDescriptor(Memory.class));
+        cons.visitFieldInsn(Opcodes.PUTFIELD, internalClassName, "memory", getDescriptor(Memory.class));
 
         // this.instance = instance;
         cons.visitVarInsn(Opcodes.ALOAD, 0);
         cons.visitVarInsn(Opcodes.ALOAD, 2);
-        cons.visitFieldInsn(
-                Opcodes.PUTFIELD, internalClassName, "instance", getDescriptor(Instance.class));
+        cons.visitFieldInsn(Opcodes.PUTFIELD, internalClassName, "instance", getDescriptor(Instance.class));
 
         cons.visitInsn(Opcodes.RETURN);
         cons.visitMaxs(0, 0);
@@ -484,8 +460,7 @@ public class AotMachine implements Machine {
     private static boolean tryEmit(AotContext ctx, Instruction ins, MethodVisitor asm) {
         var emitter = emitters.get(ins.opcode());
         if (emitter == null) {
-            throw new ChicoryException(
-                    "JVM compilation failed: opcode is not supported: " + ins.opcode());
+            throw new ChicoryException("JVM compilation failed: opcode is not supported: " + ins.opcode());
         }
         try {
             emitter.emit(ctx, ins, asm);
@@ -496,11 +471,7 @@ public class AotMachine implements Machine {
     }
 
     private void compileBody(
-            String internalClassName,
-            int funcId,
-            FunctionType type,
-            FunctionBody body,
-            MethodVisitor asm) {
+            String internalClassName, int funcId, FunctionType type, FunctionBody body, MethodVisitor asm) {
 
         var ctx = new AotContext(globalTypes, funcId, type, body);
 
@@ -513,14 +484,12 @@ public class AotMachine implements Machine {
 
         // memory = this.memory;
         asm.visitVarInsn(Opcodes.ALOAD, 0);
-        asm.visitFieldInsn(
-                Opcodes.GETFIELD, internalClassName, "memory", getDescriptor(Memory.class));
+        asm.visitFieldInsn(Opcodes.GETFIELD, internalClassName, "memory", getDescriptor(Memory.class));
         asm.visitVarInsn(Opcodes.ASTORE, ctx.memorySlot());
 
         // instance = this.instance;
         asm.visitVarInsn(Opcodes.ALOAD, 0);
-        asm.visitFieldInsn(
-                Opcodes.GETFIELD, internalClassName, "instance", getDescriptor(Instance.class));
+        asm.visitFieldInsn(Opcodes.GETFIELD, internalClassName, "instance", getDescriptor(Instance.class));
         asm.visitVarInsn(Opcodes.ASTORE, ctx.instanceSlot());
 
         // compile the function body

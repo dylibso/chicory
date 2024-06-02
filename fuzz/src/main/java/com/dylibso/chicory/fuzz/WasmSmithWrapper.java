@@ -27,16 +27,11 @@ public class WasmSmithWrapper {
 
     WasmSmithWrapper() {}
 
-    public File run(String subfolder, String fileName, InstructionTypes instructionTypes)
-            throws Exception {
+    public File run(String subfolder, String fileName, InstructionTypes instructionTypes) throws Exception {
         return run(subfolder, fileName, instructionTypes, "/smith.default.properties");
     }
 
-    public File run(
-            String subfolder,
-            String fileName,
-            InstructionTypes instructionTypes,
-            String smithProperties)
+    public File run(String subfolder, String fileName, InstructionTypes instructionTypes, String smithProperties)
             throws Exception {
         var targetSubfolder = "target/fuzz/data/" + subfolder;
         var targetFolder = new File(targetSubfolder);
@@ -47,9 +42,8 @@ public class WasmSmithWrapper {
         var command = new ArrayList<>(BINARY_NAME);
         // --ensure-termination true -> breaks the execution
         var defaultProperties = new ArrayList<String>();
-        var propsFile = new String(
-                getClass().getResourceAsStream(smithProperties).readAllBytes(),
-                StandardCharsets.UTF_8);
+        var propsFile =
+                new String(getClass().getResourceAsStream(smithProperties).readAllBytes(), StandardCharsets.UTF_8);
         var props = propsFile.split("\n");
         for (var prop : props) {
             if (!prop.isEmpty()) {
@@ -60,14 +54,8 @@ public class WasmSmithWrapper {
         }
         command.addAll(defaultProperties);
         command.addAll(List.of(
-                "--allowed-instructions",
-                instructionTypes.toString(),
-                "--output",
-                targetFile.getAbsolutePath()));
-        logger.info("Going to execute command:\n"
-                + String.join(" ", command)
-                + " < "
-                + seedFile.getAbsolutePath());
+                "--allowed-instructions", instructionTypes.toString(), "--output", targetFile.getAbsolutePath()));
+        logger.info("Going to execute command:\n" + String.join(" ", command) + " < " + seedFile.getAbsolutePath());
 
         var retry = 3;
         // Trying to use the smallest possible seed for speed reasons

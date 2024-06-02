@@ -20,32 +20,24 @@ public class SpecV1ElemHostFuncs {
 
     public static HostImports testModule3() {
         return new HostImports(new HostTable[] {
-            new HostTable(
-                    "spectest",
-                    "table",
-                    new TableInstance(new Table(ValueType.FuncRef, new Limits(1))))
+            new HostTable("spectest", "table", new TableInstance(new Table(ValueType.FuncRef, new Limits(1))))
         });
     }
 
     public static HostImports testModule5() {
         return new HostImports(new HostTable[] {
-            new HostTable(
-                    "spectest",
-                    "table",
-                    new TableInstance(new Table(ValueType.FuncRef, new Limits(10))))
+            new HostTable("spectest", "table", new TableInstance(new Table(ValueType.FuncRef, new Limits(10))))
         });
     }
 
     public static HostImports testModule6() {
-        return new HostImports(new HostGlobal[] {
-            new HostGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(123)))
-        });
+        return new HostImports(
+                new HostGlobal[] {new HostGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(123)))});
     }
 
     public static HostImports testModule7() {
-        return new HostImports(new HostGlobal[] {
-            new HostGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(321)))
-        });
+        return new HostImports(
+                new HostGlobal[] {new HostGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(321)))});
     }
 
     public static HostImports testModule11() {
@@ -89,12 +81,10 @@ public class SpecV1ElemHostFuncs {
     }
 
     public static HostImports testModule28() {
-        return new HostImports(
-                new HostTable[] {new HostTable("exporter", "table", mInstance.table(0))});
+        return new HostImports(new HostTable[] {new HostTable("exporter", "table", mInstance.table(0))});
     }
 
     public static HostImports testModule30() {
-        return new HostImports(
-                new HostGlobal[] {new HostGlobal("module4", "f", module4Instance.global(0))});
+        return new HostImports(new HostGlobal[] {new HostGlobal("module4", "f", module4Instance.global(0))});
     }
 }

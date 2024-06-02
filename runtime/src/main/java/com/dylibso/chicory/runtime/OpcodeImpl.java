@@ -802,8 +802,7 @@ public class OpcodeImpl {
         return table.ref(index);
     }
 
-    public static void TABLE_FILL(
-            Instance instance, int tableIndex, int size, int value, int offset) {
+    public static void TABLE_FILL(Instance instance, int tableIndex, int size, int value, int offset) {
         int end = offset + size;
         var table = instance.table(tableIndex);
 
@@ -816,8 +815,7 @@ public class OpcodeImpl {
         }
     }
 
-    public static void TABLE_COPY(
-            Instance instance, int srcTableIndex, int dstTableIndex, int size, int s, int d) {
+    public static void TABLE_COPY(Instance instance, int srcTableIndex, int dstTableIndex, int size, int s, int d) {
         var src = instance.table(srcTableIndex);
         var dest = instance.table(dstTableIndex);
 
@@ -838,15 +836,13 @@ public class OpcodeImpl {
         }
     }
 
-    public static void TABLE_INIT(
-            Instance instance, int tableidx, int elementidx, int size, int elemidx, int offset) {
+    public static void TABLE_INIT(Instance instance, int tableidx, int elementidx, int size, int elemidx, int offset) {
         var end = offset + size;
         var table = instance.table(tableidx);
 
         var elementCount = instance.elementCount();
         var currentElement = instance.element(elementidx);
-        var currentElementCount =
-                (currentElement instanceof PassiveElement) ? currentElement.elementCount() : 0;
+        var currentElementCount = (currentElement instanceof PassiveElement) ? currentElement.elementCount() : 0;
         boolean isOutOfBounds = (size < 0
                 || elementidx > elementCount
                 || (size > 0 && !(currentElement instanceof PassiveElement))

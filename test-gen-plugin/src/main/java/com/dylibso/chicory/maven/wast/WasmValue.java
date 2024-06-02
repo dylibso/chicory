@@ -31,9 +31,7 @@ public class WasmValue {
                         case "nan:arithmetic":
                             return "Float.NaN";
                         default:
-                            return "Float.intBitsToFloat(Integer.parseUnsignedInt(\""
-                                    + value
-                                    + "\"))";
+                            return "Float.intBitsToFloat(Integer.parseUnsignedInt(\"" + value + "\"))";
                     }
                 } else {
                     return "null";
@@ -45,9 +43,7 @@ public class WasmValue {
                         case "nan:arithmetic":
                             return "Double.NaN";
                         default:
-                            return "Double.longBitsToDouble(Long.parseUnsignedLong(\""
-                                    + value
-                                    + "\"))";
+                            return "Double.longBitsToDouble(Long.parseUnsignedLong(\"" + value + "\"))";
                     }
                 } else {
                     return "null";

@@ -28,13 +28,11 @@ public class TestModule {
         return RandomStringUtils.randomNumeric(2);
     }
 
-    public List<TestResult> testModule(File targetWasm, Module module, Instance instance)
-            throws Exception {
+    public List<TestResult> testModule(File targetWasm, Module module, Instance instance) throws Exception {
         return testModule(targetWasm, module, instance, true);
     }
 
-    public List<TestResult> testModule(
-            File targetWasm, Module module, Instance instance, boolean commitOnFailure)
+    public List<TestResult> testModule(File targetWasm, Module module, Instance instance, boolean commitOnFailure)
             throws Exception {
         var results = new ArrayList<TestResult>();
 
@@ -70,13 +68,10 @@ public class TestModule {
                     if (!oracleResult.isEmpty() || !chicoryResult.isEmpty()) {
                         System.err.println("\u001B[31mOracle:\n" + oracleResult + "\u001B[0m");
                         System.err.println("\u001B[31mChicory:\n" + chicoryResult + "\u001B[0m");
-                        try (var outputStream = new FileOutputStream(targetWasm.getParentFile()
-                                + "/result-"
-                                + truncatedExportName
-                                + ".txt")) {
-                            outputStream.write(
-                                    ("Oracle:\n" + oracleResult + "\nChicory:\n" + chicoryResult)
-                                            .getBytes(StandardCharsets.UTF_8));
+                        try (var outputStream = new FileOutputStream(
+                                targetWasm.getParentFile() + "/result-" + truncatedExportName + ".txt")) {
+                            outputStream.write(("Oracle:\n" + oracleResult + "\nChicory:\n" + chicoryResult)
+                                    .getBytes(StandardCharsets.UTF_8));
                             outputStream.flush();
                         }
                     }

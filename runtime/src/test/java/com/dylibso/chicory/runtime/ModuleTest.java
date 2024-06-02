@@ -279,11 +279,8 @@ public class ModuleTest {
                 List.of());
         var memory = new HostMemory("env", "memory", new Memory(new MemoryLimits(1)));
 
-        var hostImports = new HostImports(
-                new HostFunction[] {cbrtFunc, logFunc},
-                new HostGlobal[0],
-                memory,
-                new HostTable[0]);
+        var hostImports =
+                new HostImports(new HostFunction[] {cbrtFunc, logFunc}, new HostGlobal[0], memory, new HostTable[0]);
         var module = Module.builder("compiled/mixed-imports.wat.wasm")
                 .withHostImports(hostImports)
                 .build();
@@ -324,8 +321,7 @@ public class ModuleTest {
         AtomicLong count = new AtomicLong(0);
         var instance = Module.builder("compiled/iterfact.wat.wasm")
                 .withUnsafeExecutionListener(
-                        (Instruction instruction, long[] operands, MStack stack) ->
-                                count.getAndIncrement())
+                        (Instruction instruction, long[] operands, MStack stack) -> count.getAndIncrement())
                 .build()
                 .instantiate();
         var iterFact = instance.export("iterFact");

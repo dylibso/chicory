@@ -12,8 +12,7 @@ public final class HostFunctionInvoker {
     static {
         try {
             HANDLE = publicLookup()
-                    .unreflect(HostFunctionInvoker.class.getMethod(
-                            "invoke", Instance.class, int.class, Value[].class));
+                    .unreflect(HostFunctionInvoker.class.getMethod("invoke", Instance.class, int.class, Value[].class));
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new AssertionError(e);
         }

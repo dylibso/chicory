@@ -17,11 +17,7 @@ public final class TableImport extends Import {
      * @param entryType the table entry type (must not be {@code null})
      * @param limits the table limits (must not be {@code null})
      */
-    public TableImport(
-            final String moduleName,
-            final String name,
-            final ValueType entryType,
-            final Limits limits) {
+    public TableImport(final String moduleName, final String name, final ValueType entryType, final Limits limits) {
         super(moduleName, name);
         this.entryType = Objects.requireNonNull(entryType, "entryType");
         this.limits = Objects.requireNonNull(limits, "limits");
@@ -50,10 +46,7 @@ public final class TableImport extends Import {
     }
 
     public boolean equals(final TableImport other) {
-        return this == other
-                || super.equals(other)
-                        && entryType == other.entryType
-                        && limits.equals(other.limits);
+        return this == other || super.equals(other) && entryType == other.entryType && limits.equals(other.limits);
     }
 
     public int hashCode() {

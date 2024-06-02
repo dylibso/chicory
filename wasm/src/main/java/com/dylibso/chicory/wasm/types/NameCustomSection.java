@@ -326,15 +326,13 @@ public class NameCustomSection extends CustomSection {
         }
     }
 
-    private static void twoLevelParse(
-            final ByteBuffer slice, final List<ListEntry<NameEntry>> list) {
+    private static void twoLevelParse(final ByteBuffer slice, final List<ListEntry<NameEntry>> list) {
         int listCnt = (int) Parser.readVarUInt32(slice);
         for (int i = 0; i < listCnt; i++) {
             int groupIdx = (int) Parser.readVarUInt32(slice);
             int cnt = (int) Parser.readVarUInt32(slice);
             for (int j = 0; j < cnt; j++) {
-                twoLevelStore(
-                        list, groupIdx, (int) Parser.readVarUInt32(slice), Parser.readName(slice));
+                twoLevelStore(list, groupIdx, (int) Parser.readVarUInt32(slice), Parser.readName(slice));
             }
         }
     }
@@ -358,8 +356,7 @@ public class NameCustomSection extends CustomSection {
         return idx < 0 ? null : list.get(idx).name();
     }
 
-    private static String twoLevelSearch(
-            List<ListEntry<NameEntry>> listList, int groupIdx, int subIdx) {
+    private static String twoLevelSearch(List<ListEntry<NameEntry>> listList, int groupIdx, int subIdx) {
         int fi = binarySearch(listList, groupIdx, ListEntry::index);
         if (fi < 0) {
             return null;
@@ -382,8 +379,7 @@ public class NameCustomSection extends CustomSection {
         }
     }
 
-    private static String twoLevelStore(
-            List<ListEntry<NameEntry>> listList, int groupIdx, int subIdx, String name) {
+    private static String twoLevelStore(List<ListEntry<NameEntry>> listList, int groupIdx, int subIdx, String name) {
         Objects.requireNonNull(name);
         int fi = binarySearch(listList, groupIdx, ListEntry::index);
         ListEntry<NameEntry> subList;

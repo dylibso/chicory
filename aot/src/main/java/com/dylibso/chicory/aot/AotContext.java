@@ -23,8 +23,7 @@ public class AotContext {
     protected final int instanceSlot;
     protected final Deque<StackSize> stackSizes = new ArrayDeque<>();
 
-    public AotContext(
-            List<ValueType> globalTypes, int funcId, FunctionType type, FunctionBody body) {
+    public AotContext(List<ValueType> globalTypes, int funcId, FunctionType type, FunctionBody body) {
         this.globalTypes = globalTypes;
         this.funcId = funcId;
         this.type = type;

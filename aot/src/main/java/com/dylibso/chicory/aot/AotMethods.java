@@ -52,12 +52,10 @@ public final class AotMethods {
             INSTANCE_READ_GLOBAL = Instance.class.getMethod("readGlobal", int.class);
             INSTANCE_WRITE_GLOBAL = Instance.class.getMethod("writeGlobal", int.class, Value.class);
             INSTANCE_SET_ELEMENT = Instance.class.getMethod("setElement", int.class, Element.class);
-            MEMORY_COPY = AotMethods.class.getMethod(
-                    "memoryCopy", int.class, int.class, int.class, Memory.class);
-            MEMORY_FILL = AotMethods.class.getMethod(
-                    "memoryFill", int.class, byte.class, int.class, Memory.class);
-            MEMORY_INIT = AotMethods.class.getMethod(
-                    "memoryInit", int.class, int.class, int.class, int.class, Memory.class);
+            MEMORY_COPY = AotMethods.class.getMethod("memoryCopy", int.class, int.class, int.class, Memory.class);
+            MEMORY_FILL = AotMethods.class.getMethod("memoryFill", int.class, byte.class, int.class, Memory.class);
+            MEMORY_INIT =
+                    AotMethods.class.getMethod("memoryInit", int.class, int.class, int.class, int.class, Memory.class);
             MEMORY_GROW = Memory.class.getMethod("grow", int.class);
             MEMORY_DROP = Memory.class.getMethod("drop", int.class);
             MEMORY_PAGES = Memory.class.getMethod("pages");
@@ -70,40 +68,23 @@ public final class AotMethods {
             MEMORY_WRITE_BYTE = Memory.class.getMethod("writeByte", int.class, byte.class);
             MEMORY_WRITE_SHORT = Memory.class.getMethod("writeShort", int.class, short.class);
             MEMORY_WRITE_INT = Memory.class.getMethod("writeI32", int.class, int.class);
-            MEMORY_WRITE_LONG = AotMethods.class.getMethod(
-                    "memoryWriteLong", long.class, int.class, Memory.class);
+            MEMORY_WRITE_LONG = AotMethods.class.getMethod("memoryWriteLong", long.class, int.class, Memory.class);
             MEMORY_WRITE_FLOAT = Memory.class.getMethod("writeF32", int.class, float.class);
-            MEMORY_WRITE_DOUBLE = AotMethods.class.getMethod(
-                    "memoryWriteDouble", double.class, int.class, Memory.class);
+            MEMORY_WRITE_DOUBLE =
+                    AotMethods.class.getMethod("memoryWriteDouble", double.class, int.class, Memory.class);
             REF_IS_NULL = AotMethods.class.getMethod("isRefNull", int.class);
-            TABLE_GET =
-                    AotMethods.class.getMethod("tableGet", int.class, int.class, Instance.class);
-            TABLE_SET = AotMethods.class.getMethod(
-                    "tableSet", int.class, int.class, int.class, Instance.class);
+            TABLE_GET = AotMethods.class.getMethod("tableGet", int.class, int.class, Instance.class);
+            TABLE_SET = AotMethods.class.getMethod("tableSet", int.class, int.class, int.class, Instance.class);
             TABLE_SIZE = AotMethods.class.getMethod("tableSize", int.class, Instance.class);
-            TABLE_GROW = AotMethods.class.getMethod(
-                    "tableGrow", int.class, int.class, int.class, Instance.class);
-            TABLE_FILL = AotMethods.class.getMethod(
-                    "tableFill", int.class, int.class, int.class, int.class, Instance.class);
+            TABLE_GROW = AotMethods.class.getMethod("tableGrow", int.class, int.class, int.class, Instance.class);
+            TABLE_FILL =
+                    AotMethods.class.getMethod("tableFill", int.class, int.class, int.class, int.class, Instance.class);
             TABLE_COPY = AotMethods.class.getMethod(
-                    "tableCopy",
-                    int.class,
-                    int.class,
-                    int.class,
-                    int.class,
-                    int.class,
-                    Instance.class);
+                    "tableCopy", int.class, int.class, int.class, int.class, int.class, Instance.class);
             TABLE_INIT = AotMethods.class.getMethod(
-                    "tableInit",
-                    int.class,
-                    int.class,
-                    int.class,
-                    int.class,
-                    int.class,
-                    Instance.class);
+                    "tableInit", int.class, int.class, int.class, int.class, int.class, Instance.class);
             VALIDATE_BASE = AotMethods.class.getMethod("validateBase", int.class);
-            THROW_OUT_OF_BOUNDS_MEMORY_ACCESS =
-                    AotMethods.class.getMethod("throwOutOfBoundsMemoryAccess");
+            THROW_OUT_OF_BOUNDS_MEMORY_ACCESS = AotMethods.class.getMethod("throwOutOfBoundsMemoryAccess");
             THROW_TRAP_EXCEPTION = AotMethods.class.getMethod("throwTrapException");
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
@@ -138,20 +119,17 @@ public final class AotMethods {
     }
 
     @UsedByGeneratedCode
-    public static void tableFill(
-            int offset, int value, int size, int tableIndex, Instance instance) {
+    public static void tableFill(int offset, int value, int size, int tableIndex, Instance instance) {
         OpcodeImpl.TABLE_FILL(instance, tableIndex, size, value, offset);
     }
 
     @UsedByGeneratedCode
-    public static void tableCopy(
-            int d, int s, int size, int dstTableIndex, int srcTableIndex, Instance instance) {
+    public static void tableCopy(int d, int s, int size, int dstTableIndex, int srcTableIndex, Instance instance) {
         OpcodeImpl.TABLE_COPY(instance, srcTableIndex, dstTableIndex, size, s, d);
     }
 
     @UsedByGeneratedCode
-    public static void tableInit(
-            int offset, int elemidx, int size, int elementidx, int tableidx, Instance instance) {
+    public static void tableInit(int offset, int elemidx, int size, int elementidx, int tableidx, Instance instance) {
         OpcodeImpl.TABLE_INIT(instance, tableidx, elementidx, size, elemidx, offset);
     }
 
@@ -167,8 +145,7 @@ public final class AotMethods {
     }
 
     @UsedByGeneratedCode
-    public static void memoryInit(
-            int destination, int offset, int size, int segmentId, Memory memory) {
+    public static void memoryInit(int destination, int offset, int size, int segmentId, Memory memory) {
         memory.initPassiveSegment(segmentId, destination, offset, size);
     }
 

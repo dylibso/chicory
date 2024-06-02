@@ -15,8 +15,7 @@ class WasiTestSuiteDownloader {
         this.log = log;
     }
 
-    public void downloadTestsuite(
-            String testSuiteRepo, String testSuiteRepoRef, File testSuiteFolder)
+    public void downloadTestsuite(String testSuiteRepo, String testSuiteRepoRef, File testSuiteFolder)
             throws ConfigInvalidException, GitAPIException, IOException {
         if (testSuiteFolder.exists()) {
             log.debug("Testsuite detected, using the cached version.");

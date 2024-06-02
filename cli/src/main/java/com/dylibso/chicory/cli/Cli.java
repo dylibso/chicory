@@ -23,9 +23,7 @@ public class Cli implements Runnable {
     @CommandLine.Parameters(arity = "1", description = "a wasm file to be executed")
     File file;
 
-    @CommandLine.Parameters(
-            arity = "0..*",
-            description = "values to be passed to the wasm function")
+    @CommandLine.Parameters(arity = "0..*", description = "values to be passed to the wasm function")
     int[] arguments;
 
     @CommandLine.Option(
@@ -48,8 +46,7 @@ public class Cli implements Runnable {
     @Override
     public void run() {
         // TODO: improve the handling of the logLevel
-        try (var is = new ByteArrayInputStream(
-                (".level = " + logLevel).getBytes(StandardCharsets.UTF_8))) {
+        try (var is = new ByteArrayInputStream((".level = " + logLevel).getBytes(StandardCharsets.UTF_8))) {
             LogManager.getLogManager().readConfiguration(is);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -77,10 +74,8 @@ public class Cli implements Runnable {
             var type = instance.type(typeId);
 
             if (arguments.length != type.params().size()) {
-                throw new RuntimeException("The function needs "
-                        + type.params().size()
-                        + " parameters, but found: "
-                        + arguments.length);
+                throw new RuntimeException(
+                        "The function needs " + type.params().size() + " parameters, but found: " + arguments.length);
             }
             var params = new Value[type.params().size()];
             for (var i = 0; i < type.params().size(); i++) {

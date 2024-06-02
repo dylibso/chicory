@@ -109,8 +109,7 @@ public final class MemoryLimits {
     }
 
     public boolean equals(final MemoryLimits other) {
-        return this == other
-                || other != null && initial == other.initial && maximum == other.maximum;
+        return this == other || other != null && initial == other.initial && maximum == other.maximum;
     }
 
     public int hashCode() {

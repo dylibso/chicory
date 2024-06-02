@@ -44,9 +44,7 @@ public class OpCodeGenMojo extends AbstractMojo {
     /**
      * Location for the OpCode generated source.
      */
-    @Parameter(
-            required = true,
-            defaultValue = "${project.build.directory}/generated-sources/opcode")
+    @Parameter(required = true, defaultValue = "${project.build.directory}/generated-sources/opcode")
     private File sourceDestinationFolder;
 
     /**
@@ -69,13 +67,7 @@ public class OpCodeGenMojo extends AbstractMojo {
 
         var cu = new CompilationUnit("com.dylibso.chicory.wasm.types");
         var destFile = Path.of(
-                sourceDestinationFolder.getAbsolutePath(),
-                "com",
-                "dylibso",
-                "chicory",
-                "wasm",
-                "types",
-                "OpCode.java");
+                sourceDestinationFolder.getAbsolutePath(), "com", "dylibso", "chicory", "wasm", "types", "OpCode.java");
         cu.setStorage(destFile);
 
         cu.addImport("java.util.HashMap");
@@ -102,23 +94,17 @@ public class OpCodeGenMojo extends AbstractMojo {
                     .skip(1)
                     .map(a -> getType(a))
                     .collect(Collectors.joining(", "));
-            staticAssignement.add(new NameExpr("signature.put("
-                    + enumName
-                    + ", new WasmEncoding[] {"
-                    + staticAssignmentParams
-                    + "})"));
+            staticAssignement.add(new NameExpr(
+                    "signature.put(" + enumName + ", new WasmEncoding[] {" + staticAssignmentParams + "})"));
         }
 
-        var opcodeField =
-                enumDef.addField("int", "opcode", Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
+        var opcodeField = enumDef.addField("int", "opcode", Modifier.Keyword.PRIVATE, Modifier.Keyword.FINAL);
 
         var constructor = enumDef.addConstructor();
         constructor.addParameter("int", "opcode");
         constructor.setBody(new BlockStmt()
                 .addStatement(new AssignExpr(
-                        new NameExpr("this.opcode"),
-                        new NameExpr("opcode"),
-                        AssignExpr.Operator.ASSIGN)));
+                        new NameExpr("this.opcode"), new NameExpr("opcode"), AssignExpr.Operator.ASSIGN)));
         opcodeField.createGetter().setName("opcode");
 
         var byOpCodeMap = enumDef.addFieldWithInitializer(
@@ -129,12 +115,10 @@ public class OpCodeGenMojo extends AbstractMojo {
                 Modifier.Keyword.STATIC,
                 Modifier.Keyword.FINAL);
 
-        var byOpCode =
-                enumDef.addMethod("byOpCode", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
+        var byOpCode = enumDef.addMethod("byOpCode", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
         byOpCode.setType("OpCode");
         byOpCode.addParameter("int", "opcode");
-        byOpCode.setBody(
-                new BlockStmt().addStatement(new ReturnStmt(new NameExpr("byOpCode.get(opcode)"))));
+        byOpCode.setBody(new BlockStmt().addStatement(new ReturnStmt(new NameExpr("byOpCode.get(opcode)"))));
 
         var signature = enumDef.addFieldWithInitializer(
                 "Map<OpCode, WasmEncoding[]>",
@@ -144,18 +128,15 @@ public class OpCodeGenMojo extends AbstractMojo {
                 Modifier.Keyword.STATIC,
                 Modifier.Keyword.FINAL);
 
-        var getSignature =
-                enumDef.addMethod("getSignature", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
+        var getSignature = enumDef.addMethod("getSignature", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
         getSignature.setType("WasmEncoding[]");
         getSignature.addParameter("OpCode", "o");
-        getSignature.setBody(
-                new BlockStmt().addStatement(new ReturnStmt(new NameExpr("signature.get(o)"))));
+        getSignature.setBody(new BlockStmt().addStatement(new ReturnStmt(new NameExpr("signature.get(o)"))));
 
         var staticBlock = enumDef.addStaticInitializer();
 
         // byOpCode initialization
-        staticBlock.addStatement(new NameExpr(
-                "for (OpCode e: OpCode.values()) {" + " byOpCode.put(e.opcode(), e); }"));
+        staticBlock.addStatement(new NameExpr("for (OpCode e: OpCode.values()) {" + " byOpCode.put(e.opcode(), e); }"));
         for (var assign : staticAssignement) {
             staticBlock.addStatement(assign);
         }

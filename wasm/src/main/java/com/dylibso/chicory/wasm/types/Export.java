@@ -58,9 +58,6 @@ public class Export {
 
     public boolean equals(final Export other) {
         return this == other
-                || other != null
-                        && index == other.index
-                        && exportType == other.exportType
-                        && name.equals(other.name);
+                || other != null && index == other.index && exportType == other.exportType && name.equals(other.name);
     }
 }

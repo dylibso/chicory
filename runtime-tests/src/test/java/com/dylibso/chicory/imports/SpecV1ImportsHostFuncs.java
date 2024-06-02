@@ -108,8 +108,7 @@ public class SpecV1ImportsHostFuncs {
                 "print_f64_f64",
                 List.of(ValueType.F64, ValueType.F64),
                 List.of());
-        var table = new HostTable(
-                "spectest", "table", Map.of(1, 1, 2, 2, 10, 10, 24, 24, 100, REF_NULL_VALUE));
+        var table = new HostTable("spectest", "table", Map.of(1, 1, 2, 2, 10, 10, 24, 24, 100, REF_NULL_VALUE));
         var mem = new Memory(new MemoryLimits(1, 2));
         var memory = new HostMemory("spectest", "memory", mem);
         return new HostImports(
@@ -142,8 +141,8 @@ public class SpecV1ImportsHostFuncs {
         });
     }
 
-    private static HostImports memory2Inf = new HostImports(
-            new HostMemory("test", "memory-2-inf", new Memory(MemoryLimits.defaultLimits())));
+    private static HostImports memory2Inf =
+            new HostImports(new HostMemory("test", "memory-2-inf", new Memory(MemoryLimits.defaultLimits())));
 
     public static HostImports testModule40() {
         return memory2Inf;
@@ -188,7 +187,6 @@ public class SpecV1ImportsHostFuncs {
         var additional = new HostFunction[] {testFunc, testFuncI64};
         HostFunction[] hostFunctions = Arrays.copyOf(base, base.length + additional.length);
         System.arraycopy(additional, 0, hostFunctions, base.length, additional.length);
-        return new HostImports(
-                hostFunctions, new HostGlobal[] {}, base().memory(0), base().tables());
+        return new HostImports(hostFunctions, new HostGlobal[] {}, base().memory(0), base().tables());
     }
 }

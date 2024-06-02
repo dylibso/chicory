@@ -100,8 +100,7 @@ public class Value {
             case ExternRef:
                 return Value.EXTREF_NULL;
             default:
-                throw new IllegalArgumentException(
-                        "Can't create a zero value for type " + valueType);
+                throw new IllegalArgumentException("Can't create a zero value for type " + valueType);
         }
     }
 
@@ -114,8 +113,7 @@ public class Value {
             case F32:
                 return (int) data;
             default:
-                throw new IllegalArgumentException(
-                        "Can't turn wasm value of type " + type + " to a int");
+                throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a int");
         }
     }
 
@@ -129,8 +127,7 @@ public class Value {
             case F64:
                 return data & 0xFFFFFFFFL;
             default:
-                throw new IllegalArgumentException(
-                        "Can't turn wasm value of type " + type + " to a uint");
+                throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a uint");
         }
     }
 
@@ -142,8 +139,7 @@ public class Value {
             case F64:
                 return data;
             default:
-                throw new IllegalArgumentException(
-                        "Can't turn wasm value of type " + type + " to a long");
+                throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a long");
         }
     }
 
@@ -156,8 +152,7 @@ public class Value {
             case F64:
                 return (byte) (data & 0xff);
             default:
-                throw new IllegalArgumentException(
-                        "Can't turn wasm value of type " + type + " to a byte");
+                throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a byte");
         }
     }
 
@@ -167,8 +162,7 @@ public class Value {
             case I64:
                 return (short) (data & 0xffff);
             default:
-                throw new IllegalArgumentException(
-                        "Can't turn wasm value of type " + type + " to a short");
+                throw new IllegalArgumentException("Can't turn wasm value of type " + type + " to a short");
         }
     }
 

@@ -22,8 +22,7 @@ public final class Files {
     public static void copyDirectory(Path source, Path target) throws IOException {
         walkFileTree(source, new SimpleFileVisitor<>() {
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                    throws IOException {
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
                 if (isSymbolicLink(dir)) {
                     return FileVisitResult.SKIP_SUBTREE;
                 }
@@ -46,8 +45,7 @@ public final class Files {
             }
 
             @Override
-            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                    throws IOException {
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                 String relative = source.relativize(file).toString().replace("\\", "/");
                 Path path = target.resolve(relative);
                 copy(file, path, StandardCopyOption.COPY_ATTRIBUTES);

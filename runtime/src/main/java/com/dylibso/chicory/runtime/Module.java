@@ -127,10 +127,8 @@ public class Module {
         var mappedHostImports = mapHostImports(imports, hostImports);
 
         if (module.startSection() != null) {
-            var export = new Export(
-                    START_FUNCTION_NAME,
-                    (int) module.startSection().startIndex(),
-                    ExternalType.FUNCTION);
+            var export =
+                    new Export(START_FUNCTION_NAME, (int) module.startSection().startIndex(), ExternalType.FUNCTION);
             exports.put(START_FUNCTION_NAME, export);
         }
 
@@ -160,8 +158,7 @@ public class Module {
                 assert (mappedHostImports.memoryCount() == 1);
                 if (mappedHostImports.memory(0) == null
                         || mappedHostImports.memory(0).memory() == null) {
-                    throw new ChicoryException(
-                            "Imported memory not defined, cannot run the program");
+                    throw new ChicoryException("Imported memory not defined, cannot run the program");
                 }
                 memory = mappedHostImports.memory(0).memory();
             } else {
@@ -251,8 +248,7 @@ public class Module {
                     cnt = hostImports.functionCount();
                     for (int j = 0; j < cnt; j++) {
                         HostFunction f = hostImports.function(j);
-                        if (i.moduleName().equals(f.moduleName())
-                                && i.name().equals(f.fieldName())) {
+                        if (i.moduleName().equals(f.moduleName()) && i.name().equals(f.fieldName())) {
                             hostFuncs[hostFuncIdx] = f;
                             hostIndex[impIdx] = f;
                             found = true;
@@ -265,8 +261,7 @@ public class Module {
                     cnt = hostImports.globalCount();
                     for (int j = 0; j < cnt; j++) {
                         HostGlobal g = hostImports.global(j);
-                        if (i.moduleName().equals(g.moduleName())
-                                && i.name().equals(g.fieldName())) {
+                        if (i.moduleName().equals(g.moduleName()) && i.name().equals(g.fieldName())) {
                             hostGlobals[hostGlobalIdx] = g;
                             hostIndex[impIdx] = g;
                             found = true;
@@ -279,8 +274,7 @@ public class Module {
                     cnt = hostImports.memoryCount();
                     for (int j = 0; j < cnt; j++) {
                         HostMemory m = hostImports.memory(j);
-                        if (i.moduleName().equals(m.moduleName())
-                                && i.name().equals(m.fieldName())) {
+                        if (i.moduleName().equals(m.moduleName()) && i.name().equals(m.fieldName())) {
                             hostMems[hostMemIdx] = m;
                             hostIndex[impIdx] = m;
                             found = true;
@@ -293,8 +287,7 @@ public class Module {
                     cnt = hostImports.tableCount();
                     for (int j = 0; j < cnt; j++) {
                         HostTable t = hostImports.table(j);
-                        if (i.moduleName().equals(t.moduleName())
-                                && i.name().equals(t.fieldName())) {
+                        if (i.moduleName().equals(t.moduleName()) && i.name().equals(t.fieldName())) {
                             hostTables[hostTableIdx] = t;
                             hostIndex[impIdx] = t;
                             found = true;
@@ -305,9 +298,7 @@ public class Module {
                     break;
             }
             if (!found) {
-                this.logger.warnf(
-                        "Could not find host function for import number: %d named %s",
-                        impIdx, name);
+                this.logger.warnf("Could not find host function for import number: %d named %s", impIdx, name);
             }
         }
 
@@ -396,12 +387,9 @@ public class Module {
      */
     public static Builder builder(String classpathResource) {
         return new Builder(() -> {
-            InputStream is = Thread.currentThread()
-                    .getContextClassLoader()
-                    .getResourceAsStream(classpathResource);
+            InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(classpathResource);
             if (is == null) {
-                throw new IllegalArgumentException(
-                        "Resource not found at classpath: " + classpathResource);
+                throw new IllegalArgumentException("Resource not found at classpath: " + classpathResource);
             }
             return is;
         });
@@ -495,8 +483,7 @@ public class Module {
 
         public Module build() {
             final Logger logger = this.logger != null ? this.logger : new SystemLogger();
-            final HostImports hostImports =
-                    this.hostImports != null ? this.hostImports : new HostImports();
+            final HostImports hostImports = this.hostImports != null ? this.hostImports : new HostImports();
             final Function<Instance, Machine> machineFactory =
                     this.machineFactory != null ? this.machineFactory : InterpreterMachine::new;
             final Parser parser = new Parser(logger);
@@ -523,8 +510,7 @@ public class Module {
                             this.typeValidation);
                 default:
                     throw new InvalidException(
-                            "Text format parsing is not implemented, but you can use wat2wasm"
-                                    + " through Chicory.");
+                            "Text format parsing is not implemented, but you can use wat2wasm" + " through Chicory.");
             }
         }
     }

@@ -27,8 +27,7 @@ public class HostTable implements FromHost {
             }
         }
 
-        this.table =
-                new TableInstance(new Table(ValueType.FuncRef, new Limits(maxFuncRef, maxFuncRef)));
+        this.table = new TableInstance(new Table(ValueType.FuncRef, new Limits(maxFuncRef, maxFuncRef)));
         this.table.reset();
     }
 

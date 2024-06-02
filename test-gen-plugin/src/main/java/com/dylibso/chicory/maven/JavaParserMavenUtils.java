@@ -21,8 +21,7 @@ public class JavaParserMavenUtils {
             }
 
             @Override
-            public void error(
-                    Supplier<Throwable> throwableSupplier, Supplier<String> messageSupplier) {
+            public void error(Supplier<Throwable> throwableSupplier, Supplier<String> messageSupplier) {
                 log.error(messageSupplier.get(), throwableSupplier.get());
             }
         });

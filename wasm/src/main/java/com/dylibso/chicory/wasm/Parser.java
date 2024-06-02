@@ -77,10 +77,7 @@ public final class Parser {
         this(logger, includeSections, Map.of("name", NameCustomSection::parse));
     }
 
-    public Parser(
-            Logger logger,
-            BitSet includeSections,
-            Map<String, Function<byte[], CustomSection>> customParsers) {
+    public Parser(Logger logger, BitSet includeSections, Map<String, Function<byte[], CustomSection>> customParsers) {
         this.logger = requireNonNull(logger, "logger");
         this.includeSections = requireNonNull(includeSections, "includeSections");
         this.customParsers = Map.copyOf(customParsers);
@@ -158,10 +155,8 @@ public final class Parser {
 
         int magicNumber = buffer.getInt();
         if (magicNumber != MAGIC_BYTES) {
-            throw new MalformedException("unexpected token: magic number mismatch, found: "
-                    + magicNumber
-                    + " expected: "
-                    + MAGIC_BYTES);
+            throw new MalformedException(
+                    "unexpected token: magic number mismatch, found: " + magicNumber + " expected: " + MAGIC_BYTES);
         }
         int version = buffer.getInt();
         if (version != 1) {
@@ -268,8 +263,7 @@ public final class Parser {
         return this.includeSections.get(sectionId);
     }
 
-    private CustomSection parseCustomSection(
-            ByteBuffer buffer, long sectionSize, boolean checkMalformed) {
+    private CustomSection parseCustomSection(ByteBuffer buffer, long sectionSize, boolean checkMalformed) {
         var sectionPos = buffer.position();
         var name = readName(buffer, checkMalformed);
         var size = (sectionSize - (buffer.position() - sectionPos));
@@ -336,25 +330,20 @@ public final class Parser {
             var descType = ExternalType.byId((int) readVarUInt32(buffer));
             switch (descType) {
                 case FUNCTION: {
-                    importSection.addImport(new FunctionImport(
-                            moduleName, importName, (int) readVarUInt32(buffer)));
+                    importSection.addImport(new FunctionImport(moduleName, importName, (int) readVarUInt32(buffer)));
                     break;
                 }
                 case TABLE: {
                     var rawTableType = readVarUInt32(buffer);
                     assert rawTableType == 0x70 || rawTableType == 0x6F;
-                    var tableType =
-                            (rawTableType == 0x70) ? ValueType.FuncRef : ValueType.ExternRef;
+                    var tableType = (rawTableType == 0x70) ? ValueType.FuncRef : ValueType.ExternRef;
 
                     var limitType = (int) readVarUInt32(buffer);
                     assert limitType == 0x00 || limitType == 0x01;
                     var min = (int) readVarUInt32(buffer);
-                    var limits = limitType > 0
-                            ? new Limits(min, readVarUInt32(buffer))
-                            : new Limits(min);
+                    var limits = limitType > 0 ? new Limits(min, readVarUInt32(buffer)) : new Limits(min);
 
-                    importSection.addImport(
-                            new TableImport(moduleName, importName, tableType, limits));
+                    importSection.addImport(new TableImport(moduleName, importName, tableType, limits));
                     break;
                 }
                 case MEMORY: {
@@ -362,8 +351,7 @@ public final class Parser {
                     assert limitType == 0x00 || limitType == 0x01;
                     var min = (int) Math.min(MemoryLimits.MAX_PAGES, readVarUInt32(buffer));
                     var limits = limitType > 0
-                            ? new MemoryLimits(min, (int)
-                                    Math.min(MemoryLimits.MAX_PAGES, readVarUInt32(buffer)))
+                            ? new MemoryLimits(min, (int) Math.min(MemoryLimits.MAX_PAGES, readVarUInt32(buffer)))
                             : new MemoryLimits(min, MemoryLimits.MAX_PAGES);
 
                     importSection.addImport(new MemoryImport(moduleName, importName, limits));
@@ -372,8 +360,7 @@ public final class Parser {
                 case GLOBAL:
                     var globalValType = ValueType.forId((int) readVarUInt32(buffer));
                     var globalMut = MutabilityType.forId(buffer.get());
-                    importSection.addImport(
-                            new GlobalImport(moduleName, importName, globalMut, globalValType));
+                    importSection.addImport(new GlobalImport(moduleName, importName, globalMut, globalValType));
                     break;
             }
         }
@@ -652,13 +639,11 @@ public final class Parser {
                 switch (instruction.opcode()) {
                     case BLOCK:
                     case LOOP: {
-                        currentControlFlow =
-                                currentControlFlow.spawn(instructions.size(), instruction);
+                        currentControlFlow = currentControlFlow.spawn(instructions.size(), instruction);
                         break;
                     }
                     case IF: {
-                        currentControlFlow =
-                                currentControlFlow.spawn(instructions.size(), instruction);
+                        currentControlFlow = currentControlFlow.spawn(instructions.size(), instruction);
 
                         var defaultJmp = instructions.size() + 1;
                         currentControlFlow.addCallback(end -> {
@@ -709,8 +694,7 @@ public final class Parser {
                         break;
                     }
                     case END: {
-                        currentControlFlow.setFinalInstructionNumber(
-                                instructions.size(), instruction);
+                        currentControlFlow.setFinalInstructionNumber(instructions.size(), instruction);
                         currentControlFlow = currentControlFlow.parent();
 
                         if (lastInstruction && instructions.size() > 1) {
@@ -856,8 +840,7 @@ public final class Parser {
                 break;
         }
         if (align > 0 && !(Math.pow(2, operands[0]) <= align / 8)) {
-            throw new InvalidException(
-                    "alignment must not be larger than natural alignment (" + operands[0] + ")");
+            throw new InvalidException("alignment must not be larger than natural alignment (" + operands[0] + ")");
         }
     }
 

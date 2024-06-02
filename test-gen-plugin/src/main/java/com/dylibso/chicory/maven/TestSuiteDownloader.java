@@ -17,13 +17,11 @@ public class TestSuiteDownloader {
         this.log = log;
     }
 
-    public void downloadTestsuite(
-            String testSuiteRepo, String testSuiteRepoRef, File testSuiteFolder) throws Exception {
-        if (testSuiteFolder.exists()
-                && testSuiteFolder.list((dir, name) -> name.endsWith(".wast")).length == 0) {
+    public void downloadTestsuite(String testSuiteRepo, String testSuiteRepoRef, File testSuiteFolder)
+            throws Exception {
+        if (testSuiteFolder.exists() && testSuiteFolder.list((dir, name) -> name.endsWith(".wast")).length == 0) {
             log.warn("Testsuite folder exists but looks corrupted, replacing.");
-            try (Stream<Path> files =
-                    Files.walk(testSuiteFolder.toPath()).sorted(Comparator.reverseOrder())) {
+            try (Stream<Path> files = Files.walk(testSuiteFolder.toPath()).sorted(Comparator.reverseOrder())) {
                 files.map(Path::toFile).forEach(File::delete);
             }
         } else {

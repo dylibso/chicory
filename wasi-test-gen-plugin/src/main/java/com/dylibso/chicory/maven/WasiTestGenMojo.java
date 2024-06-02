@@ -75,9 +75,7 @@ public class WasiTestGenMojo extends AbstractMojo {
     /**
      * Location for the junit generated sources.
      */
-    @Parameter(
-            required = true,
-            defaultValue = "${project.build.directory}/generated-test-sources/test-gen")
+    @Parameter(required = true, defaultValue = "${project.build.directory}/generated-test-sources/test-gen")
     private File sourceDestinationFolder;
 
     /**
@@ -89,8 +87,7 @@ public class WasiTestGenMojo extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException {
         try {
-            new WasiTestSuiteDownloader(log)
-                    .downloadTestsuite(testSuiteRepo, testSuiteRepoRef, testSuiteFolder);
+            new WasiTestSuiteDownloader(log).downloadTestsuite(testSuiteRepo, testSuiteRepoRef, testSuiteFolder);
         } catch (GitAPIException | ConfigInvalidException | IOException e) {
             throw new MojoExecutionException("Failed to download testsuite: " + e.getMessage(), e);
         }
@@ -111,8 +108,7 @@ public class WasiTestGenMojo extends AbstractMojo {
         }
 
         // validate and group files by test suite
-        PathMatcher pathMatcher =
-                FileSystems.getDefault().getPathMatcher("glob:**/tests/*/testsuite/*.wasm");
+        PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:**/tests/*/testsuite/*.wasm");
 
         Map<String, List<File>> filesBySuite = new LinkedHashMap<>();
         for (File file : allFiles) {
@@ -130,8 +126,7 @@ public class WasiTestGenMojo extends AbstractMojo {
         try {
             Files.createDirectories(sourceDestinationFolder.toPath());
         } catch (IOException e) {
-            throw new MojoExecutionException(
-                    "Failed to create destination folder: " + sourceDestinationFolder, e);
+            throw new MojoExecutionException("Failed to create destination folder: " + sourceDestinationFolder, e);
         }
         SourceRoot dest = new SourceRoot(sourceDestinationFolder.toPath());
 
@@ -143,8 +138,7 @@ public class WasiTestGenMojo extends AbstractMojo {
             String packageName = "com.dylibso.chicory.wasi.test";
             var cu = new CompilationUnit(packageName);
 
-            var destFile = Path.of(
-                            sourceDestinationFolder.getAbsolutePath(), packageName.split("\\."))
+            var destFile = Path.of(sourceDestinationFolder.getAbsolutePath(), packageName.split("\\."))
                     .resolve("Suite" + capitalize(testSuite) + "Test.java");
             cu.setStorage(destFile);
 
@@ -157,14 +151,11 @@ public class WasiTestGenMojo extends AbstractMojo {
             // generate test methods
             var testClass = cu.addClass("Suite" + capitalize(testSuite) + "Test");
             for (File file : files) {
-                String baseName =
-                        file.getName().substring(0, file.getName().length() - ".wasm".length());
+                String baseName = file.getName().substring(0, file.getName().length() - ".wasm".length());
 
-                Specification specification =
-                        readSpecification(new File(file.getParentFile(), baseName + ".json"));
+                Specification specification = readSpecification(new File(file.getParentFile(), baseName + ".json"));
 
-                var method = testClass.addMethod(
-                        "test" + escapedCamelCase(baseName), Modifier.Keyword.PUBLIC);
+                var method = testClass.addMethod("test" + escapedCamelCase(baseName), Modifier.Keyword.PUBLIC);
                 method.addAnnotation("Test");
 
                 method.getBody()
@@ -191,17 +182,14 @@ public class WasiTestGenMojo extends AbstractMojo {
                                 AssignExpr.Operator.ASSIGN))
                         .addStatement(new AssignExpr(
                                 new NameExpr("var stderr"),
-                                new NameExpr(
-                                        javaString(requireNonNullElse(specification.stderr(), ""))),
+                                new NameExpr(javaString(requireNonNullElse(specification.stderr(), ""))),
                                 AssignExpr.Operator.ASSIGN))
                         .addStatement(new AssignExpr(
                                 new NameExpr("var stdout"),
-                                new NameExpr(
-                                        javaString(requireNonNullElse(specification.stdout(), ""))),
+                                new NameExpr(javaString(requireNonNullElse(specification.stdout(), ""))),
                                 AssignExpr.Operator.ASSIGN))
                         .addStatement(new NameExpr(
-                                "WasiTestRunner.execute(test, args, dirs, env, exitCode,"
-                                        + " stderr, stdout)"));
+                                "WasiTestRunner.execute(test, args, dirs, env, exitCode," + " stderr, stdout)"));
             }
 
             dest.add(cu);
@@ -225,16 +213,13 @@ public class WasiTestGenMojo extends AbstractMojo {
     }
 
     private static String listOf(List<String> list) {
-        return "List.of("
-                + list.stream().map(WasiTestGenMojo::javaString).collect(Collectors.joining(", "))
-                + ")";
+        return "List.of(" + list.stream().map(WasiTestGenMojo::javaString).collect(Collectors.joining(", ")) + ")";
     }
 
     private static String mapOf(Map<String, String> map) {
         return "Map.of("
                 + map.entrySet().stream()
-                        .map(entry ->
-                                javaString(entry.getKey()) + ", " + javaString(entry.getValue()))
+                        .map(entry -> javaString(entry.getKey()) + ", " + javaString(entry.getValue()))
                         .collect(Collectors.joining(", "))
                 + ")";
     }

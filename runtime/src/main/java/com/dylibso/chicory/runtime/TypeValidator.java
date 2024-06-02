@@ -35,15 +35,10 @@ public class TypeValidator {
     private void verifyType(ValueType expected, ValueType have) {
         if (have == null) {
             var expectedType = (expected == null) ? "any" : expected.name();
-            throw new InvalidException(
-                    "type mismatch: expected [" + expectedType + "], but was []");
+            throw new InvalidException("type mismatch: expected [" + expectedType + "], but was []");
         }
-        if (expected != null
-                && have != expected
-                && have != ValueType.UNKNOWN
-                && expected != ValueType.UNKNOWN) {
-            throw new InvalidException(
-                    "type mismatch: expected [" + expected + "], but was " + have);
+        if (expected != null && have != expected && have != ValueType.UNKNOWN && expected != ValueType.UNKNOWN) {
+            throw new InvalidException("type mismatch: expected [" + expected + "], but was " + have);
         }
     }
 
@@ -80,8 +75,7 @@ public class TypeValidator {
         }
     }
 
-    private int jumpToNextEndOrElse(
-            List<Instruction> instructions, Instruction op, int currentPos) {
+    private int jumpToNextEndOrElse(List<Instruction> instructions, Instruction op, int currentPos) {
         Instruction tmpInstruction;
         var offset = 0;
         do {
@@ -557,25 +551,22 @@ public class TypeValidator {
                 }
                 case LOCAL_SET: {
                     var index = (int) op.operands()[0];
-                    ValueType expectedType = (index < inputLen)
-                            ? functionType.params().get(index)
-                            : localTypes.get(index - inputLen);
+                    ValueType expectedType =
+                            (index < inputLen) ? functionType.params().get(index) : localTypes.get(index - inputLen);
                     popAndVerifyType(expectedType);
                     break;
                 }
                 case LOCAL_GET: {
                     var index = (int) op.operands()[0];
-                    ValueType expectedType = (index < inputLen)
-                            ? functionType.params().get(index)
-                            : localTypes.get(index - inputLen);
+                    ValueType expectedType =
+                            (index < inputLen) ? functionType.params().get(index) : localTypes.get(index - inputLen);
                     valueTypeStack.push(expectedType);
                     break;
                 }
                 case LOCAL_TEE: {
                     var index = (int) op.operands()[0];
-                    ValueType expectedType = (index < inputLen)
-                            ? functionType.params().get(index)
-                            : localTypes.get(index - inputLen);
+                    ValueType expectedType =
+                            (index < inputLen) ? functionType.params().get(index) : localTypes.get(index - inputLen);
                     popAndVerifyType(expectedType);
                     valueTypeStack.push(expectedType);
                     break;
@@ -622,8 +613,7 @@ public class TypeValidator {
                 case REF_IS_NULL: {
                     var ref = valueTypeStack.poll();
                     if (!ref.isReference()) {
-                        throw new InvalidException(
-                                "type mismatch: expected FuncRef or ExtRef, but was " + ref);
+                        throw new InvalidException("type mismatch: expected FuncRef or ExtRef, but was " + ref);
                     }
                     valueTypeStack.push(ValueType.I32);
                     break;
@@ -642,8 +632,7 @@ public class TypeValidator {
                     var b = valueTypeStack.poll();
 
                     if (a != b) {
-                        throw new InvalidException(
-                                "type mismatch: expected " + a + ", but was " + b);
+                        throw new InvalidException("type mismatch: expected " + a + ", but was " + b);
                     }
                     valueTypeStack.push(a);
                     break;
@@ -657,8 +646,7 @@ public class TypeValidator {
                     break;
                 }
                 default:
-                    throw new IllegalArgumentException(
-                            "Missing type validation opcode handling for " + op.opcode());
+                    throw new IllegalArgumentException("Missing type validation opcode handling for " + op.opcode());
             }
         }
     }

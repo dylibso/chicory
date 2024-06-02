@@ -12,8 +12,7 @@ public class HostGlobal implements FromHost {
         this(moduleName, fieldName, instance, MutabilityType.Const);
     }
 
-    public HostGlobal(
-            String moduleName, String fieldName, GlobalInstance instance, MutabilityType type) {
+    public HostGlobal(String moduleName, String fieldName, GlobalInstance instance, MutabilityType type) {
         this.instance = instance;
         this.type = type;
         this.moduleName = moduleName;

@@ -25,8 +25,7 @@ public class TarExtractor {
         Files.createDirectories(destination);
 
         try (BufferedInputStream inputStream = new BufferedInputStream(this.tarStream);
-                TarArchiveInputStream tar =
-                        new TarArchiveInputStream(new GzipCompressorInputStream(inputStream))) {
+                TarArchiveInputStream tar = new TarArchiveInputStream(new GzipCompressorInputStream(inputStream))) {
             ArchiveEntry entry;
             while ((entry = tar.getNextEntry()) != null) {
                 Path extractTo = this.destination.resolve(entry.getName());

@@ -139,12 +139,10 @@ public class SpecV1LinkingHostFuncs {
     }
 
     public static HostImports G2() {
-        return new HostImports(
-                new HostGlobal[] {new HostGlobal("G1", "g", new GlobalInstance(Value.i32(5)))});
+        return new HostImports(new HostGlobal[] {new HostGlobal("G1", "g", new GlobalInstance(Value.i32(5)))});
     }
 
-    private static HostMemory MmMem =
-            new HostMemory("Mm", "mem", new Memory(new MemoryLimits(1, 5)));
+    private static HostMemory MmMem = new HostMemory("Mm", "mem", new Memory(new MemoryLimits(1, 5)));
 
     public static HostImports Om() {
         return new HostImports(new HostMemory[] {MmMem});
@@ -172,10 +170,6 @@ public class SpecV1LinkingHostFuncs {
     }
 
     public static HostImports fallback() {
-        return new HostImports(
-                new HostFunction[] {},
-                new HostGlobal[] {},
-                new HostMemory[] {},
-                new HostTable[] {});
+        return new HostImports(new HostFunction[] {}, new HostGlobal[] {}, new HostMemory[] {}, new HostTable[] {});
     }
 }

@@ -157,8 +157,7 @@ public class Instance {
         for (var i = 0; i < globalInitializers.length; i++) {
             var g = globalInitializers[i];
             if (g.initInstructions().size() > 2)
-                throw new RuntimeException(
-                        "We don't support a global initializer with multiple instructions");
+                throw new RuntimeException("We don't support a global initializer with multiple instructions");
             var instr = g.initInstructions().get(0);
             switch (instr.opcode()) {
                 case I32_CONST:
@@ -175,9 +174,8 @@ public class Instance {
                     break;
                 case GLOBAL_GET: {
                     var idx = (int) instr.operands()[0];
-                    globals[i] = idx < imports.globalCount()
-                            ? imports.global(idx).instance()
-                            : globals[idx];
+                    globals[i] =
+                            idx < imports.globalCount() ? imports.global(idx).instance() : globals[idx];
                     break;
                 }
                 case REF_NULL:
@@ -187,11 +185,10 @@ public class Instance {
                     globals[i] = new GlobalInstance(Value.funcRef((int) instr.operands()[0]));
                     break;
                 default:
-                    throw new RuntimeException(
-                            "We only support i32.const, i64.const, f32.const, f64.const,"
-                                    + " global.get, ref.func and ref.null opcodes on global"
-                                    + " initializers right now. We failed to initialize opcode: "
-                                    + instr.opcode());
+                    throw new RuntimeException("We only support i32.const, i64.const, f32.const, f64.const,"
+                            + " global.get, ref.func and ref.null opcodes on global"
+                            + " initializers right now. We failed to initialize opcode: "
+                            + instr.opcode());
             }
             globals[i].setInstance(this);
         }
@@ -209,8 +206,7 @@ public class Instance {
             // TODO: can be parallelized?
             for (int i = 0; i < this.functions.length; i++) {
                 if (this.function(i) != null) {
-                    new TypeValidator()
-                            .validate(this.function(i), this.types[this.functionType(i)], this);
+                    new TypeValidator().validate(this.function(i), this.types[this.functionType(i)], this);
                 }
             }
         }

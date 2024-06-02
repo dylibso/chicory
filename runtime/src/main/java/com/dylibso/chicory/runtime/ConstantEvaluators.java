@@ -39,8 +39,7 @@ public class ConstantEvaluators {
                     } else if (vt == ValueType.FuncRef) {
                         tos = Value.FUNCREF_NULL;
                     } else {
-                        throw new IllegalStateException(
-                                "Unexpected wrong type for ref.null instruction");
+                        throw new IllegalStateException("Unexpected wrong type for ref.null instruction");
                     }
                     break;
                 }
@@ -55,8 +54,7 @@ public class ConstantEvaluators {
                     break;
                 }
                 default: {
-                    throw new ChicoryException(
-                            "Non-constant instruction encountered: " + instruction);
+                    throw new ChicoryException("Non-constant instruction encountered: " + instruction);
                 }
             }
         }

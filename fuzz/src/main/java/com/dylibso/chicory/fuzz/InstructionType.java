@@ -23,8 +23,7 @@ public enum InstructionType {
         return byValue.get(value);
     }
 
-    private static final Map<String, InstructionType> byValue =
-            new HashMap<>(InstructionType.values().length);
+    private static final Map<String, InstructionType> byValue = new HashMap<>(InstructionType.values().length);
 
     static {
         for (InstructionType i : InstructionType.values()) byValue.put(i.value(), i);

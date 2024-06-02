@@ -18,10 +18,7 @@ public final class GlobalImport extends Import {
      * @param type the type of the value stored in the global (must not be {@code null})
      */
     public GlobalImport(
-            final String moduleName,
-            final String name,
-            final MutabilityType mutabilityType,
-            final ValueType type) {
+            final String moduleName, final String name, final MutabilityType mutabilityType, final ValueType type) {
         super(moduleName, name);
         this.mutabilityType = Objects.requireNonNull(mutabilityType, "mutabilityType");
         this.type = Objects.requireNonNull(type, "type");
@@ -50,10 +47,7 @@ public final class GlobalImport extends Import {
     }
 
     public boolean equals(final GlobalImport other) {
-        return this == other
-                || super.equals(other)
-                        && mutabilityType == other.mutabilityType
-                        && type == other.type;
+        return this == other || super.equals(other) && mutabilityType == other.mutabilityType && type == other.type;
     }
 
     public int hashCode() {
