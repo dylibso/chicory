@@ -24,10 +24,10 @@ import static org.objectweb.asm.Type.getType;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
-import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.StackFrame;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
@@ -276,17 +276,16 @@ public class AotMachine implements Machine {
                     .shared(F64_TRUNC, OpcodeImpl.class)
                     .build();
 
-    public AotMachine(Module module, Instance instance) {
+    public AotMachine(com.dylibso.chicory.wasm.Module module, Instance instance) {
         this.module = module;
         this.instance = requireNonNull(instance, "instance");
 
         var importedGlobals =
-                module.wasmModule().importSection().stream()
+                module.importSection().stream()
                         .filter(GlobalImport.class::isInstance)
                         .map(GlobalImport.class::cast)
                         .map(GlobalImport::type);
-        var globals =
-                Stream.of(module.wasmModule().globalSection().globals()).map(Global::valueType);
+        var globals = Stream.of(module.globalSection().globals()).map(Global::valueType);
         this.globalTypes = Stream.concat(importedGlobals, globals).collect(toUnmodifiableList());
 
         this.compiledFunctions = compile();
@@ -315,8 +314,8 @@ public class AotMachine implements Machine {
     }
 
     private MethodHandle[] compile() {
-        int importCount = module.wasmModule().importSection().count(ExternalType.FUNCTION);
-        var functions = module.wasmModule().functionSection();
+        int importCount = module.importSection().count(ExternalType.FUNCTION);
+        var functions = module.functionSection();
         var compiled = new MethodHandle[importCount + functions.functionCount()];
 
         for (int i = 0; i < importCount; i++) {
@@ -324,8 +323,8 @@ public class AotMachine implements Machine {
         }
 
         for (int i = 0; i < functions.functionCount(); i++) {
-            var type = functions.getFunctionType(i, module.wasmModule().typeSection());
-            var body = module.wasmModule().codeSection().getFunctionBody(i);
+            var type = functions.getFunctionType(i, module.typeSection());
+            var body = module.codeSection().getFunctionBody(i);
             var funcId = importCount + i;
             try {
                 compiled[funcId] = compile(funcId, type, body);
