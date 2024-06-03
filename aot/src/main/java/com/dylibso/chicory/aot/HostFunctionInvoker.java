@@ -1,19 +1,18 @@
 package com.dylibso.chicory.aot;
 
-import static java.lang.invoke.MethodHandles.publicLookup;
+import static java.lang.invoke.MethodHandles.lookup;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.types.Value;
 import java.lang.invoke.MethodHandle;
 
-public final class HostFunctionInvoker {
+final class HostFunctionInvoker {
     public static final MethodHandle HANDLE;
 
     static {
         try {
             HANDLE =
-                    publicLookup()
-                            .unreflect(
+                    lookup().unreflect(
                                     HostFunctionInvoker.class.getMethod(
                                             "invoke", Instance.class, int.class, Value[].class));
         } catch (NoSuchMethodException | IllegalAccessException e) {

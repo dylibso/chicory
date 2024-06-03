@@ -62,16 +62,16 @@ import org.objectweb.asm.util.CheckClassAdapter;
  * Simple Machine implementation that AOT compiles function bodies and runtime-links them
  * via MethodHandle. All compilation is done in a single compile phase during instantiation.
  */
-public class AotMachine implements Machine {
+public final class AotMachine implements Machine {
 
-    protected final Module module;
-    protected final Instance instance;
-    protected final MethodHandle[] compiledFunctions;
-    protected final List<ValueType> globalTypes;
-    protected final int functionImports;
-    protected final List<FunctionType> functionTypes;
+    private final Module module;
+    private final Instance instance;
+    private final MethodHandle[] compiledFunctions;
+    private final List<ValueType> globalTypes;
+    private final int functionImports;
+    private final List<FunctionType> functionTypes;
 
-    protected static final Map<OpCode, BytecodeEmitter> emitters =
+    private static final Map<OpCode, BytecodeEmitter> emitters =
             AotEmitters.builder()
                     // ====== Misc ======
                     .intrinsic(DROP, AotEmitters::DROP)
