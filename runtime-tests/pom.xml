@@ -152,9 +152,7 @@
             <wast>binary.wast</wast>
           </excludedMalformedWasts>
           <excludedInvalidWasts>
-            <wast>align.wast</wast>
             <wast>binary-leb128.wast</wast>
-            <wast>binary.wast</wast>
             <wast>block.wast</wast>
             <wast>br.wast</wast>
             <wast>br_if.wast</wast>
@@ -165,9 +163,6 @@
             <wast>data.wast</wast>
             <wast>elem.wast</wast>
             <wast>exports.wast</wast>
-            <wast>fac.wast</wast>
-            <wast>float_exprs.wast</wast>
-            <wast>forward.wast</wast>
             <wast>func.wast</wast>
             <wast>func_ptrs.wast</wast>
             <wast>global.wast</wast>
@@ -175,8 +170,6 @@
             <wast>if.wast</wast>
             <wast>imports.wast</wast>
             <wast>labels.wast</wast>
-            <wast>left-to-right.wast</wast>
-            <wast>linking.wast</wast>
             <wast>load.wast</wast>
             <wast>local_get.wast</wast>
             <wast>local_set.wast</wast>
@@ -188,7 +181,6 @@
             <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
             <wast>select.wast</wast>
-            <wast>skip-stack-guard-page.wast</wast>
             <wast>stack.wast</wast>
             <wast>start.wast</wast>
             <wast>store.wast</wast>
@@ -202,8 +194,6 @@
             <wast>table_init.wast</wast>
             <wast>table_set.wast</wast>
             <wast>table_size.wast</wast>
-            <wast>tokens.wast</wast>
-            <wast>traps.wast</wast>
             <wast>unreachable.wast</wast>
             <wast>unreached-invalid.wast</wast>
             <wast>unreached-valid.wast</wast>
