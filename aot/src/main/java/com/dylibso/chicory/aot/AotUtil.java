@@ -4,6 +4,8 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Value;
@@ -11,6 +13,7 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.stream.Stream;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -70,6 +73,23 @@ public class AotUtil {
         }
     }
 
+    public static int loadTypeOpcode(ValueType type) {
+        switch (type) {
+            case I32:
+            case ExternRef:
+            case FuncRef:
+                return Opcodes.ILOAD;
+            case I64:
+                return Opcodes.LLOAD;
+            case F32:
+                return Opcodes.FLOAD;
+            case F64:
+                return Opcodes.DLOAD;
+            default:
+                throw new IllegalArgumentException("Unsupported type: " + type);
+        }
+    }
+
     public static ValueType localType(FunctionType type, FunctionBody body, int localIndex) {
         if (localIndex < type.params().size()) {
             return type.params().get(localIndex);
@@ -121,7 +141,9 @@ public class AotUtil {
     }
 
     public static Class<?>[] jvmParameterTypes(FunctionType type) {
-        return type.params().stream().map(AotUtil::jvmType).toArray(Class[]::new);
+        var args = type.params().stream().map(AotUtil::jvmType);
+        var extra = Stream.of(Memory.class, Instance.class);
+        return Stream.concat(args, extra).toArray(Class[]::new);
     }
 
     public static Class<?> jvmReturnType(FunctionType type) {
@@ -167,6 +189,21 @@ public class AotUtil {
         throw new IllegalArgumentException("Unsupported JVM type: " + clazz);
     }
 
+    public static int slotCount(ValueType type) {
+        switch (type) {
+            case I32:
+            case F32:
+            case ExternRef:
+            case FuncRef:
+                return 1;
+            case I64:
+            case F64:
+                return 2;
+            default:
+                throw new IllegalArgumentException("Unsupported type: " + type);
+        }
+    }
+
     public static void emitInvokeStatic(MethodVisitor asm, Method method) {
         assert Modifier.isStatic(method.getModifiers());
         asm.visitMethodInsn(
@@ -186,5 +223,9 @@ public class AotUtil {
                 method.getName(),
                 getMethodDescriptor(method),
                 false);
+    }
+
+    public static String methodNameFor(int funcId) {
+        return "func_" + funcId;
     }
 }

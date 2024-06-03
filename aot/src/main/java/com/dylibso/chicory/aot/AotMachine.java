@@ -2,28 +2,31 @@ package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.aot.AotEmitters.emitLocalStore;
 import static com.dylibso.chicory.aot.AotEmitters.emitThrowTrapException;
+import static com.dylibso.chicory.aot.AotMethods.INSTANCE_CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.aot.AotUtil.boxer;
 import static com.dylibso.chicory.aot.AotUtil.defaultValue;
-import static com.dylibso.chicory.aot.AotUtil.jvmParameterTypes;
+import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
+import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
 import static com.dylibso.chicory.aot.AotUtil.jvmReturnType;
+import static com.dylibso.chicory.aot.AotUtil.loadTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.localType;
+import static com.dylibso.chicory.aot.AotUtil.methodNameFor;
 import static com.dylibso.chicory.aot.AotUtil.methodTypeFor;
+import static com.dylibso.chicory.aot.AotUtil.slotCount;
 import static com.dylibso.chicory.aot.AotUtil.unboxer;
 import static com.dylibso.chicory.wasm.types.OpCode.*;
 import static java.lang.invoke.MethodHandles.filterArguments;
 import static java.lang.invoke.MethodHandles.filterReturnValue;
+import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.objectweb.asm.Type.VOID_TYPE;
-import static org.objectweb.asm.Type.getDescriptor;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
-import static org.objectweb.asm.Type.getType;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
-import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.StackFrame;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
@@ -31,6 +34,8 @@ import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
+import com.dylibso.chicory.wasm.types.FunctionImport;
+import com.dylibso.chicory.wasm.types.FunctionSection;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.GlobalImport;
@@ -40,18 +45,17 @@ import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 import org.objectweb.asm.util.CheckClassAdapter;
 
 /**
@@ -64,6 +68,8 @@ public class AotMachine implements Machine {
     protected final Instance instance;
     protected final MethodHandle[] compiledFunctions;
     protected final List<ValueType> globalTypes;
+    protected final int functionImports;
+    protected final List<FunctionType> functionTypes;
 
     protected static final Map<OpCode, BytecodeEmitter> emitters =
             AotEmitters.builder()
@@ -72,6 +78,9 @@ public class AotMachine implements Machine {
                     .intrinsic(ELEM_DROP, AotEmitters::ELEM_DROP)
                     .intrinsic(SELECT, AotEmitters::SELECT)
                     .intrinsic(SELECT_T, AotEmitters::SELECT)
+
+                    // ====== Control Flow ======
+                    .intrinsic(CALL, AotEmitters::CALL)
 
                     // ====== References ======
                     .intrinsic(REF_FUNC, AotEmitters::REF_FUNC)
@@ -280,15 +289,39 @@ public class AotMachine implements Machine {
         this.module = module;
         this.instance = requireNonNull(instance, "instance");
 
+        this.globalTypes = getGlobalTypes(module);
+
+        this.functionImports = module.importSection().count(ExternalType.FUNCTION);
+        this.functionTypes = getFunctionTypes(module);
+
+        this.compiledFunctions = compile();
+    }
+
+    private static List<ValueType> getGlobalTypes(Module module) {
         var importedGlobals =
                 module.importSection().stream()
                         .filter(GlobalImport.class::isInstance)
                         .map(GlobalImport.class::cast)
                         .map(GlobalImport::type);
-        var globals = Stream.of(module.globalSection().globals()).map(Global::valueType);
-        this.globalTypes = Stream.concat(importedGlobals, globals).collect(toUnmodifiableList());
 
-        this.compiledFunctions = compile();
+        var globals = Stream.of(module.globalSection().globals()).map(Global::valueType);
+
+        return Stream.concat(importedGlobals, globals).collect(toUnmodifiableList());
+    }
+
+    private static List<FunctionType> getFunctionTypes(Module module) {
+        var importedFunctions =
+                module.importSection().stream()
+                        .filter(FunctionImport.class::isInstance)
+                        .map(FunctionImport.class::cast)
+                        .map(function -> module.typeSection().types()[function.typeIndex()]);
+
+        var functions = module.functionSection();
+        var moduleFunctions =
+                IntStream.range(0, functions.functionCount())
+                        .mapToObj(i -> functions.getFunctionType(i, module.typeSection()));
+
+        return Stream.concat(importedFunctions, moduleFunctions).collect(toUnmodifiableList());
     }
 
     @Override
@@ -314,98 +347,92 @@ public class AotMachine implements Machine {
     }
 
     private MethodHandle[] compile() {
-        int importCount = module.importSection().count(ExternalType.FUNCTION);
         var functions = module.functionSection();
-        var compiled = new MethodHandle[importCount + functions.functionCount()];
+        var compiled = new MethodHandle[functionImports + functions.functionCount()];
 
-        for (int i = 0; i < importCount; i++) {
+        for (int i = 0; i < functionImports; i++) {
             compiled[i] = HostFunctionInvoker.HANDLE.bindTo(instance);
         }
 
+        Class<?> clazz = compileClass(functions);
+
         for (int i = 0; i < functions.functionCount(); i++) {
             var type = functions.getFunctionType(i, module.typeSection());
-            var body = module.codeSection().getFunctionBody(i);
-            var funcId = importCount + i;
+            var funcId = functionImports + i;
             try {
-                compiled[funcId] = compile(funcId, type, body);
-            } catch (NoSuchMethodException | IllegalAccessException e) {
+                MethodHandle handle =
+                        publicLookup()
+                                .findStatic(clazz, methodNameFor(funcId), methodTypeFor(type));
+                handle =
+                        insertArguments(
+                                handle,
+                                handle.type().parameterCount() - 2,
+                                instance.memory(),
+                                instance);
+                compiled[funcId] = adaptSignature(type, handle);
+
+            } catch (ReflectiveOperationException e) {
                 throw new ChicoryException(e);
-            } catch (InvocationTargetException | InstantiationException e) {
-                throw new RuntimeException(e);
             }
         }
 
         return compiled;
     }
 
-    private MethodHandle compile(int funcId, FunctionType type, FunctionBody body)
-            throws NoSuchMethodException,
-                    IllegalAccessException,
-                    InvocationTargetException,
-                    InstantiationException {
-
-        var className = classNameFor(funcId);
+    private Class<?> compileClass(FunctionSection functions) {
+        var className = "com.dylibso.chicory.$gen.CompiledModule";
         var internalClassName = className.replace('.', '/');
 
         var classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         classWriter.visit(
                 Opcodes.V11,
-                Opcodes.ACC_PUBLIC,
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL,
                 internalClassName,
                 null,
                 getInternalName(Object.class),
                 null);
         classWriter.visitSource("wasm", "wasm");
 
-        // private final Memory memory;
-        classWriter.visitField(
-                Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
-                "memory",
-                getDescriptor(Memory.class),
-                null,
-                null);
+        emitConstructor(classWriter);
 
-        // private final Instance instance;
-        classWriter.visitField(
-                Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
-                "instance",
-                getDescriptor(Instance.class),
-                null,
-                null);
+        for (int i = 0; i < functionImports; i++) {
+            int funcId = i;
+            emitFunction(
+                    funcId, classWriter, (type, asm) -> compileHostFunction(funcId, type, asm));
+        }
 
-        emitConstructor(internalClassName, classWriter);
+        for (int i = 0; i < functions.functionCount(); i++) {
+            var funcId = functionImports + i;
+            var body = module.codeSection().getFunctionBody(i);
 
-        var implWriter =
-                classWriter.visitMethod(
-                        Opcodes.ACC_PUBLIC,
-                        "call",
-                        getMethodDescriptor(
-                                getType(jvmReturnType(type)),
-                                Arrays.stream(jvmParameterTypes(type))
-                                        .map(Type::getType)
-                                        .toArray(Type[]::new)),
-                        null,
-                        null);
-
-        implWriter.visitCode();
-
-        compileBody(internalClassName, funcId, type, body, implWriter);
-
-        implWriter.visitMaxs(0, 0);
-        implWriter.visitEnd();
+            emitFunction(
+                    funcId,
+                    classWriter,
+                    (type, asm) -> compileBody(internalClassName, funcId, type, body, asm));
+        }
 
         classWriter.visitEnd();
 
-        Class<?> clazz = loadClass(className, classWriter.toByteArray());
-        Object target =
-                clazz.getConstructor(Memory.class, Instance.class)
-                        .newInstance(instance.memory(), instance);
-        MethodHandle handle =
-                MethodHandles.lookup()
-                        .findVirtual(clazz, "call", methodTypeFor(type))
-                        .bindTo(target);
+        return loadClass(className, classWriter.toByteArray());
+    }
 
-        return adaptSignature(type, handle);
+    private void emitFunction(
+            int funcId,
+            ClassVisitor classWriter,
+            BiConsumer<FunctionType, MethodVisitor> consumer) {
+        var type = functionTypes.get(funcId);
+        var methodWriter =
+                classWriter.visitMethod(
+                        Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+                        methodNameFor(funcId),
+                        methodTypeFor(type).toMethodDescriptorString(),
+                        null,
+                        null);
+
+        methodWriter.visitCode();
+        consumer.accept(type, methodWriter);
+        methodWriter.visitMaxs(0, 0);
+        methodWriter.visitEnd();
     }
 
     private Class<?> loadClass(String className, byte[] classBytes) {
@@ -447,20 +474,10 @@ public class AotMachine implements Machine {
         return filterReturnValue(result, publicLookup().unreflect(boxer(type.returns().get(0))));
     }
 
-    private static String classNameFor(int funcId) {
-        // TODO - use debug information (if available) to make a nice name
-        return "com.dylibso.chicory.$gen.Function$" + funcId;
-    }
-
-    private static void emitConstructor(String internalClassName, ClassVisitor writer) {
+    private static void emitConstructor(ClassVisitor writer) {
         var cons =
                 writer.visitMethod(
-                        Opcodes.ACC_PUBLIC,
-                        "<init>",
-                        getMethodDescriptor(
-                                VOID_TYPE, getType(Memory.class), getType(Instance.class)),
-                        null,
-                        null);
+                        Opcodes.ACC_PRIVATE, "<init>", getMethodDescriptor(VOID_TYPE), null, null);
         cons.visitCode();
 
         // super();
@@ -471,18 +488,6 @@ public class AotMachine implements Machine {
                 "<init>",
                 getMethodDescriptor(VOID_TYPE),
                 false);
-
-        // this.memory = memory;
-        cons.visitVarInsn(Opcodes.ALOAD, 0);
-        cons.visitVarInsn(Opcodes.ALOAD, 1);
-        cons.visitFieldInsn(
-                Opcodes.PUTFIELD, internalClassName, "memory", getDescriptor(Memory.class));
-
-        // this.instance = instance;
-        cons.visitVarInsn(Opcodes.ALOAD, 0);
-        cons.visitVarInsn(Opcodes.ALOAD, 2);
-        cons.visitFieldInsn(
-                Opcodes.PUTFIELD, internalClassName, "instance", getDescriptor(Instance.class));
 
         cons.visitInsn(Opcodes.RETURN);
         cons.visitMaxs(0, 0);
@@ -503,6 +508,43 @@ public class AotMachine implements Machine {
         }
     }
 
+    private static void compileHostFunction(int funcId, FunctionType type, MethodVisitor asm) {
+        List<Integer> slots = new ArrayList<>();
+        int slot = 0;
+        for (ValueType param : type.params()) {
+            slots.add(slot);
+            slot += slotCount(param);
+        }
+
+        asm.visitVarInsn(Opcodes.ALOAD, slot + 1);
+        asm.visitLdcInsn(funcId);
+
+        // box the arguments into Value[]
+        asm.visitLdcInsn(type.params().size());
+        asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(Value.class));
+        for (int i = 0; i < type.params().size(); i++) {
+            asm.visitInsn(Opcodes.DUP);
+            asm.visitLdcInsn(i);
+            ValueType valueType = type.params().get(i);
+            asm.visitVarInsn(loadTypeOpcode(valueType), slots.get(i));
+            emitInvokeStatic(asm, boxer(valueType));
+            asm.visitInsn(Opcodes.AASTORE);
+        }
+
+        emitInvokeVirtual(asm, INSTANCE_CALL_HOST_FUNCTION);
+
+        Class<?> returnType = jvmReturnType(type);
+        if (returnType == void.class) {
+            asm.visitInsn(Opcodes.RETURN);
+        } else {
+            // unbox the result from Value[0]
+            asm.visitLdcInsn(0);
+            asm.visitInsn(Opcodes.AALOAD);
+            emitInvokeVirtual(asm, unboxer(type.returns().get(0)));
+            asm.visitInsn(returnTypeOpcode(type));
+        }
+    }
+
     private void compileBody(
             String internalClassName,
             int funcId,
@@ -510,7 +552,7 @@ public class AotMachine implements Machine {
             FunctionBody body,
             MethodVisitor asm) {
 
-        var ctx = new AotContext(globalTypes, funcId, type, body);
+        var ctx = new AotContext(internalClassName, globalTypes, functionTypes, funcId, type, body);
 
         // initialize local variables to their default values
         int localsCount = type.params().size() + body.localTypes().size();
@@ -518,18 +560,6 @@ public class AotMachine implements Machine {
             asm.visitLdcInsn(defaultValue(localType(type, body, i)));
             emitLocalStore(ctx, asm, i);
         }
-
-        // memory = this.memory;
-        asm.visitVarInsn(Opcodes.ALOAD, 0);
-        asm.visitFieldInsn(
-                Opcodes.GETFIELD, internalClassName, "memory", getDescriptor(Memory.class));
-        asm.visitVarInsn(Opcodes.ASTORE, ctx.memorySlot());
-
-        // instance = this.instance;
-        asm.visitVarInsn(Opcodes.ALOAD, 0);
-        asm.visitFieldInsn(
-                Opcodes.GETFIELD, internalClassName, "instance", getDescriptor(Instance.class));
-        asm.visitVarInsn(Opcodes.ASTORE, ctx.instanceSlot());
 
         // compile the function body
         for (var ins : body.instructions()) {
