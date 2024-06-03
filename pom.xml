@@ -108,7 +108,7 @@
     <maven-gpg-plugin.version>3.2.4</maven-gpg-plugin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <templating-maven-plugin.version>3.0.0</templating-maven-plugin.version>
-    <maven-shade-plugin.version>3.5.3</maven-shade-plugin.version>
+    <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
     <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
   </properties>
 
