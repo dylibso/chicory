@@ -151,7 +151,11 @@ public class AotEmitters {
 
     public static void LOCAL_TEE(AotContext ctx, Instruction ins, MethodVisitor asm) {
         StackSize stackSize = ctx.popStackSize();
-        emitPop(asm, stackSize);
+        if (stackSize == StackSize.ONE) {
+            asm.visitInsn(Opcodes.DUP);
+        } else {
+            asm.visitInsn(Opcodes.DUP2);
+        }
         ctx.pushStackSize(stackSize);
 
         LOCAL_SET(ctx, ins, asm);
