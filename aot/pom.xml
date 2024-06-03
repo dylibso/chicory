@@ -77,10 +77,15 @@
             <wast>inline-module.wast</wast>
             <wast>int_exprs.wast</wast>
             <wast>int_literals.wast</wast>
+            <wast>memory_redundancy.wast</wast>
             <wast>memory_size.wast</wast>
+            <wast>memory_trap.wast</wast>
+            <wast>ref_is_null.wast</wast>
             <wast>ref_null.wast</wast>
             <wast>table.wast</wast>
             <wast>table_fill.wast</wast>
+            <wast>table_get.wast</wast>
+            <wast>table_set.wast</wast>
             <wast>table_size.wast</wast>
             <wast>token.wast</wast>
             <wast>traps.wast</wast>
@@ -192,12 +197,9 @@
             <wast>memory_fill.wast</wast>
             <wast>memory_grow.wast</wast>
             <wast>memory_init.wast</wast>
-            <wast>memory_redundancy.wast</wast>
-            <wast>memory_trap.wast</wast>
             <wast>names.wast</wast>
             <wast>nop.wast</wast>
             <wast>ref_func.wast</wast>
-            <wast>ref_is_null.wast</wast>
             <wast>return.wast</wast>
             <wast>select.wast</wast>
 
@@ -268,10 +270,8 @@
             <wast>switch.wast</wast>
             <wast>table-sub.wast</wast>
             <wast>table_copy.wast</wast>
-            <wast>table_get.wast</wast>
             <wast>table_grow.wast</wast>
             <wast>table_init.wast</wast>
-            <wast>table_set.wast</wast>
             <wast>tokens.wast</wast>
             <wast>unreachable.wast</wast>
             <wast>unreached-invalid.wast</wast>

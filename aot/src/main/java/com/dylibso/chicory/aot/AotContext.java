@@ -1,5 +1,7 @@
 package com.dylibso.chicory.aot;
 
+import static com.dylibso.chicory.aot.AotUtil.slotCount;
+
 import com.dylibso.chicory.aot.AotUtil.StackSize;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -14,7 +16,9 @@ import java.util.List;
  */
 public class AotContext {
 
+    protected final String internalClassName;
     protected final List<ValueType> globalTypes;
+    protected final List<FunctionType> functionTypes;
     protected final int funcId;
     protected final FunctionType type;
     protected final FunctionBody body;
@@ -24,18 +28,54 @@ public class AotContext {
     protected final Deque<StackSize> stackSizes = new ArrayDeque<>();
 
     public AotContext(
-            List<ValueType> globalTypes, int funcId, FunctionType type, FunctionBody body) {
+            String internalClassName,
+            List<ValueType> globalTypes,
+            List<FunctionType> functionTypes,
+            int funcId,
+            FunctionType type,
+            FunctionBody body) {
+        this.internalClassName = internalClassName;
         this.globalTypes = globalTypes;
+        this.functionTypes = functionTypes;
         this.funcId = funcId;
         this.type = type;
         this.body = body;
-        this.slots = computeSlots(type, body);
-        this.memorySlot = slots.get(slots.size() - 1);
-        this.instanceSlot = memorySlot + 1;
+
+        // compute JVM slot indices for WASM locals
+        List<Integer> slots = new ArrayList<>();
+        int slot = 0;
+
+        // WASM arguments
+        for (ValueType param : type.params()) {
+            slots.add(slot);
+            slot += slotCount(param);
+        }
+
+        // extra arguments
+        this.memorySlot = slot;
+        slot++;
+        this.instanceSlot = slot;
+        slot++;
+
+        // WASM locals
+        for (ValueType local : body.localTypes()) {
+            slots.add(slot);
+            slot += slotCount(local);
+        }
+
+        this.slots = List.copyOf(slots);
+    }
+
+    public String internalClassName() {
+        return internalClassName;
     }
 
     public List<ValueType> globalTypes() {
         return globalTypes;
+    }
+
+    public List<FunctionType> functionTypes() {
+        return functionTypes;
     }
 
     public int getId() {
@@ -72,42 +112,5 @@ public class AotContext {
 
     public StackSize popStackSize() {
         return stackSizes.pop();
-    }
-
-    private static List<Integer> computeSlots(FunctionType type, FunctionBody body) {
-        List<Integer> slots = new ArrayList<>();
-
-        // skip "this"
-        int slot = 1;
-
-        // arguments and local variables
-        for (ValueType param : type.params()) {
-            slots.add(slot);
-            slot += slotCount(param);
-        }
-        for (ValueType local : body.localTypes()) {
-            slots.add(slot);
-            slot += slotCount(local);
-        }
-
-        // first available slot
-        slots.add(slot);
-
-        return List.copyOf(slots);
-    }
-
-    private static int slotCount(ValueType type) {
-        switch (type) {
-            case I32:
-            case F32:
-            case ExternRef:
-            case FuncRef:
-                return 1;
-            case I64:
-            case F64:
-                return 2;
-            default:
-                throw new IllegalArgumentException("Unsupported type: " + type);
-        }
     }
 }

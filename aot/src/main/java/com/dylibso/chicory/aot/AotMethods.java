@@ -7,6 +7,7 @@ import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.TrapException;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.Value;
 import java.lang.reflect.Method;
@@ -14,6 +15,8 @@ import java.util.List;
 
 public final class AotMethods {
 
+    static final Method CHECK_INTERRUPTION;
+    static final Method INSTANCE_CALL_HOST_FUNCTION;
     static final Method INSTANCE_READ_GLOBAL;
     static final Method INSTANCE_WRITE_GLOBAL;
     static final Method INSTANCE_SET_ELEMENT;
@@ -49,6 +52,9 @@ public final class AotMethods {
 
     static {
         try {
+            CHECK_INTERRUPTION = AotMethods.class.getMethod("checkInterruption");
+            INSTANCE_CALL_HOST_FUNCTION =
+                    Instance.class.getMethod("callHostFunction", int.class, Value[].class);
             INSTANCE_READ_GLOBAL = Instance.class.getMethod("readGlobal", int.class);
             INSTANCE_WRITE_GLOBAL = Instance.class.getMethod("writeGlobal", int.class, Value.class);
             INSTANCE_SET_ELEMENT = Instance.class.getMethod("setElement", int.class, Element.class);
@@ -212,5 +218,12 @@ public final class AotMethods {
     @UsedByGeneratedCode
     public static RuntimeException throwTrapException() {
         throw new TrapException("Trapped on unreachable instruction", List.of());
+    }
+
+    @UsedByGeneratedCode
+    public static void checkInterruption() {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new ChicoryException("Thread interrupted");
+        }
     }
 }

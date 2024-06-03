@@ -4,6 +4,8 @@ import static com.dylibso.chicory.aot.AotMethods.*;
 import static com.dylibso.chicory.aot.AotUtil.boxer;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
+import static com.dylibso.chicory.aot.AotUtil.methodNameFor;
+import static com.dylibso.chicory.aot.AotUtil.methodTypeFor;
 import static com.dylibso.chicory.aot.AotUtil.stackSize;
 import static com.dylibso.chicory.aot.AotUtil.unboxer;
 import static com.dylibso.chicory.aot.AotUtil.validateArgumentType;
@@ -11,8 +13,10 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.aot.AotUtil.StackSize;
 import com.dylibso.chicory.runtime.OpCodeIdentifier;
+import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
@@ -78,6 +82,30 @@ public class AotEmitters {
         }
         asm.visitLabel(endLabel);
         emitPop(asm, stackSize);
+    }
+
+    public static void CALL(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        int funcId = (int) ins.operands()[0];
+        FunctionType functionType = ctx.functionTypes().get(funcId);
+        MethodType methodType = methodTypeFor(functionType);
+
+        emitInvokeStatic(asm, CHECK_INTERRUPTION);
+
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        asm.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                ctx.internalClassName(),
+                methodNameFor(funcId),
+                methodType.toMethodDescriptorString(),
+                false);
+
+        for (int i = 0; i < functionType.params().size(); i++) {
+            ctx.popStackSize();
+        }
+        if (methodType.returnType() != void.class) {
+            ctx.pushStackSize(stackSize(methodType.returnType()));
+        }
     }
 
     public static void REF_FUNC(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -740,6 +768,7 @@ public class AotEmitters {
             case DROP:
             case SELECT:
             case SELECT_T:
+            case CALL:
             case LOCAL_GET:
             case GLOBAL_GET:
                 // handled in the opcode implementation
