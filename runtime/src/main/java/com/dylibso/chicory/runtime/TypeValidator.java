@@ -32,9 +32,7 @@ public class TypeValidator {
     }
 
     private static <T> List<T> clone(List<T> list) {
-        var res = new ArrayList<T>();
-        res.addAll(list);
-        return res;
+        return new ArrayList<>(list);
     }
 
     private void popAndVerifyType(ValueType expected) {
