@@ -17,7 +17,9 @@ import java.util.stream.Stream;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-public class AotUtil {
+final class AotUtil {
+
+    private AotUtil() {}
 
     public enum StackSize {
         ONE,

@@ -14,18 +14,18 @@ import java.util.List;
 /**
  * Class for tracking context relevant to compiling a single function
  */
-public class AotContext {
+final class AotContext {
 
-    protected final String internalClassName;
-    protected final List<ValueType> globalTypes;
-    protected final List<FunctionType> functionTypes;
-    protected final int funcId;
-    protected final FunctionType type;
-    protected final FunctionBody body;
-    protected final List<Integer> slots;
-    protected final int memorySlot;
-    protected final int instanceSlot;
-    protected final Deque<StackSize> stackSizes = new ArrayDeque<>();
+    private final String internalClassName;
+    private final List<ValueType> globalTypes;
+    private final List<FunctionType> functionTypes;
+    private final int funcId;
+    private final FunctionType type;
+    private final FunctionBody body;
+    private final List<Integer> slots;
+    private final int memorySlot;
+    private final int instanceSlot;
+    private final Deque<StackSize> stackSizes = new ArrayDeque<>();
 
     public AotContext(
             String internalClassName,

@@ -1,6 +1,6 @@
 package com.dylibso.chicory.aot;
 
-public class ByteArrayClassLoader extends ClassLoader {
+final class ByteArrayClassLoader extends ClassLoader {
 
     public ByteArrayClassLoader(ClassLoader parent) {
         super(parent);
