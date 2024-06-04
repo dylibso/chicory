@@ -177,7 +177,6 @@
             <wast>loop.wast</wast>
             <wast>memory_grow.wast</wast>
             <wast>memory_size.wast</wast>
-            <wast>nop.wast</wast>
             <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
             <wast>select.wast</wast>

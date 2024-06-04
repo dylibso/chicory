@@ -151,7 +151,8 @@ public class TypeValidator {
         push(prevStack, clone(valueTypeStack));
         push(returns, functionType.returns());
 
-        for (var i = 0; i < body.instructions().size(); i++) {
+        int instructionCount = body.instructions().size();
+        for (var i = 0; i < instructionCount; i++) {
             var op = body.instructions().get(i);
 
             // control flow instructions handling
@@ -188,7 +189,7 @@ public class TypeValidator {
                                 i = nextElseIdx;
                             }
                         } else { // jump to the function END
-                            i = body.instructions().size() - 1;
+                            i = instructionCount - 1;
                         }
                         break;
                     }
@@ -324,6 +325,18 @@ public class TypeValidator {
 
             switch (op.opcode()) {
                 case NOP:
+                    {
+                        if (instructionCount == 2
+                                && body.instructions().get(instructionCount - 1).opcode()
+                                        == OpCode.END
+                                && !valueTypeStack.equals(functionType.returns())) {
+                            throw new InvalidException(
+                                    "type mismatch in implicit return, expected "
+                                            + functionType.returns()
+                                            + " but got []");
+                        }
+                        break;
+                    }
                 case UNREACHABLE:
                 case LOOP:
                 case BLOCK:
