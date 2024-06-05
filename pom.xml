@@ -364,8 +364,8 @@
                 <include>*.md</include>
                 <include>.gitignore</include>
               </includes>
-              <trimTrailingWhitespace></trimTrailingWhitespace>
-              <endWithNewline></endWithNewline>
+              <trimTrailingWhitespace/>
+              <endWithNewline/>
               <indent>
                 <spaces>true</spaces>
                 <spacesPerTab>2</spacesPerTab>
@@ -383,19 +383,21 @@
               <reflowLongStrings>true</reflowLongStrings>
               <formatJavadoc>false</formatJavadoc>
             </googleJavaFormat>
-            <importOrder></importOrder>
+            <importOrder/>
             <replaceRegex>
               <name>Remove wildcard imports</name>
               <searchRegex>import\s+(?:static\s+)?[^\*\s]+\*;(\r\n|\r|\n)</searchRegex>
               <replacement>$1</replacement>
             </replaceRegex>
-            <removeUnusedImports></removeUnusedImports>
+            <removeUnusedImports/>
           </java>
           <pom>
             <includes>
               <include>**/pom.xml</include>
             </includes>
-            <sortPom></sortPom>
+            <sortPom>
+              <expandEmptyElements>false</expandEmptyElements>
+            </sortPom>
           </pom>
         </configuration>
         <executions>
