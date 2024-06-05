@@ -1,6 +1,8 @@
 package com.dylibso.chicory.imports;
 
-import static com.dylibso.chicory.test.gen.SpecV1ElemTest.*;
+import static com.dylibso.chicory.test.gen.SpecV1ElemTest.mInstance;
+import static com.dylibso.chicory.test.gen.SpecV1ElemTest.module1Instance;
+import static com.dylibso.chicory.test.gen.SpecV1ElemTest.module4Instance;
 
 import com.dylibso.chicory.runtime.GlobalInstance;
 import com.dylibso.chicory.runtime.HostGlobal;
