@@ -51,7 +51,7 @@ jobs:
       - name: Test Java
         run: mvn -B install
       - name: Verify that nightly fuzz compiles
-        run: mvn -B compile -DskipTest -Pfuzz -pl fuzz
+        run: mvn -B test -DskipTests -Pfuzz -pl fuzz
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2

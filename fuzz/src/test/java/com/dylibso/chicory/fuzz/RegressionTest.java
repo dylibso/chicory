@@ -23,8 +23,8 @@ public class RegressionTest extends TestModule {
     @MethodSource("crashFolders")
     void regressionTests(File folder) throws Exception {
         var targetWasm = new File(folder.getAbsolutePath() + "/test.wasm");
-        var module = Module.builder(targetWasm).build();
-        var instance = module.withInitialize(true).withStart(false).instantiate();
+        var module = Module.builder(targetWasm).withInitialize(true).withStart(false).build();
+        var instance = module.instantiate();
 
         var results = testModule(targetWasm, module, instance, false);
 

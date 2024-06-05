@@ -30,8 +30,8 @@ public class SingleReproTest extends TestModule {
         var targetWasm =
                 smith.run(seed.substring(0, Math.min(seed.length(), 32)), "test.wasm", types);
 
-        var module = Module.builder(targetWasm).build();
-        var instance = module.withInitialize(true).withStart(false).instantiate();
+        var module = Module.builder(targetWasm).withInitialize(true).withStart(false).build();
+        var instance = module.instantiate();
 
         testModule(targetWasm, module, instance);
         // Sanity check that the starting function doesn't break
