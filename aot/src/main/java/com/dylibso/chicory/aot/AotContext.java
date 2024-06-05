@@ -19,6 +19,7 @@ final class AotContext {
     private final String internalClassName;
     private final List<ValueType> globalTypes;
     private final List<FunctionType> functionTypes;
+    private final FunctionType[] types;
     private final int funcId;
     private final FunctionType type;
     private final FunctionBody body;
@@ -31,12 +32,14 @@ final class AotContext {
             String internalClassName,
             List<ValueType> globalTypes,
             List<FunctionType> functionTypes,
+            FunctionType[] types,
             int funcId,
             FunctionType type,
             FunctionBody body) {
         this.internalClassName = internalClassName;
         this.globalTypes = globalTypes;
         this.functionTypes = functionTypes;
+        this.types = types;
         this.funcId = funcId;
         this.type = type;
         this.body = body;
@@ -76,6 +79,10 @@ final class AotContext {
 
     public List<FunctionType> functionTypes() {
         return functionTypes;
+    }
+
+    public FunctionType[] types() {
+        return types;
     }
 
     public int getId() {

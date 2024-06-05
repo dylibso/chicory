@@ -4,6 +4,8 @@ import static com.dylibso.chicory.aot.AotEmitters.emitLocalStore;
 import static com.dylibso.chicory.aot.AotEmitters.emitThrowTrapException;
 import static com.dylibso.chicory.aot.AotMethods.INSTANCE_CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.aot.AotUtil.boxer;
+import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
+import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
 import static com.dylibso.chicory.aot.AotUtil.defaultValue;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
@@ -15,6 +17,7 @@ import static com.dylibso.chicory.aot.AotUtil.methodTypeFor;
 import static com.dylibso.chicory.aot.AotUtil.slotCount;
 import static com.dylibso.chicory.aot.AotUtil.unboxer;
 import static com.dylibso.chicory.wasm.types.OpCode.CALL;
+import static com.dylibso.chicory.wasm.types.OpCode.CALL_INDIRECT;
 import static com.dylibso.chicory.wasm.types.OpCode.DATA_DROP;
 import static com.dylibso.chicory.wasm.types.OpCode.DROP;
 import static com.dylibso.chicory.wasm.types.OpCode.ELEM_DROP;
@@ -233,10 +236,11 @@ import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.objectweb.asm.ClassReader;
@@ -269,6 +273,7 @@ public final class AotMachine implements Machine {
 
                     // ====== Control Flow ======
                     .intrinsic(CALL, AotEmitters::CALL)
+                    .intrinsic(CALL_INDIRECT, AotEmitters::CALL_INDIRECT)
 
                     // ====== References ======
                     .intrinsic(REF_FUNC, AotEmitters::REF_FUNC)
@@ -539,7 +544,7 @@ public final class AotMachine implements Machine {
         var compiled = new MethodHandle[functionImports + functions.functionCount()];
 
         for (int i = 0; i < functionImports; i++) {
-            compiled[i] = HostFunctionInvoker.HANDLE.bindTo(instance);
+            compiled[i] = HostFunctionInvoker.handleFor(instance, i);
         }
 
         Class<?> clazz = compileClass(functions);
@@ -585,18 +590,38 @@ public final class AotMachine implements Machine {
 
         for (int i = 0; i < functionImports; i++) {
             int funcId = i;
+            var type = functionTypes.get(funcId);
             emitFunction(
-                    funcId, classWriter, (type, asm) -> compileHostFunction(funcId, type, asm));
+                    classWriter,
+                    methodNameFor(funcId),
+                    methodTypeFor(type),
+                    asm -> compileHostFunction(funcId, type, asm));
         }
 
         for (int i = 0; i < functions.functionCount(); i++) {
             var funcId = functionImports + i;
+            var type = functionTypes.get(funcId);
             var body = module.codeSection().getFunctionBody(i);
 
             emitFunction(
-                    funcId,
                     classWriter,
-                    (type, asm) -> compileBody(internalClassName, funcId, type, body, asm));
+                    methodNameFor(funcId),
+                    methodTypeFor(type),
+                    asm -> compileBody(internalClassName, funcId, type, body, asm));
+        }
+
+        var types = module.typeSection().types();
+        for (int i = 0; i < types.length; i++) {
+            var typeId = i;
+            var type = types[i];
+            if (type.returns().size() > 1) {
+                continue;
+            }
+            emitFunction(
+                    classWriter,
+                    callIndirectMethodName(typeId),
+                    callIndirectMethodType(type),
+                    asm -> compileCallIndirect(asm, typeId, type));
         }
 
         classWriter.visitEnd();
@@ -604,21 +629,21 @@ public final class AotMachine implements Machine {
         return loadClass(className, classWriter.toByteArray());
     }
 
-    private void emitFunction(
-            int funcId,
+    private static void emitFunction(
             ClassVisitor classWriter,
-            BiConsumer<FunctionType, MethodVisitor> consumer) {
-        var type = functionTypes.get(funcId);
+            String methodName,
+            MethodType methodType,
+            Consumer<MethodVisitor> consumer) {
         var methodWriter =
                 classWriter.visitMethod(
                         Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-                        methodNameFor(funcId),
-                        methodTypeFor(type).toMethodDescriptorString(),
+                        methodName,
+                        methodType.toMethodDescriptorString(),
                         null,
                         null);
 
         methodWriter.visitCode();
-        consumer.accept(type, methodWriter);
+        consumer.accept(methodWriter);
         methodWriter.visitMaxs(0, 0);
         methodWriter.visitEnd();
     }
@@ -696,6 +721,26 @@ public final class AotMachine implements Machine {
         }
     }
 
+    private static void compileCallIndirect(MethodVisitor asm, int typeId, FunctionType type) {
+        List<Integer> slots = new ArrayList<>();
+        int slot = 0;
+        for (ValueType param : type.params()) {
+            slots.add(slot);
+            slot += slotCount(param);
+        }
+
+        // parameters: arguments, funcTableIdx, tableIdx, instance
+        emitBoxArguments(type, asm, slots);
+        asm.visitLdcInsn(typeId);
+        asm.visitVarInsn(Opcodes.ILOAD, slot); // funcTableIdx
+        asm.visitVarInsn(Opcodes.ILOAD, slot + 1); // tableIdx
+        asm.visitVarInsn(Opcodes.ALOAD, slot + 2); // instance
+
+        emitInvokeStatic(asm, AotMethods.CALL_INDIRECT);
+
+        emitUnboxResult(type, asm);
+    }
+
     private static void compileHostFunction(int funcId, FunctionType type, MethodVisitor asm) {
         List<Integer> slots = new ArrayList<>();
         int slot = 0;
@@ -704,9 +749,17 @@ public final class AotMachine implements Machine {
             slot += slotCount(param);
         }
 
-        asm.visitVarInsn(Opcodes.ALOAD, slot + 1);
+        asm.visitVarInsn(Opcodes.ALOAD, slot + 1); // instance
         asm.visitLdcInsn(funcId);
+        emitBoxArguments(type, asm, slots);
 
+        emitInvokeVirtual(asm, INSTANCE_CALL_HOST_FUNCTION);
+
+        emitUnboxResult(type, asm);
+    }
+
+    private static void emitBoxArguments(
+            FunctionType type, MethodVisitor asm, List<Integer> slots) {
         // box the arguments into Value[]
         asm.visitLdcInsn(type.params().size());
         asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(Value.class));
@@ -718,9 +771,9 @@ public final class AotMachine implements Machine {
             emitInvokeStatic(asm, boxer(valueType));
             asm.visitInsn(Opcodes.AASTORE);
         }
+    }
 
-        emitInvokeVirtual(asm, INSTANCE_CALL_HOST_FUNCTION);
-
+    private static void emitUnboxResult(FunctionType type, MethodVisitor asm) {
         Class<?> returnType = jvmReturnType(type);
         if (returnType == void.class) {
             asm.visitInsn(Opcodes.RETURN);
@@ -740,7 +793,15 @@ public final class AotMachine implements Machine {
             FunctionBody body,
             MethodVisitor asm) {
 
-        var ctx = new AotContext(internalClassName, globalTypes, functionTypes, funcId, type, body);
+        var ctx =
+                new AotContext(
+                        internalClassName,
+                        globalTypes,
+                        functionTypes,
+                        module.typeSection().types(),
+                        funcId,
+                        type,
+                        body);
 
         // initialize local variables to their default values
         int localsCount = type.params().size() + body.localTypes().size();

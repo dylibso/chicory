@@ -33,7 +33,10 @@ import static com.dylibso.chicory.aot.AotMethods.TABLE_SIZE;
 import static com.dylibso.chicory.aot.AotMethods.THROW_OUT_OF_BOUNDS_MEMORY_ACCESS;
 import static com.dylibso.chicory.aot.AotMethods.THROW_TRAP_EXCEPTION;
 import static com.dylibso.chicory.aot.AotMethods.VALIDATE_BASE;
+import static com.dylibso.chicory.aot.AotUtil.StackSize;
 import static com.dylibso.chicory.aot.AotUtil.boxer;
+import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
+import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
 import static com.dylibso.chicory.aot.AotUtil.methodNameFor;
@@ -43,7 +46,6 @@ import static com.dylibso.chicory.aot.AotUtil.unboxer;
 import static com.dylibso.chicory.aot.AotUtil.validateArgumentType;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
-import com.dylibso.chicory.aot.AotUtil.StackSize;
 import com.dylibso.chicory.runtime.OpCodeIdentifier;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
@@ -134,6 +136,33 @@ final class AotEmitters {
                 methodType.toMethodDescriptorString(),
                 false);
 
+        updateStackSize(ctx, functionType, methodType);
+    }
+
+    public static void CALL_INDIRECT(AotContext ctx, Instruction ins, MethodVisitor asm) {
+        int typeId = (int) ins.operands()[0];
+        int tableIdx = (int) ins.operands()[1];
+        FunctionType functionType = ctx.types()[typeId];
+
+        MethodType methodType = callIndirectMethodType(functionType);
+
+        asm.visitLdcInsn(tableIdx);
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        // stack: arguments, funcTableIdx, tableIdx, instance
+
+        asm.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                ctx.internalClassName(),
+                callIndirectMethodName(typeId),
+                methodType.toMethodDescriptorString(),
+                false);
+
+        ctx.popStackSize();
+        updateStackSize(ctx, functionType, methodType);
+    }
+
+    private static void updateStackSize(
+            AotContext ctx, FunctionType functionType, MethodType methodType) {
         for (int i = 0; i < functionType.params().size(); i++) {
             ctx.popStackSize();
         }
@@ -803,6 +832,7 @@ final class AotEmitters {
             case SELECT:
             case SELECT_T:
             case CALL:
+            case CALL_INDIRECT:
             case LOCAL_GET:
             case GLOBAL_GET:
                 // handled in the opcode implementation

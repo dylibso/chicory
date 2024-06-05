@@ -1,14 +1,17 @@
 package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpcodeImpl;
+import com.dylibso.chicory.runtime.TableInstance;
 import com.dylibso.chicory.runtime.TrapException;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.Element;
+import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Value;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -16,6 +19,7 @@ import java.util.List;
 public final class AotMethods {
 
     static final Method CHECK_INTERRUPTION;
+    static final Method CALL_INDIRECT;
     static final Method INSTANCE_CALL_HOST_FUNCTION;
     static final Method INSTANCE_READ_GLOBAL;
     static final Method INSTANCE_WRITE_GLOBAL;
@@ -53,6 +57,14 @@ public final class AotMethods {
     static {
         try {
             CHECK_INTERRUPTION = AotMethods.class.getMethod("checkInterruption");
+            CALL_INDIRECT =
+                    AotMethods.class.getMethod(
+                            "callIndirect",
+                            Value[].class,
+                            int.class,
+                            int.class,
+                            int.class,
+                            Instance.class);
             INSTANCE_CALL_HOST_FUNCTION =
                     Instance.class.getMethod("callHostFunction", int.class, Value[].class);
             INSTANCE_READ_GLOBAL = Instance.class.getMethod("readGlobal", int.class);
@@ -132,6 +144,28 @@ public final class AotMethods {
     }
 
     private AotMethods() {}
+
+    @UsedByGeneratedCode
+    public static Value[] callIndirect(
+            Value[] args, int typeId, int funcTableIdx, int tableIdx, Instance instance) {
+        TableInstance table = instance.table(tableIdx);
+
+        instance = requireNonNullElse(table.instance(funcTableIdx), instance);
+
+        int funcId = table.ref(funcTableIdx).asFuncRef();
+        if (funcId == REF_NULL_VALUE) {
+            throw new ChicoryException("uninitialized element " + funcTableIdx);
+        }
+
+        FunctionType expectedType = instance.type(typeId);
+        FunctionType actualType = instance.type(instance.functionType(funcId));
+        if (!actualType.typesMatch(expectedType)) {
+            throw new ChicoryException("indirect call type mismatch");
+        }
+
+        checkInterruption();
+        return instance.getMachine().call(funcId, args);
+    }
 
     @UsedByGeneratedCode
     public static boolean isRefNull(int ref) {
