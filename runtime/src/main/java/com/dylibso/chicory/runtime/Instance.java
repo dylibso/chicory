@@ -319,11 +319,10 @@ public class Instance {
         return module;
     }
 
-    public int importedTableCount() {
-        return importedTablesOffset;
-    }
-
     public TableInstance table(int idx) {
+        if (idx < 0 || idx >= (tables.length + importedTablesOffset)) {
+            throw new InvalidException("unknown table " + idx);
+        }
         if (idx < importedTablesOffset) {
             return imports.table(idx).table();
         }

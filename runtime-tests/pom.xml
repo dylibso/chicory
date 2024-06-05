@@ -146,6 +146,10 @@
             <test>SpecV1LinkingTest.test118</test>
             <test>SpecV1LinkingTest.test121</test>
             <test>SpecV1LinkingTest.test122</test>
+            <test>SpecV1TableInitTest.test193</test>
+            <test>SpecV1TableInitTest.test194</test>
+            <test>SpecV1TableInitTest.test195</test>
+            <test>SpecV1TableInitTest.test196</test>
           </excludedTests>
           <excludedMalformedWasts>
             <wast>binary-leb128.wast</wast>
@@ -185,14 +189,6 @@
             <wast>store.wast</wast>
             <wast>switch.wast</wast>
             <wast>table-sub.wast</wast>
-            <wast>table.wast</wast>
-            <wast>table_copy.wast</wast>
-            <wast>table_fill.wast</wast>
-            <wast>table_get.wast</wast>
-            <wast>table_grow.wast</wast>
-            <wast>table_init.wast</wast>
-            <wast>table_set.wast</wast>
-            <wast>table_size.wast</wast>
             <wast>unreachable.wast</wast>
             <wast>unreached-invalid.wast</wast>
             <wast>unreached-valid.wast</wast>

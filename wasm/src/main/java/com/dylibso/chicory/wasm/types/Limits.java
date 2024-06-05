@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.exceptions.InvalidException;
+
 public class Limits {
     public static final long LIMIT_MAX = 0x1_0000_0000L;
 
@@ -13,6 +15,9 @@ public class Limits {
     }
 
     public Limits(long min, long max) {
+        if (min > max) {
+            throw new InvalidException("size minimum must not be greater than maximum");
+        }
         this.min = Math.min(Math.max(0, min), LIMIT_MAX);
         this.max = Math.min(Math.max(min, max), LIMIT_MAX);
     }

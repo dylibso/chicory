@@ -269,6 +269,12 @@ public class TypeValidator {
                             var restoreStack = pop(prevStack);
 
                             validateReturns(expected, restoreStack.size());
+                            if (returns.isEmpty()
+                                    && expected.isEmpty()
+                                    && !valueTypeStack.isEmpty()) {
+                                throw new InvalidException(
+                                        "type mismatch, leftovers on the stack after last end");
+                            }
 
                             valueTypeStack = restoreStack;
                             // need to push on the stack the results
@@ -379,6 +385,7 @@ public class TypeValidator {
                     }
                 case I32_CONST:
                 case MEMORY_SIZE:
+                case TABLE_SIZE:
                     {
                         push(valueTypeStack, ValueType.I32);
                         break;
@@ -760,6 +767,11 @@ public class TypeValidator {
                         push(valueTypeStack, ValueType.I32);
                         break;
                     }
+                case REF_FUNC:
+                    {
+                        push(valueTypeStack, ValueType.FuncRef);
+                        break;
+                    }
                 case SELECT:
                     {
                         popAndVerifyType(ValueType.I32);
@@ -785,10 +797,42 @@ public class TypeValidator {
                 case MEMORY_COPY:
                 case MEMORY_FILL:
                 case MEMORY_INIT:
+                case TABLE_COPY:
+                case TABLE_INIT:
                     {
                         popAndVerifyType(ValueType.I32);
                         popAndVerifyType(ValueType.I32);
                         popAndVerifyType(ValueType.I32);
+                        break;
+                    }
+                case TABLE_FILL:
+                    {
+                        popAndVerifyType(ValueType.I32);
+                        popAndVerifyType(instance.table((int) op.operands()[0]).elementType());
+                        popAndVerifyType(ValueType.I32);
+                        break;
+                    }
+                case TABLE_GET:
+                    {
+                        popAndVerifyType(ValueType.I32);
+                        push(valueTypeStack, instance.table((int) op.operands()[0]).elementType());
+                        break;
+                    }
+                case TABLE_SET:
+                    {
+                        popAndVerifyType(instance.table((int) op.operands()[0]).elementType());
+                        popAndVerifyType(ValueType.I32);
+                        break;
+                    }
+                case TABLE_GROW:
+                    {
+                        popAndVerifyType(ValueType.I32);
+                        popAndVerifyType(instance.table((int) op.operands()[0]).elementType());
+                        push(valueTypeStack, ValueType.I32);
+                        break;
+                    }
+                case ELEM_DROP:
+                    {
                         break;
                     }
                 default:
