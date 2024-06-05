@@ -268,6 +268,8 @@ public class TypeValidator {
                             var expected = pop(returns);
                             var restoreStack = pop(prevStack);
 
+                            validateReturns(expected, restoreStack.size());
+
                             valueTypeStack = restoreStack;
                             // need to push on the stack the results
                             for (var ret : expected) {
