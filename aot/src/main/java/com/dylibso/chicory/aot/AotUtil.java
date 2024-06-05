@@ -1,6 +1,7 @@
 package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+import static java.lang.invoke.MethodType.methodType;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 
@@ -13,7 +14,6 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.stream.Stream;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -138,14 +138,21 @@ final class AotUtil {
         }
     }
 
+    public static MethodType callIndirectMethodType(FunctionType functionType) {
+        return rawMethodTypeFor(functionType)
+                .appendParameterTypes(int.class, int.class, Instance.class);
+    }
+
     public static MethodType methodTypeFor(FunctionType type) {
-        return MethodType.methodType(jvmReturnType(type), jvmParameterTypes(type));
+        return rawMethodTypeFor(type).appendParameterTypes(Memory.class, Instance.class);
+    }
+
+    public static MethodType rawMethodTypeFor(FunctionType type) {
+        return methodType(jvmReturnType(type), jvmParameterTypes(type));
     }
 
     public static Class<?>[] jvmParameterTypes(FunctionType type) {
-        var args = type.params().stream().map(AotUtil::jvmType);
-        var extra = Stream.of(Memory.class, Instance.class);
-        return Stream.concat(args, extra).toArray(Class[]::new);
+        return type.params().stream().map(AotUtil::jvmType).toArray(Class[]::new);
     }
 
     public static Class<?> jvmReturnType(FunctionType type) {
@@ -229,5 +236,9 @@ final class AotUtil {
 
     public static String methodNameFor(int funcId) {
         return "func_" + funcId;
+    }
+
+    public static String callIndirectMethodName(int typeId) {
+        return "call_indirect_" + typeId;
     }
 }
