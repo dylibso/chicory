@@ -54,11 +54,13 @@ import com.dylibso.chicory.runtime.OpCodeIdentifier;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.ValueType;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -140,7 +142,11 @@ final class AotEmitters {
                 methodType.toMethodDescriptorString(),
                 false);
 
-        updateStackSize(ctx, functionType, methodType);
+        if (functionType.returns().size() > 1) {
+            emitUnboxResult(asm, ctx, functionType.returns());
+        }
+
+        updateStackSize(ctx, functionType);
     }
 
     public static void CALL_INDIRECT(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -161,17 +167,20 @@ final class AotEmitters {
                 methodType.toMethodDescriptorString(),
                 false);
 
+        if (functionType.returns().size() > 1) {
+            emitUnboxResult(asm, ctx, functionType.returns());
+        }
+
         ctx.popStackSize();
-        updateStackSize(ctx, functionType, methodType);
+        updateStackSize(ctx, functionType);
     }
 
-    private static void updateStackSize(
-            AotContext ctx, FunctionType functionType, MethodType methodType) {
+    private static void updateStackSize(AotContext ctx, FunctionType functionType) {
         for (int i = 0; i < functionType.params().size(); i++) {
             ctx.popStackSize();
         }
-        if (methodType.returnType() != void.class) {
-            ctx.pushStackSize(stackSize(methodType.returnType()));
+        for (ValueType type : functionType.returns()) {
+            ctx.pushStackSize(stackSize(jvmType(type)));
         }
     }
 
@@ -799,6 +808,17 @@ final class AotEmitters {
                 break;
             default:
                 throw new IllegalArgumentException("Unhandled opcode: " + opCode);
+        }
+    }
+
+    private static void emitUnboxResult(MethodVisitor asm, AotContext ctx, List<ValueType> types) {
+        asm.visitVarInsn(Opcodes.ASTORE, ctx.tempSlot());
+        for (int i = 0; i < types.size(); i++) {
+            ValueType type = types.get(i);
+            asm.visitVarInsn(Opcodes.ALOAD, ctx.tempSlot());
+            asm.visitLdcInsn(i);
+            asm.visitInsn(Opcodes.AALOAD);
+            emitInvokeVirtual(asm, unboxer(type));
         }
     }
 

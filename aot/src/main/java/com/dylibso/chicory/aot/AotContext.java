@@ -26,6 +26,7 @@ final class AotContext {
     private final List<Integer> slots;
     private final int memorySlot;
     private final int instanceSlot;
+    private final int tempSlot;
     private final Deque<StackSize> stackSizes = new ArrayDeque<>();
 
     public AotContext(
@@ -67,6 +68,7 @@ final class AotContext {
         }
 
         this.slots = List.copyOf(slots);
+        this.tempSlot = slot;
     }
 
     public String internalClassName() {
@@ -107,6 +109,10 @@ final class AotContext {
 
     public int instanceSlot() {
         return instanceSlot;
+    }
+
+    public int tempSlot() {
+        return tempSlot;
     }
 
     public Deque<StackSize> stackSizes() {

@@ -1,6 +1,7 @@
 package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
@@ -11,9 +12,11 @@ import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.List;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -155,6 +158,22 @@ final class AotUtil {
         }
     }
 
+    public static MethodHandle unboxerHandle(ValueType type) {
+        try {
+            return publicLookup().unreflect(unboxer(type));
+        } catch (IllegalAccessException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    public static MethodHandle boxerHandle(ValueType type) {
+        try {
+            return publicLookup().unreflect(boxer(type));
+        } catch (IllegalAccessException e) {
+            throw new AssertionError(e);
+        }
+    }
+
     public static MethodType callIndirectMethodType(FunctionType functionType) {
         return rawMethodTypeFor(functionType)
                 .appendParameterTypes(int.class, int.class, Instance.class);
@@ -168,18 +187,23 @@ final class AotUtil {
         return methodType(jvmReturnType(type), jvmParameterTypes(type));
     }
 
+    public static Class<?>[] jvmTypes(List<ValueType> types) {
+        return types.stream().map(AotUtil::jvmType).toArray(Class[]::new);
+    }
+
     public static Class<?>[] jvmParameterTypes(FunctionType type) {
-        return type.params().stream().map(AotUtil::jvmType).toArray(Class[]::new);
+        return jvmTypes(type.params());
     }
 
     public static Class<?> jvmReturnType(FunctionType type) {
-        if (type.returns().size() == 0) {
-            return void.class;
-        } else if (type.returns().size() == 1) {
-            return jvmType(type.returns().get(0));
+        switch (type.returns().size()) {
+            case 0:
+                return void.class;
+            case 1:
+                return jvmType(type.returns().get(0));
+            default:
+                return Value[].class;
         }
-        // TODO
-        throw new IllegalArgumentException("Multi-returns are not currently supported");
     }
 
     public static Object defaultValue(ValueType type) {
