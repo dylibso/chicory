@@ -64,9 +64,9 @@ final class AotEmitters {
 
     private AotEmitters() {}
 
-    public static class Builder {
+    static class Builder {
 
-        protected final Map<OpCode, BytecodeEmitter> emitters = new EnumMap<>(OpCode.class);
+        private final Map<OpCode, BytecodeEmitter> emitters = new EnumMap<>(OpCode.class);
 
         public Builder intrinsic(OpCode opCode, BytecodeEmitter emitter) {
             BytecodeEmitter wrapped =
