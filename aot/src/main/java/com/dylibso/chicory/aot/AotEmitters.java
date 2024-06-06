@@ -39,9 +39,13 @@ import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
+import static com.dylibso.chicory.aot.AotUtil.jvmType;
+import static com.dylibso.chicory.aot.AotUtil.loadTypeOpcode;
+import static com.dylibso.chicory.aot.AotUtil.localType;
 import static com.dylibso.chicory.aot.AotUtil.methodNameFor;
 import static com.dylibso.chicory.aot.AotUtil.methodTypeFor;
 import static com.dylibso.chicory.aot.AotUtil.stackSize;
+import static com.dylibso.chicory.aot.AotUtil.storeTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.unboxer;
 import static com.dylibso.chicory.aot.AotUtil.validateArgumentType;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
@@ -185,59 +189,15 @@ final class AotEmitters {
 
     public static void LOCAL_GET(AotContext ctx, Instruction ins, MethodVisitor asm) {
         var loadIndex = (int) ins.operands()[0];
-        var localType = AotUtil.localType(ctx.getType(), ctx.getBody(), loadIndex);
-        int opcode;
-        switch (localType) {
-            case I32:
-            case ExternRef:
-            case FuncRef:
-                opcode = Opcodes.ILOAD;
-                ctx.pushStackSize(StackSize.ONE);
-                break;
-            case I64:
-                opcode = Opcodes.LLOAD;
-                ctx.pushStackSize(StackSize.TWO);
-                break;
-            case F32:
-                opcode = Opcodes.FLOAD;
-                ctx.pushStackSize(StackSize.ONE);
-                break;
-            case F64:
-                opcode = Opcodes.DLOAD;
-                ctx.pushStackSize(StackSize.TWO);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported load target type: " + localType);
-        }
-        asm.visitVarInsn(opcode, ctx.localSlotIndex(loadIndex));
+        var localType = localType(ctx.getType(), ctx.getBody(), loadIndex);
+        asm.visitVarInsn(loadTypeOpcode(localType), ctx.localSlotIndex(loadIndex));
+        ctx.pushStackSize(stackSize(jvmType(localType)));
     }
 
     public static void LOCAL_SET(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitLocalStore(ctx, asm, (int) ins.operands()[0]);
-    }
-
-    public static void emitLocalStore(AotContext ctx, MethodVisitor asm, int storeIndex) {
-        var localType = AotUtil.localType(ctx.getType(), ctx.getBody(), storeIndex);
-        int opcode;
-        switch (localType) {
-            case I32:
-            case ExternRef:
-            case FuncRef:
-                opcode = Opcodes.ISTORE;
-                break;
-            case I64:
-                opcode = Opcodes.LSTORE;
-                break;
-            case F32:
-                opcode = Opcodes.FSTORE;
-                break;
-            case F64:
-                opcode = Opcodes.DSTORE;
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported store target type: " + localType);
-        }
-        asm.visitVarInsn(opcode, ctx.localSlotIndex(storeIndex));
+        int index = (int) ins.operands()[0];
+        var localType = localType(ctx.getType(), ctx.getBody(), index);
+        asm.visitVarInsn(storeTypeOpcode(localType), ctx.localSlotIndex(index));
     }
 
     public static void LOCAL_TEE(AotContext ctx, Instruction ins, MethodVisitor asm) {

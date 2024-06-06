@@ -92,6 +92,23 @@ final class AotUtil {
         }
     }
 
+    public static int storeTypeOpcode(ValueType type) {
+        switch (type) {
+            case I32:
+            case ExternRef:
+            case FuncRef:
+                return Opcodes.ISTORE;
+            case I64:
+                return Opcodes.LSTORE;
+            case F32:
+                return Opcodes.FSTORE;
+            case F64:
+                return Opcodes.DSTORE;
+            default:
+                throw new IllegalArgumentException("Unsupported type: " + type);
+        }
+    }
+
     public static ValueType localType(FunctionType type, FunctionBody body, int localIndex) {
         if (localIndex < type.params().size()) {
             return type.params().get(localIndex);
