@@ -1,6 +1,5 @@
 package com.dylibso.chicory.aot;
 
-import static com.dylibso.chicory.aot.AotEmitters.emitLocalStore;
 import static com.dylibso.chicory.aot.AotEmitters.emitThrowTrapException;
 import static com.dylibso.chicory.aot.AotMethods.INSTANCE_CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.aot.AotUtil.boxer;
@@ -15,6 +14,7 @@ import static com.dylibso.chicory.aot.AotUtil.localType;
 import static com.dylibso.chicory.aot.AotUtil.methodNameFor;
 import static com.dylibso.chicory.aot.AotUtil.methodTypeFor;
 import static com.dylibso.chicory.aot.AotUtil.slotCount;
+import static com.dylibso.chicory.aot.AotUtil.storeTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.unboxer;
 import static com.dylibso.chicory.wasm.types.OpCode.CALL;
 import static com.dylibso.chicory.wasm.types.OpCode.CALL_INDIRECT;
@@ -806,8 +806,9 @@ public final class AotMachine implements Machine {
         // initialize local variables to their default values
         int localsCount = type.params().size() + body.localTypes().size();
         for (int i = type.params().size(); i < localsCount; i++) {
-            asm.visitLdcInsn(defaultValue(localType(type, body, i)));
-            emitLocalStore(ctx, asm, i);
+            var localType = localType(type, body, i);
+            asm.visitLdcInsn(defaultValue(localType));
+            asm.visitVarInsn(storeTypeOpcode(localType), ctx.localSlotIndex(i));
         }
 
         // compile the function body
