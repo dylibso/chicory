@@ -63,6 +63,8 @@
             <wast>conversions.wast</wast>
             <wast>custom.wast</wast>
             <wast>data.wast</wast>
+            <wast>elem.wast</wast>
+            <wast>endianness.wast</wast>
             <wast>exports.wast</wast>
             <wast>f32.wast</wast>
             <wast>f32_bitwise.wast</wast>
@@ -80,6 +82,7 @@
             <wast>inline-module.wast</wast>
             <wast>int_exprs.wast</wast>
             <wast>int_literals.wast</wast>
+            <wast>linking.wast</wast>
             <wast>memory_redundancy.wast</wast>
             <wast>memory_size.wast</wast>
             <wast>memory_trap.wast</wast>
@@ -89,6 +92,7 @@
             <wast>ref_null.wast</wast>
             <wast>start.wast</wast>
             <wast>table.wast</wast>
+            <wast>table_copy.wast</wast>
             <wast>table_fill.wast</wast>
             <wast>table_get.wast</wast>
             <wast>table_set.wast</wast>
@@ -125,6 +129,7 @@
             <wast>call_indirect.wast</wast>
             <wast>conversions.wast</wast>
             <wast>data.wast</wast>
+            <wast>elem.wast</wast>
             <wast>endianness.wast</wast>
             <wast>exports.wast</wast>
             <wast>f32.wast</wast>
@@ -181,7 +186,6 @@
             <wast>br_table.wast</wast>
             <wast>call.wast</wast>
             <wast>call_indirect.wast</wast>
-            <wast>elem.wast</wast>
             <wast>fac.wast</wast>
             <wast>float_exprs.wast</wast>
             <wast>forward.wast</wast>
@@ -190,7 +194,6 @@
             <wast>if.wast</wast>
             <wast>labels.wast</wast>
             <wast>left-to-right.wast</wast>
-            <wast>linking.wast</wast>
             <wast>load.wast</wast>
             <wast>local_get.wast</wast>
             <wast>local_set.wast</wast>
