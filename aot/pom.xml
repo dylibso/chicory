@@ -84,6 +84,7 @@
             <wast>memory_size.wast</wast>
             <wast>memory_trap.wast</wast>
             <wast>names.wast</wast>
+            <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
             <wast>ref_null.wast</wast>
             <wast>start.wast</wast>
@@ -162,6 +163,7 @@
             <wast>switch.wast</wast>
             <wast>table-sub.wast</wast>
             <wast>table.wast</wast>
+            <wast>table_copy.wast</wast>
             <wast>table_fill.wast</wast>
             <wast>table_get.wast</wast>
             <wast>table_grow.wast</wast>
@@ -200,7 +202,6 @@
             <wast>memory_grow.wast</wast>
             <wast>memory_init.wast</wast>
             <wast>nop.wast</wast>
-            <wast>ref_func.wast</wast>
             <wast>return.wast</wast>
             <wast>select.wast</wast>
 
@@ -269,7 +270,6 @@
             <wast>store.wast</wast>
             <wast>switch.wast</wast>
             <wast>table-sub.wast</wast>
-            <wast>table_copy.wast</wast>
             <wast>table_grow.wast</wast>
             <wast>table_init.wast</wast>
             <wast>tokens.wast</wast>
