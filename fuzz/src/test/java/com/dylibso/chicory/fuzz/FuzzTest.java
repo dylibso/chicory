@@ -55,8 +55,8 @@ public class FuzzTest extends TestModule {
         var targetWasm =
                 generateTestData(
                         "numeric-", repetitionInfo.getCurrentRepetition(), InstructionType.NUMERIC);
-        var module = Module.builder(targetWasm).build();
-        var instance = module.withInitialize(true).withStart(false).instantiate();
+        var module = Module.builder(targetWasm).withInitialize(true).withStart(false).build();
+        var instance = module.instantiate();
 
         var results = testModule(targetWasm, module, instance);
 
@@ -72,8 +72,8 @@ public class FuzzTest extends TestModule {
         var targetWasm =
                 generateTestData(
                         "table-", repetitionInfo.getCurrentRepetition(), InstructionType.TABLE);
-        var module = Module.builder(targetWasm).build();
-        var instance = module.withInitialize(true).withStart(false).instantiate();
+        var module = Module.builder(targetWasm).withInitialize(true).withStart(false).build();
+        var instance = module.instantiate();
 
         var results = testModule(targetWasm, module, instance);
 
