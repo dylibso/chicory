@@ -39,9 +39,13 @@ import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
+import static com.dylibso.chicory.aot.AotUtil.jvmType;
+import static com.dylibso.chicory.aot.AotUtil.loadTypeOpcode;
+import static com.dylibso.chicory.aot.AotUtil.localType;
 import static com.dylibso.chicory.aot.AotUtil.methodNameFor;
 import static com.dylibso.chicory.aot.AotUtil.methodTypeFor;
 import static com.dylibso.chicory.aot.AotUtil.stackSize;
+import static com.dylibso.chicory.aot.AotUtil.storeTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.unboxer;
 import static com.dylibso.chicory.aot.AotUtil.validateArgumentType;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
@@ -50,11 +54,13 @@ import com.dylibso.chicory.runtime.OpCodeIdentifier;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.ValueType;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -64,9 +70,9 @@ final class AotEmitters {
 
     private AotEmitters() {}
 
-    public static class Builder {
+    static class Builder {
 
-        protected final Map<OpCode, BytecodeEmitter> emitters = new EnumMap<>(OpCode.class);
+        private final Map<OpCode, BytecodeEmitter> emitters = new EnumMap<>(OpCode.class);
 
         public Builder intrinsic(OpCode opCode, BytecodeEmitter emitter) {
             BytecodeEmitter wrapped =
@@ -136,7 +142,11 @@ final class AotEmitters {
                 methodType.toMethodDescriptorString(),
                 false);
 
-        updateStackSize(ctx, functionType, methodType);
+        if (functionType.returns().size() > 1) {
+            emitUnboxResult(asm, ctx, functionType.returns());
+        }
+
+        updateStackSize(ctx, functionType);
     }
 
     public static void CALL_INDIRECT(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -157,17 +167,20 @@ final class AotEmitters {
                 methodType.toMethodDescriptorString(),
                 false);
 
+        if (functionType.returns().size() > 1) {
+            emitUnboxResult(asm, ctx, functionType.returns());
+        }
+
         ctx.popStackSize();
-        updateStackSize(ctx, functionType, methodType);
+        updateStackSize(ctx, functionType);
     }
 
-    private static void updateStackSize(
-            AotContext ctx, FunctionType functionType, MethodType methodType) {
+    private static void updateStackSize(AotContext ctx, FunctionType functionType) {
         for (int i = 0; i < functionType.params().size(); i++) {
             ctx.popStackSize();
         }
-        if (methodType.returnType() != void.class) {
-            ctx.pushStackSize(stackSize(methodType.returnType()));
+        for (ValueType type : functionType.returns()) {
+            ctx.pushStackSize(stackSize(jvmType(type)));
         }
     }
 
@@ -185,59 +198,15 @@ final class AotEmitters {
 
     public static void LOCAL_GET(AotContext ctx, Instruction ins, MethodVisitor asm) {
         var loadIndex = (int) ins.operands()[0];
-        var localType = AotUtil.localType(ctx.getType(), ctx.getBody(), loadIndex);
-        int opcode;
-        switch (localType) {
-            case I32:
-            case ExternRef:
-            case FuncRef:
-                opcode = Opcodes.ILOAD;
-                ctx.pushStackSize(StackSize.ONE);
-                break;
-            case I64:
-                opcode = Opcodes.LLOAD;
-                ctx.pushStackSize(StackSize.TWO);
-                break;
-            case F32:
-                opcode = Opcodes.FLOAD;
-                ctx.pushStackSize(StackSize.ONE);
-                break;
-            case F64:
-                opcode = Opcodes.DLOAD;
-                ctx.pushStackSize(StackSize.TWO);
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported load target type: " + localType);
-        }
-        asm.visitVarInsn(opcode, ctx.localSlotIndex(loadIndex));
+        var localType = localType(ctx.getType(), ctx.getBody(), loadIndex);
+        asm.visitVarInsn(loadTypeOpcode(localType), ctx.localSlotIndex(loadIndex));
+        ctx.pushStackSize(stackSize(jvmType(localType)));
     }
 
     public static void LOCAL_SET(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitLocalStore(ctx, asm, (int) ins.operands()[0]);
-    }
-
-    public static void emitLocalStore(AotContext ctx, MethodVisitor asm, int storeIndex) {
-        var localType = AotUtil.localType(ctx.getType(), ctx.getBody(), storeIndex);
-        int opcode;
-        switch (localType) {
-            case I32:
-            case ExternRef:
-            case FuncRef:
-                opcode = Opcodes.ISTORE;
-                break;
-            case I64:
-                opcode = Opcodes.LSTORE;
-                break;
-            case F32:
-                opcode = Opcodes.FSTORE;
-                break;
-            case F64:
-                opcode = Opcodes.DSTORE;
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported store target type: " + localType);
-        }
-        asm.visitVarInsn(opcode, ctx.localSlotIndex(storeIndex));
+        int index = (int) ins.operands()[0];
+        var localType = localType(ctx.getType(), ctx.getBody(), index);
+        asm.visitVarInsn(storeTypeOpcode(localType), ctx.localSlotIndex(index));
     }
 
     public static void LOCAL_TEE(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -839,6 +808,17 @@ final class AotEmitters {
                 break;
             default:
                 throw new IllegalArgumentException("Unhandled opcode: " + opCode);
+        }
+    }
+
+    private static void emitUnboxResult(MethodVisitor asm, AotContext ctx, List<ValueType> types) {
+        asm.visitVarInsn(Opcodes.ASTORE, ctx.tempSlot());
+        for (int i = 0; i < types.size(); i++) {
+            ValueType type = types.get(i);
+            asm.visitVarInsn(Opcodes.ALOAD, ctx.tempSlot());
+            asm.visitLdcInsn(i);
+            asm.visitInsn(Opcodes.AALOAD);
+            emitInvokeVirtual(asm, unboxer(type));
         }
     }
 

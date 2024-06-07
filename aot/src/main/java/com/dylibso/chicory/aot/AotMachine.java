@@ -1,26 +1,222 @@
 package com.dylibso.chicory.aot;
 
-import static com.dylibso.chicory.aot.AotEmitters.emitLocalStore;
 import static com.dylibso.chicory.aot.AotEmitters.emitThrowTrapException;
 import static com.dylibso.chicory.aot.AotMethods.INSTANCE_CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.aot.AotUtil.boxer;
+import static com.dylibso.chicory.aot.AotUtil.boxerHandle;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
 import static com.dylibso.chicory.aot.AotUtil.defaultValue;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
 import static com.dylibso.chicory.aot.AotUtil.jvmReturnType;
+import static com.dylibso.chicory.aot.AotUtil.jvmTypes;
 import static com.dylibso.chicory.aot.AotUtil.loadTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.localType;
 import static com.dylibso.chicory.aot.AotUtil.methodNameFor;
 import static com.dylibso.chicory.aot.AotUtil.methodTypeFor;
 import static com.dylibso.chicory.aot.AotUtil.slotCount;
+import static com.dylibso.chicory.aot.AotUtil.storeTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.unboxer;
+import static com.dylibso.chicory.aot.AotUtil.unboxerHandle;
+import static com.dylibso.chicory.wasm.types.OpCode.CALL;
+import static com.dylibso.chicory.wasm.types.OpCode.CALL_INDIRECT;
+import static com.dylibso.chicory.wasm.types.OpCode.DATA_DROP;
+import static com.dylibso.chicory.wasm.types.OpCode.DROP;
+import static com.dylibso.chicory.wasm.types.OpCode.ELEM_DROP;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_ABS;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_ADD;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_CEIL;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_CONST;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_CONVERT_I32_S;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_CONVERT_I32_U;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_CONVERT_I64_S;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_CONVERT_I64_U;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_COPYSIGN;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_DEMOTE_F64;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_DIV;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_EQ;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_FLOOR;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_GE;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_GT;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_LE;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_LOAD;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_LT;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_MAX;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_MIN;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_MUL;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_NE;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_NEAREST;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_NEG;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_REINTERPRET_I32;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_SQRT;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_STORE;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_SUB;
+import static com.dylibso.chicory.wasm.types.OpCode.F32_TRUNC;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_ABS;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_ADD;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_CEIL;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_CONST;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_CONVERT_I32_S;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_CONVERT_I32_U;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_CONVERT_I64_S;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_CONVERT_I64_U;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_COPYSIGN;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_DIV;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_EQ;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_FLOOR;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_GE;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_GT;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_LE;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_LOAD;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_LT;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_MAX;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_MIN;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_MUL;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_NE;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_NEAREST;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_NEG;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_PROMOTE_F32;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_REINTERPRET_I64;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_SQRT;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_STORE;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_SUB;
+import static com.dylibso.chicory.wasm.types.OpCode.F64_TRUNC;
+import static com.dylibso.chicory.wasm.types.OpCode.GLOBAL_GET;
+import static com.dylibso.chicory.wasm.types.OpCode.GLOBAL_SET;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_ADD;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_AND;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_CLZ;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_CONST;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_CTZ;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_DIV_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_DIV_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_EQ;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_EQZ;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_EXTEND_16_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_EXTEND_8_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_GE_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_GE_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_GT_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_GT_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_LE_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_LE_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_LOAD;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_LOAD16_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_LOAD16_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_LOAD8_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_LOAD8_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_LT_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_LT_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_MUL;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_NE;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_OR;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_POPCNT;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_REINTERPRET_F32;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_REM_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_REM_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_ROTL;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_ROTR;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_SHL;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_SHR_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_SHR_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_STORE;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_STORE16;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_STORE8;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_SUB;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_TRUNC_F32_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_TRUNC_F32_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_TRUNC_F64_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_TRUNC_F64_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_TRUNC_SAT_F32_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_TRUNC_SAT_F32_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_TRUNC_SAT_F64_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_TRUNC_SAT_F64_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_WRAP_I64;
+import static com.dylibso.chicory.wasm.types.OpCode.I32_XOR;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_ADD;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_AND;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_CLZ;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_CONST;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_CTZ;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_DIV_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_DIV_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_EQ;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_EQZ;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_EXTEND_16_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_EXTEND_32_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_EXTEND_8_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_EXTEND_I32_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_EXTEND_I32_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_GE_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_GE_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_GT_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_GT_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_LE_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_LE_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_LOAD;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_LOAD16_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_LOAD16_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_LOAD32_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_LOAD32_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_LOAD8_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_LOAD8_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_LT_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_LT_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_MUL;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_NE;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_OR;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_POPCNT;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_REINTERPRET_F64;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_REM_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_REM_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_ROTL;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_ROTR;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_SHL;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_SHR_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_SHR_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_STORE;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_STORE16;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_STORE32;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_STORE8;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_SUB;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_TRUNC_F32_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_TRUNC_F32_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_TRUNC_F64_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_TRUNC_F64_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_TRUNC_SAT_F32_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_TRUNC_SAT_F32_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_TRUNC_SAT_F64_S;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_TRUNC_SAT_F64_U;
+import static com.dylibso.chicory.wasm.types.OpCode.I64_XOR;
+import static com.dylibso.chicory.wasm.types.OpCode.LOCAL_GET;
+import static com.dylibso.chicory.wasm.types.OpCode.LOCAL_SET;
+import static com.dylibso.chicory.wasm.types.OpCode.LOCAL_TEE;
+import static com.dylibso.chicory.wasm.types.OpCode.MEMORY_COPY;
+import static com.dylibso.chicory.wasm.types.OpCode.MEMORY_FILL;
+import static com.dylibso.chicory.wasm.types.OpCode.MEMORY_GROW;
+import static com.dylibso.chicory.wasm.types.OpCode.MEMORY_INIT;
+import static com.dylibso.chicory.wasm.types.OpCode.MEMORY_SIZE;
+import static com.dylibso.chicory.wasm.types.OpCode.REF_FUNC;
+import static com.dylibso.chicory.wasm.types.OpCode.REF_IS_NULL;
+import static com.dylibso.chicory.wasm.types.OpCode.REF_NULL;
+import static com.dylibso.chicory.wasm.types.OpCode.SELECT;
+import static com.dylibso.chicory.wasm.types.OpCode.SELECT_T;
+import static com.dylibso.chicory.wasm.types.OpCode.TABLE_COPY;
+import static com.dylibso.chicory.wasm.types.OpCode.TABLE_FILL;
+import static com.dylibso.chicory.wasm.types.OpCode.TABLE_GET;
+import static com.dylibso.chicory.wasm.types.OpCode.TABLE_GROW;
+import static com.dylibso.chicory.wasm.types.OpCode.TABLE_INIT;
+import static com.dylibso.chicory.wasm.types.OpCode.TABLE_SET;
+import static com.dylibso.chicory.wasm.types.OpCode.TABLE_SIZE;
 import static java.lang.invoke.MethodHandles.filterArguments;
 import static java.lang.invoke.MethodHandles.filterReturnValue;
 import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodHandles.publicLookup;
+import static java.lang.invoke.MethodType.methodType;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.objectweb.asm.Type.VOID_TYPE;
 import static org.objectweb.asm.Type.getInternalName;
@@ -49,6 +245,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
@@ -330,8 +527,7 @@ public final class AotMachine implements Machine {
     @Override
     public Value[] call(int funcId, Value[] args) throws ChicoryException {
         try {
-            Value result = (Value) compiledFunctions[funcId].invoke(args);
-            return new Value[] {result};
+            return (Value[]) compiledFunctions[funcId].invokeExact(args);
         } catch (ChicoryException e) {
             // propagate ChicoryExceptions
             throw e;
@@ -420,18 +616,31 @@ public final class AotMachine implements Machine {
                     asm -> compileBody(internalClassName, funcId, type, body, asm));
         }
 
-        var types = module.typeSection().types();
-        for (int i = 0; i < types.length; i++) {
+        var allTypes = module.typeSection().types();
+        for (int i = 0; i < allTypes.length; i++) {
             var typeId = i;
-            var type = types[i];
-            if (type.returns().size() > 1) {
-                continue;
-            }
+            var type = allTypes[i];
             emitFunction(
                     classWriter,
                     callIndirectMethodName(typeId),
                     callIndirectMethodType(type),
                     asm -> compileCallIndirect(asm, typeId, type));
+        }
+
+        var returnTypes =
+                functionTypes.stream()
+                        .map(FunctionType::returns)
+                        .filter(types -> types.size() > 1)
+                        .collect(toSet());
+        for (var types : returnTypes) {
+            emitFunction(
+                    classWriter,
+                    valueMethodName(types),
+                    valueMethodType(types),
+                    asm -> {
+                        emitBoxArguments(asm, types);
+                        asm.visitInsn(Opcodes.ARETURN);
+                    });
         }
 
         classWriter.visitEnd();
@@ -482,19 +691,23 @@ public final class AotMachine implements Machine {
         }
     }
 
-    private static MethodHandle adaptSignature(FunctionType type, MethodHandle handle)
-            throws IllegalAccessException {
+    private static MethodHandle adaptSignature(FunctionType type, MethodHandle handle) {
         var argTypes = type.params();
         var argHandlers = new MethodHandle[type.params().size()];
         for (int i = 0; i < argHandlers.length; i++) {
-            argHandlers[i] = publicLookup().unreflect(unboxer(argTypes.get(i)));
+            argHandlers[i] = unboxerHandle(argTypes.get(i));
         }
         MethodHandle result = filterArguments(handle, 0, argHandlers);
         result = result.asSpreader(Value[].class, argTypes.size());
+
         if (type.returns().isEmpty()) {
+            return result.asType(result.type().changeReturnType(Value[].class));
+        }
+        if (type.returns().size() > 1) {
             return result;
         }
-        return filterReturnValue(result, publicLookup().unreflect(boxer(type.returns().get(0))));
+        result = filterReturnValue(result, boxerHandle(type.returns().get(0)));
+        return filterReturnValue(result, ValueWrapper.HANDLE);
     }
 
     private static void emitConstructor(ClassVisitor writer) {
@@ -532,15 +745,10 @@ public final class AotMachine implements Machine {
     }
 
     private static void compileCallIndirect(MethodVisitor asm, int typeId, FunctionType type) {
-        List<Integer> slots = new ArrayList<>();
-        int slot = 0;
-        for (ValueType param : type.params()) {
-            slots.add(slot);
-            slot += slotCount(param);
-        }
+        int slot = type.params().stream().mapToInt(AotUtil::slotCount).sum();
 
         // parameters: arguments, funcTableIdx, tableIdx, instance
-        emitBoxArguments(type, asm, slots);
+        emitBoxArguments(asm, type.params());
         asm.visitLdcInsn(typeId);
         asm.visitVarInsn(Opcodes.ILOAD, slot); // funcTableIdx
         asm.visitVarInsn(Opcodes.ILOAD, slot + 1); // tableIdx
@@ -552,31 +760,32 @@ public final class AotMachine implements Machine {
     }
 
     private static void compileHostFunction(int funcId, FunctionType type, MethodVisitor asm) {
-        List<Integer> slots = new ArrayList<>();
-        int slot = 0;
-        for (ValueType param : type.params()) {
-            slots.add(slot);
-            slot += slotCount(param);
-        }
+        int slot = type.params().stream().mapToInt(AotUtil::slotCount).sum();
 
         asm.visitVarInsn(Opcodes.ALOAD, slot + 1); // instance
         asm.visitLdcInsn(funcId);
-        emitBoxArguments(type, asm, slots);
+        emitBoxArguments(asm, type.params());
 
         emitInvokeVirtual(asm, INSTANCE_CALL_HOST_FUNCTION);
 
         emitUnboxResult(type, asm);
     }
 
-    private static void emitBoxArguments(
-            FunctionType type, MethodVisitor asm, List<Integer> slots) {
+    private static void emitBoxArguments(MethodVisitor asm, List<ValueType> types) {
+        List<Integer> slots = new ArrayList<>();
+        int slot = 0;
+        for (ValueType type : types) {
+            slots.add(slot);
+            slot += slotCount(type);
+        }
+
         // box the arguments into Value[]
-        asm.visitLdcInsn(type.params().size());
+        asm.visitLdcInsn(types.size());
         asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(Value.class));
-        for (int i = 0; i < type.params().size(); i++) {
+        for (int i = 0; i < types.size(); i++) {
             asm.visitInsn(Opcodes.DUP);
             asm.visitLdcInsn(i);
-            ValueType valueType = type.params().get(i);
+            ValueType valueType = types.get(i);
             asm.visitVarInsn(loadTypeOpcode(valueType), slots.get(i));
             emitInvokeStatic(asm, boxer(valueType));
             asm.visitInsn(Opcodes.AASTORE);
@@ -587,6 +796,8 @@ public final class AotMachine implements Machine {
         Class<?> returnType = jvmReturnType(type);
         if (returnType == void.class) {
             asm.visitInsn(Opcodes.RETURN);
+        } else if (returnType == Value[].class) {
+            asm.visitInsn(Opcodes.ARETURN);
         } else {
             // unbox the result from Value[0]
             asm.visitLdcInsn(0);
@@ -616,8 +827,9 @@ public final class AotMachine implements Machine {
         // initialize local variables to their default values
         int localsCount = type.params().size() + body.localTypes().size();
         for (int i = type.params().size(); i < localsCount; i++) {
-            asm.visitLdcInsn(defaultValue(localType(type, body, i)));
-            emitLocalStore(ctx, asm, i);
+            var localType = localType(type, body, i);
+            asm.visitLdcInsn(defaultValue(localType));
+            asm.visitVarInsn(storeTypeOpcode(localType), ctx.localSlotIndex(i));
         }
 
         // compile the function body
@@ -631,7 +843,7 @@ public final class AotMachine implements Machine {
                     emitThrowTrapException(asm);
                     return;
                 case RETURN:
-                    asm.visitInsn(returnTypeOpcode(type));
+                    emitReturn(internalClassName, type, asm);
                     return;
                 default:
                     if (!tryEmit(ctx, ins, asm)) {
@@ -640,9 +852,9 @@ public final class AotMachine implements Machine {
             }
         }
 
-        asm.visitInsn(returnTypeOpcode(type));
+        emitReturn(internalClassName, type, asm);
 
-        if (jvmReturnType(type) != void.class) {
+        for (int i = 0; i < type.returns().size(); i++) {
             ctx.popStackSize();
         }
         if (!ctx.stackSizes().isEmpty()) {
@@ -650,8 +862,34 @@ public final class AotMachine implements Machine {
         }
     }
 
+    private static void emitReturn(String internalClassName, FunctionType type, MethodVisitor asm) {
+        if (type.returns().size() > 1) {
+            asm.visitMethodInsn(
+                    Opcodes.INVOKESTATIC,
+                    internalClassName,
+                    valueMethodName(type.returns()),
+                    valueMethodType(type.returns()).toMethodDescriptorString(),
+                    false);
+        }
+        asm.visitInsn(returnTypeOpcode(type));
+    }
+
+    private static MethodType valueMethodType(List<ValueType> types) {
+        return methodType(Value[].class, jvmTypes(types));
+    }
+
+    private static String valueMethodName(List<ValueType> types) {
+        return "value_"
+                + types.stream()
+                        .map(type -> type.name().toLowerCase(Locale.ROOT))
+                        .collect(joining("_"));
+    }
+
     private static int returnTypeOpcode(FunctionType type) {
         Class<?> returnType = jvmReturnType(type);
+        if (returnType == Value[].class) {
+            return Opcodes.ARETURN;
+        }
         if (returnType == int.class) {
             return Opcodes.IRETURN;
         }
