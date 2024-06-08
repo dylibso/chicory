@@ -415,6 +415,29 @@
 
   <profiles>
     <profile>
+      <!-- Performs the quick build: all plugins deactivated -->
+      <id>quick-build</id>
+      <activation>
+        <property>
+          <name>quickly</name>
+        </property>
+      </activation>
+      <properties>
+        <spotless.check.skip>true</spotless.check.skip>
+        <skipITs>true</skipITs>
+        <skipTests>true</skipTests>
+        <!-- Skip test codegen. -->
+        <wasm-test-gen.skip>true</wasm-test-gen.skip>
+        <!-- Prevent building broken tests (due to missing codegen). -->
+        <maven.test.skip>true</maven.test.skip>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+      </properties>
+      <build>
+        <defaultGoal>clean install</defaultGoal>
+      </build>
+    </profile>
+
+    <profile>
       <id>fuzz</id>
       <modules>
         <module>fuzz</module>

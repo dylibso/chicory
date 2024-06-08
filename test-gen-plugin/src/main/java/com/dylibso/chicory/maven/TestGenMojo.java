@@ -106,6 +106,12 @@ public class TestGenMojo extends AbstractMojo {
     private List<String> excludedWasts;
 
     /**
+     * Skip execution of this Mojo.
+     */
+    @Parameter(property = "wasm-test-gen.skip", defaultValue = "false")
+    private boolean skip;
+
+    /**
      * The current Maven project.
      */
     @Parameter(property = "project", required = true, readonly = true)
@@ -113,6 +119,10 @@ public class TestGenMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        if (skip) {
+            return;
+        }
+
         // Validate config
         validate(includedWasts, "includedWasts", true);
         validate(excludedTests, "excludedTests", false);
