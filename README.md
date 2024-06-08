@@ -384,6 +384,7 @@ Contributors and other advanced users may want to build the runtime from source.
 Basic steps:
 
 * `mvn clean install` to run all of the project's tests and install the library in your local repo
+* `mvn -Dquickly` to install the library skipping all tests
 * `mvn spotless:apply` to autoformat the code
 * `./scripts/compile-resources.sh` will recompile and regenerate the `resources/compiled` folders
 
