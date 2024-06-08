@@ -8,15 +8,18 @@ import java.util.function.Consumer;
 
 /**
  * The purpose of this class is to provide a control structure to, in-line, label branches in a list of instructions.
+ * <p>
  * Wasm has a structured form of control flow. There is no `jmp` to an address.
- * So instead each branching point can only "jump" to a few points internal to the function
+ * So instead, each branching point can only "jump" to a few points internal to the function
  * we are executing in. This algorithm mimics the control flow rules and annotates each
  * branching instruction with the labels (here the jumping point is the index of the instruction in the body)
  * that it can jump to. Branching instructions can only jump to the beginning of a block if this target is a loop,
  * or the end of a block for every other target block.
+ * <p>
  * It's up to the Machine to decide, based on what is on the stack, which label to choose.
- * Here is an example on how to label some code. The left side contains indexes, comments show where the labels go
- *
+ * <p>
+ * Here is an example on how to label some code. The left side contains indexes. Comments show where the labels go.
+ * <pre>
  * 0     (local i32)
  * 1     (block
  * 2       (block
@@ -45,8 +48,7 @@ import java.util.function.Consumer;
  * 18     local.set 1
  *        )
  * 19   local.get 1)
- *
- * This is very sub-optimal at the moment
+ * </pre>
  */
 public class ControlTree {
     private final Instruction instruction;
