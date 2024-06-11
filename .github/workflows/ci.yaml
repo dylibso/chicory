@@ -126,6 +126,7 @@ jobs:
         run: mvn clean install -DskipTests
         env:
           MAVEN_OPTS: "-Dmaven.repo.local=${{ github.workspace }}/repository"
+      # Test root Readme
       - name: jbang
         uses: jbangdev/jbang-action@74844c9631cf1f35650427323e9bb3ffa41dfbd9 # tag=v0.115.0
         with:
@@ -133,4 +134,13 @@ jobs:
         env:
           JBANG_REPO: "${{ github.workspace }}/repository"
       - name: compare results
-        run: diff -r ./readme-approved-results ./readme-results
+        run: diff -r ./readmes/main/expected ./readmes/main/current
+      # Test wasi Readme
+      - name: jbang
+        uses: jbangdev/jbang-action@74844c9631cf1f35650427323e9bb3ffa41dfbd9 # tag=v0.115.0
+        with:
+          script: wasi/README.md
+        env:
+          JBANG_REPO: "${{ github.workspace }}/repository"
+      - name: compare results
+        run: diff -r ./readmes/wasi/expected ./readmes/wasi/current

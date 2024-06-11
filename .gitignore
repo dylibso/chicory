@@ -14,4 +14,4 @@ scripts/jmh-tmp
 /main/
 
 /*.wasm
-readme-results
+readmes/*/current
