@@ -86,6 +86,43 @@ We also have a table:
 
 > **Note**: 💀 means the function is no longer part of WASI.
 
+<!--
+```java
+//DEPS com.dylibso.chicory:wasi:999-SNAPSHOT
+```
+-->
+
+<!--
+```java
+public void copyFileFromWasmCorpus(String sourceName, String destName) throws Exception {
+  var dest = new File(".").toPath().resolve(destName);
+  if (dest.toFile().exists()) {
+    dest.toFile().delete();
+  }
+  Files.copy(new File(".").toPath()
+          .resolve("wasm-corpus")
+          .resolve("src")
+          .resolve("main")
+          .resolve("resources")
+          .resolve("compiled")
+          .resolve(sourceName),
+          dest,
+          StandardCopyOption.REPLACE_EXISTING);
+}
+
+var readmeResults = "readmes/wasi/current";
+new File(readmeResults).mkdirs();
+
+public void writeResultFile(String name, String content) throws Exception {
+  FileWriter fileWriter = new FileWriter(new File(".").toPath().resolve(readmeResults).resolve(name).toFile());
+  PrintWriter printWriter = new PrintWriter(fileWriter);
+  printWriter.print(content);
+  printWriter.flush();
+  printWriter.close();
+}
+```
+-->
+
 ### wasip2
 
 We do have intentions to support wasip2 in the future, however this work has not been started. Please reach out to us on zulip if you are interested in helping plan and execute this work.
@@ -101,16 +138,35 @@ these functions behave and what the module can and cannot do.
 So to instantiate a WASI module you need an instance of `WasiPreview1`. You can turn this instance into
 import functions which can then be passed to the Module builder.
 
+Download from the link or with curl:
+
+```bash
+curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/main/resources/compiled/hello-wasi.wat.wasm > hello-wasi.wasm
+```
+
+<!--
 ```java
+copyFileFromWasmCorpus("hello-wasi.wat.wasm", "hello-wasi.wasm");
+```
+-->
+
+```java
+import com.dylibso.chicory.log.SystemLogger;
+import com.dylibso.chicory.wasi.WasiOptions;
+import com.dylibso.chicory.wasi.WasiPreview1;
+import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.runtime.HostImports;
+import java.io.File;
+
 var logger = new SystemLogger();
 // let's just use the default options for now
 var options = WasiOptions.builder().build();
 // create our instance of wasip1
-var wasi = new WasiPreview1(this.logger, WasiOptions.builder().build());
+var wasi = new WasiPreview1(logger, WasiOptions.builder().build());
 // turn those into host imports. Here we could add any other custom imports we have
 var imports = new HostImports(wasi.toHostFunctions());
 // create the module and connect imports
-var module = Module.builder("hello-wasi.wasm").withHostImports(imports).build();
+var module = Module.builder(new File("hello-wasi.wasm")).withHostImports(imports).build();
 // this will execute the module if it's a WASI command-pattern module
 module.instantiate();
 ```
@@ -125,6 +181,18 @@ Often, this is the way you communicate with basic WASI-enabled modules by way of
 In order to make it easy to manipulate these streams, we expose stdin as an [InputStream](https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html)
 and stdout/stderr as an [OutputStream](https://docs.oracle.com/javase/8/docs/api/java/io/OutputStream.html).
 
+Download from the link or with curl:
+
+```bash
+curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/main/resources/compiled/greet-wasi.rs.wasm > greet-wasi.wasm
+```
+
+<!--
+```java
+copyFileFromWasmCorpus("greet-wasi.rs.wasm", "greet-wasi.wasm");
+```
+-->
+
 ```java
 // Let's create a fake stdin stream with the bytes "Andrea"
 var fakeStdin = new ByteArrayInputStream("Andrea".getBytes());
@@ -132,24 +200,25 @@ var fakeStdin = new ByteArrayInputStream("Andrea".getBytes());
 var fakeStdout = new ByteArrayOutputStream();
 var fakeStderr = new ByteArrayOutputStream();
 // now pass those to our wasi options builder
-var wasiOpts = WasiOptions
-        .builder()
-        .withStdout(fakeStdout)
-        .withStderr(fakeStderr)
-        .withStdin(fakeStdin)
-        .build();
+var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStderr(fakeStderr).withStdin(fakeStdin).build();
 
-var wasi = new WasiPreview1(this.logger, wasiOpts);
+var wasi = new WasiPreview1(logger, wasiOpts);
 var imports = new HostImports(wasi.toHostFunctions());
 
 // greet-wasi is a rust program that greets the string passed in stdin
-var module = Module.builder("greet-wasi.rs.wasm").withHostImports(imports).build();
+var module = Module.builder(new File("greet-wasi.wasm")).withHostImports(imports).build();
 
 // instantiating will execute the module if it's a WASI command-pattern module
 module.instantiate();
 
 // check that we output the greeting
-assertEquals(fakeStdout.toString(), "Hello, Andrea!");
+assert(fakeStdout.toString().equals("Hello, Andrea!"));
 // there should be no bytes in stderr!
-assertEquals(fakeStderr.toString(), "");
+assert(fakeStderr.toString().equals(""));
 ```
+
+<!--
+```java
+writeResultFile("greet-wasi.result", fakeStdout.toString() + fakeStderr.toString());
+```
+-->

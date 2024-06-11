@@ -75,7 +75,7 @@ public void copyFileFromWasmCorpus(String sourceName, String destName) throws Ex
           StandardCopyOption.REPLACE_EXISTING);
 }
 
-var readmeResults = "readme-results";
+var readmeResults = "readmes/main/current";
 new File(readmeResults).mkdirs();
 
 public void writeResultFile(String name, String content) throws Exception {
