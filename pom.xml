@@ -377,19 +377,18 @@
               <include>**/src/main/java/**/*.java</include>
               <include>**/src/test/java/**/*.java</include>
             </includes>
-            <googleJavaFormat>
-              <version>1.18.1</version>
-              <style>AOSP</style>
-              <reflowLongStrings>true</reflowLongStrings>
-              <formatJavadoc>false</formatJavadoc>
-            </googleJavaFormat>
-            <importOrder/>
+            <eclipse>
+              <file>ide-config/eclipse-format.xml</file>
+            </eclipse>
+            <importOrder>
+              <file>ide-config/eclipse.importorder</file>
+            </importOrder>
+            <removeUnusedImports/>
             <replaceRegex>
               <name>Remove wildcard imports</name>
               <searchRegex>import\s+(?:static\s+)?[^\*\s]+\*;(\r\n|\r|\n)</searchRegex>
               <replacement>$1</replacement>
             </replaceRegex>
-            <removeUnusedImports/>
           </java>
           <pom>
             <includes>
