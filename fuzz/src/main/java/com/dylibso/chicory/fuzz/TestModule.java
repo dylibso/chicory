@@ -16,7 +16,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 
 public class TestModule {
     private static final Logger logger = new SystemLogger();
-    WasmTimeWrapper wasmtime = new WasmTimeWrapper();
+    WasmInterpWrapper wasmInterp = new WasmInterpWrapper();
     ChicoryCliWrapper chicoryCli = new ChicoryCliWrapper();
 
     public List<String> paramsList(FunctionType type) {
@@ -42,7 +42,7 @@ public class TestModule {
             switch (export.getValue().exportType()) {
                 case FUNCTION:
                     {
-                        logger.info("Going to test export " + export.getKey());
+                        logger.info("Going to test export " + export.getValue().name());
                         var exportSig = module.export(export.getKey());
                         var typeId = instance.functionType(exportSig.index());
                         var type = instance.type(typeId);
@@ -50,7 +50,8 @@ public class TestModule {
 
                         String oracleResult = null;
                         try {
-                            oracleResult = wasmtime.run(targetWasm, export.getKey(), params);
+                            oracleResult =
+                                    wasmInterp.run(targetWasm, export.getValue().name(), params);
                         } catch (Exception e) {
                             // If the oracle failed we can skip ...
                             logger.error("Failed to run the oracle, skip the check on Chicory");
@@ -60,9 +61,10 @@ public class TestModule {
                         // Running Chicory on the command line to compare the results
                         String chicoryResult = null;
                         try {
-                            chicoryResult = chicoryCli.run(targetWasm, export.getKey(), params);
+                            chicoryResult =
+                                    chicoryCli.run(targetWasm, export.getValue().name(), params);
                         } catch (Exception e) {
-                            logger.warn("Failed to run chicory, but wasmtime succeeded: " + e);
+                            logger.warn("Failed to run chicory, but oracle succeeded: " + e);
                         }
                         // To be used for files generation
                         var truncatedExportName =
