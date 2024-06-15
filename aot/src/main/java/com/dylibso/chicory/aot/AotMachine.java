@@ -1,7 +1,8 @@
 package com.dylibso.chicory.aot;
 
-import static com.dylibso.chicory.aot.AotEmitters.emitThrowTrapException;
+import static com.dylibso.chicory.aot.AotMethods.CHECK_INTERRUPTION;
 import static com.dylibso.chicory.aot.AotMethods.INSTANCE_CALL_HOST_FUNCTION;
+import static com.dylibso.chicory.aot.AotMethods.THROW_TRAP_EXCEPTION;
 import static com.dylibso.chicory.aot.AotUtil.boxer;
 import static com.dylibso.chicory.aot.AotUtil.boxerHandle;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
@@ -9,6 +10,7 @@ import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
 import static com.dylibso.chicory.aot.AotUtil.defaultValue;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
+import static com.dylibso.chicory.aot.AotUtil.emitPop;
 import static com.dylibso.chicory.aot.AotUtil.jvmReturnType;
 import static com.dylibso.chicory.aot.AotUtil.jvmTypes;
 import static com.dylibso.chicory.aot.AotUtil.loadTypeOpcode;
@@ -53,7 +55,9 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -63,6 +67,7 @@ import java.util.stream.Stream;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.CheckClassAdapter;
@@ -72,6 +77,8 @@ import org.objectweb.asm.util.CheckClassAdapter;
  * via MethodHandle. All compilation is done in a single compile phase during instantiation.
  */
 public final class AotMachine implements Machine {
+
+    private static final Instruction FUNCTION_SCOPE = new Instruction(-1, OpCode.NOP, new long[0]);
 
     private final Module module;
     private final Instance instance;
@@ -540,20 +547,6 @@ public final class AotMachine implements Machine {
         cons.visitEnd();
     }
 
-    private static boolean tryEmit(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        var emitter = emitters.get(ins.opcode());
-        if (emitter == null) {
-            throw new ChicoryException(
-                    "JVM compilation failed: opcode is not supported: " + ins.opcode());
-        }
-        try {
-            emitter.emit(ctx, ins, asm);
-            return true;
-        } catch (EmitterTrapException e) {
-            return false;
-        }
-    }
-
     private static void compileCallIndirect(MethodVisitor asm, int typeId, FunctionType type) {
         int slot = type.params().stream().mapToInt(AotUtil::slotCount).sum();
 
@@ -642,46 +635,229 @@ public final class AotMachine implements Machine {
             asm.visitVarInsn(storeTypeOpcode(localType), ctx.localSlotIndex(i));
         }
 
-        // compile the function body
-        for (var ins : body.instructions()) {
-            switch (ins.opcode()) {
-                    // TODO - handle control flow & other "bookkeeping" opcodes here
-                case NOP:
-                case END:
-                    break;
-                case UNREACHABLE:
-                    emitThrowTrapException(asm);
-                    return;
-                case RETURN:
-                    emitReturn(internalClassName, type, asm);
-                    return;
-                default:
-                    if (!tryEmit(ctx, ins, asm)) {
-                        return;
-                    }
+        // allocate labels for all label targets
+        Map<Integer, Label> labels = new HashMap<>();
+        for (Instruction ins : body.instructions()) {
+            if (ins.labelTrue() != null) {
+                labels.put(ins.labelTrue(), new Label());
+            }
+            if (ins.labelFalse() != null) {
+                labels.put(ins.labelFalse(), new Label());
+            }
+            if (ins.labelTable() != null) {
+                for (int label : ins.labelTable()) {
+                    labels.put(label, new Label());
+                }
             }
         }
 
-        emitReturn(internalClassName, type, asm);
+        // fake instruction to use for the function's implicit block
+        ctx.enterScope(FUNCTION_SCOPE, FunctionType.of(List.of(), type.returns()));
 
-        for (int i = 0; i < type.returns().size(); i++) {
-            ctx.popStackSize();
+        // compile the function body
+        int exitBlockDepth = -1;
+        for (int idx = 0; idx < body.instructions().size(); idx++) {
+            var ins = body.instructions().get(idx);
+
+            Label label = labels.get(idx);
+            if (label != null) {
+                asm.visitLabel(label);
+            }
+
+            // skip instructions after unconditional control transfer
+            if (exitBlockDepth >= 0) {
+                if (ins.depth() > exitBlockDepth) {
+                    continue;
+                }
+                if (ins.opcode() != OpCode.ELSE && ins.opcode() != OpCode.END) {
+                    continue;
+                }
+
+                exitBlockDepth = -1;
+                if (ins.opcode() == OpCode.END) {
+                    ctx.scopeRestoreStackSize();
+                }
+            }
+
+            switch (ins.opcode()) {
+                case NOP:
+                    break;
+                case BLOCK:
+                case LOOP:
+                    ctx.enterScope(ins.scope(), blockType(ins));
+                    break;
+                case END:
+                    ctx.exitScope(ins.scope());
+                    break;
+                case UNREACHABLE:
+                    exitBlockDepth = ins.depth();
+                    emitInvokeStatic(asm, THROW_TRAP_EXCEPTION);
+                    asm.visitInsn(Opcodes.ATHROW);
+                    break;
+                case RETURN:
+                    exitBlockDepth = ins.depth();
+                    emitReturn(asm, type, ctx);
+                    break;
+                case IF:
+                    ctx.popStackSize();
+                    ctx.enterScope(ins.scope(), blockType(ins));
+                    asm.visitJumpInsn(Opcodes.IFEQ, labels.get(ins.labelFalse()));
+                    // use the same starting stack sizes for both sides of the branch
+                    if (body.instructions().get(ins.labelFalse() - 1).opcode() == OpCode.ELSE) {
+                        ctx.pushStackSizesStack();
+                    }
+                    break;
+                case ELSE:
+                    asm.visitJumpInsn(Opcodes.GOTO, labels.get(ins.labelTrue()));
+                    ctx.popStackSizesStack();
+                    break;
+                case BR:
+                    exitBlockDepth = ins.depth();
+                    if (ins.labelTrue() < idx) {
+                        emitInvokeStatic(asm, CHECK_INTERRUPTION);
+                    }
+                    emitUnwindStack(asm, type, body, ins, ins.labelTrue(), ctx);
+                    asm.visitJumpInsn(Opcodes.GOTO, labels.get(ins.labelTrue()));
+                    break;
+                case BR_IF:
+                    ctx.popStackSize();
+                    Label falseLabel = new Label();
+                    asm.visitJumpInsn(Opcodes.IFEQ, falseLabel);
+                    if (ins.labelTrue() < idx) {
+                        emitInvokeStatic(asm, CHECK_INTERRUPTION);
+                    }
+                    emitUnwindStack(asm, type, body, ins, ins.labelTrue(), ctx);
+                    asm.visitJumpInsn(Opcodes.GOTO, labels.get(ins.labelTrue()));
+                    asm.visitLabel(falseLabel);
+                    break;
+                case BR_TABLE:
+                    exitBlockDepth = ins.depth();
+                    ctx.popStackSize();
+                    emitInvokeStatic(asm, CHECK_INTERRUPTION);
+                    // collect unique target labels
+                    Map<Integer, Label> targets = new HashMap<>();
+                    Label[] table = new Label[ins.labelTable().length];
+                    for (int i = 0; i < table.length; i++) {
+                        table[i] = targets.computeIfAbsent(ins.labelTable()[i], x -> new Label());
+                    }
+                    // table switch using the last entry of the label table as the default
+                    Label defaultLabel = table[table.length - 1];
+                    asm.visitTableSwitchInsn(0, table.length - 1, defaultLabel, table);
+                    // generate separate unwinds for each target
+                    targets.forEach(
+                            (target, tableLabel) -> {
+                                asm.visitLabel(tableLabel);
+                                emitUnwindStack(asm, type, body, ins, target, ctx);
+                                asm.visitJumpInsn(Opcodes.GOTO, labels.get(target));
+                            });
+                    break;
+                default:
+                    var emitter = emitters.get(ins.opcode());
+                    if (emitter == null) {
+                        throw new ChicoryException(
+                                "JVM compilation failed: opcode is not supported: " + ins.opcode());
+                    }
+                    emitter.emit(ctx, ins, asm);
+            }
+        }
+
+        // implicit return at end of function
+        emitReturn(asm, type, ctx);
+
+        if (ctx.stackSizesStack().size() != 1) {
+            throw new RuntimeException("Bad stack sizes stack: " + ctx.stackSizesStack());
         }
         if (!ctx.stackSizes().isEmpty()) {
             throw new RuntimeException("Stack sizes not empty: " + ctx.stackSizes());
         }
     }
 
-    private static void emitReturn(String internalClassName, FunctionType type, MethodVisitor asm) {
+    private static void emitReturn(MethodVisitor asm, FunctionType type, AotContext ctx) {
         if (type.returns().size() > 1) {
             asm.visitMethodInsn(
                     Opcodes.INVOKESTATIC,
-                    internalClassName,
+                    ctx.internalClassName(),
                     valueMethodName(type.returns()),
                     valueMethodType(type.returns()).toMethodDescriptorString(),
                     false);
         }
         asm.visitInsn(returnTypeOpcode(type));
+        for (int i = 0; i < type.returns().size(); i++) {
+            ctx.popStackSize();
+        }
+    }
+
+    private void emitUnwindStack(
+            MethodVisitor asm,
+            FunctionType functionType,
+            FunctionBody body,
+            Instruction ins,
+            int label,
+            AotContext ctx) {
+
+        boolean forward = true;
+        var target = body.instructions().get(label);
+        if (target.address() <= ins.address()) {
+            // the loop block is the instruction before the target
+            target = body.instructions().get(label - 1);
+            forward = false;
+        }
+        var scope = target.scope();
+
+        FunctionType blockType;
+        if (scope.opcode() == OpCode.END) {
+            // special scope for the function's implicit block
+            scope = FUNCTION_SCOPE;
+            blockType = functionType;
+        } else {
+            blockType = blockType(scope);
+        }
+
+        var types = forward ? blockType.returns() : blockType.params();
+
+        // for a backward jump, the initial loop parameters are dropped
+        var stackSizes = new ArrayDeque<>(ctx.stackSizes());
+        int dropCount = stackSizes.size() - ctx.scopeStackSize(scope);
+
+        // do not drop the return values for a forward jump
+        if (forward) {
+            dropCount -= types.size();
+        }
+
+        if (dropCount == 0) {
+            return;
+        }
+
+        // save result values
+        int slot = ctx.tempSlot();
+        for (int i = types.size() - 1; i >= 0; i--) {
+            ValueType type = types.get(i);
+            asm.visitVarInsn(storeTypeOpcode(type), slot);
+            slot += slotCount(type);
+            stackSizes.pop();
+        }
+
+        // drop intervening values
+        for (int i = 0; i < dropCount; i++) {
+            emitPop(asm, stackSizes.pop());
+        }
+
+        // restore result values
+        for (ValueType type : types) {
+            slot -= slotCount(type);
+            asm.visitVarInsn(loadTypeOpcode(type), slot);
+        }
+    }
+
+    private FunctionType blockType(Instruction ins) {
+        int typeId = (int) ins.operands()[0];
+        if (typeId == 0x40) {
+            return FunctionType.empty();
+        }
+        if (ValueType.isValid(typeId)) {
+            return FunctionType.returning(ValueType.forId(typeId));
+        }
+        return module.typeSection().types()[typeId];
     }
 
     private static MethodType valueMethodType(List<ValueType> types) {

@@ -254,6 +254,10 @@ final class AotUtil {
         }
     }
 
+    public static void emitPop(MethodVisitor asm, StackSize size) {
+        asm.visitInsn(size == StackSize.ONE ? Opcodes.POP : Opcodes.POP2);
+    }
+
     public static void emitInvokeStatic(MethodVisitor asm, Method method) {
         assert Modifier.isStatic(method.getModifiers());
         asm.visitMethodInsn(

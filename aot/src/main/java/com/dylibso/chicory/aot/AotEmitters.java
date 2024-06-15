@@ -31,7 +31,6 @@ import static com.dylibso.chicory.aot.AotMethods.TABLE_INIT;
 import static com.dylibso.chicory.aot.AotMethods.TABLE_SET;
 import static com.dylibso.chicory.aot.AotMethods.TABLE_SIZE;
 import static com.dylibso.chicory.aot.AotMethods.THROW_OUT_OF_BOUNDS_MEMORY_ACCESS;
-import static com.dylibso.chicory.aot.AotMethods.THROW_TRAP_EXCEPTION;
 import static com.dylibso.chicory.aot.AotMethods.VALIDATE_BASE;
 import static com.dylibso.chicory.aot.AotUtil.StackSize;
 import static com.dylibso.chicory.aot.AotUtil.boxer;
@@ -39,6 +38,7 @@ import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
+import static com.dylibso.chicory.aot.AotUtil.emitPop;
 import static com.dylibso.chicory.aot.AotUtil.jvmType;
 import static com.dylibso.chicory.aot.AotUtil.loadTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.localType;
@@ -822,20 +822,10 @@ final class AotEmitters {
         }
     }
 
-    private static void emitPop(MethodVisitor asm, StackSize size) {
-        asm.visitInsn(size == StackSize.ONE ? Opcodes.POP : Opcodes.POP2);
-    }
-
     private static void emitThrowIfInvalidOffset(MethodVisitor asm, long offset) {
         if (offset < 0 || offset >= Integer.MAX_VALUE) {
             emitInvokeStatic(asm, THROW_OUT_OF_BOUNDS_MEMORY_ACCESS);
             asm.visitInsn(Opcodes.ATHROW);
-            throw new EmitterTrapException();
         }
-    }
-
-    public static void emitThrowTrapException(MethodVisitor asm) {
-        emitInvokeStatic(asm, THROW_TRAP_EXCEPTION);
-        asm.visitInsn(Opcodes.ATHROW);
     }
 }
