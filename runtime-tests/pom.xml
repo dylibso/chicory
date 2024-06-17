@@ -146,6 +146,10 @@
             <test>SpecV1LinkingTest.test118</test>
             <test>SpecV1LinkingTest.test121</test>
             <test>SpecV1LinkingTest.test122</test>
+            <test>SpecV1LocalSetTest.test31</test>
+            <test>SpecV1LocalSetTest.test32</test>
+            <test>SpecV1LocalTeeTest.test73</test>
+            <test>SpecV1LocalTeeTest.test74</test>
             <test>SpecV1TableInitTest.test193</test>
             <test>SpecV1TableInitTest.test194</test>
             <test>SpecV1TableInitTest.test195</test>
@@ -176,8 +180,6 @@
             <wast>labels.wast</wast>
             <wast>load.wast</wast>
             <wast>local_get.wast</wast>
-            <wast>local_set.wast</wast>
-            <wast>local_tee.wast</wast>
             <wast>loop.wast</wast>
             <wast>memory_grow.wast</wast>
             <wast>memory_size.wast</wast>
@@ -187,7 +189,6 @@
             <wast>stack.wast</wast>
             <wast>start.wast</wast>
             <wast>store.wast</wast>
-            <wast>switch.wast</wast>
             <wast>table-sub.wast</wast>
             <wast>unreachable.wast</wast>
             <wast>unreached-invalid.wast</wast>

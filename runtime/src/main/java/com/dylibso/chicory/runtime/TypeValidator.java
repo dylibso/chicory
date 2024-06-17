@@ -145,6 +145,13 @@ public class TypeValidator {
         }
     }
 
+    private static ValueType getLocalType(List<ValueType> localTypes, int idx) {
+        if (idx >= localTypes.size()) {
+            throw new InvalidException("unknown local");
+        }
+        return localTypes.get(idx);
+    }
+
     public void validate(FunctionBody body, FunctionType functionType, Instance instance) {
         var localTypes = body.localTypes();
         var inputLen = functionType.params().size();
@@ -688,7 +695,7 @@ public class TypeValidator {
                         ValueType expectedType =
                                 (index < inputLen)
                                         ? functionType.params().get(index)
-                                        : localTypes.get(index - inputLen);
+                                        : getLocalType(localTypes, index - inputLen);
                         popAndVerifyType(expectedType);
                         break;
                     }
@@ -698,7 +705,7 @@ public class TypeValidator {
                         ValueType expectedType =
                                 (index < inputLen)
                                         ? functionType.params().get(index)
-                                        : localTypes.get(index - inputLen);
+                                        : getLocalType(localTypes, index - inputLen);
                         push(valueTypeStack, expectedType);
                         break;
                     }
@@ -708,7 +715,7 @@ public class TypeValidator {
                         ValueType expectedType =
                                 (index < inputLen)
                                         ? functionType.params().get(index)
-                                        : localTypes.get(index - inputLen);
+                                        : getLocalType(localTypes, index - inputLen);
                         popAndVerifyType(expectedType);
                         push(valueTypeStack, expectedType);
                         break;
