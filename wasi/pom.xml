@@ -73,6 +73,7 @@
               <exclude>tests/rust/testsuite/fd_fdstat_set_rights.wasm</exclude>
               <exclude>tests/rust/testsuite/fd_filestat_set.wasm</exclude>
               <exclude>tests/rust/testsuite/file_allocate.wasm</exclude>
+              <exclude>tests/rust/testsuite/fstflags_validate.wasm</exclude>
               <exclude>tests/rust/testsuite/interesting_paths.wasm</exclude>
               <exclude>tests/rust/testsuite/nofollow_errors.wasm</exclude>
               <exclude>tests/rust/testsuite/overwrite_preopen.wasm</exclude>
