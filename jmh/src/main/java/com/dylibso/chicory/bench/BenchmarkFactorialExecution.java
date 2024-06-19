@@ -1,10 +1,10 @@
 package com.dylibso.chicory.bench;
 
+import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.File;
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -26,25 +26,40 @@ import org.openjdk.jmh.infra.Blackhole;
 @Fork(1)
 public class BenchmarkFactorialExecution {
 
+    private static final File ITERFACT =
+            new File("wasm-corpus/src/main/resources/compiled/iterfact.wat.wasm");
+
     @Param({"5", "1000"})
     private int input;
 
-    ExportFunction iterFact;
+    Module aotModule;
+
+    ExportFunction iterFactInt;
+    ExportFunction iterFactAot;
 
     @Setup
-    public void setup() throws IOException {
-        var factorial =
-                Module.builder(
-                                new File(
-                                        "wasm-corpus/src/main/resources/compiled/iterfact.wat.wasm"))
-                        .build()
-                        .instantiate();
-        iterFact = factorial.export("iterFact");
+    public void setup() {
+        var factorialInt = Module.builder(ITERFACT).build().instantiate();
+        iterFactInt = factorialInt.export("iterFact");
+
+        aotModule =
+                Module.builder(ITERFACT)
+                        .withMachineFactory(
+                                instance -> new AotMachine(aotModule.wasmModule(), instance))
+                        .build();
+        var factorialAot = aotModule.instantiate();
+        iterFactAot = factorialAot.export("iterFact");
     }
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void benchmark(Blackhole bh) {
-        bh.consume(iterFact.apply(Value.i32(input)));
+    public void benchmarkInt(Blackhole bh) {
+        bh.consume(iterFactInt.apply(Value.i32(input)));
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    public void benchmarkAot(Blackhole bh) {
+        bh.consume(iterFactAot.apply(Value.i32(input)));
     }
 }
