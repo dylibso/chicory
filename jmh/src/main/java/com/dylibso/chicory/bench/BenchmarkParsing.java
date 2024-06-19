@@ -1,10 +1,10 @@
 package com.dylibso.chicory.bench;
 
 import com.dylibso.chicory.runtime.Module;
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.io.FileUtils;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -35,7 +35,7 @@ public class BenchmarkParsing {
 
     @Setup
     public void setup() throws IOException {
-        memoryMappedFile = FileUtils.readFileToByteArray(new File(fileName));
+        memoryMappedFile = Files.readAllBytes(Paths.get(fileName));
     }
 
     @Benchmark
