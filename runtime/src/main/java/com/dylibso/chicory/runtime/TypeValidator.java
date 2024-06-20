@@ -189,9 +189,6 @@ public class TypeValidator {
                 case END:
                     {
                         var frame = popCtrl();
-                        if (!ctrlFrameStack.isEmpty()) {
-                            resetAtStackLimit();
-                        }
                         pushVals(frame.endTypes);
                         break;
                     }
@@ -201,7 +198,6 @@ public class TypeValidator {
                         if (frame.opCode != OpCode.IF) {
                             throw new InvalidException("else doesn't belong to if");
                         }
-                        resetAtStackLimit();
                         pushCtrl(op.opcode(), frame.startTypes, frame.endTypes);
                         break;
                     }
