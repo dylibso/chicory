@@ -220,6 +220,8 @@ public class TypeValidator {
                     }
                 case RETURN:
                 {
+                    popVals(labelTypes(ctrlFrameStack.get(0)));
+                    unreachable();
                     break;
                 }
                 default:
