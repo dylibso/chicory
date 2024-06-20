@@ -51,11 +51,11 @@ public class TypeValidator {
     }
 
     private ValueType popVal() {
-        if (valueTypeStack.size() == ctrlFrameStack.get(ctrlFrameStack.size() - 1).height
-                && ctrlFrameStack.get(ctrlFrameStack.size() - 1).unreachable) {
+        var frame = ctrlFrameStack.get(ctrlFrameStack.size() - 1);
+        if (valueTypeStack.size() == frame.height && frame.unreachable) {
             return ValueType.UNKNOWN;
         }
-        if (valueTypeStack.size() == ctrlFrameStack.get(ctrlFrameStack.size() - 1).height) {
+        if (valueTypeStack.size() == frame.height) {
             throw new InvalidException("type mismatch, popVal()");
         }
         return valueTypeStack.remove(valueTypeStack.size() - 1);
@@ -96,25 +96,32 @@ public class TypeValidator {
         var frame = ctrlFrameStack.get(ctrlFrameStack.size() - 1);
         popVals(frame.endTypes);
         if (valueTypeStack.size() != frame.height) {
-            throw new InvalidException("type mismatch, wrong type stack height");
+            throw new InvalidException("type mismatch, wrong stack height");
         }
         ctrlFrameStack.remove(ctrlFrameStack.size() - 1);
         return frame;
     }
 
     private List<ValueType> labelTypes(CtrlFrame frame) {
-        if (frame.opCode == OpCode.LOOP) {
-            return frame.startTypes;
-        } else {
+//        if (frame.opCode == OpCode.LOOP) {
+//            return frame.startTypes; // TODO: verify!
+//        } else {
             return frame.endTypes;
+//        }
+    }
+
+    // This is not included in the proposed algorithm
+    private void resetAtStackLimit() {
+        var frame = ctrlFrameStack.get(ctrlFrameStack.size() - 1);
+        while (valueTypeStack.size() > frame.height) {
+            valueTypeStack.remove(valueTypeStack.size() - 1);
         }
     }
 
     private void unreachable() {
-        while (valueTypeStack.size() > ctrlFrameStack.get(ctrlFrameStack.size() - 1).height) {
-            valueTypeStack.remove(valueTypeStack.size() - 1);
-        }
-        ctrlFrameStack.get(ctrlFrameStack.size() - 1).unreachable = true;
+        var frame = ctrlFrameStack.get(ctrlFrameStack.size() - 1);
+        resetAtStackLimit();
+        frame.unreachable = true;
     }
 
     private static void validateMemory(Instance instance, int memIds) {
@@ -153,6 +160,7 @@ public class TypeValidator {
         var localTypes = body.localTypes();
         var inputLen = functionType.params().size();
         pushCtrl(null, new ArrayList<>(), functionType.returns());
+        pushCtrl(null, new ArrayList<>(), functionType.returns());
 
         for (var i = 0; i < body.instructions().size(); i++) {
             var op = body.instructions().get(i);
@@ -172,10 +180,7 @@ public class TypeValidator {
                 case LOOP: // t1* -> t2*
                 case BLOCK:
                     {
-                        var t1 =
-                                new ArrayList<
-                                        ValueType>(); // TODO: verify if it's correct, should we
-                        // swap returns with params for loops?
+                        var t1 = new ArrayList<ValueType>();
                         var t2 = getReturns(op, instance);
                         popVals(t1);
                         pushCtrl(op.opcode(), t1, t2);
@@ -183,14 +188,11 @@ public class TypeValidator {
                     }
                 case END:
                     {
-                        //                        var debugFrame =
-                        // ctrlFrameStack.get(ctrlFrameStack.size() - 1);
-                        //                        try {
                         var frame = popCtrl();
+                        if (!ctrlFrameStack.isEmpty()) {
+                            resetAtStackLimit();
+                        }
                         pushVals(frame.endTypes);
-                        //                        } catch (Exception e) {
-                        //                            System.out.println("debug me");
-                        //                        }
                         break;
                     }
                 case ELSE:
@@ -199,6 +201,7 @@ public class TypeValidator {
                         if (frame.opCode != OpCode.IF) {
                             throw new InvalidException("else doesn't belong to if");
                         }
+                        resetAtStackLimit();
                         pushCtrl(op.opcode(), frame.startTypes, frame.endTypes);
                         break;
                     }
@@ -237,9 +240,8 @@ public class TypeValidator {
                             throw new InvalidException("verify me");
                         }
                         var arity =
-                                labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - m))
-                                        .size();
-                        for (var idx = 0; idx < op.operands().length - 2; idx++) {
+                                labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - m)).size();
+                        for (var idx = 1; idx < op.operands().length - 2; idx++) {
                             var n = (int) op.operands()[idx];
                             if (ctrlFrameStack.size() < n) {
                                 throw new InvalidException("verify me");
@@ -252,6 +254,7 @@ public class TypeValidator {
                             pushVals(popVals(labelTypes));
                         }
                         popVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - m)));
+                        unreachable();
                         break;
                     }
                 case RETURN:
@@ -393,11 +396,7 @@ public class TypeValidator {
                 case I32_ROTR:
                     {
                         popVal(ValueType.I32);
-                        //                        try {
                         popVal(ValueType.I32);
-                        //                        } catch (Exception e) {
-                        //                            System.out.println("debug me");
-                        //                        }
                         pushVal(ValueType.I32);
                         break;
                     }
