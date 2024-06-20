@@ -14,6 +14,14 @@ import java.util.List;
 // https://github.com/tetratelabs/wazero/blob/5a8a053bff0ae795b264de9672016745cb842070/internal/wasm/func_validation.go
 public class TypeValidator {
 
+    private boolean isNum(ValueType t) {
+        return t.isNumeric() || t == ValueType.UNKNOWN;
+    }
+
+    private boolean isRef(ValueType t) {
+        return t.isReference() || t == ValueType.UNKNOWN;
+    }
+
     private static class CtrlFrame {
         private final OpCode opCode;
         private final List<ValueType> startTypes;
@@ -124,7 +132,7 @@ public class TypeValidator {
     }
 
     private List<ValueType> getReturns(Instruction op, Instance instance) {
-        var typeId = (int) op.scope().operands()[0];
+        var typeId = (int) op.operands()[0];
         if (typeId == 0x40) { // epsilon
             return List.of();
         } else if (ValueType.isValid(typeId)) {
@@ -152,7 +160,10 @@ public class TypeValidator {
             // control flow instructions handling
             switch (op.opcode()) {
                 case UNREACHABLE:
-                    unreachable();
+                    {
+                        unreachable();
+                        break;
+                    }
                 case IF:
                     {
                         popVal(ValueType.I32);
@@ -161,7 +172,10 @@ public class TypeValidator {
                 case LOOP: // t1* -> t2*
                 case BLOCK:
                     {
-                        var t1 = new ArrayList<ValueType>(); // TODO: verify if it's correct
+                        var t1 =
+                                new ArrayList<
+                                        ValueType>(); // TODO: verify if it's correct, should we
+                        // swap returns with params for loops?
                         var t2 = getReturns(op, instance);
                         popVals(t1);
                         pushCtrl(op.opcode(), t1, t2);
@@ -169,12 +183,14 @@ public class TypeValidator {
                     }
                 case END:
                     {
-                        try {
-                            var frame = popCtrl();
-                            pushVals(frame.endTypes);
-                        } catch (Exception e) {
-                            System.out.println("debug me");
-                        }
+                        //                        var debugFrame =
+                        // ctrlFrameStack.get(ctrlFrameStack.size() - 1);
+                        //                        try {
+                        var frame = popCtrl();
+                        pushVals(frame.endTypes);
+                        //                        } catch (Exception e) {
+                        //                            System.out.println("debug me");
+                        //                        }
                         break;
                     }
                 case ELSE:
@@ -204,6 +220,7 @@ public class TypeValidator {
                         if (op.labelTrue() == null) {
                             throw new InvalidException("unknown label");
                         }
+                        popVal(ValueType.I32);
                         var n = (int) op.operands()[0];
                         if (ctrlFrameStack.size() < n) {
                             throw new InvalidException("verify me");
@@ -214,16 +231,35 @@ public class TypeValidator {
                     }
                 case BR_TABLE:
                     {
-                        // TODO: implement me
                         popVal(ValueType.I32);
+                        var m = (int) op.operands()[op.operands().length - 1];
+                        if (ctrlFrameStack.size() < m) {
+                            throw new InvalidException("verify me");
+                        }
+                        var arity =
+                                labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - m))
+                                        .size();
+                        for (var idx = 0; idx < op.operands().length - 2; idx++) {
+                            var n = (int) op.operands()[idx];
+                            if (ctrlFrameStack.size() < n) {
+                                throw new InvalidException("verify me");
+                            }
+                            var labelTypes =
+                                    labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n));
+                            if (labelTypes.size() != arity) {
+                                throw new InvalidException("mismatched arity in BR_TABLE");
+                            }
+                            pushVals(popVals(labelTypes));
+                        }
+                        popVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - m)));
                         break;
                     }
                 case RETURN:
-                {
-                    popVals(labelTypes(ctrlFrameStack.get(0)));
-                    unreachable();
-                    break;
-                }
+                    {
+                        popVals(labelTypes(ctrlFrameStack.get(0)));
+                        unreachable();
+                        break;
+                    }
                 default:
                     break;
             }
@@ -357,7 +393,11 @@ public class TypeValidator {
                 case I32_ROTR:
                     {
                         popVal(ValueType.I32);
+                        //                        try {
                         popVal(ValueType.I32);
+                        //                        } catch (Exception e) {
+                        //                            System.out.println("debug me");
+                        //                        }
                         pushVal(ValueType.I32);
                         break;
                     }
@@ -694,7 +734,7 @@ public class TypeValidator {
                 case REF_IS_NULL:
                     {
                         var ref = popVal();
-                        if (!ref.isReference()) {
+                        if (!isRef(ref)) {
                             throw new InvalidException(
                                     "type mismatch: expected FuncRef or ExtRef, but was " + ref);
                         }
@@ -711,7 +751,7 @@ public class TypeValidator {
                         popVal(ValueType.I32);
                         var t1 = popVal();
                         var t2 = popVal();
-                        if (!(t1.isNumeric() && t2.isNumeric())) {
+                        if (!(isNum(t1) && isNum(t2))) {
                             throw new InvalidException(
                                     "type mismatch: select should have numeric arguments");
                         }
