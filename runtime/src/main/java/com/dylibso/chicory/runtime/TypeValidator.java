@@ -12,6 +12,8 @@ import java.util.List;
 
 // Heavily inspired by wazero
 // https://github.com/tetratelabs/wazero/blob/5a8a053bff0ae795b264de9672016745cb842070/internal/wasm/func_validation.go
+// control flow implementation follows:
+// https://webassembly.github.io/spec/core/appendix/algorithm.html
 public class TypeValidator {
 
     private boolean isNum(ValueType t) {
@@ -103,11 +105,11 @@ public class TypeValidator {
     }
 
     private List<ValueType> labelTypes(CtrlFrame frame) {
-//        if (frame.opCode == OpCode.LOOP) {
-//            return frame.startTypes; // TODO: verify!
-//        } else {
-            return frame.endTypes;
-//        }
+        //        if (frame.opCode == OpCode.LOOP) {
+        //            return frame.startTypes; // TODO: verify!
+        //        } else {
+        return frame.endTypes;
+        //        }
     }
 
     // This is not included in the proposed algorithm
@@ -159,7 +161,6 @@ public class TypeValidator {
     public void validate(FunctionBody body, FunctionType functionType, Instance instance) {
         var localTypes = body.localTypes();
         var inputLen = functionType.params().size();
-        pushCtrl(null, new ArrayList<>(), functionType.returns());
         pushCtrl(null, new ArrayList<>(), functionType.returns());
 
         for (var i = 0; i < body.instructions().size(); i++) {
@@ -236,7 +237,8 @@ public class TypeValidator {
                             throw new InvalidException("verify me");
                         }
                         var arity =
-                                labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - m)).size();
+                                labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - m))
+                                        .size();
                         for (var idx = 1; idx < op.operands().length - 2; idx++) {
                             var n = (int) op.operands()[idx];
                             if (ctrlFrameStack.size() < n) {
