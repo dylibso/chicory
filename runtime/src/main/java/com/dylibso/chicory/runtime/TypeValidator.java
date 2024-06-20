@@ -7,59 +7,106 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 // Heavily inspired by wazero
 // https://github.com/tetratelabs/wazero/blob/5a8a053bff0ae795b264de9672016745cb842070/internal/wasm/func_validation.go
 public class TypeValidator {
 
+    private static class CtrlFrame {
+        private final OpCode opCode;
+        private final List<ValueType> startTypes;
+        private final List<ValueType> endTypes;
+        private final int height;
+        private boolean unreachable;
+
+        public CtrlFrame(
+                OpCode opCode,
+                List<ValueType> startTypes,
+                List<ValueType> endTypes,
+                int height,
+                boolean unreachable) {
+            this.opCode = opCode;
+            this.startTypes = startTypes;
+            this.endTypes = endTypes;
+            this.height = height;
+            this.unreachable = unreachable;
+        }
+    }
+
     private List<ValueType> valueTypeStack = new ArrayList<>();
-    private List<List<ValueType>> returns = new ArrayList<>();
-    private List<List<ValueType>> prevStack = new ArrayList<>();
+    private List<CtrlFrame> ctrlFrameStack = new ArrayList<>();
 
-    private static <T> T peek(List<T> list) {
-        return list.get(list.size() - 1);
+    private void pushVal(ValueType valType) {
+        valueTypeStack.add(valType);
     }
 
-    private static <T> T pop(List<T> list) {
-        var val = list.get(list.size() - 1);
-        list.remove(list.size() - 1);
-        return val;
-    }
-
-    private static <T> void push(List<T> list, T elem) {
-        list.add(elem);
-    }
-
-    private static <T> List<T> clone(List<T> list) {
-        return new ArrayList<>(list);
-    }
-
-    private void popAndVerifyType(ValueType expected) {
-        ValueType have = null;
-        if (valueTypeStack.size() > prevStack.size()) {
-            have = pop(valueTypeStack);
-        } else if (valueTypeStack.size() > 0) {
-            // a block can consume elements outside of it
-            // but they should be restored on exit
-            have = pop(valueTypeStack);
+    private ValueType popVal() {
+        if (valueTypeStack.size() == ctrlFrameStack.get(ctrlFrameStack.size() - 1).height
+                && ctrlFrameStack.get(ctrlFrameStack.size() - 1).unreachable) {
+            return ValueType.UNKNOWN;
         }
-        verifyType(expected, have);
+        if (valueTypeStack.size() == ctrlFrameStack.get(ctrlFrameStack.size() - 1).height) {
+            throw new InvalidException("type mismatch, popVal()");
+        }
+        return valueTypeStack.remove(valueTypeStack.size() - 1);
     }
 
-    private void verifyType(ValueType expected, ValueType have) {
-        if (have == null) {
-            var expectedType = (expected == null) ? "any" : expected.name();
-            throw new InvalidException(
-                    "type mismatch: expected [" + expectedType + "], but was []");
+    private ValueType popVal(ValueType expected) {
+        var actual = popVal();
+        if (actual != expected && actual != ValueType.UNKNOWN && expected != ValueType.UNKNOWN) {
+            throw new InvalidException("type mismatch, popVal(expected)");
         }
-        if (expected != null
-                && have != expected
-                && have != ValueType.UNKNOWN
-                && expected != ValueType.UNKNOWN) {
-            throw new InvalidException(
-                    "type mismatch: expected [" + expected + "], but was " + have);
+        return actual;
+    }
+
+    private void pushVals(List<ValueType> valTypes) {
+        for (var t : valTypes) {
+            pushVal(t);
         }
+    }
+
+    private List<ValueType> popVals(List<ValueType> valTypes) {
+        var popped = new ValueType[valTypes.size()];
+        for (int i = 0; i < valTypes.size(); i++) {
+            popped[i] = popVal(valTypes.get(valTypes.size() - 1 - i));
+        }
+        return Arrays.asList(popped);
+    }
+
+    private void pushCtrl(OpCode opCode, List<ValueType> in, List<ValueType> out) {
+        var frame = new CtrlFrame(opCode, in, out, valueTypeStack.size(), false);
+        ctrlFrameStack.add(frame);
+        pushVals(in);
+    }
+
+    private CtrlFrame popCtrl() {
+        if (ctrlFrameStack.isEmpty()) {
+            throw new InvalidException("type mismatch, control frame stack empty");
+        }
+        var frame = ctrlFrameStack.get(ctrlFrameStack.size() - 1);
+        popVals(frame.endTypes);
+        if (valueTypeStack.size() != frame.height) {
+            throw new InvalidException("type mismatch, wrong type stack height");
+        }
+        ctrlFrameStack.remove(ctrlFrameStack.size() - 1);
+        return frame;
+    }
+
+    private List<ValueType> labelTypes(CtrlFrame frame) {
+        if (frame.opCode == OpCode.LOOP) {
+            return frame.startTypes;
+        } else {
+            return frame.endTypes;
+        }
+    }
+
+    private void unreachable() {
+        while (valueTypeStack.size() > ctrlFrameStack.get(ctrlFrameStack.size() - 1).height) {
+            valueTypeStack.remove(valueTypeStack.size() - 1);
+        }
+        ctrlFrameStack.get(ctrlFrameStack.size() - 1).unreachable = true;
     }
 
     private static void validateMemory(Instance instance, int memIds) {
@@ -76,55 +123,6 @@ public class TypeValidator {
         }
     }
 
-    private void validateReturns(List<ValueType> returns, int limit) {
-        if (returns.size() > (valueTypeStack.size() - limit)) {
-            throw new InvalidException("type mismatch, not enough values to return");
-        }
-
-        var stackSize = valueTypeStack.size();
-        var offset = stackSize - returns.size();
-        for (int j = 0; j < returns.size(); j++) {
-            var elem = valueTypeStack.get(offset + j);
-            verifyType(returns.get(j), elem);
-        }
-    }
-
-    private int jumpToNextEnd(List<Instruction> instructions, Instruction op, int currentPos) {
-        Instruction tmpInstruction;
-        var offset = 0;
-        do {
-            offset++;
-            if (instructions.size() > (currentPos + offset)) {
-                tmpInstruction = instructions.get(currentPos + offset);
-            } else {
-                break;
-            }
-        } while (tmpInstruction.depth() == (op.depth() + 1)
-                && tmpInstruction.opcode() != OpCode.END);
-
-        return offset + currentPos - 1;
-    }
-
-    private int jumpToNextElse(List<Instruction> instructions, Instruction op, int currentPos) {
-        Instruction tmpInstruction = null;
-        var offset = 0;
-        do {
-            offset++;
-            if (instructions.size() > (currentPos + offset)
-                    && instructions.get(currentPos + offset).opcode() == OpCode.ELSE) {
-                tmpInstruction = instructions.get(currentPos + offset);
-            } else {
-                break;
-            }
-        } while (tmpInstruction.depth() == op.depth());
-
-        if (tmpInstruction == null) {
-            return -1;
-        } else {
-            return offset + currentPos - 1;
-        }
-    }
-
     private List<ValueType> getReturns(Instruction op, Instance instance) {
         var typeId = (int) op.scope().operands()[0];
         if (typeId == 0x40) { // epsilon
@@ -133,15 +131,6 @@ public class TypeValidator {
             return List.of(ValueType.forId(typeId));
         } else {
             return instance.type(typeId).returns();
-        }
-    }
-
-    private void resetToDepth(int depth) {
-        while (prevStack.size() > depth + 1) {
-            pop(prevStack);
-        }
-        while (returns.size() > depth + 1) {
-            pop(returns);
         }
     }
 
@@ -155,142 +144,84 @@ public class TypeValidator {
     public void validate(FunctionBody body, FunctionType functionType, Instance instance) {
         var localTypes = body.localTypes();
         var inputLen = functionType.params().size();
-        push(prevStack, clone(valueTypeStack));
-        push(returns, functionType.returns());
+        pushCtrl(null, new ArrayList<>(), functionType.returns());
 
         for (var i = 0; i < body.instructions().size(); i++) {
             var op = body.instructions().get(i);
 
             // control flow instructions handling
             switch (op.opcode()) {
-                case LOOP:
-                case BLOCK:
-                    {
-                        push(prevStack, clone(valueTypeStack));
-                        push(returns, getReturns(op, instance));
-                        break;
-                    }
+                case UNREACHABLE:
+                    unreachable();
                 case IF:
                     {
-                        popAndVerifyType(ValueType.I32);
-                        push(prevStack, clone(valueTypeStack));
+                        popVal(ValueType.I32);
+                        // fallthrough
+                    }
+                case LOOP: // t1* -> t2*
+                case BLOCK:
+                    {
+                        var t1 = new ArrayList<ValueType>(); // TODO: verify if it's correct
+                        var t2 = getReturns(op, instance);
+                        popVals(t1);
+                        pushCtrl(op.opcode(), t1, t2);
+                        break;
+                    }
+                case END:
+                    {
+                        try {
+                            var frame = popCtrl();
+                            pushVals(frame.endTypes);
+                        } catch (Exception e) {
+                            System.out.println("debug me");
+                        }
                         break;
                     }
                 case ELSE:
                     {
-                        valueTypeStack = pop(prevStack);
-                        push(prevStack, clone(valueTypeStack));
-                        break;
-                    }
-                case RETURN:
-                    {
-                        var limit = peek(prevStack).size();
-                        validateReturns(functionType.returns(), limit);
-
-                        var nextElseIdx = jumpToNextElse(body.instructions(), op, i);
-                        if (nextElseIdx != -1) {
-                            var nextElse = body.instructions().get(nextElseIdx);
-                            resetToDepth(nextElse.depth());
-                            if (nextElseIdx > i) {
-                                i = nextElseIdx;
-                            }
-                        } else { // jump to the function END
-                            i = body.instructions().size() - 1;
+                        var frame = popCtrl();
+                        if (frame.opCode != OpCode.IF) {
+                            throw new InvalidException("else doesn't belong to if");
                         }
+                        pushCtrl(op.opcode(), frame.startTypes, frame.endTypes);
                         break;
                     }
                 case BR:
                     {
-                        // TODO: refactor BRs implementations
-                        var targetIdx = op.labelTrue();
-                        if (targetIdx == null) {
+                        if (op.labelTrue() == null) {
                             throw new InvalidException("unknown label");
                         }
-                        var targetInstruction = body.instructions().get(targetIdx);
-                        var targetDepth = targetInstruction.depth();
-
-                        // TODO: better verify
-                        // jump to loops return to the top of the loop instead
-                        if (body.instructions().get(targetIdx - 1).opcode() == OpCode.LOOP) {
-                            targetDepth =
-                                    jumpToNextEnd(
-                                            body.instructions(),
-                                            body.instructions().get(targetIdx - 1),
-                                            i);
+                        var n = (int) op.operands()[0];
+                        if (ctrlFrameStack.size() < n) {
+                            throw new InvalidException("verify me");
                         }
-
-                        //                        TODO: implement me properly!
-                        //                            validateReturns(
-                        //                                    returns.get(targetDepth),
-                        // prevStack.get(targetDepth).size());
-
-                        // if we are in an IF we should validate the other branch
-                        var nextElseIdx = jumpToNextElse(body.instructions(), op, i);
-                        if (nextElseIdx != -1) {
-                            var nextElse = body.instructions().get(nextElseIdx);
-                            resetToDepth(nextElse.depth());
-                            if (nextElseIdx > i) {
-                                i = nextElseIdx;
-                            }
-                        } else { // jump to function END
-                            // the remaining instructions are not going to be evaluated ever
-                            resetToDepth(targetDepth);
-                            if ((targetIdx - 1) > i) {
-                                i = (targetIdx - 1);
-                            }
-                        }
+                        popVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n)));
+                        unreachable();
                         break;
                     }
                 case BR_IF:
                     {
-                        popAndVerifyType(ValueType.I32);
-
-                        var targetIdx = op.labelTrue();
-                        if (targetIdx == null) {
+                        if (op.labelTrue() == null) {
                             throw new InvalidException("unknown label");
                         }
-                        var targetInstruction = body.instructions().get(targetIdx);
-                        var targetDepth = targetInstruction.depth();
-
-                        //                        TODO: implement me properly
-                        //                        validateReturns(
-                        //                                returns.get(targetDepth),
-                        // prevStack.get(targetDepth).size());
-
-                        // evaluate anyhow the next instruction to validate if the jump doesn't
-                        // happen
+                        var n = (int) op.operands()[0];
+                        if (ctrlFrameStack.size() < n) {
+                            throw new InvalidException("verify me");
+                        }
+                        popVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n)));
+                        pushVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n)));
                         break;
                     }
                 case BR_TABLE:
                     {
                         // TODO: implement me
-                        popAndVerifyType(ValueType.I32);
+                        popVal(ValueType.I32);
                         break;
                     }
-                case END:
-                    {
-                        if (op.scope().opcode() == OpCode.IF) {
-                            valueTypeStack = pop(prevStack);
-                        } else {
-                            var expected = pop(returns);
-                            var restoreStack = pop(prevStack);
-
-                            validateReturns(expected, restoreStack.size());
-                            if (returns.isEmpty()
-                                    && expected.isEmpty()
-                                    && !valueTypeStack.isEmpty()) {
-                                throw new InvalidException(
-                                        "type mismatch, leftovers on the stack after last end");
-                            }
-
-                            valueTypeStack = restoreStack;
-                            // need to push on the stack the results
-                            for (var ret : expected) {
-                                push(valueTypeStack, ret);
-                            }
-                        }
-                        break;
-                    }
+                case RETURN:
+                {
+                    break;
+                }
                 default:
                     break;
             }
@@ -362,15 +293,15 @@ public class TypeValidator {
                     }
                 case DROP:
                     {
-                        popAndVerifyType(null);
+                        popVal();
                         break;
                     }
                 case I32_STORE:
                 case I32_STORE8:
                 case I32_STORE16:
                     {
-                        popAndVerifyType(ValueType.I32);
-                        popAndVerifyType(ValueType.I32);
+                        popVal(ValueType.I32);
+                        popVal(ValueType.I32);
                         break;
                     }
                 case I32_LOAD:
@@ -386,15 +317,15 @@ public class TypeValidator {
                 case I32_EQZ:
                 case MEMORY_GROW:
                     {
-                        popAndVerifyType(ValueType.I32);
-                        push(valueTypeStack, ValueType.I32);
+                        popVal(ValueType.I32);
+                        pushVal(ValueType.I32);
                         break;
                     }
                 case I32_CONST:
                 case MEMORY_SIZE:
                 case TABLE_SIZE:
                     {
-                        push(valueTypeStack, ValueType.I32);
+                        pushVal(ValueType.I32);
                         break;
                     }
                 case I32_ADD:
@@ -423,16 +354,16 @@ public class TypeValidator {
                 case I32_ROTL:
                 case I32_ROTR:
                     {
-                        popAndVerifyType(ValueType.I32);
-                        popAndVerifyType(ValueType.I32);
-                        push(valueTypeStack, ValueType.I32);
+                        popVal(ValueType.I32);
+                        popVal(ValueType.I32);
+                        pushVal(ValueType.I32);
                         break;
                     }
                 case I32_WRAP_I64:
                 case I64_EQZ:
                     {
-                        popAndVerifyType(ValueType.I64);
-                        push(valueTypeStack, ValueType.I32);
+                        popVal(ValueType.I64);
+                        pushVal(ValueType.I32);
                         break;
                     }
                 case I32_TRUNC_F32_S:
@@ -441,8 +372,8 @@ public class TypeValidator {
                 case I32_TRUNC_SAT_F32_U:
                 case I32_REINTERPRET_F32:
                     {
-                        popAndVerifyType(ValueType.F32);
-                        push(valueTypeStack, ValueType.I32);
+                        popVal(ValueType.F32);
+                        pushVal(ValueType.I32);
                         break;
                     }
                 case I32_TRUNC_F64_S:
@@ -450,8 +381,8 @@ public class TypeValidator {
                 case I32_TRUNC_SAT_F64_S:
                 case I32_TRUNC_SAT_F64_U:
                     {
-                        popAndVerifyType(ValueType.F64);
-                        push(valueTypeStack, ValueType.I32);
+                        popVal(ValueType.F64);
+                        pushVal(ValueType.I32);
                         break;
                     }
                 case I64_LOAD:
@@ -464,13 +395,13 @@ public class TypeValidator {
                 case I64_EXTEND_I32_U:
                 case I64_EXTEND_I32_S:
                     {
-                        popAndVerifyType(ValueType.I32);
-                        push(valueTypeStack, ValueType.I64);
+                        popVal(ValueType.I32);
+                        pushVal(ValueType.I64);
                         break;
                     }
                 case I64_CONST:
                     {
-                        push(valueTypeStack, ValueType.I64);
+                        pushVal(ValueType.I64);
                         break;
                     }
                 case I64_STORE:
@@ -478,8 +409,8 @@ public class TypeValidator {
                 case I64_STORE16:
                 case I64_STORE32:
                     {
-                        popAndVerifyType(ValueType.I64);
-                        popAndVerifyType(ValueType.I32);
+                        popVal(ValueType.I64);
+                        popVal(ValueType.I32);
                         break;
                     }
                 case I64_ADD:
@@ -498,9 +429,9 @@ public class TypeValidator {
                 case I64_ROTL:
                 case I64_ROTR:
                     {
-                        popAndVerifyType(ValueType.I64);
-                        popAndVerifyType(ValueType.I64);
-                        push(valueTypeStack, ValueType.I64);
+                        popVal(ValueType.I64);
+                        popVal(ValueType.I64);
+                        pushVal(ValueType.I64);
                         break;
                     }
                 case I64_EQ:
@@ -514,9 +445,9 @@ public class TypeValidator {
                 case I64_GE_S:
                 case I64_GE_U:
                     {
-                        popAndVerifyType(ValueType.I64);
-                        popAndVerifyType(ValueType.I64);
-                        push(valueTypeStack, ValueType.I32);
+                        popVal(ValueType.I64);
+                        popVal(ValueType.I64);
+                        pushVal(ValueType.I32);
                         break;
                     }
                 case I64_CLZ:
@@ -526,8 +457,8 @@ public class TypeValidator {
                 case I64_EXTEND_16_S:
                 case I64_EXTEND_32_S:
                     {
-                        popAndVerifyType(ValueType.I64);
-                        push(valueTypeStack, ValueType.I64);
+                        popVal(ValueType.I64);
+                        pushVal(ValueType.I64);
                         break;
                     }
                 case I64_REINTERPRET_F64:
@@ -536,8 +467,8 @@ public class TypeValidator {
                 case I64_TRUNC_SAT_F64_S:
                 case I64_TRUNC_SAT_F64_U:
                     {
-                        popAndVerifyType(ValueType.F64);
-                        push(valueTypeStack, ValueType.I64);
+                        popVal(ValueType.F64);
+                        pushVal(ValueType.I64);
                         break;
                     }
                 case I64_TRUNC_F32_S:
@@ -545,19 +476,19 @@ public class TypeValidator {
                 case I64_TRUNC_SAT_F32_S:
                 case I64_TRUNC_SAT_F32_U:
                     {
-                        popAndVerifyType(ValueType.F32);
-                        push(valueTypeStack, ValueType.I64);
+                        popVal(ValueType.F32);
+                        pushVal(ValueType.I64);
                         break;
                     }
                 case F32_STORE:
                     {
-                        popAndVerifyType(ValueType.F32);
-                        popAndVerifyType(ValueType.I32);
+                        popVal(ValueType.F32);
+                        popVal(ValueType.I32);
                         break;
                     }
                 case F32_CONST:
                     {
-                        push(valueTypeStack, ValueType.F32);
+                        pushVal(ValueType.F32);
                         break;
                     }
                 case F32_LOAD:
@@ -565,43 +496,43 @@ public class TypeValidator {
                 case F32_CONVERT_I32_U:
                 case F32_REINTERPRET_I32:
                     {
-                        popAndVerifyType(ValueType.I32);
-                        push(valueTypeStack, ValueType.F32);
+                        popVal(ValueType.I32);
+                        pushVal(ValueType.F32);
                         break;
                     }
                 case F32_CONVERT_I64_S:
                 case F32_CONVERT_I64_U:
                     {
-                        popAndVerifyType(ValueType.I64);
-                        push(valueTypeStack, ValueType.F32);
+                        popVal(ValueType.I64);
+                        pushVal(ValueType.F32);
                         break;
                     }
                 case F64_LOAD:
                 case F64_CONVERT_I32_S:
                 case F64_CONVERT_I32_U:
                     {
-                        popAndVerifyType(ValueType.I32);
-                        push(valueTypeStack, ValueType.F64);
+                        popVal(ValueType.I32);
+                        pushVal(ValueType.F64);
                         break;
                     }
                 case F64_CONVERT_I64_S:
                 case F64_CONVERT_I64_U:
                 case F64_REINTERPRET_I64:
                     {
-                        popAndVerifyType(ValueType.I64);
-                        push(valueTypeStack, ValueType.F64);
+                        popVal(ValueType.I64);
+                        pushVal(ValueType.F64);
                         break;
                     }
                 case F64_PROMOTE_F32:
                     {
-                        popAndVerifyType(ValueType.F32);
-                        push(valueTypeStack, ValueType.F64);
+                        popVal(ValueType.F32);
+                        pushVal(ValueType.F64);
                         break;
                     }
                 case F32_DEMOTE_F64:
                     {
-                        popAndVerifyType(ValueType.F64);
-                        push(valueTypeStack, ValueType.F32);
+                        popVal(ValueType.F64);
+                        pushVal(ValueType.F32);
                         break;
                     }
                 case F32_SQRT:
@@ -612,8 +543,8 @@ public class TypeValidator {
                 case F32_TRUNC:
                 case F32_NEAREST:
                     {
-                        popAndVerifyType(ValueType.F32);
-                        push(valueTypeStack, ValueType.F32);
+                        popVal(ValueType.F32);
+                        pushVal(ValueType.F32);
                         break;
                     }
                 case F32_ADD:
@@ -624,9 +555,9 @@ public class TypeValidator {
                 case F32_MAX:
                 case F32_COPYSIGN:
                     {
-                        popAndVerifyType(ValueType.F32);
-                        popAndVerifyType(ValueType.F32);
-                        push(valueTypeStack, ValueType.F32);
+                        popVal(ValueType.F32);
+                        popVal(ValueType.F32);
+                        pushVal(ValueType.F32);
                         break;
                     }
                 case F32_EQ:
@@ -636,20 +567,20 @@ public class TypeValidator {
                 case F32_GT:
                 case F32_GE:
                     {
-                        popAndVerifyType(ValueType.F32);
-                        popAndVerifyType(ValueType.F32);
-                        push(valueTypeStack, ValueType.I32);
+                        popVal(ValueType.F32);
+                        popVal(ValueType.F32);
+                        pushVal(ValueType.I32);
                         break;
                     }
                 case F64_STORE:
                     {
-                        popAndVerifyType(ValueType.F64);
-                        popAndVerifyType(ValueType.I32);
+                        popVal(ValueType.F64);
+                        popVal(ValueType.I32);
                         break;
                     }
                 case F64_CONST:
                     {
-                        push(valueTypeStack, ValueType.F64);
+                        pushVal(ValueType.F64);
                         break;
                     }
                 case F64_SQRT:
@@ -660,8 +591,8 @@ public class TypeValidator {
                 case F64_TRUNC:
                 case F64_NEAREST:
                     {
-                        popAndVerifyType(ValueType.F64);
-                        push(valueTypeStack, ValueType.F64);
+                        popVal(ValueType.F64);
+                        pushVal(ValueType.F64);
                         break;
                     }
                 case F64_ADD:
@@ -672,9 +603,9 @@ public class TypeValidator {
                 case F64_MAX:
                 case F64_COPYSIGN:
                     {
-                        popAndVerifyType(ValueType.F64);
-                        popAndVerifyType(ValueType.F64);
-                        push(valueTypeStack, ValueType.F64);
+                        popVal(ValueType.F64);
+                        popVal(ValueType.F64);
+                        pushVal(ValueType.F64);
                         break;
                     }
                 case F64_EQ:
@@ -684,9 +615,9 @@ public class TypeValidator {
                 case F64_GT:
                 case F64_GE:
                     {
-                        popAndVerifyType(ValueType.F64);
-                        popAndVerifyType(ValueType.F64);
-                        push(valueTypeStack, ValueType.I32);
+                        popVal(ValueType.F64);
+                        popVal(ValueType.F64);
+                        pushVal(ValueType.I32);
                         break;
                     }
                 case LOCAL_SET:
@@ -696,7 +627,7 @@ public class TypeValidator {
                                 (index < inputLen)
                                         ? functionType.params().get(index)
                                         : getLocalType(localTypes, index - inputLen);
-                        popAndVerifyType(expectedType);
+                        popVal(expectedType);
                         break;
                     }
                 case LOCAL_GET:
@@ -706,7 +637,7 @@ public class TypeValidator {
                                 (index < inputLen)
                                         ? functionType.params().get(index)
                                         : getLocalType(localTypes, index - inputLen);
-                        push(valueTypeStack, expectedType);
+                        pushVal(expectedType);
                         break;
                     }
                 case LOCAL_TEE:
@@ -716,19 +647,19 @@ public class TypeValidator {
                                 (index < inputLen)
                                         ? functionType.params().get(index)
                                         : getLocalType(localTypes, index - inputLen);
-                        popAndVerifyType(expectedType);
-                        push(valueTypeStack, expectedType);
+                        popVal(expectedType);
+                        pushVal(expectedType);
                         break;
                     }
                 case GLOBAL_GET:
                     {
                         var type = instance.readGlobal((int) op.operands()[0]).type();
-                        push(valueTypeStack, type);
+                        pushVal(type);
                         break;
                     }
                 case GLOBAL_SET:
                     {
-                        popAndVerifyType(instance.readGlobal((int) op.operands()[0]).type());
+                        popVal(instance.readGlobal((int) op.operands()[0]).type());
                         break;
                     }
                 case CALL:
@@ -736,69 +667,69 @@ public class TypeValidator {
                         var index = (int) op.operands()[0];
                         var types = instance.type(instance.functionType(index));
                         for (int j = types.params().size() - 1; j >= 0; j--) {
-                            popAndVerifyType(types.params().get(j));
+                            popVal(types.params().get(j));
                         }
-                        // TODO: verify the order
-                        for (var resultType : types.returns()) {
-                            push(valueTypeStack, resultType);
-                        }
+                        pushVals(types.returns());
                         break;
                     }
                 case CALL_INDIRECT:
                     {
                         var typeId = (int) op.operands()[0];
-                        popAndVerifyType(ValueType.I32);
+                        popVal(ValueType.I32);
 
                         var types = instance.type(typeId);
                         for (int j = types.params().size() - 1; j >= 0; j--) {
-                            popAndVerifyType(types.params().get(j));
+                            popVal(types.params().get(j));
                         }
-                        // TODO: verify the order
-                        for (var resultType : types.returns()) {
-                            push(valueTypeStack, resultType);
-                        }
+                        pushVals(types.returns());
                         break;
                     }
                 case REF_NULL:
                     {
-                        push(valueTypeStack, ValueType.forId((int) op.operands()[0]));
+                        pushVal(ValueType.forId((int) op.operands()[0]));
                         break;
                     }
                 case REF_IS_NULL:
                     {
-                        var ref = pop(valueTypeStack);
+                        var ref = popVal();
                         if (!ref.isReference()) {
                             throw new InvalidException(
                                     "type mismatch: expected FuncRef or ExtRef, but was " + ref);
                         }
-                        push(valueTypeStack, ValueType.I32);
+                        pushVal(ValueType.I32);
                         break;
                     }
                 case REF_FUNC:
                     {
-                        push(valueTypeStack, ValueType.FuncRef);
+                        pushVal(ValueType.FuncRef);
                         break;
                     }
                 case SELECT:
                     {
-                        popAndVerifyType(ValueType.I32);
-                        var a = pop(valueTypeStack);
-                        var b = pop(valueTypeStack);
-                        // the result is polymorphic
-                        push(valueTypeStack, ValueType.UNKNOWN);
+                        popVal(ValueType.I32);
+                        var t1 = popVal();
+                        var t2 = popVal();
+                        if (!(t1.isNumeric() && t2.isNumeric())) {
+                            throw new InvalidException(
+                                    "type mismatch: select should have numeric arguments");
+                        }
+                        if (t1 != t2 && t1 != ValueType.UNKNOWN && t2 != ValueType.UNKNOWN) {
+                            throw new InvalidException("type mismatch: in select");
+                        }
+                        if (t1 == ValueType.UNKNOWN) {
+                            pushVal(t2);
+                        } else {
+                            pushVal(t1);
+                        }
                         break;
                     }
                 case SELECT_T:
                     {
-                        popAndVerifyType(ValueType.I32);
-                        var a = pop(valueTypeStack);
-                        var b = pop(valueTypeStack);
-
-                        if (a != b) {
-                            throw new InvalidException(
-                                    "type mismatch: expected " + a + ", but was " + b);
-                        }
-                        push(valueTypeStack, a);
+                        popVal(ValueType.I32);
+                        var t = ValueType.forId((int) op.operands()[0]);
+                        popVal(t);
+                        popVal(t);
+                        pushVal(t);
                         break;
                     }
                 case MEMORY_COPY:
@@ -807,35 +738,35 @@ public class TypeValidator {
                 case TABLE_COPY:
                 case TABLE_INIT:
                     {
-                        popAndVerifyType(ValueType.I32);
-                        popAndVerifyType(ValueType.I32);
-                        popAndVerifyType(ValueType.I32);
+                        popVal(ValueType.I32);
+                        popVal(ValueType.I32);
+                        popVal(ValueType.I32);
                         break;
                     }
                 case TABLE_FILL:
                     {
-                        popAndVerifyType(ValueType.I32);
-                        popAndVerifyType(instance.table((int) op.operands()[0]).elementType());
-                        popAndVerifyType(ValueType.I32);
+                        popVal(ValueType.I32);
+                        popVal(instance.table((int) op.operands()[0]).elementType());
+                        popVal(ValueType.I32);
                         break;
                     }
                 case TABLE_GET:
                     {
-                        popAndVerifyType(ValueType.I32);
-                        push(valueTypeStack, instance.table((int) op.operands()[0]).elementType());
+                        popVal(ValueType.I32);
+                        pushVal(instance.table((int) op.operands()[0]).elementType());
                         break;
                     }
                 case TABLE_SET:
                     {
-                        popAndVerifyType(instance.table((int) op.operands()[0]).elementType());
-                        popAndVerifyType(ValueType.I32);
+                        popVal(instance.table((int) op.operands()[0]).elementType());
+                        popVal(ValueType.I32);
                         break;
                     }
                 case TABLE_GROW:
                     {
-                        popAndVerifyType(ValueType.I32);
-                        popAndVerifyType(instance.table((int) op.operands()[0]).elementType());
-                        push(valueTypeStack, ValueType.I32);
+                        popVal(ValueType.I32);
+                        popVal(instance.table((int) op.operands()[0]).elementType());
+                        pushVal(ValueType.I32);
                         break;
                     }
                 case ELEM_DROP:

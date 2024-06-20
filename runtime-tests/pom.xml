@@ -161,9 +161,9 @@
           </excludedMalformedWasts>
           <excludedInvalidWasts>
             <wast>binary-leb128.wast</wast>
-            <wast>block.wast</wast>
-            <wast>br.wast</wast>
-            <wast>br_if.wast</wast>
+            <!--            <wast>block.wast</wast>-->
+            <!--            <wast>br.wast</wast>-->
+            <!--            <wast>br_if.wast</wast>-->
             <wast>br_table.wast</wast>
             <wast>bulk.wast</wast>
             <wast>call.wast</wast>
