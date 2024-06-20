@@ -308,6 +308,9 @@ public class Instance {
     }
 
     public int functionType(int idx) {
+        if (idx >= functionTypes.length) {
+            throw new InvalidException("unknown function");
+        }
         return functionTypes[idx];
     }
 
