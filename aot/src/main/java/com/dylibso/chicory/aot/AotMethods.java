@@ -82,22 +82,41 @@ public final class AotMethods {
             MEMORY_GROW = Memory.class.getMethod("grow", int.class);
             MEMORY_DROP = Memory.class.getMethod("drop", int.class);
             MEMORY_PAGES = Memory.class.getMethod("pages");
-            MEMORY_READ_BYTE = Memory.class.getMethod("read", int.class);
-            MEMORY_READ_SHORT = Memory.class.getMethod("readShort", int.class);
-            MEMORY_READ_INT = Memory.class.getMethod("readInt", int.class);
-            MEMORY_READ_LONG = Memory.class.getMethod("readLong", int.class);
-            MEMORY_READ_FLOAT = Memory.class.getMethod("readFloat", int.class);
-            MEMORY_READ_DOUBLE = Memory.class.getMethod("readDouble", int.class);
-            MEMORY_WRITE_BYTE = Memory.class.getMethod("writeByte", int.class, byte.class);
-            MEMORY_WRITE_SHORT = Memory.class.getMethod("writeShort", int.class, short.class);
-            MEMORY_WRITE_INT = Memory.class.getMethod("writeI32", int.class, int.class);
+            MEMORY_READ_BYTE =
+                    AotMethods.class.getMethod(
+                            "memoryReadByte", int.class, int.class, Memory.class);
+            MEMORY_READ_SHORT =
+                    AotMethods.class.getMethod(
+                            "memoryReadShort", int.class, int.class, Memory.class);
+            MEMORY_READ_INT =
+                    AotMethods.class.getMethod("memoryReadInt", int.class, int.class, Memory.class);
+            MEMORY_READ_LONG =
+                    AotMethods.class.getMethod(
+                            "memoryReadLong", int.class, int.class, Memory.class);
+            MEMORY_READ_FLOAT =
+                    AotMethods.class.getMethod(
+                            "memoryReadFloat", int.class, int.class, Memory.class);
+            MEMORY_READ_DOUBLE =
+                    AotMethods.class.getMethod(
+                            "memoryReadDouble", int.class, int.class, Memory.class);
+            MEMORY_WRITE_BYTE =
+                    AotMethods.class.getMethod(
+                            "memoryWriteByte", int.class, byte.class, int.class, Memory.class);
+            MEMORY_WRITE_SHORT =
+                    AotMethods.class.getMethod(
+                            "memoryWriteShort", int.class, short.class, int.class, Memory.class);
+            MEMORY_WRITE_INT =
+                    AotMethods.class.getMethod(
+                            "memoryWriteInt", int.class, int.class, int.class, Memory.class);
             MEMORY_WRITE_LONG =
                     AotMethods.class.getMethod(
-                            "memoryWriteLong", long.class, int.class, Memory.class);
-            MEMORY_WRITE_FLOAT = Memory.class.getMethod("writeF32", int.class, float.class);
+                            "memoryWriteLong", int.class, long.class, int.class, Memory.class);
+            MEMORY_WRITE_FLOAT =
+                    AotMethods.class.getMethod(
+                            "memoryWriteFloat", int.class, float.class, int.class, Memory.class);
             MEMORY_WRITE_DOUBLE =
                     AotMethods.class.getMethod(
-                            "memoryWriteDouble", double.class, int.class, Memory.class);
+                            "memoryWriteDouble", int.class, double.class, int.class, Memory.class);
             REF_IS_NULL = AotMethods.class.getMethod("isRefNull", int.class);
             TABLE_GET =
                     AotMethods.class.getMethod("tableGet", int.class, int.class, Instance.class);
@@ -228,13 +247,75 @@ public final class AotMethods {
     }
 
     @UsedByGeneratedCode
-    public static void memoryWriteLong(long value, int address, Memory memory) {
-        memory.writeLong(address, value);
+    public static byte memoryReadByte(int base, int offset, Memory memory) {
+        validateBase(base);
+        return memory.read(base + offset);
     }
 
     @UsedByGeneratedCode
-    public static void memoryWriteDouble(double value, int address, Memory memory) {
-        memory.writeF64(address, value);
+    public static short memoryReadShort(int base, int offset, Memory memory) {
+        validateBase(base);
+        return memory.readShort(base + offset);
+    }
+
+    @UsedByGeneratedCode
+    public static int memoryReadInt(int base, int offset, Memory memory) {
+        validateBase(base);
+        return memory.readInt(base + offset);
+    }
+
+    @UsedByGeneratedCode
+    public static long memoryReadLong(int base, int offset, Memory memory) {
+        validateBase(base);
+        return memory.readLong(base + offset);
+    }
+
+    @UsedByGeneratedCode
+    public static float memoryReadFloat(int base, int offset, Memory memory) {
+        validateBase(base);
+        return memory.readFloat(base + offset);
+    }
+
+    @UsedByGeneratedCode
+    public static double memoryReadDouble(int base, int offset, Memory memory) {
+        validateBase(base);
+        return memory.readDouble(base + offset);
+    }
+
+    @UsedByGeneratedCode
+    public static void memoryWriteByte(int base, byte value, int offset, Memory memory) {
+        validateBase(base);
+        memory.writeByte(base + offset, value);
+    }
+
+    @UsedByGeneratedCode
+    public static void memoryWriteShort(int base, short value, int offset, Memory memory) {
+        validateBase(base);
+        memory.writeShort(base + offset, value);
+    }
+
+    @UsedByGeneratedCode
+    public static void memoryWriteInt(int base, int value, int offset, Memory memory) {
+        validateBase(base);
+        memory.writeI32(base + offset, value);
+    }
+
+    @UsedByGeneratedCode
+    public static void memoryWriteLong(int base, long value, int offset, Memory memory) {
+        validateBase(base);
+        memory.writeLong(base + offset, value);
+    }
+
+    @UsedByGeneratedCode
+    public static void memoryWriteFloat(int base, float value, int offset, Memory memory) {
+        validateBase(base);
+        memory.writeF32(base + offset, value);
+    }
+
+    @UsedByGeneratedCode
+    public static void memoryWriteDouble(int base, double value, int offset, Memory memory) {
+        validateBase(base);
+        memory.writeF64(base + offset, value);
     }
 
     @UsedByGeneratedCode

@@ -17,24 +17,13 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
   public static func_0(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     LDC 0
     ILOAD 0
-    SWAP
-    DUP
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.validateBase (I)V
     LDC 0
-    IADD
-    SWAP
     ALOAD 1
-    DUP_X2
-    POP
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.writeI32 (II)V
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryWriteInt (IIILcom/dylibso/chicory/runtime/Memory;)V
     LDC 0
-    DUP
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.validateBase (I)V
     LDC 0
-    IADD
     ALOAD 1
-    SWAP
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.readInt (I)I
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryReadInt (IILcom/dylibso/chicory/runtime/Memory;)I
     IRETURN
    L0
    FRAME FULL [] [java/lang/Throwable]
@@ -46,22 +35,13 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
   public static func_1(JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)J
     LDC 0
     LLOAD 0
-    DUP2_X1
-    POP2
-    DUP
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.validateBase (I)V
     LDC 0
-    IADD
     ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryWriteLong (JILcom/dylibso/chicory/runtime/Memory;)V
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryWriteLong (IJILcom/dylibso/chicory/runtime/Memory;)V
     LDC 0
-    DUP
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.validateBase (I)V
     LDC 0
-    IADD
     ALOAD 2
-    SWAP
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.readLong (I)J
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryReadLong (IILcom/dylibso/chicory/runtime/Memory;)J
     LRETURN
    L0
    FRAME FULL [] [java/lang/Throwable]

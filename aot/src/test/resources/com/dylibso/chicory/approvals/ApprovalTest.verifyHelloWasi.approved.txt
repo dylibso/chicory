@@ -51,28 +51,14 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
   public static func_1(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     LDC 0
     LDC 8
-    SWAP
-    DUP
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.validateBase (I)V
     LDC 0
-    IADD
-    SWAP
     ALOAD 0
-    DUP_X2
-    POP
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.writeI32 (II)V
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryWriteInt (IIILcom/dylibso/chicory/runtime/Memory;)V
     LDC 4
     LDC 12
-    SWAP
-    DUP
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.validateBase (I)V
     LDC 0
-    IADD
-    SWAP
     ALOAD 0
-    DUP_X2
-    POP
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.writeI32 (II)V
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryWriteInt (IIILcom/dylibso/chicory/runtime/Memory;)V
     LDC 1
     LDC 0
     LDC 1
