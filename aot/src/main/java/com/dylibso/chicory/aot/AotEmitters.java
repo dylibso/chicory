@@ -31,7 +31,6 @@ import static com.dylibso.chicory.aot.AotMethods.TABLE_INIT;
 import static com.dylibso.chicory.aot.AotMethods.TABLE_SET;
 import static com.dylibso.chicory.aot.AotMethods.TABLE_SIZE;
 import static com.dylibso.chicory.aot.AotMethods.THROW_OUT_OF_BOUNDS_MEMORY_ACCESS;
-import static com.dylibso.chicory.aot.AotMethods.VALIDATE_BASE;
 import static com.dylibso.chicory.aot.AotUtil.StackSize;
 import static com.dylibso.chicory.aot.AotUtil.boxer;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
@@ -472,11 +471,11 @@ final class AotEmitters {
     }
 
     public static void I32_LOAD(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitRead(ctx, ins, asm, MEMORY_READ_INT);
+        emitLoadOrStore(ctx, ins, asm, MEMORY_READ_INT);
     }
 
     public static void I32_LOAD8_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitRead(ctx, ins, asm, MEMORY_READ_BYTE);
+        emitLoadOrStore(ctx, ins, asm, MEMORY_READ_BYTE);
     }
 
     public static void I32_LOAD8_U(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -486,7 +485,7 @@ final class AotEmitters {
     }
 
     public static void I32_LOAD16_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitRead(ctx, ins, asm, MEMORY_READ_SHORT);
+        emitLoadOrStore(ctx, ins, asm, MEMORY_READ_SHORT);
     }
 
     public static void I32_LOAD16_U(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -496,11 +495,11 @@ final class AotEmitters {
     }
 
     public static void F32_LOAD(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitRead(ctx, ins, asm, MEMORY_READ_FLOAT);
+        emitLoadOrStore(ctx, ins, asm, MEMORY_READ_FLOAT);
     }
 
     public static void I64_LOAD(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitRead(ctx, ins, asm, MEMORY_READ_LONG);
+        emitLoadOrStore(ctx, ins, asm, MEMORY_READ_LONG);
     }
 
     public static void I64_LOAD8_S(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -536,42 +535,25 @@ final class AotEmitters {
     }
 
     public static void F64_LOAD(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitRead(ctx, ins, asm, MEMORY_READ_DOUBLE);
-    }
-
-    public static void emitRead(AotContext ctx, Instruction ins, MethodVisitor asm, Method method) {
-        long offset = ins.operands()[1];
-        emitThrowIfInvalidOffset(asm, offset);
-
-        asm.visitInsn(Opcodes.DUP);
-        emitInvokeStatic(asm, VALIDATE_BASE);
-
-        // int address = base + offset;
-        asm.visitLdcInsn((int) offset);
-        asm.visitInsn(Opcodes.IADD);
-
-        // memory.readType(address)
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
-        asm.visitInsn(Opcodes.SWAP);
-        emitInvokeVirtual(asm, method);
+        emitLoadOrStore(ctx, ins, asm, MEMORY_READ_DOUBLE);
     }
 
     public static void I32_STORE(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitX32Store(ctx, ins, asm, MEMORY_WRITE_INT);
+        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_INT);
     }
 
     public static void I32_STORE8(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.I2B);
-        emitX32Store(ctx, ins, asm, MEMORY_WRITE_BYTE);
+        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_BYTE);
     }
 
     public static void I32_STORE16(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.I2S);
-        emitX32Store(ctx, ins, asm, MEMORY_WRITE_SHORT);
+        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_SHORT);
     }
 
     public static void F32_STORE(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitX32Store(ctx, ins, asm, MEMORY_WRITE_FLOAT);
+        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_FLOAT);
     }
 
     public static void I64_STORE8(AotContext ctx, Instruction ins, MethodVisitor asm) {
@@ -586,56 +568,27 @@ final class AotEmitters {
 
     public static void I64_STORE32(AotContext ctx, Instruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.L2I);
-        emitX32Store(ctx, ins, asm, MEMORY_WRITE_INT);
-    }
-
-    private static void emitX32Store(
-            AotContext ctx, Instruction ins, MethodVisitor asm, Method method) {
-
-        long offset = ins.operands()[1];
-        emitThrowIfInvalidOffset(asm, offset);
-
-        // validateBase(base);
-        asm.visitInsn(Opcodes.SWAP);
-        asm.visitInsn(Opcodes.DUP);
-        emitInvokeStatic(asm, VALIDATE_BASE);
-
-        // int address = base + offset;
-        asm.visitLdcInsn((int) offset);
-        asm.visitInsn(Opcodes.IADD);
-
-        // memory.writeType(address, (type) value)
-        asm.visitInsn(Opcodes.SWAP);
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
-        asm.visitInsn(Opcodes.DUP_X2);
-        asm.visitInsn(Opcodes.POP);
-        emitInvokeVirtual(asm, method);
+        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_INT);
     }
 
     public static void I64_STORE(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitX64Store(ctx, ins, asm, MEMORY_WRITE_LONG);
+        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_LONG);
     }
 
     public static void F64_STORE(AotContext ctx, Instruction ins, MethodVisitor asm) {
-        emitX64Store(ctx, ins, asm, MEMORY_WRITE_DOUBLE);
+        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_DOUBLE);
     }
 
-    private static void emitX64Store(
+    private static void emitLoadOrStore(
             AotContext ctx, Instruction ins, MethodVisitor asm, Method method) {
         long offset = ins.operands()[1];
-        emitThrowIfInvalidOffset(asm, offset);
 
-        // validateBase(base);
-        asm.visitInsn(Opcodes.DUP2_X1);
-        asm.visitInsn(Opcodes.POP2);
-        asm.visitInsn(Opcodes.DUP);
-        emitInvokeStatic(asm, VALIDATE_BASE);
+        if (offset < 0 || offset >= Integer.MAX_VALUE) {
+            emitInvokeStatic(asm, THROW_OUT_OF_BOUNDS_MEMORY_ACCESS);
+            asm.visitInsn(Opcodes.ATHROW);
+        }
 
-        // int address = base + offset;
         asm.visitLdcInsn((int) offset);
-        asm.visitInsn(Opcodes.IADD);
-
-        // memory.writeType(address, value)
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
         emitInvokeStatic(asm, method);
     }
@@ -819,13 +772,6 @@ final class AotEmitters {
             asm.visitLdcInsn(i);
             asm.visitInsn(Opcodes.AALOAD);
             emitInvokeVirtual(asm, unboxer(type));
-        }
-    }
-
-    private static void emitThrowIfInvalidOffset(MethodVisitor asm, long offset) {
-        if (offset < 0 || offset >= Integer.MAX_VALUE) {
-            emitInvokeStatic(asm, THROW_OUT_OF_BOUNDS_MEMORY_ACCESS);
-            asm.visitInsn(Opcodes.ATHROW);
         }
     }
 }
