@@ -16,27 +16,27 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
   // access flags 0x9
   public static func_0(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     ILOAD 0
-    LDC 10
+    BIPUSH 10
     IADD
-    LDC 1
+    ICONST_1
     ISUB
-    LDC 6
+    BIPUSH 6
     IMUL
-    LDC 2
+    ICONST_2
     INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.I32_DIV_S (II)I
-    LDC 40
+    BIPUSH 40
     IAND
-    LDC 33
+    BIPUSH 33
     IOR
-    LDC 22
+    BIPUSH 22
     IXOR
-    LDC 2
+    ICONST_2
     ISHL
-    LDC 3
+    ICONST_3
     ISHR
-    LDC 4
+    ICONST_4
     INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.I32_ROTL (II)I
-    LDC 6
+    BIPUSH 6
     INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.I32_ROTR (II)I
     INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.I32_EXTEND_8_S (I)I
     IRETURN
@@ -45,19 +45,19 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
 
   // access flags 0x9
   public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Instance;)I
-    LDC 1
+    ICONST_1
     ANEWARRAY com/dylibso/chicory/wasm/types/Value
     DUP
-    LDC 0
+    ICONST_0
     ILOAD 0
     INVOKESTATIC com/dylibso/chicory/wasm/types/Value.i32 (I)Lcom/dylibso/chicory/wasm/types/Value;
     AASTORE
-    LDC 0
+    ICONST_0
     ILOAD 1
     ILOAD 2
     ALOAD 3
     INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
-    LDC 0
+    ICONST_0
     AALOAD
     INVOKEVIRTUAL com/dylibso/chicory/wasm/types/Value.asInt ()I
     IRETURN

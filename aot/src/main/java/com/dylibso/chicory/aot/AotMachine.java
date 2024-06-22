@@ -71,6 +71,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodTooLargeException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.commons.InstructionAdapter;
 import org.objectweb.asm.util.CheckClassAdapter;
 
 /**
@@ -481,6 +482,7 @@ public final class AotMachine implements Machine {
             String methodName,
             MethodType methodType,
             Consumer<MethodVisitor> consumer) {
+
         var methodWriter =
                 classWriter.visitMethod(
                         Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
@@ -488,6 +490,9 @@ public final class AotMachine implements Machine {
                         methodType.toMethodDescriptorString(),
                         null,
                         null);
+
+        // optimize instruction size to avoid method size limits
+        methodWriter = new InstructionAdapter(methodWriter);
 
         methodWriter.visitCode();
         consumer.accept(methodWriter);
