@@ -15,13 +15,13 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
 
   // access flags 0x9
   public static func_0(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    LDC 0
+    ICONST_0
     ILOAD 0
-    LDC 0
+    ICONST_0
     ALOAD 1
     INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryWriteInt (IIILcom/dylibso/chicory/runtime/Memory;)V
-    LDC 0
-    LDC 0
+    ICONST_0
+    ICONST_0
     ALOAD 1
     INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryReadInt (IILcom/dylibso/chicory/runtime/Memory;)I
     IRETURN
@@ -33,13 +33,13 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
 
   // access flags 0x9
   public static func_1(JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)J
-    LDC 0
+    ICONST_0
     LLOAD 0
-    LDC 0
+    ICONST_0
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryWriteLong (IJILcom/dylibso/chicory/runtime/Memory;)V
-    LDC 0
-    LDC 0
+    ICONST_0
+    ICONST_0
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryReadLong (IILcom/dylibso/chicory/runtime/Memory;)J
     LRETURN
@@ -51,19 +51,19 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
 
   // access flags 0x9
   public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Instance;)I
-    LDC 1
+    ICONST_1
     ANEWARRAY com/dylibso/chicory/wasm/types/Value
     DUP
-    LDC 0
+    ICONST_0
     ILOAD 0
     INVOKESTATIC com/dylibso/chicory/wasm/types/Value.i32 (I)Lcom/dylibso/chicory/wasm/types/Value;
     AASTORE
-    LDC 0
+    ICONST_0
     ILOAD 1
     ILOAD 2
     ALOAD 3
     INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
-    LDC 0
+    ICONST_0
     AALOAD
     INVOKEVIRTUAL com/dylibso/chicory/wasm/types/Value.asInt ()I
     IRETURN
@@ -72,19 +72,19 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
 
   // access flags 0x9
   public static call_indirect_1(JIILcom/dylibso/chicory/runtime/Instance;)J
-    LDC 1
+    ICONST_1
     ANEWARRAY com/dylibso/chicory/wasm/types/Value
     DUP
-    LDC 0
+    ICONST_0
     LLOAD 0
     INVOKESTATIC com/dylibso/chicory/wasm/types/Value.i64 (J)Lcom/dylibso/chicory/wasm/types/Value;
     AASTORE
-    LDC 1
+    ICONST_1
     ILOAD 2
     ILOAD 3
     ALOAD 4
     INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
-    LDC 0
+    ICONST_0
     AALOAD
     INVOKEVIRTUAL com/dylibso/chicory/wasm/types/Value.asLong ()J
     LRETURN
