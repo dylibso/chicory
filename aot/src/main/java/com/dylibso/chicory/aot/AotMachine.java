@@ -68,6 +68,7 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodTooLargeException;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.CheckClassAdapter;
@@ -464,7 +465,15 @@ public final class AotMachine implements Machine {
 
         classWriter.visitEnd();
 
-        return classWriter.toByteArray();
+        try {
+            return classWriter.toByteArray();
+        } catch (MethodTooLargeException e) {
+            throw new ChicoryException(
+                    String.format(
+                            "JVM bytecode too large for WASM method: %s size=%d",
+                            e.getMethodName(), e.getCodeSize()),
+                    e);
+        }
     }
 
     private static void emitFunction(
