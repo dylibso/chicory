@@ -108,11 +108,11 @@ public class TypeValidator {
     }
 
     private List<ValueType> labelTypes(CtrlFrame frame) {
-        //        if (frame.opCode == OpCode.LOOP) {
-        //            return frame.startTypes; // TODO: verify!
-        //        } else {
-        return frame.endTypes;
-        //        }
+        if (frame.opCode == OpCode.LOOP) {
+            return frame.startTypes;
+        } else {
+            return frame.endTypes;
+        }
     }
 
     private void resetAtStackLimit() {
@@ -228,7 +228,11 @@ public class TypeValidator {
                         if (ctrlFrameStack.size() < n) {
                             throw new InvalidException("verify me");
                         }
-                        popVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n)));
+                        try {
+                            popVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n)));
+                        } catch (Exception e) {
+                            System.out.println("debug");
+                        }
                         unreachable();
                         break;
                     }
