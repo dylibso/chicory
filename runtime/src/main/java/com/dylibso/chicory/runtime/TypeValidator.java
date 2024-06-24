@@ -203,7 +203,9 @@ public class TypeValidator {
                 case END:
                     {
                         var frame = popCtrl();
-                        if (frame.opCode == OpCode.IF && !frame.hasElse && frame.startTypes.size() != frame.endTypes.size()) {
+                        if (frame.opCode == OpCode.IF
+                                && !frame.hasElse
+                                && frame.startTypes.size() != frame.endTypes.size()) {
                             throw new InvalidException("type mismatch, unbalanced if branches");
                         }
                         pushVals(frame.endTypes);
@@ -228,11 +230,7 @@ public class TypeValidator {
                         if (ctrlFrameStack.size() < n) {
                             throw new InvalidException("verify me");
                         }
-                        try {
-                            popVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n)));
-                        } catch (Exception e) {
-                            System.out.println("debug");
-                        }
+                        popVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n)));
                         unreachable();
                         break;
                     }

@@ -289,6 +289,10 @@ public class Instance {
         if (idx < importedGlobalsOffset) {
             return imports.global(idx).instance().getValue();
         }
+        var i = idx - importedGlobalsOffset;
+        if (i < 0 || i >= globals.length) {
+            throw new InvalidException("unknown global");
+        }
         return globals[idx - importedGlobalsOffset].getValue();
     }
 
