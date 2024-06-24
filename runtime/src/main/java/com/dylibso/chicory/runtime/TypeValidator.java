@@ -26,21 +26,26 @@ public class TypeValidator {
     }
 
     private static class CtrlFrame {
+        // OpCode of the current Control Flow instruction
         private final OpCode opCode;
+        // params or inputs
         private final List<ValueType> startTypes;
+        // returns or outputs
         private final List<ValueType> endTypes;
+        // the height of the stack before entering the current Control Flow instruction
         private final int height;
+        // set after uncoditional jumps
         private boolean unreachable;
+        // if there is no else, we explicit check that the enclosing IF is not returning values
         private boolean hasElse;
 
         public CtrlFrame(
-                OpCode opCode, // OpCode of the current Control Flow instruction
-                List<ValueType> startTypes, // params or inputs
-                List<ValueType> endTypes, // returns or outputs
-                int height, // the height of the stack before entering the current Control Flow instruction
-                boolean unreachable, // set after uncoditional jumps
-                boolean hasElse // if there is no else, we need an explicit check that the enclosing IF is not returning values
-        ) {
+                OpCode opCode,
+                List<ValueType> startTypes,
+                List<ValueType> endTypes,
+                int height,
+                boolean unreachable,
+                boolean hasElse) {
             this.opCode = opCode;
             this.startTypes = startTypes;
             this.endTypes = endTypes;
@@ -58,7 +63,7 @@ public class TypeValidator {
     }
 
     private ValueType popVal() {
-        var frame = ctrlFrameStack.get(ctrlFrameStack.size() - 1);
+        var frame = peekCtrl();
         if (valueTypeStack.size() == frame.height && frame.unreachable) {
             return ValueType.UNKNOWN;
         }
@@ -92,7 +97,7 @@ public class TypeValidator {
 
     private void pushCtrl(OpCode opCode, List<ValueType> in, List<ValueType> out) {
         var frame = new CtrlFrame(opCode, in, out, valueTypeStack.size(), false, false);
-        ctrlFrameStack.add(frame);
+        pushCtrl(frame);
         pushVals(in);
     }
 
@@ -100,13 +105,25 @@ public class TypeValidator {
         if (ctrlFrameStack.isEmpty()) {
             throw new InvalidException("type mismatch, control frame stack empty");
         }
-        var frame = ctrlFrameStack.get(ctrlFrameStack.size() - 1);
+        var frame = peekCtrl();
         popVals(frame.endTypes);
         if (valueTypeStack.size() != frame.height) {
             throw new InvalidException("type mismatch, wrong stack height");
         }
         ctrlFrameStack.remove(ctrlFrameStack.size() - 1);
         return frame;
+    }
+
+    private void pushCtrl(CtrlFrame frame) {
+        ctrlFrameStack.add(frame);
+    }
+
+    private CtrlFrame peekCtrl() {
+        return ctrlFrameStack.get(ctrlFrameStack.size() - 1);
+    }
+
+    private CtrlFrame getCtrl(int n) {
+        return ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n);
     }
 
     private List<ValueType> labelTypes(CtrlFrame frame) {
@@ -118,14 +135,14 @@ public class TypeValidator {
     }
 
     private void resetAtStackLimit() {
-        var frame = ctrlFrameStack.get(ctrlFrameStack.size() - 1);
+        var frame = peekCtrl();
         while (valueTypeStack.size() > frame.height) {
             valueTypeStack.remove(valueTypeStack.size() - 1);
         }
     }
 
     private void unreachable() {
-        var frame = ctrlFrameStack.get(ctrlFrameStack.size() - 1);
+        var frame = peekCtrl();
         resetAtStackLimit();
         frame.unreachable = true;
     }
@@ -220,7 +237,7 @@ public class TypeValidator {
                             throw new InvalidException("else doesn't belong to if");
                         }
                         pushCtrl(op.opcode(), frame.startTypes, frame.endTypes);
-                        ctrlFrameStack.get(ctrlFrameStack.size() - 1).hasElse = true;
+                        peekCtrl().hasElse = true;
                         break;
                     }
                 case BR:
@@ -229,7 +246,7 @@ public class TypeValidator {
                             throw new InvalidException("unknown label");
                         }
                         var n = (int) op.operands()[0];
-                        popVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n)));
+                        popVals(labelTypes(getCtrl(n)));
                         unreachable();
                         break;
                     }
@@ -240,8 +257,9 @@ public class TypeValidator {
                         }
                         popVal(ValueType.I32);
                         var n = (int) op.operands()[0];
-                        popVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n)));
-                        pushVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n)));
+                        var labelTypes = labelTypes(getCtrl(n));
+                        popVals(labelTypes);
+                        pushVals(labelTypes);
                         break;
                     }
                 case BR_TABLE:
@@ -251,13 +269,11 @@ public class TypeValidator {
                         if ((ctrlFrameStack.size() - 1 - m) < 0) {
                             throw new InvalidException("unknown label");
                         }
-                        var defaultBranchLabelTypes =
-                                labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - m));
+                        var defaultBranchLabelTypes = labelTypes(getCtrl(m));
                         var arity = defaultBranchLabelTypes.size();
                         for (var idx = 1; idx < op.operands().length - 1; idx++) {
                             var n = (int) op.operands()[idx];
-                            var labelTypes =
-                                    labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n));
+                            var labelTypes = labelTypes(getCtrl(n));
                             if (labelTypes.size() != arity) {
                                 throw new InvalidException(
                                         "type mismatch, mismatched arity in BR_TABLE");
