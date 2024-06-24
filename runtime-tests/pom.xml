@@ -156,7 +156,6 @@
             <test>SpecV1TableInitTest.test196</test>
           </excludedTests>
           <excludedMalformedWasts>
-            <wast>binary-leb128.wast</wast>
             <wast>binary.wast</wast>
           </excludedMalformedWasts>
           <excludedInvalidWasts>

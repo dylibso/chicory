@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasm;
 
+import static com.dylibso.chicory.wasm.Encoding.MAX_VARINT_LEN_32;
 import static java.util.Objects.requireNonNull;
 
 import com.dylibso.chicory.log.Logger;
@@ -311,9 +312,12 @@ public final class Parser {
         // Parse individual types in the type section
         for (int i = 0; i < typeCount; i++) {
             var form = readVarUInt32(buffer);
+            if (form > Byte.MAX_VALUE) {
+                throw new MalformedException("integer representation too long");
+            }
 
             if (form != 0x60) {
-                throw new RuntimeException(
+                throw new MalformedException(
                         "We don't support non func types. Form "
                                 + String.format("0x%02X", form)
                                 + " was given but we expected 0x60");
@@ -824,7 +828,7 @@ public final class Parser {
         var address = buffer.position();
         var b = (int) buffer.get() & 0xff;
         if (b == 0xfc) { // is multi-byte
-            b = (int) ((0xfc << 8) + Encoding.readUnsignedLeb128(buffer));
+            b = (int) ((0xfc << 8) + readVarUInt32(buffer));
         }
         var op = OpCode.byOpCode(b);
         if (op == null) {
@@ -923,6 +927,14 @@ public final class Parser {
         return expr.toArray(new Instruction[0]);
     }
 
+    // https://webassembly.github.io/spec/core/syntax/values.html#integers
+    public static final long MIN_SIGNED_INT = -2147483648l; // -2^(32-1)
+    public static final long MAX_SIGNED_INT = 2147483647l; // 2^(32-1)-1
+    public static final long MIN_UNSIGNED_INT = 0l;
+    public static final long MAX_UNSIGNED_INT = 0xFFFFFFFFl; // 2^(32)-1
+    public static final long MIN_SIGNED_LONG = -0x8000000000000000l; // -2^(64-1)
+    public static final long MAX_SIGNED_LONG = 0x7FFFFFFFFFFFFFFFl; // 2^(64-1)-1
+
     /**
      * Read an unsigned I32 from the buffer. We can't fit an unsigned 32bit int
      * into a java int, so we must use a long.
@@ -932,7 +944,11 @@ public final class Parser {
      * @return
      */
     public static long readVarUInt32(ByteBuffer buffer) {
-        return Encoding.readUnsignedLeb128(buffer);
+        var value = Encoding.readUnsignedLeb128(buffer, MAX_VARINT_LEN_32);
+        if (value < MIN_UNSIGNED_INT || value > MAX_UNSIGNED_INT) {
+            throw new MalformedException("integer too large");
+        }
+        return value;
     }
 
     /**
@@ -943,7 +959,11 @@ public final class Parser {
      * @return
      */
     public static long readVarSInt32(ByteBuffer buffer) {
-        return Encoding.readSigned32Leb128(buffer);
+        var value = Encoding.readSigned32Leb128(buffer);
+        if (value > MAX_SIGNED_INT || value < MIN_SIGNED_INT) {
+            throw new MalformedException("integer too large");
+        }
+        return value;
     }
 
     /**
@@ -954,7 +974,11 @@ public final class Parser {
      * @return
      */
     public static long readVarSInt64(ByteBuffer buffer) {
-        return Encoding.readSigned64Leb128(buffer);
+        var value = Encoding.readSigned64Leb128(buffer);
+        if (value > MAX_SIGNED_LONG || value < MIN_SIGNED_LONG) {
+            throw new MalformedException("integer too large");
+        }
+        return value;
     }
 
     /**
