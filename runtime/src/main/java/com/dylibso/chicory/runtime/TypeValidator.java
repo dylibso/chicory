@@ -112,7 +112,6 @@ public class TypeValidator {
         //        }
     }
 
-    // This is not included in the proposed algorithm
     private void resetAtStackLimit() {
         var frame = ctrlFrameStack.get(ctrlFrameStack.size() - 1);
         while (valueTypeStack.size() > frame.height) {
@@ -151,6 +150,17 @@ public class TypeValidator {
         }
     }
 
+    private List<ValueType> getParams(Instruction op, Instance instance) {
+        var typeId = (int) op.operands()[0];
+        if (typeId == 0x40) { // epsilon
+            return List.of();
+        } else if (ValueType.isValid(typeId)) {
+            return List.of();
+        } else {
+            return instance.type(typeId).params();
+        }
+    }
+
     private static ValueType getLocalType(List<ValueType> localTypes, int idx) {
         if (idx >= localTypes.size()) {
             throw new InvalidException("unknown local");
@@ -181,7 +191,7 @@ public class TypeValidator {
                 case LOOP: // t1* -> t2*
                 case BLOCK:
                     {
-                        var t1 = new ArrayList<ValueType>();
+                        var t1 = getParams(op, instance);
                         var t2 = getReturns(op, instance);
                         popVals(t1);
                         pushCtrl(op.opcode(), t1, t2);
