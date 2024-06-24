@@ -336,6 +336,10 @@ public class Instance {
         return tables[idx - importedTablesOffset];
     }
 
+    public DataSegment[] dataSegments() {
+        return dataSegments;
+    }
+
     public Element element(int idx) {
         return elements[idx];
     }

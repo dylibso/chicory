@@ -5,6 +5,7 @@ import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -342,6 +343,13 @@ public class TypeValidator {
                 case DATA_DROP:
                     {
                         var index = (int) op.operands()[0];
+                        var dataSegments = instance.dataSegments();
+
+                        if (dataSegments != null
+                                && dataSegments.length > index
+                                && instance.dataSegments()[index] instanceof PassiveDataSegment) {
+                            break;
+                        }
                         if (instance.memory() == null
                                 || instance.memory().dataSegments() == null
                                 || index >= instance.memory().dataSegments().length) {
