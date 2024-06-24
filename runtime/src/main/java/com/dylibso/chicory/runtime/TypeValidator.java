@@ -34,12 +34,13 @@ public class TypeValidator {
         private boolean hasElse;
 
         public CtrlFrame(
-                OpCode opCode,
-                List<ValueType> startTypes,
-                List<ValueType> endTypes,
-                int height,
-                boolean unreachable,
-                boolean hasElse) {
+                OpCode opCode, // OpCode of the current Control Flow instruction
+                List<ValueType> startTypes, // params or inputs
+                List<ValueType> endTypes, // returns or outputs
+                int height, // the height of the stack before entering the current Control Flow instruction
+                boolean unreachable, // set after uncoditional jumps
+                boolean hasElse // if there is no else, we need an explicit check that the enclosing IF is not returning values
+        ) {
             this.opCode = opCode;
             this.startTypes = startTypes;
             this.endTypes = endTypes;
