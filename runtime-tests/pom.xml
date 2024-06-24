@@ -146,14 +146,10 @@
             <test>SpecV1LinkingTest.test118</test>
             <test>SpecV1LinkingTest.test121</test>
             <test>SpecV1LinkingTest.test122</test>
-            <test>SpecV1LocalSetTest.test31</test>
-            <test>SpecV1LocalSetTest.test32</test>
-            <test>SpecV1LocalTeeTest.test73</test>
-            <test>SpecV1LocalTeeTest.test74</test>
-            <test>SpecV1TableInitTest.test193</test>
-            <test>SpecV1TableInitTest.test194</test>
-            <test>SpecV1TableInitTest.test195</test>
-            <test>SpecV1TableInitTest.test196</test>
+            <test>SpecV1BrTableTest.test154</test>
+            <test>SpecV1BrTableTest.test166</test>
+            <test>SpecV1BrTableTest.test167</test>
+            <test>SpecV1BrTableTest.test168</test>
           </excludedTests>
           <excludedMalformedWasts>
             <wast>binary-leb128.wast</wast>

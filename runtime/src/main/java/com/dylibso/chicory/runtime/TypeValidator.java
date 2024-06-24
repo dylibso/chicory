@@ -256,10 +256,13 @@ public class TypeValidator {
                         if (ctrlFrameStack.size() < m) {
                             throw new InvalidException("verify me");
                         }
-                        var arity =
-                                labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - m))
-                                        .size();
-                        for (var idx = 1; idx < op.operands().length - 2; idx++) {
+                        if ((ctrlFrameStack.size() - 1 - m) < 0) {
+                            throw new InvalidException("unknown label");
+                        }
+                        var defaultBranchLabelTypes =
+                                labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - m));
+                        var arity = defaultBranchLabelTypes.size();
+                        for (var idx = 1; idx < op.operands().length - 1; idx++) {
                             var n = (int) op.operands()[idx];
                             if (ctrlFrameStack.size() < n) {
                                 throw new InvalidException("verify me");
@@ -267,11 +270,12 @@ public class TypeValidator {
                             var labelTypes =
                                     labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n));
                             if (labelTypes.size() != arity) {
-                                throw new InvalidException("mismatched arity in BR_TABLE");
+                                throw new InvalidException(
+                                        "type mismatch, mismatched arity in BR_TABLE");
                             }
                             pushVals(popVals(labelTypes));
                         }
-                        popVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - m)));
+                        popVals(defaultBranchLabelTypes);
                         unreachable();
                         break;
                     }
@@ -798,11 +802,22 @@ public class TypeValidator {
                         pushVal(t);
                         break;
                     }
+                case TABLE_COPY:
+                case TABLE_INIT:
+                    {
+                        var tableidx = (int) op.operands()[1];
+                        instance.table(tableidx);
+                        var elemIdx = (int) op.operands()[0];
+                        instance.element(elemIdx);
+
+                        popVal(ValueType.I32);
+                        popVal(ValueType.I32);
+                        popVal(ValueType.I32);
+                        break;
+                    }
                 case MEMORY_COPY:
                 case MEMORY_FILL:
                 case MEMORY_INIT:
-                case TABLE_COPY:
-                case TABLE_INIT:
                     {
                         popVal(ValueType.I32);
                         popVal(ValueType.I32);
@@ -837,6 +852,8 @@ public class TypeValidator {
                     }
                 case ELEM_DROP:
                     {
+                        var index = (int) op.operands()[0];
+                        instance.element(index);
                         break;
                     }
                 default:

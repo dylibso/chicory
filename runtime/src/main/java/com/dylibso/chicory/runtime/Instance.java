@@ -341,6 +341,9 @@ public class Instance {
     }
 
     public Element element(int idx) {
+        if (idx < 0 || idx >= elements.length) {
+            throw new InvalidException("unknown elem segment " + idx);
+        }
         return elements[idx];
     }
 
