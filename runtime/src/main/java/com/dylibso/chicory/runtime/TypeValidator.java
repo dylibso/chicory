@@ -228,9 +228,6 @@ public class TypeValidator {
                             throw new InvalidException("unknown label");
                         }
                         var n = (int) op.operands()[0];
-                        if (ctrlFrameStack.size() < n) {
-                            throw new InvalidException("verify me");
-                        }
                         popVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n)));
                         unreachable();
                         break;
@@ -242,9 +239,6 @@ public class TypeValidator {
                         }
                         popVal(ValueType.I32);
                         var n = (int) op.operands()[0];
-                        if (ctrlFrameStack.size() < n) {
-                            throw new InvalidException("verify me");
-                        }
                         popVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n)));
                         pushVals(labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n)));
                         break;
@@ -253,9 +247,6 @@ public class TypeValidator {
                     {
                         popVal(ValueType.I32);
                         var m = (int) op.operands()[op.operands().length - 1];
-                        if (ctrlFrameStack.size() < m) {
-                            throw new InvalidException("verify me");
-                        }
                         if ((ctrlFrameStack.size() - 1 - m) < 0) {
                             throw new InvalidException("unknown label");
                         }
@@ -264,9 +255,6 @@ public class TypeValidator {
                         var arity = defaultBranchLabelTypes.size();
                         for (var idx = 1; idx < op.operands().length - 1; idx++) {
                             var n = (int) op.operands()[idx];
-                            if (ctrlFrameStack.size() < n) {
-                                throw new InvalidException("verify me");
-                            }
                             var labelTypes =
                                     labelTypes(ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n));
                             if (labelTypes.size() != arity) {

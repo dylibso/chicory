@@ -211,8 +211,11 @@ public class Instance {
             // TODO: can be parallelized?
             for (int i = 0; i < this.functions.length; i++) {
                 if (this.function(i) != null) {
-                    new TypeValidator()
-                            .validate(this.function(i), this.types[this.functionType(i)], this);
+                    var funcType = this.functionType(i);
+                    if (funcType >= this.types.length) {
+                        throw new InvalidException("unknown type");
+                    }
+                    new TypeValidator().validate(this.function(i), this.types[funcType], this);
                 }
             }
         }
