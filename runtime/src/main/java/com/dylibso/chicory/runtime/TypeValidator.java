@@ -30,18 +30,21 @@ public class TypeValidator {
         private final List<ValueType> endTypes;
         private final int height;
         private boolean unreachable;
+        private boolean hasElse;
 
         public CtrlFrame(
                 OpCode opCode,
                 List<ValueType> startTypes,
                 List<ValueType> endTypes,
                 int height,
-                boolean unreachable) {
+                boolean unreachable,
+                boolean hasElse) {
             this.opCode = opCode;
             this.startTypes = startTypes;
             this.endTypes = endTypes;
             this.height = height;
             this.unreachable = unreachable;
+            this.hasElse = hasElse;
         }
     }
 
@@ -86,7 +89,7 @@ public class TypeValidator {
     }
 
     private void pushCtrl(OpCode opCode, List<ValueType> in, List<ValueType> out) {
-        var frame = new CtrlFrame(opCode, in, out, valueTypeStack.size(), false);
+        var frame = new CtrlFrame(opCode, in, out, valueTypeStack.size(), false, false);
         ctrlFrameStack.add(frame);
         pushVals(in);
     }
@@ -200,6 +203,9 @@ public class TypeValidator {
                 case END:
                     {
                         var frame = popCtrl();
+                        if (frame.opCode == OpCode.IF && !frame.hasElse && frame.startTypes.size() != frame.endTypes.size()) {
+                            throw new InvalidException("type mismatch, unbalanced if branches");
+                        }
                         pushVals(frame.endTypes);
                         break;
                     }
@@ -210,6 +216,7 @@ public class TypeValidator {
                             throw new InvalidException("else doesn't belong to if");
                         }
                         pushCtrl(op.opcode(), frame.startTypes, frame.endTypes);
+                        ctrlFrameStack.get(ctrlFrameStack.size() - 1).hasElse = true;
                         break;
                     }
                 case BR:
