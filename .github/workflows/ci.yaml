@@ -67,11 +67,19 @@ jobs:
         with:
           check_name: AOT Test Results
           files: './aot/**/surefire-reports/*.xml'
-      # TODO: add wasi?
+      - name: Publish WASI Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        id: test-results-wasi
+        if: always() && matrix.os == 'ubuntu-latest' && matrix.version == '17'
+        with:
+          check_name: WASI Test Results
+          files: './wasi-testsuite/**/surefire-reports/*.xml'
       - name: DEBUG INTERPRETER
-        run: echo ${{ steps.test-results-interpreter }}
+        run: echo ${{ toJSON(steps.test-results-interpreter.outputs) }}
       - name: DEBUG AOT
-        run: echo ${{ steps.test-results-aot }}
+        run: echo ${{ toJSON(steps.test-results-aot.outputs) }}
+      - name: DEBUG WASI
+        run: echo ${{ toJSON(steps.test-results-aot.outputs) }}
 
       # - name: Publish badge conditional
       #   id: publish
