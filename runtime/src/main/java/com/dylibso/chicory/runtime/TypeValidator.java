@@ -68,7 +68,8 @@ public class TypeValidator {
             return ValueType.UNKNOWN;
         }
         if (valueTypeStack.size() == frame.height) {
-            throw new InvalidException("type mismatch, popVal()");
+            throw new InvalidException(
+                    "type mismatch, popVal(), stack reached limit at " + frame.height);
         }
         return valueTypeStack.remove(valueTypeStack.size() - 1);
     }
@@ -76,7 +77,11 @@ public class TypeValidator {
     private ValueType popVal(ValueType expected) {
         var actual = popVal();
         if (actual != expected && actual != ValueType.UNKNOWN && expected != ValueType.UNKNOWN) {
-            throw new InvalidException("type mismatch, popVal(expected)");
+            throw new InvalidException(
+                    "type mismatch, popVal(expected), expected: "
+                            + expected
+                            + " but got: "
+                            + actual);
         }
         return actual;
     }
@@ -108,7 +113,7 @@ public class TypeValidator {
         var frame = peekCtrl();
         popVals(frame.endTypes);
         if (valueTypeStack.size() != frame.height) {
-            throw new InvalidException("type mismatch, wrong stack height");
+            throw new InvalidException("type mismatch, mismatching stack height");
         }
         ctrlFrameStack.remove(ctrlFrameStack.size() - 1);
         return frame;
@@ -185,7 +190,7 @@ public class TypeValidator {
 
     private static ValueType getLocalType(List<ValueType> localTypes, int idx) {
         if (idx >= localTypes.size()) {
-            throw new InvalidException("unknown local");
+            throw new InvalidException("unknown local " + idx);
         }
         return localTypes.get(idx);
     }
@@ -243,21 +248,21 @@ public class TypeValidator {
                     }
                 case BR:
                     {
-                        if (op.labelTrue() == null) {
-                            throw new InvalidException("unknown label");
-                        }
                         var n = (int) op.operands()[0];
+                        if (op.labelTrue() == null) {
+                            throw new InvalidException("unknown label " + n);
+                        }
                         popVals(labelTypes(getCtrl(n)));
                         unreachable();
                         break;
                     }
                 case BR_IF:
                     {
-                        if (op.labelTrue() == null) {
-                            throw new InvalidException("unknown label");
-                        }
                         popVal(ValueType.I32);
                         var n = (int) op.operands()[0];
+                        if (op.labelTrue() == null) {
+                            throw new InvalidException("unknown label " + n);
+                        }
                         var labelTypes = labelTypes(getCtrl(n));
                         popVals(labelTypes);
                         pushVals(labelTypes);
@@ -268,7 +273,7 @@ public class TypeValidator {
                         popVal(ValueType.I32);
                         var m = (int) op.operands()[op.operands().length - 1];
                         if ((ctrlFrameStack.size() - 1 - m) < 0) {
-                            throw new InvalidException("unknown label");
+                            throw new InvalidException("unknown label " + m);
                         }
                         var defaultBranchLabelTypes = labelTypes(getCtrl(m));
                         var arity = defaultBranchLabelTypes.size();
@@ -277,7 +282,8 @@ public class TypeValidator {
                             var labelTypes = labelTypes(getCtrl(n));
                             if (labelTypes.size() != arity) {
                                 throw new InvalidException(
-                                        "type mismatch, mismatched arity in BR_TABLE");
+                                        "type mismatch, mismatched arity in BR_TABLE for label "
+                                                + n);
                             }
                             pushVals(popVals(labelTypes));
                         }
@@ -363,7 +369,7 @@ public class TypeValidator {
                         if (instance.memory() == null
                                 || instance.memory().dataSegments() == null
                                 || index >= instance.memory().dataSegments().length) {
-                            throw new InvalidException("unknown data segment");
+                            throw new InvalidException("unknown data segment " + index);
                         }
                         break;
                     }
@@ -790,7 +796,8 @@ public class TypeValidator {
                                     "type mismatch: select should have numeric arguments");
                         }
                         if (t1 != t2 && t1 != ValueType.UNKNOWN && t2 != ValueType.UNKNOWN) {
-                            throw new InvalidException("type mismatch: in select");
+                            throw new InvalidException(
+                                    "type mismatch, in SELECT t1: " + t1 + ", t2: " + t2);
                         }
                         if (t1 == ValueType.UNKNOWN) {
                             pushVal(t2);
