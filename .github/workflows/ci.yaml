@@ -152,6 +152,7 @@ jobs:
           esac
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
+        id: test-results
         with:
           check_name: ${{ env.NAME }} Tests Results
           compare_to_earlier_commit: false
