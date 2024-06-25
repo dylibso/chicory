@@ -152,13 +152,15 @@ jobs:
         run: |
           mkdir -p test-results-${{ env.NAME }}
           cp ./${{ matrix.folder }}/**/surefire-reports/*.xml test-results-${{ env.NAME }}
+          cd test-results-${{ env.NAME }}
           for f in * ; do mv -- "$f" "${{ env.NAME }}_$f" ; done
+          ls -al
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ env.NAME }}
-          path: test-results-${{ env.NAME }}
+          name: 'test-results-${{ env.NAME }}'
+          path: 'test-results-${{ env.NAME }}'
 
   publish-test-results:
     name: "Publish Tests Results"
