@@ -73,44 +73,51 @@ jobs:
         if: always() && matrix.os == 'ubuntu-latest' && matrix.version == '17'
         with:
           check_name: WASI Test Results
-          files: './wasi-testsuite/**/surefire-reports/*.xml'
+          files: './wasi/**/surefire-reports/*.xml'
       - name: DEBUG INTERPRETER
         run: echo ${{ toJSON(steps.test-results-interpreter.outputs) }}
       - name: DEBUG AOT
         run: echo ${{ toJSON(steps.test-results-aot.outputs) }}
       - name: DEBUG WASI
-        run: echo ${{ toJSON(steps.test-results-aot.outputs) }}
+        run: echo ${{ toJSON(steps.test-results-wasi.outputs) }}
 
-      # - name: Publish badge conditional
-      #   id: publish
-      #   if: |
-      #     (matrix.os == 'ubuntu-latest' && matrix.version == '17') &&
-      #     (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' ||
-      #       github.event_name != 'workflow_run' && github.ref == 'refs/heads/main')
-      #   run: echo "badge=true" >> $GITHUB_OUTPUT
-      # - name: Set badge color
-      #   shell: bash
-      #   if: steps.publish.outputs.badge
-      #   run: |
-      #     case ${{ fromJSON( steps.test-results.outputs.json ).conclusion }} in
-      #       success)
-      #         echo "BADGE_COLOR=31c653" >> $GITHUB_ENV
-      #         ;;
-      #       failure)
-      #         echo "BADGE_COLOR=800000" >> $GITHUB_ENV
-      #         ;;
-      #       neutral)
-      #         echo "BADGE_COLOR=696969" >> $GITHUB_ENV
-      #         ;;
-      #     esac
-      # - name: Create badge
-      #   uses: emibcn/badge-action@808173dd03e2f30c980d03ee49e181626088eee8
-      #   if: steps.publish.outputs.badge
-      #   with:
-      #     label: Tests
-      #     status: '${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.tests }} tests, ${{ fromJSON( steps.test-results.outputs.json ).formatted.stats.runs }} runs: ${{ fromJSON( steps.test-results.outputs.json ).conclusion }}'
-      #     color: ${{ env.BADGE_COLOR }}
-      #     path: badge.svg
+      - name: Publish badge conditional
+        id: publish
+        # TODO: restore-me
+        # if: |
+        #   (matrix.os == 'ubuntu-latest' && matrix.version == '17') &&
+        #   (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main' ||
+        #     github.event_name != 'workflow_run' && github.ref == 'refs/heads/main')
+        run: echo "badge=true" >> $GITHUB_OUTPUT
+      - name: Set badge color
+        shell: bash
+        if: steps.publish.outputs.badge
+        run: |
+          case ${{ fromJSON( steps.test-results.outputs.json ).conclusion }} in
+            success)
+              echo "BADGE_COLOR=31c653" >> $GITHUB_ENV
+              ;;
+            failure)
+              echo "BADGE_COLOR=800000" >> $GITHUB_ENV
+              ;;
+            neutral)
+              echo "BADGE_COLOR=696969" >> $GITHUB_ENV
+              ;;
+          esac
+      - name: Create badge
+        uses: emibcn/badge-action@808173dd03e2f30c980d03ee49e181626088eee8
+        if: steps.publish.outputs.badge
+        with:
+          label: Tests
+          status: '${{ fromJSON( steps.test-results-interpreter.outputs.json ).stats.tests }} total, ${{ fromJSON( steps.test-results-interpreter.outputs.json ).stats.tests_succ }} success, ${{ fromJSON( steps.test-results-interpreter.outputs.json ).stats.tests_skip }} skip, ${{ fromJSON( steps.test-results-interpreter.outputs.json ).stats.tests_fail + fromJSON( steps.test-results.outputs.json ).stats.tests_error }} failures'
+          color: ${{ env.BADGE_COLOR }}
+          path: badge.svg
+      - name: Upload badge to GH Action
+        uses: actions/upload-artifact@v4
+        with:
+          name: badge
+          path: badge.svg
+      # TODO: restore me
       # - name: Upload badge to Gist
       #   if: steps.publish.outputs.badge
       #   uses: andymckay/append-gist-action@ab30bf28df67017c7ad696500b218558c7c04db3
