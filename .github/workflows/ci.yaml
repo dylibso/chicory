@@ -48,10 +48,10 @@ jobs:
         run: brew install wabt
       - name: Check Style
         run:  mvn -B spotless:check -Pbenchmarks -Pfuzz
-      - name: Verify that nightly fuzz compiles
-        run: mvn -B test -DskipTests -Pfuzz -pl fuzz
       - name: Test Java
         run: mvn -B clean install
+      - name: Verify that nightly fuzz compiles
+        run: mvn -B test -DskipTests -Pfuzz -pl fuzz
 
       - name: Publish Interpreter Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
