@@ -58,13 +58,15 @@ jobs:
         id: test-results-interpreter
         if: always() && matrix.os == 'ubuntu-latest' && matrix.version == '17'
         with:
-          files: './runtime-tests/surefire-reports/*.xml'
+          check_name: Interpreter Test Results
+          files: './runtime-tests/**/surefire-reports/*.xml'
       - name: Publish AOT Test Results
         uses: EnricoMi/publish-unit-test-result-action@v2
         id: test-results-aot
         if: always() && matrix.os == 'ubuntu-latest' && matrix.version == '17'
         with:
-          files: './aot/surefire-reports/*.xml'
+          check_name: AOT Test Results
+          files: './aot/**/surefire-reports/*.xml'
       # TODO: add wasi?
       - name: DEBUG INTERPRETER
         run: echo ${{ steps.test-results-interpreter }}
