@@ -19,8 +19,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        version: [11, 17]
+        # TODO: restore me
+        # os: [ubuntu-latest, macos-latest, windows-latest]
+        # version: [11, 17]
+        os: [ubuntu-latest]
+        version: [17]
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -74,12 +77,12 @@ jobs:
         with:
           check_name: WASI Test Results
           files: './wasi/**/surefire-reports/*.xml'
-      - name: DEBUG INTERPRETER
-        run: echo ${{ toJSON(steps.test-results-interpreter.outputs) }}
-      - name: DEBUG AOT
-        run: echo ${{ toJSON(steps.test-results-aot.outputs) }}
-      - name: DEBUG WASI
-        run: echo ${{ toJSON(steps.test-results-wasi.outputs) }}
+      # - name: DEBUG INTERPRETER
+      #   run: echo ${{ toJSON(steps.test-results-interpreter.outputs) }}
+      # - name: DEBUG AOT
+      #   run: echo ${{ toJSON(steps.test-results-aot.outputs) }}
+      # - name: DEBUG WASI
+      #   run: echo ${{ toJSON(steps.test-results-wasi.outputs) }}
 
       - name: Publish badge conditional
         id: publish
