@@ -136,7 +136,7 @@ public class Instance {
 
                 Value offset = computeConstantValue(this, ae.offset());
                 if (offset.type() != ValueType.I32) {
-                    throw new ChicoryException("Invalid offset type in element");
+                    throw new ChicoryException("Invalid offset type in element " + offset.type());
                 }
                 List<List<Instruction>> initializers = ae.initializers();
                 for (int i = 0; i < initializers.size(); i++) {
@@ -213,7 +213,7 @@ public class Instance {
                 if (this.function(i) != null) {
                     var funcType = this.functionType(i);
                     if (funcType >= this.types.length) {
-                        throw new InvalidException("unknown type");
+                        throw new InvalidException("unknown type " + funcType);
                     }
                     new TypeValidator().validate(this.function(i), this.types[funcType], this);
                 }
@@ -294,7 +294,7 @@ public class Instance {
         }
         var i = idx - importedGlobalsOffset;
         if (i < 0 || i >= globals.length) {
-            throw new InvalidException("unknown global");
+            throw new InvalidException("unknown global " + i);
         }
         return globals[idx - importedGlobalsOffset].getValue();
     }
@@ -316,7 +316,7 @@ public class Instance {
 
     public int functionType(int idx) {
         if (idx >= functionTypes.length) {
-            throw new InvalidException("unknown function");
+            throw new InvalidException("unknown function " + idx);
         }
         return functionTypes[idx];
     }
