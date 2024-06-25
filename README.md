@@ -6,7 +6,7 @@
 
 [![WASI Test Results](https://gist.githubusercontent.com/andreaTP/69354d1cc6cf23e4c3c4a9a8daf7ea15/raw/badge-wasi.svg)](https://gist.githubusercontent.com/andreaTP/69354d1cc6cf23e4c3c4a9a8daf7ea15/raw/badge-wasi.svg)
 
-[![Zulip](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://chicory.zulipchat.com)
+[![Zulip](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://chicory.zulipchat.com/join/g4gqsxoys6orfxlrk6hn4cyp/)
 
 <img align="right" width="200" src="chicory1.png">
 
@@ -348,10 +348,10 @@ If you have an interest in working on any of these please reach out in Zulip!
 
 #### Make the interpreter production ready (Summer 2024)
 
-* [ ] Make all tests green with the interpreter (important for correctness)
-  * Almost complete
+* [x] Make all tests green with the interpreter (important for correctness)
+  * Completed by core team - mostly @andreaTP though :) 
 * [ ] Implement validation logic (important for safety)
-  * Started by [@andreaTP](https://github.com/andreatp)
+  * Nearing completion from [@andreaTP](https://github.com/andreatp)
 * [ ] Draft of the v1.0 API (important for stability and dx)
 
 #### Make it fast (EOY 2024)
@@ -359,10 +359,12 @@ If you have an interest in working on any of these please reach out in Zulip!
 The primary goal here is to create an AOT compiler that generates JVM bytecode
 as interpreting bytecode can only be so fast.
 
-* [ ] Decouple interpreter and create separate compiler and interpreter "engines"
-  * Started by @danielperano
-* [ ] Proof of concept AOT compiler (run some subset of modules)
+* [x] Decouple interpreter and create separate compiler and interpreter "engines"
+  * completed by [@danielperano](https://github.com/danielperano)
+* [x] Proof of concept AOT compiler (run some subset of modules)
+  * completed by [@electrum](https://github.com/electrum) and [@danielperano](https://github.com/danielperano)
 * [ ] AOT engine passes all the same specs as interpreter (stretch goal)
+  * in progress by [@electrum](https://github.com/electrum)
 * [ ] Off-heap linear memory (stretch goal)
 
 #### Make it compatible (EOY 2024)
