@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasm;
 
+import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import java.util.ArrayList;
@@ -123,6 +124,15 @@ public class ControlTree {
 
         for (var callback : this.callbacks) {
             callback.accept(this.finalInstructionNumber);
+        }
+    }
+
+    public void verifyCompleted() {
+        if (this.finalInstructionNumber == -1) {
+            throw new MalformedException("END opcode expected");
+        }
+        for (var n: nested) {
+            n.verifyCompleted();
         }
     }
 }

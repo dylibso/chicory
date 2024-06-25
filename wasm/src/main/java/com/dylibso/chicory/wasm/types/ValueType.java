@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.exceptions.MalformedException;
+
 /**
  * The possible WASM value types.
  */
@@ -172,7 +174,7 @@ public enum ValueType {
             case ID.ExternRef:
                 return ExternRef;
             default:
-                throw new IllegalArgumentException("Invalid reference type " + id);
+                throw new MalformedException("malformed reference type " + id);
         }
     }
 

@@ -1,6 +1,7 @@
 package com.dylibso.chicory.wasm;
 
 import static com.dylibso.chicory.wasm.Encoding.MAX_VARINT_LEN_32;
+import static com.dylibso.chicory.wasm.WasmLimits.MAX_FUNCTION_LOCALS;
 import static java.util.Objects.requireNonNull;
 
 import com.dylibso.chicory.log.Logger;
@@ -149,7 +150,32 @@ public final class Parser {
                     }
                 });
 
+        if (module.dataSection() != null && module.dataSection().dataSegments().length > 0 && module.dataCountSection() == null) {
+            throw new MalformedException("data count section required");
+        }
+
         return module;
+    }
+
+    private static int readInt(ByteBuffer buffer) {
+        if (buffer.remaining() < 4) {
+            throw new MalformedException("unexpected end");
+        }
+        return buffer.getInt();
+    }
+
+    private static byte readByte(ByteBuffer buffer) {
+        if (!buffer.hasRemaining()) {
+            throw new MalformedException("unexpected end");
+        }
+        return buffer.get();
+    }
+
+    private static void readBytes(ByteBuffer buffer, byte[] dest) {
+        if (buffer.remaining() < dest.length) {
+            throw new MalformedException("unexpected end");
+        }
+        buffer.get(dest);
     }
 
     // package protected to make it visible for testing
@@ -159,25 +185,25 @@ public final class Parser {
 
         var buffer = readByteBuffer(in);
 
-        int magicNumber = buffer.getInt();
+        int magicNumber = readInt(buffer);
         if (magicNumber != MAGIC_BYTES) {
             throw new MalformedException(
-                    "unexpected token: magic number mismatch, found: "
+                    "magic header not detected, found: "
                             + magicNumber
                             + " expected: "
                             + MAGIC_BYTES);
         }
-        int version = buffer.getInt();
+        int version = readInt(buffer);
         if (version != 1) {
             throw new MalformedException(
-                    "unexpected token: unsupported version, found: " + version + " expected: " + 1);
+                    "unknown binary version, found: " + version + " expected: " + 1);
         }
 
         // check if the custom section has malformed names only the first time that is parsed
         var firstTime = true;
 
         while (buffer.hasRemaining()) {
-            var sectionId = buffer.get();
+            var sectionId = readByte(buffer);
             var sectionSize = readVarUInt32(buffer);
 
             if (shouldParseSection(sectionId)) {
@@ -264,7 +290,7 @@ public final class Parser {
                         }
                     default:
                         {
-                            throw new MalformedException("malformed section id " + sectionId);
+                            throw new MalformedException("section size mismatch, malformed section id " + sectionId);
                         }
                 }
             } else {
@@ -296,7 +322,7 @@ public final class Parser {
         }
         var bytes = new byte[(int) size];
         try {
-            buffer.get(bytes);
+            readBytes(buffer, bytes);
         } catch (BufferUnderflowException bue) {
             throw new MalformedException("length out of bounds");
         }
@@ -403,7 +429,7 @@ public final class Parser {
                     }
                 case GLOBAL:
                     var globalValType = ValueType.forId((int) readVarUInt32(buffer));
-                    var globalMut = MutabilityType.forId(buffer.get());
+                    var globalMut = MutabilityType.forId(readByte(buffer));
                     importSection.addImport(
                             new GlobalImport(moduleName, importName, globalMut, globalValType));
                     break;
@@ -481,7 +507,7 @@ public final class Parser {
         // Parse individual globals
         for (int i = 0; i < globalCount; i++) {
             var valueType = ValueType.forId((int) readVarUInt32(buffer));
-            var mutabilityType = MutabilityType.forId(buffer.get());
+            var mutabilityType = MutabilityType.forId(readByte(buffer));
             var init = parseExpression(buffer);
             globalSection.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
         }
@@ -518,7 +544,9 @@ public final class Parser {
         for (var i = 0; i < elementCount; i++) {
             elementSection.addElement(parseSingleElement(buffer));
         }
-        assert (buffer.position() == initialPosition + sectionSize);
+        if (buffer.position() != initialPosition + sectionSize) {
+            throw new MalformedException("section size mismatch");
+        }
 
         return elementSection;
     }
@@ -631,6 +659,9 @@ public final class Parser {
 
         for (int i = 0; i < distinctTypesCount; i++) {
             var numberOfLocals = readVarUInt32(buffer);
+            if (numberOfLocals > MAX_FUNCTION_LOCALS) {
+                throw new MalformedException("too many locals");
+            }
             var type = ValueType.forId((int) readVarUInt32(buffer));
             for (int j = 0; j < numberOfLocals; j++) {
                 locals.add(type);
@@ -777,11 +808,15 @@ public final class Parser {
                             break;
                         }
                 }
+                if (lastInstruction) {
+                    if (instruction.opcode() != OpCode.END) {
+                        // this is hackish ...
+                        throw new MalformedException("unexpected end of section or function, END opcode expected, section size mismatch");
+                    }
+                    //  currentControlFlow.verifyCompleted();
+                }
 
                 instructions.add(instruction);
-
-                // System.out.println(Integer.toHexString(instruction.getAddress()) + " " +
-                // instruction);
             } while (!lastInstruction);
 
             var functionBody = new FunctionBody(locals, instructions);
@@ -801,17 +836,17 @@ public final class Parser {
             if (mode == 0) {
                 var offset = parseExpression(buffer);
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
-                buffer.get(data);
+                readBytes(buffer, data);
                 dataSection.addDataSegment(new ActiveDataSegment(List.of(offset), data));
             } else if (mode == 1) {
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
-                buffer.get(data);
+                readBytes(buffer, data);
                 dataSection.addDataSegment(new PassiveDataSegment(data));
             } else if (mode == 2) {
                 var memoryId = readVarUInt32(buffer);
                 var offset = parseExpression(buffer);
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
-                buffer.get(data);
+                readBytes(buffer, data);
                 dataSection.addDataSegment(new ActiveDataSegment(memoryId, List.of(offset), data));
             } else {
                 throw new ChicoryException("Failed to parse data segment with data mode: " + mode);
@@ -829,13 +864,13 @@ public final class Parser {
     private static Instruction parseInstruction(ByteBuffer buffer) {
 
         var address = buffer.position();
-        var b = (int) buffer.get() & 0xff;
+        var b = (int) readByte(buffer) & 0xff;
         if (b == 0xfc) { // is multi-byte
             b = (int) ((0xfc << 8) + readVarUInt32(buffer));
         }
         var op = OpCode.byOpCode(b);
         if (op == null) {
-            throw new IllegalArgumentException("Can't find opcode for op value " + b);
+            throw new MalformedException("illegal opcode, op value " + b);
         }
         // System.out.println("b: " + b + " op: " + op);
         var signature = OpCode.getSignature(op);
@@ -1003,7 +1038,7 @@ public final class Parser {
      * @return
      */
     public static long readFloat32(ByteBuffer buffer) {
-        return buffer.getInt();
+        return readInt(buffer);
     }
 
     /**
@@ -1021,7 +1056,7 @@ public final class Parser {
         var length = (int) readVarUInt32(buffer);
         byte[] bytes = new byte[length];
         try {
-            buffer.get(bytes);
+            readBytes(buffer, bytes);
         } catch (BufferUnderflowException e) {
             throw new MalformedException("length out of bounds");
         }
