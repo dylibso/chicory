@@ -147,12 +147,18 @@ jobs:
               echo "NAME=wasi" >> $GITHUB_ENV
               ;;
           esac
+      - name: Mangle Test Results
+        if: always()
+        run: |
+          mkdir -p test-results-${{ env.NAME }}
+          cp ./${{ matrix.folder }}/**/surefire-reports/*.xml test-results-${{ env.NAME }}
+          for f in * ; do mv -- "$f" "${{ env.NAME }}_$f" ; done
       - name: Upload Test Results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ env.NAME }}
-          path: './${{ matrix.folder }}/**/surefire-reports/*.xml'
+          path: test-results-${{ env.NAME }}
 
   publish-test-results:
     name: "Publish Tests Results"
