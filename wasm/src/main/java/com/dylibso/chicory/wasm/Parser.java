@@ -734,6 +734,9 @@ public final class Parser {
                             var offset = (int) instruction.operands()[0];
                             ControlTree reference = currentControlFlow;
                             while (offset > 0) {
+                                if (reference == null) {
+                                    throw new InvalidException("unknown label");
+                                }
                                 reference = reference.parent();
                                 offset--;
                             }

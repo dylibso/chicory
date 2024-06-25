@@ -146,53 +146,26 @@
             <test>SpecV1LinkingTest.test118</test>
             <test>SpecV1LinkingTest.test121</test>
             <test>SpecV1LinkingTest.test122</test>
-            <test>SpecV1LocalSetTest.test31</test>
-            <test>SpecV1LocalSetTest.test32</test>
-            <test>SpecV1LocalTeeTest.test73</test>
-            <test>SpecV1LocalTeeTest.test74</test>
-            <test>SpecV1TableInitTest.test193</test>
-            <test>SpecV1TableInitTest.test194</test>
-            <test>SpecV1TableInitTest.test195</test>
-            <test>SpecV1TableInitTest.test196</test>
+            <test>SpecV1BrTableTest.test154</test>
+            <test>SpecV1BrTableTest.test166</test>
+            <test>SpecV1BrTableTest.test167</test>
+            <test>SpecV1BrTableTest.test168</test>
           </excludedTests>
           <excludedMalformedWasts>
             <wast>binary.wast</wast>
           </excludedMalformedWasts>
           <excludedInvalidWasts>
-            <wast>binary-leb128.wast</wast>
-            <wast>block.wast</wast>
-            <wast>br.wast</wast>
-            <wast>br_if.wast</wast>
-            <wast>br_table.wast</wast>
-            <wast>bulk.wast</wast>
-            <wast>call.wast</wast>
             <wast>call_indirect.wast</wast>
             <wast>data.wast</wast>
             <wast>elem.wast</wast>
             <wast>exports.wast</wast>
-            <wast>func.wast</wast>
             <wast>func_ptrs.wast</wast>
             <wast>global.wast</wast>
-            <wast>i32.wast</wast>
-            <wast>if.wast</wast>
             <wast>imports.wast</wast>
-            <wast>labels.wast</wast>
-            <wast>load.wast</wast>
-            <wast>local_get.wast</wast>
-            <wast>loop.wast</wast>
-            <wast>memory_grow.wast</wast>
-            <wast>memory_size.wast</wast>
             <wast>ref_func.wast</wast>
-            <wast>ref_is_null.wast</wast>
             <wast>select.wast</wast>
-            <wast>stack.wast</wast>
             <wast>start.wast</wast>
-            <wast>store.wast</wast>
             <wast>table-sub.wast</wast>
-            <wast>unreachable.wast</wast>
-            <wast>unreached-invalid.wast</wast>
-            <wast>unreached-valid.wast</wast>
-            <wast>unwind.wast</wast>
           </excludedInvalidWasts>
           <excludedWasts>
             <wast>simd_address.wast</wast>
