@@ -211,6 +211,7 @@ public class TypeValidator {
                         // fallthrough
                     }
                 case LOOP: // t1* -> t2*
+                     // fallthrough
                 case BLOCK:
                     {
                         var t1 = getParams(op, instance);
