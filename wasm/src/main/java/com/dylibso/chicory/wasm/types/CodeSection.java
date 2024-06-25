@@ -5,6 +5,7 @@ import java.util.Objects;
 
 public class CodeSection extends Section {
     private final ArrayList<FunctionBody> functionBodies;
+    private boolean requiresDataCount = false;
 
     /**
      * Construct a new, empty section instance.
@@ -50,5 +51,13 @@ public class CodeSection extends Section {
         int idx = functionBodies.size();
         functionBodies.add(functionBody);
         return idx;
+    }
+
+    public void setRequiresDataCount(boolean requiresDataCount) {
+        this.requiresDataCount = requiresDataCount;
+    }
+
+    public boolean isRequiresDataCount() {
+        return requiresDataCount;
     }
 }

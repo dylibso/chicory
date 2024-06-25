@@ -131,7 +131,7 @@ public class ControlTree {
         if (this.finalInstructionNumber == -1) {
             throw new MalformedException("END opcode expected");
         }
-        for (var n: nested) {
+        for (var n : nested) {
             n.verifyCompleted();
         }
     }

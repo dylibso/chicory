@@ -1,7 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
-
 import java.util.List;
 
 /**
