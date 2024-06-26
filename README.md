@@ -349,7 +349,6 @@ If you have an interest in working on any of these please reach out in Zulip!
 #### Make the interpreter production ready (Summer 2024)
 
 * [x] Make all tests green with the interpreter (important for correctness)
-  * Completed
 * [ ] Implement validation logic (important for safety)
   * Nearing completion
 * [ ] Draft of the v1.0 API (important for stability and dx)
@@ -360,9 +359,7 @@ The primary goal here is to create an AOT compiler that generates JVM bytecode
 as interpreting bytecode can only be so fast.
 
 * [x] Decouple interpreter and create separate compiler and interpreter "engines"
-  * Completed
 * [x] Proof of concept AOT compiler (run some subset of modules)
-  * Completed
 * [ ] AOT engine passes all the same specs as interpreter (stretch goal)
   * In Progress
 * [ ] Off-heap linear memory (stretch goal)
