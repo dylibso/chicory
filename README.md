@@ -372,7 +372,7 @@ as interpreting bytecode can only be so fast.
 * [ ] WASIp1 Support (including test gen)
   * We have [partial support for wasip1](wasi/) and [test generation](wasi-test-gen-plugin/)
 * [ ] SIMD Support
-  * Started by [@zedbeit](https://github.com/zedbeit)
+  * Started
 * [ ] GC Support
 * [ ] Threads Support
 * [ ] Component Model Support
