@@ -185,12 +185,10 @@ public class TypeValidator {
         } else if (ValueType.isValid(typeId)) {
             return List.of();
         } else {
-            try {
-                return instance.type(typeId).params();
-            } catch (ArrayIndexOutOfBoundsException e) {
-                // to satisfy the testsuite ... not 100% sure about this
-                throw new MalformedException("unexpected end", e);
+            if (typeId >= instance.typeCount()) {
+                throw new MalformedException("unexpected end");
             }
+            return instance.type(typeId).params();
         }
     }
 

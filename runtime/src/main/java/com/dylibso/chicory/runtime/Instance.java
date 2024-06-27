@@ -314,6 +314,10 @@ public class Instance {
         return types[idx];
     }
 
+    public int typeCount() {
+        return types.length;
+    }
+
     public int functionType(int idx) {
         if (idx >= functionTypes.length) {
             throw new InvalidException("unknown function " + idx);
