@@ -403,9 +403,9 @@ public class TypeValidator {
                         pushVal(ValueType.I32);
                         break;
                     }
+                case TABLE_SIZE:
                 case I32_CONST:
                 case MEMORY_SIZE:
-                case TABLE_SIZE:
                     {
                         pushVal(ValueType.I32);
                         break;
@@ -758,6 +758,7 @@ public class TypeValidator {
                     {
                         var typeId = (int) op.operands()[0];
                         popVal(ValueType.I32);
+                        instance.table((int) op.operands()[1]);
 
                         var types = instance.type(typeId);
                         for (int j = types.params().size() - 1; j >= 0; j--) {

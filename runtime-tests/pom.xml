@@ -155,7 +155,6 @@
             <wast>binary.wast</wast>
           </excludedMalformedWasts>
           <excludedInvalidWasts>
-            <wast>call_indirect.wast</wast>
             <wast>data.wast</wast>
             <wast>elem.wast</wast>
             <wast>exports.wast</wast>

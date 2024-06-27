@@ -145,6 +145,7 @@ public class Instance {
                     var value = computeConstantValue(this, init);
                     var inst = computeConstantInstance(this, init);
                     if (ae.type() == ValueType.FuncRef) {
+                        function(value.asFuncRef());
                         table.setRef(index, value.asFuncRef(), inst);
                     } else {
                         assert ae.type() == ValueType.ExternRef;
@@ -263,6 +264,9 @@ public class Instance {
 
     public FunctionBody function(int idx) {
         if (idx < importedFunctionsOffset) return null;
+        if (idx >= (functions.length + importedFunctionsOffset)) {
+            throw new InvalidException("unknown function " + idx);
+        }
         return functions[idx - importedFunctionsOffset];
     }
 
@@ -311,6 +315,9 @@ public class Instance {
     }
 
     public FunctionType type(int idx) {
+        if (idx >= types.length) {
+            throw new InvalidException("unknown type " + idx);
+        }
         return types[idx];
     }
 
