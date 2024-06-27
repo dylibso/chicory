@@ -150,14 +150,6 @@ public final class Parser {
                     }
                 });
 
-        // to satisfy the check mentioned in the NOTE
-        // https://webassembly.github.io/spec/core/binary/modules.html#data-count-section
-        if (module.codeSection() != null
-                && module.codeSection().isRequiresDataCount()
-                && module.dataCountSection() == null) {
-            throw new MalformedException("data count section required");
-        }
-
         return module;
     }
 
@@ -182,10 +174,29 @@ public final class Parser {
         buffer.get(dest);
     }
 
+    // https://webassembly.github.io/spec/core/binary/modules.html#binary-module
+    private static class SectionsValidator {
+        private boolean hasStart = false;
+
+        SectionsValidator() {}
+
+        public void validateSectionType(byte sectionId) {
+            switch (sectionId) {
+                case SectionId.START:
+                    if (hasStart) {
+                        throw new MalformedException("unexpected content after last section");
+                    }
+                    hasStart = true;
+                    break;
+            }
+        }
+    }
+
     // package protected to make it visible for testing
     void parse(InputStream in, ParserListener listener) {
 
         requireNonNull(listener, "listener");
+        var validator = new SectionsValidator();
 
         try {
             var buffer = readByteBuffer(in);
@@ -210,6 +221,8 @@ public final class Parser {
             while (buffer.hasRemaining()) {
                 var sectionId = readByte(buffer);
                 var sectionSize = readVarUInt32(buffer);
+
+                validator.validateSectionType(sectionId);
 
                 if (shouldParseSection(sectionId)) {
                     // Process different section types based on the sectionId
@@ -414,7 +427,7 @@ public final class Parser {
                         var tableType =
                                 (rawTableType == 0x70) ? ValueType.FuncRef : ValueType.ExternRef;
 
-                        var limitType = (int) readVarUInt32(buffer);
+                        var limitType = readByte(buffer);
                         assert limitType == 0x00 || limitType == 0x01;
                         var min = (int) readVarUInt32(buffer);
                         var limits =
@@ -428,7 +441,7 @@ public final class Parser {
                     }
                 case MEMORY:
                     {
-                        var limitType = (int) readVarUInt32(buffer);
+                        var limitType = readByte(buffer);
                         assert limitType == 0x00 || limitType == 0x01;
                         var min = (int) Math.min(MemoryLimits.MAX_PAGES, readVarUInt32(buffer));
                         var limits =
@@ -478,9 +491,9 @@ public final class Parser {
         // Parse individual tables in the tables section
         for (int i = 0; i < tableCount; i++) {
             var tableType = ValueType.refTypeForId((int) readVarUInt32(buffer));
-            var limitType = readVarUInt32(buffer);
+            var limitType = readByte(buffer);
             if (!(limitType == 0x00 || limitType == 0x01)) {
-                throw new MalformedException("integer too large");
+                throw new MalformedException("integer representation too long, integer too large");
             }
             var min = readVarUInt32(buffer);
             var limits = limitType > 0 ? new Limits(min, readVarUInt32(buffer)) : new Limits(min);
@@ -506,7 +519,7 @@ public final class Parser {
 
     private static MemoryLimits parseMemoryLimits(ByteBuffer buffer) {
 
-        var limitType = readVarUInt32(buffer);
+        var limitType = readByte(buffer);
         if (!(limitType == 0x00 || limitType == 0x01)) {
             throw new MalformedException("integer representation too long, integer too large");
         }
@@ -900,6 +913,9 @@ public final class Parser {
             throw new MalformedException("illegal opcode, op value " + b);
         }
 
+        // System.out.println("b: " + b + " op: " + op);
+        var signature = OpCode.getSignature(op);
+        // TODO: Encode this in instructions.tsv ?
         switch (op) {
             case MEMORY_GROW:
             case MEMORY_SIZE:
@@ -913,9 +929,6 @@ public final class Parser {
             default:
                 break;
         }
-
-        // System.out.println("b: " + b + " op: " + op);
-        var signature = OpCode.getSignature(op);
         if (signature.length == 0) {
             return new Instruction(address, op, new long[] {});
         }

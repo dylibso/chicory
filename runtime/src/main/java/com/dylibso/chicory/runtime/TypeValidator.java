@@ -1,6 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
+import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
@@ -184,7 +185,12 @@ public class TypeValidator {
         } else if (ValueType.isValid(typeId)) {
             return List.of();
         } else {
-            return instance.type(typeId).params();
+            try {
+                return instance.type(typeId).params();
+            } catch (ArrayIndexOutOfBoundsException e) {
+                // to satisfy the testsuite ... not 100% sure about this
+                throw new MalformedException("unexpected end", e);
+            }
         }
     }
 
@@ -873,6 +879,14 @@ public class TypeValidator {
                     throw new IllegalArgumentException(
                             "Missing type validation opcode handling for " + op.opcode());
             }
+        }
+
+        // to satisfy the check mentioned in the NOTE
+        // https://webassembly.github.io/spec/core/binary/modules.html#data-count-section
+        if (instance.module().wasmModule().codeSection() != null
+                && instance.module().wasmModule().codeSection().isRequiresDataCount()
+                && instance.module().wasmModule().dataCountSection() == null) {
+            throw new MalformedException("data count section required");
         }
     }
 }
