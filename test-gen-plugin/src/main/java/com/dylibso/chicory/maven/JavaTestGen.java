@@ -213,7 +213,8 @@ public class JavaTestGen {
                 case ASSERT_UNINSTANTIABLE:
                 case ASSERT_EXHAUSTION:
                 case ASSERT_UNLINKABLE:
-                    testNumber++;
+                    method = createTestMethod(testClass, testNumber++, excludedMethods);
+                    generateMockAssert(method);
                     break;
                 default:
                     throw new IllegalArgumentException(
@@ -413,6 +414,16 @@ public class JavaTestGen {
                 .getAbsolutePath()
                 .replace(baseDir.getAbsolutePath() + File.separator, "")
                 .replace("\\", "\\\\"); // Win compat
+    }
+
+    private void generateMockAssert(MethodDeclaration method) {
+        method.addAnnotation(
+                new SingleMemberAnnotationExpr(
+                        new Name("Disabled"), new StringLiteralExpr("Test excluded")));
+
+        var assertThrows = new NameExpr("assert(true == false)");
+
+        method.getBody().get().addStatement(assertThrows);
     }
 
     private void generateAssertThrows(
