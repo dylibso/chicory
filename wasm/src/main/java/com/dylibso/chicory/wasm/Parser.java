@@ -1,6 +1,7 @@
 package com.dylibso.chicory.wasm;
 
 import static com.dylibso.chicory.wasm.Encoding.MAX_VARINT_LEN_32;
+import static com.dylibso.chicory.wasm.WasmLimits.MAX_FUNCTION_LOCALS;
 import static java.util.Objects.requireNonNull;
 
 import com.dylibso.chicory.log.Logger;
@@ -38,6 +39,7 @@ import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.PassiveElement;
+import com.dylibso.chicory.wasm.types.Section;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.Table;
@@ -97,88 +99,135 @@ public final class Parser {
         }
     }
 
+    private void onSection(Module module, Section s) {
+        switch (s.sectionId()) {
+            case SectionId.CUSTOM:
+                module.addCustomSection((CustomSection) s);
+                break;
+            case SectionId.TYPE:
+                module.setTypeSection((TypeSection) s);
+                break;
+            case SectionId.IMPORT:
+                module.setImportSection((ImportSection) s);
+                break;
+            case SectionId.FUNCTION:
+                module.setFunctionSection((FunctionSection) s);
+                break;
+            case SectionId.TABLE:
+                module.setTableSection((TableSection) s);
+                break;
+            case SectionId.MEMORY:
+                module.setMemorySection((MemorySection) s);
+                break;
+            case SectionId.GLOBAL:
+                module.setGlobalSection((GlobalSection) s);
+                break;
+            case SectionId.EXPORT:
+                module.setExportSection((ExportSection) s);
+                break;
+            case SectionId.START:
+                module.setStartSection((StartSection) s);
+                break;
+            case SectionId.ELEMENT:
+                module.setElementSection((ElementSection) s);
+                break;
+            case SectionId.CODE:
+                module.setCodeSection((CodeSection) s);
+                break;
+            case SectionId.DATA:
+                module.setDataSection((DataSection) s);
+                break;
+            case SectionId.DATA_COUNT:
+                module.setDataCountSection((DataCountSection) s);
+                break;
+            default:
+                logger.warnf("Ignoring section with id: %d", s.sectionId());
+                break;
+        }
+    }
+
     public Module parseModule(InputStream in) {
         Module module = new Module();
-
-        parse(
-                in,
-                (s) -> {
-                    switch (s.sectionId()) {
-                        case SectionId.CUSTOM:
-                            module.addCustomSection((CustomSection) s);
-                            break;
-                        case SectionId.TYPE:
-                            module.setTypeSection((TypeSection) s);
-                            break;
-                        case SectionId.IMPORT:
-                            module.setImportSection((ImportSection) s);
-                            break;
-                        case SectionId.FUNCTION:
-                            module.setFunctionSection((FunctionSection) s);
-                            break;
-                        case SectionId.TABLE:
-                            module.setTableSection((TableSection) s);
-                            break;
-                        case SectionId.MEMORY:
-                            module.setMemorySection((MemorySection) s);
-                            break;
-                        case SectionId.GLOBAL:
-                            module.setGlobalSection((GlobalSection) s);
-                            break;
-                        case SectionId.EXPORT:
-                            module.setExportSection((ExportSection) s);
-                            break;
-                        case SectionId.START:
-                            module.setStartSection((StartSection) s);
-                            break;
-                        case SectionId.ELEMENT:
-                            module.setElementSection((ElementSection) s);
-                            break;
-                        case SectionId.CODE:
-                            module.setCodeSection((CodeSection) s);
-                            break;
-                        case SectionId.DATA:
-                            module.setDataSection((DataSection) s);
-                            break;
-                        case SectionId.DATA_COUNT:
-                            module.setDataCountSection((DataCountSection) s);
-                            break;
-                        default:
-                            logger.warnf("Ignoring section with id: %d", s.sectionId());
-                            break;
-                    }
-                });
-
+        try {
+            parse(in, (s) -> onSection(module, s));
+        } catch (MalformedException e) {
+            throw new MalformedException(
+                    "section size mismatch, unexpected end of section or function, "
+                            + e.getMessage(),
+                    e);
+        }
         return module;
+    }
+
+    private static int readInt(ByteBuffer buffer) {
+        if (buffer.remaining() < 4) {
+            throw new MalformedException("length out of bounds");
+        }
+        return buffer.getInt();
+    }
+
+    private static byte readByte(ByteBuffer buffer) {
+        if (!buffer.hasRemaining()) {
+            throw new MalformedException("length out of bounds");
+        }
+        return buffer.get();
+    }
+
+    private static void readBytes(ByteBuffer buffer, byte[] dest) {
+        if (buffer.remaining() < dest.length) {
+            throw new MalformedException("length out of bounds");
+        }
+        buffer.get(dest);
+    }
+
+    // https://webassembly.github.io/spec/core/binary/modules.html#binary-module
+    private static class SectionsValidator {
+        private boolean hasStart = false;
+
+        SectionsValidator() {}
+
+        public void validateSectionType(byte sectionId) {
+            switch (sectionId) {
+                case SectionId.START:
+                    if (hasStart) {
+                        throw new MalformedException("unexpected content after last section");
+                    }
+                    hasStart = true;
+                    break;
+            }
+        }
     }
 
     // package protected to make it visible for testing
     void parse(InputStream in, ParserListener listener) {
 
         requireNonNull(listener, "listener");
+        var validator = new SectionsValidator();
 
         var buffer = readByteBuffer(in);
 
-        int magicNumber = buffer.getInt();
+        int magicNumber = readInt(buffer);
         if (magicNumber != MAGIC_BYTES) {
             throw new MalformedException(
-                    "unexpected token: magic number mismatch, found: "
+                    "magic header not detected, found: "
                             + magicNumber
                             + " expected: "
                             + MAGIC_BYTES);
         }
-        int version = buffer.getInt();
+        int version = readInt(buffer);
         if (version != 1) {
             throw new MalformedException(
-                    "unexpected token: unsupported version, found: " + version + " expected: " + 1);
+                    "unknown binary version, found: " + version + " expected: " + 1);
         }
 
         // check if the custom section has malformed names only the first time that is parsed
         var firstTime = true;
 
         while (buffer.hasRemaining()) {
-            var sectionId = buffer.get();
+            var sectionId = readByte(buffer);
             var sectionSize = readVarUInt32(buffer);
+
+            validator.validateSectionType(sectionId);
 
             if (shouldParseSection(sectionId)) {
                 // Process different section types based on the sectionId
@@ -264,7 +313,8 @@ public final class Parser {
                         }
                     default:
                         {
-                            throw new MalformedException("malformed section id " + sectionId);
+                            throw new MalformedException(
+                                    "section size mismatch, malformed section id " + sectionId);
                         }
                 }
             } else {
@@ -295,11 +345,7 @@ public final class Parser {
             throw new MalformedException("unexpected end");
         }
         var bytes = new byte[(int) size];
-        try {
-            buffer.get(bytes);
-        } catch (BufferUnderflowException bue) {
-            throw new MalformedException("length out of bounds");
-        }
+        readBytes(buffer, bytes);
         var parser = customParsers.get(name);
         return parser == null ? new UnknownCustomSection(name, bytes) : parser.apply(bytes);
     }
@@ -355,6 +401,9 @@ public final class Parser {
         for (int i = 0; i < importCount; i++) {
             String moduleName = readName(buffer);
             String importName = readName(buffer);
+            if (moduleName.isEmpty() && importName.isEmpty()) {
+                throw new MalformedException("malformed import kind");
+            }
             var descType = ExternalType.byId((int) readVarUInt32(buffer));
             switch (descType) {
                 case FUNCTION:
@@ -371,7 +420,7 @@ public final class Parser {
                         var tableType =
                                 (rawTableType == 0x70) ? ValueType.FuncRef : ValueType.ExternRef;
 
-                        var limitType = (int) readVarUInt32(buffer);
+                        var limitType = readByte(buffer);
                         assert limitType == 0x00 || limitType == 0x01;
                         var min = (int) readVarUInt32(buffer);
                         var limits =
@@ -385,7 +434,7 @@ public final class Parser {
                     }
                 case MEMORY:
                     {
-                        var limitType = (int) readVarUInt32(buffer);
+                        var limitType = readByte(buffer);
                         assert limitType == 0x00 || limitType == 0x01;
                         var min = (int) Math.min(MemoryLimits.MAX_PAGES, readVarUInt32(buffer));
                         var limits =
@@ -403,7 +452,7 @@ public final class Parser {
                     }
                 case GLOBAL:
                     var globalValType = ValueType.forId((int) readVarUInt32(buffer));
-                    var globalMut = MutabilityType.forId(buffer.get());
+                    var globalMut = MutabilityType.forId(readByte(buffer));
                     importSection.addImport(
                             new GlobalImport(moduleName, importName, globalMut, globalValType));
                     break;
@@ -435,8 +484,10 @@ public final class Parser {
         // Parse individual tables in the tables section
         for (int i = 0; i < tableCount; i++) {
             var tableType = ValueType.refTypeForId((int) readVarUInt32(buffer));
-            var limitType = readVarUInt32(buffer);
-            assert limitType == 0x00 || limitType == 0x01;
+            var limitType = readByte(buffer);
+            if (!(limitType == 0x00 || limitType == 0x01)) {
+                throw new MalformedException("integer representation too long, integer too large");
+            }
             var min = readVarUInt32(buffer);
             var limits = limitType > 0 ? new Limits(min, readVarUInt32(buffer)) : new Limits(min);
             tableSection.addTable(new Table(tableType, limits));
@@ -461,8 +512,10 @@ public final class Parser {
 
     private static MemoryLimits parseMemoryLimits(ByteBuffer buffer) {
 
-        var limitType = readVarUInt32(buffer);
-        assert limitType == 0x00 || limitType == 0x01;
+        var limitType = readByte(buffer);
+        if (!(limitType == 0x00 || limitType == 0x01)) {
+            throw new MalformedException("integer representation too long, integer too large");
+        }
 
         var initial = (int) readVarUInt32(buffer);
         if (limitType != 0x01) {
@@ -481,7 +534,7 @@ public final class Parser {
         // Parse individual globals
         for (int i = 0; i < globalCount; i++) {
             var valueType = ValueType.forId((int) readVarUInt32(buffer));
-            var mutabilityType = MutabilityType.forId(buffer.get());
+            var mutabilityType = MutabilityType.forId(readByte(buffer));
             var init = parseExpression(buffer);
             globalSection.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
         }
@@ -518,7 +571,9 @@ public final class Parser {
         for (var i = 0; i < elementCount; i++) {
             elementSection.addElement(parseSingleElement(buffer));
         }
-        assert (buffer.position() == initialPosition + sectionSize);
+        if (buffer.position() != initialPosition + sectionSize) {
+            throw new MalformedException("section size mismatch");
+        }
 
         return elementSection;
     }
@@ -631,6 +686,9 @@ public final class Parser {
 
         for (int i = 0; i < distinctTypesCount; i++) {
             var numberOfLocals = readVarUInt32(buffer);
+            if (numberOfLocals > MAX_FUNCTION_LOCALS) {
+                throw new MalformedException("too many locals");
+            }
             var type = ValueType.forId((int) readVarUInt32(buffer));
             for (int j = 0; j < numberOfLocals; j++) {
                 locals.add(type);
@@ -661,6 +719,13 @@ public final class Parser {
                 lastInstruction = buffer.position() >= funcEndPoint;
                 if (instructions.isEmpty()) {
                     currentControlFlow = root.spawn(0, instruction);
+                }
+
+                // https://webassembly.github.io/spec/core/binary/modules.html#data-count-section
+                switch (instruction.opcode()) {
+                    case MEMORY_INIT:
+                    case DATA_DROP:
+                        codeSection.setRequiresDataCount(true);
                 }
 
                 // depth control
@@ -777,11 +842,11 @@ public final class Parser {
                             break;
                         }
                 }
+                if (lastInstruction && instruction.opcode() != OpCode.END) {
+                    throw new MalformedException("END opcode expected, section size mismatch");
+                }
 
                 instructions.add(instruction);
-
-                // System.out.println(Integer.toHexString(instruction.getAddress()) + " " +
-                // instruction);
             } while (!lastInstruction);
 
             var functionBody = new FunctionBody(locals, instructions);
@@ -801,17 +866,17 @@ public final class Parser {
             if (mode == 0) {
                 var offset = parseExpression(buffer);
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
-                buffer.get(data);
+                readBytes(buffer, data);
                 dataSection.addDataSegment(new ActiveDataSegment(List.of(offset), data));
             } else if (mode == 1) {
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
-                buffer.get(data);
+                readBytes(buffer, data);
                 dataSection.addDataSegment(new PassiveDataSegment(data));
             } else if (mode == 2) {
                 var memoryId = readVarUInt32(buffer);
                 var offset = parseExpression(buffer);
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
-                buffer.get(data);
+                readBytes(buffer, data);
                 dataSection.addDataSegment(new ActiveDataSegment(memoryId, List.of(offset), data));
             } else {
                 throw new ChicoryException("Failed to parse data segment with data mode: " + mode);
@@ -829,16 +894,31 @@ public final class Parser {
     private static Instruction parseInstruction(ByteBuffer buffer) {
 
         var address = buffer.position();
-        var b = (int) buffer.get() & 0xff;
+        var b = (int) readByte(buffer) & 0xff;
         if (b == 0xfc) { // is multi-byte
             b = (int) ((0xfc << 8) + readVarUInt32(buffer));
         }
         var op = OpCode.byOpCode(b);
         if (op == null) {
-            throw new IllegalArgumentException("Can't find opcode for op value " + b);
+            throw new MalformedException("illegal opcode, op value " + b);
         }
+
         // System.out.println("b: " + b + " op: " + op);
         var signature = OpCode.getSignature(op);
+        // TODO: Encode this in instructions.tsv ?
+        switch (op) {
+            case MEMORY_GROW:
+            case MEMORY_SIZE:
+                {
+                    var zero = readByte(buffer);
+                    if (zero != 0x00) {
+                        throw new MalformedException("zero byte expected");
+                    }
+                    break;
+                }
+            default:
+                break;
+        }
         if (signature.length == 0) {
             return new Instruction(address, op, new long[] {});
         }
@@ -1003,7 +1083,7 @@ public final class Parser {
      * @return
      */
     public static long readFloat32(ByteBuffer buffer) {
-        return buffer.getInt();
+        return readInt(buffer);
     }
 
     /**
@@ -1021,7 +1101,7 @@ public final class Parser {
         var length = (int) readVarUInt32(buffer);
         byte[] bytes = new byte[length];
         try {
-            buffer.get(bytes);
+            readBytes(buffer, bytes);
         } catch (BufferUnderflowException e) {
             throw new MalformedException("length out of bounds");
         }

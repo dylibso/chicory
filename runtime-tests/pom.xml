@@ -151,9 +151,7 @@
             <test>SpecV1BrTableTest.test167</test>
             <test>SpecV1BrTableTest.test168</test>
           </excludedTests>
-          <excludedMalformedWasts>
-            <wast>binary.wast</wast>
-          </excludedMalformedWasts>
+          <excludedMalformedWasts/>
           <excludedInvalidWasts>
             <wast>call_indirect.wast</wast>
             <wast>data.wast</wast>
