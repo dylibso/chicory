@@ -42,11 +42,7 @@ public class BenchmarkFactorialExecution {
         var factorialInt = Module.builder(ITERFACT).build().instantiate();
         iterFactInt = factorialInt.export("iterFact");
 
-        aotModule =
-                Module.builder(ITERFACT)
-                        .withMachineFactory(
-                                instance -> new AotMachine(aotModule.wasmModule(), instance))
-                        .build();
+        aotModule = Module.builder(ITERFACT).withMachineFactory(AotMachine::new).build();
         var factorialAot = aotModule.instantiate();
         iterFactAot = factorialAot.export("iterFact");
     }

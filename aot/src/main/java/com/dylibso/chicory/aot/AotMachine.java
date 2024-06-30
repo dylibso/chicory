@@ -302,9 +302,9 @@ public final class AotMachine implements Machine {
                     .shared(OpCode.F64_TRUNC, OpcodeImpl.class)
                     .build();
 
-    public AotMachine(com.dylibso.chicory.wasm.Module module, Instance instance) {
-        this.module = module;
+    public AotMachine(Instance instance) {
         this.instance = requireNonNull(instance, "instance");
+        this.module = instance.module().wasmModule();
 
         this.globalTypes = getGlobalTypes(module);
 

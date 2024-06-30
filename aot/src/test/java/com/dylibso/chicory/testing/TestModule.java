@@ -75,8 +75,7 @@ public class TestModule {
                         // TODO: enable me!
                         .withTypeValidation(false)
                         .withHostImports(imports)
-                        .withMachineFactory(
-                                instance -> new AotMachine(module.wasmModule(), instance))
+                        .withMachineFactory(AotMachine::new)
                         .build();
         return this;
     }
