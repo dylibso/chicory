@@ -157,9 +157,7 @@
             <wast>elem.wast</wast>
             <wast>exports.wast</wast>
             <wast>func_ptrs.wast</wast>
-            <!--            <wast>global.wast</wast>-->
             <wast>imports.wast</wast>
-            <wast>ref_func.wast</wast>
             <wast>select.wast</wast>
             <wast>start.wast</wast>
             <wast>table-sub.wast</wast>

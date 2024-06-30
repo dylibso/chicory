@@ -10,6 +10,7 @@ import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.DataSegment;
+import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -137,6 +138,7 @@ public class Instance {
         for (var i = 0; i < this.roughTables.length; i++) {
             this.tables[i] = new TableInstance(this.roughTables[i]);
         }
+
         for (var el : elements) {
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
@@ -158,6 +160,18 @@ public class Instance {
                     } else {
                         assert ae.type() == ValueType.ExternRef;
                         table.setRef(index, value.asExtRef(), inst);
+                    }
+                }
+            } else if (el instanceof DeclarativeElement) {
+                var de = (DeclarativeElement) el;
+
+                List<List<Instruction>> initializers = de.initializers();
+                for (int i = 0; i < initializers.size(); i++) {
+                    final List<Instruction> init = initializers.get(i);
+                    var value = computeConstantValue(this, init);
+                    var func = function(value.asFuncRef());
+                    if (de.type() == ValueType.FuncRef && func != null) {
+                        func.setInitializedByElem(true);
                     }
                 }
             }
@@ -209,8 +223,12 @@ public class Instance {
                         globals[i] = new GlobalInstance(Value.EXTREF_NULL);
                         break;
                     case REF_FUNC:
-                        globals[i] = new GlobalInstance(Value.funcRef((int) instr.operands()[0]));
-                        break;
+                        {
+                            var idx = (int) instr.operands()[0];
+                            function(idx);
+                            globals[i] = new GlobalInstance(Value.funcRef(idx));
+                            break;
+                        }
                     default:
                         throw new InvalidException("constant expression required");
                 }
@@ -243,7 +261,7 @@ public class Instance {
                     if (funcType >= this.types.length) {
                         throw new InvalidException("unknown type " + funcType);
                     }
-                    new TypeValidator().validate(this.function(i), this.types[funcType], this);
+                    new TypeValidator().validate(i, this.function(i), this.types[funcType], this);
                 }
             }
         }

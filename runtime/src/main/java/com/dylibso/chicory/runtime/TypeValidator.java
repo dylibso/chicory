@@ -200,7 +200,8 @@ public class TypeValidator {
         return localTypes.get(idx);
     }
 
-    public void validate(FunctionBody body, FunctionType functionType, Instance instance) {
+    public void validate(
+            int funcIdx, FunctionBody body, FunctionType functionType, Instance instance) {
         var localTypes = body.localTypes();
         var inputLen = functionType.params().size();
         pushCtrl(null, new ArrayList<>(), functionType.returns());
@@ -797,6 +798,11 @@ public class TypeValidator {
                     }
                 case REF_FUNC:
                     {
+                        var idx = (int) op.operands()[0];
+                        if (idx == funcIdx && !body.isInitializedByElem()) { // reference to self
+                            throw new InvalidException("undeclared function reference");
+                        }
+
                         pushVal(ValueType.FuncRef);
                         break;
                     }
