@@ -21,10 +21,7 @@ public class SpecV1GlobalHostFuncs {
                             "global-mut-i32",
                             new GlobalInstance(Value.i32(0)),
                             MutabilityType.Var),
-                        new HostGlobal(
-                                "",
-                                "",
-                                new GlobalInstance(Value.externRef(0))),
+                    new HostGlobal("", "", new GlobalInstance(Value.externRef(0))),
                 });
     }
 }

@@ -194,7 +194,9 @@ public class Instance {
                                             "constant expression required, initializer expression"
                                                     + " cannot reference a mutable global");
                                 }
-                                verifyGlobalType(g.valueType(), imports.global(idx).instance().getValue().type());
+                                verifyGlobalType(
+                                        g.valueType(),
+                                        imports.global(idx).instance().getValue().type());
                                 globals[i] = imports.global(idx).instance();
                             } else {
                                 throw new InvalidException(
