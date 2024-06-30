@@ -5,6 +5,7 @@ import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -745,7 +746,15 @@ public class TypeValidator {
                     }
                 case GLOBAL_SET:
                     {
-                        popVal(instance.readGlobal((int) op.operands()[0]).type());
+                        var id = (int) op.operands()[0];
+                        var mutabilityType =
+                                (instance.globalInitializer(id) == null)
+                                        ? instance.imports().global(id).mutabilityType()
+                                        : instance.globalInitializer(id).mutabilityType();
+                        if (mutabilityType == MutabilityType.Const) {
+                            throw new InvalidException("global is immutable");
+                        }
+                        popVal(instance.readGlobal(id).type());
                         break;
                     }
                 case CALL:
