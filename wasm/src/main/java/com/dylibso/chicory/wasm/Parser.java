@@ -874,7 +874,7 @@ public final class Parser {
                 var offset = parseExpression(buffer);
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
                 readBytes(buffer, data);
-                dataSection.addDataSegment(new ActiveDataSegment(List.of(offset), data));
+                dataSection.addDataSegment(new ActiveDataSegment(0, List.of(offset), data));
             } else if (mode == 1) {
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
                 readBytes(buffer, data);

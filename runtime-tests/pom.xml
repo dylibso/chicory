@@ -153,7 +153,6 @@
           </excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts>
-            <wast>data.wast</wast>
             <wast>elem.wast</wast>
             <wast>exports.wast</wast>
             <wast>func_ptrs.wast</wast>

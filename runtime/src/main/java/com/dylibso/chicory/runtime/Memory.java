@@ -5,11 +5,14 @@ import static java.lang.Math.min;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
@@ -104,9 +107,16 @@ public final class Memory {
         for (var s : dataSegments) {
             if (s instanceof ActiveDataSegment) {
                 var segment = (ActiveDataSegment) s;
+                if (segment.index() != 0) {
+                    throw new InvalidException("unknown memory " + segment.index());
+                }
                 var offsetExpr = segment.offsetInstructions();
                 var data = segment.data();
-                var offset = computeConstantValue(instance, offsetExpr).asInt();
+                var offsetValue = computeConstantValue(instance, offsetExpr);
+                if (offsetValue.type() != ValueType.I32) {
+                    throw new InvalidException("type mismatch, epected I32 but found " + offsetValue.type() + " in ffset memory initialization");
+                }
+                var offset = offsetValue.asInt();
                 write(offset, data);
             } else if (s instanceof PassiveDataSegment) {
                 // System.out.println("Skipping passive segment " + s);

@@ -1,7 +1,9 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
@@ -56,7 +58,13 @@ public class ConstantEvaluators {
                     }
                 case GLOBAL_GET:
                     {
-                        return instance.readGlobal((int) instruction.operands()[0]);
+                        var idx = (int) instruction.operands()[0];
+                        if (idx < instance.imports().globalCount() && instance.imports().global(idx).mutabilityType() != MutabilityType.Const) {
+                            throw new InvalidException(
+                                    "constant expression required, initializer expression"
+                                            + " cannot reference a mutable global");
+                        }
+                        return instance.readGlobal(idx);
                     }
                 case END:
                     {
@@ -64,13 +72,13 @@ public class ConstantEvaluators {
                     }
                 default:
                     {
-                        throw new ChicoryException(
-                                "Non-constant instruction encountered: " + instruction);
+                        throw new InvalidException(
+                                "constant expression required, but non-constant instruction encountered: " + instruction);
                     }
             }
         }
         if (tos == null) {
-            throw new ChicoryException("No constant value loaded");
+            throw new InvalidException("type mismatch, expected constant value");
         }
         return tos;
     }
