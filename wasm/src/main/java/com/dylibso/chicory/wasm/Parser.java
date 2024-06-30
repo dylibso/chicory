@@ -401,13 +401,18 @@ public final class Parser {
         for (int i = 0; i < importCount; i++) {
             String moduleName = readName(buffer);
             String importName = readName(buffer);
-            if (moduleName.isEmpty() && importName.isEmpty()) {
-                throw new MalformedException("malformed import kind");
+            ExternalType descType;
+            try {
+                descType = ExternalType.byId((int) readVarUInt32(buffer));
+            } catch (Exception e) {
+                throw new MalformedException("malformed import kind", e);
             }
-            var descType = ExternalType.byId((int) readVarUInt32(buffer));
             switch (descType) {
                 case FUNCTION:
                     {
+                        if (moduleName.isEmpty() && importName.isEmpty()) {
+                            throw new MalformedException("malformed import kind");
+                        }
                         importSection.addImport(
                                 new FunctionImport(
                                         moduleName, importName, (int) readVarUInt32(buffer)));
@@ -456,6 +461,8 @@ public final class Parser {
                     importSection.addImport(
                             new GlobalImport(moduleName, importName, globalMut, globalValType));
                     break;
+                default:
+                    throw new MalformedException("malformed import kind");
             }
         }
 

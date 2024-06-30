@@ -190,11 +190,16 @@ public class Instance {
                             var idx = (int) instr.operands()[0];
                             if (idx < imports.globalCount()) {
                                 if (imports.global(idx).mutabilityType() != MutabilityType.Const) {
-                                    throw new InvalidException("constant expression required, initializer expression cannot reference a mutable global");
+                                    throw new InvalidException(
+                                            "constant expression required, initializer expression"
+                                                    + " cannot reference a mutable global");
                                 }
+                                verifyGlobalType(g.valueType(), imports.global(idx).instance().getValue().type());
                                 globals[i] = imports.global(idx).instance();
                             } else {
-                                throw new InvalidException("unknown global, initializer expression can only reference an imported global");
+                                throw new InvalidException(
+                                        "unknown global, initializer expression can only reference"
+                                                + " an imported global");
                             }
                             break;
                         }
@@ -317,7 +322,7 @@ public class Instance {
             return imports.global(idx).instance().getValue();
         }
         var i = idx - importedGlobalsOffset;
-        if (i < 0 || i >= globals.length) {
+        if (i < 0 || i >= globals.length || globals[idx - importedGlobalsOffset] == null) {
             throw new InvalidException("unknown global " + i);
         }
         return globals[idx - importedGlobalsOffset].getValue();
@@ -326,6 +331,9 @@ public class Instance {
     public Global globalInitializer(int idx) {
         if (idx < importedGlobalsOffset) {
             return null;
+        }
+        if ((idx - importedGlobalsOffset) >= globalInitializers.length) {
+            throw new InvalidException("unknown global " + idx);
         }
         return globalInitializers[idx - importedGlobalsOffset];
     }
