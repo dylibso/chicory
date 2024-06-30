@@ -127,7 +127,8 @@ public class Instance {
 
     private void verifyGlobalType(ValueType expected, ValueType actual) {
         if (actual != expected) {
-            throw new InvalidException("type mismatch, expected: " + expected + ", actual: " + actual);
+            throw new InvalidException(
+                    "type mismatch, expected: " + expected + ", actual: " + actual);
         }
     }
 
@@ -184,14 +185,19 @@ public class Instance {
                         verifyGlobalType(g.valueType(), ValueType.F64);
                         globals[i] = new GlobalInstance(Value.f64(instr.operands()[0]));
                         break;
-                    case GLOBAL_GET: {
-                        var idx = (int) instr.operands()[0];
-                        globals[i] =
-                                idx < imports.globalCount()
-                                        ? imports.global(idx).instance()
-                                        : globals[idx];
-                        break;
-                    }
+                    case GLOBAL_GET:
+                        {
+                            var idx = (int) instr.operands()[0];
+                            if (idx < imports.globalCount()) {
+                                if (imports.global(idx).mutabilityType() != MutabilityType.Const) {
+                                    throw new InvalidException("constant expression required, initializer expression cannot reference a mutable global");
+                                }
+                                globals[i] = imports.global(idx).instance();
+                            } else {
+                                throw new InvalidException("unknown global, initializer expression can only reference an imported global");
+                            }
+                            break;
+                        }
                     case REF_NULL:
                         globals[i] = new GlobalInstance(Value.EXTREF_NULL);
                         break;
@@ -202,7 +208,8 @@ public class Instance {
                         throw new InvalidException("constant expression required");
                 }
                 if (initialized && g.mutabilityType() == MutabilityType.Const) {
-                    throw new InvalidException("type mismatch, expected [] but found extra instructions");
+                    throw new InvalidException(
+                            "type mismatch, expected [] but found extra instructions");
                 }
                 initialized = true;
             }
