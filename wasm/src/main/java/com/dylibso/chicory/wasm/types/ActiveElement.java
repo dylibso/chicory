@@ -29,14 +29,14 @@ public final class ActiveElement extends Element {
     }
 
     /**
-     * {@return the table to actively initialize}
+     * @return the table to actively initialize
      */
     public int tableIndex() {
         return tableIndex;
     }
 
     /**
-     * {@return a constant expression defining the offset into the table}
+     * @return a constant expression defining the offset into the table
      */
     public List<Instruction> offset() {
         return offset;

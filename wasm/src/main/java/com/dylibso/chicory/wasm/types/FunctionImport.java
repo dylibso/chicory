@@ -19,7 +19,7 @@ public final class FunctionImport extends Import {
     }
 
     /**
-     * {@return the type index corresponding to the imported function's type}
+     * @return the type index corresponding to the imported function's type
      */
     public int typeIndex() {
         return typeIndex;

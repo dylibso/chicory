@@ -77,28 +77,28 @@ public final class MemoryLimits {
     }
 
     /**
-     * {@return the default memory limits}
+     * @return the default memory limits
      */
     public static MemoryLimits defaultLimits() {
         return DEFAULT_LIMITS;
     }
 
     /**
-     * {@return the initial size, in pages}
+     * @return the initial size, in pages
      */
     public int initialPages() {
         return initial;
     }
 
     /**
-     * {@return the maximum size, in pages}
+     * @return the maximum size, in pages
      */
     public int maximumPages() {
         return maximum;
     }
 
     /**
-     * {@return <code>true</code> if the limits apply to a shared memory segment, or <code>false</code> otherwise}
+     * @return <code>true</code> if the limits apply to a shared memory segment, or <code>false</code> otherwise
      */
     public boolean shared() {
         return shared;

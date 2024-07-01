@@ -19,7 +19,7 @@ public final class MemoryImport extends Import {
     }
 
     /**
-     * {@return the memory size limits, in pages}
+     * @return the memory size limits, in pages
      */
     public MemoryLimits limits() {
         return limits;

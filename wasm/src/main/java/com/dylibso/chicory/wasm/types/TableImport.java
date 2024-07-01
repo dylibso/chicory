@@ -28,14 +28,14 @@ public final class TableImport extends Import {
     }
 
     /**
-     * {@return the table entry type}
+     * @return the table entry type
      */
     public ValueType entryType() {
         return entryType;
     }
 
     /**
-     * {@return the table size limits}
+     * @return the table size limits
      */
     public Limits limits() {
         return limits;

@@ -338,6 +338,10 @@
             <goals>
               <goal>jar</goal>
             </goals>
+            <configuration>
+              <doclint>all,-missing</doclint>
+              <release>${maven.compiler.target}</release>
+            </configuration>
           </execution>
         </executions>
       </plugin>

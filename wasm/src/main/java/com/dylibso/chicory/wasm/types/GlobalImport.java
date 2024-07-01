@@ -28,14 +28,14 @@ public final class GlobalImport extends Import {
     }
 
     /**
-     * {@return the mutability type of the global}
+     * @return the mutability type of the global
      */
     public MutabilityType mutabilityType() {
         return mutabilityType;
     }
 
     /**
-     * {@return the type of the value stored in the global}
+     * @return the type of the value stored in the global
      */
     public ValueType type() {
         return type;

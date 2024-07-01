@@ -22,22 +22,22 @@ public abstract class Element {
     }
 
     /**
-     * {@return the type of the element values}
+     * @return the type of the element values
      */
     public ValueType type() {
         return type;
     }
 
     /**
-     * {@return the list of instruction lists which are used to initialize each element in the range}
+     * @return the list of instruction lists which are used to initialize each element in the range
      */
     public List<List<Instruction>> initializers() {
         return initializers;
     }
 
     /**
-     * {@return the number of elements defined by this section}
      * This value is equal to the number of initializers present.
+     * @return the number of elements defined by this section
      */
     public int elementCount() {
         return initializers().size();

@@ -28,21 +28,21 @@ public class Export {
     }
 
     /**
-     * {@return the export name}
+     * @return the export name
      */
     public String name() {
         return name;
     }
 
     /**
-     * {@return the export index}
+     * @return the export index
      */
     public int index() {
         return index;
     }
 
     /**
-     * {@return the type of exported definition}
+     * @return the type of exported definition
      */
     public ExternalType exportType() {
         return exportType;
