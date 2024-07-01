@@ -34,7 +34,7 @@ public class Module {
     public static final String START_FUNCTION_NAME = "_start";
     private final com.dylibso.chicory.wasm.Module module;
 
-    private final HashMap<String, Export> exports;
+    private final Map<String, Export> exports;
     private final Logger logger;
 
     private final boolean initialize;
@@ -64,7 +64,7 @@ public class Module {
         this.exports = genExports(module.exportSection());
     }
 
-    private static HashMap<String, Export> genExports(ExportSection export) {
+    private static Map<String, Export> genExports(ExportSection export) {
         var exports = new HashMap<String, Export>();
         int cnt = export.exportCount();
         for (int i = 0; i < cnt; i++) {

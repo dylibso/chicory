@@ -3,6 +3,7 @@ package com.dylibso.chicory.runtime;
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantInstance;
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static com.dylibso.chicory.runtime.Module.START_FUNCTION_NAME;
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
@@ -169,10 +170,12 @@ public class Instance {
                                         + value.type());
                     }
                     if (ae.type() == ValueType.FuncRef) {
-                        try {
-                            function(value.asFuncRef());
-                        } catch (InvalidException e) {
-                            throw new InvalidException("type mismatch, " + e.getMessage(), e);
+                        if (value.asFuncRef() != REF_NULL_VALUE) {
+                            try {
+                                function(value.asFuncRef());
+                            } catch (InvalidException e) {
+                                throw new InvalidException("type mismatch, " + e.getMessage(), e);
+                            }
                         }
                         table.setRef(index, value.asFuncRef(), inst);
                     } else {
@@ -187,9 +190,10 @@ public class Instance {
                 for (int i = 0; i < initializers.size(); i++) {
                     final List<Instruction> init = initializers.get(i);
                     var value = computeConstantValue(this, init);
-                    var func = function(value.asFuncRef());
-                    if (de.type() == ValueType.FuncRef && func != null) {
-                        func.setInitializedByElem(true);
+                    if (de.type() == ValueType.FuncRef
+                            && value.asFuncRef() != REF_NULL_VALUE
+                            && value.asFuncRef() >= importedFunctionsOffset) {
+                        function(value.asFuncRef()).setInitializedByElem(true);
                     }
                 }
             }
@@ -282,12 +286,13 @@ public class Instance {
         }
     }
 
-    public FunctionBody function(int idx) {
-        if (idx < importedFunctionsOffset) return null;
-        if (idx >= (functions.length + importedFunctionsOffset)) {
+    public FunctionBody function(long idx) {
+        if (idx < 0 || idx >= (functions.length + importedFunctionsOffset)) {
             throw new InvalidException("unknown function " + idx);
+        } else if (idx < importedFunctionsOffset) {
+            return null;
         }
-        return functions[idx - importedFunctionsOffset];
+        return functions[(int) idx - importedFunctionsOffset];
     }
 
     public int functionCount() {
