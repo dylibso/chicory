@@ -17,6 +17,7 @@ import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
+import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -151,13 +152,20 @@ public class Instance {
                 for (int i = 0; i < initializers.size(); i++) {
                     final List<Instruction> init = initializers.get(i);
                     var index = offset.asInt() + i;
+                    if (init.stream().filter(e -> e.opcode() != OpCode.END).count() > 1l) {
+                        throw new InvalidException(
+                                "constant expression required, type mismatch, expected [] but found"
+                                        + " extra instructions");
+                    }
                     var value = computeConstantValue(this, init);
                     var inst = computeConstantInstance(this, init);
-                    if (value.type() != ae.type()) {
+                    if (value.type() != ae.type() || table.elementType() != ae.type()) {
                         throw new InvalidException(
-                                "type mismatch, expected"
+                                "type mismatch, element type: "
                                         + ae.type()
-                                        + ", actual: "
+                                        + ", table type: "
+                                        + table.elementType()
+                                        + ", value type: "
                                         + value.type());
                     }
                     if (ae.type() == ValueType.FuncRef) {

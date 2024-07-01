@@ -839,9 +839,17 @@ public class TypeValidator {
                 case TABLE_INIT:
                     {
                         var tableidx = (int) op.operands()[1];
-                        instance.table(tableidx);
+                        var table = instance.table(tableidx);
                         var elemIdx = (int) op.operands()[0];
-                        instance.element(elemIdx);
+                        var elem = instance.element(elemIdx);
+
+                        if (table.elementType() != elem.type()) {
+                            throw new InvalidException(
+                                    "type mismatch, table type: "
+                                            + table.elementType()
+                                            + ", elem type: "
+                                            + elem.type());
+                        }
 
                         popVal(ValueType.I32);
                         popVal(ValueType.I32);
