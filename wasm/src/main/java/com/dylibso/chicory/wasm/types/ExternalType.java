@@ -26,7 +26,7 @@ public enum ExternalType {
     }
 
     /**
-     * {@return the numerical identifier for this external kind}
+     * @return the numerical identifier for this external kind
      */
     public int id() {
         return id;

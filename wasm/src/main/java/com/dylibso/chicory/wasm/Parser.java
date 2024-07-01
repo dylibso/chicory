@@ -1023,8 +1023,8 @@ public final class Parser {
      * into a java int, so we must use a long.
      * See <a href="https://www.w3.org/TR/wasm-core-1/#integers">2.2.2. Integers</a> of the WebAssembly Core Specification.
      *
-     * @param buffer
-     * @return
+     * @param buffer the byte buffer
+     * @return the resulting long
      */
     public static long readVarUInt32(ByteBuffer buffer) {
         var value = Encoding.readUnsignedLeb128(buffer, MAX_VARINT_LEN_32);
@@ -1038,8 +1038,8 @@ public final class Parser {
      * Read a signed I32 from the buffer. We can't fit an unsigned 32bit int into a java int, so we must use a long to use the same type as unsigned.
      * See <a href="https://www.w3.org/TR/wasm-core-1/#integers">2.2.2. Integers</a> of the WebAssembly Core Specification.
      *
-     * @param buffer
-     * @return
+     * @param buffer the byte buffer
+     * @return the resulting long
      */
     public static long readVarSInt32(ByteBuffer buffer) {
         var value = Encoding.readSigned32Leb128(buffer);
@@ -1053,8 +1053,8 @@ public final class Parser {
      * Read a signed I64 from the buffer which fits neatly into a long.
      * See <a href="https://www.w3.org/TR/wasm-core-1/#integers">2.2.2. Integers</a> of the WebAssembly Core Specification.
      *
-     * @param buffer
-     * @return
+     * @param buffer the byte buffer
+     * @return the resulting long
      */
     public static long readVarSInt64(ByteBuffer buffer) {
         var value = Encoding.readSigned64Leb128(buffer);
@@ -1068,8 +1068,8 @@ public final class Parser {
      * Read a F64 from the buffer which fits neatly into a long.
      * See <a href="https://www.w3.org/TR/wasm-core-1/#floating-point">2.2.3. Floating-Point</a> of the WebAssembly Core Specification.
      *
-     * @param buffer
-     * @return
+     * @param buffer the byte buffer
+     * @return the resulting long
      */
     public static long readFloat64(ByteBuffer buffer) {
         return buffer.getLong();
@@ -1079,8 +1079,8 @@ public final class Parser {
      * Read a F32 from the buffer which fits neatly into a long.
      * See <a href="https://www.w3.org/TR/wasm-core-1/#floating-point">2.2.3. Floating-Point</a> of the WebAssembly Core Specification.
      *
-     * @param buffer
-     * @return
+     * @param buffer the byte buffer
+     * @return the resulting long
      */
     public static long readFloat32(ByteBuffer buffer) {
         return readInt(buffer);
@@ -1090,8 +1090,8 @@ public final class Parser {
      * Read a symbol name from the buffer as UTF-8 String.
      * See <a href="https://www.w3.org/TR/wasm-core-1/#names%E2%91%A0">2.2.4. Names</a> of the WebAssembly Core Specification.
      *
-     * @param buffer
-     * @return
+     * @param buffer the byte buffer
+     * @return the resulting long
      */
     public static String readName(ByteBuffer buffer) {
         return readName(buffer, true);

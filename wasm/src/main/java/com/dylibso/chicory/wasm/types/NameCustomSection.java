@@ -147,21 +147,21 @@ public class NameCustomSection extends CustomSection {
     }
 
     /**
-     * {@return the module name, or <code>null</code> if none is set}
+     * @return the module name, or <code>null</code> if none is set
      */
     public String moduleName() {
         return moduleName;
     }
 
     /**
-     * {@return the name of the function with the given index, or <code>null</code> if none is set}
+     * @return the name of the function with the given index, or <code>null</code> if none is set
      */
     public String nameOfFunction(int functionIdx) {
         return oneLevelSearch(funcNames, functionIdx);
     }
 
     /**
-     * {@return the number of function names in this section}
+     * @return the number of function names in this section
      * This value does not have any relationship to the function index of any particular entry;
      * it merely reflects the number of function names in this section.
      * Used for testing.
@@ -171,56 +171,56 @@ public class NameCustomSection extends CustomSection {
     }
 
     /**
-     * {@return the name of the local with the given index within the function with the given index, or <code>null</code> if none is set}
+     * @return the name of the local with the given index within the function with the given index, or <code>null</code> if none is set
      */
     public String nameOfLocal(int functionIdx, int localIdx) {
         return twoLevelSearch(localNames, functionIdx, localIdx);
     }
 
     /**
-     * {@return the name of the local with the given index within the function with the given index, or <code>null</code> if none is set}
+     * @return the name of the local with the given index within the function with the given index, or <code>null</code> if none is set
      */
     public String nameOfLabel(int functionIdx, int labelIdx) {
         return twoLevelSearch(labelNames, functionIdx, labelIdx);
     }
 
     /**
-     * {@return the name of the table with the given index, or <code>null</code> if none is set}
+     * @return the name of the table with the given index, or <code>null</code> if none is set
      */
     public String nameOfTable(int tableIdx) {
         return oneLevelSearch(tableNames, tableIdx);
     }
 
     /**
-     * {@return the name of the memory with the given index, or <code>null</code> if none is set}
+     * @return the name of the memory with the given index, or <code>null</code> if none is set
      */
     public String nameOfMemory(int memoryIdx) {
         return oneLevelSearch(memoryNames, memoryIdx);
     }
 
     /**
-     * {@return the name of the global with the given index, or <code>null</code> if none is set}
+     * @return the name of the global with the given index, or <code>null</code> if none is set
      */
     public String nameOfGlobal(int globalIdx) {
         return oneLevelSearch(globalNames, globalIdx);
     }
 
     /**
-     * {@return the name of the element with the given index, or <code>null</code> if none is set}
+     * @return the name of the element with the given index, or <code>null</code> if none is set
      */
     public String nameOfElement(int elementIdx) {
         return oneLevelSearch(elementNames, elementIdx);
     }
 
     /**
-     * {@return the name of the data segment with the given index, or <code>null</code> if none is set}
+     * @return the name of the data segment with the given index, or <code>null</code> if none is set
      */
     public String nameOfData(int dataIdx) {
         return oneLevelSearch(dataNames, dataIdx);
     }
 
     /**
-     * {@return the name of the tag with the given index, or <code>null</code> if none is set}
+     * @return the name of the tag with the given index, or <code>null</code> if none is set
      */
     public String nameOfTag(int tagIdx) {
         return oneLevelSearch(tagNames, tagIdx);

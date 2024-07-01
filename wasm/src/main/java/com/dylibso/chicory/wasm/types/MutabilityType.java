@@ -16,14 +16,14 @@ public enum MutabilityType {
     }
 
     /**
-     * {@return the numerical identifier for this type}
+     * @return the numerical identifier for this type
      */
     public int id() {
         return id;
     }
 
     /**
-     * {@return the <code>MutabilityType</code> for the given ID value}
+     * @return the <code>MutabilityType</code> for the given ID value
      *
      * @throws IllegalArgumentException if the ID value does not correspond to a valid mutability type
      */

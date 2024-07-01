@@ -21,7 +21,7 @@ public final class Memory {
     }
 
     /**
-     * {@return the defined memory limits}
+     * @return the defined memory limits
      */
     public MemoryLimits memoryLimits() {
         return memoryLimits;

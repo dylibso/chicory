@@ -5,7 +5,7 @@ import java.util.Objects;
 /**
  * Some imported entity.
  * <p>
- * See <a href=https://webassembly.github.io/spec/core/syntax/modules.html#syntax-import">Imports</a> for
+ * See &lt;a href=https://webassembly.github.io/spec/core/syntax/modules.html#syntax-import"&gt;Imports&lt;/a&gt; for
  * reference.
  */
 public abstract class Import {
@@ -18,21 +18,21 @@ public abstract class Import {
     }
 
     /**
-     * {@return the module name to import from}
+     * @return the module name to import from
      */
     public String moduleName() {
         return moduleName;
     }
 
     /**
-     * {@return the import name}
+     * @return the import name
      */
     public String name() {
         return name;
     }
 
     /**
-     * {@return the kind of imported definition}
+     * @return the kind of imported definition
      */
     public abstract ExternalType importType();
 
