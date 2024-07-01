@@ -178,6 +178,7 @@ public class Instance {
         }
 
         for (var i = 0; i < globalInitializers.length; i++) {
+            // TODO: refactor with the ConstantEvaluators implementation
             var g = globalInitializers[i];
             var initialized = false;
             for (var j = 0; j < g.initInstructions().size(); j++) {
@@ -220,8 +221,10 @@ public class Instance {
                             break;
                         }
                     case REF_NULL:
-                        globals[i] = new GlobalInstance(Value.EXTREF_NULL);
-                        break;
+                        {
+                            globals[i] = new GlobalInstance(Value.EXTREF_NULL);
+                            break;
+                        }
                     case REF_FUNC:
                         {
                             var idx = (int) instr.operands()[0];
@@ -230,7 +233,9 @@ public class Instance {
                             break;
                         }
                     default:
-                        throw new InvalidException("constant expression required");
+                        {
+                            throw new InvalidException("constant expression required");
+                        }
                 }
                 if (initialized && g.mutabilityType() == MutabilityType.Const) {
                     throw new InvalidException(

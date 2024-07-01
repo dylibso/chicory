@@ -58,14 +58,21 @@ public class ConstantEvaluators {
                 case GLOBAL_GET:
                     {
                         var idx = (int) instruction.operands()[0];
-                        if (idx < instance.imports().globalCount()
-                                && instance.imports().global(idx).mutabilityType()
-                                        != MutabilityType.Const) {
+                        if (idx < instance.imports().globalCount()) {
+                            if (instance.imports().global(idx).mutabilityType()
+                                    != MutabilityType.Const) {
+                                throw new InvalidException(
+                                        "constant expression required, initializer expression"
+                                                + " cannot reference a mutable global");
+                            }
+                            return instance.readGlobal(idx);
+                        } else {
                             throw new InvalidException(
-                                    "constant expression required, initializer expression"
-                                            + " cannot reference a mutable global");
+                                    "unknown global "
+                                            + idx
+                                            + ", initializer expression can only reference"
+                                            + " an imported global");
                         }
-                        return instance.readGlobal(idx);
                     }
                 case END:
                     {

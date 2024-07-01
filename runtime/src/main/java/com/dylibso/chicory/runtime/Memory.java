@@ -110,13 +110,18 @@ public final class Memory {
                     throw new InvalidException("unknown memory " + segment.index());
                 }
                 var offsetExpr = segment.offsetInstructions();
+                if (offsetExpr.size() > 1) {
+                    throw new InvalidException(
+                            "type mismatch, constant expression required, expected only one"
+                                    + " initialization instruction");
+                }
                 var data = segment.data();
                 var offsetValue = computeConstantValue(instance, offsetExpr);
                 if (offsetValue.type() != ValueType.I32) {
                     throw new InvalidException(
-                            "type mismatch, epected I32 but found "
+                            "type mismatch, expected I32 but found "
                                     + offsetValue.type()
-                                    + " in ffset memory initialization");
+                                    + " in offset memory initialization");
                 }
                 var offset = offsetValue.asInt();
                 write(offset, data);
