@@ -52,7 +52,9 @@ public class ConstantEvaluators {
                     }
                 case REF_FUNC:
                     {
-                        tos = Value.funcRef((int) instruction.operands()[0]);
+                        var idx = (int) instruction.operands()[0];
+                        instance.function(idx);
+                        tos = Value.funcRef(idx);
                         break;
                     }
                 case GLOBAL_GET:

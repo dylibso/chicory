@@ -126,13 +126,6 @@ public class Instance {
         }
     }
 
-    private void verifyGlobalType(ValueType expected, ValueType actual) {
-        if (actual != expected) {
-            throw new InvalidException(
-                    "type mismatch, expected: " + expected + ", actual: " + actual);
-        }
-    }
-
     public Instance initialize(boolean start) {
         this.tables = new TableInstance[this.roughTables.length];
         for (var i = 0; i < this.roughTables.length; i++) {
@@ -178,74 +171,18 @@ public class Instance {
         }
 
         for (var i = 0; i < globalInitializers.length; i++) {
-            // TODO: refactor with the ConstantEvaluators implementation
             var g = globalInitializers[i];
-            var initialized = false;
-            for (var j = 0; j < g.initInstructions().size(); j++) {
-                var instr = g.initInstructions().get(j);
-                switch (instr.opcode()) {
-                    case I32_CONST:
-                        verifyGlobalType(g.valueType(), ValueType.I32);
-                        globals[i] = new GlobalInstance((Value.i32(instr.operands()[0])));
-                        break;
-                    case I64_CONST:
-                        verifyGlobalType(g.valueType(), ValueType.I64);
-                        globals[i] = new GlobalInstance(Value.i64(instr.operands()[0]));
-                        break;
-                    case F32_CONST:
-                        verifyGlobalType(g.valueType(), ValueType.F32);
-                        globals[i] = new GlobalInstance(Value.f32(instr.operands()[0]));
-                        break;
-                    case F64_CONST:
-                        verifyGlobalType(g.valueType(), ValueType.F64);
-                        globals[i] = new GlobalInstance(Value.f64(instr.operands()[0]));
-                        break;
-                    case GLOBAL_GET:
-                        {
-                            var idx = (int) instr.operands()[0];
-                            if (idx < imports.globalCount()) {
-                                if (imports.global(idx).mutabilityType() != MutabilityType.Const) {
-                                    throw new InvalidException(
-                                            "constant expression required, initializer expression"
-                                                    + " cannot reference a mutable global");
-                                }
-                                verifyGlobalType(
-                                        g.valueType(),
-                                        imports.global(idx).instance().getValue().type());
-                                globals[i] = imports.global(idx).instance();
-                            } else {
-                                throw new InvalidException(
-                                        "unknown global, initializer expression can only reference"
-                                                + " an imported global");
-                            }
-                            break;
-                        }
-                    case REF_NULL:
-                        {
-                            globals[i] = new GlobalInstance(Value.EXTREF_NULL);
-                            break;
-                        }
-                    case REF_FUNC:
-                        {
-                            var idx = (int) instr.operands()[0];
-                            function(idx);
-                            globals[i] = new GlobalInstance(Value.funcRef(idx));
-                            break;
-                        }
-                    default:
-                        {
-                            throw new InvalidException("constant expression required");
-                        }
-                }
-                if (initialized && g.mutabilityType() == MutabilityType.Const) {
-                    throw new InvalidException(
-                            "type mismatch, expected [] but found extra instructions");
-                }
-                initialized = true;
+            if (g.mutabilityType() == MutabilityType.Const && g.initInstructions().size() > 1) {
+                throw new InvalidException(
+                        "constant expression required, type mismatch, expected [] but found extra"
+                                + " instructions");
             }
-            if (!initialized || globals[i] == null) {
-                throw new InvalidException("type mismatch, unknown global");
+            var value = computeConstantValue(this, g.initInstructions());
+            if (g.valueType() != value.type()) {
+                throw new InvalidException(
+                        "type mismatch, expected: " + g.valueType() + ", actual: " + value.type());
             }
+            globals[i] = new GlobalInstance(value);
             globals[i].setInstance(this);
         }
 
