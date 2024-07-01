@@ -11,6 +11,7 @@ import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 // Heavily inspired by wazero
@@ -283,17 +284,37 @@ public class TypeValidator {
                         }
                         var defaultBranchLabelTypes = labelTypes(getCtrl(m));
                         var arity = defaultBranchLabelTypes.size();
-                        for (var idx = 1; idx < op.operands().length - 1; idx++) {
+                        for (var idx = 0; idx < op.operands().length - 1; idx++) {
                             var n = (int) op.operands()[idx];
-                            var labelTypes = labelTypes(getCtrl(n));
-                            if (labelTypes.size() != arity) {
-                                throw new InvalidException(
-                                        "type mismatch, mismatched arity in BR_TABLE for label "
-                                                + n);
+                            CtrlFrame ctrlFrame = null;
+                            try {
+                                ctrlFrame = getCtrl(n);
+                            } catch (IndexOutOfBoundsException e) {
+                                throw new InvalidException("unknown label", e);
+                            }
+                            var labelTypes = labelTypes(ctrlFrame);
+                            if (!ctrlFrame.unreachable) {
+                                if (labelTypes.size() != arity) {
+                                    throw new InvalidException(
+                                            "type mismatch, mismatched arity in BR_TABLE for label "
+                                                    + n);
+                                }
+                                for (var t = 0; t < arity; t++) {
+                                    if (labelTypes.get(t) != defaultBranchLabelTypes.get(t)) {
+                                        throw new InvalidException(
+                                                "type mismatch, br_table labels have inconsistent"
+                                                        + " types: expected: "
+                                                        + defaultBranchLabelTypes.get(t)
+                                                        + ", got: "
+                                                        + labelTypes.get(t));
+                                    }
+                                }
                             }
                             pushVals(popVals(labelTypes));
                         }
-                        popVals(defaultBranchLabelTypes);
+                        var reversed = new ArrayList<>(defaultBranchLabelTypes);
+                        Collections.reverse(reversed);
+                        popVals(reversed);
                         unreachable();
                         break;
                     }

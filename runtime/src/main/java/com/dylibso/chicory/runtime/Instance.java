@@ -205,7 +205,7 @@ public class Instance {
             var value = computeConstantValue(this, g.initInstructions());
             if (g.valueType() != value.type()) {
                 throw new InvalidException(
-                        "type mismatch, expected: " + g.valueType() + ", actual: " + value.type());
+                        "type mismatch, expected: " + g.valueType() + ", got: " + value.type());
             }
             globals[i] = new GlobalInstance(value);
             globals[i].setInstance(this);
