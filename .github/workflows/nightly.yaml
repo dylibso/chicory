@@ -33,10 +33,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: maven
-      - name: Setup `wasmtime`
-        uses: bytecodealliance/actions/wasmtime/setup@v1
-        with:
-          version: "v17.0.0"
       - name: Setup `wasm-tools`
         uses: bytecodealliance/actions/wasm-tools/setup@v1
         with:

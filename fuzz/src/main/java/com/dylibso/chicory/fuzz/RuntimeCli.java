@@ -26,7 +26,11 @@ public abstract class RuntimeCli {
 
     public String run(File file, String functionName, List<String> params) throws Exception {
         var command = new ArrayList<String>();
-        command.addAll(List.of(binaryName, file.getAbsolutePath(), "--invoke", functionName));
+        command.addAll(
+                List.of(
+                        binaryName,
+                        file.getAbsolutePath(),
+                        "--run-export=\"" + functionName + "\""));
         command.addAll(params);
         logger.info("Going to execute command:\n" + String.join(" ", command));
         // write the command to a file to make it reproducible
