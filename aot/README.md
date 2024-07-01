@@ -12,6 +12,5 @@ import com.dylibso.chicory.aot.AotMachine;
 var module = Module
         .builder("mymodule.wasm")
         .withMachineFactory(AotMachine::new)
-        )
         .build();
 ```
