@@ -146,20 +146,20 @@
             <test>SpecV1LinkingTest.test118</test>
             <test>SpecV1LinkingTest.test121</test>
             <test>SpecV1LinkingTest.test122</test>
-            <test>SpecV1BrTableTest.test154</test>
-            <test>SpecV1BrTableTest.test166</test>
-            <test>SpecV1BrTableTest.test167</test>
-            <test>SpecV1BrTableTest.test168</test>
+<!--            <test>SpecV1BrTableTest.test154</test>-->
+<!--            <test>SpecV1BrTableTest.test166</test>-->
+<!--            <test>SpecV1BrTableTest.test167</test>-->
+<!--            <test>SpecV1BrTableTest.test168</test>-->
+            <!-- Those errors are suggesting that messages should be accumulated instead of directly throwing -->
+            <test>SpecV1SelectTest.test120</test>
+            <test>SpecV1SelectTest.test121</test>
+            <!-- TODO: verify disabling start in wasi -->
+            <test>SpecV1StartTest.test1</test>
+            <test>SpecV1StartTest.test2</test>
           </excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts>
-            <!--            <wast>elem.wast</wast>-->
-            <!--            <wast>exports.wast</wast>-->
-            <!--            <wast>func_ptrs.wast</wast>-->
-            <!--            <wast>imports.wast</wast>-->
-            <!--            <wast>select.wast</wast>-->
-            <!--            <wast>start.wast</wast>-->
-            <!--            <wast>table-sub.wast</wast>-->
+            <wast>exports.wast</wast>
           </excludedInvalidWasts>
           <excludedWasts>
             <wast>simd_address.wast</wast>

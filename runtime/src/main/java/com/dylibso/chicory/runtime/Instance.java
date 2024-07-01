@@ -239,7 +239,7 @@ public class Instance {
             }
         }
 
-        if (start && module.export(START_FUNCTION_NAME) != null) {
+        if (module.export(START_FUNCTION_NAME) != null && start) {
             export(START_FUNCTION_NAME).apply();
         }
 
@@ -258,6 +258,8 @@ public class Instance {
                         this.module.logger().debug(() -> "Args: " + Arrays.toString(args));
                         try {
                             return machine.call(funcId, args);
+                        } catch (InvalidException e) {
+                            throw e;
                         } catch (Exception e) {
                             throw new WASMMachineException(machine.getStackTrace(), e);
                         }

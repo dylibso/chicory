@@ -836,6 +836,25 @@ public class TypeValidator {
                         break;
                     }
                 case TABLE_COPY:
+                    {
+                        var table1Idx = (int) op.operands()[1];
+                        var table1 = instance.table(table1Idx);
+                        var table2Idx = (int) op.operands()[0];
+                        var table2 = instance.table(table2Idx);
+
+                        if (table1.elementType() != table2.elementType()) {
+                            throw new InvalidException(
+                                    "type mismatch, table 1 type: "
+                                            + table1.elementType()
+                                            + ", table 2 type: "
+                                            + table2.elementType());
+                        }
+
+                        popVal(ValueType.I32);
+                        popVal(ValueType.I32);
+                        popVal(ValueType.I32);
+                        break;
+                    }
                 case TABLE_INIT:
                     {
                         var tableidx = (int) op.operands()[1];

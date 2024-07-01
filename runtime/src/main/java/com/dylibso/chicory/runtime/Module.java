@@ -113,6 +113,9 @@ public class Module {
                 case FUNCTION:
                     {
                         var type = ((FunctionImport) imprt).typeIndex();
+                        if (type >= this.module.typeSection().typeCount()) {
+                            throw new InvalidException("unknown type");
+                        }
                         functionTypes[funcIdx] = type;
                         // The global function id increases on this table
                         // function ids are assigned on imports first
@@ -160,7 +163,9 @@ public class Module {
             }
         } else {
             if (mappedHostImports.memoryCount() > 0) {
-                assert (mappedHostImports.memoryCount() == 1);
+                if (mappedHostImports.memoryCount() != 1) {
+                    throw new InvalidException("multiple memories");
+                }
                 if (mappedHostImports.memory(0) == null
                         || mappedHostImports.memory(0).memory() == null) {
                     throw new ChicoryException(
