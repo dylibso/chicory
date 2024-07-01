@@ -249,7 +249,7 @@ public class Instance {
         } else if (imports.memories().length > 0) {
             imports.memories()[0].memory().initialize(this, dataSegments);
         } else if (Arrays.stream(dataSegments).anyMatch(ds -> ds instanceof ActiveDataSegment)) {
-            for (var ds: dataSegments) {
+            for (var ds : dataSegments) {
                 if (ds instanceof ActiveDataSegment) {
                     var memory = (ActiveDataSegment) ds;
                     throw new InvalidException("unknown memory " + memory.index());
@@ -349,7 +349,7 @@ public class Instance {
         }
         var i = idx - importedGlobalsOffset;
         if (i < 0 || i >= globals.length || globals[idx - importedGlobalsOffset] == null) {
-            throw new InvalidException("unknown global " + i);
+            throw new InvalidException("unknown global " + idx);
         }
         return globals[idx - importedGlobalsOffset].getValue();
     }

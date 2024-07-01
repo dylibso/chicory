@@ -12,7 +12,6 @@ import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
@@ -114,7 +113,10 @@ public final class Memory {
                 var data = segment.data();
                 var offsetValue = computeConstantValue(instance, offsetExpr);
                 if (offsetValue.type() != ValueType.I32) {
-                    throw new InvalidException("type mismatch, epected I32 but found " + offsetValue.type() + " in ffset memory initialization");
+                    throw new InvalidException(
+                            "type mismatch, epected I32 but found "
+                                    + offsetValue.type()
+                                    + " in ffset memory initialization");
                 }
                 var offset = offsetValue.asInt();
                 write(offset, data);

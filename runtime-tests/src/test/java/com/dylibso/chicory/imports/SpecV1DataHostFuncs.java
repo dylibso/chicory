@@ -25,7 +25,8 @@ public class SpecV1DataHostFuncs {
                             "global-mut-i32",
                             new GlobalInstance(Value.i32(0)),
                             MutabilityType.Var),
-                    new HostGlobal("test", "g", new GlobalInstance(Value.i32(0)), MutabilityType.Var)
+                    new HostGlobal(
+                            "test", "g", new GlobalInstance(Value.i32(0)), MutabilityType.Var)
                 },
                 new HostMemory[] {
                     new HostMemory("spectest", "memory", new Memory(new MemoryLimits(1, 1)))

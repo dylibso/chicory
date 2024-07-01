@@ -1,6 +1,5 @@
 package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
@@ -59,7 +58,9 @@ public class ConstantEvaluators {
                 case GLOBAL_GET:
                     {
                         var idx = (int) instruction.operands()[0];
-                        if (idx < instance.imports().globalCount() && instance.imports().global(idx).mutabilityType() != MutabilityType.Const) {
+                        if (idx < instance.imports().globalCount()
+                                && instance.imports().global(idx).mutabilityType()
+                                        != MutabilityType.Const) {
                             throw new InvalidException(
                                     "constant expression required, initializer expression"
                                             + " cannot reference a mutable global");
@@ -73,7 +74,9 @@ public class ConstantEvaluators {
                 default:
                     {
                         throw new InvalidException(
-                                "constant expression required, but non-constant instruction encountered: " + instruction);
+                                "constant expression required, but non-constant instruction"
+                                        + " encountered: "
+                                        + instruction);
                     }
             }
         }
