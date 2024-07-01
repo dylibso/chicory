@@ -137,9 +137,15 @@ public class Instance {
                 var ae = (ActiveElement) el;
                 var table = table(ae.tableIndex());
 
+                if (ae.offset().size() > 1) {
+                    throw new InvalidException(
+                            "constant expression required, type mismatch, expected [] but found"
+                                    + " extra instructions");
+                }
                 Value offset = computeConstantValue(this, ae.offset());
                 if (offset.type() != ValueType.I32) {
-                    throw new ChicoryException("Invalid offset type in element " + offset.type());
+                    throw new InvalidException(
+                            "type mismatch, invalid offset type in element " + offset.type());
                 }
                 List<List<Instruction>> initializers = ae.initializers();
                 for (int i = 0; i < initializers.size(); i++) {
@@ -147,8 +153,19 @@ public class Instance {
                     var index = offset.asInt() + i;
                     var value = computeConstantValue(this, init);
                     var inst = computeConstantInstance(this, init);
+                    if (value.type() != ae.type()) {
+                        throw new InvalidException(
+                                "type mismatch, expected"
+                                        + ae.type()
+                                        + ", actual: "
+                                        + value.type());
+                    }
                     if (ae.type() == ValueType.FuncRef) {
-                        function(value.asFuncRef());
+                        try {
+                            function(value.asFuncRef());
+                        } catch (InvalidException e) {
+                            throw new InvalidException("type mismatch, " + e.getMessage(), e);
+                        }
                         table.setRef(index, value.asFuncRef(), inst);
                     } else {
                         assert ae.type() == ValueType.ExternRef;
