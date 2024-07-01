@@ -152,6 +152,7 @@ jobs:
         id: test-results
         with:
           check_name: ${{ env.NAME }} Tests Results
+          comment_mode: off
           compare_to_earlier_commit: false
           files: './${{ matrix.folder }}/**/surefire-reports/*.xml'
       - name: Publish badge conditional
