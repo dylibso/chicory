@@ -4,11 +4,11 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.Export;
+import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
@@ -61,15 +61,24 @@ public class Module {
         this.start = start;
         this.typeValidation = typeValidation;
         this.module = validateModule(module);
-        this.exports = new HashMap<>();
-        int cnt = module.exportSection().exportCount();
-        for (int i = 0; i < cnt; i++) {
-            Export e = module.exportSection().getExport(i);
-            exports.put(e.name(), e);
-        }
+        this.exports = genExports(module.exportSection());
     }
 
-    private com.dylibso.chicory.wasm.Module validateModule(com.dylibso.chicory.wasm.Module module) {
+    private static HashMap<String, Export> genExports(ExportSection export) {
+        var exports = new HashMap<String, Export>();
+        int cnt = export.exportCount();
+        for (int i = 0; i < cnt; i++) {
+            Export e = export.getExport(i);
+            if (exports.containsKey(e.name())) {
+                throw new InvalidException("duplicate export name " + e.name());
+            }
+            exports.put(e.name(), e);
+        }
+        return exports;
+    }
+
+    private static com.dylibso.chicory.wasm.Module validateModule(
+            com.dylibso.chicory.wasm.Module module) {
         var functionSectionSize = module.functionSection().functionCount();
         var codeSectionSize = module.codeSection().functionBodyCount();
         var dataSectionSize = module.dataSection().dataSegmentCount();
@@ -168,8 +177,8 @@ public class Module {
                 }
                 if (mappedHostImports.memory(0) == null
                         || mappedHostImports.memory(0).memory() == null) {
-                    throw new ChicoryException(
-                            "Imported memory not defined, cannot run the program");
+                    throw new InvalidException(
+                            "unknown memory, imported memory not defined, cannot run the program");
                 }
                 memory = mappedHostImports.memory(0).memory();
             } else {
@@ -180,6 +189,7 @@ public class Module {
         var globalImportsOffset = 0;
         var functionImportsOffset = 0;
         var tablesImportsOffset = 0;
+        var memoryImportsOffset = 0;
         for (int i = 0; i < imports.length; i++) {
             switch (imports[i].importType()) {
                 case GLOBAL:
@@ -191,8 +201,51 @@ public class Module {
                 case TABLE:
                     tablesImportsOffset++;
                     break;
+                case MEMORY:
+                    memoryImportsOffset++;
+                    break;
                 default:
                     break;
+            }
+        }
+
+        for (var e : exports.values()) {
+            switch (e.exportType()) {
+                case FUNCTION:
+                    {
+                        if (e.index()
+                                >= module.functionSection().functionCount()
+                                        + functionImportsOffset) {
+                            throw new InvalidException("unknown function " + e.index());
+                        }
+                        break;
+                    }
+                case GLOBAL:
+                    {
+                        if (e.index()
+                                >= module.globalSection().globalCount() + globalImportsOffset) {
+                            throw new InvalidException("unknown global " + e.index());
+                        }
+                        break;
+                    }
+                case TABLE:
+                    {
+                        if (e.index() >= module.tableSection().tableCount() + tablesImportsOffset) {
+                            throw new InvalidException("unknown table " + e.index());
+                        }
+                        break;
+                    }
+                case MEMORY:
+                    {
+                        var memoryCount =
+                                (module.memorySection() == null)
+                                        ? 0
+                                        : module.memorySection().memoryCount();
+                        if (e.index() >= memoryCount + memoryImportsOffset) {
+                            throw new InvalidException("unknown memory " + e);
+                        }
+                        break;
+                    }
             }
         }
 

@@ -153,9 +153,7 @@
             <test>SpecV1StartTest.test2</test>
           </excludedTests>
           <excludedMalformedWasts/>
-          <excludedInvalidWasts>
-            <wast>exports.wast</wast>
-          </excludedInvalidWasts>
+          <excludedInvalidWasts/>
           <excludedWasts>
             <wast>simd_address.wast</wast>
             <wast>simd_align.wast</wast>
