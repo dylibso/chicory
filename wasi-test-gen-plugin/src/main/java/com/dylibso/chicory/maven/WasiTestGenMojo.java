@@ -81,6 +81,12 @@ public class WasiTestGenMojo extends AbstractMojo {
     private File sourceDestinationFolder;
 
     /**
+     * Skip execution of this Mojo.
+     */
+    @Parameter(property = "wasi-test-gen.skip", defaultValue = "false")
+    private boolean skip;
+
+    /**
      * The current Maven project.
      */
     @Parameter(property = "project", required = true, readonly = true)
@@ -88,6 +94,10 @@ public class WasiTestGenMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        if (skip) {
+            return;
+        }
+
         try {
             new WasiTestSuiteDownloader(log)
                     .downloadTestsuite(testSuiteRepo, testSuiteRepoRef, testSuiteFolder);
