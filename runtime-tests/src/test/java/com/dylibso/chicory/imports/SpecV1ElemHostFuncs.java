@@ -10,6 +10,7 @@ import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.HostTable;
 import com.dylibso.chicory.runtime.TableInstance;
 import com.dylibso.chicory.wasm.types.Limits;
+import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -17,7 +18,17 @@ import com.dylibso.chicory.wasm.types.ValueType;
 public class SpecV1ElemHostFuncs {
 
     public static HostImports fallback() {
-        return new HostImports();
+        return new HostImports(
+                new HostGlobal[] {
+                    new HostGlobal("test", "global-i32", new GlobalInstance(Value.i32(0))),
+                    new HostGlobal(
+                            "test",
+                            "global-mut-i32",
+                            new GlobalInstance(Value.i32(0)),
+                            MutabilityType.Var),
+                    new HostGlobal(
+                            "test", "g", new GlobalInstance(Value.i32(0)), MutabilityType.Var)
+                });
     }
 
     public static HostImports testModule3() {

@@ -134,82 +134,92 @@ public class JavaTestGen {
 
             switch (cmd.type()) {
                 case MODULE:
-                    currentWasmFile = getWasmFile(cmd, wasmFilesFolder);
-                    lastModuleVarName = TEST_MODULE_NAME + moduleInstantiationNumber;
-                    String lastInstanceVarName = lastModuleVarName + "Instance";
-                    moduleInstantiationNumber++;
-                    if (cmd.name() != null) {
-                        lastModuleVarName = cmd.name().replace("$", "");
-                        lastInstanceVarName = cmd.name().replace("$", "") + "Instance";
+                    {
+                        currentWasmFile = getWasmFile(cmd, wasmFilesFolder);
+                        lastModuleVarName = TEST_MODULE_NAME + moduleInstantiationNumber;
+                        String lastInstanceVarName = lastModuleVarName + "Instance";
+                        moduleInstantiationNumber++;
+                        if (cmd.name() != null) {
+                            lastModuleVarName = cmd.name().replace("$", "");
+                            lastInstanceVarName = cmd.name().replace("$", "") + "Instance";
+                        }
+                        String hostFuncs =
+                                detectImports(importsName, lastModuleVarName, importsSourceRoot);
+                        testClass.addFieldWithInitializer(
+                                "Instance",
+                                lastInstanceVarName,
+                                new NullLiteralExpr(),
+                                Modifier.Keyword.PUBLIC,
+                                Modifier.Keyword.STATIC);
+
+                        var instantiateMethodName = "instantiate_" + lastInstanceVarName;
+                        var instantiateMethod =
+                                testClass.addMethod(instantiateMethodName, Modifier.Keyword.PUBLIC);
+                        // It needs to be a test to be executed
+                        instantiateMethod.addAnnotation("Test");
+                        instantiateMethod.addSingleMemberAnnotation(
+                                "Order", new IntegerLiteralExpr(Integer.toString(testNumber++)));
+
+                        instantiateMethod.setBody(
+                                new BlockStmt()
+                                        .addStatement(
+                                                new AssignExpr(
+                                                        new NameExpr(lastInstanceVarName),
+                                                        generateModuleInstantiation(
+                                                                cmd,
+                                                                currentWasmFile,
+                                                                importsName,
+                                                                hostFuncs,
+                                                                excludeInvalid),
+                                                        AssignExpr.Operator.ASSIGN)));
+                        break;
                     }
-                    String hostFuncs =
-                            detectImports(importsName, lastModuleVarName, importsSourceRoot);
-                    testClass.addFieldWithInitializer(
-                            "Instance",
-                            lastInstanceVarName,
-                            new NullLiteralExpr(),
-                            Modifier.Keyword.PUBLIC,
-                            Modifier.Keyword.STATIC);
-
-                    var instantiateMethodName = "instantiate_" + lastInstanceVarName;
-                    var instantiateMethod =
-                            testClass.addMethod(instantiateMethodName, Modifier.Keyword.PUBLIC);
-                    // It needs to be a test to be executed
-                    instantiateMethod.addAnnotation("Test");
-                    instantiateMethod.addSingleMemberAnnotation(
-                            "Order", new IntegerLiteralExpr(Integer.toString(testNumber++)));
-
-                    instantiateMethod.setBody(
-                            new BlockStmt()
-                                    .addStatement(
-                                            new AssignExpr(
-                                                    new NameExpr(lastInstanceVarName),
-                                                    generateModuleInstantiation(
-                                                            cmd,
-                                                            currentWasmFile,
-                                                            importsName,
-                                                            hostFuncs,
-                                                            excludeInvalid),
-                                                    AssignExpr.Operator.ASSIGN)));
-                    break;
                 case ACTION:
                 case ASSERT_RETURN:
                 case ASSERT_TRAP:
-                    method = createTestMethod(testClass, testNumber++, excludedMethods);
+                    {
+                        method = createTestMethod(testClass, testNumber++, excludedMethods);
 
-                    var baseVarName = escapedCamelCase(cmd.action().field());
-                    var varNum = fallbackVarNumber++;
-                    var varName = "var" + (baseVarName.isEmpty() ? varNum : baseVarName);
-                    String moduleName = lastModuleVarName;
-                    if (cmd.action().module() != null) {
-                        moduleName = cmd.action().module().replace("$", "");
-                    }
-                    var fieldExport = generateFieldExport(varName, cmd, moduleName);
-                    if (fieldExport.isPresent()) {
-                        method.getBody().get().addStatement(fieldExport.get());
-                    }
+                        var baseVarName = escapedCamelCase(cmd.action().field());
+                        var varNum = fallbackVarNumber++;
+                        var varName = "var" + (baseVarName.isEmpty() ? varNum : baseVarName);
+                        String moduleName = lastModuleVarName;
+                        if (cmd.action().module() != null) {
+                            moduleName = cmd.action().module().replace("$", "");
+                        }
+                        var fieldExport = generateFieldExport(varName, cmd, moduleName);
+                        if (fieldExport.isPresent()) {
+                            method.getBody().get().addStatement(fieldExport.get());
+                        }
 
-                    if (cmd.type() == CommandType.ACTION) {
-                        for (var expr : generateInvoke(varName, cmd)) {
-                            method.getBody().get().addStatement(expr);
+                        if (cmd.type() == CommandType.ACTION) {
+                            for (var expr : generateInvoke(varName, cmd)) {
+                                method.getBody().get().addStatement(expr);
+                            }
+                        } else {
+                            for (var expr : generateAssert(varName, cmd)) {
+                                method.getBody().get().addStatement(expr);
+                            }
                         }
-                    } else {
-                        for (var expr : generateAssert(varName, cmd)) {
-                            method.getBody().get().addStatement(expr);
-                        }
+                        break;
                     }
-                    break;
                 case REGISTER:
                     // should be irrelevant
                     break;
                 case ASSERT_MALFORMED:
-                    method = createTestMethod(testClass, testNumber++, excludedMethods);
-                    generateAssertThrows(wasmFilesFolder, cmd, method, excludeMalformed);
-                    break;
                 case ASSERT_INVALID:
-                    method = createTestMethod(testClass, testNumber++, excludedMethods);
-                    generateAssertThrows(wasmFilesFolder, cmd, method, excludeInvalid);
-                    break;
+                    {
+                        var excluded =
+                                (cmd.type() == CommandType.ASSERT_MALFORMED)
+                                        ? excludeMalformed
+                                        : excludeInvalid;
+                        method = createTestMethod(testClass, testNumber++, excludedMethods);
+                        String hostFuncs =
+                                detectImports(importsName, lastModuleVarName, importsSourceRoot);
+                        generateAssertThrows(
+                                wasmFilesFolder, cmd, method, importsName, hostFuncs, excluded);
+                        break;
+                    }
                 case ASSERT_UNINSTANTIABLE:
                 case ASSERT_EXHAUSTION:
                 case ASSERT_UNLINKABLE:
@@ -427,7 +437,12 @@ public class JavaTestGen {
     }
 
     private void generateAssertThrows(
-            File wasmFilesFolder, Command cmd, MethodDeclaration method, boolean excluded) {
+            File wasmFilesFolder,
+            Command cmd,
+            MethodDeclaration method,
+            String importsName,
+            String hostFuncs,
+            boolean excluded) {
         assert (cmd.type() == CommandType.ASSERT_INVALID
                 || cmd.type() == CommandType.ASSERT_MALFORMED);
 
@@ -448,7 +463,8 @@ public class JavaTestGen {
                                 + "assertThrows("
                                 + exceptionType
                                 + ".class, () -> "
-                                + generateModuleInstantiation(cmd, wasmFile, null, null, false)
+                                + generateModuleInstantiation(
+                                        cmd, wasmFile, importsName, hostFuncs, false)
                                 + ")");
 
         method.getBody().get().addStatement(assertThrows);

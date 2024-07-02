@@ -1,6 +1,5 @@
 package com.dylibso.chicory.wasm.types;
 
-import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import java.util.List;
 
 /**
@@ -40,9 +39,6 @@ public enum ExternalType {
     }
 
     public static ExternalType byId(int id) {
-        if (id < 0 || id >= values.size()) {
-            throw new MalformedException("malformed import kind");
-        }
         return values.get(id);
     }
 }

@@ -6,7 +6,6 @@ import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
-import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -1787,13 +1786,6 @@ class InterpreterMachine implements Machine {
 
     private static void GLOBAL_SET(MStack stack, Instance instance, long[] operands) {
         var id = (int) operands[0];
-        var mutabilityType =
-                (instance.globalInitializer(id) == null)
-                        ? instance.imports().global(id).mutabilityType()
-                        : instance.globalInitializer(id);
-        if (mutabilityType == MutabilityType.Const) {
-            throw new RuntimeException("Can't call GLOBAL_SET on immutable global");
-        }
         var val = stack.pop();
         instance.writeGlobal(id, val);
     }

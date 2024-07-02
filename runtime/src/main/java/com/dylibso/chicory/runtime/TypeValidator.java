@@ -5,11 +5,13 @@ import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 // Heavily inspired by wazero
@@ -199,7 +201,8 @@ public class TypeValidator {
         return localTypes.get(idx);
     }
 
-    public void validate(FunctionBody body, FunctionType functionType, Instance instance) {
+    public void validate(
+            int funcIdx, FunctionBody body, FunctionType functionType, Instance instance) {
         var localTypes = body.localTypes();
         var inputLen = functionType.params().size();
         pushCtrl(null, new ArrayList<>(), functionType.returns());
@@ -281,17 +284,37 @@ public class TypeValidator {
                         }
                         var defaultBranchLabelTypes = labelTypes(getCtrl(m));
                         var arity = defaultBranchLabelTypes.size();
-                        for (var idx = 1; idx < op.operands().length - 1; idx++) {
+                        for (var idx = 0; idx < op.operands().length - 1; idx++) {
                             var n = (int) op.operands()[idx];
-                            var labelTypes = labelTypes(getCtrl(n));
-                            if (labelTypes.size() != arity) {
-                                throw new InvalidException(
-                                        "type mismatch, mismatched arity in BR_TABLE for label "
-                                                + n);
+                            CtrlFrame ctrlFrame = null;
+                            try {
+                                ctrlFrame = getCtrl(n);
+                            } catch (IndexOutOfBoundsException e) {
+                                throw new InvalidException("unknown label", e);
+                            }
+                            var labelTypes = labelTypes(ctrlFrame);
+                            if (!ctrlFrame.unreachable) {
+                                if (labelTypes.size() != arity) {
+                                    throw new InvalidException(
+                                            "type mismatch, mismatched arity in BR_TABLE for label "
+                                                    + n);
+                                }
+                                for (var t = 0; t < arity; t++) {
+                                    if (labelTypes.get(t) != defaultBranchLabelTypes.get(t)) {
+                                        throw new InvalidException(
+                                                "type mismatch, br_table labels have inconsistent"
+                                                        + " types: expected: "
+                                                        + defaultBranchLabelTypes.get(t)
+                                                        + ", got: "
+                                                        + labelTypes.get(t));
+                                    }
+                                }
                             }
                             pushVals(popVals(labelTypes));
                         }
-                        popVals(defaultBranchLabelTypes);
+                        var reversed = new ArrayList<>(defaultBranchLabelTypes);
+                        Collections.reverse(reversed);
+                        popVals(reversed);
                         unreachable();
                         break;
                     }
@@ -745,7 +768,15 @@ public class TypeValidator {
                     }
                 case GLOBAL_SET:
                     {
-                        popVal(instance.readGlobal((int) op.operands()[0]).type());
+                        var id = (int) op.operands()[0];
+                        var mutabilityType =
+                                (instance.globalInitializer(id) == null)
+                                        ? instance.imports().global(id).mutabilityType()
+                                        : instance.globalInitializer(id).mutabilityType();
+                        if (mutabilityType == MutabilityType.Const) {
+                            throw new InvalidException("global is immutable");
+                        }
+                        popVal(instance.readGlobal(id).type());
                         break;
                     }
                 case CALL:
@@ -788,6 +819,11 @@ public class TypeValidator {
                     }
                 case REF_FUNC:
                     {
+                        var idx = (int) op.operands()[0];
+                        if (idx == funcIdx && !body.isInitializedByElem()) { // reference to self
+                            throw new InvalidException("undeclared function reference");
+                        }
+
                         pushVal(ValueType.FuncRef);
                         break;
                     }
@@ -821,12 +857,39 @@ public class TypeValidator {
                         break;
                     }
                 case TABLE_COPY:
+                    {
+                        var table1Idx = (int) op.operands()[1];
+                        var table1 = instance.table(table1Idx);
+                        var table2Idx = (int) op.operands()[0];
+                        var table2 = instance.table(table2Idx);
+
+                        if (table1.elementType() != table2.elementType()) {
+                            throw new InvalidException(
+                                    "type mismatch, table 1 type: "
+                                            + table1.elementType()
+                                            + ", table 2 type: "
+                                            + table2.elementType());
+                        }
+
+                        popVal(ValueType.I32);
+                        popVal(ValueType.I32);
+                        popVal(ValueType.I32);
+                        break;
+                    }
                 case TABLE_INIT:
                     {
                         var tableidx = (int) op.operands()[1];
-                        instance.table(tableidx);
+                        var table = instance.table(tableidx);
                         var elemIdx = (int) op.operands()[0];
-                        instance.element(elemIdx);
+                        var elem = instance.element(elemIdx);
+
+                        if (table.elementType() != elem.type()) {
+                            throw new InvalidException(
+                                    "type mismatch, table type: "
+                                            + table.elementType()
+                                            + ", elem type: "
+                                            + elem.type());
+                        }
 
                         popVal(ValueType.I32);
                         popVal(ValueType.I32);

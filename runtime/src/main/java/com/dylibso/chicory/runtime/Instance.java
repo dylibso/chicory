@@ -3,6 +3,7 @@ package com.dylibso.chicory.runtime;
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantInstance;
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static com.dylibso.chicory.runtime.Module.START_FUNCTION_NAME;
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
@@ -10,11 +11,14 @@ import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.DataSegment;
+import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.MutabilityType;
+import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -102,7 +106,7 @@ public class Instance {
             ExecutionListener listener) {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
-        this.globals = new GlobalInstance[globalInitializers.length + importedGlobalsOffset];
+        this.globals = new GlobalInstance[globalInitializers.length];
         this.importedGlobalsOffset = importedGlobalsOffset;
         this.importedFunctionsOffset = importedFunctionsOffset;
         this.importedTablesOffset = importedTablesOffset;
@@ -129,27 +133,67 @@ public class Instance {
         for (var i = 0; i < this.roughTables.length; i++) {
             this.tables[i] = new TableInstance(this.roughTables[i]);
         }
+
         for (var el : elements) {
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
                 var table = table(ae.tableIndex());
 
+                if (ae.offset().size() > 1) {
+                    throw new InvalidException(
+                            "constant expression required, type mismatch, expected [] but found"
+                                    + " extra instructions");
+                }
                 Value offset = computeConstantValue(this, ae.offset());
                 if (offset.type() != ValueType.I32) {
-                    throw new ChicoryException("Invalid offset type in element " + offset.type());
+                    throw new InvalidException(
+                            "type mismatch, invalid offset type in element " + offset.type());
                 }
                 List<List<Instruction>> initializers = ae.initializers();
                 for (int i = 0; i < initializers.size(); i++) {
                     final List<Instruction> init = initializers.get(i);
                     var index = offset.asInt() + i;
+                    if (init.stream().filter(e -> e.opcode() != OpCode.END).count() > 1l) {
+                        throw new InvalidException(
+                                "constant expression required, type mismatch, expected [] but found"
+                                        + " extra instructions");
+                    }
                     var value = computeConstantValue(this, init);
                     var inst = computeConstantInstance(this, init);
+                    if (value.type() != ae.type() || table.elementType() != ae.type()) {
+                        throw new InvalidException(
+                                "type mismatch, element type: "
+                                        + ae.type()
+                                        + ", table type: "
+                                        + table.elementType()
+                                        + ", value type: "
+                                        + value.type());
+                    }
                     if (ae.type() == ValueType.FuncRef) {
-                        function(value.asFuncRef());
+                        if (value.asFuncRef() != REF_NULL_VALUE) {
+                            try {
+                                function(value.asFuncRef());
+                            } catch (InvalidException e) {
+                                throw new InvalidException("type mismatch, " + e.getMessage(), e);
+                            }
+                        }
                         table.setRef(index, value.asFuncRef(), inst);
                     } else {
                         assert ae.type() == ValueType.ExternRef;
                         table.setRef(index, value.asExtRef(), inst);
+                    }
+                }
+            } else if (el instanceof DeclarativeElement) {
+                var de = (DeclarativeElement) el;
+
+                List<List<Instruction>> initializers = de.initializers();
+                for (int i = 0; i < initializers.size(); i++) {
+                    final List<Instruction> init = initializers.get(i);
+                    var value = computeConstantValue(this, init);
+                    if (de.type() == ValueType.FuncRef
+                            && value.asFuncRef() != REF_NULL_VALUE
+                            && value.asFuncRef() >= importedFunctionsOffset) {
+                        function(value.asFuncRef()).setInitializedByElem(true);
                     }
                 }
             }
@@ -157,45 +201,17 @@ public class Instance {
 
         for (var i = 0; i < globalInitializers.length; i++) {
             var g = globalInitializers[i];
-            if (g.initInstructions().size() > 2)
-                throw new RuntimeException(
-                        "We don't support a global initializer with multiple instructions");
-            var instr = g.initInstructions().get(0);
-            switch (instr.opcode()) {
-                case I32_CONST:
-                    globals[i] = new GlobalInstance((Value.i32(instr.operands()[0])));
-                    break;
-                case I64_CONST:
-                    globals[i] = new GlobalInstance(Value.i64(instr.operands()[0]));
-                    break;
-                case F32_CONST:
-                    globals[i] = new GlobalInstance(Value.f32(instr.operands()[0]));
-                    break;
-                case F64_CONST:
-                    globals[i] = new GlobalInstance(Value.f64(instr.operands()[0]));
-                    break;
-                case GLOBAL_GET:
-                    {
-                        var idx = (int) instr.operands()[0];
-                        globals[i] =
-                                idx < imports.globalCount()
-                                        ? imports.global(idx).instance()
-                                        : globals[idx];
-                        break;
-                    }
-                case REF_NULL:
-                    globals[i] = new GlobalInstance(Value.EXTREF_NULL);
-                    break;
-                case REF_FUNC:
-                    globals[i] = new GlobalInstance(Value.funcRef((int) instr.operands()[0]));
-                    break;
-                default:
-                    throw new RuntimeException(
-                            "We only support i32.const, i64.const, f32.const, f64.const,"
-                                    + " global.get, ref.func and ref.null opcodes on global"
-                                    + " initializers right now. We failed to initialize opcode: "
-                                    + instr.opcode());
+            if (g.mutabilityType() == MutabilityType.Const && g.initInstructions().size() > 1) {
+                throw new InvalidException(
+                        "constant expression required, type mismatch, expected [] but found extra"
+                                + " instructions");
             }
+            var value = computeConstantValue(this, g.initInstructions());
+            if (g.valueType() != value.type()) {
+                throw new InvalidException(
+                        "type mismatch, expected: " + g.valueType() + ", got: " + value.type());
+            }
+            globals[i] = new GlobalInstance(value);
             globals[i].setInstance(this);
         }
 
@@ -204,6 +220,12 @@ public class Instance {
         } else if (imports.memories().length > 0) {
             imports.memories()[0].memory().initialize(this, dataSegments);
         } else if (Arrays.stream(dataSegments).anyMatch(ds -> ds instanceof ActiveDataSegment)) {
+            for (var ds : dataSegments) {
+                if (ds instanceof ActiveDataSegment) {
+                    var memory = (ActiveDataSegment) ds;
+                    throw new InvalidException("unknown memory " + memory.index());
+                }
+            }
             throw new InvalidException("unknown memory");
         }
 
@@ -216,12 +238,12 @@ public class Instance {
                     if (funcType >= this.types.length) {
                         throw new InvalidException("unknown type " + funcType);
                     }
-                    new TypeValidator().validate(this.function(i), this.types[funcType], this);
+                    new TypeValidator().validate(i, this.function(i), this.types[funcType], this);
                 }
             }
         }
 
-        if (start && module.export(START_FUNCTION_NAME) != null) {
+        if (module.export(START_FUNCTION_NAME) != null && start) {
             export(START_FUNCTION_NAME).apply();
         }
 
@@ -240,6 +262,8 @@ public class Instance {
                         this.module.logger().debug(() -> "Args: " + Arrays.toString(args));
                         try {
                             return machine.call(funcId, args);
+                        } catch (InvalidException e) {
+                            throw e;
                         } catch (Exception e) {
                             throw new WASMMachineException(machine.getStackTrace(), e);
                         }
@@ -262,12 +286,13 @@ public class Instance {
         }
     }
 
-    public FunctionBody function(int idx) {
-        if (idx < importedFunctionsOffset) return null;
-        if (idx >= (functions.length + importedFunctionsOffset)) {
+    public FunctionBody function(long idx) {
+        if (idx < 0 || idx >= (functions.length + importedFunctionsOffset)) {
             throw new InvalidException("unknown function " + idx);
+        } else if (idx < importedFunctionsOffset) {
+            return null;
         }
-        return functions[idx - importedFunctionsOffset];
+        return functions[(int) idx - importedFunctionsOffset];
     }
 
     public int functionCount() {
@@ -298,7 +323,7 @@ public class Instance {
         }
         var i = idx - importedGlobalsOffset;
         if (i < 0 || i >= globals.length) {
-            throw new InvalidException("unknown global " + i);
+            throw new InvalidException("unknown global " + idx);
         }
         return globals[idx - importedGlobalsOffset].getValue();
     }
@@ -306,6 +331,9 @@ public class Instance {
     public Global globalInitializer(int idx) {
         if (idx < importedGlobalsOffset) {
             return null;
+        }
+        if ((idx - importedGlobalsOffset) >= globalInitializers.length) {
+            throw new InvalidException("unknown global " + idx);
         }
         return globalInitializers[idx - importedGlobalsOffset];
     }
