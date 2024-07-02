@@ -416,7 +416,7 @@ public class JavaTestGen {
                         + "\")"
                         + additionalParam
                         + ")\n"
-                        + ((excludeInvalid) ? "" : INDENT + ".withTypeValidation(true)\n")
+                        + ((excludeInvalid) ? INDENT + ".withTypeValidation(false)\n" : "")
                         + ((hostFuncs != null)
                                 ? INDENT
                                         + ".withHostImports("
@@ -465,17 +465,12 @@ public class JavaTestGen {
     }
 
     private String getWasmFile(Command cmd, File folder) {
-        try {
-            return folder.toPath()
-                    .resolve(cmd.filename())
-                    .toFile()
-                    .getAbsolutePath()
-                    .replace(baseDir.getAbsolutePath() + File.separator, "")
-                    .replace("\\", "\\\\"); // Win compat
-        } catch (Exception e) {
-            throw new IllegalArgumentException(
-                    "DEBUG ME: " + cmd + " - " + folder.getAbsolutePath() + " - " + cmd.filename());
-        }
+        return folder.toPath()
+                .resolve(cmd.filename())
+                .toFile()
+                .getAbsolutePath()
+                .replace(baseDir.getAbsolutePath() + File.separator, "")
+                .replace("\\", "\\\\"); // Win compat
     }
 
     private void generateAssertThrows(
