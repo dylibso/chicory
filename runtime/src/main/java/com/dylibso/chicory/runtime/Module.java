@@ -6,15 +6,18 @@ import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
+import com.dylibso.chicory.wasm.exceptions.UnlinkableException;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
+import com.dylibso.chicory.wasm.types.GlobalImport;
 import com.dylibso.chicory.wasm.types.Import;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.Table;
+import com.dylibso.chicory.wasm.types.TableImport;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -270,6 +273,76 @@ public class Module {
                 listener);
     }
 
+    private void validateHostFunctionSignature(FunctionImport imprt, HostFunction f) {
+        var expectedType = module.typeSection().getType(imprt.typeIndex());
+        if (expectedType.params().size() != f.paramTypes().size()
+                || expectedType.returns().size() != f.returnTypes().size()) {
+            throw new UnlinkableException("incompatible import type");
+        }
+        for (int i = 0; i < expectedType.params().size(); i++) {
+            var expected = expectedType.params().get(i);
+            var got = f.paramTypes().get(i);
+            if (expected != got) {
+                throw new UnlinkableException("incompatible import type");
+            }
+        }
+        for (int i = 0; i < expectedType.returns().size(); i++) {
+            var expected = expectedType.returns().get(i);
+            var got = f.returnTypes().get(i);
+            if (expected != got) {
+                throw new UnlinkableException("incompatible import type");
+            }
+        }
+    }
+
+    private void validateHostGlobalType(GlobalImport i, HostGlobal g) {
+        if (i.type() != g.instance().getValue().type()
+                || i.mutabilityType() != g.mutabilityType()) {
+            throw new UnlinkableException("incompatible import type");
+        }
+    }
+
+    private void validateHostTableType(TableImport i, HostTable t) {
+        // TODO: verify table limits and fix everything accordingly
+        if (i.entryType() != t.table().elementType()) {
+            throw new UnlinkableException("incompatible import type");
+        }
+    }
+
+    private void validateNegativeImportType(String moduleName, String name, FromHost[] fromHost) {
+        for (var fh : fromHost) {
+            if (fh.moduleName().equals(moduleName) && fh.fieldName().equals(name)) {
+                throw new UnlinkableException("incompatible import type");
+            }
+        }
+    }
+
+    private void validateNegativeImportType(
+            String moduleName, String name, ExternalType typ, HostImports hostImports) {
+        switch (typ) {
+            case FUNCTION:
+                validateNegativeImportType(moduleName, name, hostImports.globals());
+                validateNegativeImportType(moduleName, name, hostImports.memories());
+                validateNegativeImportType(moduleName, name, hostImports.tables());
+                break;
+            case GLOBAL:
+                validateNegativeImportType(moduleName, name, hostImports.functions());
+                validateNegativeImportType(moduleName, name, hostImports.memories());
+                validateNegativeImportType(moduleName, name, hostImports.tables());
+                break;
+            case MEMORY:
+                validateNegativeImportType(moduleName, name, hostImports.functions());
+                validateNegativeImportType(moduleName, name, hostImports.globals());
+                validateNegativeImportType(moduleName, name, hostImports.tables());
+                break;
+            case TABLE:
+                validateNegativeImportType(moduleName, name, hostImports.functions());
+                validateNegativeImportType(moduleName, name, hostImports.globals());
+                validateNegativeImportType(moduleName, name, hostImports.memories());
+                break;
+        }
+    }
+
     private HostImports mapHostImports(Import[] imports, HostImports hostImports) {
         int hostFuncNum = 0;
         int hostGlobalNum = 0;
@@ -307,6 +380,7 @@ public class Module {
             var i = imports[impIdx];
             var name = i.moduleName() + "." + i.name();
             var found = false;
+            validateNegativeImportType(i.moduleName(), i.name(), i.importType(), hostImports);
             switch (i.importType()) {
                 case FUNCTION:
                     cnt = hostImports.functionCount();
@@ -314,6 +388,7 @@ public class Module {
                         HostFunction f = hostImports.function(j);
                         if (i.moduleName().equals(f.moduleName())
                                 && i.name().equals(f.fieldName())) {
+                            validateHostFunctionSignature((FunctionImport) i, f);
                             hostFuncs[hostFuncIdx] = f;
                             hostIndex[impIdx] = f;
                             found = true;
@@ -328,6 +403,7 @@ public class Module {
                         HostGlobal g = hostImports.global(j);
                         if (i.moduleName().equals(g.moduleName())
                                 && i.name().equals(g.fieldName())) {
+                            validateHostGlobalType((GlobalImport) i, g);
                             hostGlobals[hostGlobalIdx] = g;
                             hostIndex[impIdx] = g;
                             found = true;
@@ -356,6 +432,7 @@ public class Module {
                         HostTable t = hostImports.table(j);
                         if (i.moduleName().equals(t.moduleName())
                                 && i.name().equals(t.fieldName())) {
+                            validateHostTableType((TableImport) i, t);
                             hostTables[hostTableIdx] = t;
                             hostIndex[impIdx] = t;
                             found = true;
