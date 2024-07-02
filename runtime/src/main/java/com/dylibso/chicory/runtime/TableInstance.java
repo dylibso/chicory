@@ -3,6 +3,7 @@ package com.dylibso.chicory.runtime;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
 import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
@@ -68,7 +69,7 @@ public class TableInstance {
             this.refs[index] = value;
             this.instances[index] = instance;
         } catch (IndexOutOfBoundsException e) {
-            throw new ChicoryException("out of bounds table access", e);
+            throw new UninstantiableException("out of bounds table access", e);
         }
     }
 
@@ -80,7 +81,7 @@ public class TableInstance {
         try {
             this.refs[index] = value;
         } catch (IndexOutOfBoundsException e) {
-            throw new ChicoryException("out of bounds table access", e);
+            throw new UninstantiableException("out of bounds table access", e);
         }
     }
 

@@ -15,7 +15,7 @@ public class TestModule {
     private Instance instance;
 
     private HostImports imports;
-    private boolean typeValidation;
+    private boolean typeValidation = true;
 
     public static TestModule of(File file) {
         return of(file, ModuleType.BINARY);

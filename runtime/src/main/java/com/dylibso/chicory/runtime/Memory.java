@@ -6,6 +6,7 @@ import static java.lang.Math.min;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
+import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
@@ -188,7 +189,7 @@ public final class Memory {
             buffer.position(addr);
             buffer.put(data, offset, size);
         } catch (Exception e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new UninstantiableException("out of bounds memory access");
         }
     }
 
@@ -196,7 +197,7 @@ public final class Memory {
         try {
             return buffer.get(addr);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new UninstantiableException("out of bounds memory access");
         }
     }
 

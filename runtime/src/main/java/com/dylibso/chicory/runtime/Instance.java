@@ -8,6 +8,7 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
+import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.DataSegment;
@@ -264,6 +265,8 @@ public class Instance {
                             return machine.call(funcId, args);
                         } catch (InvalidException e) {
                             throw e;
+                        } catch (TrapException e) {
+                            throw new UninstantiableException("unreachable", e);
                         } catch (Exception e) {
                             throw new WASMMachineException(machine.getStackTrace(), e);
                         }

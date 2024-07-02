@@ -25,7 +25,7 @@ public class SpecV1StartHostFuncs {
                             },
                             "spectest",
                             "print",
-                            List.of(ValueType.I32),
+                            List.of(),
                             List.of())
                 });
     }

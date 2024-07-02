@@ -10,7 +10,11 @@ import com.dylibso.chicory.runtime.HostMemory;
 import com.dylibso.chicory.runtime.HostTable;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
+import com.dylibso.chicory.runtime.TableInstance;
+import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
+import com.dylibso.chicory.wasm.types.MutabilityType;
+import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
@@ -124,6 +128,11 @@ public class SpecV1ImportsHostFuncs {
                         "spectest",
                         "table",
                         Map.of(1, 1, 2, 2, 10, 10, 24, 24, 100, REF_NULL_VALUE));
+        var table10Inf =
+                new HostTable(
+                        "test",
+                        "table-10-inf",
+                        new TableInstance(new Table(ValueType.FuncRef, new Limits(10))));
         var mem = new Memory(new MemoryLimits(1, 2));
         var memory = new HostMemory("spectest", "memory", mem);
         return new HostImports(
@@ -141,7 +150,7 @@ public class SpecV1ImportsHostFuncs {
                 },
                 new HostGlobal[] {},
                 memory,
-                new HostTable[] {table});
+                new HostTable[] {table, table10Inf});
     }
 
     public static HostImports testModule11() {
@@ -192,8 +201,35 @@ public class SpecV1ImportsHostFuncs {
                         },
                         "test",
                         "func",
-                        List.of(ValueType.I64),
-                        List.of(ValueType.I64));
+                        List.of(),
+                        List.of());
+        var testFuncI32 =
+                new HostFunction(
+                        (Instance instance, Value... args) -> {
+                            return null;
+                        },
+                        "test",
+                        "func-i32",
+                        List.of(ValueType.I32),
+                        List.of());
+        var testFuncToI32 =
+                new HostFunction(
+                        (Instance instance, Value... args) -> {
+                            return null;
+                        },
+                        "test",
+                        "func->i32",
+                        List.of(),
+                        List.of(ValueType.I32));
+        var testFuncI32ToI32 =
+                new HostFunction(
+                        (Instance instance, Value... args) -> {
+                            return null;
+                        },
+                        "test",
+                        "func-i32->i32",
+                        List.of(ValueType.I32),
+                        List.of(ValueType.I32));
         var testFuncI64 =
                 new HostFunction(
                         (Instance instance, Value... args) -> {
@@ -204,10 +240,25 @@ public class SpecV1ImportsHostFuncs {
                         List.of(ValueType.I64),
                         List.of(ValueType.I64));
         var base = base().functions();
-        var additional = new HostFunction[] {testFunc, testFuncI64};
+        var additional =
+                new HostFunction[] {
+                    testFunc, testFuncI32, testFuncToI32, testFuncI32ToI32, testFuncI64
+                };
         HostFunction[] hostFunctions = Arrays.copyOf(base, base.length + additional.length);
         System.arraycopy(additional, 0, hostFunctions, base.length, additional.length);
         return new HostImports(
-                hostFunctions, new HostGlobal[] {}, base().memory(0), base().tables());
+                hostFunctions,
+                new HostGlobal[] {
+                    new HostGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(0))),
+                    new HostGlobal("test", "global-i32", new GlobalInstance(Value.i32(0))),
+                    new HostGlobal("test", "global-f32", new GlobalInstance(Value.f32(0))),
+                    new HostGlobal(
+                            "test",
+                            "global-mut-i64",
+                            new GlobalInstance(Value.i64(0)),
+                            MutabilityType.Var),
+                },
+                base().memory(0),
+                base().tables());
     }
 }

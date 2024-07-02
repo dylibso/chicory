@@ -192,8 +192,8 @@ public class SpecV1ImportsHostFuncs {
                         },
                         "test",
                         "func",
-                        List.of(ValueType.I64),
-                        List.of(ValueType.I64));
+                        List.of(),
+                        List.of());
         var testFuncI64 =
                 new HostFunction(
                         (Instance instance, Value... args) -> {

@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
+import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.Value;
@@ -155,7 +155,7 @@ public class ModuleTest {
     @Test
     public void shouldTrapOnUnreachable() {
         var module = Module.builder("compiled/trap.wat.wasm").build();
-        assertThrows(WASMMachineException.class, module::instantiate);
+        assertThrows(UninstantiableException.class, module::instantiate);
     }
 
     @Test
