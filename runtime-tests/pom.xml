@@ -137,6 +137,8 @@
             <wast>utf8-invalid-encoding.wast</wast>
           </includedWasts>
           <excludedTests>
+            <!-- even wasm-decompile is not throwing on this one -->
+            <test>SpecV1ElemTest.test29</test>
             <test>SpecV1LinkingTest.test83</test>
             <test>SpecV1LinkingTest.test86</test>
             <test>SpecV1LinkingTest.test94</test>
@@ -154,6 +156,13 @@
           </excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts/>
+          <excludedUnlinkableWasts>
+            <wast>imports.wast</wast>
+            <wast>linking.wast</wast>
+          </excludedUnlinkableWasts>
+          <excludedUninstantiableWasts>
+            <wast>linking.wast</wast>
+          </excludedUninstantiableWasts>
           <excludedWasts>
             <wast>simd_address.wast</wast>
             <wast>simd_align.wast</wast>

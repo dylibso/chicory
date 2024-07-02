@@ -348,6 +348,8 @@ public final class AotMachine implements Machine {
         } catch (ChicoryException e) {
             // propagate ChicoryExceptions
             throw e;
+        } catch (StackOverflowError e) {
+            throw new ChicoryException("call stack exhausted", e);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("undefined element " + e.getMessage(), e);
         } catch (Exception e) {

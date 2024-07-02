@@ -51,19 +51,27 @@ public class JavaTestGen {
 
     private final List<String> excludedInvalidWasts;
 
+    private final List<String> excludedUninstantiableWasts;
+
+    private final List<String> excludedUnlinkableWasts;
+
     public JavaTestGen(
             Log log,
             File baseDir,
             File sourceTargetFolder,
             List<String> excludedTests,
             List<String> excludedMalformedWasts,
-            List<String> excludedInvalidWasts) {
+            List<String> excludedInvalidWasts,
+            List<String> excludedUninstantiableWasts,
+            List<String> excludedUnlinkableWasts) {
         this.log = log;
         this.baseDir = baseDir;
         this.sourceTargetFolder = sourceTargetFolder;
         this.excludedTests = excludedTests;
         this.excludedMalformedWasts = excludedMalformedWasts;
         this.excludedInvalidWasts = excludedInvalidWasts;
+        this.excludedUninstantiableWasts = excludedUninstantiableWasts;
+        this.excludedUnlinkableWasts = excludedUnlinkableWasts;
     }
 
     public CompilationUnit generate(
@@ -100,6 +108,8 @@ public class JavaTestGen {
         // base imports
         cu.addImport("com.dylibso.chicory.wasm.exceptions.InvalidException");
         cu.addImport("com.dylibso.chicory.wasm.exceptions.MalformedException");
+        cu.addImport("com.dylibso.chicory.wasm.exceptions.UninstantiableException");
+        cu.addImport("com.dylibso.chicory.wasm.exceptions.UnlinkableException");
         cu.addImport("com.dylibso.chicory.wasm.types.Value");
 
         // import for host functions
@@ -126,12 +136,8 @@ public class JavaTestGen {
                         .map(t -> t.substring(testName.length() + 1))
                         .collect(Collectors.toList());
 
-        boolean excludeMalformed = excludedMalformedWasts.contains(name + ".wast");
-        boolean excludeInvalid = excludedInvalidWasts.contains(name + ".wast");
-
         String currentWasmFile = null;
         for (var cmd : wast.commands()) {
-
             switch (cmd.type()) {
                 case MODULE:
                     {
@@ -170,13 +176,16 @@ public class JavaTestGen {
                                                                 currentWasmFile,
                                                                 importsName,
                                                                 hostFuncs,
-                                                                excludeInvalid),
+                                                                getExcluded(
+                                                                        CommandType.ASSERT_INVALID,
+                                                                        name)),
                                                         AssignExpr.Operator.ASSIGN)));
                         break;
                     }
                 case ACTION:
                 case ASSERT_RETURN:
                 case ASSERT_TRAP:
+                case ASSERT_EXHAUSTION:
                     {
                         method = createTestMethod(testClass, testNumber++, excludedMethods);
 
@@ -208,24 +217,22 @@ public class JavaTestGen {
                     break;
                 case ASSERT_MALFORMED:
                 case ASSERT_INVALID:
+                case ASSERT_UNINSTANTIABLE:
+                case ASSERT_UNLINKABLE:
                     {
-                        var excluded =
-                                (cmd.type() == CommandType.ASSERT_MALFORMED)
-                                        ? excludeMalformed
-                                        : excludeInvalid;
                         method = createTestMethod(testClass, testNumber++, excludedMethods);
                         String hostFuncs =
                                 detectImports(importsName, lastModuleVarName, importsSourceRoot);
                         generateAssertThrows(
-                                wasmFilesFolder, cmd, method, importsName, hostFuncs, excluded);
+                                wasmFilesFolder,
+                                cmd,
+                                method,
+                                importsName,
+                                hostFuncs,
+                                getExcluded(cmd.type(), name),
+                                getExceptionType(cmd.type()));
                         break;
                     }
-                case ASSERT_UNINSTANTIABLE:
-                case ASSERT_EXHAUSTION:
-                case ASSERT_UNLINKABLE:
-                    method = createTestMethod(testClass, testNumber++, excludedMethods);
-                    generateMockAssert(method);
-                    break;
                 default:
                     throw new IllegalArgumentException(
                             "command type not yet supported " + cmd.type());
@@ -233,6 +240,42 @@ public class JavaTestGen {
         }
 
         return cu;
+    }
+
+    private boolean getExcluded(CommandType typ, String name) {
+        switch (typ) {
+            case ASSERT_MALFORMED:
+                return excludedMalformedWasts.contains(name + ".wast");
+            case ASSERT_INVALID:
+                return excludedInvalidWasts.contains(name + ".wast");
+            case ASSERT_UNINSTANTIABLE:
+                return excludedUninstantiableWasts.contains(name + ".wast");
+            case ASSERT_UNLINKABLE:
+                return excludedUnlinkableWasts.contains(name + ".wast");
+            case ASSERT_EXHAUSTION:
+            case ASSERT_TRAP:
+                return false;
+            default:
+                throw new IllegalArgumentException(typ + "not implemented");
+        }
+    }
+
+    private String getExceptionType(CommandType typ) {
+        switch (typ) {
+            case ASSERT_MALFORMED:
+                return "MalformedException";
+            case ASSERT_INVALID:
+                return "InvalidException";
+            case ASSERT_UNINSTANTIABLE:
+                return "UninstantiableException";
+            case ASSERT_UNLINKABLE:
+                return "UnlinkableException";
+            case ASSERT_TRAP:
+            case ASSERT_EXHAUSTION:
+                return "ChicoryException";
+            default:
+                throw new IllegalArgumentException(typ + "not implemented");
+        }
     }
 
     private MethodDeclaration createTestMethod(
@@ -273,7 +316,9 @@ public class JavaTestGen {
     }
 
     private List<Expression> generateAssert(String varName, Command cmd) {
-        assert (cmd.type() == CommandType.ASSERT_RETURN || cmd.type() == CommandType.ASSERT_TRAP);
+        assert (cmd.type() == CommandType.ASSERT_RETURN
+                || cmd.type() == CommandType.ASSERT_TRAP
+                || cmd.type() == CommandType.ASSERT_EXHAUSTION);
         assert (cmd.expected() != null);
         assert (cmd.expected().length > 0);
         assert (cmd.action().type() == INVOKE);
@@ -286,11 +331,13 @@ public class JavaTestGen {
                         : "";
 
         var invocationMethod = ".apply(" + args + ")";
-        if (cmd.type() == CommandType.ASSERT_TRAP) {
+        if (cmd.type() == CommandType.ASSERT_TRAP || cmd.type() == CommandType.ASSERT_EXHAUSTION) {
             var assertDecl =
                     new NameExpr(
                             "var exception ="
-                                    + " assertThrows(ChicoryException.class, () -> "
+                                    + " assertThrows("
+                                    + getExceptionType(cmd.type())
+                                    + ".class, () -> "
                                     + varName
                                     + invocationMethod
                                     + ")");
@@ -409,7 +456,7 @@ public class JavaTestGen {
             }
 
             if (hostFuncs != null) {
-                log.info("Found binding HostFunctions " + importsName + "#" + varName);
+                log.debug("Found binding HostFunctions " + importsName + "#" + varName);
             }
         } catch (Exception e) {
             // ignore
@@ -418,22 +465,17 @@ public class JavaTestGen {
     }
 
     private String getWasmFile(Command cmd, File folder) {
-        return folder.toPath()
-                .resolve(cmd.filename())
-                .toFile()
-                .getAbsolutePath()
-                .replace(baseDir.getAbsolutePath() + File.separator, "")
-                .replace("\\", "\\\\"); // Win compat
-    }
-
-    private void generateMockAssert(MethodDeclaration method) {
-        method.addAnnotation(
-                new SingleMemberAnnotationExpr(
-                        new Name("Disabled"), new StringLiteralExpr("Test excluded")));
-
-        var assertThrows = new NameExpr("assert(true == false)");
-
-        method.getBody().get().addStatement(assertThrows);
+        try {
+            return folder.toPath()
+                    .resolve(cmd.filename())
+                    .toFile()
+                    .getAbsolutePath()
+                    .replace(baseDir.getAbsolutePath() + File.separator, "")
+                    .replace("\\", "\\\\"); // Win compat
+        } catch (Exception e) {
+            throw new IllegalArgumentException(
+                    "DEBUG ME: " + cmd + " - " + folder.getAbsolutePath() + " - " + cmd.filename());
+        }
     }
 
     private void generateAssertThrows(
@@ -442,18 +484,10 @@ public class JavaTestGen {
             MethodDeclaration method,
             String importsName,
             String hostFuncs,
-            boolean excluded) {
-        assert (cmd.type() == CommandType.ASSERT_INVALID
-                || cmd.type() == CommandType.ASSERT_MALFORMED);
+            boolean excluded,
+            String exceptionType) {
 
         String wasmFile = getWasmFile(cmd, wasmFilesFolder);
-
-        var exceptionType = "";
-        if (cmd.type() == CommandType.ASSERT_INVALID) {
-            exceptionType = "InvalidException";
-        } else if (cmd.type() == CommandType.ASSERT_MALFORMED) {
-            exceptionType = "MalformedException";
-        }
 
         var assignementStmt = (cmd.text() != null) ? "var exception = " : "";
 

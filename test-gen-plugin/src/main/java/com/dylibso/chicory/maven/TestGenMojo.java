@@ -35,12 +35,6 @@ public class TestGenMojo extends AbstractMojo {
     private final Log log = new SystemStreamLog();
 
     /**
-     * OS name
-     */
-    @Parameter(defaultValue = "${os.name}")
-    private String osName;
-
-    /**
      * Repository of the testsuite.
      */
     @Parameter(required = true, defaultValue = "https://github.com/WebAssembly/testsuite")
@@ -99,6 +93,12 @@ public class TestGenMojo extends AbstractMojo {
     @Parameter(required = false, defaultValue = "[]")
     private List<String> excludedInvalidWasts;
 
+    @Parameter(required = false, defaultValue = "[]")
+    private List<String> excludedUninstantiableWasts;
+
+    @Parameter(required = false, defaultValue = "[]")
+    private List<String> excludedUnlinkableWasts;
+
     /**
      * Exclude list for wast files that are entirely skipped.
      */
@@ -126,9 +126,11 @@ public class TestGenMojo extends AbstractMojo {
         // Validate config
         validate(includedWasts, "includedWasts", true);
         validate(excludedTests, "excludedTests", false);
+        validate(excludedWasts, "excludedWasts", true);
         validate(excludedMalformedWasts, "excludedMalformedWasts", true);
         validate(excludedInvalidWasts, "excludedInvalidWasts", true);
-        validate(excludedWasts, "excludedWasts", true);
+        validate(excludedUninstantiableWasts, "excludedUninstantiableWasts", true);
+        validate(excludedUnlinkableWasts, "excludedUnlinkableWasts", true);
 
         // Instantiate the utilities
         var testSuiteDownloader = new TestSuiteDownloader(log);
@@ -139,7 +141,9 @@ public class TestGenMojo extends AbstractMojo {
                         sourceDestinationFolder,
                         excludedTests,
                         excludedMalformedWasts,
-                        excludedInvalidWasts);
+                        excludedInvalidWasts,
+                        excludedUninstantiableWasts,
+                        excludedUnlinkableWasts);
 
         JavaParserMavenUtils.makeJavaParserLogToMavenOutput(getLog());
 
@@ -168,6 +172,8 @@ public class TestGenMojo extends AbstractMojo {
             includedWasts.forEach(allWastFiles::remove);
             excludedMalformedWasts.forEach(allWastFiles::remove);
             excludedInvalidWasts.forEach(allWastFiles::remove);
+            excludedUninstantiableWasts.forEach(allWastFiles::remove);
+            excludedUnlinkableWasts.forEach(allWastFiles::remove);
             excludedWasts.forEach(allWastFiles::remove);
             if (!allWastFiles.isEmpty()) {
                 throw new MojoExecutionException(

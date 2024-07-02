@@ -497,9 +497,7 @@ public class Module {
 
         private boolean initialize = true;
         private boolean start = true;
-        // TODO: turn the default to true
-        // Type validation needs to remain optional until it's finished
-        private boolean typeValidation = false;
+        private boolean typeValidation = true;
         private ExecutionListener listener = null;
         private HostImports hostImports = null;
         private Function<Instance, Machine> machineFactory = null;
