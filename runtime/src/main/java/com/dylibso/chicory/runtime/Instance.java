@@ -106,7 +106,7 @@ public class Instance {
             ExecutionListener listener) {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
-        this.globals = new GlobalInstance[globalInitializers.length + importedGlobalsOffset];
+        this.globals = new GlobalInstance[globalInitializers.length];
         this.importedGlobalsOffset = importedGlobalsOffset;
         this.importedFunctionsOffset = importedFunctionsOffset;
         this.importedTablesOffset = importedTablesOffset;
@@ -322,7 +322,7 @@ public class Instance {
             return imports.global(idx).instance().getValue();
         }
         var i = idx - importedGlobalsOffset;
-        if (i < 0 || i >= globals.length || globals[idx - importedGlobalsOffset] == null) {
+        if (i < 0 || i >= globals.length) {
             throw new InvalidException("unknown global " + idx);
         }
         return globals[idx - importedGlobalsOffset].getValue();
