@@ -432,6 +432,8 @@
         <skipTests>true</skipTests>
         <!-- Skip test codegen. -->
         <wasm-test-gen.skip>true</wasm-test-gen.skip>
+        <!-- Skip wasi tests codegen -->
+        <wasi-test-gen.skip>true</wasi-test-gen.skip>
         <!-- Prevent building broken tests (due to missing codegen). -->
         <maven.test.skip>true</maven.test.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
