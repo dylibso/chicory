@@ -78,6 +78,7 @@
     <maven.compiler.parameters>true</maven.compiler.parameters>
 
     <junit.version>5.10.3</junit.version>
+    <approvaltests.version>24.2.0</approvaltests.version>
     <spotless.version>2.43.0</spotless.version>
     <javaparser.version>3.26.1</javaparser.version>
     <commons-compress.version>1.26.2</commons-compress.version>
@@ -200,6 +201,13 @@
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-params</artifactId>
         <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>com.approvaltests</groupId>
+        <artifactId>approvaltests</artifactId>
+        <version>${approvaltests.version}</version>
         <scope>test</scope>
       </dependency>
 
