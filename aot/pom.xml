@@ -45,6 +45,10 @@
       <artifactId>wasm-corpus</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.approvaltests</groupId>
+      <artifactId>approvaltests</artifactId>
+    </dependency>
   </dependencies>
 
   <build>

@@ -78,11 +78,13 @@ import org.objectweb.asm.util.CheckClassAdapter;
  */
 public final class AotMachine implements Machine {
 
+    public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.$gen.CompiledModule";
     private static final Instruction FUNCTION_SCOPE = new Instruction(-1, OpCode.NOP, new long[0]);
 
     private final Module module;
     private final Instance instance;
     private final MethodHandle[] compiledFunctions;
+    private byte[] compiledClass;
     private final List<ValueType> globalTypes;
     private final int functionImports;
     private final List<FunctionType> functionTypes;
@@ -311,7 +313,8 @@ public final class AotMachine implements Machine {
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
         this.functionTypes = getFunctionTypes(module);
 
-        this.compiledFunctions = compile();
+        this.compiledClass = compileClass(DEFAULT_CLASS_NAME, this.module.functionSection());
+        this.compiledFunctions = compile(loadClass(DEFAULT_CLASS_NAME, compiledClass));
     }
 
     private static List<ValueType> getGlobalTypes(Module module) {
@@ -364,15 +367,13 @@ public final class AotMachine implements Machine {
         return List.of();
     }
 
-    private MethodHandle[] compile() {
+    private MethodHandle[] compile(Class<?> clazz) {
         var functions = module.functionSection();
         var compiled = new MethodHandle[functionImports + functions.functionCount()];
 
         for (int i = 0; i < functionImports; i++) {
             compiled[i] = HostFunctionInvoker.handleFor(instance, i);
         }
-
-        Class<?> clazz = compileClass(functions);
 
         for (int i = 0; i < functions.functionCount(); i++) {
             var type = functions.getFunctionType(i, module.typeSection());
@@ -397,8 +398,7 @@ public final class AotMachine implements Machine {
         return compiled;
     }
 
-    private Class<?> compileClass(FunctionSection functions) {
-        var className = "com.dylibso.chicory.$gen.CompiledModule";
+    private byte[] compileClass(String className, FunctionSection functions) {
         var internalClassName = className.replace('.', '/');
 
         var classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
@@ -464,7 +464,7 @@ public final class AotMachine implements Machine {
 
         classWriter.visitEnd();
 
-        return loadClass(className, classWriter.toByteArray());
+        return classWriter.toByteArray();
     }
 
     private static void emitFunction(
@@ -894,5 +894,9 @@ public final class AotMachine implements Machine {
             return Opcodes.RETURN;
         }
         throw new ChicoryException("Unsupported return type: " + returnType.getName());
+    }
+
+    public byte[] compiledClass() {
+        return compiledClass;
     }
 }
