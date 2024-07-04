@@ -84,7 +84,7 @@ public final class AotMachine implements Machine {
     private final Module module;
     private final Instance instance;
     private final MethodHandle[] compiledFunctions;
-    private byte[] compiledClass;
+    private final byte[] compiledClass;
     private final List<ValueType> globalTypes;
     private final int functionImports;
     private final List<FunctionType> functionTypes;
