@@ -1,0 +1,113 @@
+// class version 55.0 (55)
+// access flags 0x11
+public final class com/dylibso/chicory/$gen/CompiledModule {
+
+  // compiled from: wasm
+  // debug info: wasm
+
+  // access flags 0x2
+  private <init>()V
+    ALOAD 0
+    INVOKESPECIAL java/lang/Object.<init> ()V
+    RETURN
+    MAXSTACK = 1
+    MAXLOCALS = 1
+
+  // access flags 0x9
+  public static func_0(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    LDC 0
+    ILOAD 0
+    SWAP
+    DUP
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.validateBase (I)V
+    LDC 0
+    IADD
+    SWAP
+    ALOAD 1
+    DUP_X2
+    POP
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.writeI32 (II)V
+    LDC 0
+    DUP
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.validateBase (I)V
+    LDC 0
+    IADD
+    ALOAD 1
+    SWAP
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.readInt (I)I
+    IRETURN
+   L0
+   FRAME FULL [] [java/lang/Throwable]
+    ATHROW
+    MAXSTACK = 4
+    MAXLOCALS = 3
+
+  // access flags 0x9
+  public static func_1(JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)J
+    LDC 0
+    LLOAD 0
+    DUP2_X1
+    POP2
+    DUP
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.validateBase (I)V
+    LDC 0
+    IADD
+    ALOAD 2
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryWriteLong (JILcom/dylibso/chicory/runtime/Memory;)V
+    LDC 0
+    DUP
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.validateBase (I)V
+    LDC 0
+    IADD
+    ALOAD 2
+    SWAP
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.readLong (I)J
+    LRETURN
+   L0
+   FRAME FULL [] [java/lang/Throwable]
+    ATHROW
+    MAXSTACK = 5
+    MAXLOCALS = 4
+
+  // access flags 0x9
+  public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Instance;)I
+    LDC 1
+    ANEWARRAY com/dylibso/chicory/wasm/types/Value
+    DUP
+    LDC 0
+    ILOAD 0
+    INVOKESTATIC com/dylibso/chicory/wasm/types/Value.i32 (I)Lcom/dylibso/chicory/wasm/types/Value;
+    AASTORE
+    LDC 0
+    ILOAD 1
+    ILOAD 2
+    ALOAD 3
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
+    LDC 0
+    AALOAD
+    INVOKEVIRTUAL com/dylibso/chicory/wasm/types/Value.asInt ()I
+    IRETURN
+    MAXSTACK = 5
+    MAXLOCALS = 4
+
+  // access flags 0x9
+  public static call_indirect_1(JIILcom/dylibso/chicory/runtime/Instance;)J
+    LDC 1
+    ANEWARRAY com/dylibso/chicory/wasm/types/Value
+    DUP
+    LDC 0
+    LLOAD 0
+    INVOKESTATIC com/dylibso/chicory/wasm/types/Value.i64 (J)Lcom/dylibso/chicory/wasm/types/Value;
+    AASTORE
+    LDC 1
+    ILOAD 2
+    ILOAD 3
+    ALOAD 4
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
+    LDC 0
+    AALOAD
+    INVOKEVIRTUAL com/dylibso/chicory/wasm/types/Value.asLong ()J
+    LRETURN
+    MAXSTACK = 5
+    MAXLOCALS = 5
+}
