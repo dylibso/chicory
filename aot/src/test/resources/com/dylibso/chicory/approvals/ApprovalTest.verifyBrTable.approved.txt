@@ -1,0 +1,80 @@
+// class version 55.0 (55)
+// access flags 0x11
+public final class com/dylibso/chicory/$gen/CompiledModule {
+
+  // compiled from: wasm
+  // debug info: wasm
+
+  // access flags 0x2
+  private <init>()V
+    ALOAD 0
+    INVOKESPECIAL java/lang/Object.<init> ()V
+    RETURN
+    MAXSTACK = 1
+    MAXLOCALS = 1
+
+  // access flags 0x9
+  public static func_0(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    ILOAD 0
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.checkInterruption ()V
+    TABLESWITCH
+      0: L0
+      1: L1
+      2: L2
+      3: L3
+      default: L3
+   L2
+   FRAME SAME
+    GOTO L4
+   L1
+   FRAME SAME
+    GOTO L5
+   L0
+   FRAME SAME
+    GOTO L6
+   L3
+   FRAME SAME
+    GOTO L7
+   L4
+   FRAME SAME
+    LDC 100
+    IRETURN
+   L5
+   FRAME SAME
+    LDC 101
+    IRETURN
+   L6
+   FRAME SAME
+    LDC 102
+    IRETURN
+   L7
+   FRAME SAME
+    LDC 103
+    IRETURN
+   L8
+   FRAME FULL [] [java/lang/Throwable]
+    ATHROW
+    MAXSTACK = 1
+    MAXLOCALS = 3
+
+  // access flags 0x9
+  public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Instance;)I
+    LDC 1
+    ANEWARRAY com/dylibso/chicory/wasm/types/Value
+    DUP
+    LDC 0
+    ILOAD 0
+    INVOKESTATIC com/dylibso/chicory/wasm/types/Value.i32 (I)Lcom/dylibso/chicory/wasm/types/Value;
+    AASTORE
+    LDC 0
+    ILOAD 1
+    ILOAD 2
+    ALOAD 3
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
+    LDC 0
+    AALOAD
+    INVOKEVIRTUAL com/dylibso/chicory/wasm/types/Value.asInt ()I
+    IRETURN
+    MAXSTACK = 5
+    MAXLOCALS = 4
+}

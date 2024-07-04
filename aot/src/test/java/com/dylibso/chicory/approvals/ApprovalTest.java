@@ -3,7 +3,6 @@ package com.dylibso.chicory.approvals;
 import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.runtime.Module;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.PrintWriter;
 import org.approvaltests.Approvals;
 import org.junit.jupiter.api.Test;
@@ -13,9 +12,63 @@ import org.objectweb.asm.util.TraceClassVisitor;
 public class ApprovalTest {
 
     @Test
-    public void verifyGeneratedBytecode() throws IOException {
-        var instance = Module.builder("compiled/iterfact.wat.wasm").build().instantiate();
-        var compiled = new AotMachine(instance).compiledClass();
+    public void verifyBranching() {
+        verifyGeneratedBytecode("branching.wat.wasm");
+    }
+
+    @Test
+    public void verifyBrTable() {
+        verifyGeneratedBytecode("br_table.wat.wasm");
+    }
+
+    @Test
+    public void verifyFloat() {
+        verifyGeneratedBytecode("float.wat.wasm");
+    }
+
+    @Test
+    public void verifyHelloWasi() {
+        verifyGeneratedBytecode("hello-wasi.wat.wasm");
+    }
+
+    @Test
+    public void verifyI32() {
+        verifyGeneratedBytecode("i32.wat.wasm");
+    }
+
+    @Test
+    public void verifyIterFact() {
+        verifyGeneratedBytecode("iterfact.wat.wasm");
+    }
+
+    @Test
+    public void verifyKitchenSink() {
+        verifyGeneratedBytecode("kitchensink.wat.wasm");
+    }
+
+    @Test
+    public void verifyMemory() {
+        verifyGeneratedBytecode("memory.wat.wasm");
+    }
+
+    @Test
+    public void verifyStart() {
+        verifyGeneratedBytecode("start.wat.wasm");
+    }
+
+    @Test
+    public void verifyTrap() {
+        verifyGeneratedBytecode("trap.wat.wasm");
+    }
+
+    private static void verifyGeneratedBytecode(String name) {
+        var instance =
+                Module.builder("compiled/" + name)
+                        .withMachineFactory(AotMachine::new)
+                        .withStart(false)
+                        .build()
+                        .instantiate();
+        var compiled = ((AotMachine) instance.getMachine()).compiledClass();
 
         ClassReader cr = new ClassReader(compiled);
         var out = new ByteArrayOutputStream();
