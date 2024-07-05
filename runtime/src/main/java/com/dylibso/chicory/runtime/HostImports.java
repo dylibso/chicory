@@ -1,5 +1,9 @@
 package com.dylibso.chicory.runtime;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 public class HostImports {
     private static final HostFunction[] NO_HOST_FUNCTIONS = new HostFunction[0];
     private static final HostGlobal[] NO_HOST_GLOBALS = new HostGlobal[0];
@@ -127,5 +131,103 @@ public class HostImports {
 
     public void setIndex(FromHost[] index) {
         this.index = index;
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private List<HostFunction> functions;
+        private List<HostGlobal> globals;
+        private List<HostMemory> memories;
+        private List<HostTable> tables;
+        private List<FromHost> index;
+
+        Builder() {}
+
+        public Builder withFunctions(List<HostFunction> functions) {
+            this.functions = functions;
+            return this;
+        }
+
+        public Builder addFunction(HostFunction... function) {
+            if (this.functions == null) {
+                this.functions = new ArrayList<>();
+            }
+            Collections.addAll(this.functions, function);
+            return this;
+        }
+
+        public Builder withGlobals(List<HostGlobal> globals) {
+            this.globals = globals;
+            return this;
+        }
+
+        public Builder addGlobal(HostGlobal... global) {
+            if (this.globals == null) {
+                this.globals = new ArrayList<>();
+            }
+            Collections.addAll(this.globals, global);
+            return this;
+        }
+
+        public Builder withMemories(List<HostMemory> memories) {
+            this.memories = memories;
+            return this;
+        }
+
+        public Builder addMemory(HostMemory... memory) {
+            if (this.memories == null) {
+                this.memories = new ArrayList<>();
+            }
+            Collections.addAll(this.memories, memory);
+            return this;
+        }
+
+        public Builder withTables(List<HostTable> tables) {
+            this.tables = tables;
+            return this;
+        }
+
+        public Builder addTable(HostTable... table) {
+            if (this.tables == null) {
+                this.tables = new ArrayList<>();
+            }
+            Collections.addAll(this.tables, table);
+            return this;
+        }
+
+        public Builder withIndex(List<FromHost> index) {
+            this.index = index;
+            return this;
+        }
+
+        public Builder addIndex(FromHost... i) {
+            if (this.index == null) {
+                this.index = new ArrayList<>();
+            }
+            Collections.addAll(this.index, i);
+            return this;
+        }
+
+        public HostImports build() {
+            final HostImports hostImports =
+                    new HostImports(
+                            functions == null
+                                    ? new HostFunction[0]
+                                    : functions.toArray(new HostFunction[0]),
+                            globals == null
+                                    ? new HostGlobal[0]
+                                    : globals.toArray(new HostGlobal[0]),
+                            memories == null
+                                    ? new HostMemory[0]
+                                    : memories.toArray(new HostMemory[0]),
+                            tables == null ? new HostTable[0] : tables.toArray(new HostTable[0]));
+            if (index != null) {
+                hostImports.setIndex(index.toArray(new FromHost[0]));
+            }
+            return hostImports;
+        }
     }
 }
