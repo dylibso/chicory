@@ -270,10 +270,18 @@ public final class AotCompiler {
         try {
             return binaryWriter.toByteArray();
         } catch (MethodTooLargeException e) {
+            String name = e.getMethodName();
+            if (name.startsWith("func_") && module.nameSection() != null) {
+                int funcId = Integer.parseInt(name.split("_", -1)[1]);
+                String function = module.nameSection().nameOfFunction(funcId);
+                if (function != null) {
+                    name += " (" + function + ")";
+                }
+            }
             throw new ChicoryException(
                     String.format(
                             "JVM bytecode too large for WASM method: %s size=%d",
-                            e.getMethodName(), e.getCodeSize()),
+                            name, e.getCodeSize()),
                     e);
         }
     }
