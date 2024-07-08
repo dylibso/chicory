@@ -368,6 +368,7 @@ as interpreting bytecode can only be so fast.
   * We have [partial support for wasip1](wasi/) and [test generation](wasi-test-gen-plugin/)
 * [ ] SIMD Support
   * Started
+* [ ] Multi-Memory Support
 * [ ] GC Support
 * [ ] Threads Support
 * [ ] Component Model Support
