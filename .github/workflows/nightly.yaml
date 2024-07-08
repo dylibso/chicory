@@ -2,7 +2,9 @@ name: Nightly Fuzz
 
 on:
   schedule:
-    - cron: "0 0 * * *" # everyday
+# FIXME: Disabled waiting for: https://github.com/dylibso/chicory/pull/386
+    - cron: "0 12 1 1 *" # At 12:00 on day-of-month 1 in January.
+#    - cron: "0 0 * * *" # everyday
 
 permissions:
   pull-requests: write
