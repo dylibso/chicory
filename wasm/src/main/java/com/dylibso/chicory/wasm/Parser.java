@@ -84,7 +84,7 @@ public final class Parser {
             Logger logger,
             BitSet includeSections,
             Map<String, Function<byte[], CustomSection>> customParsers) {
-        this.logger =  requireNonNull(logger, "logger");;
+        this.logger = requireNonNull(logger, "logger");
         this.includeSections = requireNonNull(includeSections, "includeSections");
         this.customParsers = Map.copyOf(customParsers);
     }
