@@ -72,6 +72,10 @@ public final class Parser {
     private final BitSet includeSections;
     private final Logger logger;
 
+    public Parser() {
+        this(null, new BitSet());
+    }
+
     public Parser(Logger logger) {
         this(logger, new BitSet());
     }
@@ -84,7 +88,7 @@ public final class Parser {
             Logger logger,
             BitSet includeSections,
             Map<String, Function<byte[], CustomSection>> customParsers) {
-        this.logger = requireNonNull(logger, "logger");
+        this.logger = logger;
         this.includeSections = requireNonNull(includeSections, "includeSections");
         this.customParsers = Map.copyOf(customParsers);
     }
@@ -141,7 +145,9 @@ public final class Parser {
                 module.setDataCountSection((DataCountSection) s);
                 break;
             default:
-                logger.warnf("Ignoring section with id: %d", s.sectionId());
+                if (logger != null) {
+                    logger.warnf("Ignoring section with id: %d", s.sectionId());
+                }
                 break;
         }
     }
@@ -318,7 +324,9 @@ public final class Parser {
                         }
                 }
             } else {
-                System.out.println("Skipping Section with ID due to configuration: " + sectionId);
+                if (logger != null) {
+                    logger.info("Skipping Section with ID due to configuration: " + sectionId);
+                }
                 buffer.position((int) (buffer.position() + sectionSize));
                 continue;
             }
