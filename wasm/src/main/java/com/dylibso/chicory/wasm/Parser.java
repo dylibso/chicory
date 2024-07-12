@@ -318,7 +318,7 @@ public final class Parser {
                         }
                 }
             } else {
-                System.out.println("Skipping Section with ID due to configuration: " + sectionId);
+                logger.info("Skipping Section with ID due to configuration: " + sectionId);
                 buffer.position((int) (buffer.position() + sectionSize));
                 continue;
             }
