@@ -61,7 +61,8 @@ jobs:
           GITHUB_TOKEN: ${{secrets.GH_TOKEN}}
 
       - name: Release to Maven Central
-        run: mvn --batch-mode clean deploy -Prelease -DskipTests=true -X
+        run: |
+          mvn --batch-mode clean deploy -Prelease -DskipTests=true -Dspotless.check.skip=true -X
         env:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.SONATYPE_PASSWORD }}
