@@ -27,14 +27,14 @@ to your dependency management system.
 <dependency>
   <groupId>com.dylibso.chicory</groupId>
   <artifactId>runtime</artifactId>
-  <version>0.0.10</version>
+  <version>0.0.11</version>
 </dependency>
 ```
 
 #### Gradle
 
 ```groovy
-implementation 'com.dylibso.chicory:runtime:0.0.10'
+implementation 'com.dylibso.chicory:runtime:0.0.11'
 ```
 
 ### Install the CLI (experimental)
