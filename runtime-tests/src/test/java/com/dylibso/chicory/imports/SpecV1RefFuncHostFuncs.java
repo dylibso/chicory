@@ -10,14 +10,21 @@ import java.util.List;
 public class SpecV1RefFuncHostFuncs {
 
     public static HostImports fallback() {
-        return new HostImports(
-                new HostFunction[] {
-                    new HostFunction(
-                            (Instance instance, Value... args) -> args,
-                            "M",
-                            "f",
-                            List.of(ValueType.I32),
-                            List.of(ValueType.I32))
-                });
+        return HostImports.builder()
+                .addFunction(
+                        new HostFunction(
+                                (Instance instance, Value... args) -> args,
+                                "M",
+                                "f",
+                                List.of(ValueType.I32),
+                                List.of(ValueType.I32)))
+                .addFunction(
+                        new HostFunction(
+                                (Instance instance, Value... args) -> args,
+                                "M",
+                                "g",
+                                List.of(ValueType.I32),
+                                List.of(ValueType.I32)))
+                .build();
     }
 }

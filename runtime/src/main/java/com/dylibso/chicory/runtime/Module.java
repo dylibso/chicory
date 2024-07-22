@@ -15,6 +15,8 @@ import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.GlobalImport;
 import com.dylibso.chicory.wasm.types.Import;
+import com.dylibso.chicory.wasm.types.MemoryImport;
+import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
@@ -43,6 +45,7 @@ public class Module {
     private final boolean initialize;
     private final boolean start;
     private final boolean typeValidation;
+    private final boolean importValidation;
     private final ExecutionListener listener;
     private final HostImports hostImports;
     private final Function<Instance, Machine> machineFactory;
@@ -55,7 +58,8 @@ public class Module {
             ExecutionListener listener,
             boolean initialize,
             boolean start,
-            boolean typeValidation) {
+            boolean typeValidation,
+            boolean importValidation) {
         this.logger = logger;
         this.machineFactory = machineFactory;
         this.hostImports = hostImports;
@@ -63,6 +67,7 @@ public class Module {
         this.initialize = initialize;
         this.start = start;
         this.typeValidation = typeValidation;
+        this.importValidation = importValidation;
         this.module = validateModule(module);
         this.exports = genExports(module.exportSection());
     }
@@ -141,7 +146,13 @@ public class Module {
             }
         }
 
-        var mappedHostImports = mapHostImports(imports, hostImports);
+        var mappedHostImports =
+                mapHostImports(
+                        imports,
+                        hostImports,
+                        (module.memorySection() != null)
+                                ? module.memorySection().memoryCount()
+                                : 0);
 
         if (module.startSection() != null) {
             var export =
@@ -167,17 +178,11 @@ public class Module {
         Memory memory = null;
         if (module.memorySection() != null) {
             var memories = module.memorySection();
-            if (memories.memoryCount() + mappedHostImports.memoryCount() > 1) {
-                throw new InvalidException("multiple memories are not supported");
-            }
             if (memories.memoryCount() > 0) {
                 memory = new Memory(memories.getMemory(0).memoryLimits());
             }
         } else {
             if (mappedHostImports.memoryCount() > 0) {
-                if (mappedHostImports.memoryCount() != 1) {
-                    throw new InvalidException("multiple memories");
-                }
                 if (mappedHostImports.memory(0) == null
                         || mappedHostImports.memory(0).memory() == null) {
                     throw new InvalidException(
@@ -277,20 +282,32 @@ public class Module {
         var expectedType = module.typeSection().getType(imprt.typeIndex());
         if (expectedType.params().size() != f.paramTypes().size()
                 || expectedType.returns().size() != f.returnTypes().size()) {
-            throw new UnlinkableException("incompatible import type");
+            throw new UnlinkableException(
+                    "incompatible import type for host function "
+                            + f.moduleName()
+                            + "."
+                            + f.fieldName());
         }
         for (int i = 0; i < expectedType.params().size(); i++) {
             var expected = expectedType.params().get(i);
             var got = f.paramTypes().get(i);
             if (expected != got) {
-                throw new UnlinkableException("incompatible import type");
+                throw new UnlinkableException(
+                        "incompatible import type for host function "
+                                + f.moduleName()
+                                + "."
+                                + f.fieldName());
             }
         }
         for (int i = 0; i < expectedType.returns().size(); i++) {
             var expected = expectedType.returns().get(i);
             var got = f.returnTypes().get(i);
             if (expected != got) {
-                throw new UnlinkableException("incompatible import type");
+                throw new UnlinkableException(
+                        "incompatible import type for host function "
+                                + f.moduleName()
+                                + "."
+                                + f.fieldName());
             }
         }
     }
@@ -303,9 +320,44 @@ public class Module {
     }
 
     private void validateHostTableType(TableImport i, HostTable t) {
-        // TODO: verify table limits and fix everything accordingly
+        var minExpected = t.table().limits().min();
+        var maxExpected = t.table().limits().max();
+        var minCurrent = i.limits().min();
+        var maxCurrent = i.limits().max();
         if (i.entryType() != t.table().elementType()) {
             throw new UnlinkableException("incompatible import type");
+        } else if (minExpected < minCurrent || maxExpected > maxCurrent) {
+            throw new UnlinkableException(
+                    "incompatible import type, non-compatible limits, expected: "
+                            + i.limits()
+                            + ", current: "
+                            + t.table().limits()
+                            + " on table: "
+                            + t.moduleName()
+                            + "."
+                            + t.fieldName());
+        }
+    }
+
+    private void validateHostMemoryType(MemoryImport i, HostMemory m) {
+        var initialExpected = m.memory().initialPages();
+        var maxExpected = m.memory().maximumPages();
+        var initialCurrent = i.limits().initialPages();
+        var maxCurrent =
+                (i.limits().maximumPages() == MemoryLimits.MAX_PAGES)
+                        ? Memory.RUNTIME_MAX_PAGES
+                        : i.limits().maximumPages();
+        if (initialCurrent > initialExpected
+                || (maxCurrent < maxExpected && maxCurrent == initialCurrent)) {
+            throw new UnlinkableException(
+                    "incompatible import type, non-compatible limits, expected: "
+                            + i.limits()
+                            + ", current: "
+                            + m.memory().limits()
+                            + " on memory: "
+                            + m.moduleName()
+                            + "."
+                            + m.fieldName());
         }
     }
 
@@ -343,7 +395,7 @@ public class Module {
         }
     }
 
-    private HostImports mapHostImports(Import[] imports, HostImports hostImports) {
+    private HostImports mapHostImports(Import[] imports, HostImports hostImports, int memoryCount) {
         int hostFuncNum = 0;
         int hostGlobalNum = 0;
         int hostMemNum = 0;
@@ -363,6 +415,10 @@ public class Module {
                     hostTableNum++;
                     break;
             }
+        }
+
+        if (hostMemNum + memoryCount > 1) {
+            throw new InvalidException("multiple memories");
         }
 
         // TODO: this can probably be refactored ...
@@ -418,6 +474,7 @@ public class Module {
                         HostMemory m = hostImports.memory(j);
                         if (i.moduleName().equals(m.moduleName())
                                 && i.name().equals(m.fieldName())) {
+                            validateHostMemoryType((MemoryImport) i, m);
                             hostMems[hostMemIdx] = m;
                             hostIndex[impIdx] = m;
                             found = true;
@@ -443,9 +500,17 @@ public class Module {
                     break;
             }
             if (!found) {
-                this.logger.warnf(
-                        "Could not find host function for import number: %d named %s",
-                        impIdx, name);
+                if (importValidation) {
+                    throw new UnlinkableException(
+                            "unknown import, could not find host function for import number: "
+                                    + impIdx
+                                    + " named "
+                                    + name);
+                } else {
+                    this.logger.warnf(
+                            "Could not find host function for import number: %d named %s",
+                            impIdx, name);
+                }
             }
         }
 
@@ -575,6 +640,7 @@ public class Module {
         private boolean initialize = true;
         private boolean start = true;
         private boolean typeValidation = true;
+        private boolean importValidation = true;
         private ExecutionListener listener = null;
         private HostImports hostImports = null;
         private Function<Instance, Machine> machineFactory = null;
@@ -613,6 +679,11 @@ public class Module {
 
         public Builder withTypeValidation(boolean v) {
             this.typeValidation = v;
+            return this;
+        }
+
+        public Builder withImportValidation(boolean v) {
+            this.importValidation = v;
             return this;
         }
 
@@ -661,7 +732,8 @@ public class Module {
                             this.listener,
                             this.initialize,
                             this.start,
-                            this.typeValidation);
+                            this.typeValidation,
+                            this.importValidation);
                 default:
                     throw new InvalidException(
                             "Text format parsing is not implemented, but you can use wat2wasm"

@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 // Heavily inspired by wazero
 // https://github.com/tetratelabs/wazero/blob/5a8a053bff0ae795b264de9672016745cb842070/internal/wasm/func_validation.go
@@ -58,8 +59,10 @@ public class TypeValidator {
         }
     }
 
-    private List<ValueType> valueTypeStack = new ArrayList<>();
-    private List<CtrlFrame> ctrlFrameStack = new ArrayList<>();
+    private final List<ValueType> valueTypeStack = new ArrayList<>();
+    private final List<CtrlFrame> ctrlFrameStack = new ArrayList<>();
+
+    private final List<InvalidException> errors = new ArrayList<>();
 
     private void pushVal(ValueType valType) {
         valueTypeStack.add(valType);
@@ -71,8 +74,10 @@ public class TypeValidator {
             return ValueType.UNKNOWN;
         }
         if (valueTypeStack.size() == frame.height) {
-            throw new InvalidException(
-                    "type mismatch, popVal(), stack reached limit at " + frame.height);
+            errors.add(
+                    new InvalidException(
+                            "type mismatch, popVal(), stack reached limit at " + frame.height));
+            return ValueType.UNKNOWN;
         }
         return valueTypeStack.remove(valueTypeStack.size() - 1);
     }
@@ -80,11 +85,12 @@ public class TypeValidator {
     private ValueType popVal(ValueType expected) {
         var actual = popVal();
         if (actual != expected && actual != ValueType.UNKNOWN && expected != ValueType.UNKNOWN) {
-            throw new InvalidException(
-                    "type mismatch, popVal(expected), expected: "
-                            + expected
-                            + " but got: "
-                            + actual);
+            errors.add(
+                    new InvalidException(
+                            "type mismatch, popVal(expected), expected: "
+                                    + expected
+                                    + " but got: "
+                                    + actual));
         }
         return actual;
     }
@@ -111,12 +117,14 @@ public class TypeValidator {
 
     private CtrlFrame popCtrl() {
         if (ctrlFrameStack.isEmpty()) {
-            throw new InvalidException("type mismatch, control frame stack empty");
+            errors.add(new InvalidException("type mismatch, control frame stack empty"));
         }
         var frame = peekCtrl();
         popVals(frame.endTypes);
         if (valueTypeStack.size() != frame.height) {
-            throw new InvalidException("type mismatch, mismatching stack height");
+            errors.add(
+                    new InvalidException(
+                            "type mismatch, mismatching stack height, invalid result arity"));
         }
         ctrlFrameStack.remove(ctrlFrameStack.size() - 1);
         return frame;
@@ -941,6 +949,11 @@ public class TypeValidator {
                     throw new IllegalArgumentException(
                             "Missing type validation opcode handling for " + op.opcode());
             }
+        }
+
+        if (!errors.isEmpty()) {
+            throw new InvalidException(
+                    errors.stream().map(e -> e.getMessage()).collect(Collectors.joining(" - ")));
         }
 
         // to satisfy the check mentioned in the NOTE

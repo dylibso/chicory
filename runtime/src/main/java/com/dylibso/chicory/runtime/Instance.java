@@ -152,6 +152,10 @@ public class Instance {
                             "type mismatch, invalid offset type in element " + offset.type());
                 }
                 List<List<Instruction>> initializers = ae.initializers();
+                if (offset.asInt() > table.limits().min()
+                        || (offset.asInt() + initializers.size() - 1) >= table.size()) {
+                    throw new UninstantiableException("out of bounds table access");
+                }
                 for (int i = 0; i < initializers.size(); i++) {
                     final List<Instruction> init = initializers.get(i);
                     var index = offset.asInt() + i;

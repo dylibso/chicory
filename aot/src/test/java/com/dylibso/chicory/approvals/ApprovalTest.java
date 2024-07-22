@@ -64,6 +64,7 @@ public class ApprovalTest {
     private static void verifyGeneratedBytecode(String name) {
         var instance =
                 Module.builder("compiled/" + name)
+                        .withImportValidation(false)
                         .withMachineFactory(AotMachine::new)
                         .withStart(false)
                         .build()
