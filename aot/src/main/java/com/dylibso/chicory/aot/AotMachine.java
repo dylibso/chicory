@@ -591,21 +591,23 @@ public final class AotMachine implements Machine {
     }
 
     private static void emitBoxArguments(MethodVisitor asm, List<ValueType> types) {
-        final int typeSize = types.size();
-        int slot = 0;
         List<Integer> slots = new ArrayList<>();
-        // box the arguments into Value[]
-        asm.visitLdcInsn(typeSize);
-        asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(Value.class));
-        for (int i = 0; i < typeSize; i++) {
+        int slot = 0;
+        for (ValueType type : types) {
             slots.add(slot);
+            slot += slotCount(type);
+        }
+
+        // box the arguments into Value[]
+        asm.visitLdcInsn(types.size());
+        asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(Value.class));
+        for (int i = 0; i < types.size(); i++) {
             asm.visitInsn(Opcodes.DUP);
             asm.visitLdcInsn(i);
             ValueType valueType = types.get(i);
             asm.visitVarInsn(loadTypeOpcode(valueType), slots.get(i));
             emitInvokeStatic(asm, boxer(valueType));
             asm.visitInsn(Opcodes.AASTORE);
-            slot += slotCount(valueType);
         }
     }
 
