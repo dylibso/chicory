@@ -591,13 +591,11 @@ public final class AotMachine implements Machine {
     }
 
     private static void emitBoxArguments(MethodVisitor asm, List<ValueType> types) {
-        List<Integer> slots = new ArrayList<>();
         int slot = 0;
         // box the arguments into Value[]
         asm.visitLdcInsn(types.size());
         asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(Value.class));
         for (int i = 0; i < types.size(); i++) {
-            slots.add(slot);
             asm.visitInsn(Opcodes.DUP);
             asm.visitLdcInsn(i);
             ValueType valueType = types.get(i);
