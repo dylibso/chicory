@@ -56,7 +56,6 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -591,13 +590,7 @@ public final class AotMachine implements Machine {
     }
 
     private static void emitBoxArguments(MethodVisitor asm, List<ValueType> types) {
-        List<Integer> slots = new ArrayList<>();
         int slot = 0;
-        for (ValueType type : types) {
-            slots.add(slot);
-            slot += slotCount(type);
-        }
-
         // box the arguments into Value[]
         asm.visitLdcInsn(types.size());
         asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(Value.class));
@@ -605,9 +598,10 @@ public final class AotMachine implements Machine {
             asm.visitInsn(Opcodes.DUP);
             asm.visitLdcInsn(i);
             ValueType valueType = types.get(i);
-            asm.visitVarInsn(loadTypeOpcode(valueType), slots.get(i));
+            asm.visitVarInsn(loadTypeOpcode(valueType), slot);
             emitInvokeStatic(asm, boxer(valueType));
             asm.visitInsn(Opcodes.AASTORE);
+            slot += slotCount(valueType);
         }
     }
 
