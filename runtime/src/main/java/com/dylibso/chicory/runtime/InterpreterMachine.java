@@ -118,6 +118,8 @@ class InterpreterMachine implements Machine {
                     case NOP:
                         break;
                     case LOOP:
+                        LOOP(frame, stack, instance, instruction);
+                        break;
                     case BLOCK:
                         BLOCK(frame, stack);
                         break;
@@ -1844,9 +1846,26 @@ class InterpreterMachine implements Machine {
         call(stack, instance, callStack, funcId, args, type, false);
     }
 
+    private static void LOOP(StackFrame frame, MStack stack, Instance instance, Instruction instruction) {
+        frame.isControlFrame = true;
+        var paramNum = numberOfParams(instance, instruction);
+        frame.registerStackSize(stack);
+    }
+
     private static void BLOCK(StackFrame frame, MStack stack) {
         frame.isControlFrame = true;
         frame.registerStackSize(stack);
+    }
+
+    private static int numberOfParams(Instance instance, Instruction scope) {
+        var typeId = (int) scope.operands()[0];
+        if (typeId == 0x40) { // epsilon
+            return 0;
+        }
+        if (ValueType.isValid(typeId)) {
+            return 0;
+        }
+        return instance.type(typeId).params().size();
     }
 
     private static int numberOfValuesToReturn(Instance instance, Instruction scope) {
