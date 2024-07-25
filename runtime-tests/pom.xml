@@ -176,8 +176,6 @@
             <!-- SelectTest errors are suggesting that messages should be accumulated instead of directly throwing -->
             <test>SpecV1SelectTest.test120</test>
             <test>SpecV1SelectTest.test121</test>
-            <test>SpecV1StartTest.test1</test>
-            <test>SpecV1StartTest.test2</test>
           </excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts/>

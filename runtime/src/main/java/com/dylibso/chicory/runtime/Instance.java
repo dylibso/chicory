@@ -14,6 +14,7 @@ import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
+import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
@@ -231,7 +232,9 @@ public class Instance {
         }
 
         // Type validation needs to remain optional until it's finished
+        Export startFunction = module.export(START_FUNCTION_NAME);
         if (typeValidation) {
+            int startFunctionIndex = startFunction == null ? -1 : startFunction.index();
             // TODO: can be parallelized?
             for (int i = 0; i < this.functions.length; i++) {
                 if (this.function(i) != null) {
@@ -239,12 +242,21 @@ public class Instance {
                     if (funcType >= this.types.length) {
                         throw new InvalidException("unknown type " + funcType);
                     }
+                    if (i == startFunctionIndex) {
+                        // _start must be () -> ()
+                        if (!this.types[funcType].params().isEmpty()
+                                || !this.types[funcType].returns().isEmpty()) {
+                            throw new InvalidException(
+                                    "invalid start function, must have empty signature "
+                                            + funcType);
+                        }
+                    }
                     new TypeValidator().validate(i, this.function(i), this.types[funcType], this);
                 }
             }
         }
 
-        if (module.export(START_FUNCTION_NAME) != null && start) {
+        if (startFunction != null && start) {
             export(START_FUNCTION_NAME).apply();
         }
 
