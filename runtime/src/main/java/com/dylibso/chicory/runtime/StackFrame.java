@@ -124,6 +124,15 @@ public class StackFrame {
         return ctrlFrame;
     }
 
+    public CtrlFrame popCtrlTillCall() {
+        while (true) {
+            var ctrlFrame = ctrlStack.pop();
+            if (ctrlFrame.opCode == OpCode.CALL) {
+                return ctrlFrame;
+            }
+        }
+    }
+
     public void jumpTo(int newPc) {
         pc = newPc;
     }

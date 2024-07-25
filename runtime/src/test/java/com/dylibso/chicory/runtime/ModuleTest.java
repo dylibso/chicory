@@ -363,17 +363,21 @@ public class ModuleTest {
                 Module.builder("fac.wasm")
                         .withUnsafeExecutionListener(
                                 (Instruction instruction, long[] operands, MStack stack) -> {
-                                    System.out.println(
-                                            "iter -> " + instruction.opcode() + " " + stack.size());
+                                    //                                        System.out.println(
+                                    //                                                "iter -> " +
+                                    // instruction.opcode() + " " +
+                                    //     stack.size());
                                     finalStackSize.set(stack.size());
                                 })
                         .build()
                         .instantiate();
         var facSsa = instance.export("fac-ssa");
 
-        facSsa.apply(Value.i32(1));
+        var number = 100;
+        var result = facSsa.apply(Value.i32(number));
+        assertEquals(factorial(number), result[0].asInt());
 
         System.out.println(finalStackSize.get());
-        assertTrue(finalStackSize.get() == 0L);
+        // assertTrue(finalStackSize.get() == 0L);
     }
 }

@@ -53,6 +53,7 @@ class InterpreterMachine implements Machine {
         }
 
         var func = instance.function(funcId);
+        var stackSizeBefore = stack.size();
         if (func != null) {
             var stackFrame =
                     new StackFrame(func.instructions(), instance, funcId, args, func.localTypes());
@@ -80,6 +81,9 @@ class InterpreterMachine implements Machine {
         }
 
         if (!popResults) {
+            if (stack.size() != stackSizeBefore + type.returns().size()) {
+                throw new IllegalArgumentException("I don't understand something ...");
+            }
             return null;
         }
 
@@ -213,9 +217,7 @@ class InterpreterMachine implements Machine {
                     case END:
                         {
                             var ctrlFrame = frame.popCtrl();
-                            if (ctrlFrame.opCode != OpCode.IF) {
-                                StackFrame.doControlTransfer(ctrlFrame, stack);
-                            }
+                            StackFrame.doControlTransfer(ctrlFrame, stack);
 
                             // if this is the last end, then we're done with
                             // the function
@@ -225,8 +227,14 @@ class InterpreterMachine implements Machine {
                             break;
                         }
                     case RETURN:
-                        shouldReturn = true;
-                        break;
+                        {
+                            // RETURN doesn't pass through the END
+                            var ctrlFrame = frame.popCtrlTillCall();
+                            StackFrame.doControlTransfer(ctrlFrame, stack);
+
+                            shouldReturn = true;
+                            break;
+                        }
                     case CALL_INDIRECT:
                         CALL_INDIRECT(stack, instance, callStack, operands);
                         break;
