@@ -6,6 +6,7 @@ import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -26,10 +27,10 @@ public class Cli implements Runnable {
     @CommandLine.Parameters(
             arity = "0..*",
             description = "values to be passed to the wasm function")
-    int[] arguments;
+    String[] arguments;
 
     @CommandLine.Option(
-            names = {"--invoke"},
+            names = {"--run-export"},
             description = "The exported WASM function to be invoked")
     String functionName;
 
@@ -90,7 +91,16 @@ public class Cli implements Runnable {
             }
             var params = new Value[type.params().size()];
             for (var i = 0; i < type.params().size(); i++) {
-                params[i] = new Value(type.params().get(i), Long.valueOf(arguments[i]));
+                var splitted = arguments[i].split(":");
+                var currentType = splitted[0];
+                var expectedType = type.params().get(i);
+                if (typeOf(currentType) != expectedType) {
+                    throw new IllegalArgumentException(
+                            "Expected " + expectedType + " but got " + currentType);
+                }
+                var value = valueOf(expectedType, splitted[1]);
+
+                params[i] = new Value(expectedType, value);
             }
 
             var result = export.apply(params);
@@ -99,10 +109,51 @@ public class Cli implements Runnable {
                     if (result == null) {
                         System.out.println(0);
                     } else {
-                        System.out.println(r.asLong()); // Check floating point results
+                        System.out.println(stringOf(r));
                     }
                 }
             }
+        }
+    }
+
+    public static ValueType typeOf(String t) {
+        switch (t) {
+            case "i32":
+                return ValueType.I32;
+            case "i64":
+                return ValueType.I64;
+            case "f32":
+                return ValueType.F32;
+            case "F64":
+                return ValueType.F64;
+            default:
+                throw new IllegalArgumentException("Illegal value type: " + t);
+        }
+    }
+
+    public static long valueOf(ValueType typ, String v) {
+        switch (typ) {
+            case I32:
+            case I64:
+                return Long.valueOf(v);
+            case F32:
+            case F64:
+                return Double.doubleToLongBits(Double.valueOf(v));
+            default:
+                throw new IllegalArgumentException("Illegal value type: " + typ);
+        }
+    }
+
+    public static String stringOf(Value v) {
+        switch (v.type()) {
+            case I32:
+            case I64:
+                return "" + v.asLong();
+            case F32:
+            case F64:
+                return "" + v.asDouble();
+            default:
+                throw new IllegalArgumentException("Illegal value type: " + v.type());
         }
     }
 
