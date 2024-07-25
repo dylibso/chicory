@@ -1,6 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
@@ -19,9 +20,6 @@ import java.util.List;
  * within the function you are in and only specific places.
  */
 public class StackFrame {
-    public boolean doControlTransfer = false;
-    public boolean isControlFrame = true;
-
     private final List<Instruction> code;
     private Instruction currentInstruction;
 
@@ -30,7 +28,7 @@ public class StackFrame {
     private final Value[] locals;
     private final Instance instance;
 
-    private final ArrayDeque<Integer> stackSizeBeforeBlock = new ArrayDeque<>();
+    private final ArrayDeque<CtrlFrame> ctrlStack = new ArrayDeque<>();
 
     public StackFrame(Instance instance, int funcId, Value[] args, List<ValueType> localTypes) {
         this(Collections.emptyList(), instance, funcId, args, localTypes);
@@ -89,30 +87,63 @@ public class StackFrame {
         return pc >= code.size();
     }
 
-    public void registerStackSize(MStack stack) {
-        stackSizeBeforeBlock.push(stack.size());
+    public void pushCtrl(CtrlFrame ctrlFrame) {
+        ctrlStack.push(ctrlFrame);
+    }
+
+    public void pushCtrl(OpCode opcode, int startValues, int returnValues, int height) {
+        ctrlStack.push(new CtrlFrame(opcode, startValues, returnValues, height));
+    }
+
+    public CtrlFrame popCtrl() {
+        var ctrlFrame = ctrlStack.pop();
+        return ctrlFrame;
+    }
+
+    public CtrlFrame popCtrl(int n) {
+        CtrlFrame ctrlFrame = null;
+        if (ctrlStack.size() < n) {
+            throw new IllegalArgumentException("should not happen");
+        }
+        // TODO: improve the speed, quick and dirty
+        int mostRecentCall = -1;
+        var tmpCtrlStack = new ArrayDeque<CtrlFrame>();
+        tmpCtrlStack.addAll(ctrlStack);
+        for (int i = 0; i < ctrlStack.size(); i++) {
+            if (tmpCtrlStack.pop().opCode == OpCode.CALL) {
+                mostRecentCall = i;
+            }
+        }
+        if (mostRecentCall == -1) {
+            throw new IllegalArgumentException("error - should not happen");
+        }
+        while (ctrlStack.size() > (mostRecentCall - n)) {
+            ctrlFrame = ctrlStack.pop();
+        }
+        return ctrlFrame;
     }
 
     public void jumpTo(int newPc) {
         pc = newPc;
     }
 
-    public void dropValuesOutOfBlock(MStack stack) {
-        if (currentInstruction.depth() > 0) {
-            while (stackSizeBeforeBlock.size() > currentInstruction.depth()) {
-                stackSizeBeforeBlock.pop();
-            }
-
-            int expectedStackSize = stackSizeBeforeBlock.pop();
-            while (stack.size() > expectedStackSize) {
-                stack.pop();
-            }
+    public static void doControlTransfer(CtrlFrame ctrlFrame, MStack stack) {
+        var endResults =
+                (ctrlFrame.opCode == OpCode.LOOP) ? ctrlFrame.startValues : ctrlFrame.endValues;
+        Value[] returns = new Value[endResults];
+        for (int i = 0; i < returns.length; i++) {
+            if (stack.size() > 0) returns[i] = stack.pop();
         }
-    }
 
-    public void endOfNonControlBlock() {
-        if (currentInstruction.depth() > 0) {
-            stackSizeBeforeBlock.pop();
+        while (stack.size() > ctrlFrame.height) {
+            stack.pop();
+        }
+
+        for (int i = 0; i < returns.length; i++) {
+            Value value = returns[returns.length - 1 - i];
+            if (value != null) {
+                stack.push(value);
+            }
         }
     }
 }
