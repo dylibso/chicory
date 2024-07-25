@@ -53,19 +53,18 @@ class InterpreterMachine implements Machine {
         }
 
         var func = instance.function(funcId);
-        var stackSizeBefore = stack.size();
         if (func != null) {
             var stackFrame =
                     new StackFrame(func.instructions(), instance, funcId, args, func.localTypes());
             stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
-
             callStack.push(stackFrame);
+
             eval(stack, instance, callStack);
         } else {
             var stackFrame = new StackFrame(instance, funcId, args, List.of());
             stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
-
             callStack.push(stackFrame);
+
             var results = instance.callHostFunction(funcId, args);
             // a host function can return null or an array of ints
             // which we will push onto the stack
@@ -81,9 +80,6 @@ class InterpreterMachine implements Machine {
         }
 
         if (!popResults) {
-            if (stack.size() != stackSizeBefore + type.returns().size()) {
-                throw new IllegalArgumentException("I don't understand something ...");
-            }
             return null;
         }
 
@@ -222,6 +218,10 @@ class InterpreterMachine implements Machine {
                             // if this is the last end, then we're done with
                             // the function
                             if (frame.isLastBlock()) {
+                                if (ctrlFrame.opCode != OpCode.CALL) {
+                                    throw new IllegalArgumentException("something I don't grasp?");
+                                }
+
                                 break loop;
                             }
                             break;

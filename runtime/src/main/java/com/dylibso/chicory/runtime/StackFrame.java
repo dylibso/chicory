@@ -102,11 +102,7 @@ public class StackFrame {
 
     public CtrlFrame popCtrl(int n) {
         CtrlFrame ctrlFrame = null;
-        if (ctrlStack.size() < n) {
-            throw new IllegalArgumentException("should not happen");
-        }
-        // TODO: improve the speed, quick and dirty
-        // TODO: check if it's only an "off by one"
+        // TODO: improve the speed, quick and dirty implementation
         int mostRecentCall = -1;
         var tmpCtrlStack = new ArrayDeque<CtrlFrame>();
         tmpCtrlStack.addAll(ctrlStack);
@@ -114,9 +110,6 @@ public class StackFrame {
             if (tmpCtrlStack.pop().opCode == OpCode.CALL) {
                 mostRecentCall = i;
             }
-        }
-        if (mostRecentCall == -1) {
-            throw new IllegalArgumentException("error - should not happen");
         }
         while (ctrlStack.size() > (mostRecentCall - n)) {
             ctrlFrame = ctrlStack.pop();
