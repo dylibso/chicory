@@ -371,9 +371,9 @@ public class ModuleTest {
                         .instantiate();
         var facSsa = instance.export("fac-ssa");
 
-        facSsa.apply(Value.i32(10));
+        facSsa.apply(Value.i32(1));
 
         System.out.println(finalStackSize.get());
-        //        assertTrue(finalStackSize.get() == 0L);
+        assertTrue(finalStackSize.get() == 0L);
     }
 }

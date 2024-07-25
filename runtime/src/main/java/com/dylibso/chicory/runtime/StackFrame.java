@@ -106,6 +106,7 @@ public class StackFrame {
             throw new IllegalArgumentException("should not happen");
         }
         // TODO: improve the speed, quick and dirty
+        // TODO: check if it's only an "off by one"
         int mostRecentCall = -1;
         var tmpCtrlStack = new ArrayDeque<CtrlFrame>();
         tmpCtrlStack.addAll(ctrlStack);
@@ -128,8 +129,7 @@ public class StackFrame {
     }
 
     public static void doControlTransfer(CtrlFrame ctrlFrame, MStack stack) {
-        var endResults =
-                (ctrlFrame.opCode == OpCode.LOOP) ? ctrlFrame.startValues : ctrlFrame.endValues;
+        var endResults = ctrlFrame.endValues;
         Value[] returns = new Value[endResults];
         for (int i = 0; i < returns.length; i++) {
             if (stack.size() > 0) returns[i] = stack.pop();
