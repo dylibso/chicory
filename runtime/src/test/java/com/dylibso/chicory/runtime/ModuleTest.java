@@ -360,7 +360,7 @@ public class ModuleTest {
     public void shouldConsumeStackLoopOperations() {
         AtomicLong finalStackSize = new AtomicLong(0);
         var instance =
-                Module.builder("fac.wasm")
+                Module.builder("compiled/fac.wat.wasm")
                         .withUnsafeExecutionListener(
                                 (Instruction instruction, long[] operands, MStack stack) -> {
                                     finalStackSize.set(stack.size());
