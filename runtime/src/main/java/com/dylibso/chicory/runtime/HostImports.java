@@ -14,7 +14,6 @@ public class HostImports {
     private final HostGlobal[] globals;
     private final HostMemory[] memories;
     private final HostTable[] tables;
-    private FromHost[] index;
 
     public HostImports() {
         this.functions = NO_HOST_FUNCTIONS;
@@ -125,14 +124,6 @@ public class HostImports {
         return tables[idx];
     }
 
-    public FromHost[] index() {
-        return index;
-    }
-
-    public void setIndex(FromHost[] index) {
-        this.index = index;
-    }
-
     public static Builder builder() {
         return new Builder();
     }
@@ -142,7 +133,6 @@ public class HostImports {
         private List<HostGlobal> globals;
         private List<HostMemory> memories;
         private List<HostTable> tables;
-        private List<FromHost> index;
 
         Builder() {}
 
@@ -198,19 +188,6 @@ public class HostImports {
             return this;
         }
 
-        public Builder withIndex(List<FromHost> index) {
-            this.index = index;
-            return this;
-        }
-
-        public Builder addIndex(FromHost... i) {
-            if (this.index == null) {
-                this.index = new ArrayList<>();
-            }
-            Collections.addAll(this.index, i);
-            return this;
-        }
-
         public HostImports build() {
             final HostImports hostImports =
                     new HostImports(
@@ -224,9 +201,6 @@ public class HostImports {
                                     ? new HostMemory[0]
                                     : memories.toArray(new HostMemory[0]),
                             tables == null ? new HostTable[0] : tables.toArray(new HostTable[0]));
-            if (index != null) {
-                hostImports.setIndex(index.toArray(new FromHost[0]));
-            }
             return hostImports;
         }
     }
