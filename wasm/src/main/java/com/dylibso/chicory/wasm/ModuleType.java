@@ -1,4 +1,4 @@
-package com.dylibso.chicory.runtime;
+package com.dylibso.chicory.wasm;
 
 public enum ModuleType {
     TEXT,

@@ -99,11 +99,11 @@ public class JavaTestGen {
         cu.addImport("com.dylibso.chicory.testing.TestModule");
 
         // runtime imports
+        cu.addImport("com.dylibso.chicory.wasm.ModuleType");
         cu.addImport("com.dylibso.chicory.wasm.exceptions.ChicoryException");
         cu.addImport("com.dylibso.chicory.runtime.ExportFunction");
         cu.addImport("com.dylibso.chicory.runtime.Instance");
         cu.addImport("com.dylibso.chicory.runtime.Module");
-        cu.addImport("com.dylibso.chicory.runtime.ModuleType");
 
         // base imports
         cu.addImport("com.dylibso.chicory.wasm.exceptions.InvalidException");

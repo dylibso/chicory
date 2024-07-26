@@ -34,11 +34,10 @@ public class Wast2Json {
                 }
             };
     private static final com.dylibso.chicory.wasm.Module wasmModule =
-            Module.builder(Wast2Json.class.getResourceAsStream("/wast2json"))
-                    .withInitialize(false)
-                    .withStart(false)
-                    .build()
-                    .wasmModule();
+            com.dylibso.chicory.wasm.Module.builder(
+                            Wast2Json.class.getResourceAsStream("/wast2json"))
+                    .withLogger(logger)
+                    .build();
 
     private final File input;
     private final File output;

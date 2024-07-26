@@ -30,11 +30,9 @@ import java.util.List;
 public final class Wat2Wasm {
     private static final Logger logger = new SystemLogger();
     private static final com.dylibso.chicory.wasm.Module wasmModule =
-            Module.builder(Wat2Wasm.class.getResourceAsStream("/wat2wasm"))
-                    .withInitialize(false)
-                    .withStart(false)
-                    .build()
-                    .wasmModule();
+            com.dylibso.chicory.wasm.Module.builder(Wat2Wasm.class.getResourceAsStream("/wat2wasm"))
+                    .withLogger(logger)
+                    .build();
 
     private Wat2Wasm() {}
 

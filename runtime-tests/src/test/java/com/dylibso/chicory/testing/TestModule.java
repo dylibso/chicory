@@ -3,8 +3,8 @@ package com.dylibso.chicory.testing;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Module;
-import com.dylibso.chicory.runtime.ModuleType;
 import com.dylibso.chicory.wabt.Wat2Wasm;
+import com.dylibso.chicory.wasm.ModuleType;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import java.io.File;
 

@@ -1,8 +1,11 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.wasm.ModuleType.BINARY;
+
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
+import com.dylibso.chicory.wasm.ModuleType;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
