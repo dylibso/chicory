@@ -177,6 +177,9 @@ class InterpreterMachine implements Machine {
                                 var n = (int) instruction.operands()[0];
                                 var ctrlFrame = frame.popCtrl(n);
                                 frame.pushCtrl(ctrlFrame);
+                                if (ctrlFrame.opCode == OpCode.LOOP) {
+                                    StackFrame.doControlTransfer(ctrlFrame, stack);
+                                }
 
                                 frame.jumpTo(instruction.labelTrue());
                             }
