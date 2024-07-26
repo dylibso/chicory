@@ -125,114 +125,23 @@ class InterpreterMachine implements Machine {
                         break;
                     case LOOP:
                     case BLOCK:
-                        {
-                            var paramsSize = numberOfParams(instance, instruction);
-                            var returnsSize = numberOfValuesToReturn(instance, instruction);
-                            frame.pushCtrl(
-                                    opcode, paramsSize, returnsSize, stack.size() - paramsSize);
-
-                            break;
-                        }
+                        BLOCK(frame, stack, instance, instruction);
+                        break;
                     case IF:
-                        {
-                            var predValue = stack.pop();
-                            var paramsSize = numberOfParams(instance, instruction);
-                            var returnsSize = numberOfValuesToReturn(instance, instruction);
-                            frame.pushCtrl(
-                                    opcode, paramsSize, returnsSize, stack.size() - paramsSize);
-
-                            if (predValue.asInt() == 0) {
-                                frame.jumpTo(instruction.labelFalse());
-                            } else {
-                                frame.jumpTo(instruction.labelTrue());
-                            }
-                            // IF(frame, stack, instruction);
-                            break;
-                        }
+                        IF(frame, stack, instance, instruction);
+                        break;
                     case ELSE:
-                        {
-                            frame.jumpTo(instruction.labelTrue());
-                            break;
-                        }
+                        frame.jumpTo(instruction.labelTrue());
+                        break;
                     case BR:
-                        {
-                            checkInterruption();
-
-                            var n = (int) instruction.operands()[0];
-                            var ctrlFrame = frame.popCtrl(n);
-                            frame.pushCtrl(ctrlFrame);
-                            if (ctrlFrame.opCode
-                                    == OpCode.LOOP) { // a LOOP jump back to the first instruction
-                                // without passing through an END
-                                StackFrame.doControlTransfer(ctrlFrame, stack);
-                            }
-
-                            frame.jumpTo(instruction.labelTrue());
-                            break;
-                        }
+                        BR(frame, stack, instruction);
+                        break;
                     case BR_IF:
-                        {
-                            // BR_IF(frame, stack, instruction);
-                            var predValue = stack.pop();
-                            var pred = predValue.asInt();
-
-                            if (pred == 0) {
-                                frame.jumpTo(instruction.labelFalse());
-                            } else {
-                                var n = (int) instruction.operands()[0];
-                                var ctrlFrame = frame.popCtrl(n);
-                                frame.pushCtrl(ctrlFrame);
-                                if (ctrlFrame.opCode
-                                        == OpCode.LOOP) { // a LOOP jump back to the first
-                                    // instruction without passing through an
-                                    // END
-                                    StackFrame.doControlTransfer(ctrlFrame, stack);
-                                }
-
-                                frame.jumpTo(instruction.labelTrue());
-                            }
-                            break;
-                        }
+                        BR_IF(frame, stack, instruction);
+                        break;
                     case BR_TABLE:
-                        {
-                            // BR_TABLE(frame, stack, instruction);
-                            var predValue = stack.pop();
-                            var pred = predValue.asInt();
-
-                            if (pred < 0 || pred >= instruction.labelTable().length - 1) {
-                                // choose default
-                                var n =
-                                        (int)
-                                                instruction
-                                                        .operands()[
-                                                        instruction.operands().length - 1];
-                                var ctrlFrame = frame.popCtrl(n);
-                                frame.pushCtrl(ctrlFrame);
-                                if (ctrlFrame.opCode
-                                        == OpCode.LOOP) { // a LOOP jump back to the first
-                                    // instruction without passing through an
-                                    // END
-                                    StackFrame.doControlTransfer(ctrlFrame, stack);
-                                }
-
-                                frame.jumpTo(
-                                        instruction
-                                                .labelTable()[instruction.labelTable().length - 1]);
-                            } else {
-                                var n = (int) instruction.operands()[pred];
-                                var ctrlFrame = frame.popCtrl(n);
-                                frame.pushCtrl(ctrlFrame);
-                                if (ctrlFrame.opCode
-                                        == OpCode.LOOP) { // a LOOP jump back to the first
-                                    // instruction without passing through an
-                                    // END
-                                    StackFrame.doControlTransfer(ctrlFrame, stack);
-                                }
-
-                                frame.jumpTo(instruction.labelTable()[pred]);
-                            }
-                            break;
-                        }
+                        BR_TABLE(frame, stack, instruction);
+                        break;
                     case END:
                         {
                             var ctrlFrame = frame.popCtrl();
@@ -241,9 +150,6 @@ class InterpreterMachine implements Machine {
                             // if this is the last end, then we're done with
                             // the function
                             if (frame.isLastBlock()) {
-                                if (ctrlFrame.opCode != OpCode.CALL) {
-                                    throw new IllegalArgumentException("something I don't grasp?");
-                                }
                                 break loop;
                             }
                             break;
@@ -1971,32 +1877,61 @@ class InterpreterMachine implements Machine {
         return instance.type(typeId).returns().size();
     }
 
-    private static void IF(StackFrame frame, MStack stack, Instruction instruction) {
+    private static void BLOCK(
+            StackFrame frame, MStack stack, Instance instance, Instruction instruction) {
+        var paramsSize = numberOfParams(instance, instruction);
+        var returnsSize = numberOfValuesToReturn(instance, instruction);
+        frame.pushCtrl(instruction.opcode(), paramsSize, returnsSize, stack.size() - paramsSize);
+    }
+
+    private static void IF(
+            StackFrame frame, MStack stack, Instance instance, Instruction instruction) {
         var predValue = stack.pop();
+        var paramsSize = numberOfParams(instance, instruction);
+        var returnsSize = numberOfValuesToReturn(instance, instruction);
+        frame.pushCtrl(instruction.opcode(), paramsSize, returnsSize, stack.size() - paramsSize);
+
         frame.jumpTo(predValue.asInt() == 0 ? instruction.labelFalse() : instruction.labelTrue());
     }
 
+    private static void ctrlJump(StackFrame frame, MStack stack, int n) {
+        var ctrlFrame = frame.popCtrl(n);
+        frame.pushCtrl(ctrlFrame);
+        // a LOOP jumps back to the first instruction without passing through an END
+        if (ctrlFrame.opCode == OpCode.LOOP) {
+            StackFrame.doControlTransfer(ctrlFrame, stack);
+        }
+    }
+
+    private static void BR(StackFrame frame, MStack stack, Instruction instruction) {
+        checkInterruption();
+        ctrlJump(frame, stack, (int) instruction.operands()[0]);
+        frame.jumpTo(instruction.labelTrue());
+    }
+
     private static void BR_TABLE(StackFrame frame, MStack stack, Instruction instruction) {
-        // TODO: FIXME
-        var predValue = stack.pop(); // prepareControlTransfer(frame, stack, true);
+        var predValue = stack.pop();
         var pred = predValue.asInt();
 
-        if (pred < 0 || pred >= instruction.labelTable().length - 1) {
+        var defaultIdx = instruction.labelTable().length - 1;
+        if (pred < 0 || pred >= defaultIdx) {
             // choose default
-            frame.jumpTo(instruction.labelTable()[instruction.labelTable().length - 1]);
+            ctrlJump(frame, stack, (int) instruction.operands()[defaultIdx]);
+            frame.jumpTo(instruction.labelTable()[defaultIdx]);
         } else {
+            ctrlJump(frame, stack, (int) instruction.operands()[pred]);
             frame.jumpTo(instruction.labelTable()[pred]);
         }
     }
 
     private static void BR_IF(StackFrame frame, MStack stack, Instruction instruction) {
-        // TODO: FIXME
         var predValue = stack.pop();
         var pred = predValue.asInt();
 
         if (pred == 0) {
             frame.jumpTo(instruction.labelFalse());
         } else {
+            ctrlJump(frame, stack, (int) instruction.operands()[0]);
             frame.jumpTo(instruction.labelTrue());
         }
     }
