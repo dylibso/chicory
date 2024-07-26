@@ -3,7 +3,11 @@ package com.dylibso.chicory.runtime;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import com.dylibso.chicory.wasm.types.Limits;
+import com.dylibso.chicory.wasm.types.MemoryLimits;
+import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 import java.util.Collections;
 import org.junit.jupiter.api.Nested;
@@ -175,6 +179,83 @@ class HostImportsTest {
                                 .addIndex(new HostFunction(null, "", "", null, null))
                                 .build();
                 assertEquals(1, result.index().length);
+            }
+        }
+
+        @Nested
+        class DSL {
+
+            @Test
+            void withIndex() {
+                var moduleName = "module";
+                var fieldName = "filed";
+                HostImports.builder()
+                        .withNewImport(moduleName, fieldName)
+                        .withGlobal(Value.i32(1))
+                        .withNewImport(moduleName, fieldName)
+                        .withGlobal(MutabilityType.Var, Value.i32(1))
+                        .withNewImport(moduleName, fieldName)
+                        .withMutableGlobal(Value.i32(1))
+                        .withNewImport(moduleName, fieldName)
+                        .withGlobal(Value.i32(1))
+                        .withNewImport(moduleName, fieldName)
+                        .withMemory()
+                        .withNewImport(moduleName, fieldName)
+                        .withMemory(new MemoryLimits(1))
+                        .withNewImport(moduleName, fieldName)
+                        .withMemory(1)
+                        .withNewImport(moduleName, fieldName)
+                        .withMemory(1, 2)
+                        .withNewImport(moduleName, fieldName)
+                        .withTable()
+                        .withNewImport(moduleName, fieldName)
+                        .withTable(ValueType.ExternRef)
+                        .withNewImport(moduleName, fieldName)
+                        .withTable(new Limits(1))
+                        .withNewImport(moduleName, fieldName)
+                        .withTable(1)
+                        .withNewImport(moduleName, fieldName)
+                        .withTable(1, 2)
+                        .withNewImport(moduleName, fieldName)
+                        .withProcedure(() -> System.out.println("hello world"))
+                        .withNewImport(moduleName, fieldName)
+                        .withProcedure((Instance inst) -> () -> System.out.println("hello world"))
+                        .withNewImport(moduleName, fieldName)
+                        .withSupplier(() -> 1)
+                        .withNewImport(moduleName, fieldName)
+                        .withSupplier((Instance inst) -> () -> 1)
+                        .withNewImport(moduleName, fieldName)
+                        .withSupplier(() -> 2L)
+                        // this doesn't compile now as expected, since we do not handle Double just
+                        // yet
+                        // .withSupplier(() -> { return 0.0 })
+                        .withNewImport(moduleName, fieldName)
+                        .withConsumer(
+                                (int i) -> {
+                                    var x = i + 1;
+                                })
+                        .withNewImport(moduleName, fieldName)
+                        .withConsumer(
+                                (long l) -> {
+                                    var x = l + 2L;
+                                })
+                        // this doesn't compile now as expected, since we do not handle Double just
+                        // yet
+                        // .withConsumer((double d) -> { var x = d + 2; })
+                        .withNewImport(moduleName, fieldName)
+                        .withFunction((int i) -> i + 1)
+                        .withNewImport(moduleName, fieldName)
+                        .withFunction((long l) -> l + 2L)
+                        // this doesn't compile now as expected, since we do not handle Double just
+                        // yet
+                        // .withFunction((double d) -> d + 2.0)
+                        .withNewImport(moduleName, fieldName)
+                        .withFunction(
+                                (Instance inst) ->
+                                        (Value[] args) -> {
+                                            return new Value[] {};
+                                        })
+                        .build();
             }
         }
     }
