@@ -4,7 +4,7 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -28,7 +28,7 @@ public class StackFrame {
     private final Value[] locals;
     private final Instance instance;
 
-    private final ArrayDeque<CtrlFrame> ctrlStack = new ArrayDeque<>();
+    private final List<CtrlFrame> ctrlStack = new ArrayList<>();
 
     public StackFrame(Instance instance, int funcId, Value[] args, List<ValueType> localTypes) {
         this(Collections.emptyList(), instance, funcId, args, localTypes);
@@ -88,38 +88,36 @@ public class StackFrame {
     }
 
     public void pushCtrl(CtrlFrame ctrlFrame) {
-        ctrlStack.push(ctrlFrame);
+        ctrlStack.add(ctrlFrame);
     }
 
     public void pushCtrl(OpCode opcode, int startValues, int returnValues, int height) {
-        ctrlStack.push(new CtrlFrame(opcode, startValues, returnValues, height));
+        ctrlStack.add(new CtrlFrame(opcode, startValues, returnValues, height));
     }
 
     public CtrlFrame popCtrl() {
-        var ctrlFrame = ctrlStack.pop();
+        var ctrlFrame = ctrlStack.remove(ctrlStack.size() - 1);
         return ctrlFrame;
     }
 
     public CtrlFrame popCtrl(int n) {
-        CtrlFrame ctrlFrame = null;
-        // TODO: improve the speed, quick and dirty implementation
-        int mostRecentCall = -1;
-        var tmpCtrlStack = new ArrayDeque<CtrlFrame>();
-        tmpCtrlStack.addAll(ctrlStack);
-        for (int i = 0; i < ctrlStack.size(); i++) {
-            if (tmpCtrlStack.pop().opCode == OpCode.CALL) {
-                mostRecentCall = i;
+        int mostRecentCallHeight = ctrlStack.size();
+        while (true) {
+            if (ctrlStack.get(--mostRecentCallHeight).opCode == OpCode.CALL) {
+                break;
             }
         }
-        while (ctrlStack.size() > (mostRecentCall - n)) {
-            ctrlFrame = ctrlStack.pop();
+        var finalHeight = ctrlStack.size() - (mostRecentCallHeight + n + 1);
+        CtrlFrame ctrlFrame = null;
+        while (ctrlStack.size() > finalHeight) {
+            ctrlFrame = popCtrl();
         }
         return ctrlFrame;
     }
 
     public CtrlFrame popCtrlTillCall() {
         while (true) {
-            var ctrlFrame = ctrlStack.pop();
+            var ctrlFrame = popCtrl();
             if (ctrlFrame.opCode == OpCode.CALL) {
                 return ctrlFrame;
             }
@@ -131,7 +129,7 @@ public class StackFrame {
     }
 
     public static void doControlTransfer(CtrlFrame ctrlFrame, MStack stack) {
-        var endResults = ctrlFrame.endValues;
+        var endResults = ctrlFrame.startValues + ctrlFrame.endValues; // fix 401
         Value[] returns = new Value[endResults];
         for (int i = 0; i < returns.length; i++) {
             if (stack.size() > 0) returns[i] = stack.pop();

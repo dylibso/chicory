@@ -1913,7 +1913,7 @@ class InterpreterMachine implements Machine {
         var predValue = stack.pop();
         var pred = predValue.asInt();
 
-        var defaultIdx = instruction.labelTable().length - 1;
+        var defaultIdx = instruction.operands().length - 1;
         if (pred < 0 || pred >= defaultIdx) {
             // choose default
             ctrlJump(frame, stack, (int) instruction.operands()[defaultIdx]);
