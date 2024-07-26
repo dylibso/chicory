@@ -17,22 +17,18 @@
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasi</artifactId>
-      <version>0.0.12</version>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>runtime</artifactId>
-      <version>0.0.12</version>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>log</artifactId>
-      <version>0.0.12</version>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm</artifactId>
-      <version>0.0.12</version>
     </dependency>
     <dependency>
       <groupId>com.google.jimfs</groupId>
