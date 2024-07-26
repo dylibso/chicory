@@ -161,6 +161,11 @@ class InterpreterMachine implements Machine {
                             var n = (int) instruction.operands()[0];
                             var ctrlFrame = frame.popCtrl(n);
                             frame.pushCtrl(ctrlFrame);
+                            if (ctrlFrame.opCode
+                                    == OpCode.LOOP) { // a LOOP jump back to the first instruction
+                                // without passing through an END
+                                StackFrame.doControlTransfer(ctrlFrame, stack);
+                            }
 
                             frame.jumpTo(instruction.labelTrue());
                             break;
@@ -177,7 +182,10 @@ class InterpreterMachine implements Machine {
                                 var n = (int) instruction.operands()[0];
                                 var ctrlFrame = frame.popCtrl(n);
                                 frame.pushCtrl(ctrlFrame);
-                                if (ctrlFrame.opCode == OpCode.LOOP) {
+                                if (ctrlFrame.opCode
+                                        == OpCode.LOOP) { // a LOOP jump back to the first
+                                    // instruction without passing through an
+                                    // END
                                     StackFrame.doControlTransfer(ctrlFrame, stack);
                                 }
 
@@ -200,6 +208,12 @@ class InterpreterMachine implements Machine {
                                                         instruction.operands().length - 1];
                                 var ctrlFrame = frame.popCtrl(n);
                                 frame.pushCtrl(ctrlFrame);
+                                if (ctrlFrame.opCode
+                                        == OpCode.LOOP) { // a LOOP jump back to the first
+                                    // instruction without passing through an
+                                    // END
+                                    StackFrame.doControlTransfer(ctrlFrame, stack);
+                                }
 
                                 frame.jumpTo(
                                         instruction
@@ -208,6 +222,12 @@ class InterpreterMachine implements Machine {
                                 var n = (int) instruction.operands()[pred];
                                 var ctrlFrame = frame.popCtrl(n);
                                 frame.pushCtrl(ctrlFrame);
+                                if (ctrlFrame.opCode
+                                        == OpCode.LOOP) { // a LOOP jump back to the first
+                                    // instruction without passing through an
+                                    // END
+                                    StackFrame.doControlTransfer(ctrlFrame, stack);
+                                }
 
                                 frame.jumpTo(instruction.labelTable()[pred]);
                             }
@@ -224,7 +244,6 @@ class InterpreterMachine implements Machine {
                                 if (ctrlFrame.opCode != OpCode.CALL) {
                                     throw new IllegalArgumentException("something I don't grasp?");
                                 }
-
                                 break loop;
                             }
                             break;

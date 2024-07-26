@@ -373,11 +373,11 @@ public class ModuleTest {
                         .instantiate();
         var facSsa = instance.export("fac-ssa");
 
-        var number = 100;
+        var number = 200;
         var result = facSsa.apply(Value.i32(number));
         assertEquals(factorial(number), result[0].asInt());
 
-        System.out.println(finalStackSize.get());
-        // assertTrue(finalStackSize.get() == 0L);
+        // IIUC: 3 values returning from last CALL + 1 result
+        assertTrue(finalStackSize.get() == 4L);
     }
 }
