@@ -7,6 +7,7 @@ import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -68,30 +69,18 @@ public class Cli implements Runnable {
                         : new HostImports();
         var instance =
                 Instance.builder(module)
-                        .withLogger(logger)
                         .withInitialize(true)
                         .withStart(false)
                         .withHostImports(imports)
                         .build();
 
         if (functionName != null) {
-            // TODO: WRONG - fixme
-            var exportSig = module.exportSection().exportCount();
             var export = instance.export(functionName);
-
-            var typeId = instance.functionType(exportSig);
-            var type = instance.type(typeId);
-
-            if (arguments.length != type.params().size()) {
-                throw new RuntimeException(
-                        "The function needs "
-                                + type.params().size()
-                                + " parameters, but found: "
-                                + arguments.length);
-            }
-            var params = new Value[type.params().size()];
-            for (var i = 0; i < type.params().size(); i++) {
-                params[i] = new Value(type.params().get(i), Long.valueOf(arguments[i]));
+            var params = new Value[arguments.length];
+            for (var i = 0; i < arguments.length; i++) {
+                // TODO: FIXME - it's hard to extract the exported function signature
+                // -> should be easy
+                params[i] = new Value(ValueType.I32, Long.valueOf(arguments[i]));
             }
 
             var result = export.apply(params);

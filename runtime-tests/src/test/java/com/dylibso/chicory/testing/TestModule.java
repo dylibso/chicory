@@ -65,9 +65,7 @@ public class TestModule {
     }
 
     public Instance build() {
-        if (this.instance == null) {
-            this.instance = Instance.builder(module).withHostImports(imports).build();
-        }
+        this.instance = Instance.builder(module).withHostImports(imports).build();
         return this.instance;
     }
 

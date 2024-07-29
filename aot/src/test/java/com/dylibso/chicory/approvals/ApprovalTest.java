@@ -1,7 +1,8 @@
 package com.dylibso.chicory.approvals;
 
 import com.dylibso.chicory.aot.AotMachine;
-import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasm.WasmModule;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import org.approvaltests.Approvals;
@@ -63,12 +64,16 @@ public class ApprovalTest {
 
     private static void verifyGeneratedBytecode(String name) {
         var instance =
-                Module.builder("compiled/" + name)
+                Instance.builder(
+                                WasmModule.builder(
+                                                Thread.currentThread()
+                                                        .getContextClassLoader()
+                                                        .getResourceAsStream("compiled/" + name))
+                                        .build())
                         .withImportValidation(false)
                         .withMachineFactory(AotMachine::new)
                         .withStart(false)
-                        .build()
-                        .instantiate();
+                        .build();
         var compiled = ((AotMachine) instance.getMachine()).compiledClass();
 
         ClassReader cr = new ClassReader(compiled);

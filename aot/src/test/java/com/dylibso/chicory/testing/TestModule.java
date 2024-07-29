@@ -11,22 +11,22 @@ import java.io.File;
 
 public class TestModule {
 
-    private Instance.Builder builder;
     private WasmModule module;
+    private Instance instance;
 
     private HostImports imports;
     private boolean typeValidation;
 
-    public TestModule(Instance.Builder builder) {
-        this.builder = builder;
+    public TestModule(WasmModule module) {
+        this.module = module;
     }
 
     public static TestModule of(File file) {
         return of(file, WasmModuleType.BINARY);
     }
 
-    public static TestModule of(Instance.Builder builder) {
-        return new TestModule(builder);
+    public static TestModule of(WasmModule module) {
+        return new TestModule(module);
     }
 
     private static final String HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT =
@@ -63,13 +63,12 @@ public class TestModule {
             }
             return of(WasmModule.builder(parsed).build());
         }
-        return of(WasmModule.builder(file));
+        return of(WasmModule.builder(file).build());
     }
 
-    public TestModule build() {
-        this.module =
-                builder.withInitialize(false)
-                        .withStart(false)
+    public Instance build() {
+        this.instance =
+                Instance.builder(module)
                         // TODO: enable me!
                         .withTypeValidation(false)
                         // TODO: enable me!
@@ -77,7 +76,7 @@ public class TestModule {
                         .withHostImports(imports)
                         .withMachineFactory(AotMachine::new)
                         .build();
-        return this;
+        return this.instance;
     }
 
     public TestModule withHostImports(HostImports imports) {
@@ -88,17 +87,6 @@ public class TestModule {
     public TestModule withTypeValidation(boolean v) {
         this.typeValidation = v;
         return this;
-    }
-
-    public TestModule instantiate() {
-        if (this.instance == null) {
-            this.instance = module.instantiate();
-        }
-        return this;
-    }
-
-    public WasmModule module() {
-        return module;
     }
 
     public Instance instance() {

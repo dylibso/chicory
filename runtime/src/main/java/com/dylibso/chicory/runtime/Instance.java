@@ -4,7 +4,6 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantInst
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
-import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
@@ -46,7 +45,6 @@ public class Instance {
     public static final String START_FUNCTION_NAME = "_start";
 
     private final WasmModule module;
-    private final Logger logger;
     private final Machine machine;
     private final FunctionBody[] functions;
     private final Memory memory;
@@ -69,7 +67,6 @@ public class Instance {
 
     public Instance(
             WasmModule module,
-            Logger logger,
             Global[] globalInitializers,
             int importedGlobalsOffset,
             int importedFunctionsOffset,
@@ -88,7 +85,6 @@ public class Instance {
             boolean typeValidation) {
         this(
                 module,
-                logger,
                 globalInitializers,
                 importedGlobalsOffset,
                 importedFunctionsOffset,
@@ -111,7 +107,6 @@ public class Instance {
 
     public Instance(
             WasmModule module,
-            Logger logger,
             Global[] globalInitializers,
             int importedGlobalsOffset,
             int importedFunctionsOffset,
@@ -131,7 +126,6 @@ public class Instance {
             boolean typeValidation,
             ExecutionListener listener) {
         this.module = module;
-        this.logger = logger;
         this.globalInitializers = globalInitializers.clone();
         this.globals = new GlobalInstance[globalInitializers.length];
         this.importedGlobalsOffset = importedGlobalsOffset;
@@ -464,7 +458,6 @@ public class Instance {
 
     public static final class Builder {
         private final WasmModule module;
-        private Logger logger;
 
         private boolean initialize = true;
         private boolean start = true;
@@ -476,11 +469,6 @@ public class Instance {
 
         private Builder(WasmModule module) {
             this.module = Objects.requireNonNull(module);
-        }
-
-        public Builder withLogger(Logger logger) {
-            this.logger = logger;
-            return this;
         }
 
         public Builder withInitialize(boolean init) {
@@ -495,6 +483,11 @@ public class Instance {
 
         public Builder withTypeValidation(boolean v) {
             this.typeValidation = v;
+            return this;
+        }
+
+        public Builder withImportValidation(boolean v) {
+            this.importValidation = v;
             return this;
         }
 
@@ -513,11 +506,6 @@ public class Instance {
 
         public Builder withMachineFactory(Function<Instance, Machine> machineFactory) {
             this.machineFactory = machineFactory;
-            return this;
-        }
-
-        public Builder withImportValidation(boolean importValidation) {
-            this.importValidation = importValidation;
             return this;
         }
 
@@ -653,7 +641,8 @@ public class Instance {
             }
         }
 
-        private HostImports mapHostImports(Import[] imports, HostImports hostImports) {
+        private HostImports mapHostImports(
+                Import[] imports, HostImports hostImports, int memoryCount) {
             int hostFuncNum = 0;
             int hostGlobalNum = 0;
             int hostMemNum = 0;
@@ -673,6 +662,10 @@ public class Instance {
                         hostTableNum++;
                         break;
                 }
+            }
+
+            if (hostMemNum + memoryCount > 1) {
+                throw new InvalidException("multiple memories");
             }
 
             // TODO: this can probably be refactored ...
@@ -761,9 +754,11 @@ public class Instance {
                                         + " named "
                                         + name);
                     } else {
-                        this.logger.warnf(
-                                "Could not find host function for import number: %d named %s",
-                                impIdx, name);
+                        System.err.println(
+                                "Could not find host function for import number: "
+                                        + impIdx
+                                        + " named "
+                                        + name);
                     }
                 }
             }
@@ -830,9 +825,12 @@ public class Instance {
             }
 
             var mappedHostImports =
-                    (hostImports == null)
-                            ? new HostImports()
-                            : mapHostImports(imports, hostImports);
+                    mapHostImports(
+                            imports,
+                            (hostImports == null) ? new HostImports() : hostImports,
+                            (module.memorySection() != null)
+                                    ? module.memorySection().memoryCount()
+                                    : 0);
 
             if (module.startSection() != null) {
                 var export =
@@ -858,17 +856,11 @@ public class Instance {
             Memory memory = null;
             if (module.memorySection() != null) {
                 var memories = module.memorySection();
-                if (memories.memoryCount() + mappedHostImports.memoryCount() > 1) {
-                    throw new InvalidException("multiple memories are not supported");
-                }
                 if (memories.memoryCount() > 0) {
                     memory = new Memory(memories.getMemory(0).memoryLimits());
                 }
             } else {
                 if (mappedHostImports.memoryCount() > 0) {
-                    if (mappedHostImports.memoryCount() != 1) {
-                        throw new InvalidException("multiple memories");
-                    }
                     if (mappedHostImports.memory(0) == null
                             || mappedHostImports.memory(0).memory() == null) {
                         throw new InvalidException(
@@ -951,7 +943,6 @@ public class Instance {
 
             return new Instance(
                     module,
-                    logger,
                     globalInitializers,
                     globalImportsOffset,
                     functionImportsOffset,
