@@ -3,7 +3,8 @@ package com.dylibso.chicory.fuzz;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasm.WasmModule;
 import java.io.File;
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -23,8 +24,8 @@ public class RegressionTest extends TestModule {
     @MethodSource("crashFolders")
     void regressionTests(File folder) throws Exception {
         var targetWasm = new File(folder.getAbsolutePath() + "/test.wasm");
-        var module = Module.builder(targetWasm).withInitialize(true).withStart(false).build();
-        var instance = module.instantiate();
+        var module = WasmModule.builder(targetWasm).build();
+        var instance = Instance.builder(module).withInitialize(true).withStart(false).build();
 
         var results = testModule(targetWasm, module, instance, false);
 
@@ -32,6 +33,6 @@ public class RegressionTest extends TestModule {
             assertEquals(res.getOracleResult(), res.getChicoryResult());
         }
         // Sanity check that the starting function doesn't break
-        assertDoesNotThrow(() -> module.instantiate());
+        assertDoesNotThrow(() -> Instance.builder(module).build());
     }
 }
