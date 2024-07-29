@@ -1,11 +1,10 @@
 package com.dylibso.chicory.bench;
 
+import com.dylibso.chicory.wasm.WasmModule;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
-
-import com.dylibso.chicory.wasm.WasmModule;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
