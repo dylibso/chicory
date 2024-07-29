@@ -770,7 +770,7 @@ public class TypeValidator {
                     }
                 case GLOBAL_GET:
                     {
-                        var type = instance.readGlobal((int) op.operands()[0]).type();
+                        var type = instance.readGlobalValue((int) op.operands()[0]).type();
                         pushVal(type);
                         break;
                     }
@@ -784,7 +784,7 @@ public class TypeValidator {
                         if (mutabilityType == MutabilityType.Const) {
                             throw new InvalidException("global is immutable");
                         }
-                        popVal(instance.readGlobal(id).type());
+                        popVal(instance.readGlobalValue(id).type());
                         break;
                     }
                 case CALL:
