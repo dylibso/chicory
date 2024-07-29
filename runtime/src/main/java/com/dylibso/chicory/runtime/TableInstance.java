@@ -77,14 +77,6 @@ public class TableInstance {
         return instances[index];
     }
 
-    public void setRef(int index, int value) {
-        try {
-            this.refs[index] = value;
-        } catch (IndexOutOfBoundsException e) {
-            throw new UninstantiableException("out of bounds table access", e);
-        }
-    }
-
     public void reset() {
         for (int i = 0; i < refs.length; i++) {
             this.refs[i] = REF_NULL_VALUE;

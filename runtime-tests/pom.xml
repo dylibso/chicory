@@ -136,55 +136,11 @@
             <wast>utf8-import-module.wast</wast>
             <wast>utf8-invalid-encoding.wast</wast>
           </includedWasts>
-          <excludedTests>
-            <!-- even wasm-decompile is not throwing on this one -->
-            <test>SpecV1ElemTest.test29</test>
-            <!-- Missing checks on imports -->
-            <test>SpecV1ImportsTest.test101</test>
-            <test>SpecV1ImportsTest.test102</test>
-            <test>SpecV1ImportsTest.test103</test>
-            <test>SpecV1ImportsTest.test104</test>
-            <test>SpecV1ImportsTest.test105</test>
-            <test>SpecV1ImportsTest.test106</test>
-            <test>SpecV1ImportsTest.test107</test>
-            <test>SpecV1ImportsTest.test108</test>
-            <test>SpecV1ImportsTest.test111</test>
-            <test>SpecV1ImportsTest.test135</test>
-            <test>SpecV1ImportsTest.test136</test>
-            <test>SpecV1ImportsTest.test137</test>
-            <test>SpecV1ImportsTest.test138</test>
-            <test>SpecV1ImportsTest.test139</test>
-            <test>SpecV1ImportsTest.test140</test>
-            <test>SpecV1ImportsTest.test147</test>
-            <test>SpecV1ImportsTest.test148</test>
-            <test>SpecV1ImportsTest.test16</test>
-            <test>SpecV1ImportsTest.test17</test>
-            <test>SpecV1ImportsTest.test178</test>
-            <test>SpecV1ImportsTest.test36</test>
-            <test>SpecV1ImportsTest.test48</test>
-            <test>SpecV1ImportsTest.test49</test>
-            <test>SpecV1ImportsTest.test64</test>
-            <test>SpecV1LinkingTest.test83</test>
-            <test>SpecV1LinkingTest.test86</test>
-            <test>SpecV1LinkingTest.test94</test>
-            <test>SpecV1LinkingTest.test97</test>
-            <test>SpecV1LinkingTest.test115</test>
-            <test>SpecV1LinkingTest.test116</test>
-            <test>SpecV1LinkingTest.test118</test>
-            <test>SpecV1LinkingTest.test121</test>
-            <test>SpecV1LinkingTest.test122</test>
-            <!-- SelectTest errors are suggesting that messages should be accumulated instead of directly throwing -->
-            <test>SpecV1SelectTest.test120</test>
-            <test>SpecV1SelectTest.test121</test>
-          </excludedTests>
+          <excludedTests/>
           <excludedMalformedWasts/>
           <excludedInvalidWasts/>
-          <excludedUnlinkableWasts>
-            <wast>linking.wast</wast>
-          </excludedUnlinkableWasts>
-          <excludedUninstantiableWasts>
-            <wast>linking.wast</wast>
-          </excludedUninstantiableWasts>
+          <excludedUnlinkableWasts/>
+          <excludedUninstantiableWasts/>
           <excludedWasts>
             <wast>simd_address.wast</wast>
             <wast>simd_align.wast</wast>

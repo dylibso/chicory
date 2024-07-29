@@ -222,7 +222,7 @@ public class JavaTestGen {
                     {
                         method = createTestMethod(testClass, testNumber++, excludedMethods);
                         String hostFuncs =
-                                detectImports(importsName, lastModuleVarName, importsSourceRoot);
+                                detectImports(importsName, "fallback", importsSourceRoot);
                         generateAssertThrows(
                                 wasmFilesFolder,
                                 cmd,
@@ -428,11 +428,7 @@ public class JavaTestGen {
                         + INDENT
                         + ".build()\n"
                         + INDENT
-                        + ".instantiate()\n"
-                        + INDENT
-                        + ".instance()\n"
-                        + INDENT
-                        + ".initialize(true)"); // TODO: verify start = true
+                        + ".instantiate()");
     }
 
     private String detectImports(String importsName, String varName, SourceRoot testSourcesRoot) {
@@ -453,10 +449,6 @@ public class JavaTestGen {
                 if (hostFuncs == null) {
                     hostFuncs = "fallback";
                 }
-            }
-
-            if (hostFuncs != null) {
-                log.debug("Found binding HostFunctions " + importsName + "#" + varName);
             }
         } catch (Exception e) {
             // ignore

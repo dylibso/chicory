@@ -14,8 +14,6 @@ public class TestModule {
     private Module.Builder builder;
     private Module module;
 
-    private Instance instance;
-
     private HostImports imports;
     private boolean typeValidation;
 
@@ -74,6 +72,8 @@ public class TestModule {
                         .withStart(false)
                         // TODO: enable me!
                         .withTypeValidation(false)
+                        // TODO: enable me!
+                        .withImportValidation(false)
                         .withHostImports(imports)
                         .withMachineFactory(AotMachine::new)
                         .build();
@@ -90,18 +90,7 @@ public class TestModule {
         return this;
     }
 
-    public TestModule instantiate() {
-        if (this.instance == null) {
-            this.instance = module.instantiate();
-        }
-        return this;
-    }
-
-    public Module module() {
-        return module;
-    }
-
-    public Instance instance() {
-        return instance;
+    public Instance instantiate() {
+        return module.instantiate().initialize(true);
     }
 }

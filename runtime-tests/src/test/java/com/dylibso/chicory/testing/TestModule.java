@@ -12,10 +12,8 @@ public class TestModule {
 
     private Module.Builder builder;
     private Module module;
-    private Instance instance;
 
     private HostImports imports;
-    private boolean typeValidation = true;
 
     public static TestModule of(File file) {
         return of(file, ModuleType.BINARY);
@@ -68,11 +66,7 @@ public class TestModule {
 
     public TestModule build() {
         this.module =
-                builder.withInitialize(false)
-                        .withStart(false)
-                        .withTypeValidation(typeValidation)
-                        .withHostImports(imports)
-                        .build();
+                builder.withInitialize(false).withStart(false).withHostImports(imports).build();
         return this;
     }
 
@@ -81,23 +75,7 @@ public class TestModule {
         return this;
     }
 
-    public TestModule withTypeValidation(boolean v) {
-        this.typeValidation = v;
-        return this;
-    }
-
-    public TestModule instantiate() {
-        if (this.instance == null) {
-            this.instance = module.instantiate();
-        }
-        return this;
-    }
-
-    public Module module() {
-        return module;
-    }
-
-    public Instance instance() {
-        return instance;
+    public Instance instantiate() {
+        return module.instantiate().initialize(true);
     }
 }

@@ -137,6 +137,10 @@ public class HostImports {
         return new Builder();
     }
 
+    public static HostImports empty() {
+        return new Builder().build();
+    }
+
     public static final class Builder {
         private List<HostFunction> functions;
         private List<HostGlobal> globals;

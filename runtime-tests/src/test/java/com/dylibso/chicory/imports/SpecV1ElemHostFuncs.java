@@ -17,80 +17,46 @@ import com.dylibso.chicory.wasm.types.ValueType;
 
 public class SpecV1ElemHostFuncs {
 
+    private static GlobalInstance glob = new GlobalInstance(Value.i32(123));
+
     public static HostImports fallback() {
-        return new HostImports(
-                new HostGlobal[] {
-                    new HostGlobal("test", "global-i32", new GlobalInstance(Value.i32(0))),
-                    new HostGlobal(
-                            "test",
-                            "global-mut-i32",
-                            new GlobalInstance(Value.i32(0)),
-                            MutabilityType.Var),
-                    new HostGlobal(
-                            "test", "g", new GlobalInstance(Value.i32(0)), MutabilityType.Var)
-                });
-    }
-
-    public static HostImports testModule3() {
-        return new HostImports(
-                new HostTable[] {
-                    new HostTable(
-                            "spectest",
-                            "table",
-                            new TableInstance(new Table(ValueType.FuncRef, new Limits(1))))
-                });
-    }
-
-    public static HostImports testModule5() {
-        return new HostImports(
-                new HostTable[] {
-                    new HostTable(
-                            "spectest",
-                            "table",
-                            new TableInstance(new Table(ValueType.FuncRef, new Limits(10))))
-                });
-    }
-
-    public static HostImports testModule6() {
-        return new HostImports(
-                new HostGlobal[] {
-                    new HostGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(123)))
-                });
-    }
-
-    public static HostImports testModule7() {
-        return new HostImports(
-                new HostGlobal[] {
-                    new HostGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(321)))
-                });
-    }
-
-    public static HostImports testModule11() {
-        return testModule5();
-    }
-
-    public static HostImports testModule13() {
-        return testModule3();
-    }
-
-    public static HostImports testModule16() {
-        return testModule3();
+        return HostImports.builder()
+                .addGlobal(
+                        new HostGlobal("test", "global-i32", new GlobalInstance(Value.i32(0))),
+                        new HostGlobal("spectest", "global_i32", glob),
+                        new HostGlobal(
+                                "test",
+                                "global-mut-i32",
+                                new GlobalInstance(Value.i32(0)),
+                                MutabilityType.Var),
+                        new HostGlobal(
+                                "test", "g", new GlobalInstance(Value.i32(0)), MutabilityType.Var))
+                .addTable(
+                        new HostTable(
+                                "spectest",
+                                "table",
+                                new TableInstance(new Table(ValueType.FuncRef, new Limits(10)))))
+                .build();
     }
 
     public static HostImports testModule17() {
-        return testModule3();
-    }
-
-    public static HostImports testModule18() {
-        return testModule5();
+        return new HostImports(
+                new HostTable[] {
+                    new HostTable(
+                            "spectest",
+                            "table",
+                            new TableInstance(new Table(ValueType.FuncRef, new Limits(1, 100))))
+                });
     }
 
     public static HostImports testModule19() {
-        return testModule5();
-    }
-
-    public static HostImports testModule23() {
-        return testModule5();
+        return new HostImports(
+                new HostTable[] {
+                    new HostTable(
+                            "spectest",
+                            "table",
+                            new TableInstance(new Table(ValueType.FuncRef, new Limits(10, 30))))
+                });
     }
 
     private static HostTable module1SharedTable() {

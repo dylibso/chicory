@@ -35,7 +35,7 @@ public final class Memory {
      * WASM supports 2^16 pages, but we must limit based on the maximum JVM array size.
      * This limit is {@code Integer.MAX_VALUE / PAGE_SIZE}.
      */
-    private static final int RUNTIME_MAX_PAGES = 32767;
+    public static final int RUNTIME_MAX_PAGES = 32767;
 
     private final MemoryLimits limits;
 
@@ -98,11 +98,11 @@ public final class Memory {
      */
     public void initialize(Instance instance, DataSegment[] dataSegments) {
         this.dataSegments = dataSegments;
-        this.zero();
-
         if (dataSegments == null) {
             return;
         }
+
+        this.zero();
 
         for (var s : dataSegments) {
             if (s instanceof ActiveDataSegment) {
@@ -127,7 +127,7 @@ public final class Memory {
                 var offset = offsetValue.asInt();
                 write(offset, data);
             } else if (s instanceof PassiveDataSegment) {
-                // System.out.println("Skipping passive segment " + s);
+                // Passive segment should be skipped
             } else {
                 throw new ChicoryException("Data segment should be active or passive: " + s);
             }
@@ -388,5 +388,9 @@ public final class Memory {
 
     public DataSegment[] dataSegments() {
         return dataSegments;
+    }
+
+    public MemoryLimits limits() {
+        return limits;
     }
 }
