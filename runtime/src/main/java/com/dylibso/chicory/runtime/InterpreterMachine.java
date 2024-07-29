@@ -54,11 +54,17 @@ class InterpreterMachine implements Machine {
 
         var func = instance.function(funcId);
         if (func != null) {
-            callStack.push(
-                    new StackFrame(func.instructions(), instance, funcId, args, func.localTypes()));
+            var stackFrame =
+                    new StackFrame(func.instructions(), instance, funcId, args, func.localTypes());
+            stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
+            callStack.push(stackFrame);
+
             eval(stack, instance, callStack);
         } else {
-            callStack.push(new StackFrame(instance, funcId, args, List.of()));
+            var stackFrame = new StackFrame(instance, funcId, args, List.of());
+            stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
+            callStack.push(stackFrame);
+
             var results = instance.callHostFunction(funcId, args);
             // a host function can return null or an array of ints
             // which we will push onto the stack
@@ -119,17 +125,16 @@ class InterpreterMachine implements Machine {
                         break;
                     case LOOP:
                     case BLOCK:
-                        BLOCK(frame, stack);
+                        BLOCK(frame, stack, instance, instruction);
                         break;
                     case IF:
-                        IF(frame, stack, instruction);
+                        IF(frame, stack, instance, instruction);
+                        break;
+                    case ELSE:
+                        frame.jumpTo(instruction.labelTrue());
                         break;
                     case BR:
-                        checkInterruption();
-                        // fall through
-                    case ELSE:
-                        prepareControlTransfer(frame, stack, false);
-                        frame.jumpTo(instruction.labelTrue());
+                        BR(frame, stack, instruction);
                         break;
                     case BR_IF:
                         BR_IF(frame, stack, instruction);
@@ -137,9 +142,27 @@ class InterpreterMachine implements Machine {
                     case BR_TABLE:
                         BR_TABLE(frame, stack, instruction);
                         break;
+                    case END:
+                        {
+                            var ctrlFrame = frame.popCtrl();
+                            StackFrame.doControlTransfer(ctrlFrame, stack);
+
+                            // if this is the last end, then we're done with
+                            // the function
+                            if (frame.isLastBlock()) {
+                                break loop;
+                            }
+                            break;
+                        }
                     case RETURN:
-                        shouldReturn = true;
-                        break;
+                        {
+                            // RETURN doesn't pass through the END
+                            var ctrlFrame = frame.popCtrlTillCall();
+                            StackFrame.doControlTransfer(ctrlFrame, stack);
+
+                            shouldReturn = true;
+                            break;
+                        }
                     case CALL_INDIRECT:
                         CALL_INDIRECT(stack, instance, callStack, operands);
                         break;
@@ -152,21 +175,6 @@ class InterpreterMachine implements Machine {
                     case SELECT_T:
                         SELECT_T(stack, operands);
                         break;
-                    case END:
-                        {
-                            if (frame.doControlTransfer && frame.isControlFrame) {
-                                doControlTransfer(instance, stack, frame, instruction.scope());
-                            } else {
-                                frame.endOfNonControlBlock();
-                            }
-
-                            // if this is the last end, then we're done with
-                            // the function
-                            if (frame.isLastBlock()) {
-                                break loop;
-                            }
-                            break;
-                        }
                     case LOCAL_GET:
                         stack.push(frame.local((int) operands[0]));
                         break;
@@ -1844,9 +1852,15 @@ class InterpreterMachine implements Machine {
         call(stack, instance, callStack, funcId, args, type, false);
     }
 
-    private static void BLOCK(StackFrame frame, MStack stack) {
-        frame.isControlFrame = true;
-        frame.registerStackSize(stack);
+    private static int numberOfParams(Instance instance, Instruction scope) {
+        var typeId = (int) scope.operands()[0];
+        if (typeId == 0x40) { // epsilon
+            return 0;
+        }
+        if (ValueType.isValid(typeId)) {
+            return 0;
+        }
+        return instance.type(typeId).params().size();
     }
 
     private static int numberOfValuesToReturn(Instance instance, Instruction scope) {
@@ -1863,60 +1877,62 @@ class InterpreterMachine implements Machine {
         return instance.type(typeId).returns().size();
     }
 
-    private static void IF(StackFrame frame, MStack stack, Instruction instruction) {
-        frame.isControlFrame = false;
-        frame.registerStackSize(stack);
+    private static void BLOCK(
+            StackFrame frame, MStack stack, Instance instance, Instruction instruction) {
+        var paramsSize = numberOfParams(instance, instruction);
+        var returnsSize = numberOfValuesToReturn(instance, instruction);
+        frame.pushCtrl(instruction.opcode(), paramsSize, returnsSize, stack.size() - paramsSize);
+    }
+
+    private static void IF(
+            StackFrame frame, MStack stack, Instance instance, Instruction instruction) {
         var predValue = stack.pop();
+        var paramsSize = numberOfParams(instance, instruction);
+        var returnsSize = numberOfValuesToReturn(instance, instruction);
+        frame.pushCtrl(instruction.opcode(), paramsSize, returnsSize, stack.size() - paramsSize);
+
         frame.jumpTo(predValue.asInt() == 0 ? instruction.labelFalse() : instruction.labelTrue());
     }
 
+    private static void ctrlJump(StackFrame frame, MStack stack, int n) {
+        var ctrlFrame = frame.popCtrl(n);
+        frame.pushCtrl(ctrlFrame);
+        // a LOOP jumps back to the first instruction without passing through an END
+        if (ctrlFrame.opCode == OpCode.LOOP) {
+            StackFrame.doControlTransfer(ctrlFrame, stack);
+        }
+    }
+
+    private static void BR(StackFrame frame, MStack stack, Instruction instruction) {
+        checkInterruption();
+        ctrlJump(frame, stack, (int) instruction.operands()[0]);
+        frame.jumpTo(instruction.labelTrue());
+    }
+
     private static void BR_TABLE(StackFrame frame, MStack stack, Instruction instruction) {
-        var predValue = prepareControlTransfer(frame, stack, true);
+        var predValue = stack.pop();
         var pred = predValue.asInt();
 
-        if (pred < 0 || pred >= instruction.labelTable().length - 1) {
+        var defaultIdx = instruction.operands().length - 1;
+        if (pred < 0 || pred >= defaultIdx) {
             // choose default
-            frame.jumpTo(instruction.labelTable()[instruction.labelTable().length - 1]);
+            ctrlJump(frame, stack, (int) instruction.operands()[defaultIdx]);
+            frame.jumpTo(instruction.labelTable()[defaultIdx]);
         } else {
+            ctrlJump(frame, stack, (int) instruction.operands()[pred]);
             frame.jumpTo(instruction.labelTable()[pred]);
         }
     }
 
     private static void BR_IF(StackFrame frame, MStack stack, Instruction instruction) {
-        var predValue = prepareControlTransfer(frame, stack, true);
+        var predValue = stack.pop();
         var pred = predValue.asInt();
 
         if (pred == 0) {
             frame.jumpTo(instruction.labelFalse());
         } else {
+            ctrlJump(frame, stack, (int) instruction.operands()[0]);
             frame.jumpTo(instruction.labelTrue());
-        }
-    }
-
-    private static Value prepareControlTransfer(StackFrame frame, MStack stack, boolean consume) {
-        frame.doControlTransfer = true;
-        frame.isControlFrame = true;
-        return consume ? stack.pop() : null;
-    }
-
-    private static void doControlTransfer(
-            Instance instance, MStack stack, StackFrame frame, Instruction scope) {
-        // reset the control transfer
-        frame.doControlTransfer = false;
-
-        Value[] returns = new Value[numberOfValuesToReturn(instance, scope)];
-        for (int i = 0; i < returns.length; i++) {
-            if (stack.size() > 0) returns[i] = stack.pop();
-        }
-
-        // drop everything till the previous label
-        frame.dropValuesOutOfBlock(stack);
-
-        for (int i = 0; i < returns.length; i++) {
-            Value value = returns[returns.length - 1 - i];
-            if (value != null) {
-                stack.push(value);
-            }
         }
     }
 

@@ -1,9 +1,10 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -19,9 +20,6 @@ import java.util.List;
  * within the function you are in and only specific places.
  */
 public class StackFrame {
-    public boolean doControlTransfer = false;
-    public boolean isControlFrame = true;
-
     private final List<Instruction> code;
     private Instruction currentInstruction;
 
@@ -30,7 +28,7 @@ public class StackFrame {
     private final Value[] locals;
     private final Instance instance;
 
-    private final ArrayDeque<Integer> stackSizeBeforeBlock = new ArrayDeque<>();
+    private final List<CtrlFrame> ctrlStack = new ArrayList<>();
 
     public StackFrame(Instance instance, int funcId, Value[] args, List<ValueType> localTypes) {
         this(Collections.emptyList(), instance, funcId, args, localTypes);
@@ -89,30 +87,63 @@ public class StackFrame {
         return pc >= code.size();
     }
 
-    public void registerStackSize(MStack stack) {
-        stackSizeBeforeBlock.push(stack.size());
+    public void pushCtrl(CtrlFrame ctrlFrame) {
+        ctrlStack.add(ctrlFrame);
+    }
+
+    public void pushCtrl(OpCode opcode, int startValues, int returnValues, int height) {
+        ctrlStack.add(new CtrlFrame(opcode, startValues, returnValues, height));
+    }
+
+    public CtrlFrame popCtrl() {
+        var ctrlFrame = ctrlStack.remove(ctrlStack.size() - 1);
+        return ctrlFrame;
+    }
+
+    public CtrlFrame popCtrl(int n) {
+        int mostRecentCallHeight = ctrlStack.size();
+        while (true) {
+            if (ctrlStack.get(--mostRecentCallHeight).opCode == OpCode.CALL) {
+                break;
+            }
+        }
+        var finalHeight = ctrlStack.size() - (mostRecentCallHeight + n + 1);
+        CtrlFrame ctrlFrame = null;
+        while (ctrlStack.size() > finalHeight) {
+            ctrlFrame = popCtrl();
+        }
+        return ctrlFrame;
+    }
+
+    public CtrlFrame popCtrlTillCall() {
+        while (true) {
+            var ctrlFrame = popCtrl();
+            if (ctrlFrame.opCode == OpCode.CALL) {
+                return ctrlFrame;
+            }
+        }
     }
 
     public void jumpTo(int newPc) {
         pc = newPc;
     }
 
-    public void dropValuesOutOfBlock(MStack stack) {
-        if (currentInstruction.depth() > 0) {
-            while (stackSizeBeforeBlock.size() > currentInstruction.depth()) {
-                stackSizeBeforeBlock.pop();
-            }
-
-            int expectedStackSize = stackSizeBeforeBlock.pop();
-            while (stack.size() > expectedStackSize) {
-                stack.pop();
-            }
+    public static void doControlTransfer(CtrlFrame ctrlFrame, MStack stack) {
+        var endResults = ctrlFrame.startValues + ctrlFrame.endValues; // unwind stack
+        Value[] returns = new Value[endResults];
+        for (int i = 0; i < returns.length; i++) {
+            if (stack.size() > 0) returns[i] = stack.pop();
         }
-    }
 
-    public void endOfNonControlBlock() {
-        if (currentInstruction.depth() > 0) {
-            stackSizeBeforeBlock.pop();
+        while (stack.size() > ctrlFrame.height) {
+            stack.pop();
+        }
+
+        for (int i = 0; i < returns.length; i++) {
+            Value value = returns[returns.length - 1 - i];
+            if (value != null) {
+                stack.push(value);
+            }
         }
     }
 }

@@ -355,4 +355,25 @@ public class ModuleTest {
                                 .build()
                                 .instantiate());
     }
+
+    @Test
+    public void shouldConsumeStackLoopOperations() {
+        AtomicLong finalStackSize = new AtomicLong(0);
+        var instance =
+                Module.builder("compiled/fac.wat.wasm")
+                        .withUnsafeExecutionListener(
+                                (Instruction instruction, long[] operands, MStack stack) -> {
+                                    finalStackSize.set(stack.size());
+                                })
+                        .build()
+                        .instantiate();
+        var facSsa = instance.export("fac-ssa");
+
+        var number = 100;
+        var result = facSsa.apply(Value.i32(number));
+        assertEquals(factorial(number), result[0].asInt());
+
+        // IIUC: 3 values returning from last CALL + 1 result
+        assertTrue(finalStackSize.get() == 4L);
+    }
 }
