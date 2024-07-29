@@ -129,7 +129,7 @@ public class StackFrame {
     }
 
     public static void doControlTransfer(CtrlFrame ctrlFrame, MStack stack) {
-        var endResults = ctrlFrame.startValues + ctrlFrame.endValues; // fix 401
+        var endResults = ctrlFrame.startValues + ctrlFrame.endValues; // unwind stack
         Value[] returns = new Value[endResults];
         for (int i = 0; i < returns.length; i++) {
             if (stack.size() > 0) returns[i] = stack.pop();
