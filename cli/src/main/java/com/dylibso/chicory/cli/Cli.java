@@ -2,9 +2,10 @@ package com.dylibso.chicory.cli;
 
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
-import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -56,7 +57,7 @@ public class Cli implements Runnable {
             throw new RuntimeException(e);
         }
         var logger = new SystemLogger();
-        var module = Module.builder(file).withLogger(logger).build();
+        var module = WasmModule.builder(file).withLogger(logger).build();
         var imports =
                 wasi
                         ? new HostImports(
@@ -66,19 +67,19 @@ public class Cli implements Runnable {
                                         .toHostFunctions())
                         : new HostImports();
         var instance =
-                Module.builder(file)
+                Instance.builder(module)
                         .withLogger(logger)
                         .withInitialize(true)
                         .withStart(false)
                         .withHostImports(imports)
-                        .build()
-                        .instantiate();
+                        .build();
 
         if (functionName != null) {
-            var exportSig = module.export(functionName);
+            // TODO: WRONG - fixme
+            var exportSig = module.exportSection().exportCount();
             var export = instance.export(functionName);
 
-            var typeId = instance.functionType(exportSig.index());
+            var typeId = instance.functionType(exportSig);
             var type = instance.type(typeId);
 
             if (arguments.length != type.params().size()) {

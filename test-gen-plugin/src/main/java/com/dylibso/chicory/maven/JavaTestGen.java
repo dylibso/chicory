@@ -99,11 +99,10 @@ public class JavaTestGen {
         cu.addImport("com.dylibso.chicory.testing.TestModule");
 
         // runtime imports
-        cu.addImport("com.dylibso.chicory.wasm.ModuleType");
+        cu.addImport("com.dylibso.chicory.wasm.WasmModuleType");
         cu.addImport("com.dylibso.chicory.wasm.exceptions.ChicoryException");
         cu.addImport("com.dylibso.chicory.runtime.ExportFunction");
         cu.addImport("com.dylibso.chicory.runtime.Instance");
-        cu.addImport("com.dylibso.chicory.runtime.Module");
 
         // base imports
         cu.addImport("com.dylibso.chicory.wasm.exceptions.InvalidException");
@@ -406,7 +405,9 @@ public class JavaTestGen {
             String hostFuncs,
             boolean excludeInvalid) {
         var additionalParam =
-                cmd.moduleType() == null ? "" : ", ModuleType." + cmd.moduleType().toUpperCase();
+                cmd.moduleType() == null
+                        ? ""
+                        : ", WasmModuleType." + cmd.moduleType().toUpperCase();
         return new NameExpr(
                 "TestModule.of(\n"
                         + INDENT
@@ -426,9 +427,7 @@ public class JavaTestGen {
                                         + "())\n"
                                 : "")
                         + INDENT
-                        + ".build()\n"
-                        + INDENT
-                        + ".instantiate()");
+                        + ".build()");
     }
 
     private String detectImports(String importsName, String varName, SourceRoot testSourcesRoot) {

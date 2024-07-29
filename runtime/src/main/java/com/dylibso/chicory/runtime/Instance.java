@@ -2,34 +2,51 @@ package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantInstance;
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
-import static com.dylibso.chicory.runtime.Module.START_FUNCTION_NAME;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
+import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
+import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
+import com.dylibso.chicory.wasm.exceptions.UnlinkableException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.Export;
+import com.dylibso.chicory.wasm.types.ExportSection;
+import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
+import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
+import com.dylibso.chicory.wasm.types.GlobalImport;
+import com.dylibso.chicory.wasm.types.Import;
 import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.MemoryImport;
+import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
+import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 public class Instance {
-    private final Module module;
+    public static final String START_FUNCTION_NAME = "_start";
+
+    private final WasmModule module;
+    private final Logger logger;
     private final Machine machine;
     private final FunctionBody[] functions;
     private final Memory memory;
@@ -45,12 +62,14 @@ public class Instance {
     private final Table[] roughTables;
     private TableInstance[] tables;
     private final Element[] elements;
+    private final Map<String, Export> exports;
     private final boolean start;
     private final boolean typeValidation;
     private final ExecutionListener listener;
 
     public Instance(
-            Module module,
+            WasmModule module,
+            Logger logger,
             Global[] globalInitializers,
             int importedGlobalsOffset,
             int importedFunctionsOffset,
@@ -63,11 +82,13 @@ public class Instance {
             HostImports imports,
             Table[] tables,
             Element[] elements,
+            Map<String, Export> exports,
             boolean initialize,
             boolean start,
             boolean typeValidation) {
         this(
                 module,
+                logger,
                 globalInitializers,
                 importedGlobalsOffset,
                 importedFunctionsOffset,
@@ -80,6 +101,7 @@ public class Instance {
                 imports,
                 tables,
                 elements,
+                exports,
                 InterpreterMachine::new,
                 initialize,
                 start,
@@ -88,7 +110,8 @@ public class Instance {
     }
 
     public Instance(
-            Module module,
+            WasmModule module,
+            Logger logger,
             Global[] globalInitializers,
             int importedGlobalsOffset,
             int importedFunctionsOffset,
@@ -101,12 +124,14 @@ public class Instance {
             HostImports imports,
             Table[] tables,
             Element[] elements,
+            Map<String, Export> exports,
             Function<Instance, Machine> machineFactory,
             boolean initialize,
             boolean start,
             boolean typeValidation,
             ExecutionListener listener) {
         this.module = module;
+        this.logger = logger;
         this.globalInitializers = globalInitializers.clone();
         this.globals = new GlobalInstance[globalInitializers.length];
         this.importedGlobalsOffset = importedGlobalsOffset;
@@ -121,6 +146,7 @@ public class Instance {
         this.machine = machineFactory.apply(this);
         this.roughTables = tables.clone();
         this.elements = elements.clone();
+        this.exports = exports;
         this.start = start;
         this.listener = listener;
         this.typeValidation = typeValidation;
@@ -235,8 +261,7 @@ public class Instance {
             throw new InvalidException("unknown memory");
         }
 
-        // Type validation needs to remain optional until it's finished
-        Export startFunction = module.export(START_FUNCTION_NAME);
+        Export startFunction = this.exports.get(START_FUNCTION_NAME);
         if (typeValidation) {
             int startFunctionIndex = startFunction == null ? -1 : startFunction.index();
             // TODO: can be parallelized?
@@ -268,7 +293,7 @@ public class Instance {
     }
 
     public ExportFunction export(String name) {
-        var export = module.export(name);
+        var export = this.exports.get(name);
         if (export == null) throw new ChicoryException("Unknown export with name " + name);
 
         switch (export.exportType()) {
@@ -276,7 +301,6 @@ public class Instance {
                 {
                     var funcId = export.index();
                     return (args) -> {
-                        this.module.logger().debug(() -> "Args: " + Arrays.toString(args));
                         try {
                             return machine.call(funcId, args);
                         } catch (InvalidException e) {
@@ -383,7 +407,7 @@ public class Instance {
         return imports;
     }
 
-    public Module module() {
+    public WasmModule module() {
         return module;
     }
 
@@ -431,6 +455,521 @@ public class Instance {
     public void onExecution(Instruction instruction, long[] operands, MStack stack) {
         if (listener != null) {
             listener.onExecution(instruction, operands, stack);
+        }
+    }
+
+    public static Builder builder(WasmModule module) {
+        return new Builder(module);
+    }
+
+    public static final class Builder {
+        private final WasmModule module;
+        private Logger logger;
+
+        private boolean initialize = true;
+        private boolean start = true;
+        private boolean typeValidation = true;
+        private boolean importValidation = true;
+        private ExecutionListener listener = null;
+        private HostImports hostImports = null;
+        private Function<Instance, Machine> machineFactory = null;
+
+        private Builder(WasmModule module) {
+            this.module = Objects.requireNonNull(module);
+        }
+
+        public Builder withLogger(Logger logger) {
+            this.logger = logger;
+            return this;
+        }
+
+        public Builder withInitialize(boolean init) {
+            this.initialize = init;
+            return this;
+        }
+
+        public Builder withStart(boolean s) {
+            this.start = s;
+            return this;
+        }
+
+        public Builder withTypeValidation(boolean v) {
+            this.typeValidation = v;
+            return this;
+        }
+
+        /*
+         * This method is experimental and might be dropped without notice in future releases.
+         */
+        public Builder withUnsafeExecutionListener(ExecutionListener listener) {
+            this.listener = listener;
+            return this;
+        }
+
+        public Builder withHostImports(HostImports hostImports) {
+            this.hostImports = hostImports;
+            return this;
+        }
+
+        public Builder withMachineFactory(Function<Instance, Machine> machineFactory) {
+            this.machineFactory = machineFactory;
+            return this;
+        }
+
+        public Builder withImportValidation(boolean importValidation) {
+            this.importValidation = importValidation;
+            return this;
+        }
+
+        private void validateHostFunctionSignature(FunctionImport imprt, HostFunction f) {
+            var expectedType = module.typeSection().getType(imprt.typeIndex());
+            if (expectedType.params().size() != f.paramTypes().size()
+                    || expectedType.returns().size() != f.returnTypes().size()) {
+                throw new UnlinkableException(
+                        "incompatible import type for host function "
+                                + f.moduleName()
+                                + "."
+                                + f.fieldName());
+            }
+            for (int i = 0; i < expectedType.params().size(); i++) {
+                var expected = expectedType.params().get(i);
+                var got = f.paramTypes().get(i);
+                if (expected != got) {
+                    throw new UnlinkableException(
+                            "incompatible import type for host function "
+                                    + f.moduleName()
+                                    + "."
+                                    + f.fieldName());
+                }
+            }
+            for (int i = 0; i < expectedType.returns().size(); i++) {
+                var expected = expectedType.returns().get(i);
+                var got = f.returnTypes().get(i);
+                if (expected != got) {
+                    throw new UnlinkableException(
+                            "incompatible import type for host function "
+                                    + f.moduleName()
+                                    + "."
+                                    + f.fieldName());
+                }
+            }
+        }
+
+        private void validateHostGlobalType(GlobalImport i, HostGlobal g) {
+            if (i.type() != g.instance().getValue().type()
+                    || i.mutabilityType() != g.mutabilityType()) {
+                throw new UnlinkableException("incompatible import type");
+            }
+        }
+
+        private void validateHostTableType(TableImport i, HostTable t) {
+            var minExpected = t.table().limits().min();
+            var maxExpected = t.table().limits().max();
+            var minCurrent = i.limits().min();
+            var maxCurrent = i.limits().max();
+            if (i.entryType() != t.table().elementType()) {
+                throw new UnlinkableException("incompatible import type");
+            } else if (minExpected < minCurrent || maxExpected > maxCurrent) {
+                throw new UnlinkableException(
+                        "incompatible import type, non-compatible limits, expected: "
+                                + i.limits()
+                                + ", current: "
+                                + t.table().limits()
+                                + " on table: "
+                                + t.moduleName()
+                                + "."
+                                + t.fieldName());
+            }
+        }
+
+        private void validateHostMemoryType(MemoryImport i, HostMemory m) {
+            var initialExpected = m.memory().initialPages();
+            var maxExpected = m.memory().maximumPages();
+            var initialCurrent = i.limits().initialPages();
+            var maxCurrent =
+                    (i.limits().maximumPages() == MemoryLimits.MAX_PAGES)
+                            ? Memory.RUNTIME_MAX_PAGES
+                            : i.limits().maximumPages();
+            if (initialCurrent > initialExpected
+                    || (maxCurrent < maxExpected && maxCurrent == initialCurrent)) {
+                throw new UnlinkableException(
+                        "incompatible import type, non-compatible limits, expected: "
+                                + i.limits()
+                                + ", current: "
+                                + m.memory().limits()
+                                + " on memory: "
+                                + m.moduleName()
+                                + "."
+                                + m.fieldName());
+            }
+        }
+
+        private void validateNegativeImportType(
+                String moduleName, String name, FromHost[] fromHost) {
+            for (var fh : fromHost) {
+                if (fh.moduleName().equals(moduleName) && fh.fieldName().equals(name)) {
+                    throw new UnlinkableException("incompatible import type");
+                }
+            }
+        }
+
+        private void validateNegativeImportType(
+                String moduleName, String name, ExternalType typ, HostImports hostImports) {
+            switch (typ) {
+                case FUNCTION:
+                    validateNegativeImportType(moduleName, name, hostImports.globals());
+                    validateNegativeImportType(moduleName, name, hostImports.memories());
+                    validateNegativeImportType(moduleName, name, hostImports.tables());
+                    break;
+                case GLOBAL:
+                    validateNegativeImportType(moduleName, name, hostImports.functions());
+                    validateNegativeImportType(moduleName, name, hostImports.memories());
+                    validateNegativeImportType(moduleName, name, hostImports.tables());
+                    break;
+                case MEMORY:
+                    validateNegativeImportType(moduleName, name, hostImports.functions());
+                    validateNegativeImportType(moduleName, name, hostImports.globals());
+                    validateNegativeImportType(moduleName, name, hostImports.tables());
+                    break;
+                case TABLE:
+                    validateNegativeImportType(moduleName, name, hostImports.functions());
+                    validateNegativeImportType(moduleName, name, hostImports.globals());
+                    validateNegativeImportType(moduleName, name, hostImports.memories());
+                    break;
+            }
+        }
+
+        private static void validateModule(WasmModule module) {
+            var functionSectionSize = module.functionSection().functionCount();
+            var codeSectionSize = module.codeSection().functionBodyCount();
+            var dataSectionSize = module.dataSection().dataSegmentCount();
+            if (functionSectionSize != codeSectionSize) {
+                throw new MalformedException("function and code section have inconsistent lengths");
+            }
+            if (module.dataCountSection() != null
+                    && dataSectionSize != module.dataCountSection().dataCount()) {
+                throw new MalformedException(
+                        "data count and data section have inconsistent lengths");
+            }
+        }
+
+        private HostImports mapHostImports(Import[] imports, HostImports hostImports) {
+            int hostFuncNum = 0;
+            int hostGlobalNum = 0;
+            int hostMemNum = 0;
+            int hostTableNum = 0;
+            for (var imprt : imports) {
+                switch (imprt.importType()) {
+                    case FUNCTION:
+                        hostFuncNum++;
+                        break;
+                    case GLOBAL:
+                        hostGlobalNum++;
+                        break;
+                    case MEMORY:
+                        hostMemNum++;
+                        break;
+                    case TABLE:
+                        hostTableNum++;
+                        break;
+                }
+            }
+
+            // TODO: this can probably be refactored ...
+            var hostFuncs = new HostFunction[hostFuncNum];
+            var hostFuncIdx = 0;
+            var hostGlobals = new HostGlobal[hostGlobalNum];
+            var hostGlobalIdx = 0;
+            var hostMems = new HostMemory[hostMemNum];
+            var hostMemIdx = 0;
+            var hostTables = new HostTable[hostTableNum];
+            var hostTableIdx = 0;
+            var hostIndex = new FromHost[hostFuncNum + hostGlobalNum + hostMemNum + hostTableNum];
+            int cnt;
+            for (var impIdx = 0; impIdx < imports.length; impIdx++) {
+                var i = imports[impIdx];
+                var name = i.moduleName() + "." + i.name();
+                var found = false;
+                validateNegativeImportType(i.moduleName(), i.name(), i.importType(), hostImports);
+                switch (i.importType()) {
+                    case FUNCTION:
+                        cnt = hostImports.functionCount();
+                        for (int j = 0; j < cnt; j++) {
+                            HostFunction f = hostImports.function(j);
+                            if (i.moduleName().equals(f.moduleName())
+                                    && i.name().equals(f.fieldName())) {
+                                validateHostFunctionSignature((FunctionImport) i, f);
+                                hostFuncs[hostFuncIdx] = f;
+                                hostIndex[impIdx] = f;
+                                found = true;
+                                break;
+                            }
+                        }
+                        hostFuncIdx++;
+                        break;
+                    case GLOBAL:
+                        cnt = hostImports.globalCount();
+                        for (int j = 0; j < cnt; j++) {
+                            HostGlobal g = hostImports.global(j);
+                            if (i.moduleName().equals(g.moduleName())
+                                    && i.name().equals(g.fieldName())) {
+                                validateHostGlobalType((GlobalImport) i, g);
+                                hostGlobals[hostGlobalIdx] = g;
+                                hostIndex[impIdx] = g;
+                                found = true;
+                                break;
+                            }
+                        }
+                        hostGlobalIdx++;
+                        break;
+                    case MEMORY:
+                        cnt = hostImports.memoryCount();
+                        for (int j = 0; j < cnt; j++) {
+                            HostMemory m = hostImports.memory(j);
+                            if (i.moduleName().equals(m.moduleName())
+                                    && i.name().equals(m.fieldName())) {
+                                validateHostMemoryType((MemoryImport) i, m);
+                                hostMems[hostMemIdx] = m;
+                                hostIndex[impIdx] = m;
+                                found = true;
+                                break;
+                            }
+                        }
+                        hostMemIdx++;
+                        break;
+                    case TABLE:
+                        cnt = hostImports.tableCount();
+                        for (int j = 0; j < cnt; j++) {
+                            HostTable t = hostImports.table(j);
+                            if (i.moduleName().equals(t.moduleName())
+                                    && i.name().equals(t.fieldName())) {
+                                validateHostTableType((TableImport) i, t);
+                                hostTables[hostTableIdx] = t;
+                                hostIndex[impIdx] = t;
+                                found = true;
+                                break;
+                            }
+                        }
+                        hostTableIdx++;
+                        break;
+                }
+                if (!found) {
+                    if (importValidation) {
+                        throw new UnlinkableException(
+                                "unknown import, could not find host function for import number: "
+                                        + impIdx
+                                        + " named "
+                                        + name);
+                    } else {
+                        this.logger.warnf(
+                                "Could not find host function for import number: %d named %s",
+                                impIdx, name);
+                    }
+                }
+            }
+
+            var result = new HostImports(hostFuncs, hostGlobals, hostMems, hostTables);
+            return result;
+        }
+
+        private Map<String, Export> genExports(ExportSection export) {
+            var exports = new HashMap<String, Export>();
+            int cnt = export.exportCount();
+            for (int i = 0; i < cnt; i++) {
+                Export e = export.getExport(i);
+                if (exports.containsKey(e.name())) {
+                    throw new InvalidException("duplicate export name " + e.name());
+                }
+                exports.put(e.name(), e);
+            }
+            return exports;
+        }
+
+        public Instance build() {
+            validateModule(module);
+            Map<String, Export> exports = genExports(module.exportSection());
+            var globalInitializers = module.globalSection().globals();
+
+            var dataSegments = module.dataSection().dataSegments();
+
+            // TODO i guess we should explode if this is the case, is this possible?
+            var types = module.typeSection().types();
+
+            int numFuncTypes =
+                    module.functionSection().functionCount()
+                            + module.importSection().count(ExternalType.FUNCTION);
+
+            FunctionBody[] functions = module.codeSection().functionBodies();
+
+            int importId = 0;
+            var functionTypes = new int[numFuncTypes];
+            var funcIdx = 0;
+
+            int importCount = module.importSection().importCount();
+            var imports = new Import[importCount];
+            for (int i = 0; i < importCount; i++) {
+                Import imprt = module.importSection().getImport(i);
+                switch (imprt.importType()) {
+                    case FUNCTION:
+                        {
+                            var type = ((FunctionImport) imprt).typeIndex();
+                            if (type >= this.module.typeSection().typeCount()) {
+                                throw new InvalidException("unknown type");
+                            }
+                            functionTypes[funcIdx] = type;
+                            // The global function id increases on this table
+                            // function ids are assigned on imports first
+                            imports[importId++] = imprt;
+                            funcIdx++;
+                            break;
+                        }
+                    default:
+                        imports[importId++] = imprt;
+                        break;
+                }
+            }
+
+            var mappedHostImports =
+                    (hostImports == null)
+                            ? new HostImports()
+                            : mapHostImports(imports, hostImports);
+
+            if (module.startSection() != null) {
+                var export =
+                        new Export(
+                                START_FUNCTION_NAME,
+                                (int) module.startSection().startIndex(),
+                                ExternalType.FUNCTION);
+                exports.put(START_FUNCTION_NAME, export);
+            }
+
+            for (int i = 0; i < module.functionSection().functionCount(); i++) {
+                functionTypes[funcIdx++] = module.functionSection().getFunctionType(i);
+            }
+
+            var tableLength = module.tableSection().tableCount();
+            Table[] tables = new Table[tableLength];
+            for (int i = 0; i < tableLength; i++) {
+                tables[i] = module.tableSection().getTable(i);
+            }
+
+            Element[] elements = module.elementSection().elements();
+
+            Memory memory = null;
+            if (module.memorySection() != null) {
+                var memories = module.memorySection();
+                if (memories.memoryCount() + mappedHostImports.memoryCount() > 1) {
+                    throw new InvalidException("multiple memories are not supported");
+                }
+                if (memories.memoryCount() > 0) {
+                    memory = new Memory(memories.getMemory(0).memoryLimits());
+                }
+            } else {
+                if (mappedHostImports.memoryCount() > 0) {
+                    if (mappedHostImports.memoryCount() != 1) {
+                        throw new InvalidException("multiple memories");
+                    }
+                    if (mappedHostImports.memory(0) == null
+                            || mappedHostImports.memory(0).memory() == null) {
+                        throw new InvalidException(
+                                "unknown memory, imported memory not defined, cannot run the"
+                                        + " program");
+                    }
+                    memory = mappedHostImports.memory(0).memory();
+                } else {
+                    // No memory defined
+                }
+            }
+
+            var globalImportsOffset = 0;
+            var functionImportsOffset = 0;
+            var tablesImportsOffset = 0;
+            var memoryImportsOffset = 0;
+            for (int i = 0; i < imports.length; i++) {
+                switch (imports[i].importType()) {
+                    case GLOBAL:
+                        globalImportsOffset++;
+                        break;
+                    case FUNCTION:
+                        functionImportsOffset++;
+                        break;
+                    case TABLE:
+                        tablesImportsOffset++;
+                        break;
+                    case MEMORY:
+                        memoryImportsOffset++;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            for (var e : exports.values()) {
+                switch (e.exportType()) {
+                    case FUNCTION:
+                        {
+                            if (e.index()
+                                    >= module.functionSection().functionCount()
+                                            + functionImportsOffset) {
+                                throw new InvalidException("unknown function " + e.index());
+                            }
+                            break;
+                        }
+                    case GLOBAL:
+                        {
+                            if (e.index()
+                                    >= module.globalSection().globalCount() + globalImportsOffset) {
+                                throw new InvalidException("unknown global " + e.index());
+                            }
+                            break;
+                        }
+                    case TABLE:
+                        {
+                            if (e.index()
+                                    >= module.tableSection().tableCount() + tablesImportsOffset) {
+                                throw new InvalidException("unknown table " + e.index());
+                            }
+                            break;
+                        }
+                    case MEMORY:
+                        {
+                            var memoryCount =
+                                    (module.memorySection() == null)
+                                            ? 0
+                                            : module.memorySection().memoryCount();
+                            if (e.index() >= memoryCount + memoryImportsOffset) {
+                                throw new InvalidException("unknown memory " + e);
+                            }
+                            break;
+                        }
+                }
+            }
+
+            if (machineFactory == null) {
+                machineFactory = InterpreterMachine::new;
+            }
+
+            return new Instance(
+                    module,
+                    logger,
+                    globalInitializers,
+                    globalImportsOffset,
+                    functionImportsOffset,
+                    tablesImportsOffset,
+                    memory,
+                    dataSegments,
+                    functions,
+                    types,
+                    functionTypes,
+                    mappedHostImports,
+                    tables,
+                    elements,
+                    exports,
+                    machineFactory,
+                    initialize,
+                    start,
+                    typeValidation,
+                    listener);
         }
     }
 }

@@ -39,7 +39,7 @@ import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.StackFrame;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
-import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
@@ -82,7 +82,7 @@ public final class AotMachine implements Machine {
     public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.$gen.CompiledModule";
     private static final Instruction FUNCTION_SCOPE = new Instruction(-1, OpCode.NOP, new long[0]);
 
-    private final Module module;
+    private final WasmModule module;
     private final Instance instance;
     private final MethodHandle[] compiledFunctions;
     private final byte[] compiledClass;
@@ -307,7 +307,7 @@ public final class AotMachine implements Machine {
 
     public AotMachine(Instance instance) {
         this.instance = requireNonNull(instance, "instance");
-        this.module = instance.module().wasmModule();
+        this.module = instance.module();
 
         this.globalTypes = getGlobalTypes(module);
 
@@ -318,7 +318,7 @@ public final class AotMachine implements Machine {
         this.compiledFunctions = compile(loadClass(DEFAULT_CLASS_NAME, compiledClass));
     }
 
-    private static List<ValueType> getGlobalTypes(Module module) {
+    private static List<ValueType> getGlobalTypes(WasmModule module) {
         var importedGlobals =
                 module.importSection().stream()
                         .filter(GlobalImport.class::isInstance)
@@ -330,7 +330,7 @@ public final class AotMachine implements Machine {
         return Stream.concat(importedGlobals, globals).collect(toUnmodifiableList());
     }
 
-    private static List<FunctionType> getFunctionTypes(Module module) {
+    private static List<FunctionType> getFunctionTypes(WasmModule module) {
         var importedFunctions =
                 module.importSection().stream()
                         .filter(FunctionImport.class::isInstance)

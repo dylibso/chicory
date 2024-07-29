@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public class Module {
+public class WasmModule {
     private final HashMap<String, CustomSection> customSections;
 
     private TypeSection typeSection = new TypeSection();
@@ -51,7 +51,7 @@ public class Module {
     private DataSection dataSection = new DataSection();
     private DataCountSection dataCountSection;
 
-    public Module() {
+    public WasmModule() {
         this.customSections = new HashMap<>();
     }
 
@@ -178,12 +178,12 @@ public class Module {
     }
 
     /**
-     * Creates a {@link Builder} for the specified {@link com.dylibso.chicory.wasm.Module}
+     * Creates a {@link Builder} for the specified {@link WasmModule}
      *
      * @param wasmModule the already parsed Wasm module
      * @return a {@link Builder} for reading the module definition from the specified input stream
      */
-    public static Builder builder(com.dylibso.chicory.wasm.Module wasmModule) {
+    public static Builder builder(WasmModule wasmModule) {
         return new Builder(wasmModule);
     }
 
@@ -226,27 +226,6 @@ public class Module {
     }
 
     /**
-     * Creates a {@link Builder} for the specified classpath resource
-     *
-     * @param classpathResource the name of the resource
-     * @return a {@link Builder}  for reading the module definition from the specified resource
-     */
-    public static Builder builder(String classpathResource) {
-        return new Builder(
-                () -> {
-                    InputStream is =
-                            Thread.currentThread()
-                                    .getContextClassLoader()
-                                    .getResourceAsStream(classpathResource);
-                    if (is == null) {
-                        throw new IllegalArgumentException(
-                                "Resource not found at classpath: " + classpathResource);
-                    }
-                    return is;
-                });
-    }
-
-    /**
      * Creates a {@link Builder} for the specified {@link Path} resource
      *
      * @param path the path of the resource
@@ -264,17 +243,17 @@ public class Module {
     }
 
     public static class Builder {
-        private final Module parsed;
+        private final WasmModule parsed;
         private final Supplier<InputStream> inputStreamSupplier;
         private Logger logger;
-        private ModuleType moduleType = ModuleType.BINARY;
+        private WasmModuleType moduleType = WasmModuleType.BINARY;
 
         private Builder(Supplier<InputStream> inputStreamSupplier) {
             this.inputStreamSupplier = Objects.requireNonNull(inputStreamSupplier);
             this.parsed = null;
         }
 
-        private Builder(Module parsed) {
+        private Builder(WasmModule parsed) {
             this.parsed = Objects.requireNonNull(parsed);
             this.inputStreamSupplier = null;
         }
@@ -284,16 +263,16 @@ public class Module {
             return this;
         }
 
-        public Builder withType(ModuleType type) {
+        public Builder withType(WasmModuleType type) {
             this.moduleType = type;
             return this;
         }
 
-        public Module build() {
+        public WasmModule build() {
             final Logger logger = this.logger != null ? this.logger : new SystemLogger();
             final Parser parser = new Parser(logger);
 
-            Module parsed = this.parsed;
+            WasmModule parsed = this.parsed;
             if (parsed == null) {
                 try (final InputStream is = inputStreamSupplier.get()) {
                     parsed = parser.parseModule(is);

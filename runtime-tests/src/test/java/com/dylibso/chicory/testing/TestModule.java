@@ -2,25 +2,25 @@ package com.dylibso.chicory.testing;
 
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wabt.Wat2Wasm;
-import com.dylibso.chicory.wasm.ModuleType;
+import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.WasmModuleType;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import java.io.File;
 
 public class TestModule {
 
-    private Module.Builder builder;
-    private Module module;
+    private WasmModule module;
+    private Instance instance;
 
     private HostImports imports;
 
     public static TestModule of(File file) {
-        return of(file, ModuleType.BINARY);
+        return of(file, WasmModuleType.BINARY);
     }
 
-    public static TestModule of(Module.Builder builder) {
-        return new TestModule(builder);
+    public static TestModule of(WasmModule module) {
+        return new TestModule(module);
     }
 
     private static final String HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT =
@@ -46,8 +46,8 @@ public class TestModule {
                     + "i32 constant out of range "
                     + "unknown label";
 
-    public static TestModule of(File file, ModuleType moduleType) {
-        if (moduleType == ModuleType.TEXT) {
+    public static TestModule of(File file, WasmModuleType moduleType) {
+        if (moduleType == WasmModuleType.TEXT) {
             byte[] parsed;
             try {
                 parsed = Wat2Wasm.parse(file);
@@ -55,27 +55,24 @@ public class TestModule {
                 throw new MalformedException(
                         e.getMessage() + HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT);
             }
-            return of(Module.builder(parsed));
+            return of(WasmModule.builder(parsed).build());
         }
-        return of(Module.builder(file));
+        return of(WasmModule.builder(file).build());
     }
 
-    public TestModule(Module.Builder builder) {
-        this.builder = builder;
+    public TestModule(WasmModule module) {
+        this.module = module;
     }
 
-    public TestModule build() {
-        this.module =
-                builder.withInitialize(false).withStart(false).withHostImports(imports).build();
-        return this;
+    public Instance build() {
+        if (this.instance == null) {
+            this.instance = Instance.builder(module).withHostImports(imports).build();
+        }
+        return this.instance;
     }
 
     public TestModule withHostImports(HostImports imports) {
         this.imports = imports;
         return this;
-    }
-
-    public Instance instantiate() {
-        return module.instantiate().initialize(true);
     }
 }

@@ -5,11 +5,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -17,13 +19,15 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
 public class ModuleTest {
-    /**
-     * Rigorous Test :-)
-     */
+
+    private static InputStream load(String fileName) {
+        return Thread.currentThread().getContextClassLoader().getResourceAsStream(fileName);
+    }
+
     @Test
     public void shouldWorkFactorial() {
-        var module = Module.builder("compiled/iterfact.wat.wasm").build();
-        var instance = module.instantiate();
+        var module = WasmModule.builder(load("compiled/iterfact.wat.wasm")).build();
+        var instance = Instance.builder(module).build();
         var iterFact = instance.export("iterFact");
         var result = iterFact.apply(Value.i32(5))[0];
         assertEquals(120, result.asInt());
@@ -31,7 +35,9 @@ public class ModuleTest {
 
     @Test
     public void shouldSupportBrTable() {
-        var instance = Module.builder("compiled/br_table.wat.wasm").build().instantiate();
+        var instance =
+                Instance.builder(WasmModule.builder(load("compiled/br_table.wat.wasm")).build())
+                        .build();
         var switchLike = instance.export("switch_like");
         var result = switchLike.apply(Value.i32(0))[0];
         assertEquals(102, result.asInt());
@@ -51,7 +57,9 @@ public class ModuleTest {
 
     @Test
     public void shouldExerciseBranches() {
-        var module = Module.builder("compiled/branching.wat.wasm").build().instantiate();
+        var module =
+                Instance.builder(WasmModule.builder(load("compiled/branching.wat.wasm")).build())
+                        .build();
         var foo = module.export("foo");
 
         var result = foo.apply(Value.i32(0))[0];
@@ -92,10 +100,10 @@ public class ModuleTest {
                         List.of());
         var funcs = new HostFunction[] {func};
         var instance =
-                Module.builder("compiled/host-function.wat.wasm")
+                Instance.builder(
+                                WasmModule.builder(load("compiled/host-function.wat.wasm")).build())
                         .withHostImports(new HostImports(funcs))
-                        .build()
-                        .instantiate();
+                        .build();
         var logIt = instance.export("logIt");
         logIt.apply();
 
@@ -104,8 +112,10 @@ public class ModuleTest {
 
     @Test
     public void shouldComputeFactorial() {
-        var module = Module.builder("compiled/iterfact.wat.wasm").build().instantiate();
-        var iterFact = module.export("iterFact");
+        var instance =
+                Instance.builder(WasmModule.builder(load("compiled/iterfact.wat.wasm")).build())
+                        .build();
+        var iterFact = instance.export("iterFact");
 
         // don't make this too big we will overflow 32 bits
         for (var i = 0; i < 10; i++) {
@@ -143,24 +153,25 @@ public class ModuleTest {
                         List.of(ValueType.I32),
                         List.of());
         var funcs = new HostFunction[] {func};
-        var module =
-                Module.builder("compiled/start.wat.wasm")
-                        .withHostImports(new HostImports(funcs))
-                        .build();
-        module.instantiate();
+        Instance.builder(WasmModule.builder(load("compiled/start.wat.wasm")).build())
+                .withHostImports(new HostImports(funcs))
+                .build();
 
         assertTrue(count.get() > 0);
     }
 
     @Test
     public void shouldTrapOnUnreachable() {
-        var module = Module.builder("compiled/trap.wat.wasm").build();
-        assertThrows(UninstantiableException.class, module::instantiate);
+        var instanceBuilder =
+                Instance.builder(WasmModule.builder(load("compiled/trap.wat.wasm")).build());
+        assertThrows(UninstantiableException.class, () -> instanceBuilder.build());
     }
 
     @Test
     public void shouldSupportGlobals() {
-        var instance = Module.builder("compiled/globals.wat.wasm").build().instantiate();
+        var instance =
+                Instance.builder(WasmModule.builder(load("compiled/globals.wat.wasm")).build())
+                        .build();
         var doit = instance.export("doit");
         var result = doit.apply(Value.i32(32))[0];
         assertEquals(42, result.asInt());
@@ -168,7 +179,9 @@ public class ModuleTest {
 
     @Test
     public void shouldCountVowels() {
-        var instance = Module.builder("compiled/count_vowels.rs.wasm").build().instantiate();
+        var instance =
+                Instance.builder(WasmModule.builder(load("compiled/count_vowels.rs.wasm")).build())
+                        .build();
         var alloc = instance.export("alloc");
         var dealloc = instance.export("dealloc");
         var countVowels = instance.export("count_vowels");
@@ -185,35 +198,18 @@ public class ModuleTest {
     @Test
     public void shouldRunBasicCProgram() {
         // check with: wasmtime src/test/resources/wasm/basic.c.wasm --invoke run
-        var instance = Module.builder("compiled/basic.c.wasm").build().instantiate();
+        var instance =
+                Instance.builder(WasmModule.builder(load("compiled/basic.c.wasm")).build()).build();
         var run = instance.export("run");
         var result = run.apply()[0];
         assertEquals(42, result.asInt());
     }
 
-    // @Test
-    // public void shouldRunComplexFunction() {
-    // // check with: wasmtime src/test/resources/wasm/complex.c.wasm --invoke run
-    // var instance =
-    // Module.builder("wasm/complex.c.wasm").instantiate();
-    // var run = instance.getExport("run");
-    // var result = run.apply();
-    // assertEquals(-679, result.asInt());
-    // }
-
-    // @Test
-    // public void shouldRunMemoryProgramInC() {
-    // // check with: wasmtime src/test/resources/wasm/memory.c.wasm --invoke run
-    // var instance =
-    // Module.builder(("wasm/memory.c.wasm").instantiate();
-    // var run = instance.getExport("run");
-    // var result = run.apply();
-    // assertEquals(11, result.asInt());
-    // }
-
     @Test
     public void shouldWorkWithMemoryOps() {
-        var instance = Module.builder("compiled/memory.wat.wasm").build().instantiate();
+        var instance =
+                Instance.builder(WasmModule.builder(load("compiled/memory.wat.wasm")).build())
+                        .build();
         var run = instance.export("run32");
         var results = run.apply(Value.i32(42));
         var result = results[0];
@@ -242,7 +238,9 @@ public class ModuleTest {
     public void shouldRunKitchenSink() {
         // check with: wasmtime src/test/resources/wasm/kitchensink.wat.wasm --invoke
         // run 100
-        var instance = Module.builder("compiled/kitchensink.wat.wasm").build().instantiate();
+        var instance =
+                Instance.builder(WasmModule.builder(load("compiled/kitchensink.wat.wasm")).build())
+                        .build();
 
         var run = instance.export("run");
         assertEquals(6, run.apply(Value.i32(100))[0].asInt());
@@ -292,11 +290,11 @@ public class ModuleTest {
                         new HostGlobal[0],
                         memory,
                         new HostTable[0]);
-        var module =
-                Module.builder("compiled/mixed-imports.wat.wasm")
+        var instance =
+                Instance.builder(
+                                WasmModule.builder(load("compiled/mixed-imports.wat.wasm")).build())
                         .withHostImports(hostImports)
                         .build();
-        var instance = module.instantiate();
 
         var run = instance.export("main");
         run.apply();
@@ -305,7 +303,10 @@ public class ModuleTest {
 
     @Test
     public void issue294_BRIF() {
-        var instance = Module.builder("compiled/issue294_brif.wat.wasm").build().instantiate();
+        var instance =
+                Instance.builder(
+                                WasmModule.builder(load("compiled/issue294_brif.wat.wasm")).build())
+                        .build();
 
         var main = instance.export("main");
         assertEquals(5, main.apply(Value.i32(5))[0].asInt());
@@ -313,7 +314,9 @@ public class ModuleTest {
 
     @Test
     public void issue294_BR() {
-        var instance = Module.builder("compiled/issue294_br.wat.wasm").build().instantiate();
+        var instance =
+                Instance.builder(WasmModule.builder(load("compiled/issue294_br.wat.wasm")).build())
+                        .build();
 
         var main = instance.export("main");
         assertEquals(4, main.apply()[0].asInt());
@@ -321,7 +324,11 @@ public class ModuleTest {
 
     @Test
     public void issue294_BRTABLE() {
-        var instance = Module.builder("compiled/issue294_brtable.wat.wasm").build().instantiate();
+        var instance =
+                Instance.builder(
+                                WasmModule.builder(load("compiled/issue294_brtable.wat.wasm"))
+                                        .build())
+                        .build();
 
         var main = instance.export("main");
         assertEquals(4, main.apply()[0].asInt());
@@ -331,12 +338,11 @@ public class ModuleTest {
     public void shouldCountNumberOfInstructions() {
         AtomicLong count = new AtomicLong(0);
         var instance =
-                Module.builder("compiled/iterfact.wat.wasm")
+                Instance.builder(WasmModule.builder(load("compiled/iterfact.wat.wasm")).build())
                         .withUnsafeExecutionListener(
                                 (Instruction instruction, long[] operands, MStack stack) ->
                                         count.getAndIncrement())
-                        .build()
-                        .instantiate();
+                        .build();
         var iterFact = instance.export("iterFact");
 
         iterFact.apply(Value.i32(100));
@@ -350,23 +356,21 @@ public class ModuleTest {
     public void shouldValidateTypes() {
         assertDoesNotThrow(
                 () ->
-                        Module.builder("compiled/i32.wat.wasm")
+                        Instance.builder(WasmModule.builder(load("compiled/i32.wat.wasm")).build())
                                 .withTypeValidation(true)
-                                .build()
-                                .instantiate());
+                                .build());
     }
 
     @Test
     public void shouldConsumeStackLoopOperations() {
         AtomicLong finalStackSize = new AtomicLong(0);
         var instance =
-                Module.builder("compiled/fac.wat.wasm")
+                Instance.builder(WasmModule.builder(load("compiled/fac.wat.wasm")).build())
                         .withUnsafeExecutionListener(
                                 (Instruction instruction, long[] operands, MStack stack) -> {
                                     finalStackSize.set(stack.size());
                                 })
-                        .build()
-                        .instantiate();
+                        .build();
         var facSsa = instance.export("fac-ssa");
 
         var number = 100;

@@ -99,7 +99,7 @@ public final class Parser {
         }
     }
 
-    private void onSection(Module module, Section s) {
+    private void onSection(WasmModule module, Section s) {
         switch (s.sectionId()) {
             case SectionId.CUSTOM:
                 module.addCustomSection((CustomSection) s);
@@ -146,8 +146,8 @@ public final class Parser {
         }
     }
 
-    public Module parseModule(InputStream in) {
-        Module module = new Module();
+    public WasmModule parseModule(InputStream in) {
+        WasmModule module = new WasmModule();
         try {
             parse(in, (s) -> onSection(module, s));
         } catch (MalformedException e) {
