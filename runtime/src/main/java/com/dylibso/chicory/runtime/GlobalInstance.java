@@ -18,6 +18,10 @@ public class GlobalInstance {
         this.value = value;
     }
 
+    public void setValue(long value) {
+        this.value = new Value(this.value.type(), value);
+    }
+
     public Instance getInstance() {
         return instance;
     }

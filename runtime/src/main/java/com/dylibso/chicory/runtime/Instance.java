@@ -294,7 +294,7 @@ public class Instance {
                         @Override
                         public Value[] apply(Value... args) throws ChicoryException {
                             assert (args.length == 0);
-                            return new Value[] {readGlobal(export.index())};
+                            return new Value[] {readGlobalValue(export.index())};
                         }
                     };
                 }
@@ -329,14 +329,14 @@ public class Instance {
         return globals[idx - importedGlobalsOffset];
     }
 
-    public void writeGlobal(int idx, Value val) {
+    public void writeGlobal(int idx, long val) {
         if (idx < importedGlobalsOffset) {
             imports.global(idx).instance().setValue(val);
         }
         globals[idx - importedGlobalsOffset].setValue(val);
     }
 
-    public Value readGlobal(int idx) {
+    public Value readGlobalValue(int idx) {
         if (idx < importedGlobalsOffset) {
             return imports.global(idx).instance().getValue();
         }
@@ -345,6 +345,10 @@ public class Instance {
             throw new InvalidException("unknown global " + idx);
         }
         return globals[idx - importedGlobalsOffset].getValue();
+    }
+
+    public long readGlobal(int idx) {
+        return readGlobalValue(idx).raw();
     }
 
     public Global globalInitializer(int idx) {

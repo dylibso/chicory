@@ -208,6 +208,10 @@ public class Value {
         }
     }
 
+    public long raw() {
+        return data;
+    }
+
     public String toString() {
         switch (this.type) {
             case I32:
