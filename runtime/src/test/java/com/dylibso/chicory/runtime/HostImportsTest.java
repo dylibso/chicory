@@ -1,7 +1,6 @@
 package com.dylibso.chicory.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.Arrays;
@@ -20,7 +19,6 @@ class HostImportsTest {
             assertEquals(0, result.globalCount());
             assertEquals(0, result.memoryCount());
             assertEquals(0, result.tableCount());
-            assertNull(result.index());
         }
 
         @Nested
@@ -147,34 +145,6 @@ class HostImportsTest {
                                                 "spectest", "table_2", Collections.emptyMap()))
                                 .build();
                 assertEquals(2, result.tableCount());
-            }
-        }
-
-        @Nested
-        class Index {
-
-            @Test
-            void withIndex() {
-                final HostImports result =
-                        HostImports.builder()
-                                .withIndex(
-                                        Arrays.asList(
-                                                new HostFunction(null, "", "", null, null),
-                                                new HostGlobal(
-                                                        "spectest",
-                                                        "global_i32",
-                                                        new GlobalInstance(Value.i32(666)))))
-                                .build();
-                assertEquals(2, result.index().length);
-            }
-
-            @Test
-            void addIndex() {
-                final HostImports result =
-                        HostImports.builder()
-                                .addIndex(new HostFunction(null, "", "", null, null))
-                                .build();
-                assertEquals(1, result.index().length);
             }
         }
     }

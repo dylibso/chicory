@@ -430,7 +430,6 @@ public class Module {
         var hostMemIdx = 0;
         var hostTables = new HostTable[hostTableNum];
         var hostTableIdx = 0;
-        var hostIndex = new FromHost[hostFuncNum + hostGlobalNum + hostMemNum + hostTableNum];
         int cnt;
         for (var impIdx = 0; impIdx < imports.length; impIdx++) {
             var i = imports[impIdx];
@@ -446,7 +445,6 @@ public class Module {
                                 && i.name().equals(f.fieldName())) {
                             validateHostFunctionSignature((FunctionImport) i, f);
                             hostFuncs[hostFuncIdx] = f;
-                            hostIndex[impIdx] = f;
                             found = true;
                             break;
                         }
@@ -461,7 +459,6 @@ public class Module {
                                 && i.name().equals(g.fieldName())) {
                             validateHostGlobalType((GlobalImport) i, g);
                             hostGlobals[hostGlobalIdx] = g;
-                            hostIndex[impIdx] = g;
                             found = true;
                             break;
                         }
@@ -476,7 +473,6 @@ public class Module {
                                 && i.name().equals(m.fieldName())) {
                             validateHostMemoryType((MemoryImport) i, m);
                             hostMems[hostMemIdx] = m;
-                            hostIndex[impIdx] = m;
                             found = true;
                             break;
                         }
@@ -491,7 +487,6 @@ public class Module {
                                 && i.name().equals(t.fieldName())) {
                             validateHostTableType((TableImport) i, t);
                             hostTables[hostTableIdx] = t;
-                            hostIndex[impIdx] = t;
                             found = true;
                             break;
                         }
@@ -515,7 +510,6 @@ public class Module {
         }
 
         var result = new HostImports(hostFuncs, hostGlobals, hostMems, hostTables);
-        result.setIndex(hostIndex);
         return result;
     }
 
