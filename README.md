@@ -113,13 +113,13 @@ Now let's load this module and instantiate it:
 ```java
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.runtime.Instance;
 import java.io.File;
 
 // point this to your path on disk
-Module module = Module.builder(new File("./factorial.wasm")).build();
-Instance instance = module.instantiate();
+WasmModule module = WasmModule.builder(new File("./factorial.wasm")).build();
+Instance instance = Instance.builder(module).build();
 ```
 
 You can think of the `module` as the inert code and the `instance` as a virtual machine
@@ -171,7 +171,7 @@ copyFileFromWasmCorpus("count_vowels.rs.wasm", "count_vowels.wasm");
 Build and instantiate this module:
 
 ```java
-Instance instance = Module.builder(new File("./count_vowels.wasm")).build().instantiate();
+Instance instance = Instance.builder(WasmModule.builder(new File("./count_vowels.wasm")).build()).build();
 ExportFunction countVowels = instance.export("count_vowels");
 ```
 
@@ -278,7 +278,7 @@ Now we just need to pass this host function in during our instantiation phase:
 ```java
 import com.dylibso.chicory.runtime.HostImports;
 var imports = new HostImports(new HostFunction[] {func});
-var instance = Module.builder(new File("./logger.wasm")).withHostImports(imports).build().instantiate();
+var instance = Instance.builder(WasmModule.builder(new File("./logger.wasm")).build()).withHostImports(imports).build();
 var logIt = instance.export("logIt");
 logIt.apply();
 // should print "Hello, World!" 10 times
