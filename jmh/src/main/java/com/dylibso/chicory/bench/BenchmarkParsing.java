@@ -1,10 +1,11 @@
 package com.dylibso.chicory.bench;
 
-import com.dylibso.chicory.runtime.Module;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
+
+import com.dylibso.chicory.wasm.WasmModule;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -41,6 +42,6 @@ public class BenchmarkParsing {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void benchmark(Blackhole bh) {
-        bh.consume(Module.builder(memoryMappedFile).build());
+        bh.consume(WasmModule.builder(memoryMappedFile).build());
     }
 }
