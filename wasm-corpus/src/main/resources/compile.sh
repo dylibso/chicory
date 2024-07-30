@@ -41,6 +41,11 @@ compileGo() {
   (set -x; GOOS=wasip1 GOARCH=wasm go build -o "./compiled/$filename.wasm" $1)
 }
 
+compileDotnet() {
+  filename=$(basename "$1")
+  (set -x; cd $1 && dotnet publish -c Release && cp ./bin/Release/net8.0/wasi-wasm/AppBundle/*.wasm "../../compiled/$filename.dotnet.wasm")
+}
+
 compile() {
   lang=$1
   case "$lang" in
@@ -62,6 +67,9 @@ compile() {
     go)
       compileGo $2
       ;;
+    dotnet)
+      compileDotnet $2
+      ;;
     *)
       echo "Don't know how to compile language $lang"
       exit 1
@@ -73,7 +81,7 @@ lang="${1:-all}"
 path="${2:-all}"
 
 if [[ "$lang" == "all" ]]; then
-  langs=("wat" "rust" "c" "javy" "tinygo", "go")
+  langs=("wat" "rust" "c" "javy" "tinygo", "go", "dotnet")
 else
   langs=("$lang")
 fi

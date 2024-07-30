@@ -170,9 +170,24 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("clock_res_get: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: clock_res_get");
-                    // return new Value[] { Value.i32(0) };
+                    int clockId = args[0].asInt();
+                    int resultPtr = args[1].asInt();
+
+                    Memory memory = instance.memory();
+                    switch (clockId) {
+                        case WasiClockId.REALTIME:
+                        case WasiClockId.MONOTONIC:
+                            memory.writeLong(resultPtr, 1L);
+                            return wasiResult(WasiErrno.ESUCCESS);
+                        case WasiClockId.PROCESS_CPUTIME_ID:
+                            throw new WASMRuntimeException(
+                                    "We don't yet support clockid process_cputime_id");
+                        case WasiClockId.THREAD_CPUTIME_ID:
+                            throw new WASMRuntimeException(
+                                    "We don't yet support clockid thread_cputime_id");
+                        default:
+                            return wasiResult(WasiErrno.EINVAL);
+                    }
                 },
                 "wasi_snapshot_preview1",
                 "clock_res_get",

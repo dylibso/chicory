@@ -49,9 +49,6 @@
               <include>tests/rust/testsuite/*.wasm</include>
             </includes>
             <excludes>
-              <!-- clock_getres is not implemented -->
-              <exclude>tests/c/testsuite/clock_getres-monotonic.wasm</exclude>
-              <exclude>tests/c/testsuite/clock_getres-realtime.wasm</exclude>
               <!-- pread is not implemented -->
               <exclude>tests/c/testsuite/pread-with-access.wasm</exclude>
               <!-- pwrite is not implemented -->

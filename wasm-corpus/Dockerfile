@@ -4,7 +4,7 @@ FROM ubuntu:jammy
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    apt-get install -y curl build-essential gcc make pkg-config libssl-dev && \
+    apt-get install -y curl build-essential gcc make pkg-config libssl-dev dotnet-sdk-8.0 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -44,6 +44,9 @@ ENV GO_VERSION=1.21.7
 RUN curl -L -O https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz \
     && tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz \
     && rm go${GO_VERSION}.linux-amd64.tar.gz
+
+# Install dotnet
+RUN dotnet workload install wasi-experimental
 
 # Set the Go environment variables
 ENV PATH=$PATH:/usr/local/go/bin
