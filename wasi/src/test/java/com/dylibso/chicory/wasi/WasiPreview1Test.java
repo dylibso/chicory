@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasi;
 
+import static java.nio.file.Files.copy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.log.Logger;
@@ -7,7 +8,17 @@ import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.wasm.types.Value;
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.nio.file.FileSystem;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 public class WasiPreview1Test {
@@ -76,5 +87,47 @@ public class WasiPreview1Test {
         var result = sum.apply(Value.i32(20), Value.i32(22))[0];
 
         assertEquals(result.asInt(), 42);
+    }
+
+    @Test
+    public void shouldRunPythonModule() throws Exception {
+        // implementation of this tutorial:
+        var fakeStdout = new MockPrintStream();
+        var fakeStderr = new MockPrintStream();
+        FileSystem fs =
+                Jimfs.newFileSystem(
+                        Configuration.unix().toBuilder().setAttributeViews("unix").build());
+        // --mapdir /::$PWD \
+        Path inputFolder = fs.getPath("/");
+
+        // cannot get inline python to run
+        // but works when loading a file ...
+        // -- -c "import sys; from pprint import pprint as pp; \
+        //         pp(sys.path); pp(sys.platform)"
+        var script = "print(\"hello python!\")";
+
+        FileWriter fileWriter = new FileWriter(new File("/tmp/try-python-wasm").toPath().resolve("test.py").toFile());
+        PrintWriter printWriter = new PrintWriter(fileWriter);
+        printWriter.print(script);
+        printWriter.flush();
+        printWriter.close();
+
+        Files.copyDirectory(new File("/tmp/try-python-wasm").toPath(), inputFolder);
+
+        var wasiOpts =
+                WasiOptions.builder()
+                        .withDirectory(inputFolder.toString(), inputFolder)
+                        .withArguments(List.of("-c", "test.py"))
+                        .withStdout(fakeStdout)
+                        .withStderr(fakeStderr)
+                        .build();
+        var wasi = new WasiPreview1(this.logger, wasiOpts);
+        var imports = new HostImports(wasi.toHostFunctions());
+        var file = new File("/tmp/try-python-wasm/bin/python-3.11.1.wasm");
+
+        var module = Module.builder(file).withHostImports(imports).build();
+        module.instantiate();
+
+        assertEquals("hello python!\n", fakeStdout.output());
     }
 }
