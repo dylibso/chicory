@@ -21,6 +21,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         version: [11, 17]
+        exclude:
+          - os: macos-latest
+            version: 11
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
