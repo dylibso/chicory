@@ -36,6 +36,11 @@ compileTinyGo() {
   (set -x; tinygo build -o "./compiled/$filename.tiny.wasm" -target=wasi $1)
 }
 
+compileGo() {
+  filename=$(basename "$1")
+  (set -x; GOOS=wasip1 GOARCH=wasm go build -o "./compiled/$filename.wasm" $1)
+}
+
 compile() {
   lang=$1
   case "$lang" in
@@ -54,6 +59,9 @@ compile() {
     tinygo)
       compileTinyGo $2
       ;;
+    go)
+      compileGo $2
+      ;;
     *)
       echo "Don't know how to compile language $lang"
       exit 1
@@ -65,7 +73,7 @@ lang="${1:-all}"
 path="${2:-all}"
 
 if [[ "$lang" == "all" ]]; then
-  langs=("wat" "rust" "c" "javy" "tinygo")
+  langs=("wat" "rust" "c" "javy" "tinygo", "go")
 else
   langs=("$lang")
 fi
