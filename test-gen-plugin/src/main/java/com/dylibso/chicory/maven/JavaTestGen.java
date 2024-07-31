@@ -99,7 +99,7 @@ public class JavaTestGen {
         cu.addImport("com.dylibso.chicory.testing.TestModule");
 
         // runtime imports
-        cu.addImport("com.dylibso.chicory.wasm.WasmModuleType");
+        cu.addImport("com.dylibso.chicory.wasm.ModuleType");
         cu.addImport("com.dylibso.chicory.wasm.exceptions.ChicoryException");
         cu.addImport("com.dylibso.chicory.runtime.ExportFunction");
         cu.addImport("com.dylibso.chicory.runtime.Instance");
@@ -405,9 +405,7 @@ public class JavaTestGen {
             String hostFuncs,
             boolean excludeInvalid) {
         var additionalParam =
-                cmd.moduleType() == null
-                        ? ""
-                        : ", WasmModuleType." + cmd.moduleType().toUpperCase();
+                cmd.moduleType() == null ? "" : ", ModuleType." + cmd.moduleType().toUpperCase();
         return new NameExpr(
                 "TestModule.of(\n"
                         + INDENT

@@ -1,6 +1,6 @@
 package com.dylibso.chicory.bench;
 
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.Module;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -41,6 +41,6 @@ public class BenchmarkParsing {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void benchmark(Blackhole bh) {
-        bh.consume(WasmModule.builder(memoryMappedFile).build());
+        bh.consume(Module.builder(memoryMappedFile).build());
     }
 }

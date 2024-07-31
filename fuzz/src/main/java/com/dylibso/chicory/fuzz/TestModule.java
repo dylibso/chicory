@@ -3,7 +3,7 @@ package com.dylibso.chicory.fuzz;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -28,13 +28,13 @@ public class TestModule {
         return RandomStringUtils.randomNumeric(2);
     }
 
-    public List<TestResult> testModule(File targetWasm, WasmModule module, Instance instance)
+    public List<TestResult> testModule(File targetWasm, Module module, Instance instance)
             throws Exception {
         return testModule(targetWasm, module, instance, true);
     }
 
     public List<TestResult> testModule(
-            File targetWasm, WasmModule module, Instance instance, boolean commitOnFailure)
+            File targetWasm, Module module, Instance instance, boolean commitOnFailure)
             throws Exception {
         var results = new ArrayList<TestResult>();
 

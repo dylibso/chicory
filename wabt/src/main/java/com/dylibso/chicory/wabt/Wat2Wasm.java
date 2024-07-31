@@ -11,7 +11,7 @@ import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasi.WasiExitException;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
@@ -30,8 +30,8 @@ import java.util.List;
 
 public final class Wat2Wasm {
     private static final Logger logger = new SystemLogger();
-    private static final WasmModule wasmModule =
-            WasmModule.builder(Wat2Wasm.class.getResourceAsStream("/wat2wasm"))
+    private static final Module MODULE =
+            Module.builder(Wat2Wasm.class.getResourceAsStream("/wat2wasm"))
                     .withLogger(logger)
                     .build();
 
@@ -76,7 +76,7 @@ public final class Wat2Wasm {
 
                 try (var wasi = new WasiPreview1(logger, wasiOpts)) {
                     HostImports imports = new HostImports(wasi.toHostFunctions());
-                    Instance.builder(wasmModule).withHostImports(imports).build();
+                    Instance.builder(MODULE).withHostImports(imports).build();
                 }
 
                 return stdoutStream.toByteArray();

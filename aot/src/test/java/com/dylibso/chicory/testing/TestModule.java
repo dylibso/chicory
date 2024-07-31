@@ -4,20 +4,20 @@ import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wabt.Wat2Wasm;
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.WasmModuleType;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import java.io.File;
 
 public class TestModule {
 
-    private WasmModule module;
+    private Module module;
     private Instance instance;
 
     private HostImports imports;
     private boolean typeValidation;
 
-    public TestModule(WasmModule module) {
+    public TestModule(Module module) {
         this.module = module;
     }
 
@@ -25,7 +25,7 @@ public class TestModule {
         return of(file, WasmModuleType.BINARY);
     }
 
-    public static TestModule of(WasmModule module) {
+    public static TestModule of(Module module) {
         return new TestModule(module);
     }
 
@@ -61,9 +61,9 @@ public class TestModule {
                 throw new MalformedException(
                         e.getMessage() + HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT);
             }
-            return of(WasmModule.builder(parsed).build());
+            return of(Module.builder(parsed).build());
         }
-        return of(WasmModule.builder(file).build());
+        return of(Module.builder(file).build());
     }
 
     public Instance build() {

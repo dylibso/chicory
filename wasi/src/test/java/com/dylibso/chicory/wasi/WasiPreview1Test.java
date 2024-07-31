@@ -8,7 +8,7 @@ import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -25,7 +25,7 @@ public class WasiPreview1Test {
                 new WasiPreview1(this.logger, WasiOptions.builder().withStdout(fakeStdout).build());
         var imports = new HostImports(wasi.toHostFunctions());
         Instance.builder(
-                        WasmModule.builder(
+                        Module.builder(
                                         Thread.currentThread()
                                                 .getContextClassLoader()
                                                 .getResourceAsStream(
@@ -44,7 +44,7 @@ public class WasiPreview1Test {
         var wasi = new WasiPreview1(this.logger, WasiOptions.builder().withStdout(stdout).build());
         var imports = new HostImports(wasi.toHostFunctions());
         Instance.builder(
-                        WasmModule.builder(
+                        Module.builder(
                                         Thread.currentThread()
                                                 .getContextClassLoader()
                                                 .getResourceAsStream("compiled/hello-wasi.rs.wasm"))
@@ -62,7 +62,7 @@ public class WasiPreview1Test {
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
         Instance.builder(
-                        WasmModule.builder(
+                        Module.builder(
                                         Thread.currentThread()
                                                 .getContextClassLoader()
                                                 .getResourceAsStream("compiled/greet-wasi.rs.wasm"))
@@ -81,7 +81,7 @@ public class WasiPreview1Test {
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
         Instance.builder(
-                        WasmModule.builder(
+                        Module.builder(
                                         Thread.currentThread()
                                                 .getContextClassLoader()
                                                 .getResourceAsStream(
@@ -99,7 +99,7 @@ public class WasiPreview1Test {
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
         var module =
-                WasmModule.builder(
+                Module.builder(
                                 Thread.currentThread()
                                         .getContextClassLoader()
                                         .getResourceAsStream("compiled/sum.go.tiny.wasm"))
@@ -118,7 +118,7 @@ public class WasiPreview1Test {
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
         var module =
-                WasmModule.builder(
+                Module.builder(
                                 Thread.currentThread()
                                         .getContextClassLoader()
                                         .getResourceAsStream("compiled/main.go.wasm"))
@@ -147,7 +147,7 @@ public class WasiPreview1Test {
         var imports = new HostImports(wasi.toHostFunctions());
 
         var module =
-                WasmModule.builder(
+                Module.builder(
                                 Thread.currentThread()
                                         .getContextClassLoader()
                                         .getResourceAsStream("compiled/basic.dotnet.wasm"))

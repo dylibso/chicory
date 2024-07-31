@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public class WasmModule {
+public class Module {
     private final HashMap<String, CustomSection> customSections;
 
     private TypeSection typeSection = new TypeSection();
@@ -51,7 +51,7 @@ public class WasmModule {
     private DataSection dataSection = new DataSection();
     private DataCountSection dataCountSection;
 
-    public WasmModule() {
+    public Module() {
         this.customSections = new HashMap<>();
     }
 
@@ -178,13 +178,13 @@ public class WasmModule {
     }
 
     /**
-     * Creates a {@link Builder} for the specified {@link WasmModule}
+     * Creates a {@link Builder} for the specified {@link Module}
      *
-     * @param wasmModule the already parsed Wasm module
+     * @param module the already parsed Wasm module
      * @return a {@link Builder} for reading the module definition from the specified input stream
      */
-    public static Builder builder(WasmModule wasmModule) {
-        return new Builder(wasmModule);
+    public static Builder builder(Module module) {
+        return new Builder(module);
     }
 
     /**
@@ -243,17 +243,17 @@ public class WasmModule {
     }
 
     public static class Builder {
-        private final WasmModule parsed;
+        private final Module parsed;
         private final Supplier<InputStream> inputStreamSupplier;
         private Logger logger;
-        private WasmModuleType moduleType = WasmModuleType.BINARY;
+        private ModuleType moduleType = ModuleType.BINARY;
 
         private Builder(Supplier<InputStream> inputStreamSupplier) {
             this.inputStreamSupplier = Objects.requireNonNull(inputStreamSupplier);
             this.parsed = null;
         }
 
-        private Builder(WasmModule parsed) {
+        private Builder(Module parsed) {
             this.parsed = Objects.requireNonNull(parsed);
             this.inputStreamSupplier = null;
         }
@@ -263,16 +263,16 @@ public class WasmModule {
             return this;
         }
 
-        public Builder withType(WasmModuleType type) {
+        public Builder withType(ModuleType type) {
             this.moduleType = type;
             return this;
         }
 
-        public WasmModule build() {
+        public Module build() {
             final Logger logger = this.logger != null ? this.logger : new SystemLogger();
             final Parser parser = new Parser(logger);
 
-            WasmModule parsed = this.parsed;
+            Module parsed = this.parsed;
             if (parsed == null) {
                 try (final InputStream is = inputStreamSupplier.get()) {
                     parsed = parser.parseModule(is);

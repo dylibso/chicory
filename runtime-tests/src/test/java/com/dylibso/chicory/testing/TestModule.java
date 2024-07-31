@@ -3,23 +3,23 @@ package com.dylibso.chicory.testing;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wabt.Wat2Wasm;
-import com.dylibso.chicory.wasm.WasmModule;
-import com.dylibso.chicory.wasm.WasmModuleType;
+import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.ModuleType;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import java.io.File;
 
 public class TestModule {
 
-    private WasmModule module;
+    private Module module;
     private Instance instance;
 
     private HostImports imports;
 
     public static TestModule of(File file) {
-        return of(file, WasmModuleType.BINARY);
+        return of(file, ModuleType.BINARY);
     }
 
-    public static TestModule of(WasmModule module) {
+    public static TestModule of(Module module) {
         return new TestModule(module);
     }
 
@@ -46,8 +46,8 @@ public class TestModule {
                     + "i32 constant out of range "
                     + "unknown label";
 
-    public static TestModule of(File file, WasmModuleType moduleType) {
-        if (moduleType == WasmModuleType.TEXT) {
+    public static TestModule of(File file, ModuleType moduleType) {
+        if (moduleType == ModuleType.TEXT) {
             byte[] parsed;
             try {
                 parsed = Wat2Wasm.parse(file);
@@ -55,12 +55,12 @@ public class TestModule {
                 throw new MalformedException(
                         e.getMessage() + HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT);
             }
-            return of(WasmModule.builder(parsed).build());
+            return of(Module.builder(parsed).build());
         }
-        return of(WasmModule.builder(file).build());
+        return of(Module.builder(file).build());
     }
 
-    public TestModule(WasmModule module) {
+    public TestModule(Module module) {
         this.module = module;
     }
 

@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.Module;
 import java.io.File;
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -24,7 +24,7 @@ public class RegressionTest extends TestModule {
     @MethodSource("crashFolders")
     void regressionTests(File folder) throws Exception {
         var targetWasm = new File(folder.getAbsolutePath() + "/test.wasm");
-        var module = WasmModule.builder(targetWasm).build();
+        var module = Module.builder(targetWasm).build();
         var instance = Instance.builder(module).withInitialize(true).withStart(false).build();
 
         var results = testModule(targetWasm, module, instance, false);

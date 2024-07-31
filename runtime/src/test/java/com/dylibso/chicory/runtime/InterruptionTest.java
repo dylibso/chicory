@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,7 +19,7 @@ public class InterruptionTest {
     public void shouldInterruptLoop() throws InterruptedException {
         var instance =
                 Instance.builder(
-                                WasmModule.builder(
+                                Module.builder(
                                                 Thread.currentThread()
                                                         .getContextClassLoader()
                                                         .getResourceAsStream(
@@ -34,7 +34,7 @@ public class InterruptionTest {
     public void shouldInterruptCall() throws InterruptedException {
         var instance =
                 Instance.builder(
-                                WasmModule.builder(
+                                Module.builder(
                                                 Thread.currentThread()
                                                         .getContextClassLoader()
                                                         .getResourceAsStream(

@@ -113,7 +113,7 @@ Now let's load this module and instantiate it:
 ```java
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.runtime.Instance;
 import java.io.File;
 

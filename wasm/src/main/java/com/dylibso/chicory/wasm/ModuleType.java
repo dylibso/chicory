@@ -1,6 +1,6 @@
 package com.dylibso.chicory.wasm;
 
-public enum WasmModuleType {
+public enum ModuleType {
     TEXT,
     BINARY
 }

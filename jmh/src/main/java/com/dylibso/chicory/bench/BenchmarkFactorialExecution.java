@@ -3,7 +3,7 @@ package com.dylibso.chicory.bench;
 import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -38,11 +38,11 @@ public class BenchmarkFactorialExecution {
 
     @Setup
     public void setup() {
-        var factorialInt = Instance.builder(WasmModule.builder(ITERFACT).build()).build();
+        var factorialInt = Instance.builder(Module.builder(ITERFACT).build()).build();
         iterFactInt = factorialInt.export("iterFact");
 
         var factorialAot =
-                Instance.builder(WasmModule.builder(ITERFACT).build())
+                Instance.builder(Module.builder(ITERFACT).build())
                         .withMachineFactory(AotMachine::new)
                         .build();
         iterFactAot = factorialAot.export("iterFact");

@@ -5,7 +5,7 @@ import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.ByteArrayInputStream;
@@ -58,7 +58,7 @@ public class Cli implements Runnable {
             throw new RuntimeException(e);
         }
         var logger = new SystemLogger();
-        var module = WasmModule.builder(file).withLogger(logger).build();
+        var module = Module.builder(file).withLogger(logger).build();
         var imports =
                 wasi
                         ? new HostImports(

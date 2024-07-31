@@ -2,7 +2,7 @@ package com.dylibso.chicory.approvals;
 
 import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.Module;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
 import org.approvaltests.Approvals;
@@ -65,7 +65,7 @@ public class ApprovalTest {
     private static void verifyGeneratedBytecode(String name) {
         var instance =
                 Instance.builder(
-                                WasmModule.builder(
+                                Module.builder(
                                                 Thread.currentThread()
                                                         .getContextClassLoader()
                                                         .getResourceAsStream("compiled/" + name))

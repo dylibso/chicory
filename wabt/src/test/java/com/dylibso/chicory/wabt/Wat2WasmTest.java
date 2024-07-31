@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.File;
@@ -25,7 +25,7 @@ public class Wat2WasmTest {
     public void shouldRunWat2WasmOnString() {
         var moduleInstance =
                 Instance.builder(
-                                WasmModule.builder(
+                                Module.builder(
                                                 Wat2Wasm.parse(
                                                         "(module (func (export \"add\") (param $x"
                                                             + " i32) (param $y i32) (result i32)"

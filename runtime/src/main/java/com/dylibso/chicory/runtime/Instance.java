@@ -5,7 +5,7 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValu
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
@@ -44,7 +44,7 @@ import java.util.function.Function;
 public class Instance {
     public static final String START_FUNCTION_NAME = "_start";
 
-    private final WasmModule module;
+    private final Module module;
     private final Machine machine;
     private final FunctionBody[] functions;
     private final Memory memory;
@@ -66,7 +66,7 @@ public class Instance {
     private final ExecutionListener listener;
 
     public Instance(
-            WasmModule module,
+            Module module,
             Global[] globalInitializers,
             int importedGlobalsOffset,
             int importedFunctionsOffset,
@@ -106,7 +106,7 @@ public class Instance {
     }
 
     public Instance(
-            WasmModule module,
+            Module module,
             Global[] globalInitializers,
             int importedGlobalsOffset,
             int importedFunctionsOffset,
@@ -401,7 +401,7 @@ public class Instance {
         return imports;
     }
 
-    public WasmModule module() {
+    public Module module() {
         return module;
     }
 
@@ -452,12 +452,12 @@ public class Instance {
         }
     }
 
-    public static Builder builder(WasmModule module) {
+    public static Builder builder(Module module) {
         return new Builder(module);
     }
 
     public static final class Builder {
-        private final WasmModule module;
+        private final Module module;
 
         private boolean initialize = true;
         private boolean start = true;
@@ -467,7 +467,7 @@ public class Instance {
         private HostImports hostImports = null;
         private Function<Instance, Machine> machineFactory = null;
 
-        private Builder(WasmModule module) {
+        private Builder(Module module) {
             this.module = Objects.requireNonNull(module);
         }
 
@@ -627,7 +627,7 @@ public class Instance {
             }
         }
 
-        private static void validateModule(WasmModule module) {
+        private static void validateModule(Module module) {
             var functionSectionSize = module.functionSection().functionCount();
             var codeSectionSize = module.codeSection().functionBodyCount();
             var dataSectionSize = module.dataSection().dataSegmentCount();
