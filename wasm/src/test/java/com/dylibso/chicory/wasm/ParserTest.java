@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -28,8 +27,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseFile() throws IOException {
-        var logger = new SystemLogger();
-        var parser = new Parser(logger);
+        var parser = new Parser();
 
         try (InputStream is = getClass().getResourceAsStream("/compiled/start.wat.wasm")) {
             var module = parser.parseModule(is);
@@ -94,8 +92,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseIterfact() throws IOException {
-        var logger = new SystemLogger();
-        var parser = new Parser(logger);
+        var parser = new Parser();
 
         try (InputStream is = getClass().getResourceAsStream("/compiled/iterfact.wat.wasm")) {
             var module = parser.parseModule(is);
@@ -136,9 +133,8 @@ public class ParserTest {
             throw new RuntimeException("Could not find files");
         }
 
-        var logger = new SystemLogger();
         for (var f : files) {
-            var parser = new Parser(logger);
+            var parser = new Parser();
             try (InputStream is = new FileInputStream(f)) {
                 parser.parseModule(is);
             } catch (Exception e) {
@@ -149,8 +145,7 @@ public class ParserTest {
 
     @Test
     public void shouldSupportCustomListener() throws IOException {
-        var logger = new SystemLogger();
-        var parser = new Parser(logger);
+        var parser = new Parser();
 
         try (InputStream is = getClass().getResourceAsStream("/compiled/count_vowels.rs.wasm")) {
             parser.includeSection(SectionId.CUSTOM);
@@ -170,8 +165,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseFloats() throws IOException {
-        var logger = new SystemLogger();
-        var parser = new Parser(logger);
+        var parser = new Parser();
 
         try (InputStream is = getClass().getResourceAsStream("/compiled/float.wat.wasm")) {
             var module = parser.parseModule(is);
@@ -186,8 +180,7 @@ public class ParserTest {
 
     @Test
     public void shouldProperlyParseSignedValue() throws IOException {
-        var logger = new SystemLogger();
-        var parser = new Parser(logger);
+        var parser = new Parser();
 
         try (InputStream is = getClass().getResourceAsStream("/compiled/i32.wat.wasm")) {
             var module = parser.parseModule(is);
@@ -212,8 +205,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseLocalDefinitions() throws Exception {
-        var logger = new SystemLogger();
-        var parser = new Parser(logger);
+        var parser = new Parser();
 
         try (InputStream is = getClass().getResourceAsStream("/compiled/define-locals.wat.wasm")) {
             var module = parser.parseModule(is);
@@ -226,8 +218,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseNamesSection() throws IOException {
-        var logger = new SystemLogger();
-        var parser = new Parser(logger);
+        var parser = new Parser();
 
         try (InputStream is = getClass().getResourceAsStream("/compiled/count_vowels.rs.wasm")) {
             var module = parser.parseModule(is);

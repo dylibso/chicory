@@ -286,6 +286,10 @@ public class Instance {
         return this;
     }
 
+    public FunctionType exportType(String name) {
+        return type(functionType(exports.get(name).index()));
+    }
+
     public ExportFunction export(String name) {
         var export = this.exports.get(name);
         if (export == null) throw new ChicoryException("Unknown export with name " + name);
@@ -677,23 +681,24 @@ public class Instance {
             var hostMemIdx = 0;
             var hostTables = new HostTable[hostTableNum];
             var hostTableIdx = 0;
-            var hostIndex = new FromHost[hostFuncNum + hostGlobalNum + hostMemNum + hostTableNum];
             int cnt;
             for (var impIdx = 0; impIdx < imports.length; impIdx++) {
                 var i = imports[impIdx];
                 var name = i.moduleName() + "." + i.name();
                 var found = false;
                 validateNegativeImportType(i.moduleName(), i.name(), i.importType(), hostImports);
+                Function<FromHost, Boolean> checkName =
+                        (FromHost fh) ->
+                                i.moduleName().equals(fh.moduleName())
+                                        && i.name().equals(fh.fieldName());
                 switch (i.importType()) {
                     case FUNCTION:
                         cnt = hostImports.functionCount();
                         for (int j = 0; j < cnt; j++) {
                             HostFunction f = hostImports.function(j);
-                            if (i.moduleName().equals(f.moduleName())
-                                    && i.name().equals(f.fieldName())) {
+                            if (checkName.apply(f)) {
                                 validateHostFunctionSignature((FunctionImport) i, f);
                                 hostFuncs[hostFuncIdx] = f;
-                                hostIndex[impIdx] = f;
                                 found = true;
                                 break;
                             }
@@ -704,11 +709,9 @@ public class Instance {
                         cnt = hostImports.globalCount();
                         for (int j = 0; j < cnt; j++) {
                             HostGlobal g = hostImports.global(j);
-                            if (i.moduleName().equals(g.moduleName())
-                                    && i.name().equals(g.fieldName())) {
+                            if (checkName.apply(g)) {
                                 validateHostGlobalType((GlobalImport) i, g);
                                 hostGlobals[hostGlobalIdx] = g;
-                                hostIndex[impIdx] = g;
                                 found = true;
                                 break;
                             }
@@ -719,11 +722,9 @@ public class Instance {
                         cnt = hostImports.memoryCount();
                         for (int j = 0; j < cnt; j++) {
                             HostMemory m = hostImports.memory(j);
-                            if (i.moduleName().equals(m.moduleName())
-                                    && i.name().equals(m.fieldName())) {
+                            if (checkName.apply(m)) {
                                 validateHostMemoryType((MemoryImport) i, m);
                                 hostMems[hostMemIdx] = m;
-                                hostIndex[impIdx] = m;
                                 found = true;
                                 break;
                             }
@@ -734,11 +735,9 @@ public class Instance {
                         cnt = hostImports.tableCount();
                         for (int j = 0; j < cnt; j++) {
                             HostTable t = hostImports.table(j);
-                            if (i.moduleName().equals(t.moduleName())
-                                    && i.name().equals(t.fieldName())) {
+                            if (checkName.apply(t)) {
                                 validateHostTableType((TableImport) i, t);
                                 hostTables[hostTableIdx] = t;
-                                hostIndex[impIdx] = t;
                                 found = true;
                                 break;
                             }
@@ -873,6 +872,7 @@ public class Instance {
                 }
             }
 
+            // TODO: refactor with "mapHostImports"
             var globalImportsOffset = 0;
             var functionImportsOffset = 0;
             var tablesImportsOffset = 0;

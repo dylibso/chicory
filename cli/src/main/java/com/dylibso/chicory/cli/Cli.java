@@ -7,7 +7,6 @@ import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +57,7 @@ public class Cli implements Runnable {
             throw new RuntimeException(e);
         }
         var logger = new SystemLogger();
-        var module = Module.builder(file).withLogger(logger).build();
+        var module = Module.builder(file).build();
         var imports =
                 wasi
                         ? new HostImports(
@@ -75,12 +74,11 @@ public class Cli implements Runnable {
                         .build();
 
         if (functionName != null) {
+            var type = instance.exportType(functionName);
             var export = instance.export(functionName);
-            var params = new Value[arguments.length];
-            for (var i = 0; i < arguments.length; i++) {
-                // TODO: FIXME - it's hard to extract the exported function signature
-                // -> should be easy
-                params[i] = new Value(ValueType.I32, Long.valueOf(arguments[i]));
+            var params = new Value[type.params().size()];
+            for (var i = 0; i < type.params().size(); i++) {
+                params[i] = new Value(type.params().get(i), Long.valueOf(arguments[i]));
             }
 
             var result = export.apply(params);

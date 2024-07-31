@@ -35,9 +35,7 @@ public class Wast2Json {
                 }
             };
     private static final Module MODULE =
-            Module.builder(Wast2Json.class.getResourceAsStream("/wast2json"))
-                    .withLogger(logger)
-                    .build();
+            Module.builder(Wast2Json.class.getResourceAsStream("/wast2json")).build();
 
     private final File input;
     private final File output;
@@ -86,7 +84,11 @@ public class Wast2Json {
                 args.addAll(List.of(options));
                 wasiOpts.withArguments(args);
 
-                try (var wasi = new WasiPreview1(logger, wasiOpts.build())) {
+                try (var wasi =
+                        WasiPreview1.builder()
+                                .withLogger(logger)
+                                .withOpts(wasiOpts.build())
+                                .build()) {
                     HostImports imports = new HostImports(wasi.toHostFunctions());
                     Instance.builder(MODULE).withHostImports(imports).build();
                 }

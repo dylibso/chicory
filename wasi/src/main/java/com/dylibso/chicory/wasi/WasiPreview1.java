@@ -15,6 +15,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 
 import com.dylibso.chicory.log.Logger;
+import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
@@ -87,6 +88,37 @@ public class WasiPreview1 implements Closeable {
         for (var entry : opts.directories().entrySet()) {
             byte[] name = entry.getKey().getBytes(UTF_8);
             descriptors.allocate(new PreopenedDirectory(name, entry.getValue()));
+        }
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Logger logger;
+        private WasiOptions opts;
+
+        private Builder() {}
+
+        public Builder withLogger(Logger logger) {
+            this.logger = logger;
+            return this;
+        }
+
+        public Builder withOpts(WasiOptions opts) {
+            this.opts = opts;
+            return this;
+        }
+
+        public WasiPreview1 build() {
+            if (logger == null) {
+                logger = new SystemLogger();
+            }
+            if (opts == null) {
+                opts = WasiOptions.builder().build();
+            }
+            return new WasiPreview1(logger, opts);
         }
     }
 

@@ -4,7 +4,6 @@ import static com.dylibso.chicory.wasm.Encoding.MAX_VARINT_LEN_32;
 import static com.dylibso.chicory.wasm.WasmLimits.MAX_FUNCTION_LOCALS;
 import static java.util.Objects.requireNonNull;
 
-import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
@@ -70,21 +69,17 @@ public final class Parser {
 
     private final Map<String, Function<byte[], CustomSection>> customParsers;
     private final BitSet includeSections;
-    private final Logger logger;
 
-    public Parser(Logger logger) {
-        this(logger, new BitSet());
+    public Parser() {
+        this(new BitSet());
     }
 
-    public Parser(Logger logger, BitSet includeSections) {
-        this(logger, includeSections, Map.of("name", NameCustomSection::parse));
+    public Parser(BitSet includeSections) {
+        this(includeSections, Map.of("name", NameCustomSection::parse));
     }
 
     public Parser(
-            Logger logger,
-            BitSet includeSections,
-            Map<String, Function<byte[], CustomSection>> customParsers) {
-        this.logger = requireNonNull(logger, "logger");
+            BitSet includeSections, Map<String, Function<byte[], CustomSection>> customParsers) {
         this.includeSections = requireNonNull(includeSections, "includeSections");
         this.customParsers = Map.copyOf(customParsers);
     }
@@ -141,7 +136,7 @@ public final class Parser {
                 module.setDataCountSection((DataCountSection) s);
                 break;
             default:
-                logger.warnf("Ignoring section with id: %d", s.sectionId());
+                module.addIgnoredSection(s.sectionId());
                 break;
         }
     }
@@ -318,9 +313,7 @@ public final class Parser {
                         }
                 }
             } else {
-                logger.info("Skipping Section with ID due to configuration: " + sectionId);
                 buffer.position((int) (buffer.position() + sectionSize));
-                continue;
             }
         }
     }

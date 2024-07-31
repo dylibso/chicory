@@ -31,9 +31,7 @@ import java.util.List;
 public final class Wat2Wasm {
     private static final Logger logger = new SystemLogger();
     private static final Module MODULE =
-            Module.builder(Wat2Wasm.class.getResourceAsStream("/wat2wasm"))
-                    .withLogger(logger)
-                    .build();
+            Module.builder(Wat2Wasm.class.getResourceAsStream("/wat2wasm")).build();
 
     private Wat2Wasm() {}
 
@@ -74,7 +72,8 @@ public final class Wat2Wasm {
                                 .withArguments(List.of("wat2wasm", path.toString(), "--output=-"))
                                 .build();
 
-                try (var wasi = new WasiPreview1(logger, wasiOpts)) {
+                try (var wasi =
+                        WasiPreview1.builder().withLogger(logger).withOpts(wasiOpts).build()) {
                     HostImports imports = new HostImports(wasi.toHostFunctions());
                     Instance.builder(MODULE).withHostImports(imports).build();
                 }

@@ -18,7 +18,7 @@ import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.aot.AotMachine;
 // ...
-var is = Thread.currentThread().getContextClassLoader().getResourceAsStream("compiled/basic.c.wasm");
+var is = getClass().getResourceAsStream("compiled/basic.c.wasm");
 Instance.
 
 builder(Module.builder(is).
