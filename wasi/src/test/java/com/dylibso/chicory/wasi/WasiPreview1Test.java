@@ -1,11 +1,13 @@
 package com.dylibso.chicory.wasi;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
 import org.junit.jupiter.api.Test;
@@ -76,5 +78,18 @@ public class WasiPreview1Test {
         var result = sum.apply(Value.i32(20), Value.i32(22))[0];
 
         assertEquals(result.asInt(), 42);
+    }
+
+    @Test
+    public void shouldRunWasiGoModule() {
+        var fakeStdout = new MockPrintStream();
+        var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).build();
+        var wasi = new WasiPreview1(this.logger, wasiOpts);
+        var imports = new HostImports(wasi.toHostFunctions());
+        var module = Module.builder("compiled/main.go.wasm").withHostImports(imports).build();
+        var wrapped = assertThrows(WASMMachineException.class, () -> module.instantiate());
+        WasiExitException exit = (WasiExitException) wrapped.getCause();
+        assertEquals(0, exit.exitCode());
+        assertEquals("Hello, WebAssembly!\n", fakeStdout.output());
     }
 }
