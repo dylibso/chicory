@@ -20,8 +20,9 @@ public class InterruptionTest {
         var instance =
                 Instance.builder(
                                 Module.builder(
-                                                InterruptionTest.class.getResourceAsStream(
-                                                        "compiled/infinite-loop.c.wasm"))
+                                                ClassLoader.getSystemClassLoader()
+                                                        .getResourceAsStream(
+                                                                "compiled/infinite-loop.c.wasm"))
                                         .build())
                         .build();
         var function = instance.export("run");
@@ -33,8 +34,9 @@ public class InterruptionTest {
         var instance =
                 Instance.builder(
                                 Module.builder(
-                                                InterruptionTest.class.getResourceAsStream(
-                                                        "compiled/power.c.wasm"))
+                                                ClassLoader.getSystemClassLoader()
+                                                        .getResourceAsStream(
+                                                                "compiled/power.c.wasm"))
                                         .build())
                         .build();
         var function = instance.export("run");
