@@ -104,30 +104,26 @@ public class WasiPreview1Test {
         // but works when loading a file ...
         // -- -c "import sys; from pprint import pprint as pp; \
         //         pp(sys.path); pp(sys.platform)"
-        var script = "print(\"hello python!\")";
+        var script = "import sys; from pprint import pprint as pp;\n"+
+                    "print(\"hello python!\")\n" +
+                "pp(sys.platform)";
 
-        FileWriter fileWriter = new FileWriter(new File("/tmp/try-python-wasm").toPath().resolve("test.py").toFile());
-        PrintWriter printWriter = new PrintWriter(fileWriter);
-        printWriter.print(script);
-        printWriter.flush();
-        printWriter.close();
-
-        Files.copyDirectory(new File("/tmp/try-python-wasm").toPath(), inputFolder);
+        Files.copyDirectory(new File("src/test/resources/py").toPath(), inputFolder);
 
         var wasiOpts =
                 WasiOptions.builder()
                         .withDirectory(inputFolder.toString(), inputFolder)
-                        .withArguments(List.of("-c", "test.py"))
+                        .withArguments(List.of("python", "-c", script))
                         .withStdout(fakeStdout)
                         .withStderr(fakeStderr)
                         .build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
-        var file = new File("/tmp/try-python-wasm/bin/python-3.11.1.wasm");
+        var file = new File("src/test/resources/py/python.wasm");
 
         var module = Module.builder(file).withHostImports(imports).build();
         module.instantiate();
 
-        assertEquals("hello python!\n", fakeStdout.output());
+        assertEquals("hello python!\n'wasi'\n", fakeStdout.output());
     }
 }
