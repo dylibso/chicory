@@ -10,6 +10,7 @@ import com.dylibso.chicory.runtime.Module;
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class WasiPreview1Test {
@@ -91,5 +92,25 @@ public class WasiPreview1Test {
         WasiExitException exit = (WasiExitException) wrapped.getCause();
         assertEquals(0, exit.exitCode());
         assertEquals("Hello, WebAssembly!\n", fakeStdout.output());
+    }
+
+    @Test
+    public void shouldRunWasiDemoDotnetModule() throws Exception {
+        var fakeStdout = new MockPrintStream();
+        var wasiOpts =
+                WasiOptions.builder()
+                        .withStdout(fakeStdout)
+                        // Fix for "[MONO] critical: /__w/1/s/src/mono/mono/eglib/gpath.c:134:
+                        // assertion 'filename != NULL' failed"
+                        // https://jflower.co.uk/running-net-8-on-cloudflare-workers/
+                        .withArguments(List.of(""))
+                        .build();
+        var wasi = new WasiPreview1(this.logger, wasiOpts);
+        var imports = new HostImports(wasi.toHostFunctions());
+
+        var module = Module.builder("compiled/basic.dotnet.wasm").withHostImports(imports).build();
+        module.instantiate();
+
+        assertEquals("Hello, Wasi Console!\n", fakeStdout.output());
     }
 }
