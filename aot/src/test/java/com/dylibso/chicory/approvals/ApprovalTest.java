@@ -66,8 +66,8 @@ public class ApprovalTest {
         var instance =
                 Instance.builder(
                                 Module.builder(
-                                                ApprovalTest.class.getResourceAsStream(
-                                                        "compiled/" + name))
+                                                ClassLoader.getSystemClassLoader()
+                                                        .getResourceAsStream("compiled/" + name))
                                         .build())
                         .withImportValidation(false)
                         .withMachineFactory(AotMachine::new)
