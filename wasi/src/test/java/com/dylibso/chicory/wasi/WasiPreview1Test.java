@@ -1,6 +1,5 @@
 package com.dylibso.chicory.wasi;
 
-import static java.nio.file.Files.copy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.log.Logger;
@@ -12,13 +11,9 @@ import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.PrintWriter;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
-
 import org.junit.jupiter.api.Test;
 
 public class WasiPreview1Test {
@@ -104,9 +99,10 @@ public class WasiPreview1Test {
         // but works when loading a file ...
         // -- -c "import sys; from pprint import pprint as pp; \
         //         pp(sys.path); pp(sys.platform)"
-        var script = "import sys; from pprint import pprint as pp;\n"+
-                    "print(\"hello python!\")\n" +
-                "pp(sys.platform)";
+        var script =
+                "import sys; from pprint import pprint as pp;\n"
+                        + "print(\"hello python!\")\n"
+                        + "pp(sys.platform)";
 
         Files.copyDirectory(new File("src/test/resources/py").toPath(), inputFolder);
 
