@@ -48,7 +48,6 @@ public class Module {
     private DataCountSection dataCountSection;
 
     private final List<Integer> ignoredSections = new ArrayList();
-    private final List<Integer> skippedSections = new ArrayList();
 
     public Module() {
         this.customSections = new HashMap<>();
