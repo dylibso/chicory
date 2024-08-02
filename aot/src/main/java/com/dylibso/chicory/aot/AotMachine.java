@@ -307,7 +307,7 @@ public final class AotMachine implements Machine {
 
     public AotMachine(Instance instance) {
         this.instance = requireNonNull(instance, "instance");
-        this.module = instance.module().wasmModule();
+        this.module = instance.module();
 
         this.globalTypes = getGlobalTypes(module);
 

@@ -3,7 +3,7 @@ package com.dylibso.chicory.fuzz;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -38,19 +38,19 @@ public class TestModule {
             throws Exception {
         var results = new ArrayList<TestResult>();
 
-        for (var export : module.exports().entrySet()) {
-            switch (export.getValue().exportType()) {
+        for (var i = 0; i < module.exportSection().exportCount(); i++) {
+            var export = module.exportSection().getExport(i);
+            switch (export.exportType()) {
                 case FUNCTION:
                     {
-                        logger.info("Going to test export " + export.getKey());
-                        var exportSig = module.export(export.getKey());
-                        var typeId = instance.functionType(exportSig.index());
+                        logger.info("Going to test export " + export.name());
+                        var typeId = export.index();
                         var type = instance.type(typeId);
                         var params = paramsList(type);
 
                         String oracleResult = null;
                         try {
-                            oracleResult = wasmtime.run(targetWasm, export.getKey(), params);
+                            oracleResult = wasmtime.run(targetWasm, export.name(), params);
                         } catch (Exception e) {
                             // If the oracle failed we can skip ...
                             logger.error("Failed to run the oracle, skip the check on Chicory");
@@ -60,14 +60,13 @@ public class TestModule {
                         // Running Chicory on the command line to compare the results
                         String chicoryResult = null;
                         try {
-                            chicoryResult = chicoryCli.run(targetWasm, export.getKey(), params);
+                            chicoryResult = chicoryCli.run(targetWasm, export.name(), params);
                         } catch (Exception e) {
                             logger.warn("Failed to run chicory, but wasmtime succeeded: " + e);
                         }
                         // To be used for files generation
                         var truncatedExportName =
-                                export.getKey()
-                                        .substring(0, Math.min(export.getKey().length(), 32));
+                                export.name().substring(0, Math.min(export.name().length(), 32));
 
                         if (!oracleResult.isEmpty() || !chicoryResult.isEmpty()) {
                             System.err.println("\u001B[31mOracle:\n" + oracleResult + "\u001B[0m");
@@ -104,7 +103,7 @@ public class TestModule {
                     }
                 default:
                     // ignored for now
-                    logger.info("Skipping export " + export.getKey());
+                    logger.info("Skipping export " + export.name());
                     break;
             }
         }

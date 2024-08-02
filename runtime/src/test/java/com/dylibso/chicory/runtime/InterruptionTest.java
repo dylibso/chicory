@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -16,14 +17,28 @@ import org.junit.jupiter.api.Test;
 public class InterruptionTest {
     @Test
     public void shouldInterruptLoop() throws InterruptedException {
-        var instance = Module.builder("compiled/infinite-loop.c.wasm").build().instantiate();
+        var instance =
+                Instance.builder(
+                                Module.builder(
+                                                ClassLoader.getSystemClassLoader()
+                                                        .getResourceAsStream(
+                                                                "compiled/infinite-loop.c.wasm"))
+                                        .build())
+                        .build();
         var function = instance.export("run");
         assertInterruption(function::apply);
     }
 
     @Test
     public void shouldInterruptCall() throws InterruptedException {
-        var instance = Module.builder("compiled/power.c.wasm").build().instantiate();
+        var instance =
+                Instance.builder(
+                                Module.builder(
+                                                ClassLoader.getSystemClassLoader()
+                                                        .getResourceAsStream(
+                                                                "compiled/power.c.wasm"))
+                                        .build())
+                        .build();
         var function = instance.export("run");
         assertInterruption(() -> function.apply(Value.i32(100)));
     }

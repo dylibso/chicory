@@ -1,6 +1,6 @@
 package com.dylibso.chicory.bench;
 
-import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.wasm.Module;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;

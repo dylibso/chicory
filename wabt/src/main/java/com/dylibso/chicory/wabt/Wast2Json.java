@@ -7,11 +7,12 @@ import static java.nio.file.Files.createDirectories;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
-import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasi.WasiExitException;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
+import com.dylibso.chicory.wasm.Module;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayOutputStream;
@@ -33,12 +34,8 @@ public class Wast2Json {
                     return false;
                 }
             };
-    private static final com.dylibso.chicory.wasm.Module wasmModule =
-            Module.builder(Wast2Json.class.getResourceAsStream("/wast2json"))
-                    .withInitialize(false)
-                    .withStart(false)
-                    .build()
-                    .wasmModule();
+    private static final Module MODULE =
+            Module.builder(Wast2Json.class.getResourceAsStream("/wast2json")).build();
 
     private final File input;
     private final File output;
@@ -87,10 +84,13 @@ public class Wast2Json {
                 args.addAll(List.of(options));
                 wasiOpts.withArguments(args);
 
-                try (var wasi = new WasiPreview1(logger, wasiOpts.build())) {
+                try (var wasi =
+                        WasiPreview1.builder()
+                                .withLogger(logger)
+                                .withOpts(wasiOpts.build())
+                                .build()) {
                     HostImports imports = new HostImports(wasi.toHostFunctions());
-                    Module module = Module.builder(wasmModule).withHostImports(imports).build();
-                    module.instantiate();
+                    Instance.builder(MODULE).withHostImports(imports).build();
                 }
 
                 createDirectories(output.toPath().getParent());

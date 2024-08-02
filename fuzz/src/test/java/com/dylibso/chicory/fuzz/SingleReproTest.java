@@ -2,7 +2,8 @@ package com.dylibso.chicory.fuzz;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasm.Module;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.Test;
@@ -27,11 +28,11 @@ public class SingleReproTest extends TestModule {
         var targetWasm =
                 smith.run(seed.substring(0, Math.min(seed.length(), 32)), "test.wasm", types);
 
-        var module = Module.builder(targetWasm).withInitialize(true).withStart(false).build();
-        var instance = module.instantiate();
+        var module = Module.builder(targetWasm).build();
+        var instance = Instance.builder(module).withInitialize(true).withStart(false).build();
 
         testModule(targetWasm, module, instance);
         // Sanity check that the starting function doesn't break
-        assertDoesNotThrow(() -> module.instantiate());
+        assertDoesNotThrow(() -> Instance.builder(module).build());
     }
 }

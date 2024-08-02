@@ -2,7 +2,8 @@ package com.dylibso.chicory.bench;
 
 import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.runtime.ExportFunction;
-import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
@@ -32,18 +33,18 @@ public class BenchmarkFactorialExecution {
     @Param({"5", "1000"})
     private int input;
 
-    Module aotModule;
-
     ExportFunction iterFactInt;
     ExportFunction iterFactAot;
 
     @Setup
     public void setup() {
-        var factorialInt = Module.builder(ITERFACT).build().instantiate();
+        var factorialInt = Instance.builder(Module.builder(ITERFACT).build()).build();
         iterFactInt = factorialInt.export("iterFact");
 
-        aotModule = Module.builder(ITERFACT).withMachineFactory(AotMachine::new).build();
-        var factorialAot = aotModule.instantiate();
+        var factorialAot =
+                Instance.builder(Module.builder(ITERFACT).build())
+                        .withMachineFactory(AotMachine::new)
+                        .build();
         iterFactAot = factorialAot.export("iterFact");
     }
 

@@ -7,7 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.Module;
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import java.io.File;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,11 +29,14 @@ public class FuzzTest extends TestModule {
             targetWasm =
                     smith.run(prefix + num, "test.wasm", new InstructionTypes(instructionTypes));
 
-            atLeastOneExportedFunction =
-                    Module.builder(targetWasm).build().exports().values().stream()
-                            .filter(e -> e.exportType() == ExternalType.FUNCTION)
-                            .findAny()
-                            .isPresent();
+            var exportSection = Module.builder(targetWasm).build().exportSection();
+            atLeastOneExportedFunction = false;
+            for (int i = 0; i < exportSection.exportCount(); i++) {
+                if (exportSection.getExport(i).exportType() == ExternalType.FUNCTION) {
+                    atLeastOneExportedFunction = true;
+                    break;
+                }
+            }
         }
 
         return targetWasm;
@@ -55,8 +59,8 @@ public class FuzzTest extends TestModule {
         var targetWasm =
                 generateTestData(
                         "numeric-", repetitionInfo.getCurrentRepetition(), InstructionType.NUMERIC);
-        var module = Module.builder(targetWasm).withInitialize(true).withStart(false).build();
-        var instance = module.instantiate();
+        var module = Module.builder(targetWasm).build();
+        var instance = Instance.builder(module).withInitialize(true).withStart(false).build();
 
         var results = testModule(targetWasm, module, instance);
 
@@ -64,7 +68,7 @@ public class FuzzTest extends TestModule {
             assertEquals(res.getOracleResult(), res.getChicoryResult());
         }
         // Sanity check that the starting function doesn't break
-        assertDoesNotThrow(() -> module.instantiate());
+        assertDoesNotThrow(() -> Instance.builder(module).build());
     }
 
     @RepeatedTest(value = FUZZ_TEST_TABLE, failureThreshold = 1) // stop on first failure
@@ -72,8 +76,8 @@ public class FuzzTest extends TestModule {
         var targetWasm =
                 generateTestData(
                         "table-", repetitionInfo.getCurrentRepetition(), InstructionType.TABLE);
-        var module = Module.builder(targetWasm).withInitialize(true).withStart(false).build();
-        var instance = module.instantiate();
+        var module = Module.builder(targetWasm).build();
+        var instance = Instance.builder(module).withInitialize(true).withStart(false).build();
 
         var results = testModule(targetWasm, module, instance);
 
@@ -81,6 +85,6 @@ public class FuzzTest extends TestModule {
             assertEquals(res.getOracleResult(), res.getChicoryResult());
         }
         // Sanity check that the starting function doesn't break
-        assertDoesNotThrow(() -> module.instantiate());
+        assertDoesNotThrow(() -> Instance.builder(module).build());
     }
 }

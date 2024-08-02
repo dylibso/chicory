@@ -2,6 +2,8 @@ package com.dylibso.chicory.wasm;
 
 import static java.util.Objects.requireNonNull;
 
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.types.CodeSection;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.DataCountSection;
@@ -16,9 +18,18 @@ import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.TableSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 public class Module {
     private final HashMap<String, CustomSection> customSections;
@@ -35,6 +46,8 @@ public class Module {
     private CodeSection codeSection = new CodeSection();
     private DataSection dataSection = new DataSection();
     private DataCountSection dataCountSection;
+
+    private final List<Integer> ignoredSections = new ArrayList();
 
     public Module() {
         this.customSections = new HashMap<>();
@@ -150,5 +163,96 @@ public class Module {
 
     public void setElementSection(ElementSection elementSection) {
         this.elementSection = requireNonNull(elementSection);
+    }
+
+    public void addIgnoredSection(int id) {
+        ignoredSections.add(id);
+    }
+
+    /**
+     * Creates a {@link Builder} for the specified {@link InputStream}
+     *
+     * @param input the input stream
+     * @return a {@link Builder} for reading the module definition from the specified input stream
+     */
+    public static Builder builder(InputStream input) {
+        return new Builder(() -> input);
+    }
+
+    /**
+     * Creates a {@link Builder} for the specified {@link ByteBuffer}
+     *
+     * @param buffer the buffer
+     * @return a {@link Builder} for reading the module definition from the specified buffer
+     */
+    public static Builder builder(ByteBuffer buffer) {
+        return builder(buffer.array());
+    }
+
+    /**
+     * Creates a {@link Builder} for the specified byte array
+     *
+     * @param buffer the buffer
+     * @return a {@link Builder} for reading the module definition from the specified buffer
+     */
+    public static Builder builder(byte[] buffer) {
+        return new Builder(() -> new ByteArrayInputStream(buffer));
+    }
+
+    /**
+     * Creates a {@link Builder} for the specified {@link File} resource
+     *
+     * @param file the path of the resource
+     * @return a {@link Builder} for reading the module definition from the specified file
+     */
+    public static Builder builder(File file) {
+        return builder(file.toPath());
+    }
+
+    /**
+     * Creates a {@link Builder} for the specified {@link Path} resource
+     *
+     * @param path the path of the resource
+     * @return a {@link Builder} for reading the module definition from the specified path
+     */
+    public static Builder builder(Path path) {
+        return new Builder(
+                () -> {
+                    try {
+                        return Files.newInputStream(path);
+                    } catch (IOException e) {
+                        throw new IllegalArgumentException("Error opening file: " + path, e);
+                    }
+                });
+    }
+
+    public static class Builder {
+        private final Supplier<InputStream> inputStreamSupplier;
+        private ModuleType moduleType = ModuleType.BINARY;
+
+        private Builder(Supplier<InputStream> inputStreamSupplier) {
+            this.inputStreamSupplier = Objects.requireNonNull(inputStreamSupplier);
+        }
+
+        public Builder withType(ModuleType type) {
+            this.moduleType = type;
+            return this;
+        }
+
+        public Module build() {
+            final Parser parser = new Parser();
+            switch (this.moduleType) {
+                case BINARY:
+                    try (final InputStream is = inputStreamSupplier.get()) {
+                        return parser.parseModule(is);
+                    } catch (IOException e) {
+                        throw new ChicoryException(e);
+                    }
+                default:
+                    throw new InvalidException(
+                            "Text format parsing is not implemented, but you can use wat2wasm"
+                                    + " through Chicory.");
+            }
+        }
     }
 }

@@ -3,30 +3,30 @@ package com.dylibso.chicory.testing;
 import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Module;
-import com.dylibso.chicory.runtime.ModuleType;
 import com.dylibso.chicory.wabt.Wat2Wasm;
+import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.ModuleType;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import java.io.File;
 
 public class TestModule {
 
-    private Module.Builder builder;
     private Module module;
+    private Instance instance;
 
     private HostImports imports;
     private boolean typeValidation;
 
-    public TestModule(Module.Builder builder) {
-        this.builder = builder;
+    public TestModule(Module module) {
+        this.module = module;
     }
 
     public static TestModule of(File file) {
         return of(file, ModuleType.BINARY);
     }
 
-    public static TestModule of(Module.Builder builder) {
-        return new TestModule(builder);
+    public static TestModule of(Module module) {
+        return new TestModule(module);
     }
 
     private static final String HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT =
@@ -61,15 +61,14 @@ public class TestModule {
                 throw new MalformedException(
                         e.getMessage() + HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT);
             }
-            return of(Module.builder(parsed));
+            return of(Module.builder(parsed).build());
         }
-        return of(Module.builder(file));
+        return of(Module.builder(file).build());
     }
 
-    public TestModule build() {
-        this.module =
-                builder.withInitialize(false)
-                        .withStart(false)
+    public Instance build() {
+        this.instance =
+                Instance.builder(module)
                         // TODO: enable me!
                         .withTypeValidation(false)
                         // TODO: enable me!
@@ -77,7 +76,7 @@ public class TestModule {
                         .withHostImports(imports)
                         .withMachineFactory(AotMachine::new)
                         .build();
-        return this;
+        return this.instance;
     }
 
     public TestModule withHostImports(HostImports imports) {
@@ -90,7 +89,7 @@ public class TestModule {
         return this;
     }
 
-    public Instance instantiate() {
-        return module.instantiate().initialize(true);
+    public Instance instance() {
+        return instance;
     }
 }
