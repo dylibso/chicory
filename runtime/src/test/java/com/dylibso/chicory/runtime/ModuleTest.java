@@ -191,22 +191,22 @@ public class ModuleTest {
     }
 
     @Test
-     public void shouldRunComplexFunction() {
-         // check with: wasmtime complex.c.wasm --invoke run
-         var instance = Instance.builder(loadModule("compiled/complex.c.wasm")).build();
-         var run = instance.export("run");
-         var result = run.apply();
-         assertEquals(-679, result[0].asInt());
-     }
+    public void shouldRunComplexFunction() {
+        // check with: wasmtime complex.c.wasm --invoke run
+        var instance = Instance.builder(loadModule("compiled/complex.c.wasm")).build();
+        var run = instance.export("run");
+        var result = run.apply();
+        assertEquals(-679, result[0].asInt());
+    }
 
-     @Test
-     public void shouldRunMemoryProgramInC() {
-         // check with: wasmtime memory.c.wasm --invoke run
-         var instance = Instance.builder(loadModule("compiled/memory.c.wasm")).build();
-         var run = instance.export("run");
-         var result = run.apply();
-         assertEquals(11, result[0].asInt());
-     }
+    @Test
+    public void shouldRunMemoryProgramInC() {
+        // check with: wasmtime memory.c.wasm --invoke run
+        var instance = Instance.builder(loadModule("compiled/memory.c.wasm")).build();
+        var run = instance.export("run");
+        var result = run.apply();
+        assertEquals(11, result[0].asInt());
+    }
 
     @Test
     public void shouldWorkWithMemoryOps() {
@@ -245,13 +245,13 @@ public class ModuleTest {
         assertEquals(6, run.apply(Value.i32(100))[0].asInt());
     }
 
-     @Test
-     public void shouldOperateMemoryOps() {
-     // check with: wasmtime memories.wat.wasm --invoke run 100
-     var instance = Instance.builder(loadModule("compiled/memories.wat.wasm")).build();
-     var run = instance.export("run");
-     assertEquals(-25438, run.apply(Value.i32(100))[0].asInt());
-     }
+    @Test
+    public void shouldOperateMemoryOps() {
+        // check with: wasmtime memories.wat.wasm --invoke run 100
+        var instance = Instance.builder(loadModule("compiled/memories.wat.wasm")).build();
+        var run = instance.export("run");
+        assertEquals(-25438, run.apply(Value.i32(100))[0].asInt());
+    }
 
     @Test
     public void shouldRunMixedImports() {

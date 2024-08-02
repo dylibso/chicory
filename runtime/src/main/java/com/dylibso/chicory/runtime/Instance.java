@@ -785,10 +785,7 @@ public class Instance {
             var globalInitializers = module.globalSection().globals();
 
             var dataSegments = module.dataSection().dataSegments();
-
-            // TODO i guess we should explode if this is the case, is this possible?
             var types = module.typeSection().types();
-
             int numFuncTypes =
                     module.functionSection().functionCount()
                             + module.importSection().count(ExternalType.FUNCTION);
