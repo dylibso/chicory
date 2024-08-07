@@ -39,7 +39,7 @@ implementation 'com.dylibso.chicory:runtime:0.0.12'
 
 ### Install the CLI (experimental)
 
-The Java generator CLI is available for download on Maven at the link:
+The Chicory CLI is available for download on Maven at the link:
 
 ```
 https://repo1.maven.org/maven2/com/dylibso/chicory/cli/<version>/cli-<version>.sh
