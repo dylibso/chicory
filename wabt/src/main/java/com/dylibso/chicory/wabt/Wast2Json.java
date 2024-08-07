@@ -77,7 +77,7 @@ public class Wast2Json {
                 wasiOpts.withDirectory(outputFolder.toString(), outputFolder);
 
                 List<String> args = new ArrayList<>();
-                args.add("wasm-objdump");
+                args.add("wast2json");
                 args.add(inputPath.toString());
                 args.add("-o");
                 args.add(outputFolder.resolve(output.getName()).toString());
