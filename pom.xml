@@ -86,7 +86,7 @@
     <asm.version>9.7</asm.version>
     <jgit.version>6.10.0.202406032230-r</jgit.version>
     <picocli.version>4.7.6</picocli.version>
-    <commons-lang.version>3.15.0</commons-lang.version>
+    <commons-lang.version>3.16.0</commons-lang.version>
     <commons-io.version>2.16.1</commons-io.version>
     <jmh.version>1.37</jmh.version>
 
