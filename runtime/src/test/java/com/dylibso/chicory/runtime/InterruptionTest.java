@@ -3,11 +3,9 @@ package com.dylibso.chicory.runtime;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.Value;
@@ -47,9 +45,8 @@ public class InterruptionTest {
         AtomicBoolean interrupted = new AtomicBoolean();
         Runnable runnable =
                 () -> {
-                    var e = assertThrows(WASMMachineException.class, function::run);
-                    var ex = assertInstanceOf(ChicoryException.class, e.getCause());
-                    assertEquals("Thread interrupted", ex.getMessage());
+                    var e = assertThrows(ChicoryException.class, function::run);
+                    assertEquals("Thread interrupted", e.getMessage());
                     interrupted.set(true);
                 };
 

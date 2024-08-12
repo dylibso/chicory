@@ -62,6 +62,8 @@ public final class WasiTestRunner {
             int actualExitCode;
             try {
                 actualExitCode = execute(test, options.build());
+            } catch (WasiExitException e) {
+                actualExitCode = e.exitCode();
             } catch (RuntimeException e) {
                 String message = "Failed to execute test: " + test;
                 if (!stdoutStream.output().isEmpty() || !stderrStream.output().isEmpty()) {

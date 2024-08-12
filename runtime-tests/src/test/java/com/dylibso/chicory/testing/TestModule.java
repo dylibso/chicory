@@ -44,7 +44,9 @@ public class TestModule {
                     + "import after table "
                     + "import after memory "
                     + "i32 constant out of range "
-                    + "unknown label";
+                    + "unknown label "
+                    + "alignment "
+                    + "multiple start sections";
 
     public static TestModule of(File file, ModuleType moduleType) {
         if (moduleType == ModuleType.TEXT) {

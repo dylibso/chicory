@@ -59,7 +59,11 @@ class InterpreterMachine implements Machine {
             stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
             callStack.push(stackFrame);
 
-            eval(stack, instance, callStack);
+            try {
+                eval(stack, instance, callStack);
+            } catch (StackOverflowError e) {
+                throw new ChicoryException("call stack exhausted", e);
+            }
         } else {
             var stackFrame = new StackFrame(instance, funcId, args, List.of());
             stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
@@ -96,659 +100,647 @@ class InterpreterMachine implements Machine {
 
     static void eval(MStack stack, Instance instance, ArrayDeque<StackFrame> callStack)
             throws ChicoryException {
+        var frame = callStack.peek();
+        boolean shouldReturn = false;
 
-        try {
-            var frame = callStack.peek();
-            boolean shouldReturn = false;
+        loop:
+        while (!frame.terminated()) {
+            if (shouldReturn) return;
+            var instruction = frame.loadCurrentInstruction();
+            //                LOGGER.log(
+            //                        System.Logger.Level.DEBUG,
+            //                        "func="
+            //                                + frame.funcId
+            //                                + "@"
+            //                                + frame.pc
+            //                                + ": "
+            //                                + instruction
+            //                                + " stack="
+            //                                + stack);
+            var opcode = instruction.opcode();
+            var operands = instruction.operands();
+            instance.onExecution(instruction, operands, stack);
+            switch (opcode) {
+                case UNREACHABLE:
+                    throw new TrapException("Trapped on unreachable instruction", callStack);
+                case NOP:
+                    break;
+                case LOOP:
+                case BLOCK:
+                    BLOCK(frame, stack, instance, instruction);
+                    break;
+                case IF:
+                    IF(frame, stack, instance, instruction);
+                    break;
+                case ELSE:
+                    frame.jumpTo(instruction.labelTrue());
+                    break;
+                case BR:
+                    BR(frame, stack, instruction);
+                    break;
+                case BR_IF:
+                    BR_IF(frame, stack, instruction);
+                    break;
+                case BR_TABLE:
+                    BR_TABLE(frame, stack, instruction);
+                    break;
+                case END:
+                    {
+                        var ctrlFrame = frame.popCtrl();
+                        StackFrame.doControlTransfer(ctrlFrame, stack);
 
-            loop:
-            while (!frame.terminated()) {
-                if (shouldReturn) return;
-                var instruction = frame.loadCurrentInstruction();
-                //                LOGGER.log(
-                //                        System.Logger.Level.DEBUG,
-                //                        "func="
-                //                                + frame.funcId
-                //                                + "@"
-                //                                + frame.pc
-                //                                + ": "
-                //                                + instruction
-                //                                + " stack="
-                //                                + stack);
-                var opcode = instruction.opcode();
-                var operands = instruction.operands();
-                instance.onExecution(instruction, operands, stack);
-                switch (opcode) {
-                    case UNREACHABLE:
-                        throw new TrapException("Trapped on unreachable instruction", callStack);
-                    case NOP:
-                        break;
-                    case LOOP:
-                    case BLOCK:
-                        BLOCK(frame, stack, instance, instruction);
-                        break;
-                    case IF:
-                        IF(frame, stack, instance, instruction);
-                        break;
-                    case ELSE:
-                        frame.jumpTo(instruction.labelTrue());
-                        break;
-                    case BR:
-                        BR(frame, stack, instruction);
-                        break;
-                    case BR_IF:
-                        BR_IF(frame, stack, instruction);
-                        break;
-                    case BR_TABLE:
-                        BR_TABLE(frame, stack, instruction);
-                        break;
-                    case END:
-                        {
-                            var ctrlFrame = frame.popCtrl();
-                            StackFrame.doControlTransfer(ctrlFrame, stack);
-
-                            // if this is the last end, then we're done with
-                            // the function
-                            if (frame.isLastBlock()) {
-                                break loop;
-                            }
-                            break;
+                        // if this is the last end, then we're done with
+                        // the function
+                        if (frame.isLastBlock()) {
+                            break loop;
                         }
-                    case RETURN:
-                        {
-                            // RETURN doesn't pass through the END
-                            var ctrlFrame = frame.popCtrlTillCall();
-                            StackFrame.doControlTransfer(ctrlFrame, stack);
+                        break;
+                    }
+                case RETURN:
+                    {
+                        // RETURN doesn't pass through the END
+                        var ctrlFrame = frame.popCtrlTillCall();
+                        StackFrame.doControlTransfer(ctrlFrame, stack);
 
-                            shouldReturn = true;
-                            break;
-                        }
-                    case CALL_INDIRECT:
-                        CALL_INDIRECT(stack, instance, callStack, operands);
-                        break;
-                    case DROP:
-                        stack.pop();
-                        break;
-                    case SELECT:
-                        SELECT(stack);
-                        break;
-                    case SELECT_T:
-                        SELECT_T(stack, operands);
-                        break;
-                    case LOCAL_GET:
-                        stack.push(frame.local((int) operands[0]));
-                        break;
-                    case LOCAL_SET:
-                        frame.setLocal((int) operands[0], stack.pop());
-                        break;
-                    case LOCAL_TEE:
-                        // here we peek instead of pop, leaving it on the stack
-                        frame.setLocal((int) operands[0], stack.peek());
-                        break;
-                    case GLOBAL_GET:
-                        GLOBAL_GET(stack, instance, operands);
-                        break;
-                    case GLOBAL_SET:
-                        GLOBAL_SET(stack, instance, operands);
-                        break;
-                    case TABLE_GET:
-                        TABLE_GET(stack, instance, operands);
-                        break;
-                    case TABLE_SET:
-                        TABLE_SET(stack, instance, operands);
-                        break;
-                        // TODO signed and unsigned are the same right now
-                    case I32_LOAD:
-                        I32_LOAD(stack, instance, operands);
-                        break;
-                    case I64_LOAD:
-                        I64_LOAD(stack, instance, operands);
-                        break;
-                    case F32_LOAD:
-                        F32_LOAD(stack, instance, operands);
-                        break;
-                    case F64_LOAD:
-                        F64_LOAD(stack, instance, operands);
-                        break;
-                    case I32_LOAD8_S:
-                        I32_LOAD8_S(stack, instance, operands);
-                        break;
-                    case I64_LOAD8_S:
-                        I64_LOAD8_S(stack, instance, operands);
-                        break;
-                    case I32_LOAD8_U:
-                        I32_LOAD8_U(stack, instance, operands);
-                        break;
-                    case I64_LOAD8_U:
-                        I64_LOAD8_U(stack, instance, operands);
-                        break;
-                    case I32_LOAD16_S:
-                        I32_LOAD16_S(stack, instance, operands);
-                        break;
-                    case I64_LOAD16_S:
-                        I64_LOAD16_S(stack, instance, operands);
-                        break;
-                    case I32_LOAD16_U:
-                        I32_LOAD16_U(stack, instance, operands);
-                        break;
-                    case I64_LOAD16_U:
-                        I64_LOAD16_U(stack, instance, operands);
-                        break;
-                    case I64_LOAD32_S:
-                        I64_LOAD32_S(stack, instance, operands);
-                        break;
-                    case I64_LOAD32_U:
-                        I64_LOAD32_U(stack, instance, operands);
-                        break;
-                    case I32_STORE:
-                        I32_STORE(stack, instance, operands);
-                        break;
-                    case I32_STORE16:
-                    case I64_STORE16:
-                        I64_STORE16(stack, instance, operands);
-                        break;
-                    case I64_STORE:
-                        I64_STORE(stack, instance, operands);
-                        break;
-                    case F32_STORE:
-                        F32_STORE(stack, instance, operands);
-                        break;
-                    case F64_STORE:
-                        F64_STORE(stack, instance, operands);
-                        break;
-                    case MEMORY_GROW:
-                        MEMORY_GROW(stack, instance);
-                        break;
-                    case MEMORY_FILL:
-                        MEMORY_FILL(stack, instance, operands);
-                        break;
-                    case I32_STORE8:
-                    case I64_STORE8:
-                        I64_STORE8(stack, instance, operands);
-                        break;
-                    case I64_STORE32:
-                        I64_STORE32(stack, instance, operands);
-                        break;
-                    case MEMORY_SIZE:
-                        MEMORY_SIZE(stack, instance);
-                        break;
-                        // TODO 32bit and 64 bit operations are the same for now
-                    case I32_CONST:
-                        stack.push(Value.i32(operands[0]));
-                        break;
-                    case I64_CONST:
-                        stack.push(Value.i64(operands[0]));
-                        break;
-                    case F32_CONST:
-                        stack.push(Value.f32(operands[0]));
-                        break;
-                    case F64_CONST:
-                        stack.push(Value.f64(operands[0]));
-                        break;
-                    case I32_EQ:
-                        I32_EQ(stack);
-                        break;
-                    case I64_EQ:
-                        I64_EQ(stack);
-                        break;
-                    case I32_NE:
-                        I32_NE(stack);
-                        break;
-                    case I64_NE:
-                        I64_NE(stack);
-                        break;
-                    case I32_EQZ:
-                        I32_EQZ(stack);
-                        break;
-                    case I64_EQZ:
-                        I64_EQZ(stack);
-                        break;
-                    case I32_LT_S:
-                        I32_LT_S(stack);
-                        break;
-                    case I32_LT_U:
-                        I32_LT_U(stack);
-                        break;
-                    case I64_LT_S:
-                        I64_LT_S(stack);
-                        break;
-                    case I64_LT_U:
-                        I64_LT_U(stack);
-                        break;
-                    case I32_GT_S:
-                        I32_GT_S(stack);
-                        break;
-                    case I32_GT_U:
-                        I32_GT_U(stack);
-                        break;
-                    case I64_GT_S:
-                        I64_GT_S(stack);
-                        break;
-                    case I64_GT_U:
-                        I64_GT_U(stack);
-                        break;
-                    case I32_GE_S:
-                        I32_GE_S(stack);
-                        break;
-                    case I32_GE_U:
-                        I32_GE_U(stack);
-                        break;
-                    case I64_GE_U:
-                        I64_GE_U(stack);
-                        break;
-                    case I64_GE_S:
-                        I64_GE_S(stack);
-                        break;
-                    case I32_LE_S:
-                        I32_LE_S(stack);
-                        break;
-                    case I32_LE_U:
-                        I32_LE_U(stack);
-                        break;
-                    case I64_LE_S:
-                        I64_LE_S(stack);
-                        break;
-                    case I64_LE_U:
-                        I64_LE_U(stack);
-                        break;
-                    case F32_EQ:
-                        F32_EQ(stack);
-                        break;
-                    case F64_EQ:
-                        F64_EQ(stack);
-                        break;
-                    case I32_CLZ:
-                        I32_CLZ(stack);
-                        break;
-                    case I32_CTZ:
-                        I32_CTZ(stack);
-                        break;
-                    case I32_POPCNT:
-                        I32_POPCNT(stack);
-                        break;
-                    case I32_ADD:
-                        I32_ADD(stack);
-                        break;
-                    case I64_ADD:
-                        I64_ADD(stack);
-                        break;
-                    case I32_SUB:
-                        I32_SUB(stack);
-                        break;
-                    case I64_SUB:
-                        I64_SUB(stack);
-                        break;
-                    case I32_MUL:
-                        I32_MUL(stack);
-                        break;
-                    case I64_MUL:
-                        I64_MUL(stack);
-                        break;
-                    case I32_DIV_S:
-                        I32_DIV_S(stack);
-                        break;
-                    case I32_DIV_U:
-                        I32_DIV_U(stack);
-                        break;
-                    case I64_DIV_S:
-                        I64_DIV_S(stack);
-                        break;
-                    case I64_DIV_U:
-                        I64_DIV_U(stack);
-                        break;
-                    case I32_REM_S:
-                        I32_REM_S(stack);
-                        break;
-                    case I32_REM_U:
-                        I32_REM_U(stack);
-                        break;
-                    case I64_AND:
-                        I64_AND(stack);
-                        break;
-                    case I64_OR:
-                        I64_OR(stack);
-                        break;
-                    case I64_XOR:
-                        I64_XOR(stack);
-                        break;
-                    case I64_SHL:
-                        I64_SHL(stack);
-                        break;
-                    case I64_SHR_S:
-                        I64_SHR_S(stack);
-                        break;
-                    case I64_SHR_U:
-                        I64_SHR_U(stack);
-                        break;
-                    case I64_REM_S:
-                        I64_REM_S(stack);
-                        break;
-                    case I64_REM_U:
-                        I64_REM_U(stack);
-                        break;
-                    case I64_ROTL:
-                        I64_ROTL(stack);
-                        break;
-                    case I64_ROTR:
-                        I64_ROTR(stack);
-                        break;
-                    case I64_CLZ:
-                        I64_CLZ(stack);
-                        break;
-                    case I64_CTZ:
-                        I64_CTZ(stack);
-                        break;
-                    case I64_POPCNT:
-                        I64_POPCNT(stack);
-                        break;
-                    case F32_NEG:
-                        F32_NEG(stack);
-                        break;
-                    case F64_NEG:
-                        F64_NEG(stack);
-                        break;
-                    case CALL:
-                        CALL(stack, instance, callStack, operands);
-                        break;
-                    case I32_AND:
-                        I32_AND(stack);
-                        break;
-                    case I32_OR:
-                        I32_OR(stack);
-                        break;
-                    case I32_XOR:
-                        I32_XOR(stack);
-                        break;
-                    case I32_SHL:
-                        I32_SHL(stack);
-                        break;
-                    case I32_SHR_S:
-                        I32_SHR_S(stack);
-                        break;
-                    case I32_SHR_U:
-                        I32_SHR_U(stack);
-                        break;
-                    case I32_ROTL:
-                        I32_ROTL(stack);
-                        break;
-                    case I32_ROTR:
-                        I32_ROTR(stack);
-                        break;
-                    case F32_ADD:
-                        F32_ADD(stack);
-                        break;
-                    case F64_ADD:
-                        F64_ADD(stack);
-                        break;
-                    case F32_SUB:
-                        F32_SUB(stack);
-                        break;
-                    case F64_SUB:
-                        F64_SUB(stack);
-                        break;
-                    case F32_MUL:
-                        F32_MUL(stack);
-                        break;
-                    case F64_MUL:
-                        F64_MUL(stack);
-                        break;
-                    case F32_DIV:
-                        F32_DIV(stack);
-                        break;
-                    case F64_DIV:
-                        F64_DIV(stack);
-                        break;
-                    case F32_MIN:
-                        F32_MIN(stack);
-                        break;
-                    case F64_MIN:
-                        F64_MIN(stack);
-                        break;
-                    case F32_MAX:
-                        F32_MAX(stack);
-                        break;
-                    case F64_MAX:
-                        F64_MAX(stack);
-                        break;
-                    case F32_SQRT:
-                        F32_SQRT(stack);
-                        break;
-                    case F64_SQRT:
-                        F64_SQRT(stack);
-                        break;
-                    case F32_FLOOR:
-                        F32_FLOOR(stack);
-                        break;
-                    case F64_FLOOR:
-                        F64_FLOOR(stack);
-                        break;
-                    case F32_CEIL:
-                        F32_CEIL(stack);
-                        break;
-                    case F64_CEIL:
-                        F64_CEIL(stack);
-                        break;
-                    case F32_TRUNC:
-                        F32_TRUNC(stack);
-                        break;
-                    case F64_TRUNC:
-                        F64_TRUNC(stack);
-                        break;
-                    case F32_NEAREST:
-                        F32_NEAREST(stack);
-                        break;
-                    case F64_NEAREST:
-                        F64_NEAREST(stack);
-                        break;
-                        // For the extend_* operations, note that java
-                        // automatically does this when casting from
-                        // smaller to larger primitives
-                    case I32_EXTEND_8_S:
-                        I32_EXTEND_8_S(stack);
-                        break;
-                    case I32_EXTEND_16_S:
-                        I32_EXTEND_16_S(stack);
-                        break;
-                    case I64_EXTEND_8_S:
-                        I64_EXTEND_8_S(stack);
-                        break;
-                    case I64_EXTEND_16_S:
-                        I64_EXTEND_16_S(stack);
-                        break;
-                    case I64_EXTEND_32_S:
-                        I64_EXTEND_32_S(stack);
-                        break;
-                    case F64_CONVERT_I64_U:
-                        F64_CONVERT_I64_U(stack);
-                        break;
-                    case F64_CONVERT_I32_U:
-                        F64_CONVERT_I32_U(stack);
-                        break;
-                    case F64_CONVERT_I32_S:
-                        F64_CONVERT_I32_S(stack);
-                        break;
-                    case F64_PROMOTE_F32:
-                        F64_PROMOTE_F32(stack);
-                        break;
-                    case F64_REINTERPRET_I64:
-                        F64_REINTERPRET_I64(stack);
-                        break;
-                    case I64_TRUNC_F64_S:
-                        I64_TRUNC_F64_S(stack);
-                        break;
-                    case I32_WRAP_I64:
-                        I32_WRAP_I64(stack);
-                        break;
-                    case I64_EXTEND_I32_S:
-                        I64_EXTEND_I32_S(stack);
-                        break;
-                    case I64_EXTEND_I32_U:
-                        I64_EXTEND_I32_U(stack);
-                        break;
-                    case I32_REINTERPRET_F32:
-                        I32_REINTERPRET_F32(stack);
-                        break;
-                    case I64_REINTERPRET_F64:
-                        I64_REINTERPRET_F64(stack);
-                        break;
-                    case F32_REINTERPRET_I32:
-                        F32_REINTERPRET_I32(stack);
-                        break;
-                    case F32_COPYSIGN:
-                        F32_COPYSIGN(stack);
-                        break;
-                    case F32_ABS:
-                        F32_ABS(stack);
-                        break;
-                    case F64_COPYSIGN:
-                        F64_COPYSIGN(stack);
-                        break;
-                    case F64_ABS:
-                        F64_ABS(stack);
-                        break;
-                    case F32_NE:
-                        F32_NE(stack);
-                        break;
-                    case F64_NE:
-                        F64_NE(stack);
-                        break;
-                    case F32_LT:
-                        F32_LT(stack);
-                        break;
-                    case F64_LT:
-                        F64_LT(stack);
-                        break;
-                    case F32_LE:
-                        F32_LE(stack);
-                        break;
-                    case F64_LE:
-                        F64_LE(stack);
-                        break;
-                    case F32_GE:
-                        F32_GE(stack);
-                        break;
-                    case F64_GE:
-                        F64_GE(stack);
-                        break;
-                    case F32_GT:
-                        F32_GT(stack);
-                        break;
-                    case F64_GT:
-                        F64_GT(stack);
-                        break;
-                    case F32_DEMOTE_F64:
-                        F32_DEMOTE_F64(stack);
-                        break;
-                    case F32_CONVERT_I32_S:
-                        F32_CONVERT_I32_S(stack);
-                        break;
-                    case I32_TRUNC_F32_S:
-                        I32_TRUNC_F32_S(stack);
-                        break;
-                    case I32_TRUNC_SAT_F32_S:
-                        I32_TRUNC_SAT_F32_S(stack);
-                        break;
-                    case I32_TRUNC_SAT_F32_U:
-                        I32_TRUNC_SAT_F32_U(stack);
-                        break;
-                    case I32_TRUNC_SAT_F64_S:
-                        I32_TRUNC_SAT_F64_S(stack);
-                        break;
-                    case I32_TRUNC_SAT_F64_U:
-                        I32_TRUNC_SAT_F64_U(stack);
-                        break;
-                    case F32_CONVERT_I32_U:
-                        F32_CONVERT_I32_U(stack);
-                        break;
-                    case I32_TRUNC_F32_U:
-                        I32_TRUNC_F32_U(stack);
-                        break;
-                    case F32_CONVERT_I64_S:
-                        F32_CONVERT_I64_S(stack);
-                        break;
-                    case F32_CONVERT_I64_U:
-                        F32_CONVERT_I64_U(stack);
-                        break;
-                    case F64_CONVERT_I64_S:
-                        F64_CONVERT_I64_S(stack);
-                        break;
-                    case I64_TRUNC_F32_U:
-                        I64_TRUNC_F32_U(stack);
-                        break;
-                    case I64_TRUNC_F64_U:
-                        I64_TRUNC_F64_U(stack);
-                        break;
-                    case I64_TRUNC_SAT_F32_S:
-                        I64_TRUNC_SAT_F32_S(stack);
-                        break;
-                    case I64_TRUNC_SAT_F32_U:
-                        I64_TRUNC_SAT_F32_U(stack);
-                        break;
-                    case I64_TRUNC_SAT_F64_S:
-                        I64_TRUNC_SAT_F64_S(stack);
-                        break;
-                    case I64_TRUNC_SAT_F64_U:
-                        I64_TRUNC_SAT_F64_U(stack);
-                        break;
-                    case I32_TRUNC_F64_S:
-                        I32_TRUNC_F64_S(stack);
-                        break;
-                    case I32_TRUNC_F64_U:
-                        I32_TRUNC_F64_U(stack);
-                        break;
-                    case I64_TRUNC_F32_S:
-                        I64_TRUNC_F32_S(stack);
-                        break;
-                    case MEMORY_INIT:
-                        MEMORY_INIT(stack, instance, operands);
-                        break;
-                    case TABLE_INIT:
-                        TABLE_INIT(stack, instance, operands);
-                        break;
-                    case DATA_DROP:
-                        DATA_DROP(instance, operands);
-                        break;
-                    case MEMORY_COPY:
-                        MEMORY_COPY(stack, instance, operands);
-                        break;
-                    case TABLE_COPY:
-                        TABLE_COPY(stack, instance, operands);
-                        break;
-                    case TABLE_FILL:
-                        TABLE_FILL(stack, instance, operands);
-                        break;
-                    case TABLE_SIZE:
-                        TABLE_SIZE(stack, instance, operands);
-                        break;
-                    case TABLE_GROW:
-                        TABLE_GROW(stack, instance, operands);
-                        break;
-                    case REF_FUNC:
-                        stack.push(Value.funcRef((int) operands[0]));
-                        break;
-                    case REF_NULL:
-                        REF_NULL(stack, operands);
-                        break;
-                    case REF_IS_NULL:
-                        REF_IS_NULL(stack);
-                        break;
-                    case ELEM_DROP:
-                        ELEM_DROP(instance, operands);
-                        break;
-                    default:
-                        throw new RuntimeException(
-                                "Machine doesn't recognize Instruction " + instruction);
-                }
+                        shouldReturn = true;
+                        break;
+                    }
+                case CALL_INDIRECT:
+                    CALL_INDIRECT(stack, instance, callStack, operands);
+                    break;
+                case DROP:
+                    stack.pop();
+                    break;
+                case SELECT:
+                    SELECT(stack);
+                    break;
+                case SELECT_T:
+                    SELECT_T(stack, operands);
+                    break;
+                case LOCAL_GET:
+                    stack.push(frame.local((int) operands[0]));
+                    break;
+                case LOCAL_SET:
+                    frame.setLocal((int) operands[0], stack.pop());
+                    break;
+                case LOCAL_TEE:
+                    // here we peek instead of pop, leaving it on the stack
+                    frame.setLocal((int) operands[0], stack.peek());
+                    break;
+                case GLOBAL_GET:
+                    GLOBAL_GET(stack, instance, operands);
+                    break;
+                case GLOBAL_SET:
+                    GLOBAL_SET(stack, instance, operands);
+                    break;
+                case TABLE_GET:
+                    TABLE_GET(stack, instance, operands);
+                    break;
+                case TABLE_SET:
+                    TABLE_SET(stack, instance, operands);
+                    break;
+                    // TODO signed and unsigned are the same right now
+                case I32_LOAD:
+                    I32_LOAD(stack, instance, operands);
+                    break;
+                case I64_LOAD:
+                    I64_LOAD(stack, instance, operands);
+                    break;
+                case F32_LOAD:
+                    F32_LOAD(stack, instance, operands);
+                    break;
+                case F64_LOAD:
+                    F64_LOAD(stack, instance, operands);
+                    break;
+                case I32_LOAD8_S:
+                    I32_LOAD8_S(stack, instance, operands);
+                    break;
+                case I64_LOAD8_S:
+                    I64_LOAD8_S(stack, instance, operands);
+                    break;
+                case I32_LOAD8_U:
+                    I32_LOAD8_U(stack, instance, operands);
+                    break;
+                case I64_LOAD8_U:
+                    I64_LOAD8_U(stack, instance, operands);
+                    break;
+                case I32_LOAD16_S:
+                    I32_LOAD16_S(stack, instance, operands);
+                    break;
+                case I64_LOAD16_S:
+                    I64_LOAD16_S(stack, instance, operands);
+                    break;
+                case I32_LOAD16_U:
+                    I32_LOAD16_U(stack, instance, operands);
+                    break;
+                case I64_LOAD16_U:
+                    I64_LOAD16_U(stack, instance, operands);
+                    break;
+                case I64_LOAD32_S:
+                    I64_LOAD32_S(stack, instance, operands);
+                    break;
+                case I64_LOAD32_U:
+                    I64_LOAD32_U(stack, instance, operands);
+                    break;
+                case I32_STORE:
+                    I32_STORE(stack, instance, operands);
+                    break;
+                case I32_STORE16:
+                case I64_STORE16:
+                    I64_STORE16(stack, instance, operands);
+                    break;
+                case I64_STORE:
+                    I64_STORE(stack, instance, operands);
+                    break;
+                case F32_STORE:
+                    F32_STORE(stack, instance, operands);
+                    break;
+                case F64_STORE:
+                    F64_STORE(stack, instance, operands);
+                    break;
+                case MEMORY_GROW:
+                    MEMORY_GROW(stack, instance);
+                    break;
+                case MEMORY_FILL:
+                    MEMORY_FILL(stack, instance, operands);
+                    break;
+                case I32_STORE8:
+                case I64_STORE8:
+                    I64_STORE8(stack, instance, operands);
+                    break;
+                case I64_STORE32:
+                    I64_STORE32(stack, instance, operands);
+                    break;
+                case MEMORY_SIZE:
+                    MEMORY_SIZE(stack, instance);
+                    break;
+                    // TODO 32bit and 64 bit operations are the same for now
+                case I32_CONST:
+                    stack.push(Value.i32(operands[0]));
+                    break;
+                case I64_CONST:
+                    stack.push(Value.i64(operands[0]));
+                    break;
+                case F32_CONST:
+                    stack.push(Value.f32(operands[0]));
+                    break;
+                case F64_CONST:
+                    stack.push(Value.f64(operands[0]));
+                    break;
+                case I32_EQ:
+                    I32_EQ(stack);
+                    break;
+                case I64_EQ:
+                    I64_EQ(stack);
+                    break;
+                case I32_NE:
+                    I32_NE(stack);
+                    break;
+                case I64_NE:
+                    I64_NE(stack);
+                    break;
+                case I32_EQZ:
+                    I32_EQZ(stack);
+                    break;
+                case I64_EQZ:
+                    I64_EQZ(stack);
+                    break;
+                case I32_LT_S:
+                    I32_LT_S(stack);
+                    break;
+                case I32_LT_U:
+                    I32_LT_U(stack);
+                    break;
+                case I64_LT_S:
+                    I64_LT_S(stack);
+                    break;
+                case I64_LT_U:
+                    I64_LT_U(stack);
+                    break;
+                case I32_GT_S:
+                    I32_GT_S(stack);
+                    break;
+                case I32_GT_U:
+                    I32_GT_U(stack);
+                    break;
+                case I64_GT_S:
+                    I64_GT_S(stack);
+                    break;
+                case I64_GT_U:
+                    I64_GT_U(stack);
+                    break;
+                case I32_GE_S:
+                    I32_GE_S(stack);
+                    break;
+                case I32_GE_U:
+                    I32_GE_U(stack);
+                    break;
+                case I64_GE_U:
+                    I64_GE_U(stack);
+                    break;
+                case I64_GE_S:
+                    I64_GE_S(stack);
+                    break;
+                case I32_LE_S:
+                    I32_LE_S(stack);
+                    break;
+                case I32_LE_U:
+                    I32_LE_U(stack);
+                    break;
+                case I64_LE_S:
+                    I64_LE_S(stack);
+                    break;
+                case I64_LE_U:
+                    I64_LE_U(stack);
+                    break;
+                case F32_EQ:
+                    F32_EQ(stack);
+                    break;
+                case F64_EQ:
+                    F64_EQ(stack);
+                    break;
+                case I32_CLZ:
+                    I32_CLZ(stack);
+                    break;
+                case I32_CTZ:
+                    I32_CTZ(stack);
+                    break;
+                case I32_POPCNT:
+                    I32_POPCNT(stack);
+                    break;
+                case I32_ADD:
+                    I32_ADD(stack);
+                    break;
+                case I64_ADD:
+                    I64_ADD(stack);
+                    break;
+                case I32_SUB:
+                    I32_SUB(stack);
+                    break;
+                case I64_SUB:
+                    I64_SUB(stack);
+                    break;
+                case I32_MUL:
+                    I32_MUL(stack);
+                    break;
+                case I64_MUL:
+                    I64_MUL(stack);
+                    break;
+                case I32_DIV_S:
+                    I32_DIV_S(stack);
+                    break;
+                case I32_DIV_U:
+                    I32_DIV_U(stack);
+                    break;
+                case I64_DIV_S:
+                    I64_DIV_S(stack);
+                    break;
+                case I64_DIV_U:
+                    I64_DIV_U(stack);
+                    break;
+                case I32_REM_S:
+                    I32_REM_S(stack);
+                    break;
+                case I32_REM_U:
+                    I32_REM_U(stack);
+                    break;
+                case I64_AND:
+                    I64_AND(stack);
+                    break;
+                case I64_OR:
+                    I64_OR(stack);
+                    break;
+                case I64_XOR:
+                    I64_XOR(stack);
+                    break;
+                case I64_SHL:
+                    I64_SHL(stack);
+                    break;
+                case I64_SHR_S:
+                    I64_SHR_S(stack);
+                    break;
+                case I64_SHR_U:
+                    I64_SHR_U(stack);
+                    break;
+                case I64_REM_S:
+                    I64_REM_S(stack);
+                    break;
+                case I64_REM_U:
+                    I64_REM_U(stack);
+                    break;
+                case I64_ROTL:
+                    I64_ROTL(stack);
+                    break;
+                case I64_ROTR:
+                    I64_ROTR(stack);
+                    break;
+                case I64_CLZ:
+                    I64_CLZ(stack);
+                    break;
+                case I64_CTZ:
+                    I64_CTZ(stack);
+                    break;
+                case I64_POPCNT:
+                    I64_POPCNT(stack);
+                    break;
+                case F32_NEG:
+                    F32_NEG(stack);
+                    break;
+                case F64_NEG:
+                    F64_NEG(stack);
+                    break;
+                case CALL:
+                    CALL(stack, instance, callStack, operands);
+                    break;
+                case I32_AND:
+                    I32_AND(stack);
+                    break;
+                case I32_OR:
+                    I32_OR(stack);
+                    break;
+                case I32_XOR:
+                    I32_XOR(stack);
+                    break;
+                case I32_SHL:
+                    I32_SHL(stack);
+                    break;
+                case I32_SHR_S:
+                    I32_SHR_S(stack);
+                    break;
+                case I32_SHR_U:
+                    I32_SHR_U(stack);
+                    break;
+                case I32_ROTL:
+                    I32_ROTL(stack);
+                    break;
+                case I32_ROTR:
+                    I32_ROTR(stack);
+                    break;
+                case F32_ADD:
+                    F32_ADD(stack);
+                    break;
+                case F64_ADD:
+                    F64_ADD(stack);
+                    break;
+                case F32_SUB:
+                    F32_SUB(stack);
+                    break;
+                case F64_SUB:
+                    F64_SUB(stack);
+                    break;
+                case F32_MUL:
+                    F32_MUL(stack);
+                    break;
+                case F64_MUL:
+                    F64_MUL(stack);
+                    break;
+                case F32_DIV:
+                    F32_DIV(stack);
+                    break;
+                case F64_DIV:
+                    F64_DIV(stack);
+                    break;
+                case F32_MIN:
+                    F32_MIN(stack);
+                    break;
+                case F64_MIN:
+                    F64_MIN(stack);
+                    break;
+                case F32_MAX:
+                    F32_MAX(stack);
+                    break;
+                case F64_MAX:
+                    F64_MAX(stack);
+                    break;
+                case F32_SQRT:
+                    F32_SQRT(stack);
+                    break;
+                case F64_SQRT:
+                    F64_SQRT(stack);
+                    break;
+                case F32_FLOOR:
+                    F32_FLOOR(stack);
+                    break;
+                case F64_FLOOR:
+                    F64_FLOOR(stack);
+                    break;
+                case F32_CEIL:
+                    F32_CEIL(stack);
+                    break;
+                case F64_CEIL:
+                    F64_CEIL(stack);
+                    break;
+                case F32_TRUNC:
+                    F32_TRUNC(stack);
+                    break;
+                case F64_TRUNC:
+                    F64_TRUNC(stack);
+                    break;
+                case F32_NEAREST:
+                    F32_NEAREST(stack);
+                    break;
+                case F64_NEAREST:
+                    F64_NEAREST(stack);
+                    break;
+                    // For the extend_* operations, note that java
+                    // automatically does this when casting from
+                    // smaller to larger primitives
+                case I32_EXTEND_8_S:
+                    I32_EXTEND_8_S(stack);
+                    break;
+                case I32_EXTEND_16_S:
+                    I32_EXTEND_16_S(stack);
+                    break;
+                case I64_EXTEND_8_S:
+                    I64_EXTEND_8_S(stack);
+                    break;
+                case I64_EXTEND_16_S:
+                    I64_EXTEND_16_S(stack);
+                    break;
+                case I64_EXTEND_32_S:
+                    I64_EXTEND_32_S(stack);
+                    break;
+                case F64_CONVERT_I64_U:
+                    F64_CONVERT_I64_U(stack);
+                    break;
+                case F64_CONVERT_I32_U:
+                    F64_CONVERT_I32_U(stack);
+                    break;
+                case F64_CONVERT_I32_S:
+                    F64_CONVERT_I32_S(stack);
+                    break;
+                case F64_PROMOTE_F32:
+                    F64_PROMOTE_F32(stack);
+                    break;
+                case F64_REINTERPRET_I64:
+                    F64_REINTERPRET_I64(stack);
+                    break;
+                case I64_TRUNC_F64_S:
+                    I64_TRUNC_F64_S(stack);
+                    break;
+                case I32_WRAP_I64:
+                    I32_WRAP_I64(stack);
+                    break;
+                case I64_EXTEND_I32_S:
+                    I64_EXTEND_I32_S(stack);
+                    break;
+                case I64_EXTEND_I32_U:
+                    I64_EXTEND_I32_U(stack);
+                    break;
+                case I32_REINTERPRET_F32:
+                    I32_REINTERPRET_F32(stack);
+                    break;
+                case I64_REINTERPRET_F64:
+                    I64_REINTERPRET_F64(stack);
+                    break;
+                case F32_REINTERPRET_I32:
+                    F32_REINTERPRET_I32(stack);
+                    break;
+                case F32_COPYSIGN:
+                    F32_COPYSIGN(stack);
+                    break;
+                case F32_ABS:
+                    F32_ABS(stack);
+                    break;
+                case F64_COPYSIGN:
+                    F64_COPYSIGN(stack);
+                    break;
+                case F64_ABS:
+                    F64_ABS(stack);
+                    break;
+                case F32_NE:
+                    F32_NE(stack);
+                    break;
+                case F64_NE:
+                    F64_NE(stack);
+                    break;
+                case F32_LT:
+                    F32_LT(stack);
+                    break;
+                case F64_LT:
+                    F64_LT(stack);
+                    break;
+                case F32_LE:
+                    F32_LE(stack);
+                    break;
+                case F64_LE:
+                    F64_LE(stack);
+                    break;
+                case F32_GE:
+                    F32_GE(stack);
+                    break;
+                case F64_GE:
+                    F64_GE(stack);
+                    break;
+                case F32_GT:
+                    F32_GT(stack);
+                    break;
+                case F64_GT:
+                    F64_GT(stack);
+                    break;
+                case F32_DEMOTE_F64:
+                    F32_DEMOTE_F64(stack);
+                    break;
+                case F32_CONVERT_I32_S:
+                    F32_CONVERT_I32_S(stack);
+                    break;
+                case I32_TRUNC_F32_S:
+                    I32_TRUNC_F32_S(stack);
+                    break;
+                case I32_TRUNC_SAT_F32_S:
+                    I32_TRUNC_SAT_F32_S(stack);
+                    break;
+                case I32_TRUNC_SAT_F32_U:
+                    I32_TRUNC_SAT_F32_U(stack);
+                    break;
+                case I32_TRUNC_SAT_F64_S:
+                    I32_TRUNC_SAT_F64_S(stack);
+                    break;
+                case I32_TRUNC_SAT_F64_U:
+                    I32_TRUNC_SAT_F64_U(stack);
+                    break;
+                case F32_CONVERT_I32_U:
+                    F32_CONVERT_I32_U(stack);
+                    break;
+                case I32_TRUNC_F32_U:
+                    I32_TRUNC_F32_U(stack);
+                    break;
+                case F32_CONVERT_I64_S:
+                    F32_CONVERT_I64_S(stack);
+                    break;
+                case F32_CONVERT_I64_U:
+                    F32_CONVERT_I64_U(stack);
+                    break;
+                case F64_CONVERT_I64_S:
+                    F64_CONVERT_I64_S(stack);
+                    break;
+                case I64_TRUNC_F32_U:
+                    I64_TRUNC_F32_U(stack);
+                    break;
+                case I64_TRUNC_F64_U:
+                    I64_TRUNC_F64_U(stack);
+                    break;
+                case I64_TRUNC_SAT_F32_S:
+                    I64_TRUNC_SAT_F32_S(stack);
+                    break;
+                case I64_TRUNC_SAT_F32_U:
+                    I64_TRUNC_SAT_F32_U(stack);
+                    break;
+                case I64_TRUNC_SAT_F64_S:
+                    I64_TRUNC_SAT_F64_S(stack);
+                    break;
+                case I64_TRUNC_SAT_F64_U:
+                    I64_TRUNC_SAT_F64_U(stack);
+                    break;
+                case I32_TRUNC_F64_S:
+                    I32_TRUNC_F64_S(stack);
+                    break;
+                case I32_TRUNC_F64_U:
+                    I32_TRUNC_F64_U(stack);
+                    break;
+                case I64_TRUNC_F32_S:
+                    I64_TRUNC_F32_S(stack);
+                    break;
+                case MEMORY_INIT:
+                    MEMORY_INIT(stack, instance, operands);
+                    break;
+                case TABLE_INIT:
+                    TABLE_INIT(stack, instance, operands);
+                    break;
+                case DATA_DROP:
+                    DATA_DROP(instance, operands);
+                    break;
+                case MEMORY_COPY:
+                    MEMORY_COPY(stack, instance, operands);
+                    break;
+                case TABLE_COPY:
+                    TABLE_COPY(stack, instance, operands);
+                    break;
+                case TABLE_FILL:
+                    TABLE_FILL(stack, instance, operands);
+                    break;
+                case TABLE_SIZE:
+                    TABLE_SIZE(stack, instance, operands);
+                    break;
+                case TABLE_GROW:
+                    TABLE_GROW(stack, instance, operands);
+                    break;
+                case REF_FUNC:
+                    stack.push(Value.funcRef((int) operands[0]));
+                    break;
+                case REF_NULL:
+                    REF_NULL(stack, operands);
+                    break;
+                case REF_IS_NULL:
+                    REF_IS_NULL(stack);
+                    break;
+                case ELEM_DROP:
+                    ELEM_DROP(instance, operands);
+                    break;
+                default:
+                    throw new RuntimeException(
+                            "Machine doesn't recognize Instruction " + instruction);
             }
-        } catch (ChicoryException e) {
-            // propagate ChicoryExceptions
-            throw e;
-        } catch (StackOverflowError e) {
-            throw new ChicoryException("call stack exhausted", e);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("undefined element " + e.getMessage(), e);
-        } catch (Exception e) {
-            throw new WASMRuntimeException("An underlying Java exception occurred", e);
         }
     }
 
