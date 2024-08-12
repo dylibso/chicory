@@ -1,28 +1,13 @@
 package com.dylibso.chicory.wasm.types;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class DataSection extends Section {
-    private final ArrayList<DataSegment> dataSegments;
+    private final List<DataSegment> dataSegments;
 
-    /**
-     * Construct a new, empty section instance.
-     */
-    public DataSection() {
-        this(new ArrayList<>());
-    }
-
-    /**
-     * Construct a new, empty section instance.
-     *
-     * @param estimatedSize the estimated number of data segments to reserve space for
-     */
-    public DataSection(int estimatedSize) {
-        this(new ArrayList<>(estimatedSize));
-    }
-
-    private DataSection(ArrayList<DataSegment> dataSegments) {
+    private DataSection(List<DataSegment> dataSegments) {
         super(SectionId.DATA);
         this.dataSegments = dataSegments;
     }
@@ -39,16 +24,29 @@ public class DataSection extends Section {
         return dataSegments.get(idx);
     }
 
-    /**
-     * Add a data segment definition to this section.
-     *
-     * @param dataSegment the data segment to add to this section (must not be {@code null})
-     * @return the index of the newly-added data segment
-     */
-    public int addDataSegment(DataSegment dataSegment) {
-        Objects.requireNonNull(dataSegment, "dataSegment");
-        int idx = dataSegments.size();
-        dataSegments.add(dataSegment);
-        return idx;
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private List<DataSegment> dataSegments = new ArrayList<>();
+
+        private Builder() {}
+
+        /**
+         * Add a data segment definition to this section.
+         *
+         * @param dataSegment the data segment to add to this section (must not be {@code null})
+         * @return the Builder
+         */
+        public Builder addDataSegment(DataSegment dataSegment) {
+            Objects.requireNonNull(dataSegment, "dataSegment");
+            dataSegments.add(dataSegment);
+            return this;
+        }
+
+        public DataSection build() {
+            return new DataSection(dataSegments);
+        }
     }
 }

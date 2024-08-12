@@ -1,28 +1,13 @@
 package com.dylibso.chicory.wasm.types;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 public class ElementSection extends Section {
-    private final ArrayList<Element> elements;
+    private final List<Element> elements;
 
-    /**
-     * Construct a new, empty section instance.
-     */
-    public ElementSection() {
-        this(new ArrayList<>());
-    }
-
-    /**
-     * Construct a new, empty section instance.
-     *
-     * @param estimatedSize the estimated number of elements to reserve space for
-     */
-    public ElementSection(int estimatedSize) {
-        this(new ArrayList<>(estimatedSize));
-    }
-
-    private ElementSection(ArrayList<Element> elements) {
+    private ElementSection(List<Element> elements) {
         super(SectionId.ELEMENT);
         this.elements = elements;
     }
@@ -39,16 +24,27 @@ public class ElementSection extends Section {
         return elements.get(idx);
     }
 
-    /**
-     * Add an element definition to this section.
-     *
-     * @param element the element to add to this section (must not be {@code null})
-     * @return the index of the newly-added element
-     */
-    public int addElement(Element element) {
-        Objects.requireNonNull(element, "element");
-        int idx = elements.size();
-        elements.add(element);
-        return idx;
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private List<Element> elements = new ArrayList<>();
+
+        /**
+         * Add an element definition to this section.
+         *
+         * @param element the element to add to this section (must not be {@code null})
+         * @return the Builder
+         */
+        public Builder addElement(Element element) {
+            Objects.requireNonNull(element, "element");
+            elements.add(element);
+            return this;
+        }
+
+        public ElementSection build() {
+            return new ElementSection(elements);
+        }
     }
 }

@@ -26,7 +26,7 @@ public class NameCustomSection extends CustomSection {
     /**
      * Construct a section instance from the specified contents.
      */
-    public NameCustomSection(
+    private NameCustomSection(
             String moduleName,
             List<NameEntry> funcNames,
             List<ListEntry<NameEntry>> localNames,
