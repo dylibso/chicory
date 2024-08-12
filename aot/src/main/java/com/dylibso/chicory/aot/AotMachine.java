@@ -37,7 +37,6 @@ import static org.objectweb.asm.Type.getMethodDescriptor;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.OpcodeImpl;
-import com.dylibso.chicory.runtime.StackFrame;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
@@ -361,11 +360,6 @@ public final class AotMachine implements Machine {
         } catch (Throwable e) {
             throw new WASMRuntimeException("An underlying Java error occurred", e);
         }
-    }
-
-    @Override
-    public List<StackFrame> getStackTrace() {
-        return List.of();
     }
 
     private MethodHandle[] compile(Class<?> clazz) {

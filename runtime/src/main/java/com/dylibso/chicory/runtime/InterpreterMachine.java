@@ -1928,11 +1928,6 @@ class InterpreterMachine implements Machine {
         }
     }
 
-    @Override
-    public List<StackFrame> getStackTrace() {
-        return List.copyOf(callStack);
-    }
-
     static Value[] extractArgsForParams(MStack stack, List<ValueType> params) {
         if (params == null) {
             return Value.EMPTY_VALUES;
