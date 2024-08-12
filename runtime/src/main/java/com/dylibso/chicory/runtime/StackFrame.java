@@ -30,6 +30,8 @@ public class StackFrame {
 
     private final List<CtrlFrame> ctrlStack = new ArrayList<>();
 
+    private boolean shouldReturn = false;
+
     public StackFrame(Instance instance, int funcId, Value[] args, List<ValueType> localTypes) {
         this(Collections.emptyList(), instance, funcId, args, localTypes);
     }
@@ -145,5 +147,13 @@ public class StackFrame {
                 stack.push(value);
             }
         }
+    }
+
+    public void shouldReturn(boolean v) {
+        this.shouldReturn = v;
+    }
+
+    public boolean shouldReturn() {
+        return this.shouldReturn;
     }
 }
