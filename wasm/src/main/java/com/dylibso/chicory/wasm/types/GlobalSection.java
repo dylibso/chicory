@@ -9,7 +9,7 @@ public class GlobalSection extends Section {
 
     private GlobalSection(List<Global> globals) {
         super(SectionId.GLOBAL);
-        this.globals = globals;
+        this.globals = List.copyOf(globals);
     }
 
     public Global[] globals() {
