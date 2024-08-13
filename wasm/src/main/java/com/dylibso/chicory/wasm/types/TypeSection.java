@@ -9,7 +9,7 @@ public class TypeSection extends Section {
 
     private TypeSection(List<FunctionType> types) {
         super(SectionId.TYPE);
-        this.types = types;
+        this.types = List.copyOf(types);
     }
 
     public FunctionType[] types() {
