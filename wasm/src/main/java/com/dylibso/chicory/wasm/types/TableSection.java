@@ -9,7 +9,7 @@ public class TableSection extends Section {
 
     private TableSection(List<Table> tables) {
         super(SectionId.TABLE);
-        this.tables = tables;
+        this.tables = List.copyOf(tables);
     }
 
     public int tableCount() {
