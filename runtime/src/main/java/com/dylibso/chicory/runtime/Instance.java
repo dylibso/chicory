@@ -300,7 +300,7 @@ public class Instance {
         switch (export.exportType()) {
             case FUNCTION:
                 {
-                    return (args) -> machine.call(export.index(), args);
+                    return args -> machine.call(export.index(), args);
                 }
             case GLOBAL:
                 {
