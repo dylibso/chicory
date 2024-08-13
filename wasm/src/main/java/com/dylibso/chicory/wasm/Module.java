@@ -66,7 +66,7 @@ public class Module {
         this.dataSection = requireNonNull(dataSection);
         this.dataCountSection = dataCountSection;
         this.customSections = requireNonNull(customSections);
-        this.ignoredSections = requireNonNull(ignoredSections);
+        this.ignoredSections = List.copyOf(ignoredSections);
     }
 
     public TypeSection typeSection() {
