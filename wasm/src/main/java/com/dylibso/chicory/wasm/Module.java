@@ -19,10 +19,11 @@ import com.dylibso.chicory.wasm.types.TypeSection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class Module {
-    private final HashMap<String, CustomSection> customSections;
+    private final Map<String, CustomSection> customSections;
 
     private final TypeSection typeSection;
     private final ImportSection importSection;

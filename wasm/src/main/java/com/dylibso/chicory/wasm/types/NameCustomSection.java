@@ -38,15 +38,15 @@ public class NameCustomSection extends CustomSection {
             List<NameEntry> dataNames,
             List<NameEntry> tagNames) {
         this.moduleName = moduleName;
-        this.funcNames = funcNames;
-        this.localNames = localNames;
-        this.labelNames = labelNames;
-        this.tableNames = tableNames;
-        this.memoryNames = memoryNames;
-        this.globalNames = globalNames;
-        this.elementNames = elementNames;
-        this.dataNames = dataNames;
-        this.tagNames = tagNames;
+        this.funcNames = List.copyOf(funcNames);
+        this.localNames = List.copyOf(localNames);
+        this.labelNames = List.copyOf(labelNames);
+        this.tableNames = List.copyOf(tableNames);
+        this.memoryNames = List.copyOf(memoryNames);
+        this.globalNames = List.copyOf(globalNames);
+        this.elementNames = List.copyOf(elementNames);
+        this.dataNames = List.copyOf(dataNames);
+        this.tagNames = List.copyOf(tagNames);
     }
 
     /**
