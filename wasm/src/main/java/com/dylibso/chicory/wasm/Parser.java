@@ -99,50 +99,50 @@ public final class Parser {
         }
     }
 
-    private static void onSection(Module.Builder moduleBuilder, Section s) {
+    private static void onSection(Module.Builder module, Section s) {
         switch (s.sectionId()) {
             case SectionId.CUSTOM:
                 var customSection = (CustomSection) s;
-                moduleBuilder.addCustomSection(customSection.name(), customSection);
+                module.addCustomSection(customSection.name(), customSection);
                 break;
             case SectionId.TYPE:
-                moduleBuilder.setTypeSection((TypeSection) s);
+                module.setTypeSection((TypeSection) s);
                 break;
             case SectionId.IMPORT:
-                moduleBuilder.setImportSection((ImportSection) s);
+                module.setImportSection((ImportSection) s);
                 break;
             case SectionId.FUNCTION:
-                moduleBuilder.setFunctionSection((FunctionSection) s);
+                module.setFunctionSection((FunctionSection) s);
                 break;
             case SectionId.TABLE:
-                moduleBuilder.setTableSection((TableSection) s);
+                module.setTableSection((TableSection) s);
                 break;
             case SectionId.MEMORY:
-                moduleBuilder.setMemorySection((MemorySection) s);
+                module.setMemorySection((MemorySection) s);
                 break;
             case SectionId.GLOBAL:
-                moduleBuilder.setGlobalSection((GlobalSection) s);
+                module.setGlobalSection((GlobalSection) s);
                 break;
             case SectionId.EXPORT:
-                moduleBuilder.setExportSection((ExportSection) s);
+                module.setExportSection((ExportSection) s);
                 break;
             case SectionId.START:
-                moduleBuilder.setStartSection((StartSection) s);
+                module.setStartSection((StartSection) s);
                 break;
             case SectionId.ELEMENT:
-                moduleBuilder.setElementSection((ElementSection) s);
+                module.setElementSection((ElementSection) s);
                 break;
             case SectionId.CODE:
-                moduleBuilder.setCodeSection((CodeSection) s);
+                module.setCodeSection((CodeSection) s);
                 break;
             case SectionId.DATA:
-                moduleBuilder.setDataSection((DataSection) s);
+                module.setDataSection((DataSection) s);
                 break;
             case SectionId.DATA_COUNT:
-                moduleBuilder.setDataCountSection((DataCountSection) s);
+                module.setDataCountSection((DataCountSection) s);
                 break;
             default:
-                moduleBuilder.addIgnoredSection(s.sectionId());
+                module.addIgnoredSection(s.sectionId());
                 break;
         }
     }
