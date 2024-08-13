@@ -155,6 +155,7 @@ import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 
@@ -169,7 +170,7 @@ var wasi = new WasiPreview1(logger, WasiOptions.builder().build());
 var imports = new HostImports(wasi.toHostFunctions());
 // create the module and connect imports
 // this will execute the module if it's a WASI command-pattern module
-Instance.builder(Module.builder(new File("hello-wasi.wasm")).build()).withHostImports(imports).build();
+Instance.builder(Parser.parse(new File("hello-wasi.wasm"))).withHostImports(imports).build();
 ```
 
 > **Note**: Take note that we don't explicitly execute the module. The module will run when you instantiate it. This
@@ -208,7 +209,7 @@ var imports = new HostImports(wasi.toHostFunctions());
 
 // greet-wasi is a rust program that greets the string passed in stdin
 // instantiating will execute the module if it's a WASI command-pattern module
-Instance.builder(Module.builder(new File("greet-wasi.wasm")).build()).withHostImports(imports).build();
+Instance.builder(Parser.parse(new File("greet-wasi.wasm"))).withHostImports(imports).build();
 
 // check that we output the greeting
 assert(fakeStdout.toString().equals("Hello, Andrea!"));

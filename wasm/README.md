@@ -7,18 +7,44 @@ for a beta we will publish to maven central. For now this is available as Github
 ## Usage
 
 There are two ways you can interface with this library. The simplest way is to parse the whole
-module using `parseModule`:
+module using `Parser.parse`:
+
+<!--
+```java
+//DEPS com.dylibso.chicory:wasm-corpus:999-SNAPSHOT
+//DEPS com.dylibso.chicory:wasm:999-SNAPSHOT
+```
+-->
+
+<!--
+```java
+var readmeResults = "readmes/wasm/current";
+new File(readmeResults).mkdirs();
+
+public void writeResultFile(String name, String content) throws Exception {
+  FileWriter fileWriter = new FileWriter(new File(".").toPath().resolve(readmeResults).resolve(name).toFile());
+  PrintWriter printWriter = new PrintWriter(fileWriter);
+  printWriter.print(content);
+  printWriter.flush();
+  printWriter.close();
+}
+```
+-->
 
 ```java
-var parser = new Parser(new SystemLogger());
-try (var fis = new FileInputStream("/tmp/code.wasm")) {
-    var module = parser.parseModule(fis);
-    var customSection = module.customSections().get(0);
-    System.out.println("First custom section: " + customSection.getName());
-} catch (Exception e) {
-    throw new RuntimeException(e);
-};
+import com.dylibso.chicory.wasm.Parser;
+
+var is = ClassLoader.getSystemClassLoader().getResourceAsStream("compiled/count_vowels.rs.wasm");
+var module = Parser.parse(is);
+var customSection = module.customSections().get(0);
+System.out.println("First custom section: " + customSection.name());
 ```
+
+<!--
+```java
+writeResultFile("parser-base.result", customSection.name());
+```
+-->
 
 The second is to use the `ParserListener` interface and the `parse()` method. In this mode you can also call
 `includeSection(int sectionId)` for each section you wish to parse. It will skip all other
@@ -26,27 +52,35 @@ sections. This is useful for performance if you only want to parse a piece of th
 If you don't call this method once it will parse all sections.
 
 ```java
-var parser = new Parser(new SystemLogger());
+import com.dylibso.chicory.wasm.ParserListener;
+import com.dylibso.chicory.wasm.types.CustomSection;
+import com.dylibso.chicory.wasm.types.SectionId;
+
+var parser = new Parser();
 
 // include the custom sections, don't call this to receive all sections
 parser.includeSection(SectionId.CUSTOM);
 // parser.includeSection(SectionId.CODE); // call for each section you want
 
+String result = "";
 // implement the listener
-parser.setListener(section -> {
-    if (section.getSectionId() == SectionId.CUSTOM) {
+ParserListener listener = section -> {
+    if (section.sectionId() == SectionId.CUSTOM) {
         var customSection = (CustomSection) section;
-        var name = customSection.getName();
+        var name = customSection.name();
+        result += name + "\n";
         System.out.println("Got custom section with name: " + name);
     } else {
-        fail("Should not have received section with id: " + section.getSectionId());
+        throw new RuntimeException("Should not have received section with id: " + section.sectionId());
     }
-});
-
-// call parseModule()
-try (var fis = new FileInputStream("/tmp/code.wasm")) {
-    parser.parseModule(fis);
-} catch (Exception e) {
-    throw new RuntimeException(e);
 };
+
+// call parse()
+var is = ClassLoader.getSystemClassLoader().getResourceAsStream("compiled/count_vowels.rs.wasm");
+parser.parse(is, listener);
 ```
+<!--
+```java
+writeResultFile("parser-listener.result", result);
+```
+-->

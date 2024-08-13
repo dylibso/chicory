@@ -114,11 +114,12 @@ Now let's load this module and instantiate it:
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.Instance;
 import java.io.File;
 
 // point this to your path on disk
-Module module = Module.builder(new File("./factorial.wasm")).build();
+Module module = Parser.parse(new File("./factorial.wasm"));
 Instance instance = Instance.builder(module).build();
 ```
 
@@ -171,7 +172,7 @@ copyFileFromWasmCorpus("count_vowels.rs.wasm", "count_vowels.wasm");
 Build and instantiate this module:
 
 ```java
-Instance instance = Instance.builder(Module.builder(new File("./count_vowels.wasm")).build()).build();
+Instance instance = Instance.builder(Parser.parse(new File("./count_vowels.wasm"))).build();
 ExportFunction countVowels = instance.export("count_vowels");
 ```
 
@@ -278,7 +279,7 @@ Now we just need to pass this host function in during our instantiation phase:
 ```java
 import com.dylibso.chicory.runtime.HostImports;
 var imports = new HostImports(new HostFunction[] {func});
-var instance = Instance.builder(Module.builder(new File("./logger.wasm")).build()).withHostImports(imports).build();
+var instance = Instance.builder(Parser.parse(new File("./logger.wasm"))).withHostImports(imports).build();
 var logIt = instance.export("logIt");
 logIt.apply();
 // should print "Hello, World!" 10 times

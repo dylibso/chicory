@@ -230,8 +230,7 @@ public final class Parser {
         }
     }
 
-    // package protected to make it visible for testing
-    void parse(InputStream in, ParserListener listener) {
+    public void parse(InputStream in, ParserListener listener) {
 
         requireNonNull(listener, "listener");
         var validator = new SectionsValidator();
