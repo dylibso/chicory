@@ -65,7 +65,7 @@ public class Module {
         this.codeSection = requireNonNull(codeSection);
         this.dataSection = requireNonNull(dataSection);
         this.dataCountSection = dataCountSection;
-        this.customSections = requireNonNull(customSections);
+        this.customSections = Map.copyOf(customSections);
         this.ignoredSections = List.copyOf(ignoredSections);
     }
 
