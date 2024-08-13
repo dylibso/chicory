@@ -10,7 +10,7 @@ public class CodeSection extends Section {
 
     private CodeSection(List<FunctionBody> functionBodies, boolean requiresDataCount) {
         super(SectionId.CODE);
-        this.functionBodies = functionBodies;
+        this.functionBodies = List.copyOf(functionBodies);
         this.requiresDataCount = requiresDataCount;
     }
 
