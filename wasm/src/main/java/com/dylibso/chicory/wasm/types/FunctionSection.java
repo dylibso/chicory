@@ -8,7 +8,7 @@ public class FunctionSection extends Section {
 
     private FunctionSection(List<Integer> typeIndices) {
         super(SectionId.FUNCTION);
-        this.typeIndices = typeIndices;
+        this.typeIndices = List.copyOf(typeIndices);
     }
 
     public int getFunctionType(int idx) {
