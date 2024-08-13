@@ -90,7 +90,10 @@ public class Wast2Json {
                                 .withOpts(wasiOpts.build())
                                 .build()) {
                     HostImports imports = new HostImports(wasi.toHostFunctions());
-                    Instance.builder(MODULE).withHostImports(imports).build();
+                    Instance.builder(MODULE)
+                            .withTypeValidation(false)
+                            .withHostImports(imports)
+                            .build();
                 }
 
                 createDirectories(output.toPath().getParent());

@@ -75,7 +75,10 @@ public final class Wat2Wasm {
                 try (var wasi =
                         WasiPreview1.builder().withLogger(logger).withOpts(wasiOpts).build()) {
                     HostImports imports = new HostImports(wasi.toHostFunctions());
-                    Instance.builder(MODULE).withHostImports(imports).build();
+                    Instance.builder(MODULE)
+                            .withTypeValidation(false)
+                            .withHostImports(imports)
+                            .build();
                 }
 
                 return stdoutStream.toByteArray();
