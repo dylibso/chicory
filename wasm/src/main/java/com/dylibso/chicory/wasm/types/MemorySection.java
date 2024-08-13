@@ -9,7 +9,7 @@ public class MemorySection extends Section {
 
     private MemorySection(List<Memory> memories) {
         super(SectionId.MEMORY);
-        this.memories = memories;
+        this.memories = List.copyOf(memories);
     }
 
     public int memoryCount() {
