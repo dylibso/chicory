@@ -54,7 +54,7 @@ public class ParserTest {
 
             // check start section
             var startSection = module.startSection();
-            assertEquals(1, startSection.startIndex());
+            assertEquals(1, startSection.get().startIndex());
 
             // check function section
             var funcSection = module.functionSection();
@@ -68,9 +68,9 @@ public class ParserTest {
 
             // check memory section
             var memorySection = module.memorySection();
-            assertEquals(1, memorySection.memoryCount());
-            assertEquals(1, memorySection.getMemory(0).memoryLimits().initialPages());
-            assertEquals(65536, memorySection.getMemory(0).memoryLimits().maximumPages());
+            assertEquals(1, memorySection.get().memoryCount());
+            assertEquals(1, memorySection.get().getMemory(0).memoryLimits().initialPages());
+            assertEquals(65536, memorySection.get().getMemory(0).memoryLimits().maximumPages());
 
             var codeSection = module.codeSection();
             assertEquals(1, codeSection.functionBodyCount());

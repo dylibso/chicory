@@ -19,6 +19,7 @@ import com.dylibso.chicory.wasm.types.TypeSection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 public class Module {
     private final HashMap<String, CustomSection> customSections;
@@ -27,14 +28,14 @@ public class Module {
     private final ImportSection importSection;
     private final FunctionSection functionSection;
     private final TableSection tableSection;
-    private final MemorySection memorySection;
+    private final Optional<MemorySection> memorySection;
     private final GlobalSection globalSection;
     private final ExportSection exportSection;
-    private final StartSection startSection;
+    private final Optional<StartSection> startSection;
     private final ElementSection elementSection;
     private final CodeSection codeSection;
     private final DataSection dataSection;
-    private final DataCountSection dataCountSection;
+    private final Optional<DataCountSection> dataCountSection;
     private final List<Integer> ignoredSections;
 
     Module(
@@ -42,14 +43,14 @@ public class Module {
             ImportSection importSection,
             FunctionSection functionSection,
             TableSection tableSection,
-            MemorySection memorySection,
+            Optional<MemorySection> memorySection,
             GlobalSection globalSection,
             ExportSection exportSection,
-            StartSection startSection,
+            Optional<StartSection> startSection,
             ElementSection elementSection,
             CodeSection codeSection,
             DataSection dataSection,
-            DataCountSection dataCountSection,
+            Optional<DataCountSection> dataCountSection,
             HashMap<String, CustomSection> customSections,
             List<Integer> ignoredSections) {
         this.typeSection = requireNonNull(typeSection);
@@ -80,7 +81,7 @@ public class Module {
         return exportSection;
     }
 
-    public StartSection startSection() {
+    public Optional<StartSection> startSection() {
         return startSection;
     }
 
@@ -96,11 +97,11 @@ public class Module {
         return dataSection;
     }
 
-    public DataCountSection dataCountSection() {
+    public Optional<DataCountSection> dataCountSection() {
         return dataCountSection;
     }
 
-    public MemorySection memorySection() {
+    public Optional<MemorySection> memorySection() {
         return memorySection;
     }
 
@@ -141,76 +142,76 @@ public class Module {
         private ImportSection importSection = ImportSection.builder().build();
         private FunctionSection functionSection = FunctionSection.builder().build();
         private TableSection tableSection = TableSection.builder().build();
-        private MemorySection memorySection = null;
+        private Optional<MemorySection> memorySection = Optional.empty();
         private GlobalSection globalSection = GlobalSection.builder().build();
         private ExportSection exportSection = ExportSection.builder().build();
-        private StartSection startSection = null;
+        private Optional<StartSection> startSection = Optional.empty();
         private ElementSection elementSection = ElementSection.builder().build();
         private CodeSection codeSection = CodeSection.builder().build();
         private DataSection dataSection = DataSection.builder().build();
-        private DataCountSection dataCountSection = null;
+        private Optional<DataCountSection> dataCountSection = Optional.empty();
         private HashMap<String, CustomSection> customSections = new HashMap<>();
         private List<Integer> ignoredSections = new ArrayList<>();
 
         private Builder() {}
 
         public Builder setTypeSection(TypeSection ts) {
-            this.typeSection = ts;
+            this.typeSection = requireNonNull(ts);
             return this;
         }
 
         public Builder setImportSection(ImportSection is) {
-            this.importSection = is;
+            this.importSection = requireNonNull(is);
             return this;
         }
 
         public Builder setFunctionSection(FunctionSection fs) {
-            this.functionSection = fs;
+            this.functionSection = requireNonNull(fs);
             return this;
         }
 
         public Builder setTableSection(TableSection ts) {
-            this.tableSection = ts;
+            this.tableSection = requireNonNull(ts);
             return this;
         }
 
         public Builder setMemorySection(MemorySection ms) {
-            this.memorySection = ms;
+            this.memorySection = Optional.ofNullable(ms);
             return this;
         }
 
         public Builder setGlobalSection(GlobalSection gs) {
-            this.globalSection = gs;
+            this.globalSection = requireNonNull(gs);
             return this;
         }
 
         public Builder setExportSection(ExportSection es) {
-            this.exportSection = es;
+            this.exportSection = requireNonNull(es);
             return this;
         }
 
         public Builder setStartSection(StartSection ss) {
-            this.startSection = ss;
+            this.startSection = Optional.ofNullable(ss);
             return this;
         }
 
         public Builder setElementSection(ElementSection es) {
-            this.elementSection = es;
+            this.elementSection = requireNonNull(es);
             return this;
         }
 
         public Builder setCodeSection(CodeSection cs) {
-            this.codeSection = cs;
+            this.codeSection = requireNonNull(cs);
             return this;
         }
 
         public Builder setDataSection(DataSection ds) {
-            this.dataSection = ds;
+            this.dataSection = requireNonNull(ds);
             return this;
         }
 
         public Builder setDataCountSection(DataCountSection dcs) {
-            this.dataCountSection = dcs;
+            this.dataCountSection = Optional.of(dcs);
             return this;
         }
 
