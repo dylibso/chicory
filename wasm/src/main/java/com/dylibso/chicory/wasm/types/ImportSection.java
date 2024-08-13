@@ -10,7 +10,7 @@ public class ImportSection extends Section {
 
     private ImportSection(List<Import> imports) {
         super(SectionId.IMPORT);
-        this.imports = imports;
+        this.imports = List.copyOf(imports);
     }
 
     public int importCount() {
