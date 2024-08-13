@@ -9,7 +9,7 @@ public class DataSection extends Section {
 
     private DataSection(List<DataSegment> dataSegments) {
         super(SectionId.DATA);
-        this.dataSegments = dataSegments;
+        this.dataSegments = List.copyOf(dataSegments);
     }
 
     public DataSegment[] dataSegments() {
