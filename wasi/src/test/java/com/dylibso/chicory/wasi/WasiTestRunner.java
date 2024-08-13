@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.Parser;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.File;
@@ -83,7 +83,7 @@ public final class WasiTestRunner {
 
     private static int execute(File test, WasiOptions wasiOptions) {
         try (var wasi = new WasiPreview1(LOGGER, wasiOptions)) {
-            Instance.builder(Module.builder(test).build())
+            Instance.builder(Parser.parse(test))
                     .withHostImports(new HostImports(wasi.toHostFunctions()))
                     .build();
         } catch (WasiExitException e) {

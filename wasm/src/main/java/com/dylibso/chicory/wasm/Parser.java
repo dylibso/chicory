@@ -47,19 +47,23 @@ import com.dylibso.chicory.wasm.types.TableSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.UnknownCustomSection;
 import com.dylibso.chicory.wasm.types.ValueType;
+import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Parser for Web Assembly binaries.
@@ -95,114 +99,7 @@ public final class Parser {
         }
     }
 
-    public static class ModuleBuilder {
-        private TypeSection typeSection = TypeSection.builder().build();
-        private ImportSection importSection = ImportSection.builder().build();
-        private FunctionSection functionSection = FunctionSection.builder().build();
-        private TableSection tableSection = TableSection.builder().build();
-        private MemorySection memorySection = null;
-        private GlobalSection globalSection = GlobalSection.builder().build();
-        private ExportSection exportSection = ExportSection.builder().build();
-        private StartSection startSection = null;
-        private ElementSection elementSection = ElementSection.builder().build();
-        private CodeSection codeSection = CodeSection.builder().build();
-        private DataSection dataSection = DataSection.builder().build();
-        private DataCountSection dataCountSection = null;
-        private HashMap<String, CustomSection> customSections = new HashMap<>();
-        private List<Integer> ignoredSections = new ArrayList<>();
-
-        private ModuleBuilder() {}
-
-        public ModuleBuilder setTypeSection(TypeSection ts) {
-            this.typeSection = ts;
-            return this;
-        }
-
-        public ModuleBuilder setImportSection(ImportSection is) {
-            this.importSection = is;
-            return this;
-        }
-
-        public ModuleBuilder setFunctionSection(FunctionSection fs) {
-            this.functionSection = fs;
-            return this;
-        }
-
-        public ModuleBuilder setTableSection(TableSection ts) {
-            this.tableSection = ts;
-            return this;
-        }
-
-        public ModuleBuilder setMemorySection(MemorySection ms) {
-            this.memorySection = ms;
-            return this;
-        }
-
-        public ModuleBuilder setGlobalSection(GlobalSection gs) {
-            this.globalSection = gs;
-            return this;
-        }
-
-        public ModuleBuilder setExportSection(ExportSection es) {
-            this.exportSection = es;
-            return this;
-        }
-
-        public ModuleBuilder setStartSection(StartSection ss) {
-            this.startSection = ss;
-            return this;
-        }
-
-        public ModuleBuilder setElementSection(ElementSection es) {
-            this.elementSection = es;
-            return this;
-        }
-
-        public ModuleBuilder setCodeSection(CodeSection cs) {
-            this.codeSection = cs;
-            return this;
-        }
-
-        public ModuleBuilder setDataSection(DataSection ds) {
-            this.dataSection = ds;
-            return this;
-        }
-
-        public ModuleBuilder setDataCountSection(DataCountSection dcs) {
-            this.dataCountSection = dcs;
-            return this;
-        }
-
-        public ModuleBuilder addCustomSection(String name, CustomSection cs) {
-            this.customSections.put(name, cs);
-            return this;
-        }
-
-        public ModuleBuilder addIgnoredSection(int id) {
-            this.ignoredSections.add(id);
-            return this;
-        }
-
-        public Module build() {
-            return new Module(
-                    typeSection,
-                    importSection,
-                    functionSection,
-                    tableSection,
-                    memorySection,
-                    globalSection,
-                    exportSection,
-                    startSection,
-                    elementSection,
-                    codeSection,
-                    dataSection,
-                    dataCountSection,
-                    customSections,
-                    ignoredSections);
-        }
-    }
-
-    private void onSection(ModuleBuilder moduleBuilder, Section s) {
+    private static void onSection(Module.Builder moduleBuilder, Section s) {
         switch (s.sectionId()) {
             case SectionId.CUSTOM:
                 var customSection = (CustomSection) s;
@@ -250,10 +147,41 @@ public final class Parser {
         }
     }
 
-    public Module parseModule(InputStream in) {
-        ModuleBuilder moduleBuilder = new ModuleBuilder();
-        try {
-            parse(in, (s) -> onSection(moduleBuilder, s));
+    public static Module parse(InputStream input) {
+        return new Parser().parse(() -> input);
+    }
+
+    public static Module parse(ByteBuffer buffer) {
+        return new Parser().parse(buffer.array());
+    }
+
+    public static Module parse(byte[] buffer) {
+        return new Parser().parse(() -> new ByteArrayInputStream(buffer));
+    }
+
+    public static Module parse(File file) {
+        return new Parser().parse(file.toPath());
+    }
+
+    public static Module parse(Path path) {
+        return new Parser()
+                .parse(
+                        () -> {
+                            try {
+                                return Files.newInputStream(path);
+                            } catch (IOException e) {
+                                throw new IllegalArgumentException(
+                                        "Error opening file: " + path, e);
+                            }
+                        });
+    }
+
+    public Module parse(Supplier<InputStream> inputStreamSupplier) {
+        Module.Builder moduleBuilder = Module.builder();
+        try (final InputStream is = inputStreamSupplier.get()) {
+            parse(is, (s) -> onSection(moduleBuilder, s));
+        } catch (IOException e) {
+            throw new ChicoryException(e);
         } catch (MalformedException e) {
             throw new MalformedException(
                     "section size mismatch, unexpected end of section or function, "
@@ -771,25 +699,6 @@ public final class Parser {
             assert active;
             return new ActiveElement(type, inits, tableIdx, offset);
         }
-    }
-
-    private static long[] readFuncIndices(ByteBuffer buffer) {
-        var funcIndexCount = readVarUInt32(buffer);
-        var funcIndices = new long[(int) funcIndexCount];
-        for (var j = 0; j < funcIndexCount; j++) {
-            funcIndices[j] = readVarUInt32(buffer);
-        }
-        return funcIndices;
-    }
-
-    private static Instruction[][] readExprs(ByteBuffer buffer) {
-        var exprIndexCount = readVarUInt32(buffer);
-        var exprs = new Instruction[(int) exprIndexCount][];
-        for (var j = 0; j < exprIndexCount; j++) {
-            var instr = parseExpression(buffer);
-            exprs[j] = instr;
-        }
-        return exprs;
     }
 
     private static List<ValueType> parseCodeSectionLocalTypes(ByteBuffer buffer) {

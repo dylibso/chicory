@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiExitException;
-import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.File;
 import org.junit.jupiter.api.Test;
@@ -25,13 +25,12 @@ public class Wat2WasmTest {
     public void shouldRunWat2WasmOnString() {
         var moduleInstance =
                 Instance.builder(
-                                Module.builder(
-                                                Wat2Wasm.parse(
-                                                        "(module (func (export \"add\") (param $x"
-                                                            + " i32) (param $y i32) (result i32)"
-                                                            + " (i32.add (local.get $x) (local.get"
-                                                            + " $y))))"))
-                                        .build())
+                                Parser.parse(
+                                        Wat2Wasm.parse(
+                                                "(module (func (export \"add\") (param $x"
+                                                        + " i32) (param $y i32) (result i32)"
+                                                        + " (i32.add (local.get $x) (local.get"
+                                                        + " $y))))")))
                         .withTypeValidation(true)
                         .withInitialize(true)
                         .build();

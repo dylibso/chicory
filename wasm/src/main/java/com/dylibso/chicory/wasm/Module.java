@@ -2,8 +2,6 @@ package com.dylibso.chicory.wasm;
 
 import static java.util.Objects.requireNonNull;
 
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.types.CodeSection;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.DataCountSection;
@@ -18,18 +16,9 @@ import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.TableSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
-import java.util.function.Supplier;
 
 public class Module {
     private final HashMap<String, CustomSection> customSections;
@@ -139,90 +128,118 @@ public class Module {
         return elementSection;
     }
 
-    /**
-     * Creates a {@link Builder} for the specified {@link InputStream}
-     *
-     * @param input the input stream
-     * @return a {@link Builder} for reading the module definition from the specified input stream
-     */
-    public static Builder builder(InputStream input) {
-        return new Builder(() -> input);
+    public List<Integer> ignoredSections() {
+        return ignoredSections;
     }
 
-    /**
-     * Creates a {@link Builder} for the specified {@link ByteBuffer}
-     *
-     * @param buffer the buffer
-     * @return a {@link Builder} for reading the module definition from the specified buffer
-     */
-    public static Builder builder(ByteBuffer buffer) {
-        return builder(buffer.array());
-    }
-
-    /**
-     * Creates a {@link Builder} for the specified byte array
-     *
-     * @param buffer the buffer
-     * @return a {@link Builder} for reading the module definition from the specified buffer
-     */
-    public static Builder builder(byte[] buffer) {
-        return new Builder(() -> new ByteArrayInputStream(buffer));
-    }
-
-    /**
-     * Creates a {@link Builder} for the specified {@link File} resource
-     *
-     * @param file the path of the resource
-     * @return a {@link Builder} for reading the module definition from the specified file
-     */
-    public static Builder builder(File file) {
-        return builder(file.toPath());
-    }
-
-    /**
-     * Creates a {@link Builder} for the specified {@link Path} resource
-     *
-     * @param path the path of the resource
-     * @return a {@link Builder} for reading the module definition from the specified path
-     */
-    public static Builder builder(Path path) {
-        return new Builder(
-                () -> {
-                    try {
-                        return Files.newInputStream(path);
-                    } catch (IOException e) {
-                        throw new IllegalArgumentException("Error opening file: " + path, e);
-                    }
-                });
+    public static Builder builder() {
+        return new Builder();
     }
 
     public static class Builder {
-        private final Supplier<InputStream> inputStreamSupplier;
-        private ModuleType moduleType = ModuleType.BINARY;
+        private TypeSection typeSection = TypeSection.builder().build();
+        private ImportSection importSection = ImportSection.builder().build();
+        private FunctionSection functionSection = FunctionSection.builder().build();
+        private TableSection tableSection = TableSection.builder().build();
+        private MemorySection memorySection = null;
+        private GlobalSection globalSection = GlobalSection.builder().build();
+        private ExportSection exportSection = ExportSection.builder().build();
+        private StartSection startSection = null;
+        private ElementSection elementSection = ElementSection.builder().build();
+        private CodeSection codeSection = CodeSection.builder().build();
+        private DataSection dataSection = DataSection.builder().build();
+        private DataCountSection dataCountSection = null;
+        private HashMap<String, CustomSection> customSections = new HashMap<>();
+        private List<Integer> ignoredSections = new ArrayList<>();
 
-        private Builder(Supplier<InputStream> inputStreamSupplier) {
-            this.inputStreamSupplier = Objects.requireNonNull(inputStreamSupplier);
+        private Builder() {}
+
+        public Builder setTypeSection(TypeSection ts) {
+            this.typeSection = ts;
+            return this;
         }
 
-        public Builder withType(ModuleType type) {
-            this.moduleType = type;
+        public Builder setImportSection(ImportSection is) {
+            this.importSection = is;
+            return this;
+        }
+
+        public Builder setFunctionSection(FunctionSection fs) {
+            this.functionSection = fs;
+            return this;
+        }
+
+        public Builder setTableSection(TableSection ts) {
+            this.tableSection = ts;
+            return this;
+        }
+
+        public Builder setMemorySection(MemorySection ms) {
+            this.memorySection = ms;
+            return this;
+        }
+
+        public Builder setGlobalSection(GlobalSection gs) {
+            this.globalSection = gs;
+            return this;
+        }
+
+        public Builder setExportSection(ExportSection es) {
+            this.exportSection = es;
+            return this;
+        }
+
+        public Builder setStartSection(StartSection ss) {
+            this.startSection = ss;
+            return this;
+        }
+
+        public Builder setElementSection(ElementSection es) {
+            this.elementSection = es;
+            return this;
+        }
+
+        public Builder setCodeSection(CodeSection cs) {
+            this.codeSection = cs;
+            return this;
+        }
+
+        public Builder setDataSection(DataSection ds) {
+            this.dataSection = ds;
+            return this;
+        }
+
+        public Builder setDataCountSection(DataCountSection dcs) {
+            this.dataCountSection = dcs;
+            return this;
+        }
+
+        public Builder addCustomSection(String name, CustomSection cs) {
+            this.customSections.put(name, cs);
+            return this;
+        }
+
+        public Builder addIgnoredSection(int id) {
+            this.ignoredSections.add(id);
             return this;
         }
 
         public Module build() {
-            final Parser parser = new Parser();
-            switch (this.moduleType) {
-                case BINARY:
-                    try (final InputStream is = inputStreamSupplier.get()) {
-                        return parser.parseModule(is);
-                    } catch (IOException e) {
-                        throw new ChicoryException(e);
-                    }
-                default:
-                    throw new InvalidException(
-                            "Text format parsing is not implemented, but you can use wat2wasm"
-                                    + " through Chicory.");
-            }
+            return new Module(
+                    typeSection,
+                    importSection,
+                    functionSection,
+                    tableSection,
+                    memorySection,
+                    globalSection,
+                    exportSection,
+                    startSection,
+                    elementSection,
+                    codeSection,
+                    dataSection,
+                    dataCountSection,
+                    customSections,
+                    ignoredSections);
         }
     }
 }

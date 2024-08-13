@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -17,11 +17,10 @@ public class InterruptionTest {
     public void shouldInterruptLoop() throws InterruptedException {
         var instance =
                 Instance.builder(
-                                Module.builder(
-                                                ClassLoader.getSystemClassLoader()
-                                                        .getResourceAsStream(
-                                                                "compiled/infinite-loop.c.wasm"))
-                                        .build())
+                                Parser.parse(
+                                        ClassLoader.getSystemClassLoader()
+                                                .getResourceAsStream(
+                                                        "compiled/infinite-loop.c.wasm")))
                         .build();
         var function = instance.export("run");
         assertInterruption(function::apply);
@@ -31,11 +30,9 @@ public class InterruptionTest {
     public void shouldInterruptCall() throws InterruptedException {
         var instance =
                 Instance.builder(
-                                Module.builder(
-                                                ClassLoader.getSystemClassLoader()
-                                                        .getResourceAsStream(
-                                                                "compiled/power.c.wasm"))
-                                        .build())
+                                Parser.parse(
+                                        ClassLoader.getSystemClassLoader()
+                                                .getResourceAsStream("compiled/power.c.wasm")))
                         .build();
         var function = instance.export("run");
         assertInterruption(() -> function.apply(Value.i32(100)));

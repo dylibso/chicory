@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import java.io.File;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +29,7 @@ public class FuzzTest extends TestModule {
             targetWasm =
                     smith.run(prefix + num, "test.wasm", new InstructionTypes(instructionTypes));
 
-            var exportSection = Module.builder(targetWasm).build().exportSection();
+            var exportSection = Parser.parse(targetWasm).exportSection();
             atLeastOneExportedFunction = false;
             for (int i = 0; i < exportSection.exportCount(); i++) {
                 if (exportSection.getExport(i).exportType() == ExternalType.FUNCTION) {
@@ -59,7 +59,7 @@ public class FuzzTest extends TestModule {
         var targetWasm =
                 generateTestData(
                         "numeric-", repetitionInfo.getCurrentRepetition(), InstructionType.NUMERIC);
-        var module = Module.builder(targetWasm).build();
+        var module = Parser.parse(targetWasm);
         var instance = Instance.builder(module).withInitialize(true).withStart(false).build();
 
         var results = testModule(targetWasm, module, instance);
@@ -76,7 +76,7 @@ public class FuzzTest extends TestModule {
         var targetWasm =
                 generateTestData(
                         "table-", repetitionInfo.getCurrentRepetition(), InstructionType.TABLE);
-        var module = Module.builder(targetWasm).build();
+        var module = Parser.parse(targetWasm);
         var instance = Instance.builder(module).withInitialize(true).withStart(false).build();
 
         var results = testModule(targetWasm, module, instance);

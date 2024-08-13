@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
@@ -20,7 +21,7 @@ import org.junit.jupiter.api.Test;
 public class ModuleTest {
 
     private static Module loadModule(String fileName) {
-        return Module.builder(ModuleTest.class.getResourceAsStream("/" + fileName)).build();
+        return Parser.parse(ModuleTest.class.getResourceAsStream("/" + fileName));
     }
 
     @Test
