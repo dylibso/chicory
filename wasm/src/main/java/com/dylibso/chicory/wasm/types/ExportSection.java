@@ -9,7 +9,7 @@ public class ExportSection extends Section {
 
     private ExportSection(List<Export> exports) {
         super(SectionId.EXPORT);
-        this.exports = exports;
+        this.exports = List.copyOf(exports);
     }
 
     public int exportCount() {
