@@ -78,7 +78,7 @@
     <maven.compiler.parameters>true</maven.compiler.parameters>
 
     <junit.version>5.10.3</junit.version>
-    <approvaltests.version>24.3.0</approvaltests.version>
+    <approvaltests.version>24.4.0</approvaltests.version>
     <spotless.version>2.43.0</spotless.version>
     <javaparser.version>3.26.1</javaparser.version>
     <commons-compress.version>1.27.0</commons-compress.version>
