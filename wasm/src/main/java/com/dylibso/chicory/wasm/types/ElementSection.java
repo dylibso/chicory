@@ -9,7 +9,7 @@ public class ElementSection extends Section {
 
     private ElementSection(List<Element> elements) {
         super(SectionId.ELEMENT);
-        this.elements = elements;
+        this.elements = List.copyOf(elements);
     }
 
     public Element[] elements() {
