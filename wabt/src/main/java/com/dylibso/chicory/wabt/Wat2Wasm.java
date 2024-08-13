@@ -1,18 +1,14 @@
 package com.dylibso.chicory.wabt;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
-import com.dylibso.chicory.wasi.WasiExitException;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Module;
-import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayInputStream;
@@ -82,13 +78,6 @@ public final class Wat2Wasm {
                 }
 
                 return stdoutStream.toByteArray();
-            } catch (WASMMachineException e) {
-                if (!(e.getCause() instanceof WasiExitException)) {
-                    throw e;
-                }
-                var stdout = stdoutStream.toString(UTF_8);
-                var stderr = stderrStream.toString(UTF_8);
-                throw new MalformedException(stdout + "\n" + stderr);
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);

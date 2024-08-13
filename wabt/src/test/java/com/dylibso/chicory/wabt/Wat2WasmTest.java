@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasi.WasiExitException;
 import com.dylibso.chicory.wasm.Module;
-import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.File;
 import org.junit.jupiter.api.Test;
@@ -46,14 +46,14 @@ public class Wat2WasmTest {
 
     @Test
     public void shouldThrowMalformedException() throws Exception {
-        var malformedException =
+        var exitException =
                 assertThrows(
-                        MalformedException.class,
+                        WasiExitException.class,
                         () ->
                                 Wat2Wasm.parse(
                                         new File(
                                                 "src/test/resources/utf8-invalid-encoding-spec.0.wat")));
 
-        assertTrue(malformedException.getMessage().contains("invalid utf-8 encoding"));
+        assertEquals(1, exitException.exitCode());
     }
 }

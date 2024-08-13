@@ -4,7 +4,6 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantInst
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
-import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
@@ -280,7 +279,11 @@ public class Instance {
         }
 
         if (startFunction != null && start) {
-            export(START_FUNCTION_NAME).apply();
+            try {
+                export(START_FUNCTION_NAME).apply();
+            } catch (TrapException e) {
+                throw new UninstantiableException(e.getMessage(), e);
+            }
         }
 
         return this;
@@ -297,27 +300,13 @@ public class Instance {
         switch (export.exportType()) {
             case FUNCTION:
                 {
-                    var funcId = export.index();
-                    return (args) -> {
-                        try {
-                            return machine.call(funcId, args);
-                        } catch (InvalidException e) {
-                            throw e;
-                        } catch (TrapException e) {
-                            throw new UninstantiableException("unreachable", e);
-                        } catch (Exception e) {
-                            throw new WASMMachineException(machine.getStackTrace(), e);
-                        }
-                    };
+                    return args -> machine.call(export.index(), args);
                 }
             case GLOBAL:
                 {
-                    return new ExportFunction() {
-                        @Override
-                        public Value[] apply(Value... args) throws ChicoryException {
-                            assert (args.length == 0);
-                            return new Value[] {readGlobal(export.index())};
-                        }
+                    return args -> {
+                        assert (args.length == 0);
+                        return new Value[] {readGlobal(export.index())};
                     };
                 }
             default:

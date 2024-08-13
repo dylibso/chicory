@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasm.Module;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
@@ -62,6 +61,8 @@ public final class WasiTestRunner {
             int actualExitCode;
             try {
                 actualExitCode = execute(test, options.build());
+            } catch (WasiExitException e) {
+                actualExitCode = e.exitCode();
             } catch (RuntimeException e) {
                 String message = "Failed to execute test: " + test;
                 if (!stdoutStream.output().isEmpty() || !stderrStream.output().isEmpty()) {
@@ -85,11 +86,8 @@ public final class WasiTestRunner {
             Instance.builder(Module.builder(test).build())
                     .withHostImports(new HostImports(wasi.toHostFunctions()))
                     .build();
-        } catch (WASMMachineException e) {
-            if (e.getCause() instanceof WasiExitException) {
-                return ((WasiExitException) e.getCause()).exitCode();
-            }
-            throw e;
+        } catch (WasiExitException e) {
+            return e.exitCode();
         }
         return 0;
     }

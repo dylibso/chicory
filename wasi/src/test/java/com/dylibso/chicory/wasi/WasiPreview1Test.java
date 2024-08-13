@@ -7,7 +7,6 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.exceptions.WASMMachineException;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
@@ -95,11 +94,10 @@ public class WasiPreview1Test {
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
         var module = loadModule("compiled/main.go.wasm");
-        var wrapped =
+        var exit =
                 assertThrows(
-                        WASMMachineException.class,
+                        WasiExitException.class,
                         () -> Instance.builder(module).withHostImports(imports).build());
-        WasiExitException exit = (WasiExitException) wrapped.getCause();
         assertEquals(0, exit.exitCode());
         assertEquals("Hello, WebAssembly!\n", fakeStdout.output());
     }
