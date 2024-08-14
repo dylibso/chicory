@@ -27,10 +27,8 @@ public class ParserTest {
 
     @Test
     public void shouldParseFile() throws IOException {
-        var parser = new Parser();
-
         try (InputStream is = getClass().getResourceAsStream("/compiled/start.wat.wasm")) {
-            var module = parser.parseModule(is);
+            var module = Parser.parse(is);
 
             // check types section
             var typeSection = module.typeSection();
@@ -56,7 +54,7 @@ public class ParserTest {
 
             // check start section
             var startSection = module.startSection();
-            assertEquals(1, startSection.startIndex());
+            assertEquals(1, startSection.get().startIndex());
 
             // check function section
             var funcSection = module.functionSection();
@@ -70,9 +68,9 @@ public class ParserTest {
 
             // check memory section
             var memorySection = module.memorySection();
-            assertEquals(1, memorySection.memoryCount());
-            assertEquals(1, memorySection.getMemory(0).memoryLimits().initialPages());
-            assertEquals(65536, memorySection.getMemory(0).memoryLimits().maximumPages());
+            assertEquals(1, memorySection.get().memoryCount());
+            assertEquals(1, memorySection.get().getMemory(0).memoryLimits().initialPages());
+            assertEquals(65536, memorySection.get().getMemory(0).memoryLimits().maximumPages());
 
             var codeSection = module.codeSection();
             assertEquals(1, codeSection.functionBodyCount());
@@ -92,10 +90,8 @@ public class ParserTest {
 
     @Test
     public void shouldParseIterfact() throws IOException {
-        var parser = new Parser();
-
         try (InputStream is = getClass().getResourceAsStream("/compiled/iterfact.wat.wasm")) {
-            var module = parser.parseModule(is);
+            var module = Parser.parse(is);
 
             // check types section
             var typeSection = module.typeSection();
@@ -134,9 +130,8 @@ public class ParserTest {
         }
 
         for (var f : files) {
-            var parser = new Parser();
             try (InputStream is = new FileInputStream(f)) {
-                parser.parseModule(is);
+                Parser.parse(is);
             } catch (Exception e) {
                 throw new RuntimeException(String.format("Failed to parse file %s", f), e);
             }
@@ -165,10 +160,8 @@ public class ParserTest {
 
     @Test
     public void shouldParseFloats() throws IOException {
-        var parser = new Parser();
-
         try (InputStream is = getClass().getResourceAsStream("/compiled/float.wat.wasm")) {
-            var module = parser.parseModule(is);
+            var module = Parser.parse(is);
             var codeSection = module.codeSection();
             var fbody = codeSection.getFunctionBody(0);
             var f32 = Float.intBitsToFloat((int) fbody.instructions().get(0).operands()[0]);
@@ -180,10 +173,8 @@ public class ParserTest {
 
     @Test
     public void shouldProperlyParseSignedValue() throws IOException {
-        var parser = new Parser();
-
         try (InputStream is = getClass().getResourceAsStream("/compiled/i32.wat.wasm")) {
-            var module = parser.parseModule(is);
+            var module = Parser.parse(is);
             var codeSection = module.codeSection();
             var fbody = codeSection.getFunctionBody(0);
             assertEquals(-2147483648L, fbody.instructions().get(0).operands()[0]);
@@ -205,10 +196,8 @@ public class ParserTest {
 
     @Test
     public void shouldParseLocalDefinitions() throws Exception {
-        var parser = new Parser();
-
         try (InputStream is = getClass().getResourceAsStream("/compiled/define-locals.wat.wasm")) {
-            var module = parser.parseModule(is);
+            var module = Parser.parse(is);
             var codeSection = module.codeSection();
             var fbody = codeSection.getFunctionBody(0);
             assertEquals(fbody.localTypes().get(0), ValueType.I32);
@@ -218,10 +207,8 @@ public class ParserTest {
 
     @Test
     public void shouldParseNamesSection() throws IOException {
-        var parser = new Parser();
-
         try (InputStream is = getClass().getResourceAsStream("/compiled/count_vowels.rs.wasm")) {
-            var module = parser.parseModule(is);
+            var module = Parser.parse(is);
             var nameSec = module.nameSection();
             assertEquals(module.codeSection().functionBodyCount(), nameSec.functionNameCount());
             assertEquals("__stack_pointer", nameSec.nameOfGlobal(0));

@@ -5,7 +5,7 @@ import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasm.Module;
-import com.dylibso.chicory.wasm.ModuleType;
+import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import java.io.File;
 
@@ -19,10 +19,6 @@ public class TestModule {
 
     public TestModule(Module module) {
         this.module = module;
-    }
-
-    public static TestModule of(File file) {
-        return of(file, ModuleType.BINARY);
     }
 
     public static TestModule of(Module module) {
@@ -54,8 +50,8 @@ public class TestModule {
                     + "alignment "
                     + "multiple start sections";
 
-    public static TestModule of(File file, ModuleType moduleType) {
-        if (moduleType == ModuleType.TEXT) {
+    public static TestModule of(File file) {
+        if (file.getName().endsWith(".wat")) {
             byte[] parsed;
             try {
                 parsed = Wat2Wasm.parse(file);
@@ -63,9 +59,9 @@ public class TestModule {
                 throw new MalformedException(
                         e.getMessage() + HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT);
             }
-            return of(Module.builder(parsed).build());
+            return of(Parser.parse(parsed));
         }
-        return of(Module.builder(file).build());
+        return of(Parser.parse(file));
     }
 
     public Instance build() {

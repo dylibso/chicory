@@ -91,6 +91,13 @@ jobs:
           script: aot/README.md
         env:
           JBANG_REPO: "${{ github.workspace }}/repository"
+      # Test WASM Readme
+      - name: jbang
+        uses: jbangdev/jbang-action@9f8c55e0a2b6b297711162b20c209c5e07076e59 # tag=v0.117.1
+        with:
+          script: wasm/README.md
+        env:
+          JBANG_REPO: "${{ github.workspace }}/repository"
 
   test-results:
     name: Test Results

@@ -1,0 +1,8 @@
+.debug_abbrev
+.debug_info
+.debug_ranges
+.debug_str
+.debug_line
+name
+producers
+target_features

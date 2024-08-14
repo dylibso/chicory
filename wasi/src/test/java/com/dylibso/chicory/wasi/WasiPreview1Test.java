@@ -8,6 +8,7 @@ import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
 import java.util.List;
@@ -17,7 +18,7 @@ public class WasiPreview1Test {
     private final Logger logger = new SystemLogger();
 
     private static Module loadModule(String fileName) {
-        return Module.builder(WasiPreview1Test.class.getResourceAsStream("/" + fileName)).build();
+        return Parser.parse(WasiPreview1Test.class.getResourceAsStream("/" + fileName));
     }
 
     @Test

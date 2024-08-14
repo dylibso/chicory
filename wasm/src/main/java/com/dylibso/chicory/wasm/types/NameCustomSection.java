@@ -1,10 +1,12 @@
 package com.dylibso.chicory.wasm.types;
 
+import static java.util.Objects.requireNonNull;
+
 import com.dylibso.chicory.wasm.Parser;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.function.ToIntFunction;
 
 /**
@@ -12,7 +14,7 @@ import java.util.function.ToIntFunction;
  */
 public class NameCustomSection extends CustomSection {
 
-    private final String moduleName;
+    private final Optional<String> moduleName;
     private final List<NameEntry> funcNames;
     private final List<ListEntry<NameEntry>> localNames;
     private final List<ListEntry<NameEntry>> labelNames;
@@ -26,8 +28,8 @@ public class NameCustomSection extends CustomSection {
     /**
      * Construct a section instance from the specified contents.
      */
-    public NameCustomSection(
-            String moduleName,
+    private NameCustomSection(
+            Optional<String> moduleName,
             List<NameEntry> funcNames,
             List<ListEntry<NameEntry>> localNames,
             List<ListEntry<NameEntry>> labelNames,
@@ -38,15 +40,15 @@ public class NameCustomSection extends CustomSection {
             List<NameEntry> dataNames,
             List<NameEntry> tagNames) {
         this.moduleName = moduleName;
-        this.funcNames = funcNames;
-        this.localNames = localNames;
-        this.labelNames = labelNames;
-        this.tableNames = tableNames;
-        this.memoryNames = memoryNames;
-        this.globalNames = globalNames;
-        this.elementNames = elementNames;
-        this.dataNames = dataNames;
-        this.tagNames = tagNames;
+        this.funcNames = List.copyOf(requireNonNull(funcNames));
+        this.localNames = List.copyOf(requireNonNull(localNames));
+        this.labelNames = List.copyOf(requireNonNull(labelNames));
+        this.tableNames = List.copyOf(requireNonNull(tableNames));
+        this.memoryNames = List.copyOf(requireNonNull(memoryNames));
+        this.globalNames = List.copyOf(requireNonNull(globalNames));
+        this.elementNames = List.copyOf(requireNonNull(elementNames));
+        this.dataNames = List.copyOf(requireNonNull(dataNames));
+        this.tagNames = List.copyOf(requireNonNull(tagNames));
     }
 
     /**
@@ -130,7 +132,7 @@ public class NameCustomSection extends CustomSection {
         }
 
         return new NameCustomSection(
-                moduleName,
+                Optional.ofNullable(moduleName),
                 funcNames,
                 localNames,
                 labelNames,
@@ -147,9 +149,9 @@ public class NameCustomSection extends CustomSection {
     }
 
     /**
-     * @return the module name, or <code>null</code> if none is set
+     * @return the optional module name
      */
-    public String moduleName() {
+    public Optional<String> moduleName() {
         return moduleName;
     }
 
@@ -226,107 +228,6 @@ public class NameCustomSection extends CustomSection {
         return oneLevelSearch(tagNames, tagIdx);
     }
 
-    /**
-     * Add a function name to this section.
-     *
-     * @param functionIdx the index of the function to name
-     * @param name the new name (must not be {@code null})
-     * @return the previously set name, or {@code null} if there was none
-     */
-    public String addFunctionName(int functionIdx, String name) {
-        return oneLevelStore(funcNames, functionIdx, name);
-    }
-
-    /**
-     * Add a local name to this section.
-     *
-     * @param functionIdx the index of the function containing the local
-     * @param localIdx the index of the local to name
-     * @param name the new name (must not be {@code null})
-     * @return the previously set name, or {@code null} if there was none
-     */
-    public String addLocalName(int functionIdx, int localIdx, String name) {
-        return twoLevelStore(localNames, functionIdx, localIdx, name);
-    }
-
-    /**
-     * Add a label name to this section.
-     *
-     * @param functionIdx the index of the function containing the label
-     * @param labelIdx the index of the label to name
-     * @param name the new name (must not be {@code null})
-     * @return the previously set name, or {@code null} if there was none
-     */
-    public String addLabelName(int functionIdx, int labelIdx, String name) {
-        return twoLevelStore(labelNames, functionIdx, labelIdx, name);
-    }
-
-    /**
-     * Add a table name to this section.
-     *
-     * @param tableIdx the index of the table to name
-     * @param name the new name (must not be {@code null})
-     * @return the previously set name, or {@code null} if there was none
-     */
-    public String addTableName(int tableIdx, String name) {
-        return oneLevelStore(funcNames, tableIdx, name);
-    }
-
-    /**
-     * Add a memory name to this section.
-     *
-     * @param memoryIdx the index of the memory to name
-     * @param name the new name (must not be {@code null})
-     * @return the previously set name, or {@code null} if there was none
-     */
-    public String addMemoryName(int memoryIdx, String name) {
-        return oneLevelStore(funcNames, memoryIdx, name);
-    }
-
-    /**
-     * Add a global name to this section.
-     *
-     * @param globalIdx the index of the global to name
-     * @param name the new name (must not be {@code null})
-     * @return the previously set name, or {@code null} if there was none
-     */
-    public String addGlobalName(int globalIdx, String name) {
-        return oneLevelStore(funcNames, globalIdx, name);
-    }
-
-    /**
-     * Add an element name to this section.
-     *
-     * @param elementIdx the index of the element to name
-     * @param name the new name (must not be {@code null})
-     * @return the previously set name, or {@code null} if there was none
-     */
-    public String addElementName(int elementIdx, String name) {
-        return oneLevelStore(funcNames, elementIdx, name);
-    }
-
-    /**
-     * Add a data segment name to this section.
-     *
-     * @param dataIdx the index of the data segment to name
-     * @param name the new name (must not be {@code null})
-     * @return the previously set name, or {@code null} if there was none
-     */
-    public String addDataName(int dataIdx, String name) {
-        return oneLevelStore(funcNames, dataIdx, name);
-    }
-
-    /**
-     * Add a tag name to this section.
-     *
-     * @param tagIdx the index of the tag to name
-     * @param name the new name (must not be {@code null})
-     * @return the previously set name, or {@code null} if there was none
-     */
-    public String addTagName(int tagIdx, String name) {
-        return oneLevelStore(funcNames, tagIdx, name);
-    }
-
     // parsing helpers
 
     private static void oneLevelParse(final ByteBuffer slice, final List<NameEntry> list) {
@@ -380,7 +281,7 @@ public class NameCustomSection extends CustomSection {
     }
 
     private static String oneLevelStore(List<NameEntry> list, int storeIdx, String name) {
-        Objects.requireNonNull(name);
+        requireNonNull(name);
         int idx = binarySearch(list, storeIdx, NameEntry::index);
         if (idx < 0) {
             // insert
@@ -394,7 +295,7 @@ public class NameCustomSection extends CustomSection {
 
     private static String twoLevelStore(
             List<ListEntry<NameEntry>> listList, int groupIdx, int subIdx, String name) {
-        Objects.requireNonNull(name);
+        requireNonNull(name);
         int fi = binarySearch(listList, groupIdx, ListEntry::index);
         ListEntry<NameEntry> subList;
         if (fi < 0) {

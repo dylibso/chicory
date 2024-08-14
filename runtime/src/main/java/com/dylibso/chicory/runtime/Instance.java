@@ -627,8 +627,9 @@ public class Instance {
             if (functionSectionSize != codeSectionSize) {
                 throw new MalformedException("function and code section have inconsistent lengths");
             }
-            if (module.dataCountSection() != null
-                    && dataSectionSize != module.dataCountSection().dataCount()) {
+            if (module.dataCountSection()
+                    .map(dcs -> dcs.dataCount() != dataSectionSize)
+                    .orElse(false)) {
                 throw new MalformedException(
                         "data count and data section have inconsistent lengths");
             }
@@ -813,15 +814,13 @@ public class Instance {
                     mapHostImports(
                             imports,
                             (hostImports == null) ? new HostImports() : hostImports,
-                            (module.memorySection() != null)
-                                    ? module.memorySection().memoryCount()
-                                    : 0);
+                            module.memorySection().map(m -> m.memoryCount()).orElse(0));
 
-            if (module.startSection() != null) {
+            if (module.startSection().isPresent()) {
                 var export =
                         new Export(
                                 START_FUNCTION_NAME,
-                                (int) module.startSection().startIndex(),
+                                (int) module.startSection().get().startIndex(),
                                 ExternalType.FUNCTION);
                 exports.put(START_FUNCTION_NAME, export);
             }
@@ -839,8 +838,8 @@ public class Instance {
             Element[] elements = module.elementSection().elements();
 
             Memory memory = null;
-            if (module.memorySection() != null) {
-                var memories = module.memorySection();
+            if (module.memorySection().isPresent()) {
+                var memories = module.memorySection().get();
                 if (memories.memoryCount() > 0) {
                     memory = new Memory(memories.getMemory(0).memoryLimits());
                 }
@@ -912,9 +911,7 @@ public class Instance {
                     case MEMORY:
                         {
                             var memoryCount =
-                                    (module.memorySection() == null)
-                                            ? 0
-                                            : module.memorySection().memoryCount();
+                                    module.memorySection().map(m -> m.memoryCount()).orElse(0);
                             if (e.index() >= memoryCount + memoryImportsOffset) {
                                 throw new InvalidException("unknown memory " + e);
                             }
