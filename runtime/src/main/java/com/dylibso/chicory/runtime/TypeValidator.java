@@ -958,8 +958,7 @@ public class TypeValidator {
 
         // to satisfy the check mentioned in the NOTE
         // https://webassembly.github.io/spec/core/binary/modules.html#data-count-section
-        if (instance.module().codeSection() != null
-                && instance.module().codeSection().isRequiresDataCount()
+        if (instance.module().codeSection().isRequiresDataCount()
                 && instance.module().dataCountSection().isEmpty()) {
             throw new MalformedException("data count section required");
         }

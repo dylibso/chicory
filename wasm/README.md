@@ -42,7 +42,7 @@ System.out.println("First custom section: " + customSection.name());
 
 <!--
 ```java
-writeResultFile("parser-base.result", customSection.name());
+writeResultFile("parser-base.result", customSection.name() + "\n");
 ```
 -->
 

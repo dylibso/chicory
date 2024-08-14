@@ -384,7 +384,7 @@ public final class Parser {
     private static TypeSection parseTypeSection(ByteBuffer buffer) {
 
         var typeCount = readVarUInt32(buffer);
-        TypeSection.Builder typeSectionBuilder = TypeSection.builder();
+        TypeSection.Builder typeSection = TypeSection.builder();
 
         // Parse individual types in the type section
         for (int i = 0; i < typeCount; i++) {
@@ -417,16 +417,16 @@ public final class Parser {
                 returns[j] = ValueType.forId((int) readVarUInt32(buffer));
             }
 
-            typeSectionBuilder.addFunctionType(FunctionType.of(params, returns));
+            typeSection.addFunctionType(FunctionType.of(params, returns));
         }
 
-        return typeSectionBuilder.build();
+        return typeSection.build();
     }
 
     private static ImportSection parseImportSection(ByteBuffer buffer) {
 
         var importCount = readVarUInt32(buffer);
-        ImportSection.Builder importSectionBuilder = ImportSection.builder();
+        ImportSection.Builder importSection = ImportSection.builder();
 
         // Parse individual imports in the import section
         for (int i = 0; i < importCount; i++) {
@@ -444,7 +444,7 @@ public final class Parser {
                         if (moduleName.isEmpty() && importName.isEmpty()) {
                             throw new MalformedException("malformed import kind");
                         }
-                        importSectionBuilder.addImport(
+                        importSection.addImport(
                                 new FunctionImport(
                                         moduleName, importName, (int) readVarUInt32(buffer)));
                         break;
@@ -464,7 +464,7 @@ public final class Parser {
                                         ? new Limits(min, readVarUInt32(buffer))
                                         : new Limits(min);
 
-                        importSectionBuilder.addImport(
+                        importSection.addImport(
                                 new TableImport(moduleName, importName, tableType, limits));
                         break;
                     }
@@ -483,14 +483,13 @@ public final class Parser {
                                                                 readVarUInt32(buffer)))
                                         : new MemoryLimits(min, MemoryLimits.MAX_PAGES);
 
-                        importSectionBuilder.addImport(
-                                new MemoryImport(moduleName, importName, limits));
+                        importSection.addImport(new MemoryImport(moduleName, importName, limits));
                         break;
                     }
                 case GLOBAL:
                     var globalValType = ValueType.forId((int) readVarUInt32(buffer));
                     var globalMut = MutabilityType.forId(readByte(buffer));
-                    importSectionBuilder.addImport(
+                    importSection.addImport(
                             new GlobalImport(moduleName, importName, globalMut, globalValType));
                     break;
                 default:
@@ -498,27 +497,27 @@ public final class Parser {
             }
         }
 
-        return importSectionBuilder.build();
+        return importSection.build();
     }
 
     private static FunctionSection parseFunctionSection(ByteBuffer buffer) {
 
         var functionCount = readVarUInt32(buffer);
-        FunctionSection.Builder functionSectionBuilder = FunctionSection.builder();
+        FunctionSection.Builder functionSection = FunctionSection.builder();
 
         // Parse individual functions in the function section
         for (int i = 0; i < functionCount; i++) {
             var typeIndex = readVarUInt32(buffer);
-            functionSectionBuilder.addFunctionType((int) typeIndex);
+            functionSection.addFunctionType((int) typeIndex);
         }
 
-        return functionSectionBuilder.build();
+        return functionSection.build();
     }
 
     private static TableSection parseTableSection(ByteBuffer buffer) {
 
         var tableCount = readVarUInt32(buffer);
-        TableSection.Builder tableSectionBuilder = TableSection.builder();
+        TableSection.Builder tableSection = TableSection.builder();
 
         // Parse individual tables in the tables section
         for (int i = 0; i < tableCount; i++) {
@@ -529,24 +528,24 @@ public final class Parser {
             }
             var min = readVarUInt32(buffer);
             var limits = limitType > 0 ? new Limits(min, readVarUInt32(buffer)) : new Limits(min);
-            tableSectionBuilder.addTable(new Table(tableType, limits));
+            tableSection.addTable(new Table(tableType, limits));
         }
 
-        return tableSectionBuilder.build();
+        return tableSection.build();
     }
 
     private static MemorySection parseMemorySection(ByteBuffer buffer) {
 
         var memoryCount = readVarUInt32(buffer);
-        MemorySection.Builder memorySectionBuilder = MemorySection.builder();
+        MemorySection.Builder memorySection = MemorySection.builder();
 
         // Parse individual memories in the memory section
         for (int i = 0; i < memoryCount; i++) {
             var limits = parseMemoryLimits(buffer);
-            memorySectionBuilder.addMemory(new Memory(limits));
+            memorySection.addMemory(new Memory(limits));
         }
 
-        return memorySectionBuilder.build();
+        return memorySection.build();
     }
 
     private static MemoryLimits parseMemoryLimits(ByteBuffer buffer) {
@@ -568,33 +567,33 @@ public final class Parser {
     private static GlobalSection parseGlobalSection(ByteBuffer buffer) {
 
         var globalCount = readVarUInt32(buffer);
-        GlobalSection.Builder globalSectionBuilder = GlobalSection.builder();
+        GlobalSection.Builder globalSection = GlobalSection.builder();
 
         // Parse individual globals
         for (int i = 0; i < globalCount; i++) {
             var valueType = ValueType.forId((int) readVarUInt32(buffer));
             var mutabilityType = MutabilityType.forId(readByte(buffer));
             var init = parseExpression(buffer);
-            globalSectionBuilder.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
+            globalSection.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
         }
 
-        return globalSectionBuilder.build();
+        return globalSection.build();
     }
 
     private static ExportSection parseExportSection(ByteBuffer buffer) {
 
         var exportCount = readVarUInt32(buffer);
-        ExportSection.Builder exportSectionBuilder = ExportSection.builder();
+        ExportSection.Builder exportSection = ExportSection.builder();
 
         // Parse individual functions in the function section
         for (int i = 0; i < exportCount; i++) {
             var name = readName(buffer, false);
             var exportType = ExternalType.byId((int) readVarUInt32(buffer));
             var index = (int) readVarUInt32(buffer);
-            exportSectionBuilder.addExport(new Export(name, index, exportType));
+            exportSection.addExport(new Export(name, index, exportType));
         }
 
-        return exportSectionBuilder.build();
+        return exportSection.build();
     }
 
     private static StartSection parseStartSection(ByteBuffer buffer) {
@@ -605,16 +604,16 @@ public final class Parser {
         var initialPosition = buffer.position();
 
         var elementCount = readVarUInt32(buffer);
-        ElementSection.Builder elementSectionBuilder = ElementSection.builder();
+        ElementSection.Builder elementSection = ElementSection.builder();
 
         for (var i = 0; i < elementCount; i++) {
-            elementSectionBuilder.addElement(parseSingleElement(buffer));
+            elementSection.addElement(parseSingleElement(buffer));
         }
         if (buffer.position() != initialPosition + sectionSize) {
             throw new MalformedException("section size mismatch");
         }
 
-        return elementSectionBuilder.build();
+        return elementSection.build();
     }
 
     private static Element parseSingleElement(ByteBuffer buffer) {
@@ -722,7 +721,7 @@ public final class Parser {
         var funcBodyCount = readVarUInt32(buffer);
 
         var root = new ControlTree();
-        var codeSectionBuilder = CodeSection.builder();
+        var codeSection = CodeSection.builder();
 
         // Parse individual function bodies in the code section
         for (int i = 0; i < funcBodyCount; i++) {
@@ -745,7 +744,7 @@ public final class Parser {
                 switch (instruction.opcode()) {
                     case MEMORY_INIT:
                     case DATA_DROP:
-                        codeSectionBuilder.setRequiresDataCount(true);
+                        codeSection.setRequiresDataCount(true);
                 }
 
                 // depth control
@@ -870,16 +869,16 @@ public final class Parser {
             } while (!lastInstruction);
 
             var functionBody = new FunctionBody(locals, instructions);
-            codeSectionBuilder.addFunctionBody(functionBody);
+            codeSection.addFunctionBody(functionBody);
         }
 
-        return codeSectionBuilder.build();
+        return codeSection.build();
     }
 
     private static DataSection parseDataSection(ByteBuffer buffer) {
 
         var dataSegmentCount = readVarUInt32(buffer);
-        DataSection.Builder dataSectionBuilder = DataSection.builder();
+        DataSection.Builder dataSection = DataSection.builder();
 
         for (var i = 0; i < dataSegmentCount; i++) {
             var mode = readVarUInt32(buffer);
@@ -887,24 +886,23 @@ public final class Parser {
                 var offset = parseExpression(buffer);
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
                 readBytes(buffer, data);
-                dataSectionBuilder.addDataSegment(new ActiveDataSegment(0, List.of(offset), data));
+                dataSection.addDataSegment(new ActiveDataSegment(0, List.of(offset), data));
             } else if (mode == 1) {
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
                 readBytes(buffer, data);
-                dataSectionBuilder.addDataSegment(new PassiveDataSegment(data));
+                dataSection.addDataSegment(new PassiveDataSegment(data));
             } else if (mode == 2) {
                 var memoryId = readVarUInt32(buffer);
                 var offset = parseExpression(buffer);
                 byte[] data = new byte[(int) readVarUInt32(buffer)];
                 readBytes(buffer, data);
-                dataSectionBuilder.addDataSegment(
-                        new ActiveDataSegment(memoryId, List.of(offset), data));
+                dataSection.addDataSegment(new ActiveDataSegment(memoryId, List.of(offset), data));
             } else {
                 throw new ChicoryException("Failed to parse data segment with data mode: " + mode);
             }
         }
 
-        return dataSectionBuilder.build();
+        return dataSection.build();
     }
 
     private static DataCountSection parseDataCountSection(ByteBuffer buffer) {

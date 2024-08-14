@@ -212,11 +212,13 @@ public class Module {
         }
 
         public Builder setDataCountSection(DataCountSection dcs) {
-            this.dataCountSection = Optional.of(dcs);
+            this.dataCountSection = Optional.ofNullable(dcs);
             return this;
         }
 
         public Builder addCustomSection(String name, CustomSection cs) {
+            requireNonNull(name);
+            requireNonNull(cs);
             this.customSections.put(name, cs);
             return this;
         }

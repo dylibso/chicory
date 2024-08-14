@@ -1,10 +1,12 @@
 package com.dylibso.chicory.wasm.types;
 
+import static java.util.Objects.requireNonNull;
+
 import com.dylibso.chicory.wasm.Parser;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.function.ToIntFunction;
 
 /**
@@ -12,7 +14,7 @@ import java.util.function.ToIntFunction;
  */
 public class NameCustomSection extends CustomSection {
 
-    private final String moduleName;
+    private final Optional<String> moduleName;
     private final List<NameEntry> funcNames;
     private final List<ListEntry<NameEntry>> localNames;
     private final List<ListEntry<NameEntry>> labelNames;
@@ -27,7 +29,7 @@ public class NameCustomSection extends CustomSection {
      * Construct a section instance from the specified contents.
      */
     private NameCustomSection(
-            String moduleName,
+            Optional<String> moduleName,
             List<NameEntry> funcNames,
             List<ListEntry<NameEntry>> localNames,
             List<ListEntry<NameEntry>> labelNames,
@@ -38,15 +40,15 @@ public class NameCustomSection extends CustomSection {
             List<NameEntry> dataNames,
             List<NameEntry> tagNames) {
         this.moduleName = moduleName;
-        this.funcNames = List.copyOf(funcNames);
-        this.localNames = List.copyOf(localNames);
-        this.labelNames = List.copyOf(labelNames);
-        this.tableNames = List.copyOf(tableNames);
-        this.memoryNames = List.copyOf(memoryNames);
-        this.globalNames = List.copyOf(globalNames);
-        this.elementNames = List.copyOf(elementNames);
-        this.dataNames = List.copyOf(dataNames);
-        this.tagNames = List.copyOf(tagNames);
+        this.funcNames = List.copyOf(requireNonNull(funcNames));
+        this.localNames = List.copyOf(requireNonNull(localNames));
+        this.labelNames = List.copyOf(requireNonNull(labelNames));
+        this.tableNames = List.copyOf(requireNonNull(tableNames));
+        this.memoryNames = List.copyOf(requireNonNull(memoryNames));
+        this.globalNames = List.copyOf(requireNonNull(globalNames));
+        this.elementNames = List.copyOf(requireNonNull(elementNames));
+        this.dataNames = List.copyOf(requireNonNull(dataNames));
+        this.tagNames = List.copyOf(requireNonNull(tagNames));
     }
 
     /**
@@ -130,7 +132,7 @@ public class NameCustomSection extends CustomSection {
         }
 
         return new NameCustomSection(
-                moduleName,
+                Optional.ofNullable(moduleName),
                 funcNames,
                 localNames,
                 labelNames,
@@ -147,9 +149,9 @@ public class NameCustomSection extends CustomSection {
     }
 
     /**
-     * @return the module name, or <code>null</code> if none is set
+     * @return the optional module name
      */
-    public String moduleName() {
+    public Optional<String> moduleName() {
         return moduleName;
     }
 
@@ -279,7 +281,7 @@ public class NameCustomSection extends CustomSection {
     }
 
     private static String oneLevelStore(List<NameEntry> list, int storeIdx, String name) {
-        Objects.requireNonNull(name);
+        requireNonNull(name);
         int idx = binarySearch(list, storeIdx, NameEntry::index);
         if (idx < 0) {
             // insert
@@ -293,7 +295,7 @@ public class NameCustomSection extends CustomSection {
 
     private static String twoLevelStore(
             List<ListEntry<NameEntry>> listList, int groupIdx, int subIdx, String name) {
-        Objects.requireNonNull(name);
+        requireNonNull(name);
         int fi = binarySearch(listList, groupIdx, ListEntry::index);
         ListEntry<NameEntry> subList;
         if (fi < 0) {
