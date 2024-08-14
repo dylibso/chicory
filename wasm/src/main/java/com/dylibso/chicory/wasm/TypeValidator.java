@@ -1,13 +1,21 @@
-package com.dylibso.chicory.runtime;
+package com.dylibso.chicory.wasm;
+
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
+import com.dylibso.chicory.wasm.types.Element;
+import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
+import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.Global;
+import com.dylibso.chicory.wasm.types.GlobalImport;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
-import com.dylibso.chicory.wasm.types.PassiveDataSegment;
+import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,6 +71,39 @@ public class TypeValidator {
     private final List<CtrlFrame> ctrlFrameStack = new ArrayList<>();
 
     private final List<InvalidException> errors = new ArrayList<>();
+
+    private final Module module;
+    private final List<Global> globalImports;
+    private final List<Integer> functionImports;
+    private final List<ValueType> tableImports;
+    private final int memoryImports;
+
+    public TypeValidator(Module module) {
+        this.module = requireNonNull(module);
+
+        this.globalImports =
+                module.importSection().stream()
+                        .filter(GlobalImport.class::isInstance)
+                        .map(GlobalImport.class::cast)
+                        .map(i -> new Global(i.type(), i.mutabilityType(), List.of()))
+                        .collect(toList());
+
+        this.functionImports =
+                module.importSection().stream()
+                        .filter(FunctionImport.class::isInstance)
+                        .map(FunctionImport.class::cast)
+                        .map(FunctionImport::typeIndex)
+                        .collect(toList());
+
+        this.tableImports =
+                module.importSection().stream()
+                        .filter(TableImport.class::isInstance)
+                        .map(TableImport.class::cast)
+                        .map(TableImport::entryType)
+                        .collect(toList());
+
+        this.memoryImports = module.importSection().count(ExternalType.MEMORY);
+    }
 
     private void pushVal(ValueType valType) {
         valueTypeStack.add(valType);
@@ -163,42 +204,40 @@ public class TypeValidator {
         frame.unreachable = true;
     }
 
-    private static void validateMemory(Instance instance, int memIds) {
-        validateMemory(instance, memIds, -1);
-    }
-
-    private static void validateMemory(Instance instance, int memIds, int dataSegmentIdx) {
-        if (instance.memory() == null || memIds > 0) {
-            throw new InvalidException("unknown memory " + memIds);
-        }
-        if (instance.memory().dataSegments() == null
-                || dataSegmentIdx >= instance.memory().dataSegments().length) {
-            throw new InvalidException("unknown data segment " + dataSegmentIdx);
+    private void validateMemory(int id) {
+        if ((module.memorySection().isEmpty() && memoryImports == 0) || id != 0) {
+            throw new InvalidException("unknown memory " + id);
         }
     }
 
-    private List<ValueType> getReturns(Instruction op, Instance instance) {
+    private void validateDataSegment(int idx) {
+        if (idx < 0 || idx >= module.dataSection().dataSegmentCount()) {
+            throw new InvalidException("unknown data segment " + idx);
+        }
+    }
+
+    private List<ValueType> getReturns(Instruction op) {
         var typeId = (int) op.operands()[0];
         if (typeId == 0x40) { // epsilon
             return List.of();
         } else if (ValueType.isValid(typeId)) {
             return List.of(ValueType.forId(typeId));
         } else {
-            return instance.type(typeId).returns();
+            return getType(typeId).returns();
         }
     }
 
-    private List<ValueType> getParams(Instruction op, Instance instance) {
+    private List<ValueType> getParams(Instruction op) {
         var typeId = (int) op.operands()[0];
         if (typeId == 0x40) { // epsilon
             return List.of();
         } else if (ValueType.isValid(typeId)) {
             return List.of();
         } else {
-            if (typeId >= instance.typeCount()) {
+            if (typeId >= module.typeSection().typeCount()) {
                 throw new MalformedException("unexpected end");
             }
-            return instance.type(typeId).params();
+            return getType(typeId).params();
         }
     }
 
@@ -209,8 +248,51 @@ public class TypeValidator {
         return localTypes.get(idx);
     }
 
-    public void validate(
-            int funcIdx, FunctionBody body, FunctionType functionType, Instance instance) {
+    private FunctionType getType(int idx) {
+        if (idx < 0 || idx >= module.typeSection().typeCount()) {
+            throw new InvalidException("unknown type " + idx);
+        }
+        return module.typeSection().getType(idx);
+    }
+
+    private Global getGlobal(int idx) {
+        if (idx < 0 || idx >= globalImports.size() + module.globalSection().globalCount()) {
+            throw new InvalidException("unknown global " + idx);
+        }
+        if (idx < globalImports.size()) {
+            return globalImports.get(idx);
+        }
+        return module.globalSection().getGlobal(idx - globalImports.size());
+    }
+
+    private int getFunctionType(int idx) {
+        if (idx < 0 || idx >= functionImports.size() + module.functionSection().functionCount()) {
+            throw new InvalidException("unknown function " + idx);
+        }
+        if (idx < functionImports.size()) {
+            return functionImports.get(idx);
+        }
+        return module.functionSection().getFunctionType(idx - functionImports.size());
+    }
+
+    private ValueType getTableType(int idx) {
+        if (idx < 0 || idx >= tableImports.size() + module.tableSection().tableCount()) {
+            throw new InvalidException("unknown table " + idx);
+        }
+        if (idx < tableImports.size()) {
+            return tableImports.get(idx);
+        }
+        return module.tableSection().getTable(idx - tableImports.size()).elementType();
+    }
+
+    private Element getElement(int idx) {
+        if (idx < 0 || idx >= module.elementSection().elementCount()) {
+            throw new InvalidException("unknown elem segment " + idx);
+        }
+        return module.elementSection().getElement(idx);
+    }
+
+    public void validate(int funcIdx, FunctionBody body, FunctionType functionType) {
         var localTypes = body.localTypes();
         var inputLen = functionType.params().size();
         pushCtrl(null, new ArrayList<>(), functionType.returns());
@@ -234,8 +316,8 @@ public class TypeValidator {
                     // fallthrough
                 case BLOCK:
                     {
-                        var t1 = getParams(op, instance);
-                        var t2 = getReturns(op, instance);
+                        var t1 = getParams(op);
+                        var t2 = getReturns(op);
                         popVals(t1);
                         pushCtrl(op.opcode(), t1, t2);
                         break;
@@ -338,14 +420,15 @@ public class TypeValidator {
 
             switch (op.opcode()) {
                 case MEMORY_COPY:
-                    validateMemory(instance, (int) op.operands()[0]);
-                    validateMemory(instance, (int) op.operands()[1]);
+                    validateMemory((int) op.operands()[0]);
+                    validateMemory((int) op.operands()[1]);
                     break;
                 case MEMORY_FILL:
-                    validateMemory(instance, (int) op.operands()[0]);
+                    validateMemory((int) op.operands()[0]);
                     break;
                 case MEMORY_INIT:
-                    validateMemory(instance, (int) op.operands()[1], (int) op.operands()[0]);
+                    validateMemory((int) op.operands()[1]);
+                    validateDataSegment((int) op.operands()[0]);
                     break;
                 case MEMORY_SIZE:
                 case MEMORY_GROW:
@@ -372,7 +455,7 @@ public class TypeValidator {
                 case I64_STORE32:
                 case F32_STORE:
                 case F64_STORE:
-                    validateMemory(instance, 0);
+                    validateMemory(0);
                     break;
                 default:
                     break;
@@ -393,19 +476,7 @@ public class TypeValidator {
                     break;
                 case DATA_DROP:
                     {
-                        var index = (int) op.operands()[0];
-                        var dataSegments = instance.dataSegments();
-
-                        if (dataSegments != null
-                                && dataSegments.length > index
-                                && instance.dataSegments()[index] instanceof PassiveDataSegment) {
-                            break;
-                        }
-                        if (instance.memory() == null
-                                || instance.memory().dataSegments() == null
-                                || index >= instance.memory().dataSegments().length) {
-                            throw new InvalidException("unknown data segment " + index);
-                        }
+                        validateDataSegment((int) op.operands()[0]);
                         break;
                     }
                 case DROP:
@@ -770,27 +841,23 @@ public class TypeValidator {
                     }
                 case GLOBAL_GET:
                     {
-                        var type = instance.readGlobal((int) op.operands()[0]).type();
-                        pushVal(type);
+                        var global = getGlobal((int) op.operands()[0]);
+                        pushVal(global.valueType());
                         break;
                     }
                 case GLOBAL_SET:
                     {
-                        var id = (int) op.operands()[0];
-                        var mutabilityType =
-                                (instance.globalInitializer(id) == null)
-                                        ? instance.imports().global(id).mutabilityType()
-                                        : instance.globalInitializer(id).mutabilityType();
-                        if (mutabilityType == MutabilityType.Const) {
+                        var global = getGlobal((int) op.operands()[0]);
+                        if (global.mutabilityType() == MutabilityType.Const) {
                             throw new InvalidException("global is immutable");
                         }
-                        popVal(instance.readGlobal(id).type());
+                        popVal(global.valueType());
                         break;
                     }
                 case CALL:
                     {
-                        var index = (int) op.operands()[0];
-                        var types = instance.type(instance.functionType(index));
+                        int typeId = getFunctionType((int) op.operands()[0]);
+                        var types = getType(typeId);
                         for (int j = types.params().size() - 1; j >= 0; j--) {
                             popVal(types.params().get(j));
                         }
@@ -801,9 +868,8 @@ public class TypeValidator {
                     {
                         var typeId = (int) op.operands()[0];
                         popVal(ValueType.I32);
-                        instance.table((int) op.operands()[1]);
-
-                        var types = instance.type(typeId);
+                        getTableType((int) op.operands()[1]);
+                        var types = getType(typeId);
                         for (int j = types.params().size() - 1; j >= 0; j--) {
                             popVal(types.params().get(j));
                         }
@@ -866,17 +932,15 @@ public class TypeValidator {
                     }
                 case TABLE_COPY:
                     {
-                        var table1Idx = (int) op.operands()[1];
-                        var table1 = instance.table(table1Idx);
-                        var table2Idx = (int) op.operands()[0];
-                        var table2 = instance.table(table2Idx);
+                        var table1 = getTableType((int) op.operands()[1]);
+                        var table2 = getTableType((int) op.operands()[0]);
 
-                        if (table1.elementType() != table2.elementType()) {
+                        if (table1 != table2) {
                             throw new InvalidException(
                                     "type mismatch, table 1 type: "
-                                            + table1.elementType()
+                                            + table1
                                             + ", table 2 type: "
-                                            + table2.elementType());
+                                            + table2);
                         }
 
                         popVal(ValueType.I32);
@@ -886,15 +950,14 @@ public class TypeValidator {
                     }
                 case TABLE_INIT:
                     {
-                        var tableidx = (int) op.operands()[1];
-                        var table = instance.table(tableidx);
+                        var table = getTableType((int) op.operands()[1]);
                         var elemIdx = (int) op.operands()[0];
-                        var elem = instance.element(elemIdx);
+                        var elem = getElement(elemIdx);
 
-                        if (table.elementType() != elem.type()) {
+                        if (table != elem.type()) {
                             throw new InvalidException(
                                     "type mismatch, table type: "
-                                            + table.elementType()
+                                            + table
                                             + ", elem type: "
                                             + elem.type());
                         }
@@ -916,33 +979,33 @@ public class TypeValidator {
                 case TABLE_FILL:
                     {
                         popVal(ValueType.I32);
-                        popVal(instance.table((int) op.operands()[0]).elementType());
+                        popVal(getTableType((int) op.operands()[0]));
                         popVal(ValueType.I32);
                         break;
                     }
                 case TABLE_GET:
                     {
                         popVal(ValueType.I32);
-                        pushVal(instance.table((int) op.operands()[0]).elementType());
+                        pushVal(getTableType((int) op.operands()[0]));
                         break;
                     }
                 case TABLE_SET:
                     {
-                        popVal(instance.table((int) op.operands()[0]).elementType());
+                        popVal(getTableType((int) op.operands()[0]));
                         popVal(ValueType.I32);
                         break;
                     }
                 case TABLE_GROW:
                     {
                         popVal(ValueType.I32);
-                        popVal(instance.table((int) op.operands()[0]).elementType());
+                        popVal(getTableType((int) op.operands()[0]));
                         pushVal(ValueType.I32);
                         break;
                     }
                 case ELEM_DROP:
                     {
                         var index = (int) op.operands()[0];
-                        instance.element(index);
+                        getElement(index);
                         break;
                     }
                 default:
@@ -958,8 +1021,7 @@ public class TypeValidator {
 
         // to satisfy the check mentioned in the NOTE
         // https://webassembly.github.io/spec/core/binary/modules.html#data-count-section
-        if (instance.module().codeSection().isRequiresDataCount()
-                && instance.module().dataCountSection().isEmpty()) {
+        if (module.codeSection().isRequiresDataCount() && module.dataCountSection().isEmpty()) {
             throw new MalformedException("data count section required");
         }
     }
