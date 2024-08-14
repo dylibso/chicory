@@ -20,6 +20,10 @@ public class GlobalSection extends Section {
         return globals.size();
     }
 
+    public Global getGlobal(int idx) {
+        return globals.get(idx);
+    }
+
     public static Builder builder() {
         return new Builder();
     }

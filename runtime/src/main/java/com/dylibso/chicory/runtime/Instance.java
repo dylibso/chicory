@@ -5,6 +5,7 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValu
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.TypeValidator;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
@@ -273,7 +274,7 @@ public class Instance {
                                             + funcType);
                         }
                     }
-                    new TypeValidator().validate(i, this.function(i), this.types[funcType], this);
+                    new TypeValidator(module).validate(i, function(i), types[funcType]);
                 }
             }
         }
@@ -358,29 +359,11 @@ public class Instance {
         return globals[idx - importedGlobalsOffset].getValue();
     }
 
-    public Global globalInitializer(int idx) {
-        if (idx < importedGlobalsOffset) {
-            return null;
-        }
-        if ((idx - importedGlobalsOffset) >= globalInitializers.length) {
-            throw new InvalidException("unknown global " + idx);
-        }
-        return globalInitializers[idx - importedGlobalsOffset];
-    }
-
-    public int globalCount() {
-        return globals.length;
-    }
-
     public FunctionType type(int idx) {
         if (idx >= types.length) {
             throw new InvalidException("unknown type " + idx);
         }
         return types[idx];
-    }
-
-    public int typeCount() {
-        return types.length;
     }
 
     public int functionType(int idx) {
@@ -406,10 +389,6 @@ public class Instance {
             return imports.table(idx).table();
         }
         return tables[idx - importedTablesOffset];
-    }
-
-    public DataSegment[] dataSegments() {
-        return dataSegments;
     }
 
     public Element element(int idx) {
