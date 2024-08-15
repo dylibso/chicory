@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 // https://github.com/tetratelabs/wazero/blob/5a8a053bff0ae795b264de9672016745cb842070/internal/wasm/func_validation.go
 // control flow implementation follows:
 // https://webassembly.github.io/spec/core/appendix/algorithm.html
-public class TypeValidator {
+final class Validator {
 
     private boolean isNum(ValueType t) {
         return t.isNumeric() || t == ValueType.UNKNOWN;
@@ -83,7 +83,7 @@ public class TypeValidator {
     private final int memoryImports;
     private final Set<Integer> declaredFunctions;
 
-    public TypeValidator(Module module) {
+    public Validator(Module module) {
         this.module = requireNonNull(module);
 
         this.globalImports =
@@ -315,7 +315,40 @@ public class TypeValidator {
         return module.elementSection().getElement(idx);
     }
 
-    public void validate(int funcIdx, FunctionBody body, FunctionType functionType) {
+    public void validateModule() {
+        if (module.functionSection().functionCount() != module.codeSection().functionBodyCount()) {
+            throw new MalformedException("function and code section have inconsistent lengths");
+        }
+
+        if (module.dataCountSection()
+                .map(dcs -> dcs.dataCount() != module.dataSection().dataSegmentCount())
+                .orElse(false)) {
+            throw new MalformedException("data count and data section have inconsistent lengths");
+        }
+
+        if (module.startSection().isPresent()) {
+            long index = module.startSection().get().startIndex();
+            if (index < 0 || index > Integer.MAX_VALUE) {
+                throw new InvalidException("unknown function " + index);
+            }
+            var type = getType(getFunctionType((int) index));
+            if (!type.params().isEmpty() || !type.returns().isEmpty()) {
+                throw new InvalidException(
+                        "invalid start function, must have empty signature " + type);
+            }
+        }
+    }
+
+    public void validateFunctions() {
+        for (var i = 0; i < module.codeSection().functionBodyCount(); i++) {
+            var body = module.codeSection().getFunctionBody(i);
+            var idx = functionImports.size() + i;
+            var type = getType(getFunctionType(idx));
+            validateFunction(idx, body, type);
+        }
+    }
+
+    public void validateFunction(int funcIdx, FunctionBody body, FunctionType functionType) {
         var localTypes = body.localTypes();
         var inputLen = functionType.params().size();
         pushCtrl(null, new ArrayList<>(), functionType.returns());

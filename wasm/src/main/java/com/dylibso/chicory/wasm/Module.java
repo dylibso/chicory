@@ -153,6 +153,7 @@ public class Module {
         private Optional<DataCountSection> dataCountSection = Optional.empty();
         private HashMap<String, CustomSection> customSections = new HashMap<>();
         private List<Integer> ignoredSections = new ArrayList<>();
+        private boolean validate = true;
 
         private Builder() {}
 
@@ -228,22 +229,36 @@ public class Module {
             return this;
         }
 
+        public Builder withValidation(boolean validate) {
+            this.validate = validate;
+            return this;
+        }
+
         public Module build() {
-            return new Module(
-                    typeSection,
-                    importSection,
-                    functionSection,
-                    tableSection,
-                    memorySection,
-                    globalSection,
-                    exportSection,
-                    startSection,
-                    elementSection,
-                    codeSection,
-                    dataSection,
-                    dataCountSection,
-                    customSections,
-                    ignoredSections);
+            var module =
+                    new Module(
+                            typeSection,
+                            importSection,
+                            functionSection,
+                            tableSection,
+                            memorySection,
+                            globalSection,
+                            exportSection,
+                            startSection,
+                            elementSection,
+                            codeSection,
+                            dataSection,
+                            dataCountSection,
+                            customSections,
+                            ignoredSections);
+
+            var validator = new Validator(module);
+            validator.validateModule();
+            if (validate) {
+                validator.validateFunctions();
+            }
+
+            return module;
         }
     }
 }

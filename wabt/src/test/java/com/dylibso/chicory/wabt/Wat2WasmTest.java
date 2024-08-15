@@ -31,7 +31,6 @@ public class Wat2WasmTest {
                                                         + " i32) (param $y i32) (result i32)"
                                                         + " (i32.add (local.get $x) (local.get"
                                                         + " $y))))")))
-                        .withTypeValidation(true)
                         .withInitialize(true)
                         .build();
 

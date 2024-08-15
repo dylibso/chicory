@@ -5,10 +5,8 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValu
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.wasm.Module;
-import com.dylibso.chicory.wasm.TypeValidator;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
-import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
 import com.dylibso.chicory.wasm.exceptions.UnlinkableException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
@@ -62,7 +60,6 @@ public class Instance {
     private final Element[] elements;
     private final Map<String, Export> exports;
     private final boolean start;
-    private final boolean typeValidation;
     private final ExecutionListener listener;
 
     public Instance(
@@ -83,7 +80,6 @@ public class Instance {
             Function<Instance, Machine> machineFactory,
             boolean initialize,
             boolean start,
-            boolean typeValidation,
             ExecutionListener listener) {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
@@ -103,7 +99,6 @@ public class Instance {
         this.exports = exports;
         this.start = start;
         this.listener = listener;
-        this.typeValidation = typeValidation;
 
         if (initialize) {
             initialize(this.start);
@@ -207,29 +202,6 @@ public class Instance {
         }
 
         Export startFunction = this.exports.get(START_FUNCTION_NAME);
-        if (typeValidation) {
-            int startFunctionIndex = startFunction == null ? -1 : startFunction.index();
-            // TODO: can be parallelized?
-            for (int i = 0; i < this.functions.length; i++) {
-                if (this.function(i) != null) {
-                    var funcType = this.functionType(i);
-                    if (funcType >= this.types.length) {
-                        throw new InvalidException("unknown type " + funcType);
-                    }
-                    if (i == startFunctionIndex) {
-                        // _start must be () -> ()
-                        if (!this.types[funcType].params().isEmpty()
-                                || !this.types[funcType].returns().isEmpty()) {
-                            throw new InvalidException(
-                                    "invalid start function, must have empty signature "
-                                            + funcType);
-                        }
-                    }
-                    new TypeValidator(module).validate(i, function(i), types[funcType]);
-                }
-            }
-        }
-
         if (startFunction != null && start) {
             try {
                 export(START_FUNCTION_NAME).apply();
@@ -384,7 +356,6 @@ public class Instance {
 
         private boolean initialize = true;
         private boolean start = true;
-        private boolean typeValidation = true;
         private boolean importValidation = true;
         private ExecutionListener listener = null;
         private HostImports hostImports = null;
@@ -401,11 +372,6 @@ public class Instance {
 
         public Builder withStart(boolean s) {
             this.start = s;
-            return this;
-        }
-
-        public Builder withTypeValidation(boolean v) {
-            this.typeValidation = v;
             return this;
         }
 
@@ -550,21 +516,6 @@ public class Instance {
             }
         }
 
-        private static void validateModule(Module module) {
-            var functionSectionSize = module.functionSection().functionCount();
-            var codeSectionSize = module.codeSection().functionBodyCount();
-            var dataSectionSize = module.dataSection().dataSegmentCount();
-            if (functionSectionSize != codeSectionSize) {
-                throw new MalformedException("function and code section have inconsistent lengths");
-            }
-            if (module.dataCountSection()
-                    .map(dcs -> dcs.dataCount() != dataSectionSize)
-                    .orElse(false)) {
-                throw new MalformedException(
-                        "data count and data section have inconsistent lengths");
-            }
-        }
-
         private HostImports mapHostImports(
                 Import[] imports, HostImports hostImports, int memoryCount) {
             int hostFuncNum = 0;
@@ -700,7 +651,6 @@ public class Instance {
         }
 
         public Instance build() {
-            validateModule(module);
             Map<String, Export> exports = genExports(module.exportSection());
             var globalInitializers = module.globalSection().globals();
 
@@ -872,7 +822,6 @@ public class Instance {
                     machineFactory,
                     initialize,
                     start,
-                    typeValidation,
                     listener);
         }
     }
