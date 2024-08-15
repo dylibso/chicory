@@ -170,17 +170,8 @@ public class Instance {
                     }
                 }
             } else if (el instanceof DeclarativeElement) {
-                var de = (DeclarativeElement) el;
-
-                List<List<Instruction>> initializers = de.initializers();
-                for (int i = 0; i < initializers.size(); i++) {
-                    final List<Instruction> init = initializers.get(i);
-                    var value = computeConstantValue(this, init);
-                    if (de.type() == ValueType.FuncRef
-                            && value.asFuncRef() != REF_NULL_VALUE
-                            && value.asFuncRef() >= importedFunctionsOffset) {
-                        function(value.asFuncRef()).setInitializedByElem(true);
-                    }
+                for (List<Instruction> init : el.initializers()) {
+                    computeConstantValue(this, init);
                 }
             }
         }

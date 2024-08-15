@@ -5,7 +5,6 @@ import java.util.List;
 public class FunctionBody {
     private final List<ValueType> locals;
     private final List<Instruction> instructions;
-    private boolean initializedByElem = false;
 
     public FunctionBody(List<ValueType> locals, List<Instruction> instructions) {
         this.locals = List.copyOf(locals);
@@ -18,13 +17,5 @@ public class FunctionBody {
 
     public List<Instruction> instructions() {
         return instructions;
-    }
-
-    public void setInitializedByElem(boolean v) {
-        initializedByElem = v;
-    }
-
-    public boolean isInitializedByElem() {
-        return initializedByElem;
     }
 }
