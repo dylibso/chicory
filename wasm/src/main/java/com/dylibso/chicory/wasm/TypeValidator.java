@@ -2,9 +2,11 @@ package com.dylibso.chicory.wasm;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
+import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
@@ -21,7 +23,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 // Heavily inspired by wazero
 // https://github.com/tetratelabs/wazero/blob/5a8a053bff0ae795b264de9672016745cb842070/internal/wasm/func_validation.go
@@ -77,6 +81,7 @@ public class TypeValidator {
     private final List<Integer> functionImports;
     private final List<ValueType> tableImports;
     private final int memoryImports;
+    private final Set<Integer> declaredFunctions;
 
     public TypeValidator(Module module) {
         this.module = requireNonNull(module);
@@ -103,6 +108,24 @@ public class TypeValidator {
                         .collect(toList());
 
         this.memoryImports = module.importSection().count(ExternalType.MEMORY);
+
+        this.declaredFunctions =
+                module.elementSection().stream()
+                        .filter(DeclarativeElement.class::isInstance)
+                        .flatMap(element -> element.initializers().stream())
+                        .flatMap(this::declaredFunctions)
+                        .collect(toSet());
+    }
+
+    private Stream<Integer> declaredFunctions(List<Instruction> init) {
+        if (!init.isEmpty() && init.get(0).opcode() == OpCode.REF_FUNC) {
+            int idx = (int) init.get(0).operands()[0];
+            getFunctionType(idx);
+            if (idx >= functionImports.size()) {
+                return Stream.of(idx);
+            }
+        }
+        return Stream.empty();
     }
 
     private void pushVal(ValueType valType) {
@@ -894,10 +917,10 @@ public class TypeValidator {
                 case REF_FUNC:
                     {
                         var idx = (int) op.operands()[0];
-                        if (idx == funcIdx && !body.isInitializedByElem()) { // reference to self
+                        if (idx == funcIdx // reference to self
+                                && !declaredFunctions.contains(idx)) {
                             throw new InvalidException("undeclared function reference");
                         }
-
                         pushVal(ValueType.FuncRef);
                         break;
                     }

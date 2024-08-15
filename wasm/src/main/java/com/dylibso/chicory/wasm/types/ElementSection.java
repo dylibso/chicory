@@ -3,6 +3,7 @@ package com.dylibso.chicory.wasm.types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 public class ElementSection extends Section {
     private final List<Element> elements;
@@ -22,6 +23,10 @@ public class ElementSection extends Section {
 
     public Element getElement(int idx) {
         return elements.get(idx);
+    }
+
+    public Stream<Element> stream() {
+        return elements.stream();
     }
 
     public static Builder builder() {
