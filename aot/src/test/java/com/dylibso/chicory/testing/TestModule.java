@@ -15,11 +15,6 @@ public class TestModule {
     private Instance instance;
 
     private HostImports imports;
-    private boolean typeValidation;
-
-    public TestModule(Module module) {
-        this.module = module;
-    }
 
     public static TestModule of(Module module) {
         return new TestModule(module);
@@ -64,13 +59,13 @@ public class TestModule {
         return of(Parser.parse(file));
     }
 
+    public TestModule(Module module) {
+        this.module = module;
+    }
+
     public Instance build() {
         this.instance =
                 Instance.builder(module)
-                        // TODO: enable me!
-                        .withTypeValidation(false)
-                        // TODO: enable me!
-                        .withImportValidation(false)
                         .withHostImports(imports)
                         .withMachineFactory(AotMachine::new)
                         .build();
@@ -80,14 +75,5 @@ public class TestModule {
     public TestModule withHostImports(HostImports imports) {
         this.imports = imports;
         return this;
-    }
-
-    public TestModule withTypeValidation(boolean v) {
-        this.typeValidation = v;
-        return this;
-    }
-
-    public Instance instance() {
-        return instance;
     }
 }
