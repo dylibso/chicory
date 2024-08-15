@@ -356,7 +356,6 @@ public class Instance {
 
         private boolean initialize = true;
         private boolean start = true;
-        private boolean importValidation = true;
         private ExecutionListener listener = null;
         private HostImports hostImports = null;
         private Function<Instance, Machine> machineFactory = null;
@@ -372,11 +371,6 @@ public class Instance {
 
         public Builder withStart(boolean s) {
             this.start = s;
-            return this;
-        }
-
-        public Builder withImportValidation(boolean v) {
-            this.importValidation = v;
             return this;
         }
 
@@ -617,19 +611,11 @@ public class Instance {
                         break;
                 }
                 if (!found) {
-                    if (importValidation) {
-                        throw new UnlinkableException(
-                                "unknown import, could not find host function for import number: "
-                                        + impIdx
-                                        + " named "
-                                        + name);
-                    } else {
-                        System.err.println(
-                                "Could not find host function for import number: "
-                                        + impIdx
-                                        + " named "
-                                        + name);
-                    }
+                    throw new UnlinkableException(
+                            "unknown import, could not find host function for import number: "
+                                    + impIdx
+                                    + " named "
+                                    + name);
                 }
             }
 
