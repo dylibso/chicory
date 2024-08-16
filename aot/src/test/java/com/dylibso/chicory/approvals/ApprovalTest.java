@@ -1,10 +1,14 @@
 package com.dylibso.chicory.approvals;
 
 import com.dylibso.chicory.aot.AotMachine;
+import com.dylibso.chicory.runtime.HostFunction;
+import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
+import java.util.List;
 import org.approvaltests.Approvals;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
@@ -29,7 +33,14 @@ public class ApprovalTest {
 
     @Test
     public void verifyHelloWasi() {
-        verifyGeneratedBytecode("hello-wasi.wat.wasm");
+        verifyGeneratedBytecode(
+                "hello-wasi.wat.wasm",
+                new HostFunction(
+                        (instance, args) -> null,
+                        "wasi_snapshot_preview1",
+                        "fd_write",
+                        List.of(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
+                        List.of(ValueType.I32)));
     }
 
     @Test
@@ -54,7 +65,14 @@ public class ApprovalTest {
 
     @Test
     public void verifyStart() {
-        verifyGeneratedBytecode("start.wat.wasm");
+        verifyGeneratedBytecode(
+                "start.wat.wasm",
+                new HostFunction(
+                        (instance, args) -> null,
+                        "env",
+                        "gotit",
+                        List.of(ValueType.I32),
+                        List.of()));
     }
 
     @Test
@@ -62,13 +80,13 @@ public class ApprovalTest {
         verifyGeneratedBytecode("trap.wat.wasm");
     }
 
-    private static void verifyGeneratedBytecode(String name) {
+    private static void verifyGeneratedBytecode(String name, HostFunction... hostFunctions) {
         var instance =
                 Instance.builder(
                                 Parser.parse(
                                         ClassLoader.getSystemClassLoader()
                                                 .getResourceAsStream("compiled/" + name)))
-                        .withImportValidation(false)
+                        .withHostImports(new HostImports(hostFunctions))
                         .withMachineFactory(AotMachine::new)
                         .withStart(false)
                         .build();
