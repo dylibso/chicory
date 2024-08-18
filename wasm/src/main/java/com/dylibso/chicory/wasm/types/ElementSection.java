@@ -34,7 +34,7 @@ public class ElementSection extends Section {
     }
 
     public static class Builder {
-        private List<Element> elements = new ArrayList<>();
+        private final List<Element> elements = new ArrayList<>();
 
         /**
          * Add an element definition to this section.

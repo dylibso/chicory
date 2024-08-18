@@ -1,9 +1,9 @@
 package com.dylibso.chicory.wasm.types;
 
-public class Section {
+public abstract class Section {
     private final int id;
 
-    public Section(long id) {
+    Section(long id) {
         this.id = (int) id;
     }
 

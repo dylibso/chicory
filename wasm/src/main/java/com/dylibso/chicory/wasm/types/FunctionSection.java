@@ -28,7 +28,7 @@ public class FunctionSection extends Section {
     }
 
     public static class Builder {
-        private List<Integer> typeIndices = new ArrayList<>();
+        private final List<Integer> typeIndices = new ArrayList<>();
 
         private Builder() {}
 

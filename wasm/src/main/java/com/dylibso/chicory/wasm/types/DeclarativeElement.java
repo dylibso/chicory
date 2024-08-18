@@ -14,7 +14,7 @@ public final class DeclarativeElement extends Element {
      * @param type the type of the element values (must not be {@code null})
      * @param initializers the list of instruction lists which are used to initialize each element in the range (must not be {@code null})
      */
-    public DeclarativeElement(final ValueType type, final List<List<Instruction>> initializers) {
+    public DeclarativeElement(ValueType type, List<List<Instruction>> initializers) {
         super(type, initializers);
     }
 }

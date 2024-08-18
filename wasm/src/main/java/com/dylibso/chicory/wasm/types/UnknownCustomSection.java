@@ -1,6 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
-import java.util.Objects;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A custom section which is unknown to the parser.
@@ -9,24 +9,18 @@ public final class UnknownCustomSection extends CustomSection {
     private final String name;
     private final byte[] bytes;
 
-    /**
-     * Construct a new instance.
-     *
-     * @param name the name of the section (must not be {@code null})
-     * @param bytes the section contents (must not be {@code null})
-     */
-    private UnknownCustomSection(final String name, final byte[] bytes) {
-        super();
-        this.name = Objects.requireNonNull(name, "name");
+    private UnknownCustomSection(String name, byte[] bytes) {
+        this.name = requireNonNull(name, "name");
         this.bytes = bytes.clone();
     }
 
+    @Override
     public String name() {
         return name;
     }
 
     public byte[] bytes() {
-        return bytes;
+        return bytes.clone();
     }
 
     public static Builder builder() {
@@ -40,12 +34,12 @@ public final class UnknownCustomSection extends CustomSection {
         private Builder() {}
 
         public Builder withName(String name) {
-            this.name = name;
+            this.name = requireNonNull(name);
             return this;
         }
 
         public Builder withBytes(byte[] bytes) {
-            this.bytes = bytes;
+            this.bytes = requireNonNull(bytes);
             return this;
         }
 

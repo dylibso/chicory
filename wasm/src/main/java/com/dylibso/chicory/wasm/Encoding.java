@@ -9,6 +9,8 @@ public final class Encoding {
     public static final int MAX_VARINT_LEN_32 = 5; // ceil(32/7)
     public static final int MAX_VARINT_LEN_64 = 10; // ceil(64/7)
 
+    private Encoding() {}
+
     /**
      * Reads an unsigned integer from {@code byteBuffer}.
      */

@@ -19,10 +19,10 @@ public final class ActiveElement extends Element {
      * @param offset the list of instructions which give the offset into the table (must not be {@code null})
      */
     public ActiveElement(
-            final ValueType type,
-            final List<List<Instruction>> initializers,
-            final int tableIndex,
-            final List<Instruction> offset) {
+            ValueType type,
+            List<List<Instruction>> initializers,
+            int tableIndex,
+            List<Instruction> offset) {
         super(type, initializers);
         this.tableIndex = tableIndex;
         this.offset = List.copyOf(offset);

@@ -20,7 +20,7 @@ public enum ExternalType {
 
     private final int id;
 
-    ExternalType(final int id) {
+    ExternalType(int id) {
         this.id = id;
     }
 

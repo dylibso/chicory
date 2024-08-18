@@ -30,18 +30,21 @@ public class Limits {
         return max;
     }
 
-    public boolean equals(final Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         return obj instanceof Limits && equals((Limits) obj);
     }
 
-    public boolean equals(final Limits other) {
+    public boolean equals(Limits other) {
         return this == other || other != null && min == other.min && max == other.max;
     }
 
+    @Override
     public int hashCode() {
         return Long.hashCode(min) * 19 + Long.hashCode(max);
     }
 
+    @Override
     public String toString() {
         return toString(new StringBuilder()).toString();
     }

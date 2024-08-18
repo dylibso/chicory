@@ -29,7 +29,7 @@ public enum ValueType {
     }
 
     /**
-     * @return <code>true</code> if the type can be stored in memory, and thus has a size, or <code>false</code> otherwise
+     * @return {@code true} if the type can be stored in memory, and thus has a size, or {@code false} otherwise
      */
     public boolean hasSize() {
         switch (this) {
@@ -65,7 +65,7 @@ public enum ValueType {
     }
 
     /**
-     * @return <code>true</code> if the type is a numeric type, or <code>false</code> otherwise
+     * @return {@code true} if the type is a numeric type, or {@code false} otherwise
      */
     public boolean isNumeric() {
         switch (this) {
@@ -80,7 +80,7 @@ public enum ValueType {
     }
 
     /**
-     * @return <code>true</code> if the type is an integer type, or <code>false</code> otherwise
+     * @return {@code true} if the type is an integer type, or {@code false} otherwise
      */
     public boolean isInteger() {
         switch (this) {
@@ -93,7 +93,7 @@ public enum ValueType {
     }
 
     /**
-     * @return <code>true</code> if the type is a floating-point type, or <code>false</code> otherwise
+     * @return {@code true} if the type is a floating-point type, or {@code false} otherwise
      */
     public boolean isFloatingPoint() {
         switch (this) {
@@ -106,7 +106,7 @@ public enum ValueType {
     }
 
     /**
-     * @return <code>true</code> if the type is a reference type, or <code>false</code> otherwise
+     * @return {@code true} if the type is a reference type, or {@code false} otherwise
      */
     public boolean isReference() {
         switch (this) {
@@ -119,9 +119,9 @@ public enum ValueType {
     }
 
     /**
-     * @return <code>true</code> if the given type ID is a valid value type ID, or <code>false</code> if it is not
+     * @return {@code true} if the given type ID is a valid value type ID, or {@code false} if it is not
      */
-    public static boolean isValid(final int typeId) {
+    public static boolean isValid(int typeId) {
         switch (typeId) {
             case ID.F64:
             case ID.ExternRef:
@@ -137,7 +137,7 @@ public enum ValueType {
     }
 
     /**
-     * @return the <code>ValueType</code> for the given ID value
+     * @return the {@code ValueType} for the given ID value
      *
      * @throws IllegalArgumentException if the ID value does not correspond to a valid value type
      */
@@ -163,7 +163,7 @@ public enum ValueType {
     }
 
     /**
-     * @return the reference-typed <code>ValueType</code> for the given ID value
+     * @return the reference-typed {@code ValueType} for the given ID value
      *
      * @throws IllegalArgumentException if the ID value does not correspond to a valid reference type
      */

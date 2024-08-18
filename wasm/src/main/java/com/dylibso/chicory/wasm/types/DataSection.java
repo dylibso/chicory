@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class DataSection extends Section {
+public final class DataSection extends Section {
     private final List<DataSegment> dataSegments;
 
     private DataSection(List<DataSegment> dataSegments) {
@@ -29,7 +29,7 @@ public class DataSection extends Section {
     }
 
     public static class Builder {
-        private List<DataSegment> dataSegments = new ArrayList<>();
+        private final List<DataSegment> dataSegments = new ArrayList<>();
 
         private Builder() {}
 

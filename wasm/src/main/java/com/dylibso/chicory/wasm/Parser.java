@@ -1,6 +1,9 @@
 package com.dylibso.chicory.wasm;
 
 import static com.dylibso.chicory.wasm.Encoding.MAX_VARINT_LEN_32;
+import static com.dylibso.chicory.wasm.Encoding.readSigned32Leb128;
+import static com.dylibso.chicory.wasm.Encoding.readSigned64Leb128;
+import static com.dylibso.chicory.wasm.Encoding.readUnsignedLeb128;
 import static com.dylibso.chicory.wasm.WasmLimits.MAX_FUNCTION_LOCALS;
 import static java.util.Objects.requireNonNull;
 
@@ -68,6 +71,7 @@ import java.util.function.Supplier;
 /**
  * Parser for Web Assembly binaries.
  */
+@SuppressWarnings("UnnecessaryCodeBlock")
 public final class Parser {
 
     private static final int MAGIC_BYTES = 1836278016; // Magic prefix \0asm
@@ -89,7 +93,7 @@ public final class Parser {
         this.customParsers = Map.copyOf(customParsers);
     }
 
-    private ByteBuffer readByteBuffer(InputStream is) {
+    private static ByteBuffer readByteBuffer(InputStream is) {
         try {
             var buffer = ByteBuffer.wrap(is.readAllBytes());
             buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -152,7 +156,7 @@ public final class Parser {
     }
 
     public static Module parse(ByteBuffer buffer) {
-        return new Parser().parse(buffer.array());
+        return parse(buffer.array());
     }
 
     public static Module parse(byte[] buffer) {
@@ -160,7 +164,7 @@ public final class Parser {
     }
 
     public static Module parse(File file) {
-        return new Parser().parse(file.toPath());
+        return parse(file.toPath());
     }
 
     public static Module parse(Path path) {
@@ -178,7 +182,7 @@ public final class Parser {
 
     public Module parse(Supplier<InputStream> inputStreamSupplier) {
         Module.Builder moduleBuilder = Module.builder();
-        try (final InputStream is = inputStreamSupplier.get()) {
+        try (InputStream is = inputStreamSupplier.get()) {
             parse(is, (s) -> onSection(moduleBuilder, s));
         } catch (IOException e) {
             throw new ChicoryException(e);
@@ -214,7 +218,7 @@ public final class Parser {
 
     // https://webassembly.github.io/spec/core/binary/modules.html#binary-module
     private static class SectionsValidator {
-        private boolean hasStart = false;
+        private boolean hasStart;
 
         SectionsValidator() {}
 
@@ -657,16 +661,10 @@ public final class Parser {
             type = ValueType.FuncRef;
         } else if (hasElemKind) {
             int ek = (int) readVarUInt32(buffer);
-            switch (ek) {
-                case 0x00:
-                    {
-                        type = ValueType.FuncRef;
-                        break;
-                    }
-                default:
-                    {
-                        throw new ChicoryException("Invalid element kind");
-                    }
+            if (ek == 0x00) {
+                type = ValueType.FuncRef;
+            } else {
+                throw new ChicoryException("Invalid element kind");
             }
         } else {
             assert hasRefType;
@@ -691,12 +689,12 @@ public final class Parser {
         }
         if (declarative) {
             return new DeclarativeElement(type, inits);
-        } else if (passive) {
-            return new PassiveElement(type, inits);
-        } else {
-            assert active;
-            return new ActiveElement(type, inits, tableIdx, offset);
         }
+        if (passive) {
+            return new PassiveElement(type, inits);
+        }
+        assert active;
+        return new ActiveElement(type, inits, tableIdx, offset);
     }
 
     private static List<ValueType> parseCodeSectionLocalTypes(ByteBuffer buffer) {
@@ -753,14 +751,16 @@ public final class Parser {
                     case LOOP:
                     case IF:
                         {
-                            instruction.setDepth(++depth);
+                            depth++;
+                            instruction.setDepth(depth);
                             blockScope.push(instruction);
                             instruction.setScope(blockScope.peek());
                             break;
                         }
                     case END:
                         {
-                            instruction.setDepth(depth--);
+                            instruction.setDepth(depth);
+                            depth--;
                             instruction.setScope(
                                     blockScope.isEmpty() ? instruction : blockScope.pop());
                             break;
@@ -813,6 +813,7 @@ public final class Parser {
                         {
                             instruction.setLabelFalse(instructions.size() + 1);
                         }
+                        // fallthrough
                     case BR:
                         {
                             var offset = (int) instruction.operands()[0];
@@ -970,7 +971,9 @@ public final class Parser {
             }
         }
         var operandsArray = new long[operands.size()];
-        for (var i = 0; i < operands.size(); i++) operandsArray[i] = operands.get(i);
+        for (var i = 0; i < operands.size(); i++) {
+            operandsArray[i] = operands.get(i);
+        }
         verifyAlignment(op, operandsArray);
         return new Instruction(address, op, operandsArray);
     }
@@ -1010,7 +1013,7 @@ public final class Parser {
                 align = 64;
                 break;
         }
-        if (align > 0 && !(Math.pow(2, operands[0]) <= align / 8)) {
+        if ((align > 0) && ((1 << operands[0]) > (align >> 3))) {
             throw new InvalidException(
                     "alignment must not be larger than natural alignment (" + operands[0] + ")");
         }
@@ -1030,12 +1033,9 @@ public final class Parser {
     }
 
     // https://webassembly.github.io/spec/core/syntax/values.html#integers
-    public static final long MIN_SIGNED_INT = -2147483648l; // -2^(32-1)
-    public static final long MAX_SIGNED_INT = 2147483647l; // 2^(32-1)-1
-    public static final long MIN_UNSIGNED_INT = 0l;
-    public static final long MAX_UNSIGNED_INT = 0xFFFFFFFFl; // 2^(32)-1
-    public static final long MIN_SIGNED_LONG = -0x8000000000000000l; // -2^(64-1)
-    public static final long MAX_SIGNED_LONG = 0x7FFFFFFFFFFFFFFFl; // 2^(64-1)-1
+    public static final long MIN_SIGNED_INT = Integer.MIN_VALUE; // -2^(32-1)
+    public static final long MAX_SIGNED_INT = Integer.MAX_VALUE; // 2^(32-1)-1
+    public static final long MAX_UNSIGNED_INT = 0xFFFFFFFFL; // 2^(32)-1
 
     /**
      * Read an unsigned I32 from the buffer. We can't fit an unsigned 32bit int
@@ -1046,8 +1046,8 @@ public final class Parser {
      * @return the resulting long
      */
     public static long readVarUInt32(ByteBuffer buffer) {
-        var value = Encoding.readUnsignedLeb128(buffer, MAX_VARINT_LEN_32);
-        if (value < MIN_UNSIGNED_INT || value > MAX_UNSIGNED_INT) {
+        var value = readUnsignedLeb128(buffer, MAX_VARINT_LEN_32);
+        if (value < 0 || value > MAX_UNSIGNED_INT) {
             throw new MalformedException("integer too large");
         }
         return value;
@@ -1061,8 +1061,8 @@ public final class Parser {
      * @return the resulting long
      */
     public static long readVarSInt32(ByteBuffer buffer) {
-        var value = Encoding.readSigned32Leb128(buffer);
-        if (value > MAX_SIGNED_INT || value < MIN_SIGNED_INT) {
+        var value = readSigned32Leb128(buffer);
+        if (value < MIN_SIGNED_INT || value > MAX_SIGNED_INT) {
             throw new MalformedException("integer too large");
         }
         return value;
@@ -1076,11 +1076,7 @@ public final class Parser {
      * @return the resulting long
      */
     public static long readVarSInt64(ByteBuffer buffer) {
-        var value = Encoding.readSigned64Leb128(buffer);
-        if (value > MAX_SIGNED_LONG || value < MIN_SIGNED_LONG) {
-            throw new MalformedException("integer too large");
-        }
-        return value;
+        return readSigned64Leb128(buffer);
     }
 
     /**

@@ -21,7 +21,7 @@ public class Export {
      * @param index the index of the definition to export
      * @param exportType the export type (must not be {@code null})
      */
-    public Export(final String name, final int index, final ExternalType exportType) {
+    public Export(String name, int index, ExternalType exportType) {
         this.name = Objects.requireNonNull(name, "name");
         this.index = index;
         this.exportType = Objects.requireNonNull(exportType, "type");
@@ -48,15 +48,17 @@ public class Export {
         return exportType;
     }
 
+    @Override
     public int hashCode() {
         return (name.hashCode() * 31 + index) * 31 + exportType.hashCode();
     }
 
-    public boolean equals(final Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         return obj instanceof Export && equals((Export) obj);
     }
 
-    public boolean equals(final Export other) {
+    public boolean equals(Export other) {
         return this == other
                 || other != null
                         && index == other.index

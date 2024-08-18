@@ -15,9 +15,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -81,9 +83,9 @@ public class ParserTest {
 
             assertEquals("0x00000032: I32_CONST [42]", instructions.get(0).toString());
             assertEquals(OpCode.I32_CONST, instructions.get(0).opcode());
-            assertEquals(42L, (long) instructions.get(0).operands()[0]);
+            assertEquals(42L, instructions.get(0).operands()[0]);
             assertEquals(OpCode.CALL, instructions.get(1).opcode());
-            assertEquals(0L, (long) instructions.get(1).operands()[0]);
+            assertEquals(0L, instructions.get(1).operands()[0]);
             assertEquals(OpCode.END, instructions.get(2).opcode());
         }
     }
@@ -116,14 +118,16 @@ public class ParserTest {
     }
 
     @Test
-    public void shouldParseAllFiles() {
+    public void shouldParseAllFiles() throws IOException {
         File compiledDir = new File("../wasm-corpus/src/main/resources/compiled/");
 
-        List<File> files = new ArrayList<>();
-        files.addAll(
-                Arrays.asList(
-                        compiledDir.listFiles(
-                                (ignored, name) -> name.toLowerCase().endsWith(".wasm"))));
+        List<File> files;
+        try (Stream<Path> stream = Files.list(compiledDir.toPath())) {
+            files =
+                    stream.map(Path::toFile)
+                            .filter(f -> f.getName().toLowerCase().endsWith(".wasm"))
+                            .collect(Collectors.toList());
+        }
 
         if (files.isEmpty()) {
             throw new RuntimeException("Could not find files");
@@ -132,7 +136,7 @@ public class ParserTest {
         for (var f : files) {
             try (InputStream is = new FileInputStream(f)) {
                 Parser.parse(is);
-            } catch (Exception e) {
+            } catch (IOException | RuntimeException e) {
                 throw new RuntimeException(String.format("Failed to parse file %s", f), e);
             }
         }

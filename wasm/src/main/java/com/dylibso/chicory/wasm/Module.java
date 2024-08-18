@@ -151,8 +151,8 @@ public class Module {
         private CodeSection codeSection = CodeSection.builder().build();
         private DataSection dataSection = DataSection.builder().build();
         private Optional<DataCountSection> dataCountSection = Optional.empty();
-        private HashMap<String, CustomSection> customSections = new HashMap<>();
-        private List<Integer> ignoredSections = new ArrayList<>();
+        private final HashMap<String, CustomSection> customSections = new HashMap<>();
+        private final List<Integer> ignoredSections = new ArrayList<>();
         private boolean validate = true;
 
         private Builder() {}

@@ -6,7 +6,7 @@ public class Table {
     private final ValueType elementType;
     private final Limits limits;
 
-    public Table(final ValueType elementType, final Limits limits) {
+    public Table(ValueType elementType, Limits limits) {
         this.elementType = Objects.requireNonNull(elementType, "elementType");
         if (!elementType.isReference()) {
             throw new IllegalArgumentException("Table element type must be a reference type");

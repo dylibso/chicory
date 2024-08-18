@@ -50,7 +50,7 @@ import java.util.function.Consumer;
  * 19   local.get 1)
  * </pre>
  */
-public class ControlTree {
+final class ControlTree {
     private final Instruction instruction;
     private final int initialInstructionNumber;
     private int finalInstructionNumber = -1; // to be set when END is reached

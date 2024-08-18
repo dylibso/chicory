@@ -31,7 +31,8 @@ public final class FunctionType {
         return returns.equals(other.returns);
     }
 
-    public boolean equals(final Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         return obj instanceof FunctionType && equals((FunctionType) obj);
     }
 
@@ -39,6 +40,7 @@ public final class FunctionType {
         return hashCode == other.hashCode && paramsMatch(other) && returnsMatch(other);
     }
 
+    @Override
     public int hashCode() {
         return hashCode;
     }
@@ -81,7 +83,8 @@ public final class FunctionType {
         if (params.isEmpty()) {
             if (returns.isEmpty()) {
                 return empty;
-            } else if (returns.size() == 1) {
+            }
+            if (returns.size() == 1) {
                 return returning(returns.get(0));
             }
         } else if (returns.isEmpty()) {
@@ -104,6 +107,7 @@ public final class FunctionType {
         return empty;
     }
 
+    @Override
     public String toString() {
         var builder = new StringBuilder();
         builder.append('(');
