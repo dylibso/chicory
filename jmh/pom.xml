@@ -16,11 +16,11 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>runtime</artifactId>
+      <artifactId>aot</artifactId>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>aot</artifactId>
+      <artifactId>runtime</artifactId>
     </dependency>
     <dependency>
       <groupId>org.openjdk.jmh</groupId>
@@ -68,5 +68,4 @@
       </plugin>
     </plugins>
   </build>
-
 </project>

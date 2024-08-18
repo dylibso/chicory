@@ -34,19 +34,19 @@
   </developers>
 
   <modules>
-    <module>wabt</module>
-    <module>wasm-support-plugin</module>
-    <module>test-gen-plugin</module>
-    <module>wasi-test-gen-plugin</module>
-    <module>log</module>
-    <module>wasm</module>
-    <module>runtime</module>
-    <module>runtime-tests</module>
-    <module>wasi</module>
-    <module>wasm-corpus</module>
-    <module>cli</module>
     <module>aot</module>
     <module>bom</module>
+    <module>cli</module>
+    <module>log</module>
+    <module>runtime</module>
+    <module>runtime-tests</module>
+    <module>test-gen-plugin</module>
+    <module>wabt</module>
+    <module>wasi</module>
+    <module>wasi-test-gen-plugin</module>
+    <module>wasm</module>
+    <module>wasm-corpus</module>
+    <module>wasm-support-plugin</module>
   </modules>
 
   <scm>
@@ -103,6 +103,7 @@
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
     <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
+    <maven-enforcer-plugin.version>3.5.0</maven-enforcer-plugin.version>
     <maven-dependency-plugin.version>3.7.1</maven-dependency-plugin.version>
     <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
     <maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
@@ -115,29 +116,20 @@
 
   <dependencyManagement>
     <dependencies>
+
+      <!-- Used by AOT compiler -->
       <dependency>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>log</artifactId>
-        <version>${project.version}</version>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm-bom</artifactId>
+        <version>${asm.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
-      <dependency>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>wasm</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>runtime</artifactId>
-        <version>${project.version}</version>
-      </dependency>
+
+      <!-- Chicory project modules -->
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>aot</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>wasi</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -147,7 +139,12 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>wasm-corpus</artifactId>
+        <artifactId>log</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>runtime</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -155,14 +152,34 @@
         <artifactId>wabt</artifactId>
         <version>${project.version}</version>
       </dependency>
-
-      <!-- Used by AOT compiler -->
       <dependency>
-        <groupId>org.ow2.asm</groupId>
-        <artifactId>asm-bom</artifactId>
-        <version>${asm.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wasi</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wasm</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wasm-corpus</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <!-- Used for WASI tests -->
+      <dependency>
+        <groupId>com.google.jimfs</groupId>
+        <artifactId>jimfs</artifactId>
+        <version>1.3.0</version>
+      </dependency>
+
+      <!-- Used in the infrastructure of Fuzz tests -->
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>${commons-io.version}</version>
       </dependency>
 
       <!-- Used to build a CLI -->
@@ -178,17 +195,25 @@
         <artifactId>commons-lang3</artifactId>
         <version>${commons-lang.version}</version>
       </dependency>
+
+      <!-- JMH tests -->
       <dependency>
-        <groupId>commons-io</groupId>
-        <artifactId>commons-io</artifactId>
-        <version>${commons-io.version}</version>
+        <groupId>org.openjdk.jmh</groupId>
+        <artifactId>jmh-core</artifactId>
+        <version>${jmh.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.openjdk.jmh</groupId>
+        <artifactId>jmh-generator-annprocess</artifactId>
+        <version>${jmh.version}</version>
       </dependency>
 
-      <!-- Used for WASI tests -->
+      <!-- Unit tests -->
       <dependency>
-        <groupId>com.google.jimfs</groupId>
-        <artifactId>jimfs</artifactId>
-        <version>1.3.0</version>
+        <groupId>com.approvaltests</groupId>
+        <artifactId>approvaltests</artifactId>
+        <version>${approvaltests.version}</version>
+        <scope>test</scope>
       </dependency>
 
       <!-- Unit tests -->
@@ -209,25 +234,6 @@
         <artifactId>junit-jupiter-params</artifactId>
         <version>${junit.version}</version>
         <scope>test</scope>
-      </dependency>
-
-      <dependency>
-        <groupId>com.approvaltests</groupId>
-        <artifactId>approvaltests</artifactId>
-        <version>${approvaltests.version}</version>
-        <scope>test</scope>
-      </dependency>
-
-      <!-- JMH tests -->
-      <dependency>
-        <groupId>org.openjdk.jmh</groupId>
-        <artifactId>jmh-core</artifactId>
-        <version>${jmh.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.openjdk.jmh</groupId>
-        <artifactId>jmh-generator-annprocess</artifactId>
-        <version>${jmh.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -289,6 +295,11 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>${maven-javadoc-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${maven-enforcer-plugin.version}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -379,8 +390,28 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <configuration>
+          <fail>true</fail>
+          <failFast>false</failFast>
+          <rules>
+            <banDuplicatePomDependencyVersions/>
+            <requireUpperBoundDeps/>
+          </rules>
+        </configuration>
+        <executions>
+          <execution>
+            <id>enforce</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <phase>validate</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
-        <version>${maven-dependency-plugin.version}</version>
         <configuration>
           <failOnWarning>true</failOnWarning>
           <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
@@ -445,6 +476,9 @@
             </excludes>
             <sortPom>
               <expandEmptyElements>false</expandEmptyElements>
+              <sortModules>true</sortModules>
+              <sortDependencies>scope,groupId,artifactId</sortDependencies>
+              <sortDependencyExclusions>groupId,artifactId</sortDependencyExclusions>
             </sortPom>
           </pom>
         </configuration>
@@ -548,5 +582,4 @@
       </modules>
     </profile>
   </profiles>
-
 </project>

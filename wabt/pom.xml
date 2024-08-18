@@ -16,7 +16,7 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wasi</artifactId>
+      <artifactId>log</artifactId>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
@@ -24,7 +24,7 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>log</artifactId>
+      <artifactId>wasi</artifactId>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
@@ -37,10 +37,12 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
