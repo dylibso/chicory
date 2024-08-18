@@ -104,6 +104,7 @@
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
     <maven-install-plugin.version>3.1.2</maven-install-plugin.version>
+    <maven-dependency-plugin.version>3.7.1</maven-dependency-plugin.version>
     <maven-site-plugin.version>3.12.1</maven-site-plugin.version>
     <maven-deploy-plugin.version>3.1.2</maven-deploy-plugin.version>
     <maven-gpg-plugin.version>3.2.5</maven-gpg-plugin.version>
@@ -150,7 +151,6 @@
         <artifactId>wasm-corpus</artifactId>
         <version>${project.version}</version>
       </dependency>
-
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>wabt</artifactId>
@@ -172,6 +172,7 @@
         <artifactId>picocli</artifactId>
         <version>${picocli.version}</version>
       </dependency>
+
       <!-- Used in the infrastructure of Fuzz tests -->
       <dependency>
         <groupId>org.apache.commons</groupId>
@@ -191,6 +192,13 @@
         <version>1.3.0</version>
       </dependency>
 
+      <!-- Unit tests -->
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
       <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter-engine</artifactId>
@@ -212,7 +220,6 @@
       </dependency>
 
       <!-- JMH tests -->
-
       <dependency>
         <groupId>org.openjdk.jmh</groupId>
         <artifactId>jmh-core</artifactId>
@@ -283,6 +290,11 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
           <version>${maven-javadoc-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>${maven-dependency-plugin.version}</version>
         </plugin>
         <plugin>
           <groupId>com.diffplug.spotless</groupId>
@@ -363,6 +375,28 @@
             <goals>
               <goal>jar</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${maven-dependency-plugin.version}</version>
+        <configuration>
+          <failOnWarning>true</failOnWarning>
+          <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
+          <ignoredUnusedDeclaredDependencies>
+            <dependency>com.dylibso.chicory:wasm-corpus</dependency>
+            <dependency>org.junit.jupiter:junit-jupiter-engine</dependency>
+          </ignoredUnusedDeclaredDependencies>
+        </configuration>
+        <executions>
+          <execution>
+            <id>dependency-analyze</id>
+            <goals>
+              <goal>analyze-only</goal>
+            </goals>
+            <phase>process-test-classes</phase>
           </execution>
         </executions>
       </plugin>
@@ -448,6 +482,7 @@
         <!-- Prevent building broken tests (due to missing codegen). -->
         <maven.test.skip>true</maven.test.skip>
         <maven.javadoc.skip>true</maven.javadoc.skip>
+        <mdep.analyze.skip>true</mdep.analyze.skip>
       </properties>
       <build>
         <defaultGoal>clean install</defaultGoal>

@@ -16,15 +16,22 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>log</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wasm</artifactId>
+      <artifactId>runtime</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wabt</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
