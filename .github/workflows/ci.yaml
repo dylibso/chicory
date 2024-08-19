@@ -63,7 +63,7 @@ jobs:
           java-version: '17'
           cache: maven
       - name: Build Chicory
-        run: mvn -Dquickly
+        run: mvn -B -Dquickly
         env:
           MAVEN_OPTS: "-Dmaven.repo.local=${{ github.workspace }}/repository"
       # Test root Readme

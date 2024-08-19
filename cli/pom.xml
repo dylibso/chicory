@@ -16,7 +16,19 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
+      <artifactId>log</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>runtime</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm</artifactId>
     </dependency>
     <dependency>
       <groupId>info.picocli</groupId>
