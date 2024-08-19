@@ -355,10 +355,8 @@ public final class AotMachine implements Machine {
             throw new ChicoryException("call stack exhausted", e);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("undefined element " + e.getMessage(), e);
-        } catch (Exception e) {
-            throw new WASMRuntimeException("An underlying Java exception occurred", e);
         } catch (Throwable e) {
-            throw new WASMRuntimeException("An underlying Java error occurred", e);
+            throw new WASMRuntimeException("An underlying Java exception occurred", e);
         }
     }
 
