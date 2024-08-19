@@ -90,7 +90,7 @@
     <commons-io.version>2.16.1</commons-io.version>
     <jmh.version>1.37</jmh.version>
 
-    <maven-plugin-api.version>3.9.8</maven-plugin-api.version>
+    <maven-plugin-api.version>3.9.9</maven-plugin-api.version>
     <maven-plugin-annotations.version>3.13.1</maven-plugin-annotations.version>
 
     <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
