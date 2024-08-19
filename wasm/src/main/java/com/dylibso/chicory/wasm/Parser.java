@@ -12,6 +12,7 @@ import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
+import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.CodeSection;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.DataCountSection;
@@ -67,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Parser for Web Assembly binaries.
@@ -725,53 +727,54 @@ public final class Parser {
             var depth = 0;
             var funcEndPoint = readVarUInt32(buffer) + buffer.position();
             var locals = parseCodeSectionLocalTypes(buffer);
-            var instructions = new ArrayList<Instruction>();
+            var instructions = new ArrayList<AnnotatedInstruction.Builder>();
             var lastInstruction = false;
             ControlTree currentControlFlow = null;
 
             do {
-                var instruction = parseInstruction(buffer);
+                var baseInstruction = parseInstruction(buffer);
+                var instruction = AnnotatedInstruction.builder().from(baseInstruction);
                 lastInstruction = buffer.position() >= funcEndPoint;
                 if (instructions.isEmpty()) {
                     currentControlFlow = root.spawn(0, instruction);
                 }
 
                 // https://webassembly.github.io/spec/core/binary/modules.html#data-count-section
-                switch (instruction.opcode()) {
+                switch (baseInstruction.opcode()) {
                     case MEMORY_INIT:
                     case DATA_DROP:
                         codeSection.setRequiresDataCount(true);
                 }
 
                 // depth control
-                switch (instruction.opcode()) {
+                switch (baseInstruction.opcode()) {
                     case BLOCK:
                     case LOOP:
                     case IF:
                         {
                             depth++;
-                            instruction.setDepth(depth);
-                            blockScope.push(instruction);
-                            instruction.setScope(blockScope.peek());
+                            instruction.withDepth(depth);
+                            blockScope.push(baseInstruction);
+                            instruction.withScope(blockScope.peek());
                             break;
                         }
                     case END:
                         {
-                            instruction.setDepth(depth);
+                            instruction.withDepth(depth);
                             depth--;
-                            instruction.setScope(
-                                    blockScope.isEmpty() ? instruction : blockScope.pop());
+                            instruction.withScope(
+                                    blockScope.isEmpty() ? baseInstruction : blockScope.pop());
                             break;
                         }
                     default:
                         {
-                            instruction.setDepth(depth);
+                            instruction.withDepth(depth);
                             break;
                         }
                 }
 
                 // control-flow
-                switch (instruction.opcode()) {
+                switch (baseInstruction.opcode()) {
                     case BLOCK:
                     case LOOP:
                         {
@@ -788,33 +791,32 @@ public final class Parser {
                             currentControlFlow.addCallback(
                                     end -> {
                                         // check that there is no "else" branch
-                                        if (instruction.labelFalse() == defaultJmp) {
-                                            instruction.setLabelFalse(end);
-                                        }
+                                        instruction.updateLabelFalse(end);
                                     });
 
                             // defaults
-                            instruction.setLabelTrue(defaultJmp);
-                            instruction.setLabelFalse(defaultJmp);
+                            instruction.withLabelTrue(defaultJmp);
+                            instruction.withLabelFalse(defaultJmp);
                             break;
                         }
                     case ELSE:
                         {
-                            assert (currentControlFlow.instruction().opcode() == OpCode.IF);
-                            currentControlFlow.instruction().setLabelFalse(instructions.size() + 1);
+                            currentControlFlow
+                                    .instruction()
+                                    .withLabelFalse(instructions.size() + 1);
 
-                            currentControlFlow.addCallback(instruction::setLabelTrue);
+                            currentControlFlow.addCallback(instruction::withLabelTrue);
 
                             break;
                         }
                     case BR_IF:
                         {
-                            instruction.setLabelFalse(instructions.size() + 1);
+                            instruction.withLabelFalse(instructions.size() + 1);
                         }
                         // fallthrough
                     case BR:
                         {
-                            var offset = (int) instruction.operands()[0];
+                            var offset = (int) baseInstruction.operands()[0];
                             ControlTree reference = currentControlFlow;
                             while (offset > 0) {
                                 if (reference == null) {
@@ -823,14 +825,16 @@ public final class Parser {
                                 reference = reference.parent();
                                 offset--;
                             }
-                            reference.addCallback(instruction::setLabelTrue);
+                            reference.addCallback(instruction::withLabelTrue);
                             break;
                         }
                     case BR_TABLE:
                         {
-                            instruction.setLabelTable(new int[instruction.operands().length]);
-                            for (var idx = 0; idx < instruction.labelTable().length; idx++) {
-                                var offset = (int) instruction.operands()[idx];
+                            var length = baseInstruction.operands().length;
+                            var labelTable = new ArrayList<Integer>();
+                            for (var idx = 0; idx < length; idx++) {
+                                labelTable.add(null);
+                                var offset = (int) baseInstruction.operands()[idx];
                                 ControlTree reference = currentControlFlow;
                                 while (offset > 0) {
                                     if (reference == null) {
@@ -840,9 +844,9 @@ public final class Parser {
                                     offset--;
                                 }
                                 int finalIdx = idx;
-                                reference.addCallback(
-                                        end -> instruction.labelTable()[finalIdx] = end);
+                                reference.addCallback(end -> labelTable.set(finalIdx, end));
                             }
+                            instruction.withLabelTable(labelTable);
                             break;
                         }
                     case END:
@@ -854,7 +858,7 @@ public final class Parser {
                             if (lastInstruction && instructions.size() > 1) {
                                 var former = instructions.get(instructions.size() - 1);
                                 if (former.opcode() == OpCode.END) {
-                                    instruction.setScope(former.scope());
+                                    instruction.withScope(former.scope().get());
                                 }
                             }
                             break;
@@ -867,7 +871,12 @@ public final class Parser {
                 instructions.add(instruction);
             } while (!lastInstruction);
 
-            var functionBody = new FunctionBody(locals, instructions);
+            var functionBody =
+                    new FunctionBody(
+                            locals,
+                            instructions.stream()
+                                    .map(ins -> ins.build())
+                                    .collect(Collectors.toUnmodifiableList()));
             codeSection.addFunctionBody(functionBody);
         }
 
@@ -936,9 +945,6 @@ public final class Parser {
                 }
             default:
                 break;
-        }
-        if (signature.length == 0) {
-            return new Instruction(address, op, new long[] {});
         }
         var operands = new ArrayList<Long>();
         for (var sig : signature) {
@@ -1018,7 +1024,6 @@ public final class Parser {
     }
 
     private static Instruction[] parseExpression(ByteBuffer buffer) {
-
         var expr = new ArrayList<Instruction>();
         while (true) {
             var i = parseInstruction(buffer);

@@ -40,6 +40,7 @@ import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
@@ -639,17 +640,15 @@ public final class AotMachine implements Machine {
 
         // allocate labels for all label targets
         Map<Integer, Label> labels = new HashMap<>();
-        for (Instruction ins : body.instructions()) {
-            if (ins.labelTrue() != null) {
+        for (AnnotatedInstruction ins : body.instructions()) {
+            if (ins.labelTrue() != AnnotatedInstruction.UNDEFINED_LABEL) {
                 labels.put(ins.labelTrue(), new Label());
             }
-            if (ins.labelFalse() != null) {
+            if (ins.labelFalse() != AnnotatedInstruction.UNDEFINED_LABEL) {
                 labels.put(ins.labelFalse(), new Label());
             }
-            if (ins.labelTable() != null) {
-                for (int label : ins.labelTable()) {
-                    labels.put(label, new Label());
-                }
+            for (int label : ins.labelTable()) {
+                labels.put(label, new Label());
             }
         }
 
@@ -737,20 +736,21 @@ public final class AotMachine implements Machine {
                     ctx.popStackSize();
                     emitInvokeStatic(asm, CHECK_INTERRUPTION);
                     // skip table switch if it only has a default
-                    if (ins.labelTable().length == 1) {
+                    if (ins.labelTable().size() == 1) {
                         asm.visitInsn(Opcodes.POP);
-                        emitUnwindStack(asm, type, body, ins, ins.labelTable()[0], ctx);
-                        asm.visitJumpInsn(Opcodes.GOTO, labels.get(ins.labelTable()[0]));
+                        emitUnwindStack(asm, type, body, ins, ins.labelTable().get(0), ctx);
+                        asm.visitJumpInsn(Opcodes.GOTO, labels.get(ins.labelTable().get(0)));
                         break;
                     }
                     // collect unique target labels
                     Map<Integer, Label> targets = new HashMap<>();
-                    Label[] table = new Label[ins.labelTable().length - 1];
+                    Label[] table = new Label[ins.labelTable().size() - 1];
                     for (int i = 0; i < table.length; i++) {
-                        table[i] = targets.computeIfAbsent(ins.labelTable()[i], x -> new Label());
+                        table[i] =
+                                targets.computeIfAbsent(ins.labelTable().get(i), x -> new Label());
                     }
                     // table switch using the last entry of the label table as the default
-                    int defaultTarget = ins.labelTable()[ins.labelTable().length - 1];
+                    int defaultTarget = ins.labelTable().get(ins.labelTable().size() - 1);
                     Label defaultLabel = targets.computeIfAbsent(defaultTarget, x -> new Label());
                     asm.visitTableSwitchInsn(0, table.length - 1, defaultLabel, table);
                     // generate separate unwinds for each target
@@ -801,7 +801,7 @@ public final class AotMachine implements Machine {
             MethodVisitor asm,
             FunctionType functionType,
             FunctionBody body,
-            Instruction ins,
+            AnnotatedInstruction ins,
             int label,
             AotContext ctx) {
 
@@ -860,7 +860,7 @@ public final class AotMachine implements Machine {
     }
 
     private FunctionType blockType(Instruction ins) {
-        int typeId = (int) ins.operands()[0];
+        var typeId = (int) ins.operands()[0];
         if (typeId == 0x40) {
             return FunctionType.empty();
         }

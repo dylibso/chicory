@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -20,8 +20,8 @@ import java.util.List;
  * within the function you are in and only specific places.
  */
 public class StackFrame {
-    private final List<Instruction> code;
-    private Instruction currentInstruction;
+    private final List<AnnotatedInstruction> code;
+    private AnnotatedInstruction currentInstruction;
 
     private final int funcId;
     private int pc;
@@ -35,7 +35,7 @@ public class StackFrame {
     }
 
     public StackFrame(
-            List<Instruction> code,
+            List<AnnotatedInstruction> code,
             Instance instance,
             int funcId,
             Value[] args,
@@ -74,7 +74,7 @@ public class StackFrame {
         return id + "\n\tpc=" + pc + " locals=" + Arrays.toString(locals);
     }
 
-    public Instruction loadCurrentInstruction() {
+    public AnnotatedInstruction loadCurrentInstruction() {
         currentInstruction = code.get(pc++);
         return currentInstruction;
     }
