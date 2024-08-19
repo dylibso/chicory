@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class CodeSection extends Section {
+public final class CodeSection extends Section {
     private final List<FunctionBody> functionBodies;
     private final boolean requiresDataCount;
 
@@ -35,8 +35,8 @@ public class CodeSection extends Section {
     }
 
     public static class Builder {
-        private List<FunctionBody> functionBodies = new ArrayList<>();
-        private boolean requiresDataCount = false;
+        private final List<FunctionBody> functionBodies = new ArrayList<>();
+        private boolean requiresDataCount;
 
         private Builder() {}
 

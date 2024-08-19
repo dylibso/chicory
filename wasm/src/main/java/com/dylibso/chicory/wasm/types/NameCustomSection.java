@@ -25,9 +25,6 @@ public class NameCustomSection extends CustomSection {
     private final List<NameEntry> dataNames;
     private final List<NameEntry> tagNames;
 
-    /**
-     * Construct a section instance from the specified contents.
-     */
     private NameCustomSection(
             Optional<String> moduleName,
             List<NameEntry> funcNames,
@@ -39,7 +36,7 @@ public class NameCustomSection extends CustomSection {
             List<NameEntry> elementNames,
             List<NameEntry> dataNames,
             List<NameEntry> tagNames) {
-        this.moduleName = moduleName;
+        this.moduleName = requireNonNull(moduleName);
         this.funcNames = List.copyOf(requireNonNull(funcNames));
         this.localNames = List.copyOf(requireNonNull(localNames));
         this.labelNames = List.copyOf(requireNonNull(labelNames));
@@ -76,56 +73,36 @@ public class NameCustomSection extends CustomSection {
             // todo: IDs 4 and 10 are reserved for the Host GC spec
             switch (id) {
                 case 0:
-                    {
-                        assert (moduleName == null);
-                        moduleName = Parser.readName(slice);
-                        break;
-                    }
+                    assert (moduleName == null);
+                    moduleName = Parser.readName(slice);
+                    break;
                 case 1:
-                    {
-                        oneLevelParse(slice, funcNames);
-                        break;
-                    }
+                    oneLevelParse(slice, funcNames);
+                    break;
                 case 2:
-                    {
-                        twoLevelParse(slice, localNames);
-                        break;
-                    }
+                    twoLevelParse(slice, localNames);
+                    break;
                 case 3:
-                    {
-                        twoLevelParse(slice, labelNames);
-                        break;
-                    }
+                    twoLevelParse(slice, labelNames);
+                    break;
                 case 5:
-                    {
-                        oneLevelParse(slice, tableNames);
-                        break;
-                    }
+                    oneLevelParse(slice, tableNames);
+                    break;
                 case 6:
-                    {
-                        oneLevelParse(slice, memoryNames);
-                        break;
-                    }
+                    oneLevelParse(slice, memoryNames);
+                    break;
                 case 7:
-                    {
-                        oneLevelParse(slice, globalNames);
-                        break;
-                    }
+                    oneLevelParse(slice, globalNames);
+                    break;
                 case 8:
-                    {
-                        oneLevelParse(slice, elementNames);
-                        break;
-                    }
+                    oneLevelParse(slice, elementNames);
+                    break;
                 case 9:
-                    {
-                        oneLevelParse(slice, dataNames);
-                        break;
-                    }
+                    oneLevelParse(slice, dataNames);
+                    break;
                 case 11:
-                    {
-                        oneLevelParse(slice, tagNames);
-                        break;
-                    }
+                    oneLevelParse(slice, tagNames);
+                    break;
                 default:
                     // ignore unknown subsection for forwards-compatibility
             }
@@ -144,6 +121,7 @@ public class NameCustomSection extends CustomSection {
                 tagNames);
     }
 
+    @Override
     public String name() {
         return "name";
     }
@@ -156,7 +134,7 @@ public class NameCustomSection extends CustomSection {
     }
 
     /**
-     * @return the name of the function with the given index, or <code>null</code> if none is set
+     * @return the name of the function with the given index, or {@code null} if none is set
      */
     public String nameOfFunction(int functionIdx) {
         return oneLevelSearch(funcNames, functionIdx);
@@ -173,56 +151,56 @@ public class NameCustomSection extends CustomSection {
     }
 
     /**
-     * @return the name of the local with the given index within the function with the given index, or <code>null</code> if none is set
+     * @return the name of the local with the given index within the function with the given index, or {@code null} if none is set
      */
     public String nameOfLocal(int functionIdx, int localIdx) {
         return twoLevelSearch(localNames, functionIdx, localIdx);
     }
 
     /**
-     * @return the name of the local with the given index within the function with the given index, or <code>null</code> if none is set
+     * @return the name of the local with the given index within the function with the given index, or {@code null} if none is set
      */
     public String nameOfLabel(int functionIdx, int labelIdx) {
         return twoLevelSearch(labelNames, functionIdx, labelIdx);
     }
 
     /**
-     * @return the name of the table with the given index, or <code>null</code> if none is set
+     * @return the name of the table with the given index, or {@code null} if none is set
      */
     public String nameOfTable(int tableIdx) {
         return oneLevelSearch(tableNames, tableIdx);
     }
 
     /**
-     * @return the name of the memory with the given index, or <code>null</code> if none is set
+     * @return the name of the memory with the given index, or {@code null} if none is set
      */
     public String nameOfMemory(int memoryIdx) {
         return oneLevelSearch(memoryNames, memoryIdx);
     }
 
     /**
-     * @return the name of the global with the given index, or <code>null</code> if none is set
+     * @return the name of the global with the given index, or {@code null} if none is set
      */
     public String nameOfGlobal(int globalIdx) {
         return oneLevelSearch(globalNames, globalIdx);
     }
 
     /**
-     * @return the name of the element with the given index, or <code>null</code> if none is set
+     * @return the name of the element with the given index, or {@code null} if none is set
      */
     public String nameOfElement(int elementIdx) {
         return oneLevelSearch(elementNames, elementIdx);
     }
 
     /**
-     * @return the name of the data segment with the given index, or <code>null</code> if none is set
+     * @return the name of the data segment with the given index, or {@code null} if none is set
      */
     public String nameOfData(int dataIdx) {
         return oneLevelSearch(dataNames, dataIdx);
     }
 
     /**
-     * @return the name of the tag with the given index, or <code>null</code> if none is set
+     * @return the name of the tag with the given index, or {@code null} if none is set
      */
     public String nameOfTag(int tagIdx) {
         return oneLevelSearch(tagNames, tagIdx);
@@ -230,15 +208,14 @@ public class NameCustomSection extends CustomSection {
 
     // parsing helpers
 
-    private static void oneLevelParse(final ByteBuffer slice, final List<NameEntry> list) {
+    private static void oneLevelParse(ByteBuffer slice, List<NameEntry> list) {
         int cnt = (int) Parser.readVarUInt32(slice);
         for (int i = 0; i < cnt; i++) {
             oneLevelStore(list, (int) Parser.readVarUInt32(slice), Parser.readName(slice));
         }
     }
 
-    private static void twoLevelParse(
-            final ByteBuffer slice, final List<ListEntry<NameEntry>> list) {
+    private static void twoLevelParse(ByteBuffer slice, List<ListEntry<NameEntry>> list) {
         int listCnt = (int) Parser.readVarUInt32(slice);
         for (int i = 0; i < listCnt; i++) {
             int groupIdx = (int) Parser.readVarUInt32(slice);
@@ -250,7 +227,7 @@ public class NameCustomSection extends CustomSection {
         }
     }
 
-    private static ByteBuffer slice(final ByteBuffer buf, final int size) {
+    private static ByteBuffer slice(ByteBuffer buf, int size) {
         int pos = buf.position();
         int lim = buf.limit();
         try {
@@ -287,10 +264,9 @@ public class NameCustomSection extends CustomSection {
             // insert
             list.add(-idx - 1, new NameEntry(storeIdx, name));
             return null;
-        } else {
-            // replace
-            return list.set(idx, new NameEntry(storeIdx, name)).name();
         }
+        // replace
+        return list.set(idx, new NameEntry(storeIdx, name)).name();
     }
 
     private static String twoLevelStore(
@@ -309,10 +285,9 @@ public class NameCustomSection extends CustomSection {
             // insert
             subList.add(-li - 1, new NameEntry(subIdx, name));
             return null;
-        } else {
-            // replace
-            return subList.set(li, new NameEntry(subIdx, name)).name();
         }
+        // replace
+        return subList.set(li, new NameEntry(subIdx, name)).name();
     }
 
     private static <T> int binarySearch(List<T> list, int idx, ToIntFunction<T> indexExtractor) {
@@ -342,7 +317,7 @@ public class NameCustomSection extends CustomSection {
         private final int index;
         private final String name;
 
-        NameEntry(final int index, final String name) {
+        NameEntry(int index, String name) {
             this.index = index;
             this.name = name;
         }
@@ -355,6 +330,7 @@ public class NameCustomSection extends CustomSection {
             return name;
         }
 
+        @Override
         public String toString() {
             return "[" + index + "] -> " + name;
         }
@@ -365,7 +341,7 @@ public class NameCustomSection extends CustomSection {
     static final class ListEntry<T> extends ArrayList<T> {
         private final int index;
 
-        ListEntry(final int index) {
+        ListEntry(int index) {
             this.index = index;
         }
 
@@ -373,6 +349,7 @@ public class NameCustomSection extends CustomSection {
             return index;
         }
 
+        @Override
         public String toString() {
             return "[" + index + "] -> " + super.toString();
         }

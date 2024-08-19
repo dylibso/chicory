@@ -5,7 +5,7 @@ package com.dylibso.chicory.wasm.types;
  */
 public abstract class CustomSection extends Section {
 
-    protected CustomSection() {
+    CustomSection() {
         super(SectionId.CUSTOM);
     }
 

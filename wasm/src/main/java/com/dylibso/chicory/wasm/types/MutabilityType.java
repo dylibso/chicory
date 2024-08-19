@@ -23,7 +23,7 @@ public enum MutabilityType {
     }
 
     /**
-     * @return the <code>MutabilityType</code> for the given ID value
+     * @return the {@code MutabilityType} for the given ID value
      *
      * @throws IllegalArgumentException if the ID value does not correspond to a valid mutability type
      */

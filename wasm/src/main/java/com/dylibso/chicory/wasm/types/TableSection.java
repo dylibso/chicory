@@ -25,7 +25,7 @@ public class TableSection extends Section {
     }
 
     public static class Builder {
-        private List<Table> tables = new ArrayList<>();
+        private final List<Table> tables = new ArrayList<>();
 
         private Builder() {}
 

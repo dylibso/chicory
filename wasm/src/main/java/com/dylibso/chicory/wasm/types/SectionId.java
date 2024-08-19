@@ -1,6 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
-public class SectionId {
+public final class SectionId {
     public static final int CUSTOM = 0;
     public static final int TYPE = 1;
     public static final int IMPORT = 2;
@@ -14,4 +14,6 @@ public class SectionId {
     public static final int CODE = 10;
     public static final int DATA = 11;
     public static final int DATA_COUNT = 12;
+
+    private SectionId() {}
 }

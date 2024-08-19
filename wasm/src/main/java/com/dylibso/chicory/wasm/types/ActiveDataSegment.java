@@ -6,10 +6,6 @@ public final class ActiveDataSegment extends DataSegment {
     private final long idx;
     private final List<Instruction> offsetInstructions;
 
-    public ActiveDataSegment(List<Instruction> offsetInstructions, byte[] data) {
-        this(0, offsetInstructions, data);
-    }
-
     public ActiveDataSegment(long idx, List<Instruction> offsetInstructions, byte[] data) {
         super(data);
         this.idx = idx;

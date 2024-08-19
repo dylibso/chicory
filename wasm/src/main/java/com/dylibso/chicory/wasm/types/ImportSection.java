@@ -34,7 +34,7 @@ public class ImportSection extends Section {
     }
 
     public static class Builder {
-        private List<Import> imports = new ArrayList<>();
+        private final List<Import> imports = new ArrayList<>();
 
         private Builder() {}
 

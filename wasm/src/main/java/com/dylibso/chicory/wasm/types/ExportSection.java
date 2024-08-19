@@ -25,7 +25,7 @@ public class ExportSection extends Section {
     }
 
     public static class Builder {
-        private List<Export> exports = new ArrayList<>();
+        private final List<Export> exports = new ArrayList<>();
 
         private Builder() {}
 

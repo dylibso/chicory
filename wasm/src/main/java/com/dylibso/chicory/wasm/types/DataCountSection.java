@@ -1,6 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
-public class DataCountSection extends Section {
+public final class DataCountSection extends Section {
     private final int dataCount;
 
     private DataCountSection(int dataCount) {

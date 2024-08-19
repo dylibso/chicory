@@ -29,7 +29,7 @@ public class TypeSection extends Section {
     }
 
     public static class Builder {
-        private List<FunctionType> types = new ArrayList<>();
+        private final List<FunctionType> types = new ArrayList<>();
 
         private Builder() {}
 

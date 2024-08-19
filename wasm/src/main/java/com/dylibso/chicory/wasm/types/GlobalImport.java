@@ -18,10 +18,7 @@ public final class GlobalImport extends Import {
      * @param type the type of the value stored in the global (must not be {@code null})
      */
     public GlobalImport(
-            final String moduleName,
-            final String name,
-            final MutabilityType mutabilityType,
-            final ValueType type) {
+            String moduleName, String name, MutabilityType mutabilityType, ValueType type) {
         super(moduleName, name);
         this.mutabilityType = Objects.requireNonNull(mutabilityType, "mutabilityType");
         this.type = Objects.requireNonNull(type, "type");
@@ -41,26 +38,30 @@ public final class GlobalImport extends Import {
         return type;
     }
 
+    @Override
     public ExternalType importType() {
         return ExternalType.GLOBAL;
     }
 
-    public boolean equals(final Import other) {
+    @Override
+    public boolean equals(Import other) {
         return other instanceof GlobalImport && equals((GlobalImport) other);
     }
 
-    public boolean equals(final GlobalImport other) {
+    public boolean equals(GlobalImport other) {
         return this == other
                 || super.equals(other)
                         && mutabilityType == other.mutabilityType
                         && type == other.type;
     }
 
+    @Override
     public int hashCode() {
         return (super.hashCode() * 19 + mutabilityType.hashCode()) * 19 + type.hashCode();
     }
 
-    public StringBuilder toString(final StringBuilder b) {
+    @Override
+    public StringBuilder toString(StringBuilder b) {
         b.append("global (type=").append(type).append(",mut=").append(mutabilityType).append(')');
         return super.toString(b);
     }

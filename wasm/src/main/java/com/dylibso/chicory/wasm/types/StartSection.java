@@ -1,6 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
-public class StartSection extends Section {
+public final class StartSection extends Section {
     private final long startIndex;
 
     private StartSection(long startIndex) {

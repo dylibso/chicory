@@ -1,6 +1,7 @@
 package com.dylibso.chicory.wasm;
 
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
@@ -24,7 +25,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 // Heavily inspired by wazero
@@ -33,27 +33,28 @@ import java.util.stream.Stream;
 // https://webassembly.github.io/spec/core/appendix/algorithm.html
 final class Validator {
 
-    private boolean isNum(ValueType t) {
+    private static boolean isNum(ValueType t) {
         return t.isNumeric() || t == ValueType.UNKNOWN;
     }
 
-    private boolean isRef(ValueType t) {
+    private static boolean isRef(ValueType t) {
         return t.isReference() || t == ValueType.UNKNOWN;
     }
 
+    @SuppressWarnings("PublicField")
     private static class CtrlFrame {
         // OpCode of the current Control Flow instruction
-        private final OpCode opCode;
+        public final OpCode opCode;
         // params or inputs
-        private final List<ValueType> startTypes;
+        public final List<ValueType> startTypes;
         // returns or outputs
-        private final List<ValueType> endTypes;
+        public final List<ValueType> endTypes;
         // the height of the stack before entering the current Control Flow instruction
-        private final int height;
+        public final int height;
         // set after uncoditional jumps
-        private boolean unreachable;
+        public boolean unreachable;
         // if there is no else, we explicit check that the enclosing IF is not returning values
-        private boolean hasElse;
+        public boolean hasElse;
 
         public CtrlFrame(
                 OpCode opCode,
@@ -206,12 +207,8 @@ final class Validator {
         return ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n);
     }
 
-    private List<ValueType> labelTypes(CtrlFrame frame) {
-        if (frame.opCode == OpCode.LOOP) {
-            return frame.startTypes;
-        } else {
-            return frame.endTypes;
-        }
+    private static List<ValueType> labelTypes(CtrlFrame frame) {
+        return (frame.opCode == OpCode.LOOP) ? frame.startTypes : frame.endTypes;
     }
 
     private void resetAtStackLimit() {
@@ -243,25 +240,25 @@ final class Validator {
         var typeId = (int) op.operands()[0];
         if (typeId == 0x40) { // epsilon
             return List.of();
-        } else if (ValueType.isValid(typeId)) {
-            return List.of(ValueType.forId(typeId));
-        } else {
-            return getType(typeId).returns();
         }
+        if (ValueType.isValid(typeId)) {
+            return List.of(ValueType.forId(typeId));
+        }
+        return getType(typeId).returns();
     }
 
     private List<ValueType> getParams(Instruction op) {
         var typeId = (int) op.operands()[0];
         if (typeId == 0x40) { // epsilon
             return List.of();
-        } else if (ValueType.isValid(typeId)) {
-            return List.of();
-        } else {
-            if (typeId >= module.typeSection().typeCount()) {
-                throw new MalformedException("unexpected end");
-            }
-            return getType(typeId).params();
         }
+        if (ValueType.isValid(typeId)) {
+            return List.of();
+        }
+        if (typeId >= module.typeSection().typeCount()) {
+            throw new MalformedException("unexpected end");
+        }
+        return getType(typeId).params();
     }
 
     private static ValueType getLocalType(List<ValueType> localTypes, int idx) {
@@ -348,6 +345,7 @@ final class Validator {
         }
     }
 
+    @SuppressWarnings("UnnecessaryCodeBlock")
     public void validateFunction(int funcIdx, FunctionBody body, FunctionType functionType) {
         var localTypes = body.localTypes();
         var inputLen = functionType.params().size();
@@ -359,16 +357,13 @@ final class Validator {
             // control flow instructions handling
             switch (op.opcode()) {
                 case UNREACHABLE:
-                    {
-                        unreachable();
-                        break;
-                    }
+                    unreachable();
+                    break;
                 case IF:
-                    {
-                        popVal(ValueType.I32);
-                        // fallthrough
-                    }
-                case LOOP: // t1* -> t2*
+                    popVal(ValueType.I32);
+                    // fallthrough
+                case LOOP:
+                    // t1* -> t2*
                     // fallthrough
                 case BLOCK:
                     {
@@ -432,7 +427,7 @@ final class Validator {
                         var arity = defaultBranchLabelTypes.size();
                         for (var idx = 0; idx < op.operands().length - 1; idx++) {
                             var n = (int) op.operands()[idx];
-                            CtrlFrame ctrlFrame = null;
+                            CtrlFrame ctrlFrame;
                             try {
                                 ctrlFrame = getCtrl(n);
                             } catch (IndexOutOfBoundsException e) {
@@ -1072,7 +1067,7 @@ final class Validator {
 
         if (!errors.isEmpty()) {
             throw new InvalidException(
-                    errors.stream().map(e -> e.getMessage()).collect(Collectors.joining(" - ")));
+                    errors.stream().map(Throwable::getMessage).collect(joining(" - ")));
         }
 
         // to satisfy the check mentioned in the NOTE

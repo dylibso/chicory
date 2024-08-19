@@ -189,11 +189,11 @@ public class Value {
     }
 
     public ValueType type() {
-        return this.type;
+        return type;
     }
 
     public byte[] data() {
-        switch (this.type) {
+        switch (type) {
             case I64:
             case F64:
                 ByteBuffer buffer = ByteBuffer.allocate(8);
@@ -208,22 +208,23 @@ public class Value {
         }
     }
 
+    @Override
     public String toString() {
-        switch (this.type) {
+        switch (type) {
             case I32:
-                return this.asInt() + "@i32";
+                return asInt() + "@i32";
             case I64:
-                return this.asLong() + "@i64";
+                return asLong() + "@i64";
             case F32:
-                return this.asFloat() + "@f32";
+                return asFloat() + "@f32";
             case F64:
-                return this.asDouble() + "@f64";
+                return asDouble() + "@f64";
             case FuncRef:
                 return "func[" + (int) data + "]";
             case ExternRef:
                 return "ext[" + (int) data + "]";
             default:
-                throw new RuntimeException("TODO handle missing types");
+                throw new AssertionError("Unhandled type: " + type);
         }
     }
 

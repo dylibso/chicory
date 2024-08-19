@@ -17,11 +17,7 @@ public final class TableImport extends Import {
      * @param entryType the table entry type (must not be {@code null})
      * @param limits the table limits (must not be {@code null})
      */
-    public TableImport(
-            final String moduleName,
-            final String name,
-            final ValueType entryType,
-            final Limits limits) {
+    public TableImport(String moduleName, String name, ValueType entryType, Limits limits) {
         super(moduleName, name);
         this.entryType = Objects.requireNonNull(entryType, "entryType");
         this.limits = Objects.requireNonNull(limits, "limits");
@@ -41,26 +37,30 @@ public final class TableImport extends Import {
         return limits;
     }
 
+    @Override
     public ExternalType importType() {
         return ExternalType.TABLE;
     }
 
-    public boolean equals(final Import other) {
+    @Override
+    public boolean equals(Import other) {
         return other instanceof TableImport && equals((TableImport) other);
     }
 
-    public boolean equals(final TableImport other) {
+    public boolean equals(TableImport other) {
         return this == other
                 || super.equals(other)
                         && entryType == other.entryType
                         && limits.equals(other.limits);
     }
 
+    @Override
     public int hashCode() {
         return (super.hashCode() * 19 + entryType.hashCode()) * 19 + limits.hashCode();
     }
 
-    public StringBuilder toString(final StringBuilder b) {
+    @Override
+    public StringBuilder toString(StringBuilder b) {
         b.append("table (type=").append(entryType).append(",limits=");
         limits.toString(b);
         b.append(')');

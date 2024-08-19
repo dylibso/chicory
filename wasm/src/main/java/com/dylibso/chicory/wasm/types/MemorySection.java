@@ -25,7 +25,7 @@ public class MemorySection extends Section {
     }
 
     public static class Builder {
-        private List<Memory> memories = new ArrayList<>();
+        private final List<Memory> memories = new ArrayList<>();
 
         private Builder() {}
 

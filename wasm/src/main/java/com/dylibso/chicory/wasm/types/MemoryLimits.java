@@ -67,7 +67,8 @@ public final class MemoryLimits {
     public MemoryLimits(int initial, int maximum, boolean shared) {
         if (initial > MAX_PAGES || maximum > MAX_PAGES || initial < 0 || maximum < 0) {
             throw new InvalidException("memory size must be at most 65536 pages (4GiB)");
-        } else if (initial > maximum) {
+        }
+        if (initial > maximum) {
             throw new InvalidException("size minimum must not be greater than maximum");
         }
 
@@ -98,25 +99,28 @@ public final class MemoryLimits {
     }
 
     /**
-     * @return <code>true</code> if the limits apply to a shared memory segment, or <code>false</code> otherwise
+     * @return {@code true} if the limits apply to a shared memory segment, or {@code false} otherwise
      */
     public boolean shared() {
         return shared;
     }
 
-    public boolean equals(final Object obj) {
+    @Override
+    public boolean equals(Object obj) {
         return obj instanceof MemoryLimits && equals((MemoryLimits) obj);
     }
 
-    public boolean equals(final MemoryLimits other) {
+    public boolean equals(MemoryLimits other) {
         return this == other
                 || other != null && initial == other.initial && maximum == other.maximum;
     }
 
+    @Override
     public int hashCode() {
         return maximum * 19 + initial;
     }
 
+    @Override
     public String toString() {
         return toString(new StringBuilder()).toString();
     }

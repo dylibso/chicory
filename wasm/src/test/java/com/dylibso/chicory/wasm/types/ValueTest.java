@@ -53,7 +53,7 @@ public class ValueTest {
         var i32FortyTwo = Value.i32(42);
         var i64FortyTwo = Value.i64(42L);
         var i32TwentyOne = Value.i32(21);
-        var f32TwentyOne = Value.f32(Float.floatToIntBits(21.f));
+        var f32TwentyOne = Value.f32(Float.floatToIntBits(21.0f));
 
         assertEquals(i32FortyTwo, i32FortyTwo);
         assertEquals(i32FortyTwo, Value.i32(42));

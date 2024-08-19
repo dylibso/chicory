@@ -2,7 +2,7 @@ package com.dylibso.chicory.wasm.types;
 
 import java.util.List;
 
-public class FunctionBody {
+public final class FunctionBody {
     private final List<ValueType> locals;
     private final List<Instruction> instructions;
 

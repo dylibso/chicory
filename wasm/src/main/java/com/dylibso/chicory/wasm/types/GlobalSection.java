@@ -29,7 +29,7 @@ public class GlobalSection extends Section {
     }
 
     public static class Builder {
-        private List<Global> globals = new ArrayList<>();
+        private final List<Global> globals = new ArrayList<>();
 
         private Builder() {}
 

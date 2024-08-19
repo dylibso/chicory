@@ -2,7 +2,7 @@ package com.dylibso.chicory.wasm;
 
 // Spec: https://webassembly.github.io/spec/core/appendix/implementation.html#syntactic-limits
 // From: https://github.com/WebKit/webkit/blob/main/Source/JavaScriptCore/wasm/WasmLimits.h
-public class WasmLimits {
+public final class WasmLimits {
 
     public static final int MAX_TYPES = 1000000;
     public static final int MAX_FUNCTIONS = 1000000;
@@ -27,4 +27,6 @@ public class WasmLimits {
 
     public static final int MAX_TABLE_ENTRIES = 10000000;
     public static final int MAX_TABLES = 1000000;
+
+    private WasmLimits() {}
 }
