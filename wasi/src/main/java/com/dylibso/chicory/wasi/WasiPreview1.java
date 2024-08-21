@@ -129,12 +129,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction adapterCloseBadfd() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("adapter_close_badfd: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: adapter_close_badfd");
-                    // return new Value[] { Value.i32(0) };
-                },
+                this::adapterCloseBadfd,
                 "wasi_snapshot_preview1",
                 "adapter_close_badfd",
                 List.of(I32),
@@ -143,12 +138,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction adapterOpenBadfd() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("adapter_open_badfd: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: adapter_open_badfd");
-                    // return new Value[] { Value.i32(0) };
-                },
+                this::adaptedOpenBadfd,
                 "wasi_snapshot_preview1",
                 "adapter_open_badfd",
                 List.of(I32),
@@ -157,22 +147,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction argsGet() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("args_get: " + Arrays.toString(args));
-                    int argv = args[0].asInt();
-                    int argvBuf = args[1].asInt();
-
-                    Memory memory = instance.memory();
-                    for (byte[] argument : arguments) {
-                        memory.writeI32(argv, argvBuf);
-                        argv += 4;
-                        memory.write(argvBuf, argument);
-                        argvBuf += argument.length;
-                        memory.writeByte(argvBuf, (byte) 0);
-                        argvBuf++;
-                    }
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::argsGet,
                 "wasi_snapshot_preview1",
                 "args_get",
                 List.of(I32, I32),
@@ -181,17 +156,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction argsSizesGet() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("args_sizes_get: " + Arrays.toString(args));
-                    int argc = args[0].asInt();
-                    int argvBufSize = args[1].asInt();
-
-                    int bufSize = arguments.stream().mapToInt(x -> x.length + 1).sum();
-                    Memory memory = instance.memory();
-                    memory.writeI32(argc, arguments.size());
-                    memory.writeI32(argvBufSize, bufSize);
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::argsSizesGet,
                 "wasi_snapshot_preview1",
                 "args_sizes_get",
                 List.of(I32, I32),
@@ -200,27 +165,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction clockResGet() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("clock_res_get: " + Arrays.toString(args));
-                    int clockId = args[0].asInt();
-                    int resultPtr = args[1].asInt();
-
-                    Memory memory = instance.memory();
-                    switch (clockId) {
-                        case WasiClockId.REALTIME:
-                        case WasiClockId.MONOTONIC:
-                            memory.writeLong(resultPtr, 1L);
-                            return wasiResult(WasiErrno.ESUCCESS);
-                        case WasiClockId.PROCESS_CPUTIME_ID:
-                            throw new WASMRuntimeException(
-                                    "We don't yet support clockid process_cputime_id");
-                        case WasiClockId.THREAD_CPUTIME_ID:
-                            throw new WASMRuntimeException(
-                                    "We don't yet support clockid thread_cputime_id");
-                        default:
-                            return wasiResult(WasiErrno.EINVAL);
-                    }
-                },
+                this::clockResGet,
                 "wasi_snapshot_preview1",
                 "clock_res_get",
                 List.of(I32, I32),
@@ -229,32 +174,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction clockTimeGet() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("clock_time_get: " + Arrays.toString(args));
-                    int clockId = args[0].asInt();
-                    long precision = args[1].asLong();
-                    int resultPtr = args[2].asInt();
-
-                    Memory memory = instance.memory();
-                    switch (clockId) {
-                        case WasiClockId.REALTIME:
-                            Instant now = Instant.now();
-                            long epochNanos = SECONDS.toNanos(now.getEpochSecond()) + now.getNano();
-                            memory.writeLong(resultPtr, epochNanos);
-                            return wasiResult(WasiErrno.ESUCCESS);
-                        case WasiClockId.MONOTONIC:
-                            memory.writeLong(resultPtr, System.nanoTime());
-                            return wasiResult(WasiErrno.ESUCCESS);
-                        case WasiClockId.PROCESS_CPUTIME_ID:
-                            throw new WASMRuntimeException(
-                                    "We don't yet support clockid process_cputime_id");
-                        case WasiClockId.THREAD_CPUTIME_ID:
-                            throw new WASMRuntimeException(
-                                    "We don't yet support clockid thread_cputime_id");
-                        default:
-                            return wasiResult(WasiErrno.EINVAL);
-                    }
-                },
+                this::clockTimeGet,
                 "wasi_snapshot_preview1",
                 "clock_time_get",
                 List.of(I32, I64, I32),
@@ -263,28 +183,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction environGet() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("environ_get: " + Arrays.toString(args));
-                    int environ = args[0].asInt();
-                    int environBuf = args[1].asInt();
-
-                    Memory memory = instance.memory();
-                    for (var entry : environment) {
-                        byte[] name = entry.getKey();
-                        byte[] value = entry.getValue();
-                        byte[] data = new byte[name.length + value.length + 2];
-                        System.arraycopy(name, 0, data, 0, name.length);
-                        data[name.length] = '=';
-                        System.arraycopy(value, 0, data, name.length + 1, value.length);
-                        data[data.length - 1] = '\0';
-
-                        memory.writeI32(environ, environBuf);
-                        environ += 4;
-                        memory.write(environBuf, data);
-                        environBuf += data.length;
-                    }
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::environGet,
                 "wasi_snapshot_preview1",
                 "environ_get",
                 List.of(I32, I32),
@@ -293,20 +192,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction environSizesGet() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("environ_sizes_get: " + Arrays.toString(args));
-                    int environCount = args[0].asInt();
-                    int environBufSize = args[1].asInt();
-
-                    int bufSize =
-                            environment.stream()
-                                    .mapToInt(x -> x.getKey().length + x.getValue().length + 2)
-                                    .sum();
-                    Memory memory = instance.memory();
-                    memory.writeI32(environCount, environment.size());
-                    memory.writeI32(environBufSize, bufSize);
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::environSizesGet,
                 "wasi_snapshot_preview1",
                 "environ_sizes_get",
                 List.of(I32, I32),
@@ -315,12 +201,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdAdvise() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_advise: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: fd_advise");
-                    // return new Value[] { Value.i32(0) };
-                },
+                this::fdAdvise,
                 "wasi_snapshot_preview1",
                 "fd_advise",
                 List.of(I32, I64, I64, I32),
@@ -329,12 +210,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdAllocate() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_allocate: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: fd_allocate");
-                    // return new Value[] { Value.i32(0) };
-                },
+                this::fdAllocate,
                 "wasi_snapshot_preview1",
                 "fd_allocate",
                 List.of(I32, I64, I64),
@@ -343,26 +219,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdClose() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_close: " + Arrays.toString(args));
-                    int fd = args[0].asInt();
-
-                    Descriptor descriptor = descriptors.get(fd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    descriptors.free(fd);
-
-                    try {
-                        if (descriptor instanceof Closeable) {
-                            ((Closeable) descriptor).close();
-                        }
-                    } catch (IOException e) {
-                        return wasiResult(WasiErrno.EIO);
-                    }
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::fdClose,
                 "wasi_snapshot_preview1",
                 "fd_close",
                 List.of(I32),
@@ -371,12 +228,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdDatasync() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_datasync: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: fd_datasync");
-                    // return new Value[] { Value.i32(0) };
-                },
+                this::fdDatasync,
                 "wasi_snapshot_preview1",
                 "fd_datasync",
                 List.of(I32),
@@ -385,46 +237,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdFdstatGet() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_fdstat_get: " + Arrays.toString(args));
-                    int fd = args[0].asInt();
-                    int buf = args[1].asInt();
-                    int flags = 0;
-                    int rightsBase;
-                    int rightsInheriting = 0;
-
-                    var descriptor = descriptors.get(fd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    WasiFileType fileType;
-                    if (descriptor instanceof InStream) {
-                        fileType = WasiFileType.CHARACTER_DEVICE;
-                        rightsBase = WasiRights.FD_READ;
-                    } else if (descriptor instanceof OutStream) {
-                        fileType = WasiFileType.CHARACTER_DEVICE;
-                        rightsBase = WasiRights.FD_WRITE;
-                    } else if (descriptor instanceof Directory) {
-                        fileType = WasiFileType.DIRECTORY;
-                        rightsBase = WasiRights.DIRECTORY_RIGHTS_BASE;
-                        rightsInheriting = rightsBase | WasiRights.FILE_RIGHTS_BASE;
-                    } else if (descriptor instanceof OpenFile) {
-                        fileType = WasiFileType.REGULAR_FILE;
-                        rightsBase = WasiRights.FILE_RIGHTS_BASE;
-                        flags = ((OpenFile) descriptor).fdFlags();
-                    } else {
-                        throw unhandledDescriptor(descriptor);
-                    }
-
-                    Memory memory = instance.memory();
-                    memory.write(buf, new byte[8]);
-                    memory.writeByte(buf, (byte) fileType.ordinal());
-                    memory.writeShort(buf + 2, (short) flags);
-                    memory.writeLong(buf + 8, rightsBase);
-                    memory.writeLong(buf + 16, rightsInheriting);
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::fdFdstatGet,
                 "wasi_snapshot_preview1",
                 "fd_fdstat_get",
                 List.of(I32, I32),
@@ -433,34 +246,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdFdstatSetFlags() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_fdstat_set_flags: " + Arrays.toString(args));
-                    int fd = args[0].asInt();
-                    int flags = args[1].asInt();
-
-                    var descriptor = descriptors.get(fd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
-                        return wasiResult(WasiErrno.EINVAL);
-                    }
-                    if ((descriptor instanceof OpenDirectory)
-                            || (descriptor instanceof PreopenedDirectory)) {
-                        return wasiResult(WasiErrno.ESUCCESS);
-                    }
-                    if (!(descriptor instanceof OpenFile)) {
-                        throw unhandledDescriptor(descriptor);
-                    }
-
-                    // we don't support changing flags
-                    if (flags != ((OpenFile) descriptor).fdFlags()) {
-                        return wasiResult(WasiErrno.ENOTSUP);
-                    }
-
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::fdFdstatSetFlags,
                 "wasi_snapshot_preview1",
                 "fd_fdstat_set_flags",
                 List.of(I32, I32),
@@ -469,12 +255,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdFdstatSetRights() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_fdstat_set_rights: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: fd_fdstat_set_rightsn");
-                    // return new Value[] { Value.i32(0) };
-                },
+                this::fdFdstatSetRights,
                 "wasi_snapshot_preview1",
                 "fd_fdstat_set_rights",
                 List.of(I32, I64, I32),
@@ -483,52 +264,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdFilestatGet() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_filestat_get: " + Arrays.toString(args));
-                    int fd = args[0].asInt();
-                    int buf = args[1].asInt();
-
-                    var descriptor = descriptors.get(fd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
-                        Map<String, Object> attributes =
-                                Map.of(
-                                        "dev", 0L,
-                                        "ino", 0L,
-                                        "nlink", 1L,
-                                        "size", 0L,
-                                        "lastAccessTime", FileTime.from(Instant.EPOCH),
-                                        "lastModifiedTime", FileTime.from(Instant.EPOCH),
-                                        "ctime", FileTime.from(Instant.EPOCH));
-                        writeFileStat(
-                                instance.memory(), buf, attributes, WasiFileType.CHARACTER_DEVICE);
-                        return wasiResult(WasiErrno.ESUCCESS);
-                    }
-
-                    Path path;
-                    if (descriptor instanceof OpenFile) {
-                        path = ((OpenFile) descriptor).path();
-                    } else if (descriptor instanceof OpenDirectory) {
-                        path = ((OpenDirectory) descriptor).path();
-                    } else {
-                        throw unhandledDescriptor(descriptor);
-                    }
-
-                    Map<String, Object> attributes;
-                    try {
-                        attributes = Files.readAttributes(path, "unix:*");
-                    } catch (UnsupportedOperationException e) {
-                        return wasiResult(WasiErrno.ENOTSUP);
-                    } catch (IOException e) {
-                        return wasiResult(WasiErrno.EIO);
-                    }
-
-                    writeFileStat(instance.memory(), buf, attributes, getFileType(attributes));
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::fdFilestatGet,
                 "wasi_snapshot_preview1",
                 "fd_filestat_get",
                 List.of(I32, I32),
@@ -537,12 +273,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdFilestatSetSize() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_filestat_set_size: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: fd_filestat_set_size");
-                    // return new Value[] { Value.i32(0) };
-                },
+                this::fdFilestatSetSize,
                 "wasi_snapshot_preview1",
                 "fd_filestat_set_size",
                 List.of(I32, I64),
@@ -551,12 +282,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdFilestatSetTimes() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_filestat_set_times: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: fd_filestat_set_times");
-                    // return new Value[] { Value.i32(0) };
-                },
+                this::fdFilestatSetTimes,
                 "wasi_snapshot_preview1",
                 "fd_filestat_set_times",
                 List.of(I32, I64, I64, I32),
@@ -565,11 +291,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdPread() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_pread: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call: fd_pread");
-                    // return new Value[] { Value.i32(0) };
-                },
+                this::fdPread,
                 "wasi_snapshot_preview1",
                 "fd_pread",
                 List.of(I32, I32, I32, I64, I32),
@@ -578,29 +300,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdPrestatDirName() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_prestat_dir_name: " + Arrays.toString(args));
-                    int fd = args[0].asInt();
-                    int path = args[1].asInt();
-                    int pathLen = args[2].asInt();
-
-                    var descriptor = descriptors.get(fd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    if (!(descriptor instanceof PreopenedDirectory)) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-                    byte[] name = ((PreopenedDirectory) descriptor).name();
-
-                    if (pathLen < name.length) {
-                        return wasiResult(WasiErrno.ENAMETOOLONG);
-                    }
-
-                    instance.memory().write(path, name);
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::fdPrestatDirName,
                 "wasi_snapshot_preview1",
                 "fd_prestat_dir_name",
                 List.of(I32, I32, I32),
@@ -609,26 +309,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdPrestatGet() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_prestat_get: " + Arrays.toString(args));
-                    int fd = args[0].asInt();
-                    int buf = args[1].asInt();
-
-                    var descriptor = descriptors.get(fd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    if (!(descriptor instanceof PreopenedDirectory)) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-                    int length = ((PreopenedDirectory) descriptor).name().length;
-
-                    Memory memory = instance.memory();
-                    memory.writeI32(buf, 0); // preopentype::dir
-                    memory.writeI32(buf + 4, length);
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::fdPrestatGet,
                 "wasi_snapshot_preview1",
                 "fd_prestat_get",
                 List.of(I32, I32),
@@ -637,12 +318,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdPwrite() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_pwrite: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: fd_pwrite");
-                    // return new Value[] { Value.i32(0) };
-                },
+                this::fdPwrite,
                 "wasi_snapshot_preview1",
                 "fd_pwrite",
                 List.of(I32, I32, I32, I64, I32),
@@ -651,54 +327,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdRead() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_read: " + Arrays.toString(args));
-                    var fd = args[0].asInt();
-                    var iovs = args[1].asInt();
-                    var iovsLen = args[2].asInt();
-                    var nreadPtr = args[3].asInt();
-
-                    var descriptor = descriptors.get(fd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    if (descriptor instanceof OutStream) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-                    if (descriptor instanceof Directory) {
-                        return wasiResult(WasiErrno.EISDIR);
-                    }
-                    if (!(descriptor instanceof DataReader)) {
-                        throw unhandledDescriptor(descriptor);
-                    }
-                    DataReader reader = (DataReader) descriptor;
-
-                    int totalRead = 0;
-                    Memory memory = instance.memory();
-                    for (var i = 0; i < iovsLen; i++) {
-                        int base = iovs + (i * 8);
-                        int iovBase = memory.readI32(base).asInt();
-                        var iovLen = memory.readI32(base + 4).asInt();
-                        try {
-                            byte[] data = new byte[iovLen];
-                            int read = reader.read(data);
-                            if (read < 0) {
-                                break;
-                            }
-                            memory.write(iovBase, data, 0, read);
-                            totalRead += read;
-                            if (read < iovLen) {
-                                break;
-                            }
-                        } catch (IOException e) {
-                            return wasiResult(WasiErrno.EIO);
-                        }
-                    }
-
-                    memory.writeI32(nreadPtr, totalRead);
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::fdRead,
                 "wasi_snapshot_preview1",
                 "fd_read",
                 List.of(I32, I32, I32, I32),
@@ -707,80 +336,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdReaddir() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_readdir: " + Arrays.toString(args));
-                    int dirFd = args[0].asInt();
-                    int buf = args[1].asInt();
-                    int bufLen = args[2].asInt();
-                    long cookie = args[3].asLong();
-                    int bufUsedPtr = args[4].asInt();
-
-                    if (cookie < 0) {
-                        return wasiResult(WasiErrno.EINVAL);
-                    }
-
-                    var descriptor = descriptors.get(dirFd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    Path directoryPath;
-                    if (descriptor instanceof Directory) {
-                        directoryPath = ((Directory) descriptor).path();
-                    } else {
-                        return wasiResult(WasiErrno.ENOTDIR);
-                    }
-
-                    Memory memory = instance.memory();
-                    int used = 0;
-                    try (Stream<Path> stream = Files.list(directoryPath)) {
-                        Stream<Path> special =
-                                Stream.of(directoryPath.resolve("."), directoryPath.resolve(".."));
-                        Iterator<Path> iterator =
-                                Stream.concat(special, stream).skip(cookie).iterator();
-                        while (iterator.hasNext()) {
-                            Path entryPath = iterator.next();
-                            byte[] name = entryPath.getFileName().toString().getBytes(UTF_8);
-                            cookie++;
-
-                            Map<String, Object> attributes;
-                            try {
-                                attributes = Files.readAttributes(entryPath, "unix:*");
-                            } catch (UnsupportedOperationException e) {
-                                return wasiResult(WasiErrno.ENOTSUP);
-                            } catch (NoSuchFileException e) {
-                                continue;
-                            }
-
-                            ByteBuffer entry =
-                                    ByteBuffer.allocate(24 + name.length)
-                                            .order(ByteOrder.LITTLE_ENDIAN);
-                            entry.putLong(0, cookie);
-                            entry.putLong(8, ((Number) attributes.get("ino")).longValue());
-                            entry.putInt(16, name.length);
-                            entry.put(20, (byte) getFileType(attributes).ordinal());
-                            entry.position(24);
-                            entry.put(name);
-
-                            int writeSize = min(entry.capacity(), bufLen - used);
-                            memory.write(buf + used, entry.array(), 0, writeSize);
-                            used += writeSize;
-
-                            if (used == bufLen) {
-                                break;
-                            }
-                        }
-                    } catch (NotDirectoryException e) {
-                        return wasiResult(WasiErrno.ENOTDIR);
-                    } catch (NoSuchFileException e) {
-                        return wasiResult(WasiErrno.ENOENT);
-                    } catch (IOException e) {
-                        return wasiResult(WasiErrno.EIO);
-                    }
-
-                    memory.writeI32(bufUsedPtr, used);
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::fdReaddir,
                 "wasi_snapshot_preview1",
                 "fd_readdir",
                 List.of(I32, I32, I32, I64, I32),
@@ -789,11 +345,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdRenumber() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_renumber: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: fd_renumber");
-                },
+                this::fdRenumber,
                 "wasi_snapshot_preview1",
                 "fd_renumber",
                 List.of(I32, I32),
@@ -802,56 +354,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdSeek() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_seek: " + Arrays.toString(args));
-                    int fd = args[0].asInt();
-                    long offset = args[1].asLong();
-                    int whence = args[2].asInt();
-                    int newOffsetPtr = args[3].asInt();
-
-                    if (whence < 0 || whence > 2) {
-                        return wasiResult(WasiErrno.EINVAL);
-                    }
-
-                    var descriptor = descriptors.get(fd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
-                        return wasiResult(WasiErrno.ESPIPE);
-                    }
-                    if (descriptor instanceof Directory) {
-                        return wasiResult(WasiErrno.EISDIR);
-                    }
-                    if (!(descriptor instanceof OpenFile)) {
-                        throw unhandledDescriptor(descriptor);
-                    }
-                    SeekableByteChannel channel = ((OpenFile) descriptor).channel();
-
-                    long newOffset;
-                    try {
-                        switch (whence) {
-                            case WasiWhence.SET:
-                                channel.position(offset);
-                                break;
-                            case WasiWhence.CUR:
-                                channel.position(channel.position() + offset);
-                                break;
-                            case WasiWhence.END:
-                                channel.position(channel.size() + offset);
-                                break;
-                        }
-                        newOffset = channel.position();
-                    } catch (IllegalArgumentException e) {
-                        return wasiResult(WasiErrno.EINVAL);
-                    } catch (IOException e) {
-                        return wasiResult(WasiErrno.EIO);
-                    }
-
-                    instance.memory().writeLong(newOffsetPtr, newOffset);
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::fdSeek,
                 "wasi_snapshot_preview1",
                 "fd_seek",
                 List.of(I32, I64, I32, I32),
@@ -860,11 +363,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdSync() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_sync: " + Arrays.toString(args));
-                    throw new WASMRuntimeException("We don't yet support this WASI call: fd_sync");
-                    // return new Value[] {Value.i32(0)};
-                },
+                this::fdSync,
                 "wasi_snapshot_preview1",
                 "fd_sync",
                 List.of(I32),
@@ -873,37 +372,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdTell() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_tell: " + Arrays.toString(args));
-                    int fd = args[0].asInt();
-                    int offsetPtr = args[1].asInt();
-
-                    var descriptor = descriptors.get(fd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
-                        return wasiResult(WasiErrno.ESPIPE);
-                    }
-                    if (descriptor instanceof Directory) {
-                        return wasiResult(WasiErrno.EISDIR);
-                    }
-                    if (!(descriptor instanceof OpenFile)) {
-                        throw unhandledDescriptor(descriptor);
-                    }
-                    SeekableByteChannel channel = ((OpenFile) descriptor).channel();
-
-                    long offset;
-                    try {
-                        offset = channel.position();
-                    } catch (IOException e) {
-                        return wasiResult(WasiErrno.EIO);
-                    }
-
-                    instance.memory().writeLong(offsetPtr, offset);
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::fdTell,
                 "wasi_snapshot_preview1",
                 "fd_tell",
                 List.of(I32, I32),
@@ -912,50 +381,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction fdWrite() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("fd_write: " + Arrays.toString(args));
-                    var fd = args[0].asInt();
-                    var iovs = args[1].asInt();
-                    var iovsLen = args[2].asInt();
-                    var nwrittenPtr = args[3].asInt();
-
-                    var descriptor = descriptors.get(fd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    if (descriptor instanceof InStream) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-                    if (descriptor instanceof Directory) {
-                        return wasiResult(WasiErrno.EISDIR);
-                    }
-                    if (!(descriptor instanceof DataWriter)) {
-                        throw unhandledDescriptor(descriptor);
-                    }
-                    DataWriter writer = (DataWriter) descriptor;
-
-                    var totalWritten = 0;
-                    Memory memory = instance.memory();
-                    for (var i = 0; i < iovsLen; i++) {
-                        var base = iovs + (i * 8);
-                        var iovBase = memory.readI32(base).asInt();
-                        var iovLen = memory.readI32(base + 4).asInt();
-                        var data = memory.readBytes(iovBase, iovLen);
-                        try {
-                            int written = writer.write(data);
-                            totalWritten += written;
-                            if (written < iovLen) {
-                                break;
-                            }
-                        } catch (IOException e) {
-                            return wasiResult(WasiErrno.EIO);
-                        }
-                    }
-
-                    memory.writeI32(nwrittenPtr, totalWritten);
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::fdWrite,
                 "wasi_snapshot_preview1",
                 "fd_write",
                 List.of(I32, I32, I32, I32),
@@ -964,39 +390,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction pathCreateDirectory() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("path_create_directory: " + Arrays.toString(args));
-                    int dirFd = args[0].asInt();
-                    int pathPtr = args[1].asInt();
-                    int pathLen = args[2].asInt();
-
-                    var descriptor = descriptors.get(dirFd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    if (!(descriptor instanceof Directory)) {
-                        return wasiResult(WasiErrno.ENOTDIR);
-                    }
-                    Path directory = ((Directory) descriptor).path();
-
-                    String rawPath = instance.memory().readString(pathPtr, pathLen);
-                    Path path = resolvePath(directory, rawPath);
-                    if (path == null) {
-                        return wasiResult(WasiErrno.EACCES);
-                    }
-
-                    try {
-                        Files.createDirectory(path);
-                    } catch (FileAlreadyExistsException e) {
-                        return wasiResult(WasiErrno.EEXIST);
-                    } catch (NoSuchFileException e) {
-                        return wasiResult(WasiErrno.ENOENT);
-                    } catch (IOException e) {
-                        return wasiResult(WasiErrno.EIO);
-                    }
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::pathCreateDirectory,
                 "wasi_snapshot_preview1",
                 "path_create_directory",
                 List.of(I32, I32, I32),
@@ -1005,48 +399,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction pathFilestatGet() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("path_filestat_get: " + Arrays.toString(args));
-                    int dirFd = args[0].asInt();
-                    int lookupFlags = args[1].asInt();
-                    int pathPtr = args[2].asInt();
-                    int pathLen = args[3].asInt();
-                    int buf = args[4].asInt();
-
-                    var descriptor = descriptors.get(dirFd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    if (!(descriptor instanceof Directory)) {
-                        return wasiResult(WasiErrno.ENOTDIR);
-                    }
-                    Path directory = ((Directory) descriptor).path();
-
-                    Memory memory = instance.memory();
-                    String rawPath = memory.readString(pathPtr, pathLen);
-                    Path path = resolvePath(directory, rawPath);
-                    if (path == null) {
-                        return wasiResult(WasiErrno.EACCES);
-                    }
-
-                    LinkOption[] linkOptions = toLinkOptions(lookupFlags);
-
-                    Map<String, Object> attributes;
-                    try {
-                        attributes = Files.readAttributes(path, "unix:*", linkOptions);
-                    } catch (UnsupportedOperationException e) {
-                        return wasiResult(WasiErrno.ENOTSUP);
-                    } catch (NoSuchFileException e) {
-                        return wasiResult(WasiErrno.ENOENT);
-                    } catch (IOException e) {
-                        return wasiResult(WasiErrno.EIO);
-                    }
-
-                    writeFileStat(memory, buf, attributes, getFileType(attributes));
-
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::pathFilestatGet,
                 "wasi_snapshot_preview1",
                 "path_filestat_get",
                 List.of(I32, I32, I32, I32, I32),
@@ -1055,11 +408,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction pathFilestatSetTimes() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("path_filestat_set_times: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: path_filestat_set_times");
-                },
+                this::pathFilestatSetTimes,
                 "wasi_snapshot_preview1",
                 "path_filestat_set_times",
                 List.of(I32, I32, I32, I32, I64, I64, I32),
@@ -1068,11 +417,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction pathLink() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("path_link: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: path_link");
-                },
+                this::pathLink,
                 "wasi_snapshot_preview1",
                 "path_link",
                 List.of(I32, I32, I32, I32, I32, I32, I32),
@@ -1081,97 +426,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction pathOpen() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("path_open: " + Arrays.toString(args));
-                    int dirFd = args[0].asInt();
-                    int lookupFlags = args[1].asInt();
-                    int pathPtr = args[2].asInt();
-                    int pathLen = args[3].asInt();
-                    int openFlags = args[4].asInt();
-                    long rightsBase = args[5].asLong();
-                    long rightsInheriting = args[6].asLong();
-                    int fdFlags = args[7].asInt();
-                    int fdPtr = args[8].asInt();
-
-                    var descriptor = descriptors.get(dirFd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    if (!(descriptor instanceof Directory)) {
-                        return wasiResult(WasiErrno.ENOTDIR);
-                    }
-                    Path directory = ((Directory) descriptor).path();
-
-                    Memory memory = instance.memory();
-                    String rawPath = memory.readString(pathPtr, pathLen);
-                    Path path = resolvePath(directory, rawPath);
-                    if (path == null) {
-                        return wasiResult(WasiErrno.EACCES);
-                    }
-
-                    LinkOption[] linkOptions = toLinkOptions(lookupFlags);
-
-                    if (Files.isDirectory(path, linkOptions)) {
-                        int fd = descriptors.allocate(new OpenDirectory(path));
-                        memory.writeI32(fdPtr, fd);
-                        return wasiResult(WasiErrno.ESUCCESS);
-                    }
-
-                    if (flagSet(openFlags, WasiOpenFlags.DIRECTORY)
-                            && Files.exists(path, linkOptions)) {
-                        return wasiResult(WasiErrno.ENOTDIR);
-                    }
-
-                    Set<OpenOption> openOptions = new HashSet<>(Arrays.asList(linkOptions));
-
-                    boolean append = flagSet(fdFlags, WasiFdFlags.APPEND);
-                    boolean truncate = flagSet(openFlags, WasiOpenFlags.TRUNC);
-
-                    if (append && truncate) {
-                        return wasiResult(WasiErrno.ENOTSUP);
-                    }
-                    if (!append) {
-                        openOptions.add(StandardOpenOption.READ);
-                    }
-                    openOptions.add(StandardOpenOption.WRITE);
-
-                    if (flagSet(openFlags, WasiOpenFlags.CREAT)) {
-                        if (flagSet(openFlags, WasiOpenFlags.EXCL)) {
-                            openOptions.add(StandardOpenOption.CREATE_NEW);
-                        } else {
-                            openOptions.add(StandardOpenOption.CREATE);
-                        }
-                    }
-                    if (truncate) {
-                        openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
-                    }
-                    if (append) {
-                        openOptions.add(StandardOpenOption.APPEND);
-                    }
-                    if (flagSet(fdFlags, WasiFdFlags.SYNC)) {
-                        openOptions.add(StandardOpenOption.SYNC);
-                    }
-                    if (flagSet(fdFlags, WasiFdFlags.DSYNC)) {
-                        openOptions.add(StandardOpenOption.DSYNC);
-                    }
-                    // ignore WasiFdFlags.RSYNC and WasiFdFlags.NONBLOCK
-
-                    int fd;
-                    try {
-                        SeekableByteChannel channel = Files.newByteChannel(path, openOptions);
-                        fd = descriptors.allocate(new OpenFile(path, channel, fdFlags));
-                    } catch (FileAlreadyExistsException e) {
-                        return wasiResult(WasiErrno.EEXIST);
-                    } catch (NoSuchFileException e) {
-                        return wasiResult(WasiErrno.ENOENT);
-                    } catch (IOException e) {
-                        return wasiResult(WasiErrno.EIO);
-                    }
-
-                    memory.writeI32(fdPtr, fd);
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::pathOpen,
                 "wasi_snapshot_preview1",
                 "path_open",
                 List.of(I32, I32, I32, I32, I32, I64, I64, I32, I32),
@@ -1180,20 +435,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction pathReadlink() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("path_readlink: " + Arrays.toString(args));
-                    int dirFd = args[0].asInt();
-                    int pathPtr = args[1].asInt();
-                    int pathLen = args[2].asInt();
-                    int buf = args[3].asInt();
-                    int bufLen = args[4].asInt();
-                    int bufUsed = args[5].asInt();
-
-                    Memory memory = instance.memory();
-                    String rawPath = memory.readString(pathPtr, pathLen);
-
-                    return wasiResult(WasiErrno.EINVAL);
-                },
+                this::pathReadlink,
                 "wasi_snapshot_preview1",
                 "path_readlink",
                 List.of(I32, I32, I32, I32, I32, I32),
@@ -1202,45 +444,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction pathRemoveDirectory() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("path_remove_directory: " + Arrays.toString(args));
-                    int dirFd = args[0].asInt();
-                    int pathPtr = args[1].asInt();
-                    int pathLen = args[2].asInt();
-
-                    var descriptor = descriptors.get(dirFd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    if (!(descriptor instanceof Directory)) {
-                        return wasiResult(WasiErrno.ENOTDIR);
-                    }
-                    Path directory = ((Directory) descriptor).path();
-
-                    String rawPath = instance.memory().readString(pathPtr, pathLen);
-                    Path path = resolvePath(directory, rawPath);
-                    if (path == null) {
-                        return wasiResult(WasiErrno.EACCES);
-                    }
-
-                    try {
-                        var attributes =
-                                Files.readAttributes(
-                                        path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-                        if (!attributes.isDirectory()) {
-                            return wasiResult(WasiErrno.ENOTDIR);
-                        }
-                        Files.delete(path);
-                    } catch (NoSuchFileException e) {
-                        return wasiResult(WasiErrno.ENOENT);
-                    } catch (DirectoryNotEmptyException e) {
-                        return wasiResult(WasiErrno.ENOTEMPTY);
-                    } catch (IOException e) {
-                        return wasiResult(WasiErrno.EIO);
-                    }
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::pathRemoveDirectory,
                 "wasi_snapshot_preview1",
                 "path_remove_directory",
                 List.of(I32, I32, I32),
@@ -1249,72 +453,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction pathRename() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("path_rename: " + Arrays.toString(args));
-                    int oldFd = args[0].asInt();
-                    int oldPathPtr = args[1].asInt();
-                    int oldPathLen = args[2].asInt();
-                    int newFd = args[3].asInt();
-                    int newPathPtr = args[4].asInt();
-                    int newPathLen = args[5].asInt();
-
-                    var oldDescriptor = descriptors.get(oldFd);
-                    if (oldDescriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-                    if (!(oldDescriptor instanceof Directory)) {
-                        return wasiResult(WasiErrno.ENOTDIR);
-                    }
-                    Path oldDirectory = ((Directory) oldDescriptor).path();
-
-                    var newDescriptor = descriptors.get(newFd);
-                    if (newDescriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-                    if (!(newDescriptor instanceof Directory)) {
-                        return wasiResult(WasiErrno.ENOTDIR);
-                    }
-                    Path newDirectory = ((Directory) newDescriptor).path();
-
-                    String oldRawPath = instance.memory().readString(oldPathPtr, oldPathLen);
-                    Path oldPath = resolvePath(oldDirectory, oldRawPath);
-                    if (oldPath == null) {
-                        return wasiResult(WasiErrno.EACCES);
-                    }
-
-                    String newRawPath = instance.memory().readString(newPathPtr, newPathLen);
-                    Path newPath = resolvePath(newDirectory, newRawPath);
-                    if (newPath == null) {
-                        return wasiResult(WasiErrno.EACCES);
-                    }
-
-                    if (Files.isDirectory(oldPath)
-                            && Files.isRegularFile(newPath, LinkOption.NOFOLLOW_LINKS)) {
-                        return wasiResult(WasiErrno.ENOTDIR);
-                    }
-                    if (Files.isRegularFile(oldPath, LinkOption.NOFOLLOW_LINKS)
-                            && Files.isDirectory(newPath)) {
-                        return wasiResult(WasiErrno.EISDIR);
-                    }
-
-                    try {
-                        Files.move(
-                                oldPath,
-                                newPath,
-                                StandardCopyOption.REPLACE_EXISTING,
-                                StandardCopyOption.ATOMIC_MOVE,
-                                StandardCopyOption.COPY_ATTRIBUTES);
-                    } catch (UnsupportedOperationException | AtomicMoveNotSupportedException e) {
-                        return wasiResult(WasiErrno.ENOTSUP);
-                    } catch (NoSuchFileException e) {
-                        return wasiResult(WasiErrno.ENOENT);
-                    } catch (DirectoryNotEmptyException e) {
-                        return wasiResult(WasiErrno.ENOTEMPTY);
-                    } catch (IOException e) {
-                        return wasiResult(WasiErrno.EIO);
-                    }
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::pathRename,
                 "wasi_snapshot_preview1",
                 "path_rename",
                 List.of(I32, I32, I32, I32, I32, I32),
@@ -1323,11 +462,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction pathSymlink() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("path_symlink: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: path_symlink");
-                },
+                this::pathSymlink,
                 "wasi_snapshot_preview1",
                 "path_symlink",
                 List.of(I32, I32, I32, I32, I32),
@@ -1336,46 +471,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction pathUnlinkFile() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("path_unlink_file: " + Arrays.toString(args));
-                    int dirFd = args[0].asInt();
-                    int pathPtr = args[1].asInt();
-                    int pathLen = args[2].asInt();
-
-                    var descriptor = descriptors.get(dirFd);
-                    if (descriptor == null) {
-                        return wasiResult(WasiErrno.EBADF);
-                    }
-
-                    if (!(descriptor instanceof Directory)) {
-                        return wasiResult(WasiErrno.ENOTDIR);
-                    }
-                    Path directory = ((Directory) descriptor).path();
-
-                    String rawPath = instance.memory().readString(pathPtr, pathLen);
-                    Path path = resolvePath(directory, rawPath);
-                    if (path == null) {
-                        return wasiResult(WasiErrno.EACCES);
-                    }
-
-                    try {
-                        var attributes =
-                                Files.readAttributes(
-                                        path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-                        if (attributes.isDirectory()) {
-                            return wasiResult(WasiErrno.EISDIR);
-                        }
-                        if (rawPath.endsWith("/")) {
-                            return wasiResult(WasiErrno.ENOTDIR);
-                        }
-                        Files.delete(path);
-                    } catch (NoSuchFileException e) {
-                        return wasiResult(WasiErrno.ENOENT);
-                    } catch (IOException e) {
-                        return wasiResult(WasiErrno.EIO);
-                    }
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::pathUnlinkFile,
                 "wasi_snapshot_preview1",
                 "path_unlink_file",
                 List.of(I32, I32, I32),
@@ -1384,11 +480,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction pollOneoff() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("poll_oneoff: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: poll_oneoff");
-                },
+                this::pollOneoff,
                 "wasi_snapshot_preview1",
                 "poll_oneoff",
                 List.of(I32, I32, I32, I32),
@@ -1397,11 +489,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction procExit() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("proc_exit: " + Arrays.toString(args));
-                    int code = args[0].asInt();
-                    throw new WasiExitException(code);
-                },
+                this::procExit,
                 "wasi_snapshot_preview1",
                 "proc_exit",
                 List.of(I32),
@@ -1410,11 +498,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction procRaise() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("proc_raise: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: proc_raise");
-                },
+                this::procRaise,
                 "wasi_snapshot_preview1",
                 "proc_raise",
                 List.of(I32),
@@ -1423,23 +507,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction randomGet() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("random_get: " + Arrays.toString(args));
-                    int buf = args[0].asInt();
-                    int bufLen = args[1].asInt();
-
-                    if (bufLen < 0) {
-                        return wasiResult(WasiErrno.EINVAL);
-                    }
-                    if (bufLen >= 100_000) {
-                        throw new WASMRuntimeException("random_get: bufLen must be < 100_000");
-                    }
-
-                    byte[] data = new byte[bufLen];
-                    new SecureRandom().nextBytes(data);
-                    instance.memory().write(buf, data);
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::randomGet,
                 "wasi_snapshot_preview1",
                 "random_get",
                 List.of(I32, I32),
@@ -1448,11 +516,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction resetAdapterState() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("reset_adapter_state: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: reset_adapter_state");
-                },
+                this::resetAdapterState,
                 "wasi_snapshot_preview1",
                 "reset_adapter_state",
                 List.of(),
@@ -1461,11 +525,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction schedYield() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("sched_yield: " + Arrays.toString(args));
-                    // do nothing here
-                    return wasiResult(WasiErrno.ESUCCESS);
-                },
+                this::schedYield,
                 "wasi_snapshot_preview1",
                 "sched_yield",
                 List.of(),
@@ -1474,11 +534,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction setAllocationState() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("set_allocation_state: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: set_allocation_state");
-                },
+                this::setAllocationState,
                 "wasi_snapshot_preview1",
                 "set_allocation_state",
                 List.of(I32),
@@ -1487,11 +543,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction setStatePtr() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("set_state_ptr: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: set_state_ptr");
-                },
+                this::setStatePtr,
                 "wasi_snapshot_preview1",
                 "set_state_ptr",
                 List.of(I32),
@@ -1500,11 +552,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction sockAccept() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("sock_accept: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: sock_accept");
-                },
+                this::sockAccept,
                 "wasi_snapshot_preview1",
                 "sock_accept",
                 List.of(I32, I32, I32),
@@ -1513,11 +561,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction sockRecv() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("sock_recv: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: sock_recv");
-                },
+                this::sockRecv,
                 "wasi_snapshot_preview1",
                 "sock_recv",
                 List.of(I32, I32, I32, I32, I32, I32),
@@ -1526,11 +570,7 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction sockSend() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("sock_send: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: sock_send");
-                },
+                this::sockSend,
                 "wasi_snapshot_preview1",
                 "sock_send",
                 List.of(I32, I32, I32, I32, I32),
@@ -1539,16 +579,1080 @@ public class WasiPreview1 implements Closeable {
 
     public HostFunction sockShutdown() {
         return new HostFunction(
-                (Instance instance, Value... args) -> {
-                    logger.info("sock_shutdown: " + Arrays.toString(args));
-                    throw new WASMRuntimeException(
-                            "We don't yet support this WASI call: sock_shutdown");
-                },
+                this::sockShutdown,
                 "wasi_snapshot_preview1",
                 "sock_shutdown",
                 List.of(I32, I32),
                 List.of(I32));
     }
+
+
+    private Value[] adapterCloseBadfd(Instance instance, Value... args) {
+        logger.info("adapter_close_badfd: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: adapter_close_badfd");
+// return new Value[] { Value.i32(0) };
+    }
+
+    private Value[] adaptedOpenBadfd(Instance instance, Value... args) {
+        logger.info("adapter_open_badfd: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: adapter_open_badfd");
+// return new Value[] { Value.i32(0) };
+    }
+
+    private Value[] argsGet(Instance instance, Value... args) {
+        logger.info("args_get: " + Arrays.toString(args));
+        int argv = args[0].asInt();
+        int argvBuf = args[1].asInt();
+
+        Memory memory = instance.memory();
+        for (byte[] argument : arguments) {
+            memory.writeI32(argv, argvBuf);
+            argv += 4;
+            memory.write(argvBuf, argument);
+            argvBuf += argument.length;
+            memory.writeByte(argvBuf, (byte) 0);
+            argvBuf++;
+        }
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] argsSizesGet(Instance instance, Value... args) {
+        logger.info("args_sizes_get: " + Arrays.toString(args));
+        int argc = args[0].asInt();
+        int argvBufSize = args[1].asInt();
+
+        int bufSize = arguments.stream().mapToInt(x -> x.length + 1).sum();
+        Memory memory = instance.memory();
+        memory.writeI32(argc, arguments.size());
+        memory.writeI32(argvBufSize, bufSize);
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] clockResGet(Instance instance, Value... args) {
+        logger.info("clock_res_get: " + Arrays.toString(args));
+        int clockId = args[0].asInt();
+        int resultPtr = args[1].asInt();
+
+        Memory memory = instance.memory();
+        switch (clockId) {
+            case WasiClockId.REALTIME:
+            case WasiClockId.MONOTONIC:
+                memory.writeLong(resultPtr, 1L);
+                return wasiResult(WasiErrno.ESUCCESS);
+            case WasiClockId.PROCESS_CPUTIME_ID:
+                throw new WASMRuntimeException(
+                        "We don't yet support clockid process_cputime_id");
+            case WasiClockId.THREAD_CPUTIME_ID:
+                throw new WASMRuntimeException(
+                        "We don't yet support clockid thread_cputime_id");
+            default:
+                return wasiResult(WasiErrno.EINVAL);
+        }
+    }
+
+    private Value[] clockTimeGet(Instance instance, Value... args) {
+        logger.info("clock_time_get: " + Arrays.toString(args));
+        int clockId = args[0].asInt();
+        long precision = args[1].asLong();
+        int resultPtr = args[2].asInt();
+
+        Memory memory = instance.memory();
+        switch (clockId) {
+            case WasiClockId.REALTIME:
+                Instant now = Instant.now();
+                long epochNanos = SECONDS.toNanos(now.getEpochSecond()) + now.getNano();
+                memory.writeLong(resultPtr, epochNanos);
+                return wasiResult(WasiErrno.ESUCCESS);
+            case WasiClockId.MONOTONIC:
+                memory.writeLong(resultPtr, System.nanoTime());
+                return wasiResult(WasiErrno.ESUCCESS);
+            case WasiClockId.PROCESS_CPUTIME_ID:
+                throw new WASMRuntimeException(
+                        "We don't yet support clockid process_cputime_id");
+            case WasiClockId.THREAD_CPUTIME_ID:
+                throw new WASMRuntimeException(
+                        "We don't yet support clockid thread_cputime_id");
+            default:
+                return wasiResult(WasiErrno.EINVAL);
+        }
+    }
+
+    private Value[] environGet(Instance instance, Value... args) {
+        logger.info("environ_get: " + Arrays.toString(args));
+        int environ = args[0].asInt();
+        int environBuf = args[1].asInt();
+
+        Memory memory = instance.memory();
+        for (var entry : environment) {
+            byte[] name = entry.getKey();
+            byte[] value = entry.getValue();
+            byte[] data = new byte[name.length + value.length + 2];
+            System.arraycopy(name, 0, data, 0, name.length);
+            data[name.length] = '=';
+            System.arraycopy(value, 0, data, name.length + 1, value.length);
+            data[data.length - 1] = '\0';
+
+            memory.writeI32(environ, environBuf);
+            environ += 4;
+            memory.write(environBuf, data);
+            environBuf += data.length;
+        }
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] environSizesGet(Instance instance, Value... args) {
+        logger.info("environ_sizes_get: " + Arrays.toString(args));
+        int environCount = args[0].asInt();
+        int environBufSize = args[1].asInt();
+
+        int bufSize =
+                environment.stream()
+                        .mapToInt(x -> x.getKey().length + x.getValue().length + 2)
+                        .sum();
+        Memory memory = instance.memory();
+        memory.writeI32(environCount, environment.size());
+        memory.writeI32(environBufSize, bufSize);
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] fdAdvise(Instance instance, Value... args) {
+        logger.info("fd_advise: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: fd_advise");
+// return new Value[] { Value.i32(0) };
+    }
+
+    private Value[] fdAllocate(Instance instance, Value... args) {
+        logger.info("fd_allocate: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: fd_allocate");
+// return new Value[] { Value.i32(0) };
+    }
+
+    private Value[] fdClose(Instance instance, Value... args) {
+        logger.info("fd_close: " + Arrays.toString(args));
+        int fd = args[0].asInt();
+
+        Descriptor descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        descriptors.free(fd);
+
+        try {
+            if (descriptor instanceof Closeable) {
+                ((Closeable) descriptor).close();
+            }
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] fdDatasync(Instance instance, Value... args) {
+        logger.info("fd_datasync: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: fd_datasync");
+// return new Value[] { Value.i32(0) };
+    }
+
+    private Value[] fdFdstatGet(Instance instance, Value... args) {
+        logger.info("fd_fdstat_get: " + Arrays.toString(args));
+        int fd = args[0].asInt();
+        int buf = args[1].asInt();
+        int flags = 0;
+        int rightsBase;
+        int rightsInheriting = 0;
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        WasiFileType fileType;
+        if (descriptor instanceof InStream) {
+            fileType = WasiFileType.CHARACTER_DEVICE;
+            rightsBase = WasiRights.FD_READ;
+        } else if (descriptor instanceof OutStream) {
+            fileType = WasiFileType.CHARACTER_DEVICE;
+            rightsBase = WasiRights.FD_WRITE;
+        } else if (descriptor instanceof Directory) {
+            fileType = WasiFileType.DIRECTORY;
+            rightsBase = WasiRights.DIRECTORY_RIGHTS_BASE;
+            rightsInheriting = rightsBase | WasiRights.FILE_RIGHTS_BASE;
+        } else if (descriptor instanceof OpenFile) {
+            fileType = WasiFileType.REGULAR_FILE;
+            rightsBase = WasiRights.FILE_RIGHTS_BASE;
+            flags = ((OpenFile) descriptor).fdFlags();
+        } else {
+            throw unhandledDescriptor(descriptor);
+        }
+
+        Memory memory = instance.memory();
+        memory.write(buf, new byte[8]);
+        memory.writeByte(buf, (byte) fileType.ordinal());
+        memory.writeShort(buf + 2, (short) flags);
+        memory.writeLong(buf + 8, rightsBase);
+        memory.writeLong(buf + 16, rightsInheriting);
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] fdFdstatSetFlags(Instance instance, Value... args) {
+        logger.info("fd_fdstat_set_flags: " + Arrays.toString(args));
+        int fd = args[0].asInt();
+        int flags = args[1].asInt();
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+        if ((descriptor instanceof OpenDirectory)
+                || (descriptor instanceof PreopenedDirectory)) {
+            return wasiResult(WasiErrno.ESUCCESS);
+        }
+        if (!(descriptor instanceof OpenFile)) {
+            throw unhandledDescriptor(descriptor);
+        }
+
+// we don't support changing flags
+        if (flags != ((OpenFile) descriptor).fdFlags()) {
+            return wasiResult(WasiErrno.ENOTSUP);
+        }
+
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] fdFdstatSetRights(Instance instance, Value... args) {
+        logger.info("fd_fdstat_set_rights: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: fd_fdstat_set_rightsn");
+// return new Value[] { Value.i32(0) };
+    }
+
+    private Value[] fdFilestatGet(Instance instance, Value... args) {
+        logger.info("fd_filestat_get: " + Arrays.toString(args));
+        int fd = args[0].asInt();
+        int buf = args[1].asInt();
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
+            Map<String, Object> attributes =
+                    Map.of(
+                            "dev", 0L,
+                            "ino", 0L,
+                            "nlink", 1L,
+                            "size", 0L,
+                            "lastAccessTime", FileTime.from(Instant.EPOCH),
+                            "lastModifiedTime", FileTime.from(Instant.EPOCH),
+                            "ctime", FileTime.from(Instant.EPOCH));
+            writeFileStat(
+                    instance.memory(), buf, attributes, WasiFileType.CHARACTER_DEVICE);
+            return wasiResult(WasiErrno.ESUCCESS);
+        }
+
+        Path path;
+        if (descriptor instanceof OpenFile) {
+            path = ((OpenFile) descriptor).path();
+        } else if (descriptor instanceof OpenDirectory) {
+            path = ((OpenDirectory) descriptor).path();
+        } else {
+            throw unhandledDescriptor(descriptor);
+        }
+
+        Map<String, Object> attributes;
+        try {
+            attributes = Files.readAttributes(path, "unix:*");
+        } catch (UnsupportedOperationException e) {
+            return wasiResult(WasiErrno.ENOTSUP);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+
+        writeFileStat(instance.memory(), buf, attributes, getFileType(attributes));
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] fdFilestatSetSize(Instance instance, Value... args) {
+        logger.info("fd_filestat_set_size: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: fd_filestat_set_size");
+// return new Value[] { Value.i32(0) };
+    }
+
+    private Value[] fdFilestatSetTimes(Instance instance, Value... args) {
+        logger.info("fd_filestat_set_times: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: fd_filestat_set_times");
+// return new Value[] { Value.i32(0) };
+    }
+
+    private Value[] fdPread(Instance instance, Value... args) {
+        logger.info("fd_pread: " + Arrays.toString(args));
+        throw new WASMRuntimeException("We don't yet support this WASI call: fd_pread");
+// return new Value[] { Value.i32(0) };
+    }
+
+    private Value[] fdPrestatDirName(Instance instance, Value... args) {
+        logger.info("fd_prestat_dir_name: " + Arrays.toString(args));
+        int fd = args[0].asInt();
+        int path = args[1].asInt();
+        int pathLen = args[2].asInt();
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (!(descriptor instanceof PreopenedDirectory)) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        byte[] name = ((PreopenedDirectory) descriptor).name();
+
+        if (pathLen < name.length) {
+            return wasiResult(WasiErrno.ENAMETOOLONG);
+        }
+
+        instance.memory().write(path, name);
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] fdPrestatGet(Instance instance, Value... args) {
+        logger.info("fd_prestat_get: " + Arrays.toString(args));
+        int fd = args[0].asInt();
+        int buf = args[1].asInt();
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (!(descriptor instanceof PreopenedDirectory)) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        int length = ((PreopenedDirectory) descriptor).name().length;
+
+        Memory memory = instance.memory();
+        memory.writeI32(buf, 0); // preopentype::dir
+        memory.writeI32(buf + 4, length);
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] fdPwrite(Instance instance, Value... args) {
+        logger.info("fd_pwrite: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: fd_pwrite");
+// return new Value[] { Value.i32(0) };
+    }
+
+    private Value[] fdRead(Instance instance, Value... args) {
+        logger.info("fd_read: " + Arrays.toString(args));
+        var fd = args[0].asInt();
+        var iovs = args[1].asInt();
+        var iovsLen = args[2].asInt();
+        var nreadPtr = args[3].asInt();
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (descriptor instanceof OutStream) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        if (descriptor instanceof Directory) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+        if (!(descriptor instanceof DataReader)) {
+            throw unhandledDescriptor(descriptor);
+        }
+        DataReader reader = (DataReader) descriptor;
+
+        int totalRead = 0;
+        Memory memory = instance.memory();
+        for (var i = 0; i < iovsLen; i++) {
+            int base = iovs + (i * 8);
+            int iovBase = memory.readI32(base).asInt();
+            var iovLen = memory.readI32(base + 4).asInt();
+            try {
+                byte[] data = new byte[iovLen];
+                int read = reader.read(data);
+                if (read < 0) {
+                    break;
+                }
+                memory.write(iovBase, data, 0, read);
+                totalRead += read;
+                if (read < iovLen) {
+                    break;
+                }
+            } catch (IOException e) {
+                return wasiResult(WasiErrno.EIO);
+            }
+        }
+
+        memory.writeI32(nreadPtr, totalRead);
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] fdReaddir(Instance instance, Value... args) {
+        logger.info("fd_readdir: " + Arrays.toString(args));
+        int dirFd = args[0].asInt();
+        int buf = args[1].asInt();
+        int bufLen = args[2].asInt();
+        long cookie = args[3].asLong();
+        int bufUsedPtr = args[4].asInt();
+
+        if (cookie < 0) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+
+        var descriptor = descriptors.get(dirFd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        Path directoryPath;
+        if (descriptor instanceof Directory) {
+            directoryPath = ((Directory) descriptor).path();
+        } else {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+
+        Memory memory = instance.memory();
+        int used = 0;
+        try (Stream<Path> stream = Files.list(directoryPath)) {
+            Stream<Path> special =
+                    Stream.of(directoryPath.resolve("."), directoryPath.resolve(".."));
+            Iterator<Path> iterator =
+                    Stream.concat(special, stream).skip(cookie).iterator();
+            while (iterator.hasNext()) {
+                Path entryPath = iterator.next();
+                byte[] name = entryPath.getFileName().toString().getBytes(UTF_8);
+                cookie++;
+
+                Map<String, Object> attributes;
+                try {
+                    attributes = Files.readAttributes(entryPath, "unix:*");
+                } catch (UnsupportedOperationException e) {
+                    return wasiResult(WasiErrno.ENOTSUP);
+                } catch (NoSuchFileException e) {
+                    continue;
+                }
+
+                ByteBuffer entry =
+                        ByteBuffer.allocate(24 + name.length)
+                                .order(ByteOrder.LITTLE_ENDIAN);
+                entry.putLong(0, cookie);
+                entry.putLong(8, ((Number) attributes.get("ino")).longValue());
+                entry.putInt(16, name.length);
+                entry.put(20, (byte) getFileType(attributes).ordinal());
+                entry.position(24);
+                entry.put(name);
+
+                int writeSize = min(entry.capacity(), bufLen - used);
+                memory.write(buf + used, entry.array(), 0, writeSize);
+                used += writeSize;
+
+                if (used == bufLen) {
+                    break;
+                }
+            }
+        } catch (NotDirectoryException e) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        } catch (NoSuchFileException e) {
+            return wasiResult(WasiErrno.ENOENT);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+
+        memory.writeI32(bufUsedPtr, used);
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] fdRenumber(Instance instance, Value... args) {
+        logger.info("fd_renumber: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: fd_renumber");
+    }
+
+    private Value[] fdSeek(Instance instance, Value... args) {
+        logger.info("fd_seek: " + Arrays.toString(args));
+        int fd = args[0].asInt();
+        long offset = args[1].asLong();
+        int whence = args[2].asInt();
+        int newOffsetPtr = args[3].asInt();
+
+        if (whence < 0 || whence > 2) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
+            return wasiResult(WasiErrno.ESPIPE);
+        }
+        if (descriptor instanceof Directory) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+        if (!(descriptor instanceof OpenFile)) {
+            throw unhandledDescriptor(descriptor);
+        }
+        SeekableByteChannel channel = ((OpenFile) descriptor).channel();
+
+        long newOffset;
+        try {
+            switch (whence) {
+                case WasiWhence.SET:
+                    channel.position(offset);
+                    break;
+                case WasiWhence.CUR:
+                    channel.position(channel.position() + offset);
+                    break;
+                case WasiWhence.END:
+                    channel.position(channel.size() + offset);
+                    break;
+            }
+            newOffset = channel.position();
+        } catch (IllegalArgumentException e) {
+            return wasiResult(WasiErrno.EINVAL);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+
+        instance.memory().writeLong(newOffsetPtr, newOffset);
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] fdSync(Instance instance, Value... args) {
+        logger.info("fd_sync: " + Arrays.toString(args));
+        throw new WASMRuntimeException("We don't yet support this WASI call: fd_sync");
+// return new Value[] {Value.i32(0)};
+    }
+
+    private Value[] fdTell(Instance instance, Value... args) {
+        logger.info("fd_tell: " + Arrays.toString(args));
+        int fd = args[0].asInt();
+        int offsetPtr = args[1].asInt();
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
+            return wasiResult(WasiErrno.ESPIPE);
+        }
+        if (descriptor instanceof Directory) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+        if (!(descriptor instanceof OpenFile)) {
+            throw unhandledDescriptor(descriptor);
+        }
+        SeekableByteChannel channel = ((OpenFile) descriptor).channel();
+
+        long offset;
+        try {
+            offset = channel.position();
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+
+        instance.memory().writeLong(offsetPtr, offset);
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] fdWrite(Instance instance, Value... args) {
+        logger.info("fd_write: " + Arrays.toString(args));
+        var fd = args[0].asInt();
+        var iovs = args[1].asInt();
+        var iovsLen = args[2].asInt();
+        var nwrittenPtr = args[3].asInt();
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (descriptor instanceof InStream) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        if (descriptor instanceof Directory) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+        if (!(descriptor instanceof DataWriter)) {
+            throw unhandledDescriptor(descriptor);
+        }
+        DataWriter writer = (DataWriter) descriptor;
+
+        var totalWritten = 0;
+        Memory memory = instance.memory();
+        for (var i = 0; i < iovsLen; i++) {
+            var base = iovs + (i * 8);
+            var iovBase = memory.readI32(base).asInt();
+            var iovLen = memory.readI32(base + 4).asInt();
+            var data = memory.readBytes(iovBase, iovLen);
+            try {
+                int written = writer.write(data);
+                totalWritten += written;
+                if (written < iovLen) {
+                    break;
+                }
+            } catch (IOException e) {
+                return wasiResult(WasiErrno.EIO);
+            }
+        }
+
+        memory.writeI32(nwrittenPtr, totalWritten);
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] pathCreateDirectory(Instance instance, Value... args) {
+        logger.info("path_create_directory: " + Arrays.toString(args));
+        int dirFd = args[0].asInt();
+        int pathPtr = args[1].asInt();
+        int pathLen = args[2].asInt();
+
+        var descriptor = descriptors.get(dirFd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (!(descriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path directory = ((Directory) descriptor).path();
+
+        String rawPath = instance.memory().readString(pathPtr, pathLen);
+        Path path = resolvePath(directory, rawPath);
+        if (path == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        try {
+            Files.createDirectory(path);
+        } catch (FileAlreadyExistsException e) {
+            return wasiResult(WasiErrno.EEXIST);
+        } catch (NoSuchFileException e) {
+            return wasiResult(WasiErrno.ENOENT);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] pathFilestatGet(Instance instance, Value... args) {
+        logger.info("path_filestat_get: " + Arrays.toString(args));
+        int dirFd = args[0].asInt();
+        int lookupFlags = args[1].asInt();
+        int pathPtr = args[2].asInt();
+        int pathLen = args[3].asInt();
+        int buf = args[4].asInt();
+
+        var descriptor = descriptors.get(dirFd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (!(descriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path directory = ((Directory) descriptor).path();
+
+        Memory memory = instance.memory();
+        String rawPath = memory.readString(pathPtr, pathLen);
+        Path path = resolvePath(directory, rawPath);
+        if (path == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        LinkOption[] linkOptions = toLinkOptions(lookupFlags);
+
+        Map<String, Object> attributes;
+        try {
+            attributes = Files.readAttributes(path, "unix:*", linkOptions);
+        } catch (UnsupportedOperationException e) {
+            return wasiResult(WasiErrno.ENOTSUP);
+        } catch (NoSuchFileException e) {
+            return wasiResult(WasiErrno.ENOENT);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+
+        writeFileStat(memory, buf, attributes, getFileType(attributes));
+
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] pathFilestatSetTimes(Instance instance, Value... args) {
+        logger.info("path_filestat_set_times: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: path_filestat_set_times");
+    }
+
+    private Value[] pathLink(Instance instance, Value... args) {
+        logger.info("path_link: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: path_link");
+    }
+
+    private Value[] pathOpen(Instance instance, Value... args) {
+        logger.info("path_open: " + Arrays.toString(args));
+        int dirFd = args[0].asInt();
+        int lookupFlags = args[1].asInt();
+        int pathPtr = args[2].asInt();
+        int pathLen = args[3].asInt();
+        int openFlags = args[4].asInt();
+        long rightsBase = args[5].asLong();
+        long rightsInheriting = args[6].asLong();
+        int fdFlags = args[7].asInt();
+        int fdPtr = args[8].asInt();
+
+        var descriptor = descriptors.get(dirFd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (!(descriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path directory = ((Directory) descriptor).path();
+
+        Memory memory = instance.memory();
+        String rawPath = memory.readString(pathPtr, pathLen);
+        Path path = resolvePath(directory, rawPath);
+        if (path == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        LinkOption[] linkOptions = toLinkOptions(lookupFlags);
+
+        if (Files.isDirectory(path, linkOptions)) {
+            int fd = descriptors.allocate(new OpenDirectory(path));
+            memory.writeI32(fdPtr, fd);
+            return wasiResult(WasiErrno.ESUCCESS);
+        }
+
+        if (flagSet(openFlags, WasiOpenFlags.DIRECTORY)
+                && Files.exists(path, linkOptions)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+
+        Set<OpenOption> openOptions = new HashSet<>(Arrays.asList(linkOptions));
+
+        boolean append = flagSet(fdFlags, WasiFdFlags.APPEND);
+        boolean truncate = flagSet(openFlags, WasiOpenFlags.TRUNC);
+
+        if (append && truncate) {
+            return wasiResult(WasiErrno.ENOTSUP);
+        }
+        if (!append) {
+            openOptions.add(StandardOpenOption.READ);
+        }
+        openOptions.add(StandardOpenOption.WRITE);
+
+        if (flagSet(openFlags, WasiOpenFlags.CREAT)) {
+            if (flagSet(openFlags, WasiOpenFlags.EXCL)) {
+                openOptions.add(StandardOpenOption.CREATE_NEW);
+            } else {
+                openOptions.add(StandardOpenOption.CREATE);
+            }
+        }
+        if (truncate) {
+            openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
+        }
+        if (append) {
+            openOptions.add(StandardOpenOption.APPEND);
+        }
+        if (flagSet(fdFlags, WasiFdFlags.SYNC)) {
+            openOptions.add(StandardOpenOption.SYNC);
+        }
+        if (flagSet(fdFlags, WasiFdFlags.DSYNC)) {
+            openOptions.add(StandardOpenOption.DSYNC);
+        }
+// ignore WasiFdFlags.RSYNC and WasiFdFlags.NONBLOCK
+
+        int fd;
+        try {
+            SeekableByteChannel channel = Files.newByteChannel(path, openOptions);
+            fd = descriptors.allocate(new OpenFile(path, channel, fdFlags));
+        } catch (FileAlreadyExistsException e) {
+            return wasiResult(WasiErrno.EEXIST);
+        } catch (NoSuchFileException e) {
+            return wasiResult(WasiErrno.ENOENT);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+
+        memory.writeI32(fdPtr, fd);
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] pathReadlink(Instance instance, Value... args) {
+        logger.info("path_readlink: " + Arrays.toString(args));
+        int dirFd = args[0].asInt();
+        int pathPtr = args[1].asInt();
+        int pathLen = args[2].asInt();
+        int buf = args[3].asInt();
+        int bufLen = args[4].asInt();
+        int bufUsed = args[5].asInt();
+
+        Memory memory = instance.memory();
+        String rawPath = memory.readString(pathPtr, pathLen);
+
+        return wasiResult(WasiErrno.EINVAL);
+    }
+
+    private Value[] pathRemoveDirectory(Instance instance, Value... args) {
+        logger.info("path_remove_directory: " + Arrays.toString(args));
+        int dirFd = args[0].asInt();
+        int pathPtr = args[1].asInt();
+        int pathLen = args[2].asInt();
+
+        var descriptor = descriptors.get(dirFd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (!(descriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path directory = ((Directory) descriptor).path();
+
+        String rawPath = instance.memory().readString(pathPtr, pathLen);
+        Path path = resolvePath(directory, rawPath);
+        if (path == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        try {
+            var attributes =
+                    Files.readAttributes(
+                            path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            if (!attributes.isDirectory()) {
+                return wasiResult(WasiErrno.ENOTDIR);
+            }
+            Files.delete(path);
+        } catch (NoSuchFileException e) {
+            return wasiResult(WasiErrno.ENOENT);
+        } catch (DirectoryNotEmptyException e) {
+            return wasiResult(WasiErrno.ENOTEMPTY);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] pathRename(Instance instance, Value... args) {
+        logger.info("path_rename: " + Arrays.toString(args));
+        int oldFd = args[0].asInt();
+        int oldPathPtr = args[1].asInt();
+        int oldPathLen = args[2].asInt();
+        int newFd = args[3].asInt();
+        int newPathPtr = args[4].asInt();
+        int newPathLen = args[5].asInt();
+
+        var oldDescriptor = descriptors.get(oldFd);
+        if (oldDescriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        if (!(oldDescriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path oldDirectory = ((Directory) oldDescriptor).path();
+
+        var newDescriptor = descriptors.get(newFd);
+        if (newDescriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        if (!(newDescriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path newDirectory = ((Directory) newDescriptor).path();
+
+        String oldRawPath = instance.memory().readString(oldPathPtr, oldPathLen);
+        Path oldPath = resolvePath(oldDirectory, oldRawPath);
+        if (oldPath == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        String newRawPath = instance.memory().readString(newPathPtr, newPathLen);
+        Path newPath = resolvePath(newDirectory, newRawPath);
+        if (newPath == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        if (Files.isDirectory(oldPath)
+                && Files.isRegularFile(newPath, LinkOption.NOFOLLOW_LINKS)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        if (Files.isRegularFile(oldPath, LinkOption.NOFOLLOW_LINKS)
+                && Files.isDirectory(newPath)) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+
+        try {
+            Files.move(
+                    oldPath,
+                    newPath,
+                    StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.COPY_ATTRIBUTES);
+        } catch (UnsupportedOperationException | AtomicMoveNotSupportedException e) {
+            return wasiResult(WasiErrno.ENOTSUP);
+        } catch (NoSuchFileException e) {
+            return wasiResult(WasiErrno.ENOENT);
+        } catch (DirectoryNotEmptyException e) {
+            return wasiResult(WasiErrno.ENOTEMPTY);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] pathSymlink(Instance instance, Value... args) {
+        logger.info("path_symlink: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: path_symlink");
+    }
+
+    private Value[] pathUnlinkFile(Instance instance, Value... args) {
+        logger.info("path_unlink_file: " + Arrays.toString(args));
+        int dirFd = args[0].asInt();
+        int pathPtr = args[1].asInt();
+        int pathLen = args[2].asInt();
+
+        var descriptor = descriptors.get(dirFd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (!(descriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path directory = ((Directory) descriptor).path();
+
+        String rawPath = instance.memory().readString(pathPtr, pathLen);
+        Path path = resolvePath(directory, rawPath);
+        if (path == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        try {
+            var attributes =
+                    Files.readAttributes(
+                            path, BasicFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
+            if (attributes.isDirectory()) {
+                return wasiResult(WasiErrno.EISDIR);
+            }
+            if (rawPath.endsWith("/")) {
+                return wasiResult(WasiErrno.ENOTDIR);
+            }
+            Files.delete(path);
+        } catch (NoSuchFileException e) {
+            return wasiResult(WasiErrno.ENOENT);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] pollOneoff(Instance instance, Value... args) {
+        logger.info("poll_oneoff: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: poll_oneoff");
+    }
+
+    private Value[] procExit(Instance instance, Value... args) {
+        logger.info("proc_exit: " + Arrays.toString(args));
+        int code = args[0].asInt();
+        throw new WasiExitException(code);
+    }
+
+    private Value[] procRaise(Instance instance, Value... args) {
+        logger.info("proc_raise: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: proc_raise");
+    }
+
+    private Value[] randomGet(Instance instance, Value... args) {
+        logger.info("random_get: " + Arrays.toString(args));
+        int buf = args[0].asInt();
+        int bufLen = args[1].asInt();
+
+        if (bufLen < 0) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+        if (bufLen >= 100_000) {
+            throw new WASMRuntimeException("random_get: bufLen must be < 100_000");
+        }
+
+        byte[] data = new byte[bufLen];
+        new SecureRandom().nextBytes(data);
+        instance.memory().write(buf, data);
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] resetAdapterState(Instance instance, Value... args) {
+        logger.info("reset_adapter_state: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: reset_adapter_state");
+    }
+
+    private Value[] schedYield(Instance instance, Value... args) {
+        logger.info("sched_yield: " + Arrays.toString(args));
+// do nothing here
+        return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    private Value[] setAllocationState(Instance instance, Value... args) {
+        logger.info("set_allocation_state: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: set_allocation_state");
+    }
+
+    private Value[] setStatePtr(Instance instance, Value... args) {
+        logger.info("set_state_ptr: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: set_state_ptr");
+    }
+
+    private Value[] sockAccept(Instance instance, Value... args) {
+        logger.info("sock_accept: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: sock_accept");
+    }
+
+    private Value[] sockRecv(Instance instance, Value... args) {
+        logger.info("sock_recv: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: sock_recv");
+    }
+
+    private Value[] sockSend(Instance instance, Value... args) {
+        logger.info("sock_send: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: sock_send");
+    }
+
+    private Value[] sockShutdown(Instance instance, Value... args) {
+        logger.info("sock_shutdown: " + Arrays.toString(args));
+        throw new WASMRuntimeException(
+                "We don't yet support this WASI call: sock_shutdown");
+    }
+
 
     public HostFunction[] toHostFunctions() {
         return new HostFunction[] {
