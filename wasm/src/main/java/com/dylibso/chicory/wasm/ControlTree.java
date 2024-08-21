@@ -53,7 +53,6 @@ import java.util.function.Consumer;
 final class ControlTree {
     private final Instruction instruction;
     private final int initialInstructionNumber;
-    private int finalInstructionNumber = -1; // to be set when END is reached
     private final ControlTree parent;
     private final List<ControlTree> nested;
     private final List<Consumer<Integer>> callbacks;
@@ -80,10 +79,6 @@ final class ControlTree {
         return node;
     }
 
-    public boolean isRoot() {
-        return this.parent == null;
-    }
-
     public Instruction instruction() {
         return instruction;
     }
@@ -100,29 +95,26 @@ final class ControlTree {
         return parent;
     }
 
-    public List<ControlTree> nested() {
-        return nested;
-    }
-
     public void addCallback(Consumer<Integer> callback) {
         this.callbacks.add(callback);
     }
 
     public void setFinalInstructionNumber(int finalInstructionNumber, Instruction end) {
-        this.finalInstructionNumber = finalInstructionNumber;
-
+        // to be set when END is reached
         if (end.scope().opcode() == OpCode.LOOP) {
             var lastLoopInstruction = 0;
-            for (var ct : this.parent.nested) {
-                if (ct.instruction().opcode() == OpCode.LOOP) {
-                    lastLoopInstruction = ct.instructionNumber();
+            if (this.parent != null) {
+                for (var ct : this.parent.nested) {
+                    if (ct.instruction().opcode() == OpCode.LOOP) {
+                        lastLoopInstruction = ct.instructionNumber();
+                    }
                 }
             }
-            this.finalInstructionNumber = lastLoopInstruction + 1;
+            finalInstructionNumber = lastLoopInstruction + 1;
         }
 
         for (var callback : this.callbacks) {
-            callback.accept(this.finalInstructionNumber);
+            callback.accept(finalInstructionNumber);
         }
     }
 }

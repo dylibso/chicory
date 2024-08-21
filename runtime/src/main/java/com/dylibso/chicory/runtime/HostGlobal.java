@@ -3,7 +3,7 @@ package com.dylibso.chicory.runtime;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 
 public class HostGlobal implements FromHost {
-    private GlobalInstance instance;
+    private final GlobalInstance instance;
     private final MutabilityType type;
     private final String moduleName;
     private final String fieldName;
@@ -22,10 +22,6 @@ public class HostGlobal implements FromHost {
 
     public GlobalInstance instance() {
         return instance;
-    }
-
-    public void setInstance(GlobalInstance instance) {
-        this.instance = instance;
     }
 
     public MutabilityType mutabilityType() {

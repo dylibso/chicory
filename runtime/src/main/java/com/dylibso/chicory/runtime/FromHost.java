@@ -5,7 +5,7 @@ public interface FromHost {
         FUNCTION,
         GLOBAL,
         MEMORY,
-        TABLE;
+        TABLE
     }
 
     String moduleName();
