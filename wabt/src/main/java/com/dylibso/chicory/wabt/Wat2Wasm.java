@@ -6,6 +6,7 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasi.HostModule;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Module;
@@ -69,9 +70,15 @@ public final class Wat2Wasm {
                                 .withArguments(List.of("wat2wasm", path.toString(), "--output=-"))
                                 .build();
 
+                HostModule hostModule = WasiPreview1.toHostModule();
                 try (var wasi =
-                        WasiPreview1.builder().withLogger(logger).withOpts(wasiOpts).build()) {
-                    HostImports imports = new HostImports(wasi.toHostFunctions());
+                        WasiPreview1.instance(
+                                hostModule,
+                                WasiPreview1.builder()
+                                        .withLogger(logger)
+                                        .withOpts(wasiOpts)
+                                        .build())) {
+                    HostImports imports = new HostImports(wasi.hostFunctions());
                     Instance.builder(MODULE).withHostImports(imports).build();
                 }
 
