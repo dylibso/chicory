@@ -51,7 +51,7 @@ final class Validator {
         public final List<ValueType> endTypes;
         // the height of the stack before entering the current Control Flow instruction
         public final int height;
-        // set after uncoditional jumps
+        // set after unconditional jumps
         public boolean unreachable;
         // if there is no else, we explicit check that the enclosing IF is not returning values
         public boolean hasElse;

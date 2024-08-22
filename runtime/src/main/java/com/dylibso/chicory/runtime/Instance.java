@@ -2,6 +2,7 @@ package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantInstance;
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
+import static com.dylibso.chicory.wasm.types.ExternalType.FUNCTION;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.wasm.Module;
@@ -26,6 +27,7 @@ import com.dylibso.chicory.wasm.types.Import;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MemoryImport;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
+import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
@@ -56,10 +58,9 @@ public class Instance {
     private final int[] functionTypes;
     private final HostImports imports;
     private final Table[] roughTables;
-    private TableInstance[] tables;
+    private final TableInstance[] tables;
     private final Element[] elements;
     private final Map<String, Export> exports;
-    private final boolean start;
     private final ExecutionListener listener;
 
     public Instance(
@@ -95,18 +96,17 @@ public class Instance {
         this.imports = imports;
         this.machine = machineFactory.apply(this);
         this.roughTables = tables.clone();
+        this.tables = new TableInstance[this.roughTables.length];
         this.elements = elements.clone();
         this.exports = exports;
-        this.start = start;
         this.listener = listener;
 
         if (initialize) {
-            initialize(this.start);
+            initialize(start);
         }
     }
 
     public Instance initialize(boolean start) {
-        this.tables = new TableInstance[this.roughTables.length];
         for (var i = 0; i < this.roughTables.length; i++) {
             this.tables[i] = new TableInstance(this.roughTables[i]);
         }
@@ -134,7 +134,7 @@ public class Instance {
                 for (int i = 0; i < initializers.size(); i++) {
                     final List<Instruction> init = initializers.get(i);
                     var index = offset.asInt() + i;
-                    if (init.stream().filter(e -> e.opcode() != OpCode.END).count() > 1l) {
+                    if (init.stream().filter(e -> e.opcode() != OpCode.END).count() > 1L) {
                         throw new InvalidException(
                                 "constant expression required, type mismatch, expected [] but found"
                                         + " extra instructions");
@@ -619,8 +619,7 @@ public class Instance {
                 }
             }
 
-            var result = new HostImports(hostFuncs, hostGlobals, hostMems, hostTables);
-            return result;
+            return new HostImports(hostFuncs, hostGlobals, hostMems, hostTables);
         }
 
         private Map<String, Export> genExports(ExportSection export) {
@@ -644,7 +643,7 @@ public class Instance {
             var types = module.typeSection().types();
             int numFuncTypes =
                     module.functionSection().functionCount()
-                            + module.importSection().count(ExternalType.FUNCTION);
+                            + module.importSection().count(FUNCTION);
 
             FunctionBody[] functions = module.codeSection().functionBodies();
 
@@ -656,38 +655,29 @@ public class Instance {
             var imports = new Import[importCount];
             for (int i = 0; i < importCount; i++) {
                 Import imprt = module.importSection().getImport(i);
-                switch (imprt.importType()) {
-                    case FUNCTION:
-                        {
-                            var type = ((FunctionImport) imprt).typeIndex();
-                            if (type >= this.module.typeSection().typeCount()) {
-                                throw new InvalidException("unknown type");
-                            }
-                            functionTypes[funcIdx] = type;
-                            // The global function id increases on this table
-                            // function ids are assigned on imports first
-                            imports[importId++] = imprt;
-                            funcIdx++;
-                            break;
-                        }
-                    default:
-                        imports[importId++] = imprt;
-                        break;
+                if (imprt.importType() == FUNCTION) {
+                    var type = ((FunctionImport) imprt).typeIndex();
+                    if (type >= this.module.typeSection().typeCount()) {
+                        throw new InvalidException("unknown type");
+                    }
+                    functionTypes[funcIdx] = type;
+                    funcIdx++;
                 }
+                imports[importId++] = imprt;
             }
 
             var mappedHostImports =
                     mapHostImports(
                             imports,
                             (hostImports == null) ? new HostImports() : hostImports,
-                            module.memorySection().map(m -> m.memoryCount()).orElse(0));
+                            module.memorySection().map(MemorySection::memoryCount).orElse(0));
 
             if (module.startSection().isPresent()) {
                 var export =
                         new Export(
                                 START_FUNCTION_NAME,
                                 (int) module.startSection().get().startIndex(),
-                                ExternalType.FUNCTION);
+                                FUNCTION);
                 exports.put(START_FUNCTION_NAME, export);
             }
 
@@ -728,8 +718,8 @@ public class Instance {
             var functionImportsOffset = 0;
             var tablesImportsOffset = 0;
             var memoryImportsOffset = 0;
-            for (int i = 0; i < imports.length; i++) {
-                switch (imports[i].importType()) {
+            for (Import imp : imports) {
+                switch (imp.importType()) {
                     case GLOBAL:
                         globalImportsOffset++;
                         break;
@@ -777,7 +767,9 @@ public class Instance {
                     case MEMORY:
                         {
                             var memoryCount =
-                                    module.memorySection().map(m -> m.memoryCount()).orElse(0);
+                                    module.memorySection()
+                                            .map(MemorySection::memoryCount)
+                                            .orElse(0);
                             if (e.index() >= memoryCount + memoryImportsOffset) {
                                 throw new InvalidException("unknown memory " + e);
                             }

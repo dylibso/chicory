@@ -12,7 +12,7 @@ import java.util.Arrays;
 
 public class TableInstance {
 
-    private Table table;
+    private final Table table;
     private Instance[] instances;
     private int[] refs;
 
@@ -51,12 +51,10 @@ public class TableInstance {
     }
 
     public Value ref(int index) {
-        int res;
-        try {
-            res = this.refs[index];
-        } catch (IndexOutOfBoundsException e) {
-            throw new ChicoryException("undefined element", e);
+        if (index < 0 || index >= this.refs.length) {
+            throw new ChicoryException("undefined element");
         }
+        int res = this.refs[index];
         if (this.elementType() == ValueType.FuncRef) {
             return Value.funcRef(res);
         } else {
@@ -65,12 +63,11 @@ public class TableInstance {
     }
 
     public void setRef(int index, int value, Instance instance) {
-        try {
-            this.refs[index] = value;
-            this.instances[index] = instance;
-        } catch (IndexOutOfBoundsException e) {
-            throw new UninstantiableException("out of bounds table access", e);
+        if (index < 0 || index >= this.refs.length || index >= this.instances.length) {
+            throw new UninstantiableException("out of bounds table access");
         }
+        this.refs[index] = value;
+        this.instances[index] = instance;
     }
 
     public Instance instance(int index) {

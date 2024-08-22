@@ -19,7 +19,7 @@ public class Limits {
             throw new InvalidException("size minimum must not be greater than maximum");
         }
         this.min = Math.min(Math.max(0, min), LIMIT_MAX);
-        this.max = Math.min(Math.max(min, max), LIMIT_MAX);
+        this.max = Math.min(max, LIMIT_MAX);
     }
 
     public long min() {

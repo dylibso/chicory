@@ -1,5 +1,7 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.wasm.types.OpCode.GLOBAL_GET;
+
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
@@ -97,11 +99,8 @@ public class ConstantEvaluators {
 
     public static Instance computeConstantInstance(Instance instance, List<Instruction> expr) {
         for (Instruction instruction : expr) {
-            switch (instruction.opcode()) {
-                case GLOBAL_GET:
-                    {
-                        return instance.global((int) instruction.operands()[0]).getInstance();
-                    }
+            if (instruction.opcode() == GLOBAL_GET) {
+                return instance.global((int) instruction.operands()[0]).getInstance();
             }
         }
         return instance;

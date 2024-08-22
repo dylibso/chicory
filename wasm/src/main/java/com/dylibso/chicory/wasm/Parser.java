@@ -223,13 +223,11 @@ public final class Parser {
         SectionsValidator() {}
 
         public void validateSectionType(byte sectionId) {
-            switch (sectionId) {
-                case SectionId.START:
-                    if (hasStart) {
-                        throw new MalformedException("unexpected content after last section");
-                    }
-                    hasStart = true;
-                    break;
+            if (sectionId == SectionId.START) {
+                if (hasStart) {
+                    throw new MalformedException("unexpected content after last section");
+                }
+                hasStart = true;
             }
         }
     }
