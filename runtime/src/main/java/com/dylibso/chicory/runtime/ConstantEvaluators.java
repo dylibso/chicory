@@ -17,7 +17,7 @@ public class ConstantEvaluators {
 
     public static Value computeConstantValue(Instance instance, List<Instruction> expr) {
         Value tos = null;
-        for (Instruction instruction : expr) {
+        for (var instruction : expr) {
             switch (instruction.opcode()) {
                 case F32_CONST:
                     {

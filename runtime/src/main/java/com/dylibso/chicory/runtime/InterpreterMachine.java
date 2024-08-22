@@ -4,8 +4,8 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -1844,7 +1844,7 @@ class InterpreterMachine implements Machine {
         call(stack, instance, callStack, funcId, args, type, false);
     }
 
-    private static int numberOfParams(Instance instance, Instruction scope) {
+    private static int numberOfParams(Instance instance, AnnotatedInstruction scope) {
         var typeId = (int) scope.operands()[0];
         if (typeId == 0x40) { // epsilon
             return 0;
@@ -1855,7 +1855,7 @@ class InterpreterMachine implements Machine {
         return instance.type(typeId).params().size();
     }
 
-    private static int numberOfValuesToReturn(Instance instance, Instruction scope) {
+    private static int numberOfValuesToReturn(Instance instance, AnnotatedInstruction scope) {
         if (scope.opcode() == OpCode.END) {
             return 0;
         }
@@ -1870,14 +1870,14 @@ class InterpreterMachine implements Machine {
     }
 
     private static void BLOCK(
-            StackFrame frame, MStack stack, Instance instance, Instruction instruction) {
+            StackFrame frame, MStack stack, Instance instance, AnnotatedInstruction instruction) {
         var paramsSize = numberOfParams(instance, instruction);
         var returnsSize = numberOfValuesToReturn(instance, instruction);
         frame.pushCtrl(instruction.opcode(), paramsSize, returnsSize, stack.size() - paramsSize);
     }
 
     private static void IF(
-            StackFrame frame, MStack stack, Instance instance, Instruction instruction) {
+            StackFrame frame, MStack stack, Instance instance, AnnotatedInstruction instruction) {
         var predValue = stack.pop();
         var paramsSize = numberOfParams(instance, instruction);
         var returnsSize = numberOfValuesToReturn(instance, instruction);
@@ -1895,13 +1895,13 @@ class InterpreterMachine implements Machine {
         }
     }
 
-    private static void BR(StackFrame frame, MStack stack, Instruction instruction) {
+    private static void BR(StackFrame frame, MStack stack, AnnotatedInstruction instruction) {
         checkInterruption();
         ctrlJump(frame, stack, (int) instruction.operands()[0]);
         frame.jumpTo(instruction.labelTrue());
     }
 
-    private static void BR_TABLE(StackFrame frame, MStack stack, Instruction instruction) {
+    private static void BR_TABLE(StackFrame frame, MStack stack, AnnotatedInstruction instruction) {
         var predValue = stack.pop();
         var pred = predValue.asInt();
 
@@ -1909,14 +1909,14 @@ class InterpreterMachine implements Machine {
         if (pred < 0 || pred >= defaultIdx) {
             // choose default
             ctrlJump(frame, stack, (int) instruction.operands()[defaultIdx]);
-            frame.jumpTo(instruction.labelTable()[defaultIdx]);
+            frame.jumpTo(instruction.labelTable().get(defaultIdx));
         } else {
             ctrlJump(frame, stack, (int) instruction.operands()[pred]);
-            frame.jumpTo(instruction.labelTable()[pred]);
+            frame.jumpTo(instruction.labelTable().get(pred));
         }
     }
 
-    private static void BR_IF(StackFrame frame, MStack stack, Instruction instruction) {
+    private static void BR_IF(StackFrame frame, MStack stack, AnnotatedInstruction instruction) {
         var predValue = stack.pop();
         var pred = predValue.asInt();
 

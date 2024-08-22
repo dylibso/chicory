@@ -3,6 +3,7 @@ package com.dylibso.chicory.wasm;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
@@ -81,7 +82,7 @@ public class ParserTest {
             var instructions = func.instructions();
             assertEquals(3, instructions.size());
 
-            assertEquals("0x00000032: I32_CONST [42]", instructions.get(0).toString());
+            assertTrue(instructions.get(0).toString().contains("0x00000032: I32_CONST [42]"));
             assertEquals(OpCode.I32_CONST, instructions.get(0).opcode());
             assertEquals(42L, instructions.get(0).operands()[0]);
             assertEquals(OpCode.CALL, instructions.get(1).opcode());

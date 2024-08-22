@@ -1,6 +1,6 @@
 package com.dylibso.chicory.wasm;
 
-import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +51,7 @@ import java.util.function.Consumer;
  * </pre>
  */
 final class ControlTree {
-    private final Instruction instruction;
+    private final AnnotatedInstruction.Builder instruction;
     private final int initialInstructionNumber;
     private final ControlTree parent;
     private final List<ControlTree> nested;
@@ -65,7 +65,10 @@ final class ControlTree {
         this.callbacks = new ArrayList<>();
     }
 
-    private ControlTree(int initialInstructionNumber, Instruction instruction, ControlTree parent) {
+    private ControlTree(
+            int initialInstructionNumber,
+            AnnotatedInstruction.Builder instruction,
+            ControlTree parent) {
         this.instruction = instruction;
         this.initialInstructionNumber = initialInstructionNumber;
         this.parent = parent;
@@ -73,13 +76,14 @@ final class ControlTree {
         this.callbacks = new ArrayList<>();
     }
 
-    public ControlTree spawn(int initialInstructionNumber, Instruction instruction) {
+    public ControlTree spawn(
+            int initialInstructionNumber, AnnotatedInstruction.Builder instruction) {
         var node = new ControlTree(initialInstructionNumber, instruction, this);
         this.addNested(node);
         return node;
     }
 
-    public Instruction instruction() {
+    public AnnotatedInstruction.Builder instruction() {
         return instruction;
     }
 
@@ -99,9 +103,10 @@ final class ControlTree {
         this.callbacks.add(callback);
     }
 
-    public void setFinalInstructionNumber(int finalInstructionNumber, Instruction end) {
+    public void setFinalInstructionNumber(
+            int finalInstructionNumber, AnnotatedInstruction.Builder end) {
         // to be set when END is reached
-        if (end.scope().opcode() == OpCode.LOOP) {
+        if (end.scope().isPresent() && end.scope().get().opcode() == OpCode.LOOP) {
             var lastLoopInstruction = 0;
             if (this.parent != null) {
                 for (var ct : this.parent.nested) {

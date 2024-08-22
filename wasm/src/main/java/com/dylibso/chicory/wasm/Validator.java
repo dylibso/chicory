@@ -7,6 +7,7 @@ import static java.util.stream.Collectors.toSet;
 
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
+import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -236,7 +237,7 @@ final class Validator {
         }
     }
 
-    private List<ValueType> getReturns(Instruction op) {
+    private List<ValueType> getReturns(AnnotatedInstruction op) {
         var typeId = (int) op.operands()[0];
         if (typeId == 0x40) { // epsilon
             return List.of();
@@ -247,7 +248,7 @@ final class Validator {
         return getType(typeId).returns();
     }
 
-    private List<ValueType> getParams(Instruction op) {
+    private List<ValueType> getParams(AnnotatedInstruction op) {
         var typeId = (int) op.operands()[0];
         if (typeId == 0x40) { // epsilon
             return List.of();
@@ -397,9 +398,6 @@ final class Validator {
                 case BR:
                     {
                         var n = (int) op.operands()[0];
-                        if (op.labelTrue() == null) {
-                            throw new InvalidException("unknown label " + n);
-                        }
                         popVals(labelTypes(getCtrl(n)));
                         unreachable();
                         break;
@@ -408,9 +406,6 @@ final class Validator {
                     {
                         popVal(ValueType.I32);
                         var n = (int) op.operands()[0];
-                        if (op.labelTrue() == null) {
-                            throw new InvalidException("unknown label " + n);
-                        }
                         var labelTypes = labelTypes(getCtrl(n));
                         popVals(labelTypes);
                         pushVals(labelTypes);

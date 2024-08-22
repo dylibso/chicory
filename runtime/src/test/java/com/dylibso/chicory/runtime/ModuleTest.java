@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
-import com.dylibso.chicory.wasm.types.Instruction;
+import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -327,7 +327,7 @@ public class ModuleTest {
         var instance =
                 Instance.builder(loadModule("compiled/iterfact.wat.wasm"))
                         .withUnsafeExecutionListener(
-                                (Instruction instruction, long[] operands, MStack stack) ->
+                                (AnnotatedInstruction instruction, long[] operands, MStack stack) ->
                                         count.getAndIncrement())
                         .build();
         var iterFact = instance.export("iterFact");
@@ -345,7 +345,9 @@ public class ModuleTest {
         var instance =
                 Instance.builder(loadModule("compiled/fac.wat.wasm"))
                         .withUnsafeExecutionListener(
-                                (Instruction instruction, long[] operands, MStack stack) -> {
+                                (AnnotatedInstruction instruction,
+                                        long[] operands,
+                                        MStack stack) -> {
                                     finalStackSize.set(stack.size());
                                 })
                         .build();
