@@ -16,7 +16,6 @@ import static java.util.stream.Collectors.toList;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
@@ -1334,13 +1333,6 @@ public class WasiPreview1 implements AutoCloseable {
                 .bind("sock_shutdown", inst::sockShutdown)
                 .onClose(inst::close)
                 .build();
-    }
-
-    @Deprecated
-    public HostFunction[] toHostFunctions() {
-        HostModule hostModule = WasiPreview1.toHostModule();
-        HostModuleInstance instance = WasiPreview1.instance(hostModule, this);
-        return instance.hostFunctions();
     }
 
     private Value[] wasiResult(WasiErrno errno) {

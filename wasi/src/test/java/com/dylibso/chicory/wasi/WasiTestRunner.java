@@ -82,9 +82,12 @@ public final class WasiTestRunner {
     }
 
     private static int execute(File test, WasiOptions wasiOptions) {
-        try (var wasi = new WasiPreview1(LOGGER, wasiOptions)) {
+        try (var wasi =
+                WasiPreview1.instance(
+                        WasiPreview1.toHostModule(), new WasiPreview1(LOGGER, wasiOptions))) {
+
             Instance.builder(Parser.parse(test))
-                    .withHostImports(new HostImports(wasi.toHostFunctions()))
+                    .withHostImports(new HostImports(wasi.hostFunctions()))
                     .build();
         } catch (WasiExitException e) {
             return e.exitCode();

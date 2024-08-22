@@ -27,7 +27,9 @@ public class WasiPreview1Test {
         var fakeStdout = new MockPrintStream();
         var wasi =
                 new WasiPreview1(this.logger, WasiOptions.builder().withStdout(fakeStdout).build());
-        var imports = new HostImports(wasi.toHostFunctions());
+        var imports =
+                new HostImports(
+                        WasiPreview1.instance(WasiPreview1.toHostModule(), wasi).hostFunctions());
         Instance.builder(loadModule("compiled/hello-wasi.wat.wasm"))
                 .withHostImports(imports)
                 .build();
@@ -40,7 +42,9 @@ public class WasiPreview1Test {
         var expected = "Hello, World!";
         var stdout = new MockPrintStream();
         var wasi = new WasiPreview1(this.logger, WasiOptions.builder().withStdout(stdout).build());
-        var imports = new HostImports(wasi.toHostFunctions());
+        var imports =
+                new HostImports(
+                        WasiPreview1.instance(WasiPreview1.toHostModule(), wasi).hostFunctions());
         Instance.builder(loadModule("compiled/hello-wasi.rs.wasm"))
                 .withHostImports(imports)
                 .build(); // run _start and prints Hello, World!
