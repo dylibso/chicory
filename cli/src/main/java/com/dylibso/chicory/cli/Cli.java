@@ -61,10 +61,16 @@ public class Cli implements Runnable {
         var imports =
                 wasi
                         ? new HostImports(
-                                new WasiPreview1(
-                                                logger,
-                                                WasiOptions.builder().inheritSystem().build())
-                                        .toHostFunctions())
+                                WasiPreview1.instance(
+                                                WasiPreview1.toHostModule(),
+                                                WasiPreview1.builder()
+                                                        .withLogger(logger)
+                                                        .withOpts(
+                                                                WasiOptions.builder()
+                                                                        .inheritSystem()
+                                                                        .build())
+                                                        .build())
+                                        .hostFunctions())
                         : new HostImports();
         var instance =
                 Instance.builder(module)

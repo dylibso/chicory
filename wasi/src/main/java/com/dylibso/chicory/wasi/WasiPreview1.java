@@ -55,7 +55,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Stream;
 
-public class WasiPreview1 implements Closeable {
+public class WasiPreview1 implements AutoCloseable {
+
+    public static final String MODULE_NAME = "wasi_snapshot_preview1";
+
     private final Logger logger;
     private final List<byte[]> arguments;
     private final List<Entry<byte[], byte[]>> environment;
@@ -127,478 +130,16 @@ public class WasiPreview1 implements Closeable {
         descriptors.closeAll();
     }
 
-    public HostFunction adapterCloseBadfd() {
-        return new HostFunction(
-                this::adapterCloseBadfd,
-                "wasi_snapshot_preview1",
-                "adapter_close_badfd",
-                List.of(I32),
-                List.of(I32));
-    }
-
-    public HostFunction adapterOpenBadfd() {
-        return new HostFunction(
-                this::adaptedOpenBadfd,
-                "wasi_snapshot_preview1",
-                "adapter_open_badfd",
-                List.of(I32),
-                List.of(I32));
-    }
-
-    public HostFunction argsGet() {
-        return new HostFunction(
-                this::argsGet,
-                "wasi_snapshot_preview1",
-                "args_get",
-                List.of(I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction argsSizesGet() {
-        return new HostFunction(
-                this::argsSizesGet,
-                "wasi_snapshot_preview1",
-                "args_sizes_get",
-                List.of(I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction clockResGet() {
-        return new HostFunction(
-                this::clockResGet,
-                "wasi_snapshot_preview1",
-                "clock_res_get",
-                List.of(I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction clockTimeGet() {
-        return new HostFunction(
-                this::clockTimeGet,
-                "wasi_snapshot_preview1",
-                "clock_time_get",
-                List.of(I32, I64, I32),
-                List.of(I32));
-    }
-
-    public HostFunction environGet() {
-        return new HostFunction(
-                this::environGet,
-                "wasi_snapshot_preview1",
-                "environ_get",
-                List.of(I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction environSizesGet() {
-        return new HostFunction(
-                this::environSizesGet,
-                "wasi_snapshot_preview1",
-                "environ_sizes_get",
-                List.of(I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdAdvise() {
-        return new HostFunction(
-                this::fdAdvise,
-                "wasi_snapshot_preview1",
-                "fd_advise",
-                List.of(I32, I64, I64, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdAllocate() {
-        return new HostFunction(
-                this::fdAllocate,
-                "wasi_snapshot_preview1",
-                "fd_allocate",
-                List.of(I32, I64, I64),
-                List.of(I32));
-    }
-
-    public HostFunction fdClose() {
-        return new HostFunction(
-                this::fdClose,
-                "wasi_snapshot_preview1",
-                "fd_close",
-                List.of(I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdDatasync() {
-        return new HostFunction(
-                this::fdDatasync,
-                "wasi_snapshot_preview1",
-                "fd_datasync",
-                List.of(I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdFdstatGet() {
-        return new HostFunction(
-                this::fdFdstatGet,
-                "wasi_snapshot_preview1",
-                "fd_fdstat_get",
-                List.of(I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdFdstatSetFlags() {
-        return new HostFunction(
-                this::fdFdstatSetFlags,
-                "wasi_snapshot_preview1",
-                "fd_fdstat_set_flags",
-                List.of(I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdFdstatSetRights() {
-        return new HostFunction(
-                this::fdFdstatSetRights,
-                "wasi_snapshot_preview1",
-                "fd_fdstat_set_rights",
-                List.of(I32, I64, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdFilestatGet() {
-        return new HostFunction(
-                this::fdFilestatGet,
-                "wasi_snapshot_preview1",
-                "fd_filestat_get",
-                List.of(I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdFilestatSetSize() {
-        return new HostFunction(
-                this::fdFilestatSetSize,
-                "wasi_snapshot_preview1",
-                "fd_filestat_set_size",
-                List.of(I32, I64),
-                List.of(I32));
-    }
-
-    public HostFunction fdFilestatSetTimes() {
-        return new HostFunction(
-                this::fdFilestatSetTimes,
-                "wasi_snapshot_preview1",
-                "fd_filestat_set_times",
-                List.of(I32, I64, I64, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdPread() {
-        return new HostFunction(
-                this::fdPread,
-                "wasi_snapshot_preview1",
-                "fd_pread",
-                List.of(I32, I32, I32, I64, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdPrestatDirName() {
-        return new HostFunction(
-                this::fdPrestatDirName,
-                "wasi_snapshot_preview1",
-                "fd_prestat_dir_name",
-                List.of(I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdPrestatGet() {
-        return new HostFunction(
-                this::fdPrestatGet,
-                "wasi_snapshot_preview1",
-                "fd_prestat_get",
-                List.of(I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdPwrite() {
-        return new HostFunction(
-                this::fdPwrite,
-                "wasi_snapshot_preview1",
-                "fd_pwrite",
-                List.of(I32, I32, I32, I64, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdRead() {
-        return new HostFunction(
-                this::fdRead,
-                "wasi_snapshot_preview1",
-                "fd_read",
-                List.of(I32, I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdReaddir() {
-        return new HostFunction(
-                this::fdReaddir,
-                "wasi_snapshot_preview1",
-                "fd_readdir",
-                List.of(I32, I32, I32, I64, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdRenumber() {
-        return new HostFunction(
-                this::fdRenumber,
-                "wasi_snapshot_preview1",
-                "fd_renumber",
-                List.of(I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdSeek() {
-        return new HostFunction(
-                this::fdSeek,
-                "wasi_snapshot_preview1",
-                "fd_seek",
-                List.of(I32, I64, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdSync() {
-        return new HostFunction(
-                this::fdSync,
-                "wasi_snapshot_preview1",
-                "fd_sync",
-                List.of(I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdTell() {
-        return new HostFunction(
-                this::fdTell,
-                "wasi_snapshot_preview1",
-                "fd_tell",
-                List.of(I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction fdWrite() {
-        return new HostFunction(
-                this::fdWrite,
-                "wasi_snapshot_preview1",
-                "fd_write",
-                List.of(I32, I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction pathCreateDirectory() {
-        return new HostFunction(
-                this::pathCreateDirectory,
-                "wasi_snapshot_preview1",
-                "path_create_directory",
-                List.of(I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction pathFilestatGet() {
-        return new HostFunction(
-                this::pathFilestatGet,
-                "wasi_snapshot_preview1",
-                "path_filestat_get",
-                List.of(I32, I32, I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction pathFilestatSetTimes() {
-        return new HostFunction(
-                this::pathFilestatSetTimes,
-                "wasi_snapshot_preview1",
-                "path_filestat_set_times",
-                List.of(I32, I32, I32, I32, I64, I64, I32),
-                List.of(I32));
-    }
-
-    public HostFunction pathLink() {
-        return new HostFunction(
-                this::pathLink,
-                "wasi_snapshot_preview1",
-                "path_link",
-                List.of(I32, I32, I32, I32, I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction pathOpen() {
-        return new HostFunction(
-                this::pathOpen,
-                "wasi_snapshot_preview1",
-                "path_open",
-                List.of(I32, I32, I32, I32, I32, I64, I64, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction pathReadlink() {
-        return new HostFunction(
-                this::pathReadlink,
-                "wasi_snapshot_preview1",
-                "path_readlink",
-                List.of(I32, I32, I32, I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction pathRemoveDirectory() {
-        return new HostFunction(
-                this::pathRemoveDirectory,
-                "wasi_snapshot_preview1",
-                "path_remove_directory",
-                List.of(I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction pathRename() {
-        return new HostFunction(
-                this::pathRename,
-                "wasi_snapshot_preview1",
-                "path_rename",
-                List.of(I32, I32, I32, I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction pathSymlink() {
-        return new HostFunction(
-                this::pathSymlink,
-                "wasi_snapshot_preview1",
-                "path_symlink",
-                List.of(I32, I32, I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction pathUnlinkFile() {
-        return new HostFunction(
-                this::pathUnlinkFile,
-                "wasi_snapshot_preview1",
-                "path_unlink_file",
-                List.of(I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction pollOneoff() {
-        return new HostFunction(
-                this::pollOneoff,
-                "wasi_snapshot_preview1",
-                "poll_oneoff",
-                List.of(I32, I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction procExit() {
-        return new HostFunction(
-                this::procExit,
-                "wasi_snapshot_preview1",
-                "proc_exit",
-                List.of(I32),
-                List.of());
-    }
-
-    public HostFunction procRaise() {
-        return new HostFunction(
-                this::procRaise,
-                "wasi_snapshot_preview1",
-                "proc_raise",
-                List.of(I32),
-                List.of(I32));
-    }
-
-    public HostFunction randomGet() {
-        return new HostFunction(
-                this::randomGet,
-                "wasi_snapshot_preview1",
-                "random_get",
-                List.of(I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction resetAdapterState() {
-        return new HostFunction(
-                this::resetAdapterState,
-                "wasi_snapshot_preview1",
-                "reset_adapter_state",
-                List.of(),
-                List.of());
-    }
-
-    public HostFunction schedYield() {
-        return new HostFunction(
-                this::schedYield,
-                "wasi_snapshot_preview1",
-                "sched_yield",
-                List.of(),
-                List.of(I32));
-    }
-
-    public HostFunction setAllocationState() {
-        return new HostFunction(
-                this::setAllocationState,
-                "wasi_snapshot_preview1",
-                "set_allocation_state",
-                List.of(I32),
-                List.of());
-    }
-
-    public HostFunction setStatePtr() {
-        return new HostFunction(
-                this::setStatePtr,
-                "wasi_snapshot_preview1",
-                "set_state_ptr",
-                List.of(I32),
-                List.of());
-    }
-
-    public HostFunction sockAccept() {
-        return new HostFunction(
-                this::sockAccept,
-                "wasi_snapshot_preview1",
-                "sock_accept",
-                List.of(I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction sockRecv() {
-        return new HostFunction(
-                this::sockRecv,
-                "wasi_snapshot_preview1",
-                "sock_recv",
-                List.of(I32, I32, I32, I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction sockSend() {
-        return new HostFunction(
-                this::sockSend,
-                "wasi_snapshot_preview1",
-                "sock_send",
-                List.of(I32, I32, I32, I32, I32),
-                List.of(I32));
-    }
-
-    public HostFunction sockShutdown() {
-        return new HostFunction(
-                this::sockShutdown,
-                "wasi_snapshot_preview1",
-                "sock_shutdown",
-                List.of(I32, I32),
-                List.of(I32));
-    }
-
-
     private Value[] adapterCloseBadfd(Instance instance, Value... args) {
         logger.info("adapter_close_badfd: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: adapter_close_badfd");
-// return new Value[] { Value.i32(0) };
+        throw new WASMRuntimeException("We don't yet support this WASI call: adapter_close_badfd");
+        // return new Value[] { Value.i32(0) };
     }
 
     private Value[] adaptedOpenBadfd(Instance instance, Value... args) {
         logger.info("adapter_open_badfd: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: adapter_open_badfd");
-// return new Value[] { Value.i32(0) };
+        throw new WASMRuntimeException("We don't yet support this WASI call: adapter_open_badfd");
+        // return new Value[] { Value.i32(0) };
     }
 
     private Value[] argsGet(Instance instance, Value... args) {
@@ -642,11 +183,9 @@ public class WasiPreview1 implements Closeable {
                 memory.writeLong(resultPtr, 1L);
                 return wasiResult(WasiErrno.ESUCCESS);
             case WasiClockId.PROCESS_CPUTIME_ID:
-                throw new WASMRuntimeException(
-                        "We don't yet support clockid process_cputime_id");
+                throw new WASMRuntimeException("We don't yet support clockid process_cputime_id");
             case WasiClockId.THREAD_CPUTIME_ID:
-                throw new WASMRuntimeException(
-                        "We don't yet support clockid thread_cputime_id");
+                throw new WASMRuntimeException("We don't yet support clockid thread_cputime_id");
             default:
                 return wasiResult(WasiErrno.EINVAL);
         }
@@ -669,11 +208,9 @@ public class WasiPreview1 implements Closeable {
                 memory.writeLong(resultPtr, System.nanoTime());
                 return wasiResult(WasiErrno.ESUCCESS);
             case WasiClockId.PROCESS_CPUTIME_ID:
-                throw new WASMRuntimeException(
-                        "We don't yet support clockid process_cputime_id");
+                throw new WASMRuntimeException("We don't yet support clockid process_cputime_id");
             case WasiClockId.THREAD_CPUTIME_ID:
-                throw new WASMRuntimeException(
-                        "We don't yet support clockid thread_cputime_id");
+                throw new WASMRuntimeException("We don't yet support clockid thread_cputime_id");
             default:
                 return wasiResult(WasiErrno.EINVAL);
         }
@@ -719,16 +256,14 @@ public class WasiPreview1 implements Closeable {
 
     private Value[] fdAdvise(Instance instance, Value... args) {
         logger.info("fd_advise: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: fd_advise");
-// return new Value[] { Value.i32(0) };
+        throw new WASMRuntimeException("We don't yet support this WASI call: fd_advise");
+        // return new Value[] { Value.i32(0) };
     }
 
     private Value[] fdAllocate(Instance instance, Value... args) {
         logger.info("fd_allocate: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: fd_allocate");
-// return new Value[] { Value.i32(0) };
+        throw new WASMRuntimeException("We don't yet support this WASI call: fd_allocate");
+        // return new Value[] { Value.i32(0) };
     }
 
     private Value[] fdClose(Instance instance, Value... args) {
@@ -754,9 +289,8 @@ public class WasiPreview1 implements Closeable {
 
     private Value[] fdDatasync(Instance instance, Value... args) {
         logger.info("fd_datasync: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: fd_datasync");
-// return new Value[] { Value.i32(0) };
+        throw new WASMRuntimeException("We don't yet support this WASI call: fd_datasync");
+        // return new Value[] { Value.i32(0) };
     }
 
     private Value[] fdFdstatGet(Instance instance, Value... args) {
@@ -813,15 +347,14 @@ public class WasiPreview1 implements Closeable {
         if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
             return wasiResult(WasiErrno.EINVAL);
         }
-        if ((descriptor instanceof OpenDirectory)
-                || (descriptor instanceof PreopenedDirectory)) {
+        if ((descriptor instanceof OpenDirectory) || (descriptor instanceof PreopenedDirectory)) {
             return wasiResult(WasiErrno.ESUCCESS);
         }
         if (!(descriptor instanceof OpenFile)) {
             throw unhandledDescriptor(descriptor);
         }
 
-// we don't support changing flags
+        // we don't support changing flags
         if (flags != ((OpenFile) descriptor).fdFlags()) {
             return wasiResult(WasiErrno.ENOTSUP);
         }
@@ -833,7 +366,7 @@ public class WasiPreview1 implements Closeable {
         logger.info("fd_fdstat_set_rights: " + Arrays.toString(args));
         throw new WASMRuntimeException(
                 "We don't yet support this WASI call: fd_fdstat_set_rightsn");
-// return new Value[] { Value.i32(0) };
+        // return new Value[] { Value.i32(0) };
     }
 
     private Value[] fdFilestatGet(Instance instance, Value... args) {
@@ -856,8 +389,7 @@ public class WasiPreview1 implements Closeable {
                             "lastAccessTime", FileTime.from(Instant.EPOCH),
                             "lastModifiedTime", FileTime.from(Instant.EPOCH),
                             "ctime", FileTime.from(Instant.EPOCH));
-            writeFileStat(
-                    instance.memory(), buf, attributes, WasiFileType.CHARACTER_DEVICE);
+            writeFileStat(instance.memory(), buf, attributes, WasiFileType.CHARACTER_DEVICE);
             return wasiResult(WasiErrno.ESUCCESS);
         }
 
@@ -885,22 +417,21 @@ public class WasiPreview1 implements Closeable {
 
     private Value[] fdFilestatSetSize(Instance instance, Value... args) {
         logger.info("fd_filestat_set_size: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: fd_filestat_set_size");
-// return new Value[] { Value.i32(0) };
+        throw new WASMRuntimeException("We don't yet support this WASI call: fd_filestat_set_size");
+        // return new Value[] { Value.i32(0) };
     }
 
     private Value[] fdFilestatSetTimes(Instance instance, Value... args) {
         logger.info("fd_filestat_set_times: " + Arrays.toString(args));
         throw new WASMRuntimeException(
                 "We don't yet support this WASI call: fd_filestat_set_times");
-// return new Value[] { Value.i32(0) };
+        // return new Value[] { Value.i32(0) };
     }
 
     private Value[] fdPread(Instance instance, Value... args) {
         logger.info("fd_pread: " + Arrays.toString(args));
         throw new WASMRuntimeException("We don't yet support this WASI call: fd_pread");
-// return new Value[] { Value.i32(0) };
+        // return new Value[] { Value.i32(0) };
     }
 
     private Value[] fdPrestatDirName(Instance instance, Value... args) {
@@ -950,9 +481,8 @@ public class WasiPreview1 implements Closeable {
 
     private Value[] fdPwrite(Instance instance, Value... args) {
         logger.info("fd_pwrite: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: fd_pwrite");
-// return new Value[] { Value.i32(0) };
+        throw new WASMRuntimeException("We don't yet support this WASI call: fd_pwrite");
+        // return new Value[] { Value.i32(0) };
     }
 
     private Value[] fdRead(Instance instance, Value... args) {
@@ -1033,8 +563,7 @@ public class WasiPreview1 implements Closeable {
         try (Stream<Path> stream = Files.list(directoryPath)) {
             Stream<Path> special =
                     Stream.of(directoryPath.resolve("."), directoryPath.resolve(".."));
-            Iterator<Path> iterator =
-                    Stream.concat(special, stream).skip(cookie).iterator();
+            Iterator<Path> iterator = Stream.concat(special, stream).skip(cookie).iterator();
             while (iterator.hasNext()) {
                 Path entryPath = iterator.next();
                 byte[] name = entryPath.getFileName().toString().getBytes(UTF_8);
@@ -1050,8 +579,7 @@ public class WasiPreview1 implements Closeable {
                 }
 
                 ByteBuffer entry =
-                        ByteBuffer.allocate(24 + name.length)
-                                .order(ByteOrder.LITTLE_ENDIAN);
+                        ByteBuffer.allocate(24 + name.length).order(ByteOrder.LITTLE_ENDIAN);
                 entry.putLong(0, cookie);
                 entry.putLong(8, ((Number) attributes.get("ino")).longValue());
                 entry.putInt(16, name.length);
@@ -1081,8 +609,7 @@ public class WasiPreview1 implements Closeable {
 
     private Value[] fdRenumber(Instance instance, Value... args) {
         logger.info("fd_renumber: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: fd_renumber");
+        throw new WASMRuntimeException("We don't yet support this WASI call: fd_renumber");
     }
 
     private Value[] fdSeek(Instance instance, Value... args) {
@@ -1139,7 +666,7 @@ public class WasiPreview1 implements Closeable {
     private Value[] fdSync(Instance instance, Value... args) {
         logger.info("fd_sync: " + Arrays.toString(args));
         throw new WASMRuntimeException("We don't yet support this WASI call: fd_sync");
-// return new Value[] {Value.i32(0)};
+        // return new Value[] {Value.i32(0)};
     }
 
     private Value[] fdTell(Instance instance, Value... args) {
@@ -1304,8 +831,7 @@ public class WasiPreview1 implements Closeable {
 
     private Value[] pathLink(Instance instance, Value... args) {
         logger.info("path_link: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: path_link");
+        throw new WASMRuntimeException("We don't yet support this WASI call: path_link");
     }
 
     private Value[] pathOpen(Instance instance, Value... args) {
@@ -1345,8 +871,7 @@ public class WasiPreview1 implements Closeable {
             return wasiResult(WasiErrno.ESUCCESS);
         }
 
-        if (flagSet(openFlags, WasiOpenFlags.DIRECTORY)
-                && Files.exists(path, linkOptions)) {
+        if (flagSet(openFlags, WasiOpenFlags.DIRECTORY) && Files.exists(path, linkOptions)) {
             return wasiResult(WasiErrno.ENOTDIR);
         }
 
@@ -1382,7 +907,7 @@ public class WasiPreview1 implements Closeable {
         if (flagSet(fdFlags, WasiFdFlags.DSYNC)) {
             openOptions.add(StandardOpenOption.DSYNC);
         }
-// ignore WasiFdFlags.RSYNC and WasiFdFlags.NONBLOCK
+        // ignore WasiFdFlags.RSYNC and WasiFdFlags.NONBLOCK
 
         int fd;
         try {
@@ -1494,12 +1019,10 @@ public class WasiPreview1 implements Closeable {
             return wasiResult(WasiErrno.EACCES);
         }
 
-        if (Files.isDirectory(oldPath)
-                && Files.isRegularFile(newPath, LinkOption.NOFOLLOW_LINKS)) {
+        if (Files.isDirectory(oldPath) && Files.isRegularFile(newPath, LinkOption.NOFOLLOW_LINKS)) {
             return wasiResult(WasiErrno.ENOTDIR);
         }
-        if (Files.isRegularFile(oldPath, LinkOption.NOFOLLOW_LINKS)
-                && Files.isDirectory(newPath)) {
+        if (Files.isRegularFile(oldPath, LinkOption.NOFOLLOW_LINKS) && Files.isDirectory(newPath)) {
             return wasiResult(WasiErrno.EISDIR);
         }
 
@@ -1524,8 +1047,7 @@ public class WasiPreview1 implements Closeable {
 
     private Value[] pathSymlink(Instance instance, Value... args) {
         logger.info("path_symlink: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: path_symlink");
+        throw new WASMRuntimeException("We don't yet support this WASI call: path_symlink");
     }
 
     private Value[] pathUnlinkFile(Instance instance, Value... args) {
@@ -1571,8 +1093,7 @@ public class WasiPreview1 implements Closeable {
 
     private Value[] pollOneoff(Instance instance, Value... args) {
         logger.info("poll_oneoff: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: poll_oneoff");
+        throw new WASMRuntimeException("We don't yet support this WASI call: poll_oneoff");
     }
 
     private Value[] procExit(Instance instance, Value... args) {
@@ -1583,8 +1104,7 @@ public class WasiPreview1 implements Closeable {
 
     private Value[] procRaise(Instance instance, Value... args) {
         logger.info("proc_raise: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: proc_raise");
+        throw new WASMRuntimeException("We don't yet support this WASI call: proc_raise");
     }
 
     private Value[] randomGet(Instance instance, Value... args) {
@@ -1607,134 +1127,43 @@ public class WasiPreview1 implements Closeable {
 
     private Value[] resetAdapterState(Instance instance, Value... args) {
         logger.info("reset_adapter_state: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: reset_adapter_state");
+        throw new WASMRuntimeException("We don't yet support this WASI call: reset_adapter_state");
     }
 
     private Value[] schedYield(Instance instance, Value... args) {
         logger.info("sched_yield: " + Arrays.toString(args));
-// do nothing here
+        // do nothing here
         return wasiResult(WasiErrno.ESUCCESS);
     }
 
     private Value[] setAllocationState(Instance instance, Value... args) {
         logger.info("set_allocation_state: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: set_allocation_state");
+        throw new WASMRuntimeException("We don't yet support this WASI call: set_allocation_state");
     }
 
     private Value[] setStatePtr(Instance instance, Value... args) {
         logger.info("set_state_ptr: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: set_state_ptr");
+        throw new WASMRuntimeException("We don't yet support this WASI call: set_state_ptr");
     }
 
     private Value[] sockAccept(Instance instance, Value... args) {
         logger.info("sock_accept: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: sock_accept");
+        throw new WASMRuntimeException("We don't yet support this WASI call: sock_accept");
     }
 
     private Value[] sockRecv(Instance instance, Value... args) {
         logger.info("sock_recv: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: sock_recv");
+        throw new WASMRuntimeException("We don't yet support this WASI call: sock_recv");
     }
 
     private Value[] sockSend(Instance instance, Value... args) {
         logger.info("sock_send: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: sock_send");
+        throw new WASMRuntimeException("We don't yet support this WASI call: sock_send");
     }
 
     private Value[] sockShutdown(Instance instance, Value... args) {
         logger.info("sock_shutdown: " + Arrays.toString(args));
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: sock_shutdown");
-    }
-
-
-    public HostFunction[] toHostFunctions() {
-        return new HostFunction[] {
-            adapterCloseBadfd(),
-            adapterOpenBadfd(),
-            argsGet(),
-            argsSizesGet(),
-            clockResGet(),
-            clockTimeGet(),
-            environGet(),
-            environSizesGet(),
-            fdAdvise(),
-            fdAllocate(),
-            fdClose(),
-            fdDatasync(),
-            fdFdstatGet(),
-            fdFdstatSetFlags(),
-            fdFdstatSetRights(),
-            fdFilestatGet(),
-            fdFilestatSetSize(),
-            fdFilestatSetTimes(),
-            fdPread(),
-            fdPrestatDirName(),
-            fdPrestatGet(),
-            fdPwrite(),
-            fdRead(),
-            fdReaddir(),
-            fdRenumber(),
-            fdSeek(),
-            fdSync(),
-            fdTell(),
-            fdWrite(),
-            pathCreateDirectory(),
-            pathFilestatGet(),
-            pathFilestatSetTimes(),
-            pathLink(),
-            pathOpen(),
-            pathReadlink(),
-            pathRemoveDirectory(),
-            pathRename(),
-            pathSymlink(),
-            pathUnlinkFile(),
-            pollOneoff(),
-            procExit(),
-            procRaise(),
-            randomGet(),
-            resetAdapterState(),
-            schedYield(),
-            setAllocationState(),
-            setStatePtr(),
-            sockAccept(),
-            sockRecv(),
-            sockSend(),
-            sockShutdown()
-        };
-    }
-
-    private Value[] wasiResult(WasiErrno errno) {
-        if (errno != WasiErrno.ESUCCESS) {
-            logger.info("result = " + errno.name());
-        }
-        return new Value[] {Value.i32(errno.ordinal())};
-    }
-
-    private static Path resolvePath(Path directory, String rawPathString) {
-        Path rawPath;
-        try {
-            rawPath = directory.getFileSystem().getPath(rawPathString);
-        } catch (InvalidPathException e) {
-            return null;
-        }
-
-        if (rawPath.isAbsolute()) {
-            return null;
-        }
-
-        String normalized = rawPath.normalize().toString();
-        if (normalized.equals("..") || normalized.startsWith("../")) {
-            return null;
-        }
-
-        return directory.resolve(normalized);
+        throw new WASMRuntimeException("We don't yet support this WASI call: sock_shutdown");
     }
 
     private static void writeFileStat(
@@ -1782,5 +1211,162 @@ public class WasiPreview1 implements Closeable {
 
     private static RuntimeException unhandledDescriptor(Descriptor descriptor) {
         return new WASMRuntimeException("Unhandled descriptor: " + descriptor.getClass().getName());
+    }
+
+    public static HostModule toHostModule() {
+        var i32_t = List.of(I32);
+        var i32_i32_t = List.of(I32, I32);
+        var i32_i32_i32_t = List.of(I32, I32, I32);
+        var i32_i32_i32_i32_t = List.of(I32, I32, I32, I32);
+        return HostModule.builder(MODULE_NAME)
+                .withFunctionSignature("adapter_close_badfd", i32_t, i32_t)
+                .withFunctionSignature("adapter_open_badfd", i32_t, i32_t)
+                .withFunctionSignature("args_get", i32_i32_t, i32_t)
+                .withFunctionSignature("args_sizes_get", i32_i32_t, i32_t)
+                .withFunctionSignature("clock_res_get", i32_i32_t, i32_t)
+                .withFunctionSignature("clock_time_get", List.of(I32, I64, I32), i32_t)
+                .withFunctionSignature("environ_get", i32_i32_t, i32_t)
+                .withFunctionSignature("environ_sizes_get", i32_i32_t, i32_t)
+                .withFunctionSignature("fd_advise", List.of(I32, I64, I64, I32), i32_t)
+                .withFunctionSignature("fd_allocate", List.of(I32, I64, I64), i32_t)
+                .withFunctionSignature("fd_close", i32_t, i32_t)
+                .withFunctionSignature("fd_datasync", i32_t, i32_t)
+                .withFunctionSignature("fd_fdstat_get", i32_i32_t, i32_t)
+                .withFunctionSignature("fd_fdstat_set_flags", i32_i32_t, i32_t)
+                .withFunctionSignature("fd_fdstat_set_rights", List.of(I32, I64, I32), i32_t)
+                .withFunctionSignature("fd_filestat_get", i32_i32_t, i32_t)
+                .withFunctionSignature("fd_filestat_set_size", List.of(I32, I64), i32_t)
+                .withFunctionSignature("fd_filestat_set_times", List.of(I32, I64, I64, I32), i32_t)
+                .withFunctionSignature("fd_pread", List.of(I32, I32, I32, I64, I32), i32_t)
+                .withFunctionSignature("fd_prestat_dir_name", i32_i32_i32_t, i32_t)
+                .withFunctionSignature("fd_prestat_get", i32_i32_t, i32_t)
+                .withFunctionSignature("fd_pwrite", List.of(I32, I32, I32, I64, I32), i32_t)
+                .withFunctionSignature("fd_read", i32_i32_i32_i32_t, i32_t)
+                .withFunctionSignature("fd_readdir", List.of(I32, I32, I32, I64, I32), i32_t)
+                .withFunctionSignature("fd_renumber", i32_i32_t, i32_t)
+                .withFunctionSignature("fd_seek", List.of(I32, I64, I32, I32), i32_t)
+                .withFunctionSignature("fd_sync", i32_t, i32_t)
+                .withFunctionSignature("fd_tell", i32_i32_t, i32_t)
+                .withFunctionSignature("fd_write", i32_i32_i32_i32_t, i32_t)
+                .withFunctionSignature("path_create_directory", i32_i32_i32_t, i32_t)
+                .withFunctionSignature("path_filestat_get", List.of(I32, I32, I32, I32, I32), i32_t)
+                .withFunctionSignature(
+                        "path_filestat_set_times",
+                        List.of(I32, I32, I32, I32, I64, I64, I32),
+                        i32_t)
+                .withFunctionSignature(
+                        "path_link", List.of(I32, I32, I32, I32, I32, I32, I32), i32_t)
+                .withFunctionSignature(
+                        "path_open", List.of(I32, I32, I32, I32, I32, I64, I64, I32, I32), i32_t)
+                .withFunctionSignature(
+                        "path_readlink", List.of(I32, I32, I32, I32, I32, I32), i32_t)
+                .withFunctionSignature("path_remove_directory", i32_i32_i32_t, i32_t)
+                .withFunctionSignature("path_rename", List.of(I32, I32, I32, I32, I32, I32), i32_t)
+                .withFunctionSignature("path_symlink", List.of(I32, I32, I32, I32, I32), i32_t)
+                .withFunctionSignature("path_unlink_file", i32_i32_i32_t, i32_t)
+                .withFunctionSignature("poll_oneoff", i32_i32_i32_i32_t, i32_t)
+                .withFunctionSignature("proc_exit", i32_t, List.of())
+                .withFunctionSignature("proc_raise", i32_t, i32_t)
+                .withFunctionSignature("random_get", i32_i32_t, i32_t)
+                .withFunctionSignature("reset_adapter_state", List.of(), List.of())
+                .withFunctionSignature("sched_yield", List.of(), i32_t)
+                .withFunctionSignature("set_allocation_state", i32_t, List.of())
+                .withFunctionSignature("set_state_ptr", i32_t, List.of())
+                .withFunctionSignature("sock_accept", i32_i32_i32_t, i32_t)
+                .withFunctionSignature("sock_recv", List.of(I32, I32, I32, I32, I32, I32), i32_t)
+                .withFunctionSignature("sock_send", List.of(I32, I32, I32, I32, I32), i32_t)
+                .withFunctionSignature("sock_shutdown", i32_i32_t, i32_t)
+                .build();
+    }
+
+    public static HostModuleInstance instance(HostModule hostModule, WasiPreview1 inst) {
+        return HostModuleInstance.builder(hostModule)
+                .bind("adapter_close_badfd", inst::adapterCloseBadfd)
+                .bind("adapter_open_badfd", inst::adaptedOpenBadfd)
+                .bind("args_get", inst::argsGet)
+                .bind("args_sizes_get", inst::argsSizesGet)
+                .bind("clock_res_get", inst::clockResGet)
+                .bind("clock_time_get", inst::clockTimeGet)
+                .bind("environ_get", inst::environGet)
+                .bind("environ_sizes_get", inst::environSizesGet)
+                .bind("fd_advise", inst::fdAdvise)
+                .bind("fd_allocate", inst::fdAllocate)
+                .bind("fd_close", inst::fdClose)
+                .bind("fd_datasync", inst::fdDatasync)
+                .bind("fd_fdstat_get", inst::fdFdstatGet)
+                .bind("fd_fdstat_set_flags", inst::fdFdstatSetFlags)
+                .bind("fd_fdstat_set_rights", inst::fdFdstatSetRights)
+                .bind("fd_filestat_get", inst::fdFilestatGet)
+                .bind("fd_filestat_set_size", inst::fdFilestatSetSize)
+                .bind("fd_filestat_set_times", inst::fdFilestatSetTimes)
+                .bind("fd_pread", inst::fdPread)
+                .bind("fd_prestat_dir_name", inst::fdPrestatDirName)
+                .bind("fd_prestat_get", inst::fdPrestatGet)
+                .bind("fd_pwrite", inst::fdPwrite)
+                .bind("fd_read", inst::fdRead)
+                .bind("fd_readdir", inst::fdReaddir)
+                .bind("fd_renumber", inst::fdRenumber)
+                .bind("fd_seek", inst::fdSeek)
+                .bind("fd_sync", inst::fdSync)
+                .bind("fd_tell", inst::fdTell)
+                .bind("fd_write", inst::fdWrite)
+                .bind("path_create_directory", inst::pathCreateDirectory)
+                .bind("path_filestat_get", inst::pathFilestatGet)
+                .bind("path_filestat_set_times", inst::pathFilestatSetTimes)
+                .bind("path_link", inst::pathLink)
+                .bind("path_open", inst::pathOpen)
+                .bind("path_readlink", inst::pathReadlink)
+                .bind("path_remove_directory", inst::pathRemoveDirectory)
+                .bind("path_rename", inst::pathRename)
+                .bind("path_symlink", inst::pathSymlink)
+                .bind("path_unlink_file", inst::pathUnlinkFile)
+                .bind("poll_oneoff", inst::pollOneoff)
+                .bind("proc_exit", inst::procExit)
+                .bind("proc_raise", inst::procRaise)
+                .bind("random_get", inst::randomGet)
+                .bind("reset_adapter_state", inst::resetAdapterState)
+                .bind("sched_yield", inst::schedYield)
+                .bind("set_allocation_state", inst::setAllocationState)
+                .bind("set_state_ptr", inst::setStatePtr)
+                .bind("sock_accept", inst::sockAccept)
+                .bind("sock_recv", inst::sockRecv)
+                .bind("sock_send", inst::sockSend)
+                .bind("sock_shutdown", inst::sockShutdown)
+                .onClose(inst::close)
+                .build();
+    }
+
+    @Deprecated
+    public HostFunction[] toHostFunctions() {
+        HostModule hostModule = WasiPreview1.toHostModule();
+        HostModuleInstance instance = WasiPreview1.instance(hostModule, this);
+        return instance.hostFunctions();
+    }
+
+    private Value[] wasiResult(WasiErrno errno) {
+        if (errno != WasiErrno.ESUCCESS) {
+            logger.info("result = " + errno.name());
+        }
+        return new Value[] {Value.i32(errno.ordinal())};
+    }
+
+    private static Path resolvePath(Path directory, String rawPathString) {
+        Path rawPath;
+        try {
+            rawPath = directory.getFileSystem().getPath(rawPathString);
+        } catch (InvalidPathException e) {
+            return null;
+        }
+
+        if (rawPath.isAbsolute()) {
+            return null;
+        }
+
+        String normalized = rawPath.normalize().toString();
+        if (normalized.equals("..") || normalized.startsWith("../")) {
+            return null;
+        }
+
+        return directory.resolve(normalized);
     }
 }
