@@ -167,7 +167,8 @@ var options = WasiOptions.builder().build();
 // create our instance of wasip1
 var wasi = new WasiPreview1(logger, WasiOptions.builder().build());
 // turn those into host imports. Here we could add any other custom imports we have
-var imports = new HostImports(wasi.toHostFunctions());
+var wasiInstance = WasiPreview1.instance(WasiPreview1.toHostModule(), wasi);
+var imports = new HostImports(wasiInstance.hostFunctions());
 // create the module and connect imports
 // this will execute the module if it's a WASI command-pattern module
 Instance.builder(Parser.parse(new File("hello-wasi.wasm"))).withHostImports(imports).build();
@@ -205,7 +206,8 @@ var fakeStderr = new ByteArrayOutputStream();
 var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStderr(fakeStderr).withStdin(fakeStdin).build();
 
 var wasi = new WasiPreview1(logger, wasiOpts);
-var imports = new HostImports(wasi.toHostFunctions());
+var wasiInstance = WasiPreview1.instance(WasiPreview1.toHostModule(), wasi);
+var imports = new HostImports(wasiInstance.hostFunctions());
 
 // greet-wasi is a rust program that greets the string passed in stdin
 // instantiating will execute the module if it's a WASI command-pattern module
