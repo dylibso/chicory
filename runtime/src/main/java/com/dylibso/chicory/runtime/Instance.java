@@ -661,13 +661,9 @@ public class Instance {
                         throw new InvalidException("unknown type");
                     }
                     functionTypes[funcIdx] = type;
-                    // The global function id increases on this table
-                    // function ids are assigned on imports first
-                    imports[importId++] = imprt;
                     funcIdx++;
-                } else {
-                    imports[importId++] = imprt;
                 }
+                imports[importId++] = imprt;
             }
 
             var mappedHostImports =
