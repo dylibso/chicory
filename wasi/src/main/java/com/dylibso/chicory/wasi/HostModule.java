@@ -9,7 +9,6 @@ public interface HostModule {
     public static class Builder {
         private final String moduleName;
         private final List<FunctionSignature> signatures;
-        private AutoCloseable closeable;
 
         public Builder(String moduleName) {
             this.moduleName = moduleName;

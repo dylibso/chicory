@@ -8,6 +8,7 @@ public class HostFunctionBundle implements HostModuleInstance {
     private final Runnable onClose;
 
     public HostFunctionBundle(HostModule module, HostFunction[] hostFunctions, Runnable onClose) {
+
         this.module = module;
         this.hostFunctions = hostFunctions;
         this.onClose = onClose;
