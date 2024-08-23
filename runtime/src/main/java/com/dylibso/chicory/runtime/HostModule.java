@@ -1,4 +1,4 @@
-package com.dylibso.chicory.wasi;
+package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayList;

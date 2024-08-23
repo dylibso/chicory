@@ -1,4 +1,4 @@
-package com.dylibso.chicory.wasi;
+package com.dylibso.chicory.runtime;
 
 public class FunctionSignatureBundle implements HostModule {
 

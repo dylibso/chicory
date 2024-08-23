@@ -1,6 +1,4 @@
-package com.dylibso.chicory.wasi;
-
-import com.dylibso.chicory.runtime.HostFunction;
+package com.dylibso.chicory.runtime;
 
 public class HostFunctionBundle implements HostModuleInstance {
     private final HostModule module;

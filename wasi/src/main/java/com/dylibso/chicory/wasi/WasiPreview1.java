@@ -16,6 +16,8 @@ import static java.util.stream.Collectors.toList;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
+import com.dylibso.chicory.runtime.HostModule;
+import com.dylibso.chicory.runtime.HostModuleInstance;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;

@@ -1,7 +1,5 @@
-package com.dylibso.chicory.wasi;
+package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.WasmFunctionHandle;
 import java.util.HashMap;
 import java.util.Map;
 
