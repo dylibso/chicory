@@ -10,6 +10,7 @@ import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 
 /**
@@ -19,7 +20,7 @@ class InterpreterMachine implements Machine {
 
     private final MStack stack;
 
-    private final ArrayDeque<StackFrame> callStack;
+    private final Deque<StackFrame> callStack;
 
     private final Instance instance;
 
@@ -37,7 +38,7 @@ class InterpreterMachine implements Machine {
     public static Value[] call(
             MStack stack,
             Instance instance,
-            ArrayDeque<StackFrame> callStack,
+            Deque<StackFrame> callStack,
             int funcId,
             Value[] args,
             FunctionType callType,
@@ -98,7 +99,7 @@ class InterpreterMachine implements Machine {
         return results;
     }
 
-    static void eval(MStack stack, Instance instance, ArrayDeque<StackFrame> callStack)
+    static void eval(MStack stack, Instance instance, Deque<StackFrame> callStack)
             throws ChicoryException {
         var frame = callStack.peek();
         boolean shouldReturn = false;
@@ -1606,7 +1607,7 @@ class InterpreterMachine implements Machine {
     }
 
     private static void CALL(
-            MStack stack, Instance instance, ArrayDeque<StackFrame> callStack, long[] operands) {
+            MStack stack, Instance instance, Deque<StackFrame> callStack, long[] operands) {
         var funcId = (int) operands[0];
         var typeId = instance.functionType(funcId);
         var type = instance.type(typeId);
@@ -1822,7 +1823,7 @@ class InterpreterMachine implements Machine {
     }
 
     private static void CALL_INDIRECT(
-            MStack stack, Instance instance, ArrayDeque<StackFrame> callStack, long[] operands) {
+            MStack stack, Instance instance, Deque<StackFrame> callStack, long[] operands) {
         var tableIdx = (int) operands[1];
         var table = instance.table(tableIdx);
 
