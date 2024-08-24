@@ -38,6 +38,7 @@ public abstract class Element {
 
     /**
      * This value is equal to the number of initializers present.
+     *
      * @return the number of elements defined by this section
      */
     public int elementCount() {

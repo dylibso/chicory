@@ -24,6 +24,7 @@ public interface Logger {
 
         /**
          * Returns the name of this level.
+         *
          * @return this level {@linkplain #name()}.
          */
         public final String getName() {
@@ -33,6 +34,7 @@ public interface Logger {
         /**
          * Returns the severity of this level.
          * A higher severity means a more severe condition.
+         *
          * @return this level severity.
          */
         public final int getSeverity() {
