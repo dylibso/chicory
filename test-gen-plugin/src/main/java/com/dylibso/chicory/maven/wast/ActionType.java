@@ -15,7 +15,7 @@ public enum ActionType {
         this.value = value;
     }
 
-    @JsonValue()
+    @JsonValue
     public String value() {
         return value;
     }

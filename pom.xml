@@ -423,6 +423,7 @@
               </module>
               <module name="SuppressWarningsFilter"/>
               <module name="TreeWalker">
+                <module name="AnnotationUseStyle"/>
                 <module name="ArrayTypeStyle"/>
                 <module name="AtclauseOrder"/>
                 <module name="AvoidDoubleBraceInitialization"/>
