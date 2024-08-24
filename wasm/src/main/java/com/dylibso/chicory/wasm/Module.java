@@ -52,7 +52,7 @@ public class Module {
             CodeSection codeSection,
             DataSection dataSection,
             Optional<DataCountSection> dataCountSection,
-            HashMap<String, CustomSection> customSections,
+            Map<String, CustomSection> customSections,
             List<Integer> ignoredSections) {
         this.typeSection = requireNonNull(typeSection);
         this.importSection = requireNonNull(importSection);
@@ -151,7 +151,7 @@ public class Module {
         private CodeSection codeSection = CodeSection.builder().build();
         private DataSection dataSection = DataSection.builder().build();
         private Optional<DataCountSection> dataCountSection = Optional.empty();
-        private final HashMap<String, CustomSection> customSections = new HashMap<>();
+        private final Map<String, CustomSection> customSections = new HashMap<>();
         private final List<Integer> ignoredSections = new ArrayList<>();
         private boolean validate = true;
 

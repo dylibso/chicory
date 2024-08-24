@@ -2,6 +2,7 @@ package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayDeque;
+import java.util.Deque;
 
 /**
  * A temporary class that gives us a little more control over the interface.
@@ -9,7 +10,7 @@ import java.util.ArrayDeque;
  * We should replace with something more idiomatic and performant.
  */
 public class MStack {
-    private final ArrayDeque<Value> stack;
+    private final Deque<Value> stack;
 
     public MStack() {
         this.stack = new ArrayDeque<>();
