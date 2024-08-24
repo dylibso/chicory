@@ -62,7 +62,9 @@ public abstract class RuntimeCli {
         BufferedReader br = new BufferedReader(new InputStreamReader(ps.getInputStream()));
         StringBuilder sb = new StringBuilder();
         String line;
-        while ((line = br.readLine()) != null) sb.append(line + "\n");
+        while ((line = br.readLine()) != null) {
+            sb.append(line + "\n");
+        }
         String result = sb.toString();
         logger.info("Returned output is:\n" + result);
         return result;

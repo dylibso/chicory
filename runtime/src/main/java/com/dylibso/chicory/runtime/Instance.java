@@ -220,7 +220,9 @@ public class Instance {
 
     public ExportFunction export(String name) {
         var export = this.exports.get(name);
-        if (export == null) throw new ChicoryException("Unknown export with name " + name);
+        if (export == null) {
+            throw new ChicoryException("Unknown export with name " + name);
+        }
 
         switch (export.exportType()) {
             case FUNCTION:
