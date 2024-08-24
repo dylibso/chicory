@@ -7,7 +7,9 @@ import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 
-public class SpecV1FuncPtrsHostFuncs {
+public final class SpecV1FuncPtrsHostFuncs {
+
+    private SpecV1FuncPtrsHostFuncs() {}
 
     public static HostImports fallback() {
         return new HostImports(

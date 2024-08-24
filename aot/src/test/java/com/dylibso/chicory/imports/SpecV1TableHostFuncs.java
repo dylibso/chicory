@@ -7,7 +7,10 @@ import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.ValueType;
 
-public class SpecV1TableHostFuncs {
+public final class SpecV1TableHostFuncs {
+
+    private SpecV1TableHostFuncs() {}
+
     public static HostImports fallback() {
         return HostImports.builder()
                 .addTable(

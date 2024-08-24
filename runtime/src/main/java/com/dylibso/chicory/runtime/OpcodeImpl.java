@@ -24,7 +24,9 @@ import com.dylibso.chicory.wasm.types.ValueType;
  * are ordered such that the last value pushed is the last argument to the method, i.e.,
  * method(tos - 2, tos - 1, tos).
  */
-public class OpcodeImpl {
+public final class OpcodeImpl {
+
+    private OpcodeImpl() {}
 
     // ========= I32 =========
 

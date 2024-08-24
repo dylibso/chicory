@@ -6,7 +6,10 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.List;
 
-public class SpecV1TokensHostFuncs {
+public final class SpecV1TokensHostFuncs {
+
+    private SpecV1TokensHostFuncs() {}
+
     public static HostImports fallback() {
         return HostImports.builder()
                 .addFunction(

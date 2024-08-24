@@ -6,7 +6,9 @@ import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Value;
 
-public class SpecV1GlobalHostFuncs {
+public final class SpecV1GlobalHostFuncs {
+
+    private SpecV1GlobalHostFuncs() {}
 
     public static HostImports fallback() {
         return new HostImports(

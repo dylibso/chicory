@@ -11,7 +11,10 @@ import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Value;
 
-public class SpecV1DataHostFuncs {
+public final class SpecV1DataHostFuncs {
+
+    private SpecV1DataHostFuncs() {}
+
     public static HostImports fallback() {
 
         return new HostImports(

@@ -7,7 +7,10 @@ import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 
-public class SpecV1BinaryLeb128HostFuncs {
+public final class SpecV1BinaryLeb128HostFuncs {
+
+    private SpecV1BinaryLeb128HostFuncs() {}
+
     public static HostImports fallback() {
         return HostImports.builder()
                 .addFunction(
