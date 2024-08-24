@@ -276,7 +276,8 @@ public class NameCustomSection extends CustomSection {
         ListEntry<NameEntry> subList;
         if (fi < 0) {
             // insert
-            listList.add(-fi - 1, subList = new ListEntry<>(groupIdx));
+            subList = new ListEntry<>(groupIdx);
+            listList.add(-fi - 1, subList);
         } else {
             subList = listList.get(fi);
         }
