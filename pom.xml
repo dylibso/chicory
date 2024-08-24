@@ -445,6 +445,7 @@
                 <module name="ModifierOrder"/>
                 <module name="MultipleVariableDeclarations"/>
                 <module name="MutableException"/>
+                <module name="NeedBraces"/>
                 <module name="NoClone"/>
                 <module name="NoFinalizer"/>
                 <module name="NonEmptyAtclauseDescription"/>

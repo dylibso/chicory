@@ -69,7 +69,9 @@ public class StackFrame {
         var id = "[" + funcId + "]";
         if (nameSec != null) {
             var funcName = nameSec.nameOfFunction(funcId);
-            if (funcName != null) id = funcName + id;
+            if (funcName != null) {
+                id = funcName + id;
+            }
         }
         return id + "\n\tpc=" + pc + " locals=" + Arrays.toString(locals);
     }
@@ -132,7 +134,9 @@ public class StackFrame {
         var endResults = ctrlFrame.startValues + ctrlFrame.endValues; // unwind stack
         Value[] returns = new Value[endResults];
         for (int i = 0; i < returns.length; i++) {
-            if (stack.size() > 0) returns[i] = stack.pop();
+            if (stack.size() > 0) {
+                returns[i] = stack.pop();
+            }
         }
 
         while (stack.size() > ctrlFrame.height) {

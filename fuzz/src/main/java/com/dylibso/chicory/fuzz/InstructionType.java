@@ -27,7 +27,9 @@ public enum InstructionType {
             new HashMap<>(InstructionType.values().length);
 
     static {
-        for (InstructionType i : InstructionType.values()) byValue.put(i.value(), i);
+        for (InstructionType i : InstructionType.values()) {
+            byValue.put(i.value(), i);
+        }
     }
 
     public String value() {

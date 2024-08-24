@@ -88,8 +88,12 @@ class InterpreterMachine implements Machine {
             return null;
         }
 
-        if (type.returns().isEmpty()) return null;
-        if (stack.size() == 0) return null;
+        if (type.returns().isEmpty()) {
+            return null;
+        }
+        if (stack.size() == 0) {
+            return null;
+        }
 
         var totalResults = type.returns().size();
         var results = new Value[totalResults];
@@ -106,7 +110,9 @@ class InterpreterMachine implements Machine {
 
         loop:
         while (!frame.terminated()) {
-            if (shouldReturn) return;
+            if (shouldReturn) {
+                return;
+            }
             var instruction = frame.loadCurrentInstruction();
             //                LOGGER.log(
             //                        System.Logger.Level.DEBUG,
@@ -1484,9 +1490,10 @@ class InterpreterMachine implements Machine {
     private static void MEMORY_COPY(MStack stack, Instance instance, long[] operands) {
         var memidxSrc = (int) operands[0];
         var memidxDst = (int) operands[1];
-        if (memidxDst != 0 && memidxSrc != 0)
+        if (memidxDst != 0 && memidxSrc != 0) {
             throw new WASMRuntimeException(
                     "We don't support non zero index for memory: " + memidxSrc + " " + memidxDst);
+        }
         var size = stack.pop().asInt();
         var offset = stack.pop().asInt();
         var destination = stack.pop().asInt();
@@ -1507,8 +1514,9 @@ class InterpreterMachine implements Machine {
     private static void MEMORY_INIT(MStack stack, Instance instance, long[] operands) {
         var segmentId = (int) operands[0];
         var memidx = (int) operands[1];
-        if (memidx != 0)
+        if (memidx != 0) {
             throw new WASMRuntimeException("We don't support non zero index for memory: " + memidx);
+        }
         var size = stack.pop().asInt();
         var offset = stack.pop().asInt();
         var destination = stack.pop().asInt();

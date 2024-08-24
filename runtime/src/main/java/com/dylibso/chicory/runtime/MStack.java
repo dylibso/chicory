@@ -17,19 +17,25 @@ public class MStack {
     }
 
     public void push(Value v) {
-        if (v == null) throw new RuntimeException("Can't push null value onto stack");
+        if (v == null) {
+            throw new RuntimeException("Can't push null value onto stack");
+        }
         this.stack.push(v);
     }
 
     public Value pop() {
         var r = this.stack.pollFirst();
-        if (r == null) throw new RuntimeException("Stack underflow exception");
+        if (r == null) {
+            throw new RuntimeException("Stack underflow exception");
+        }
         return r;
     }
 
     public Value peek() {
         var r = this.stack.peek();
-        if (r == null) throw new RuntimeException("Stack underflow exception");
+        if (r == null) {
+            throw new RuntimeException("Stack underflow exception");
+        }
         return r;
     }
 
