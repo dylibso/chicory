@@ -17,7 +17,9 @@ import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 
-public class SpecV1ImportsHostFuncs {
+public final class SpecV1ImportsHostFuncs {
+
+    private SpecV1ImportsHostFuncs() {}
 
     public static HostImports testModule11() {
         return HostImports.builder()

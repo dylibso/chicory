@@ -23,7 +23,7 @@ import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 
-public class SpecV1LinkingHostFuncs {
+public final class SpecV1LinkingHostFuncs {
 
     private static HostFunction MfCall =
             new HostFunction(
@@ -32,6 +32,8 @@ public class SpecV1LinkingHostFuncs {
                     "call",
                     List.of(),
                     List.of(ValueType.I32));
+
+    private SpecV1LinkingHostFuncs() {}
 
     public static HostImports Mf() {
         return new HostImports(new HostFunction[] {MfCall});

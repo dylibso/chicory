@@ -41,5 +41,7 @@ public enum MutabilityType {
     static final class ID {
         static final int Const = 0x00;
         static final int Var = 0x01;
+
+        private ID() {}
     }
 }

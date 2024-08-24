@@ -10,7 +10,9 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 import java.util.List;
 
-public class ConstantEvaluators {
+public final class ConstantEvaluators {
+    private ConstantEvaluators() {}
+
     public static Value computeConstantValue(Instance instance, Instruction[] expr) {
         return computeConstantValue(instance, Arrays.asList(expr));
     }

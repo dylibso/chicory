@@ -434,6 +434,7 @@
                 </module>
                 <module name="EmptyCatchBlock"/>
                 <module name="FallThrough"/>
+                <module name="HideUtilityClassConstructor"/>
                 <module name="InnerAssignment"/>
                 <module name="InvalidJavadocPosition"/>
                 <module name="JavadocBlockTagLocation"/>

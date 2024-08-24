@@ -15,9 +15,11 @@ import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 
-public class SpecV1ElemHostFuncs {
+public final class SpecV1ElemHostFuncs {
 
     private static GlobalInstance glob = new GlobalInstance(Value.i32(123));
+
+    private SpecV1ElemHostFuncs() {}
 
     public static HostImports fallback() {
         return HostImports.builder()

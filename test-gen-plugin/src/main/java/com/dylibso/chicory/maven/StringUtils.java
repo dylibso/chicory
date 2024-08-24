@@ -1,6 +1,8 @@
 package com.dylibso.chicory.maven;
 
-public class StringUtils {
+public final class StringUtils {
+
+    private StringUtils() {}
 
     public static String capitalize(String in) {
         if (in.isEmpty()) {
