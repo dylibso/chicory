@@ -452,6 +452,7 @@
                 <module name="OneStatementPerLine"/>
                 <module name="OneTopLevelClass"/>
                 <module name="PackageDeclaration"/>
+                <module name="RequireEmptyLineBeforeBlockTagGroup"/>
                 <module name="SimplifyBooleanExpression"/>
                 <module name="SimplifyBooleanReturn"/>
                 <module name="SingleLineJavadoc"/>
