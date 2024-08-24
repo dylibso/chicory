@@ -88,7 +88,9 @@
     <picocli.version>4.7.6</picocli.version>
 
     <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
+    <checkstyle.version>10.17.0</checkstyle.version>
     <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
+    <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>3.8.0</maven-dependency-plugin.version>
@@ -241,6 +243,18 @@
           <groupId>com.diffplug.spotless</groupId>
           <artifactId>spotless-maven-plugin</artifactId>
           <version>${spotless-maven-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${maven-checkstyle-plugin.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>${checkstyle.version}</version>
+            </dependency>
+          </dependencies>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -397,6 +411,72 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <configuration>
+          <failOnViolation>true</failOnViolation>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
+          <excludeGeneratedSources>true</excludeGeneratedSources>
+          <checkstyleRules>
+            <module name="Checker">
+              <module name="FileTabCharacter">
+                <property name="fileExtensions" value="java,xml"/>
+              </module>
+              <module name="SuppressWarningsFilter"/>
+              <module name="TreeWalker">
+                <module name="ArrayTypeStyle"/>
+                <module name="AtclauseOrder"/>
+                <module name="AvoidDoubleBraceInitialization"/>
+                <module name="AvoidNoArgumentSuperConstructorCall"/>
+                <module name="ConstructorsDeclarationGrouping"/>
+                <module name="DefaultComesLast"/>
+                <module name="EmptyBlock">
+                  <property name="option" value="text"/>
+                </module>
+                <module name="EmptyCatchBlock"/>
+                <module name="FallThrough"/>
+                <module name="InvalidJavadocPosition"/>
+                <module name="JavadocBlockTagLocation"/>
+                <module name="JavadocContentLocation"/>
+                <module name="JavadocMissingLeadingAsterisk"/>
+                <module name="JavadocMissingWhitespaceAfterAsterisk"/>
+                <module name="ModifiedControlVariable"/>
+                <module name="ModifierOrder"/>
+                <module name="MultipleVariableDeclarations"/>
+                <module name="MutableException"/>
+                <module name="NoClone"/>
+                <module name="NoFinalizer"/>
+                <module name="NonEmptyAtclauseDescription"/>
+                <module name="OneStatementPerLine"/>
+                <module name="OneTopLevelClass"/>
+                <module name="PackageDeclaration"/>
+                <module name="SimplifyBooleanExpression"/>
+                <module name="SimplifyBooleanReturn"/>
+                <module name="SingleLineJavadoc"/>
+                <module name="StringLiteralEquality"/>
+                <module name="SuppressWarningsHolder"/>
+                <module name="TypeName"/>
+                <module name="UnnecessarySemicolonAfterOuterTypeDeclaration"/>
+                <module name="UnnecessarySemicolonAfterTypeMemberDeclaration"/>
+                <module name="UnnecessarySemicolonInEnumeration"/>
+                <module name="UnnecessarySemicolonInTryWithResources"/>
+                <module name="UpperEll"/>
+              </module>
+            </module>
+          </checkstyleRules>
+        </configuration>
+        <executions>
+          <execution>
+            <id>checkstyle</id>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <phase>validate</phase>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
           <release>${maven.compiler.release}</release>
@@ -511,6 +591,7 @@
       </activation>
       <properties>
         <spotless.check.skip>true</spotless.check.skip>
+        <checkstyle.skip>true</checkstyle.skip>
         <skipITs>true</skipITs>
         <skipTests>true</skipTests>
         <!-- Skip test codegen. -->
