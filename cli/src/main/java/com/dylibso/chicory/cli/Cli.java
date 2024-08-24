@@ -30,18 +30,18 @@ public class Cli implements Runnable {
     int[] arguments;
 
     @CommandLine.Option(
-            names = {"--invoke"},
+            names = "--invoke",
             description = "The exported WASM function to be invoked")
     String functionName;
 
     @CommandLine.Option(
-            names = {"--wasi"},
+            names = "--wasi",
             description = "Enable the experimental WASI V1 support",
             defaultValue = "false")
     boolean wasi;
 
     @CommandLine.Option(
-            names = {"--log-level"},
+            names = "--log-level",
             description = "The log level to be used",
             defaultValue = "INFO")
     String logLevel; // this should be an enum
