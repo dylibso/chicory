@@ -13,6 +13,8 @@ import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+import java.nio.BufferOverflowException;
+import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
@@ -188,7 +190,7 @@ public final class Memory {
         try {
             buffer.position(addr);
             buffer.put(data, offset, size);
-        } catch (Exception e) {
+        } catch (IllegalArgumentException | IndexOutOfBoundsException | BufferOverflowException e) {
             throw new UninstantiableException("out of bounds memory access");
         }
     }
@@ -207,7 +209,9 @@ public final class Memory {
             buffer.position(addr);
             buffer.get(bytes);
             return bytes;
-        } catch (Exception e) {
+        } catch (IllegalArgumentException
+                | BufferUnderflowException
+                | NegativeArraySizeException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }

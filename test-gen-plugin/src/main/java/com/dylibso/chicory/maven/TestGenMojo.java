@@ -199,8 +199,8 @@ public class TestGenMojo extends AbstractMojo {
             includedWasts.parallelStream().forEach(testGenerator::generateTests);
 
             dest.saveAll();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new MojoExecutionException(e);
         }
 
         // Add the generated tests to the source root

@@ -7,6 +7,7 @@ import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +52,7 @@ public class TestModule {
                         String oracleResult = null;
                         try {
                             oracleResult = wasmtime.run(targetWasm, export.name(), params);
-                        } catch (Exception e) {
+                        } catch (IOException | RuntimeException e) {
                             // If the oracle failed we can skip ...
                             logger.error("Failed to run the oracle, skip the check on Chicory");
                             continue;
@@ -61,7 +62,7 @@ public class TestModule {
                         String chicoryResult = null;
                         try {
                             chicoryResult = chicoryCli.run(targetWasm, export.name(), params);
-                        } catch (Exception e) {
+                        } catch (IOException | RuntimeException e) {
                             logger.warn("Failed to run chicory, but wasmtime succeeded: " + e);
                         }
                         // To be used for files generation

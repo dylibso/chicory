@@ -439,7 +439,7 @@ public final class Parser {
             ExternalType descType;
             try {
                 descType = ExternalType.byId((int) readVarUInt32(buffer));
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 throw new MalformedException("malformed import kind", e);
             }
             switch (descType) {

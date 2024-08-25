@@ -50,7 +50,7 @@ public class TestModule {
             byte[] parsed;
             try {
                 parsed = Wat2Wasm.parse(file);
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 throw new MalformedException(
                         e.getMessage() + HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT);
             }

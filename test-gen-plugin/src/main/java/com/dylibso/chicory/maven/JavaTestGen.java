@@ -28,6 +28,7 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.utils.SourceRoot;
 import com.github.javaparser.utils.StringEscapeUtils;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -442,7 +443,7 @@ public class JavaTestGen {
                     hostFuncs = "fallback";
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             // ignore
         }
         return hostFuncs;

@@ -28,7 +28,7 @@ public class WasmSmithWrapper {
     WasmSmithWrapper() {}
 
     public File run(String subfolder, String fileName, InstructionTypes instructionTypes)
-            throws Exception {
+            throws IOException {
         return run(subfolder, fileName, instructionTypes, "/smith.default.properties");
     }
 
@@ -37,7 +37,7 @@ public class WasmSmithWrapper {
             String fileName,
             InstructionTypes instructionTypes,
             String smithProperties)
-            throws Exception {
+            throws IOException {
         var targetSubfolder = "target/fuzz/data/" + subfolder;
         var targetFolder = new File(targetSubfolder);
         targetFolder.mkdirs();
@@ -93,6 +93,7 @@ public class WasmSmithWrapper {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new RuntimeException(e);
             } finally {
                 // Renew the seed
