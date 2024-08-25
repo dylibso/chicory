@@ -89,6 +89,7 @@
 
     <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
     <checkstyle.version>10.17.0</checkstyle.version>
+    <error-prone.version>2.30.0</error-prone.version>
     <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
     <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
@@ -497,6 +498,19 @@
           <failOnWarning>true</failOnWarning>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
+          <compilerArgs>
+            <arg>-XDcompilePolicy=simple</arg>
+            <arg>-Xplugin:ErrorProne \
+              -XepDisableAllChecks \
+              -XepExcludedPaths:.*/target/generated-(|test-)sources/.*</arg>
+          </compilerArgs>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>com.google.errorprone</groupId>
+              <artifactId>error_prone_core</artifactId>
+              <version>${error-prone.version}</version>
+            </path>
+          </annotationProcessorPaths>
         </configuration>
       </plugin>
 
@@ -618,6 +632,16 @@
       </properties>
       <build>
         <defaultGoal>clean install</defaultGoal>
+        <plugins>
+          <!-- disable Error Prone -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <configuration>
+              <compilerArgs combine.self="override"/>
+            </configuration>
+          </plugin>
+        </plugins>
       </build>
     </profile>
 
