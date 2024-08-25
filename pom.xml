@@ -437,6 +437,9 @@
                 <module name="ExplicitInitialization"/>
                 <module name="FallThrough"/>
                 <module name="HideUtilityClassConstructor"/>
+                <module name="IllegalCatch">
+                  <property name="illegalClassNames" value="Exception"/>
+                </module>
                 <module name="InnerAssignment"/>
                 <module name="InvalidJavadocPosition"/>
                 <module name="JavadocBlockTagLocation"/>

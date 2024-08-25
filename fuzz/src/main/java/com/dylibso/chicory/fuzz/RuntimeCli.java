@@ -24,7 +24,7 @@ public abstract class RuntimeCli {
         this.cmdName = cmdName;
     }
 
-    public String run(File file, String functionName, List<String> params) throws Exception {
+    public String run(File file, String functionName, List<String> params) throws IOException {
         var command = new ArrayList<String>();
         command.addAll(List.of(binaryName, file.getAbsolutePath(), "--invoke", functionName));
         command.addAll(params);
@@ -48,6 +48,7 @@ public abstract class RuntimeCli {
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
 
