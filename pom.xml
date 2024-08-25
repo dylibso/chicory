@@ -434,6 +434,7 @@
                   <property name="option" value="text"/>
                 </module>
                 <module name="EmptyCatchBlock"/>
+                <module name="ExplicitInitialization"/>
                 <module name="FallThrough"/>
                 <module name="HideUtilityClassConstructor"/>
                 <module name="InnerAssignment"/>
