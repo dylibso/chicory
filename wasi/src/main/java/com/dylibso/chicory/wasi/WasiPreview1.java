@@ -232,7 +232,7 @@ public class WasiPreview1 implements Closeable {
                 (Instance instance, Value... args) -> {
                     logger.info("clock_time_get: " + Arrays.toString(args));
                     int clockId = args[0].asInt();
-                    long precision = args[1].asLong();
+                    // long precision = args[1].asLong();
                     int resultPtr = args[2].asInt();
 
                     Memory memory = instance.memory();
@@ -1088,8 +1088,8 @@ public class WasiPreview1 implements Closeable {
                     int pathPtr = args[2].asInt();
                     int pathLen = args[3].asInt();
                     int openFlags = args[4].asInt();
-                    long rightsBase = args[5].asLong();
-                    long rightsInheriting = args[6].asLong();
+                    // long rightsBase = args[5].asLong();
+                    // long rightsInheriting = args[6].asLong();
                     int fdFlags = args[7].asInt();
                     int fdPtr = args[8].asInt();
 
@@ -1182,15 +1182,15 @@ public class WasiPreview1 implements Closeable {
         return new HostFunction(
                 (Instance instance, Value... args) -> {
                     logger.info("path_readlink: " + Arrays.toString(args));
-                    int dirFd = args[0].asInt();
-                    int pathPtr = args[1].asInt();
-                    int pathLen = args[2].asInt();
-                    int buf = args[3].asInt();
-                    int bufLen = args[4].asInt();
-                    int bufUsed = args[5].asInt();
+                    // int dirFd = args[0].asInt();
+                    // int pathPtr = args[1].asInt();
+                    // int pathLen = args[2].asInt();
+                    // int buf = args[3].asInt();
+                    // int bufLen = args[4].asInt();
+                    // int bufUsed = args[5].asInt();
 
-                    Memory memory = instance.memory();
-                    String rawPath = memory.readString(pathPtr, pathLen);
+                    // Memory memory = instance.memory();
+                    // String rawPath = memory.readString(pathPtr, pathLen);
 
                     return wasiResult(WasiErrno.EINVAL);
                 },
