@@ -95,7 +95,7 @@ public class OpCodeGenMojo extends AbstractMojo {
             var originalName = line[0].split(" ")[0];
             var enumName = originalName.toUpperCase(Locale.ROOT).replace('.', '_');
             var value = line[1].trim().split(" ")[0];
-            var hexValue = line[1].trim().split(" ")[0].replace("$", "0x");
+            var hexValue = value.replace("$", "0x");
 
             enumConstantDecl.setName(enumName);
             enumConstantDecl.setArguments(new NodeList<>(new IntegerLiteralExpr(hexValue)));
@@ -131,14 +131,13 @@ public class OpCodeGenMojo extends AbstractMojo {
                                         AssignExpr.Operator.ASSIGN)));
         opcodeField.createGetter().setName("opcode");
 
-        var byOpCodeMap =
-                enumDef.addFieldWithInitializer(
-                        "Map<Integer, OpCode>",
-                        "byOpCode",
-                        new NameExpr("new HashMap<>()"),
-                        Modifier.Keyword.PRIVATE,
-                        Modifier.Keyword.STATIC,
-                        Modifier.Keyword.FINAL);
+        enumDef.addFieldWithInitializer(
+                "Map<Integer, OpCode>",
+                "byOpCode",
+                new NameExpr("new HashMap<>()"),
+                Modifier.Keyword.PRIVATE,
+                Modifier.Keyword.STATIC,
+                Modifier.Keyword.FINAL);
 
         var byOpCode =
                 enumDef.addMethod("byOpCode", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
@@ -147,14 +146,13 @@ public class OpCodeGenMojo extends AbstractMojo {
         byOpCode.setBody(
                 new BlockStmt().addStatement(new ReturnStmt(new NameExpr("byOpCode.get(opcode)"))));
 
-        var signature =
-                enumDef.addFieldWithInitializer(
-                        "Map<OpCode, WasmEncoding[]>",
-                        "signature",
-                        new NameExpr("new HashMap<>()"),
-                        Modifier.Keyword.PRIVATE,
-                        Modifier.Keyword.STATIC,
-                        Modifier.Keyword.FINAL);
+        enumDef.addFieldWithInitializer(
+                "Map<OpCode, WasmEncoding[]>",
+                "signature",
+                new NameExpr("new HashMap<>()"),
+                Modifier.Keyword.PRIVATE,
+                Modifier.Keyword.STATIC,
+                Modifier.Keyword.FINAL);
 
         var getSignature =
                 enumDef.addMethod("getSignature", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
