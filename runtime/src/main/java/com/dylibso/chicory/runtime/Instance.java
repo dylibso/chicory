@@ -359,9 +359,9 @@ public class Instance {
 
         private boolean initialize = true;
         private boolean start = true;
-        private ExecutionListener listener = null;
-        private HostImports hostImports = null;
-        private Function<Instance, Machine> machineFactory = null;
+        private ExecutionListener listener;
+        private HostImports hostImports;
+        private Function<Instance, Machine> machineFactory;
 
         private Builder(Module module) {
             this.module = Objects.requireNonNull(module);
