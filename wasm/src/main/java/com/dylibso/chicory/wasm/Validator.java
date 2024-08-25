@@ -181,6 +181,10 @@ final class Validator {
         pushVals(in);
     }
 
+    private void pushCtrl(CtrlFrame frame) {
+        ctrlFrameStack.add(frame);
+    }
+
     private CtrlFrame popCtrl() {
         if (ctrlFrameStack.isEmpty()) {
             errors.add(new InvalidException("type mismatch, control frame stack empty"));
@@ -194,10 +198,6 @@ final class Validator {
         }
         ctrlFrameStack.remove(ctrlFrameStack.size() - 1);
         return frame;
-    }
-
-    private void pushCtrl(CtrlFrame frame) {
-        ctrlFrameStack.add(frame);
     }
 
     private CtrlFrame peekCtrl() {
