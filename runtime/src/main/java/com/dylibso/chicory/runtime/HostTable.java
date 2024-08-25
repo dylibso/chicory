@@ -32,10 +32,12 @@ public class HostTable implements FromHost {
         this.table.reset();
     }
 
+    @Override
     public String moduleName() {
         return moduleName;
     }
 
+    @Override
     public String fieldName() {
         return fieldName;
     }

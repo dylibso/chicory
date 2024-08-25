@@ -27,10 +27,12 @@ public class HostFunction implements FromHost {
         return handle;
     }
 
+    @Override
     public String moduleName() {
         return moduleName;
     }
 
+    @Override
     public String fieldName() {
         return fieldName;
     }

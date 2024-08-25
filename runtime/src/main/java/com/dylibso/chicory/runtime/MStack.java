@@ -43,6 +43,7 @@ public class MStack {
         return this.stack.size();
     }
 
+    @Override
     public String toString() {
         return this.stack.toString();
     }

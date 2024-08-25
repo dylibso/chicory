@@ -28,10 +28,12 @@ public class HostGlobal implements FromHost {
         return type;
     }
 
+    @Override
     public String moduleName() {
         return moduleName;
     }
 
+    @Override
     public String fieldName() {
         return fieldName;
     }

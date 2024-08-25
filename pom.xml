@@ -502,6 +502,7 @@
             <arg>-XDcompilePolicy=simple</arg>
             <arg>-Xplugin:ErrorProne \
               -XepDisableAllChecks \
+              -Xep:MissingOverride:ERROR \
               -XepExcludedPaths:.*/target/generated-(|test-)sources/.*</arg>
           </compilerArgs>
           <annotationProcessorPaths>

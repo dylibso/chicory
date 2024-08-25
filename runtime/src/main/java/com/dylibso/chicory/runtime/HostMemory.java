@@ -11,10 +11,12 @@ public class HostMemory implements FromHost {
         this.memory = memory;
     }
 
+    @Override
     public String moduleName() {
         return moduleName;
     }
 
+    @Override
     public String fieldName() {
         return fieldName;
     }
