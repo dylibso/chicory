@@ -1,5 +1,7 @@
 package com.dylibso.chicory.maven;
 
+import static org.apache.maven.plugins.annotations.LifecyclePhase.GENERATE_SOURCES;
+
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
@@ -24,7 +26,6 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugin.logging.SystemStreamLog;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -32,7 +33,7 @@ import org.apache.maven.project.MavenProject;
 /**
  * This plugin should generate the OpCodes.java file from a tsv
  */
-@Mojo(name = "opcode-gen", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
+@Mojo(name = "opcode-gen", defaultPhase = GENERATE_SOURCES, threadSafe = true)
 public class OpCodeGenMojo extends AbstractMojo {
 
     private final Log log = new SystemStreamLog();
