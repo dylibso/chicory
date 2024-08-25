@@ -34,7 +34,7 @@ public final class CodeSection extends Section {
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private final List<FunctionBody> functionBodies = new ArrayList<>();
         private boolean requiresDataCount;
 

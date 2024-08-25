@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class TableSection extends Section {
+public final class TableSection extends Section {
     private final List<Table> tables;
 
     private TableSection(List<Table> tables) {
@@ -24,7 +24,7 @@ public class TableSection extends Section {
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private final List<Table> tables = new ArrayList<>();
 
         private Builder() {}

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class MemorySection extends Section {
+public final class MemorySection extends Section {
     private final List<Memory> memories;
 
     private MemorySection(List<Memory> memories) {
@@ -24,7 +24,7 @@ public class MemorySection extends Section {
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private final List<Memory> memories = new ArrayList<>();
 
         private Builder() {}

@@ -24,7 +24,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Wast2Json {
+public final class Wast2Json {
     private static final Logger logger =
             new SystemLogger() {
                 @Override
@@ -129,7 +129,7 @@ public class Wast2Json {
     // minimal size
     //  --debug-names                            Write debug names to the generated binary file
     //  --no-check                               Don't check for invalid modules
-    public static class Builder {
+    public static final class Builder {
         private File input;
         private File output;
 

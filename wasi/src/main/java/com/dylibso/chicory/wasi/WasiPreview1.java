@@ -55,7 +55,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Stream;
 
-public class WasiPreview1 implements Closeable {
+public final class WasiPreview1 implements Closeable {
     private final Logger logger;
     private final List<byte[]> arguments;
     private final List<Entry<byte[], byte[]>> environment;
@@ -95,7 +95,7 @@ public class WasiPreview1 implements Closeable {
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private Logger logger;
         private WasiOptions opts;
 

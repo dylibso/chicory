@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class Module {
+public final class Module {
     private final Map<String, CustomSection> customSections;
 
     private final TypeSection typeSection;
@@ -39,7 +39,7 @@ public class Module {
     private final Optional<DataCountSection> dataCountSection;
     private final List<Integer> ignoredSections;
 
-    Module(
+    private Module(
             TypeSection typeSection,
             ImportSection importSection,
             FunctionSection functionSection,
@@ -138,7 +138,7 @@ public class Module {
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private TypeSection typeSection = TypeSection.builder().build();
         private ImportSection importSection = ImportSection.builder().build();
         private FunctionSection functionSection = FunctionSection.builder().build();

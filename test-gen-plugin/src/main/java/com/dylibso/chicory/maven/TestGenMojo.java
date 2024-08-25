@@ -223,7 +223,7 @@ public class TestGenMojo extends AbstractMojo {
         }
     }
 
-    private class TestGenerator {
+    private final class TestGenerator {
 
         private final JavaTestGen testGen;
         private final SourceRoot importSourceRoot;

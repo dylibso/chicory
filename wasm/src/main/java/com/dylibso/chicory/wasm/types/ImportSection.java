@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-public class ImportSection extends Section {
+public final class ImportSection extends Section {
     private final List<Import> imports;
 
     private ImportSection(List<Import> imports) {
@@ -33,7 +33,7 @@ public class ImportSection extends Section {
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private final List<Import> imports = new ArrayList<>();
 
         private Builder() {}

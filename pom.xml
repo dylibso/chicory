@@ -436,6 +436,7 @@
                 <module name="EmptyCatchBlock"/>
                 <module name="ExplicitInitialization"/>
                 <module name="FallThrough"/>
+                <module name="FinalClass"/>
                 <module name="HideUtilityClassConstructor"/>
                 <module name="IllegalCatch">
                   <property name="illegalClassNames" value="Exception"/>

@@ -3,7 +3,7 @@ package com.dylibso.chicory.wasm.types;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FunctionSection extends Section {
+public final class FunctionSection extends Section {
     private final List<Integer> typeIndices;
 
     private FunctionSection(List<Integer> typeIndices) {
@@ -27,7 +27,7 @@ public class FunctionSection extends Section {
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private final List<Integer> typeIndices = new ArrayList<>();
 
         private Builder() {}

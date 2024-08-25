@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class TypeSection extends Section {
+public final class TypeSection extends Section {
     private final List<FunctionType> types;
 
     private TypeSection(List<FunctionType> types) {
@@ -28,7 +28,7 @@ public class TypeSection extends Section {
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private final List<FunctionType> types = new ArrayList<>();
 
         private Builder() {}
