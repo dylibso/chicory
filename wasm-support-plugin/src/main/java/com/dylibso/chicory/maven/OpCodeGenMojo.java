@@ -1,3 +1,5 @@
+package com.dylibso.chicory.maven;
+
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
