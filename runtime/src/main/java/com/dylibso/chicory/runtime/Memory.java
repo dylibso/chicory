@@ -182,6 +182,10 @@ public final class Memory {
         return readCString(addr, StandardCharsets.UTF_8);
     }
 
+    public void write(int addr, Value data) {
+        write(addr, data.data());
+    }
+
     public void write(int addr, byte[] data) {
         write(addr, data, 0, data.length);
     }
@@ -214,10 +218,6 @@ public final class Memory {
                 | NegativeArraySizeException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
-    }
-
-    public void write(int addr, Value data) {
-        write(addr, data.data());
     }
 
     public void writeI32(int addr, int data) {

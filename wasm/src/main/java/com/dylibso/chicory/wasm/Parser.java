@@ -197,43 +197,6 @@ public final class Parser {
         return moduleBuilder.build();
     }
 
-    private static int readInt(ByteBuffer buffer) {
-        if (buffer.remaining() < 4) {
-            throw new MalformedException("length out of bounds");
-        }
-        return buffer.getInt();
-    }
-
-    private static byte readByte(ByteBuffer buffer) {
-        if (!buffer.hasRemaining()) {
-            throw new MalformedException("length out of bounds");
-        }
-        return buffer.get();
-    }
-
-    private static void readBytes(ByteBuffer buffer, byte[] dest) {
-        if (buffer.remaining() < dest.length) {
-            throw new MalformedException("length out of bounds");
-        }
-        buffer.get(dest);
-    }
-
-    // https://webassembly.github.io/spec/core/binary/modules.html#binary-module
-    private static class SectionsValidator {
-        private boolean hasStart;
-
-        SectionsValidator() {}
-
-        public void validateSectionType(byte sectionId) {
-            if (sectionId == SectionId.START) {
-                if (hasStart) {
-                    throw new MalformedException("unexpected content after last section");
-                }
-                hasStart = true;
-            }
-        }
-    }
-
     public void parse(InputStream in, ParserListener listener) {
 
         requireNonNull(listener, "listener");
@@ -354,6 +317,22 @@ public final class Parser {
                 }
             } else {
                 buffer.position((int) (buffer.position() + sectionSize));
+            }
+        }
+    }
+
+    // https://webassembly.github.io/spec/core/binary/modules.html#binary-module
+    private static class SectionsValidator {
+        private boolean hasStart;
+
+        SectionsValidator() {}
+
+        public void validateSectionType(byte sectionId) {
+            if (sectionId == SectionId.START) {
+                if (hasStart) {
+                    throw new MalformedException("unexpected content after last section");
+                }
+                hasStart = true;
             }
         }
     }
@@ -1033,6 +1012,27 @@ public final class Parser {
             expr.add(i);
         }
         return expr.toArray(new Instruction[0]);
+    }
+
+    private static int readInt(ByteBuffer buffer) {
+        if (buffer.remaining() < 4) {
+            throw new MalformedException("length out of bounds");
+        }
+        return buffer.getInt();
+    }
+
+    private static byte readByte(ByteBuffer buffer) {
+        if (!buffer.hasRemaining()) {
+            throw new MalformedException("length out of bounds");
+        }
+        return buffer.get();
+    }
+
+    private static void readBytes(ByteBuffer buffer, byte[] dest) {
+        if (buffer.remaining() < dest.length) {
+            throw new MalformedException("length out of bounds");
+        }
+        buffer.get(dest);
     }
 
     // https://webassembly.github.io/spec/core/syntax/values.html#integers

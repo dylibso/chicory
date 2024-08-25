@@ -174,15 +174,6 @@ final class AotEmitters {
         updateStackSize(ctx, functionType);
     }
 
-    private static void updateStackSize(AotContext ctx, FunctionType functionType) {
-        for (int i = 0; i < functionType.params().size(); i++) {
-            ctx.popStackSize();
-        }
-        for (ValueType type : functionType.returns()) {
-            ctx.pushStackSize(stackSize(jvmType(type)));
-        }
-    }
-
     public static void REF_FUNC(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitLdcInsn((int) ins.operands()[0]);
     }
@@ -646,6 +637,15 @@ final class AotEmitters {
                         + staticHelpers.getName()
                         + " does not provide an implementation of opcode "
                         + opcode.name());
+    }
+
+    private static void updateStackSize(AotContext ctx, FunctionType functionType) {
+        for (int i = 0; i < functionType.params().size(); i++) {
+            ctx.popStackSize();
+        }
+        for (ValueType type : functionType.returns()) {
+            ctx.pushStackSize(stackSize(jvmType(type)));
+        }
     }
 
     private static void updateStackSize(AotContext ctx, OpCode opCode) {

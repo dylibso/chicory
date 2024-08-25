@@ -79,6 +79,10 @@ public final class FunctionType {
         return accepting.get(valueType);
     }
 
+    public boolean typesMatch(FunctionType other) {
+        return paramsMatch(other) && returnsMatch(other);
+    }
+
     public static FunctionType of(List<ValueType> params, List<ValueType> returns) {
         if (params.isEmpty()) {
             if (returns.isEmpty()) {
@@ -93,10 +97,6 @@ public final class FunctionType {
             }
         }
         return new FunctionType(List.copyOf(params), List.copyOf(returns));
-    }
-
-    public boolean typesMatch(FunctionType other) {
-        return paramsMatch(other) && returnsMatch(other);
     }
 
     public static FunctionType of(ValueType[] params, ValueType[] returns) {

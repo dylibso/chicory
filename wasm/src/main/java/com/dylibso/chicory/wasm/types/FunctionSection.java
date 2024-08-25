@@ -15,12 +15,12 @@ public final class FunctionSection extends Section {
         return typeIndices.get(idx);
     }
 
-    public int functionCount() {
-        return typeIndices.size();
-    }
-
     public FunctionType getFunctionType(int idx, TypeSection typeSection) {
         return typeSection.getType(getFunctionType(idx));
+    }
+
+    public int functionCount() {
+        return typeIndices.size();
     }
 
     public static Builder builder() {

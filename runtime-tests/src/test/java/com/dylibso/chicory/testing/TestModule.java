@@ -15,10 +15,6 @@ public class TestModule {
 
     private HostImports imports;
 
-    public static TestModule of(Module module) {
-        return new TestModule(module);
-    }
-
     private static final String HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT =
             "Matching keywords to get the WebAssembly testsuite to pass: "
                     + "malformed UTF-8 encoding "
@@ -56,6 +52,10 @@ public class TestModule {
             return of(Parser.parse(parsed));
         }
         return of(Parser.parse(file));
+    }
+
+    public static TestModule of(Module module) {
+        return new TestModule(module);
     }
 
     public TestModule(Module module) {
