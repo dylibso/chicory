@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class AnnotatedInstruction extends Instruction {
+public final class AnnotatedInstruction extends Instruction {
     public static final int UNDEFINED_LABEL = -1;
 
     // metadata fields
@@ -74,7 +74,7 @@ public class AnnotatedInstruction extends Instruction {
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private Instruction base;
         private int depth;
         private Optional<Integer> labelTrue = Optional.empty();

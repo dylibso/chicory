@@ -10,7 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class WasiOptions {
+public final class WasiOptions {
     private final OutputStream stdout;
     private final OutputStream stderr;
     private final InputStream stdin;
@@ -22,7 +22,7 @@ public class WasiOptions {
         return new Builder();
     }
 
-    public WasiOptions(
+    private WasiOptions(
             OutputStream stdout,
             OutputStream stderr,
             InputStream stdin,
@@ -61,7 +61,7 @@ public class WasiOptions {
         return directories;
     }
 
-    public static class Builder {
+    public static final class Builder {
         private OutputStream stdout = OutputStream.nullOutputStream();
         private OutputStream stderr = OutputStream.nullOutputStream();
         private InputStream stdin = InputStream.nullInputStream();

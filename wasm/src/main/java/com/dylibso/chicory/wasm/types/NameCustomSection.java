@@ -12,7 +12,7 @@ import java.util.function.ToIntFunction;
 /**
  * The "name" custom section.
  */
-public class NameCustomSection extends CustomSection {
+public final class NameCustomSection extends CustomSection {
 
     private final Optional<String> moduleName;
     private final List<NameEntry> funcNames;

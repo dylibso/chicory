@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class GlobalSection extends Section {
+public final class GlobalSection extends Section {
     private final List<Global> globals;
 
     private GlobalSection(List<Global> globals) {
@@ -28,7 +28,7 @@ public class GlobalSection extends Section {
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private final List<Global> globals = new ArrayList<>();
 
         private Builder() {}

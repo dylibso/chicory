@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class ExportSection extends Section {
+public final class ExportSection extends Section {
     private final List<Export> exports;
 
     private ExportSection(List<Export> exports) {
@@ -24,7 +24,7 @@ public class ExportSection extends Section {
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private final List<Export> exports = new ArrayList<>();
 
         private Builder() {}

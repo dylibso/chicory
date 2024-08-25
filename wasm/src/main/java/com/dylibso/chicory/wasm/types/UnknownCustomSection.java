@@ -27,7 +27,7 @@ public final class UnknownCustomSection extends CustomSection {
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private String name;
         private byte[] bytes;
 

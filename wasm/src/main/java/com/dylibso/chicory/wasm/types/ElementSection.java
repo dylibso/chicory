@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-public class ElementSection extends Section {
+public final class ElementSection extends Section {
     private final List<Element> elements;
 
     private ElementSection(List<Element> elements) {
@@ -33,7 +33,7 @@ public class ElementSection extends Section {
         return new Builder();
     }
 
-    public static class Builder {
+    public static final class Builder {
         private final List<Element> elements = new ArrayList<>();
 
         /**
