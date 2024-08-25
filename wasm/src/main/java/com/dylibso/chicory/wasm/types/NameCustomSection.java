@@ -142,9 +142,9 @@ public class NameCustomSection extends CustomSection {
 
     /**
      * @return the number of function names in this section
-     * This value does not have any relationship to the function index of any particular entry;
-     * it merely reflects the number of function names in this section.
-     * Used for testing.
+     *         This value does not have any relationship to the function index of any particular entry;
+     *         it merely reflects the number of function names in this section.
+     *         Used for testing.
      */
     public int functionNameCount() {
         return funcNames.size();

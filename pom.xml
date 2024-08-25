@@ -441,6 +441,7 @@
                 <module name="JavadocContentLocation"/>
                 <module name="JavadocMissingLeadingAsterisk"/>
                 <module name="JavadocMissingWhitespaceAfterAsterisk"/>
+                <module name="JavadocTagContinuationIndentation"/>
                 <module name="ModifiedControlVariable"/>
                 <module name="ModifierOrder"/>
                 <module name="MultipleVariableDeclarations"/>
