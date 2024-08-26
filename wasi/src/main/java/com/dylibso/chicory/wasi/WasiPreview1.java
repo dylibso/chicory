@@ -419,7 +419,7 @@ public final class WasiPreview1 implements Closeable {
 
                     Memory memory = instance.memory();
                     memory.write(buf, new byte[8]);
-                    memory.writeByte(buf, (byte) fileType.ordinal());
+                    memory.writeByte(buf, (byte) fileType.value());
                     memory.writeShort(buf + 2, (short) flags);
                     memory.writeLong(buf + 8, rightsBase);
                     memory.writeLong(buf + 16, rightsInheriting);
@@ -758,7 +758,7 @@ public final class WasiPreview1 implements Closeable {
                             entry.putLong(0, cookie);
                             entry.putLong(8, ((Number) attributes.get("ino")).longValue());
                             entry.putInt(16, name.length);
-                            entry.put(20, (byte) getFileType(attributes).ordinal());
+                            entry.put(20, (byte) getFileType(attributes).value());
                             entry.position(24);
                             entry.put(name);
 
@@ -1610,7 +1610,7 @@ public final class WasiPreview1 implements Closeable {
         if (errno != WasiErrno.ESUCCESS) {
             logger.info("result = " + errno.name());
         }
-        return new Value[] {Value.i32(errno.ordinal())};
+        return new Value[] {Value.i32(errno.value())};
     }
 
     private static Path resolvePath(Path directory, String rawPathString) {
@@ -1638,7 +1638,7 @@ public final class WasiPreview1 implements Closeable {
         memory.writeLong(buf, (long) attributes.get("dev"));
         memory.writeLong(buf + 8, ((Number) attributes.get("ino")).longValue());
         memory.write(buf + 16, new byte[8]);
-        memory.writeByte(buf + 16, (byte) fileType.ordinal());
+        memory.writeByte(buf + 16, (byte) fileType.value());
         memory.writeLong(buf + 24, ((Number) attributes.get("nlink")).longValue());
         memory.writeLong(buf + 32, (long) attributes.get("size"));
         memory.writeLong(buf + 40, fileTimeToNanos(attributes, "lastAccessTime"));

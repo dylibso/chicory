@@ -1,5 +1,7 @@
 package com.dylibso.chicory.fuzz;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import java.io.BufferedReader;
@@ -7,7 +9,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +34,7 @@ public abstract class RuntimeCli {
         // TODO: centralize the management of folders/files it's too scattered
         try (var outputStream =
                 new FileOutputStream(file.getParentFile() + "/" + cmdName + "-command.txt")) {
-            outputStream.write(String.join(" ", command).getBytes(StandardCharsets.UTF_8));
+            outputStream.write(String.join(" ", command).getBytes(UTF_8));
             outputStream.flush();
         }
 
@@ -55,12 +56,12 @@ public abstract class RuntimeCli {
         // check
         if (ps.exitValue() != 0) {
             System.err.println(cmdName + " exiting with:" + ps.exitValue());
-            System.err.println(new String(ps.getErrorStream().readAllBytes()));
+            System.err.println(new String(ps.getErrorStream().readAllBytes(), UTF_8));
             throw new RuntimeException("Failed to execute " + cmdName + " program.");
         }
 
         // get output
-        BufferedReader br = new BufferedReader(new InputStreamReader(ps.getInputStream()));
+        BufferedReader br = new BufferedReader(new InputStreamReader(ps.getInputStream(), UTF_8));
         StringBuilder sb = new StringBuilder();
         String line;
         while ((line = br.readLine()) != null) {

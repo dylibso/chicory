@@ -12,7 +12,7 @@ final class ValueWrapper {
         try {
             HANDLE = lookup().unreflect(ValueWrapper.class.getMethod("wrap", Value.class));
         } catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new AssertionError(e);
+            throw new LinkageError(e.getMessage(), e);
         }
     }
 

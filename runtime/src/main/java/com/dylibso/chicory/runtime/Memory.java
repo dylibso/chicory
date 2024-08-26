@@ -372,6 +372,7 @@ public final class Memory {
         fill(value, 0, buffer.capacity());
     }
 
+    @SuppressWarnings("ByteBufferBackingArray")
     public void fill(byte value, int fromIndex, int toIndex) {
         try {
             // see https://appsintheopen.com/posts/53-resetting-bytebuffers-to-zero-in-java

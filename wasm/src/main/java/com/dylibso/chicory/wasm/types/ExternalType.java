@@ -20,8 +20,10 @@ public enum ExternalType {
 
     private final int id;
 
+    @SuppressWarnings("EnumOrdinal")
     ExternalType(int id) {
         this.id = id;
+        assert ordinal() == id;
     }
 
     /**
@@ -32,11 +34,6 @@ public enum ExternalType {
     }
 
     private static final List<ExternalType> values = List.of(values());
-
-    static {
-        // integrity verification
-        assert values.stream().allMatch(e -> e.ordinal() == e.id());
-    }
 
     public static ExternalType byId(int id) {
         return values.get(id);

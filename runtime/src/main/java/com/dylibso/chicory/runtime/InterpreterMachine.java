@@ -182,7 +182,7 @@ class InterpreterMachine implements Machine {
                     SELECT(stack);
                     break;
                 case SELECT_T:
-                    SELECT_T(stack, operands);
+                    SELECT_T(stack);
                     break;
                 case LOCAL_GET:
                     stack.push(frame.local((int) operands[0]));
@@ -1819,7 +1819,7 @@ class InterpreterMachine implements Machine {
         }
     }
 
-    private static void SELECT_T(MStack stack, long[] operands) {
+    private static void SELECT_T(MStack stack) {
         var pred = stack.pop().asInt();
         var b = stack.pop();
         var a = stack.pop();

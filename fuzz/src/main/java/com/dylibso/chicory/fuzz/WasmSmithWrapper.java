@@ -1,11 +1,12 @@
 package com.dylibso.chicory.fuzz;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -32,6 +33,7 @@ public class WasmSmithWrapper {
         return run(subfolder, fileName, instructionTypes, "/smith.default.properties");
     }
 
+    @SuppressWarnings("StringSplitter")
     public File run(
             String subfolder,
             String fileName,
@@ -48,9 +50,7 @@ public class WasmSmithWrapper {
         // --ensure-termination true -> breaks the execution
         var defaultProperties = new ArrayList<String>();
         var propsFile =
-                new String(
-                        getClass().getResourceAsStream(smithProperties).readAllBytes(),
-                        StandardCharsets.UTF_8);
+                new String(getClass().getResourceAsStream(smithProperties).readAllBytes(), UTF_8);
         var props = propsFile.split("\n");
         for (var prop : props) {
             if (!prop.isEmpty()) {
@@ -81,7 +81,7 @@ public class WasmSmithWrapper {
 
             // write the seed file
             try (var outputStream = new FileOutputStream(seedFile)) {
-                outputStream.write((seed).getBytes(StandardCharsets.UTF_8));
+                outputStream.write((seed).getBytes(UTF_8));
                 outputStream.flush();
             }
 
@@ -103,7 +103,7 @@ public class WasmSmithWrapper {
 
             if (ps.exitValue() != 0) {
                 logger.error("wasm-smith exiting with:" + ps.exitValue());
-                logger.error(new String(ps.getErrorStream().readAllBytes()));
+                logger.error(new String(ps.getErrorStream().readAllBytes(), UTF_8));
                 retry--;
             } else {
                 break;

@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wabt;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -18,7 +19,7 @@ public class Wat2WasmTest {
         var result = Wat2Wasm.parse(new File("../wasm-corpus/src/main/resources/wat/iterfact.wat"));
 
         assertTrue(result.length > 0);
-        assertTrue(new String(result).contains("iterFact"));
+        assertTrue(new String(result, UTF_8).contains("iterFact"));
     }
 
     @Test

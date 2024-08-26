@@ -1,5 +1,6 @@
 package com.dylibso.chicory.runtime;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -173,7 +174,7 @@ public class ModuleTest {
         var countVowels = instance.export("count_vowels");
         var memory = instance.memory();
         var message = "Hello, World!";
-        var len = message.getBytes().length;
+        var len = message.getBytes(UTF_8).length;
         var ptr = alloc.apply(Value.i32(len))[0].asInt();
         memory.writeString(ptr, message);
         var result = countVowels.apply(Value.i32(ptr), Value.i32(len));

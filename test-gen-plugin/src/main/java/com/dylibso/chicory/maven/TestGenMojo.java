@@ -136,7 +136,6 @@ public class TestGenMojo extends AbstractMojo {
         var testSuiteDownloader = new TestSuiteDownloader(log);
         var testGen =
                 new JavaTestGen(
-                        log,
                         project.getBasedir(),
                         sourceDestinationFolder,
                         excludedTests,

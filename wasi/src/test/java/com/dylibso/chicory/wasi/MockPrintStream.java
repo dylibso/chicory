@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasi;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
@@ -17,6 +19,6 @@ class MockPrintStream extends PrintStream {
     }
 
     public String output() {
-        return baos.toString();
+        return baos.toString(UTF_8);
     }
 }
