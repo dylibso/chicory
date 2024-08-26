@@ -1,5 +1,7 @@
 package com.dylibso.chicory.approvals;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.HostImports;
@@ -94,7 +96,7 @@ public class ApprovalTest {
 
         ClassReader cr = new ClassReader(compiled);
         var out = new ByteArrayOutputStream();
-        cr.accept(new TraceClassVisitor(new PrintWriter(out)), 0);
+        cr.accept(new TraceClassVisitor(new PrintWriter(out, false, UTF_8)), 0);
 
         Approvals.verify(out);
     }

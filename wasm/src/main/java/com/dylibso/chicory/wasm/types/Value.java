@@ -238,7 +238,7 @@ public class Value {
             return false;
         }
         Value other = (Value) v;
-        return Objects.equals(type.id(), other.type.id()) && data == other.data;
+        return type.id() == other.type.id() && data == other.data;
     }
 
     @Override

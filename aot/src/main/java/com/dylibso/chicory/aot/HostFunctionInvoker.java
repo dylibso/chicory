@@ -17,7 +17,7 @@ final class HostFunctionInvoker {
                                     HostFunctionInvoker.class.getMethod(
                                             "invoke", Instance.class, int.class, Value[].class));
         } catch (NoSuchMethodException | IllegalAccessException e) {
-            throw new AssertionError(e);
+            throw new LinkageError(e.getMessage(), e);
         }
     }
 

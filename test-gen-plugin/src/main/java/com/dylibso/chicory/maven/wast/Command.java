@@ -90,4 +90,8 @@ public class Command {
     public String moduleType() {
         return moduleType;
     }
+
+    public String as() {
+        return as;
+    }
 }

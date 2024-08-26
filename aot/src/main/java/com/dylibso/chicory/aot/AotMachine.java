@@ -26,6 +26,7 @@ import static java.lang.invoke.MethodHandles.filterReturnValue;
 import static java.lang.invoke.MethodHandles.insertArguments;
 import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
@@ -506,7 +507,7 @@ public final class AotMachine implements Machine {
             // run ASM verifier to help with debugging
             try {
                 ClassReader reader = new ClassReader(classBytes);
-                CheckClassAdapter.verify(reader, true, new PrintWriter(System.out));
+                CheckClassAdapter.verify(reader, true, new PrintWriter(System.out, false, UTF_8));
             } catch (NoClassDefFoundError ignored) {
                 // the ASM verifier is an optional dependency
             } catch (Throwable t) {

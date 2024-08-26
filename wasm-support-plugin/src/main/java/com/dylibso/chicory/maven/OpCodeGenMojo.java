@@ -22,10 +22,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -35,8 +34,6 @@ import org.apache.maven.project.MavenProject;
  */
 @Mojo(name = "opcode-gen", defaultPhase = GENERATE_SOURCES, threadSafe = true)
 public class OpCodeGenMojo extends AbstractMojo {
-
-    private final Log log = new SystemStreamLog();
 
     /**
      * The source file
@@ -58,15 +55,13 @@ public class OpCodeGenMojo extends AbstractMojo {
     @Parameter(property = "project", required = true, readonly = true)
     private MavenProject project;
 
+    @SuppressWarnings("StringSplitter")
     @Override
     public void execute() throws MojoExecutionException {
         sourceDestinationFolder.mkdirs();
-        List<String[]> lines = null;
-        try {
-            lines =
-                    Files.lines(instructionsFile.toPath())
-                            .map(line -> line.split("\t"))
-                            .collect(Collectors.toList());
+        List<String[]> lines;
+        try (Stream<String> stream = Files.lines(instructionsFile.toPath())) {
+            lines = stream.map(line -> line.split("\t")).collect(Collectors.toList());
         } catch (IOException e) {
             throw new MojoExecutionException(e);
         }

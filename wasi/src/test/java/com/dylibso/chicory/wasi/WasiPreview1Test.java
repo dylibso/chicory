@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasi;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -50,7 +51,7 @@ public class WasiPreview1Test {
     @Test
     public void shouldRunWasiGreetRustModule() {
         // check with: wasmtime src/test/resources/compiled/greet-wasi.rs.wasm
-        var fakeStdin = new ByteArrayInputStream("Benjamin".getBytes());
+        var fakeStdin = new ByteArrayInputStream("Benjamin".getBytes(UTF_8));
         var wasiOpts = WasiOptions.builder().withStdout(System.out).withStdin(fakeStdin).build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new HostImports(wasi.toHostFunctions());
@@ -63,7 +64,7 @@ public class WasiPreview1Test {
     public void shouldRunWasiDemoJavyModule() {
         // check with: echo "{ \"n\": 2, \"bar\": \"baz\"}" | wasmtime
         // wasi/src/test/resources/compiled/javy-demo.js.wasm
-        var fakeStdin = new ByteArrayInputStream("{ \"n\": 2, \"bar\": \"baz\" }".getBytes());
+        var fakeStdin = new ByteArrayInputStream("{ \"n\": 2, \"bar\": \"baz\" }".getBytes(UTF_8));
         var fakeStdout = new MockPrintStream();
         var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStdin(fakeStdin).build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);

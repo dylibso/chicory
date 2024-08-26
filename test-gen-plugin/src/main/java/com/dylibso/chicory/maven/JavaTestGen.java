@@ -34,13 +34,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.apache.maven.plugin.logging.Log;
 
 public class JavaTestGen {
 
     private static final String TEST_MODULE_NAME = "testModule";
-
-    private final Log log;
 
     private final File baseDir;
 
@@ -57,7 +54,6 @@ public class JavaTestGen {
     private final List<String> excludedUnlinkableWasts;
 
     public JavaTestGen(
-            Log log,
             File baseDir,
             File sourceTargetFolder,
             List<String> excludedTests,
@@ -65,7 +61,6 @@ public class JavaTestGen {
             List<String> excludedInvalidWasts,
             List<String> excludedUninstantiableWasts,
             List<String> excludedUnlinkableWasts) {
-        this.log = log;
         this.baseDir = baseDir;
         this.sourceTargetFolder = sourceTargetFolder;
         this.excludedTests = excludedTests;
@@ -171,7 +166,6 @@ public class JavaTestGen {
                                                 new AssignExpr(
                                                         new NameExpr(lastInstanceVarName),
                                                         generateModuleInstantiation(
-                                                                cmd,
                                                                 currentWasmFile,
                                                                 importsName,
                                                                 hostFuncs,
@@ -399,11 +393,7 @@ public class JavaTestGen {
     private static final String INDENT = TAB + TAB + TAB + TAB + TAB;
 
     private static NameExpr generateModuleInstantiation(
-            Command cmd,
-            String wasmFile,
-            String importsName,
-            String hostFuncs,
-            boolean excludeInvalid) {
+            String wasmFile, String importsName, String hostFuncs, boolean excludeInvalid) {
         return new NameExpr(
                 "TestModule.of(\n"
                         + INDENT
@@ -478,7 +468,7 @@ public class JavaTestGen {
                                 + exceptionType
                                 + ".class, () -> "
                                 + generateModuleInstantiation(
-                                        cmd, wasmFile, importsName, hostFuncs, false)
+                                        wasmFile, importsName, hostFuncs, false)
                                 + ")");
 
         method.getBody().get().addStatement(assertThrows);

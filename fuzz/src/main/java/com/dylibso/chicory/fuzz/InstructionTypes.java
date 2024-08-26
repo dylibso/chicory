@@ -1,6 +1,7 @@
 package com.dylibso.chicory.fuzz;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,7 +29,7 @@ public class InstructionTypes {
                 Arrays.stream(values.trim().split(","))
                         .map(
                                 v -> {
-                                    var res = InstructionType.byValue(v.toLowerCase());
+                                    var res = InstructionType.byValue(v.toLowerCase(Locale.ROOT));
                                     if (res == null) {
                                         throw new RuntimeException(
                                                 "Cannot find a matching type for " + v);

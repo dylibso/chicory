@@ -8,5 +8,10 @@ enum WasiFileType {
     REGULAR_FILE,
     SOCKET_DGRAM,
     SOCKET_STREAM,
-    SYMBOLIC_LINK,
+    SYMBOLIC_LINK;
+
+    @SuppressWarnings("EnumOrdinal")
+    public int value() {
+        return ordinal();
+    }
 }

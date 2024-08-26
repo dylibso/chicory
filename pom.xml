@@ -501,8 +501,13 @@
           <compilerArgs>
             <arg>-XDcompilePolicy=simple</arg>
             <arg>-Xplugin:ErrorProne \
-              -XepDisableAllChecks \
+              -Xep:MissingCasesInEnumSwitch:OFF \
               -Xep:MissingOverride:ERROR \
+              -Xep:MissingSummary:OFF \
+              -Xep:NonOverridingEquals:OFF \
+              -Xep:OperatorPrecedence:OFF \
+              -Xep:ReferenceEquality:OFF \
+              -Xep:UnnecessaryParentheses:OFF \
               -XepExcludedPaths:.*/target/generated-(|test-)sources/.*</arg>
           </compilerArgs>
           <annotationProcessorPaths>

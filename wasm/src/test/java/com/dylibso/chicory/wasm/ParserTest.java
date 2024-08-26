@@ -19,6 +19,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.MethodOrderer;
@@ -126,7 +127,7 @@ public class ParserTest {
         try (Stream<Path> stream = Files.list(compiledDir.toPath())) {
             files =
                     stream.map(Path::toFile)
-                            .filter(f -> f.getName().toLowerCase().endsWith(".wasm"))
+                            .filter(f -> f.getName().toLowerCase(Locale.ROOT).endsWith(".wasm"))
                             .collect(Collectors.toList());
         }
 

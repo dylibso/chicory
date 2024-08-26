@@ -77,5 +77,10 @@ enum WasiErrno {
     ETIMEDOUT,
     ETXTBSY,
     EXDEV,
-    ENOTCAPABLE,
+    ENOTCAPABLE;
+
+    @SuppressWarnings("EnumOrdinal")
+    public int value() {
+        return ordinal();
+    }
 }
