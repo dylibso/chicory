@@ -157,10 +157,6 @@ public final class Parser {
         return new Parser().parse(() -> input);
     }
 
-    public static Module parse(ByteBuffer buffer) {
-        return parse(buffer.array());
-    }
-
     public static Module parse(byte[] buffer) {
         return new Parser().parse(() -> new ByteArrayInputStream(buffer));
     }
