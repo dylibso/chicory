@@ -28,7 +28,3 @@ export CHICORY_FUZZ_TYPES=numeric,table
 
 mvn install -Pfuzz -pl fuzz -Dtest="com.dylibso.chicory.fuzz.SingleReproTest#singleReproducer"
 ```
-
-## Import in IntelliJ
-
-Right click on `/fuzz/pom.xml` -> "Add as a Maven Project"

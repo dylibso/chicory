@@ -44,11 +44,9 @@ jobs:
           java-version: '${{ matrix.version }}'
           cache: maven
       - name: Check Style
-        run:  mvn -B spotless:check -Pbenchmarks -Pfuzz
+        run:  mvn -B spotless:check
       - name: Test Java
         run: mvn -B clean install
-      - name: Verify that nightly fuzz compiles
-        run: mvn -B test -DskipTests -Pfuzz -pl fuzz
 
   readme-ci:
     runs-on: ubuntu-latest

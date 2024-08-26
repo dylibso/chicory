@@ -23,12 +23,12 @@
       <artifactId>runtime</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.openjdk.jmh</groupId>
-      <artifactId>jmh-core</artifactId>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm</artifactId>
     </dependency>
     <dependency>
       <groupId>org.openjdk.jmh</groupId>
-      <artifactId>jmh-generator-annprocess</artifactId>
+      <artifactId>jmh-core</artifactId>
     </dependency>
   </dependencies>
 
