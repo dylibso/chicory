@@ -401,6 +401,9 @@
         <configuration>
           <release>${maven.compiler.release}</release>
           <parameters>true</parameters>
+          <failOnWarning>true</failOnWarning>
+          <showDeprecation>true</showDeprecation>
+          <showWarnings>true</showWarnings>
         </configuration>
       </plugin>
 
