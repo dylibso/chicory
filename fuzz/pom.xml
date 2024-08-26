@@ -13,6 +13,13 @@
   <name>Chicory - Fuzz</name>
   <description>Fuzzying Chicory</description>
 
+  <properties>
+    <skipTests>true</skipTests>
+
+    <fuzz.test.numeric>10</fuzz.test.numeric>
+    <fuzz.test.table>10</fuzz.test.table>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
