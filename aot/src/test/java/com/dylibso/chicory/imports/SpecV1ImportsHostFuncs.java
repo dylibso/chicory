@@ -268,8 +268,7 @@ public final class SpecV1ImportsHostFuncs {
                         new HostGlobal(
                                 "test",
                                 "global-mut-i64",
-                                new GlobalInstance(Value.i64(0)),
-                                MutabilityType.Var))
+                                new GlobalInstance(Value.i64(0), MutabilityType.Var)))
                 .addMemory(
                         new HostMemory("spectest", "memory", new Memory(new MemoryLimits(1))),
                         new HostMemory(
