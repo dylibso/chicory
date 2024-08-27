@@ -184,7 +184,7 @@ public class Instance {
                 throw new InvalidException(
                         "type mismatch, expected: " + g.valueType() + ", got: " + value.type());
             }
-            globals[i] = new GlobalInstance(value);
+            globals[i] = new GlobalInstance(value, g.mutabilityType());
             globals[i].setInstance(this);
         }
 
@@ -431,7 +431,7 @@ public class Instance {
 
         private void validateHostGlobalType(GlobalImport i, HostGlobal g) {
             if (i.type() != g.instance().getValue().type()
-                    || i.mutabilityType() != g.mutabilityType()) {
+                    || i.mutabilityType() != g.instance().getMutabilityType()) {
                 throw new UnlinkableException("incompatible import type");
             }
         }
