@@ -6,7 +6,7 @@ import com.dylibso.chicory.wasm.types.Value;
 public class GlobalInstance {
     private Value value;
     private Instance instance;
-    private MutabilityType mutabilityType;
+    private final MutabilityType mutabilityType;
 
     public GlobalInstance(Value value, MutabilityType mutabilityType) {
         this.value = value;
@@ -36,9 +36,5 @@ public class GlobalInstance {
 
     public MutabilityType getMutabilityType() {
         return mutabilityType;
-    }
-
-    public void setMutabilityType(MutabilityType mutabilityType) {
-        this.mutabilityType = mutabilityType;
     }
 }
