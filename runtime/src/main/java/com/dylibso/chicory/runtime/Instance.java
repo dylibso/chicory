@@ -457,19 +457,25 @@ public class Instance {
         }
 
         private void validateHostMemoryType(MemoryImport i, HostMemory m) {
-            var initialExpected = m.memory().initialPages();
-            var maxExpected = m.memory().maximumPages();
-            var initialCurrent = i.limits().initialPages();
-            var maxCurrent =
+            // FIXME is this correct or should MemoryLimits become mutable?
+            var hostMemInitialPages = m.memory().initialPages();
+            var hostMemCurrentPages = m.memory().pages();
+            var hostMemMaxPages = m.memory().maximumPages();
+            var importInitialPages = i.limits().initialPages();
+            var importMaxPages =
                     (i.limits().maximumPages() == MemoryLimits.MAX_PAGES)
                             ? Memory.RUNTIME_MAX_PAGES
                             : i.limits().maximumPages();
-            if (initialCurrent > initialExpected
-                    || (maxCurrent < maxExpected && maxCurrent == initialCurrent)) {
+
+            // HostMem bounds [x,y] must be within the import bounds [a, b]; i.e., a <= x, y >= b.
+            // In other words, the bounds are not valid when:
+            // - HostMem current number of pages cannot be less than the import lower bound.
+            // - HostMem upper bound cannot be larger than the given upper bound.
+            if (hostMemCurrentPages < importInitialPages || hostMemMaxPages > importMaxPages) {
                 throw new UnlinkableException(
-                        "incompatible import type, non-compatible limits, expected: "
+                        "incompatible import type, non-compatible limits, import: "
                                 + i.limits()
-                                + ", current: "
+                                + ", host: "
                                 + m.memory().limits()
                                 + " on memory: "
                                 + m.moduleName()
@@ -574,6 +580,7 @@ public class Instance {
                         hostFuncIdx++;
                         break;
                     case GLOBAL:
+                        //                        found = true;
                         cnt = hostImports.globalCount();
                         for (int j = 0; j < cnt; j++) {
                             HostGlobal g = hostImports.global(j);
@@ -697,20 +704,21 @@ public class Instance {
             Element[] elements = module.elementSection().elements();
 
             Memory memory = null;
-            if (module.memorySection().isPresent()) {
-                var memories = module.memorySection().get();
-                if (memories.memoryCount() > 0) {
-                    memory = new Memory(memories.getMemory(0).memoryLimits());
+
+            if (mappedHostImports.memoryCount() > 0) {
+                if (mappedHostImports.memory(0) == null
+                        || mappedHostImports.memory(0).memory() == null) {
+                    throw new InvalidException(
+                            "unknown memory, imported memory not defined, cannot run the"
+                                    + " program");
                 }
+                memory = mappedHostImports.memory(0).memory();
             } else {
-                if (mappedHostImports.memoryCount() > 0) {
-                    if (mappedHostImports.memory(0) == null
-                            || mappedHostImports.memory(0).memory() == null) {
-                        throw new InvalidException(
-                                "unknown memory, imported memory not defined, cannot run the"
-                                        + " program");
+                if (module.memorySection().isPresent()) {
+                    var memories = module.memorySection().get();
+                    if (memories.memoryCount() > 0) {
+                        memory = new Memory(memories.getMemory(0).memoryLimits());
                     }
-                    memory = mappedHostImports.memory(0).memory();
                 } else {
                     // No memory defined
                 }

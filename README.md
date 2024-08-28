@@ -291,6 +291,57 @@ writeResultFile("hostFunction.result", hostFunctionResult);
 ```
 -->
 
+### Store and Instantiating Multiple Modules
+
+A [Store][spec] is an intermediate-level abstraction that collects Wasm function, global, memory, and table instances
+as named entities.
+
+It simplifies creating instances when there are a lot of interdependencies, by collecting all the
+
+In the simplest case, it allows to register single host functions, globals, memories and tables:
+
+```java
+import com.dylibso.chicory.runtime.Store;
+
+// instantiate the store
+var store = new Store();
+// registers `console.log` defined above in the store
+store.addHostFunction(func);
+```
+
+However, the store also automatically exposes the exports of a module to the other instances that are registered.
+
+```java
+// registers `logger` into the store
+store.register("logger", instance);
+// now the exported function `logIt` can be imported by other modules as `logger.logIt`
+```
+
+There is also a shorthand method to instantiate a module and register the resulting instance:
+
+```java
+var logger2 = store.instantiate("logger2", Parser.parse(new File("./logger.wasm")));
+```
+
+This is equivalent to:
+
+```java
+var hostImports = store.toHostImports();
+var instance = Instance.builder(m).withHostImports(hostImports).build();
+store.register("logger2", instance);
+```
+
+Notice that registering two instances with the same name results in overwriting the
+functions, globals, memories, tables with matching names. In this case, the new `logger2.logIt` function
+overwrote the old `logger2.logIt` function.
+
+The current `Store` is a mutable object, not meant to be shared (it is not thread-safe).
+
+A `Store` _does not_ resolve interdependencies between modules in itself: if your set of modules
+have interdependencies, you will have to instantiate and register them in the right order.
+
+[spec]: https://www.w3.org/TR/2019/REC-wasm-core-1-20191205/#store%E2%91%A0
+
 ## Development
 
 ### Why is this needed?

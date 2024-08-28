@@ -7,6 +7,8 @@ import static java.util.stream.Collectors.toSet;
 
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
+import com.dylibso.chicory.wasm.types.ActiveDataSegment;
+import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
@@ -333,6 +335,120 @@ final class Validator {
             if (!type.params().isEmpty() || !type.returns().isEmpty()) {
                 throw new InvalidException(
                         "invalid start function, must have empty signature " + type);
+            }
+        }
+    }
+
+    public void validateData() {
+        // Validate offsets.
+        for (var ds : module.dataSection().dataSegments()) {
+            if (ds instanceof ActiveDataSegment) {
+                var ads = (ActiveDataSegment) ds;
+                validateConstantExpression(ads.offsetInstructions(), ValueType.I32);
+            }
+        }
+    }
+
+    public void validateElements() {
+        // Validate offsets.
+        for (Element el : module.elementSection().elements()) {
+            if (el instanceof ActiveElement) {
+                var ae = (ActiveElement) el;
+                validateConstantExpression(ae.offset(), ValueType.I32);
+            }
+        }
+    }
+
+    public void validateGlobals() {
+        for (Global g : module.globalSection().globals()) {
+            validateConstantExpression(g.initInstructions(), g.valueType());
+        }
+    }
+
+    private void validateConstantExpression(
+            List<? extends Instruction> expr, ValueType expectedType) {
+        int allFuncCount = this.functionImports.size() + module.functionSection().functionCount();
+        int constInstrCount = 0;
+        for (var instruction : expr) {
+            ValueType exprType = null;
+
+            long[] operands = instruction.operands();
+            switch (instruction.opcode()) {
+                case I32_CONST:
+                    exprType = ValueType.I32;
+                    constInstrCount++;
+                    break;
+                case I64_CONST:
+                    exprType = ValueType.I64;
+                    constInstrCount++;
+                    break;
+                case F32_CONST:
+                    exprType = ValueType.F32;
+                    constInstrCount++;
+                    break;
+                case F64_CONST:
+                    exprType = ValueType.F64;
+                    constInstrCount++;
+                    break;
+                case REF_NULL:
+                    {
+                        exprType = ValueType.refTypeForId((int) operands[0]);
+                        constInstrCount++;
+                        if (exprType != ValueType.ExternRef && exprType != ValueType.FuncRef) {
+                            throw new IllegalStateException(
+                                    "Unexpected wrong type for ref.null instruction");
+                        }
+                        break;
+                    }
+                case REF_FUNC:
+                    {
+                        exprType = ValueType.FuncRef;
+                        constInstrCount++;
+                        long idx = operands[0];
+
+                        if (idx < 0 || idx > allFuncCount) {
+                            throw new InvalidException("unknown function " + idx);
+                        }
+
+                        break;
+                    }
+                case GLOBAL_GET:
+                    {
+                        var idx = (int) operands[0];
+                        if (idx < globalImports.size()) {
+                            var global = globalImports.get(idx);
+                            if (global.mutabilityType() != MutabilityType.Const) {
+                                throw new InvalidException(
+                                        "constant expression required, initializer expression"
+                                                + " cannot reference a mutable global");
+                            }
+                            exprType = global.valueType();
+                        } else {
+                            throw new InvalidException(
+                                    "unknown global "
+                                            + idx
+                                            + ", initializer expression can only reference"
+                                            + " an imported global");
+                        }
+                        constInstrCount++;
+                        break;
+                    }
+                case END:
+                    break;
+                default:
+                    throw new InvalidException(
+                            "constant expression required, but non-constant instruction"
+                                    + " encountered: "
+                                    + instruction);
+            }
+
+            if (exprType != null && exprType != expectedType) {
+                throw new InvalidException("type mismatch");
+            }
+
+            // There must be at most one constant instruction.
+            if (constInstrCount > 1) {
+                throw new InvalidException("type mismatch, multiple constant expressions found");
             }
         }
     }
