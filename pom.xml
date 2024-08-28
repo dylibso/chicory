@@ -35,6 +35,7 @@
 
   <modules>
     <module>aot</module>
+    <module>aot-maven-plugin</module>
     <module>aot-tests</module>
     <module>bom</module>
     <module>cli</module>
@@ -47,6 +48,8 @@
     <module>runtime-tests</module>
     <module>test-gen-plugin</module>
     <module>wabt</module>
+    <module>wabt-aot</module>
+    <module>wabt-gen-aot</module>
     <module>wasi</module>
     <module>wasi-test-gen-plugin</module>
     <module>wasm</module>
@@ -79,7 +82,11 @@
 
     <maven.compiler.release>11</maven.compiler.release>
     <maven.compiler.failOnWarning>true</maven.compiler.failOnWarning>
+<<<<<<< HEAD
     <maven.dependency.failOnWarning>true</maven.dependency.failOnWarning>
+=======
+    <maven.dependencies.failOnWarning>true</maven.dependencies.failOnWarning>
+>>>>>>> 452c0d0d ([POC] Use the AOT compiled code instead of MH)
 
     <approvaltests.version>24.4.0</approvaltests.version>
     <asm.version>9.7</asm.version>
@@ -166,6 +173,16 @@
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>wabt</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wabt-aot</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wabt-gen-aot</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -563,7 +580,11 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
         <configuration>
+<<<<<<< HEAD
           <failOnWarning>${maven.dependency.failOnWarning}</failOnWarning>
+=======
+          <failOnWarning>${maven.dependencies.failOnWarning}</failOnWarning>
+>>>>>>> 452c0d0d ([POC] Use the AOT compiled code instead of MH)
           <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
           <ignoredUnusedDeclaredDependencies>
             <dependency>com.dylibso.chicory:wasm-corpus</dependency>
@@ -666,11 +687,18 @@
         <checkstyle.skip>true</checkstyle.skip>
         <enforcer.skip>true</enforcer.skip>
         <maven.compiler.failOnWarning>false</maven.compiler.failOnWarning>
+<<<<<<< HEAD
         <maven.dependency.failOnWarning>false</maven.dependency.failOnWarning>
         <maven.javadoc.skip>true</maven.javadoc.skip>
       </properties>
     </profile>
 
+=======
+        <maven.dependencies.failOnWarning>false</maven.dependencies.failOnWarning>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
+      </properties>
+    </profile>
+>>>>>>> 452c0d0d ([POC] Use the AOT compiled code instead of MH)
     <profile>
       <!-- Performs the quick build: all plugins deactivated -->
       <id>quick-build</id>

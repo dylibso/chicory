@@ -80,7 +80,7 @@ import org.objectweb.asm.util.CheckClassAdapter;
  */
 public final class AotMachine implements Machine {
 
-    public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.$gen.CompiledModule";
+    public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.gen.CompiledModule";
     private static final Instruction FUNCTION_SCOPE = new Instruction(-1, OpCode.NOP, new long[0]);
 
     private final Module module;
@@ -388,7 +388,6 @@ public final class AotMachine implements Machine {
                                 instance.memory(),
                                 instance);
                 compiled[funcId] = adaptSignature(type, handle);
-
             } catch (ReflectiveOperationException e) {
                 throw new ChicoryException(e);
             }

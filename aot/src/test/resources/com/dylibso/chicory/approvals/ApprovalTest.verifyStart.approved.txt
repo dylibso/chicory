@@ -1,6 +1,6 @@
 // class version 55.0 (55)
 // access flags 0x11
-public final class com/dylibso/chicory/$gen/CompiledModule {
+public final class com/dylibso/chicory/gen/CompiledModule {
 
   // compiled from: wasm
   // debug info: wasm
@@ -35,7 +35,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     INVOKESTATIC com/dylibso/chicory/aot/AotMethods.checkInterruption ()V
     ALOAD 0
     ALOAD 1
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
+    INVOKESTATIC com/dylibso/chicory/gen/CompiledModule.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     RETURN
     MAXSTACK = 3
     MAXLOCALS = 2

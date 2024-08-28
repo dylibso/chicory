@@ -8,41 +8,27 @@
     <version>999-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>test-gen-plugin</artifactId>
+  <artifactId>aot-maven-plugin</artifactId>
   <packaging>maven-plugin</packaging>
-  <name>Chicory - Test Gen Maven Plugin</name>
-  <description>A Maven Plugin to generate tests from the WebAssembly testsuite</description>
+  <name>Chicory - AOT Maven Plugin</name>
+  <description>A Maven Plugin to generate a package for running WASM</description>
 
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wabt-aot</artifactId>
+      <artifactId>aot</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-annotations</artifactId>
-      <version>${jackson.version}</version>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>runtime</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasi</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.github.javaparser</groupId>
-      <artifactId>javaparser-core</artifactId>
-      <version>${javaparser.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jgit</groupId>
-      <artifactId>org.eclipse.jgit</artifactId>
-      <version>${jgit.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.maven</groupId>
-      <artifactId>maven-core</artifactId>
-      <version>${maven-plugin-api.version}</version>
-      <scope>provided</scope>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>

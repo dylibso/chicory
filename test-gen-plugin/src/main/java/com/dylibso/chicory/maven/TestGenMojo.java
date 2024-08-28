@@ -3,8 +3,8 @@ package com.dylibso.chicory.maven;
 import static com.dylibso.chicory.maven.Constants.SPEC_JSON;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.GENERATE_TEST_SOURCES;
 
+import com.dylibso.chicory.aot.wabt.Wast2Json;
 import com.dylibso.chicory.maven.wast.Wast;
-import com.dylibso.chicory.wabt.Wast2Json;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.utils.SourceRoot;
 import java.io.File;
