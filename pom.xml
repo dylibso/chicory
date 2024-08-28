@@ -75,6 +75,8 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
     <maven.compiler.release>11</maven.compiler.release>
+    <maven.compiler.failOnWarning>true</maven.compiler.failOnWarning>
+    <maven.dependency.failOnWarning>true</maven.dependency.failOnWarning>
 
     <approvaltests.version>24.4.0</approvaltests.version>
     <asm.version>9.7</asm.version>
@@ -497,7 +499,7 @@
         <configuration>
           <release>${maven.compiler.release}</release>
           <parameters>true</parameters>
-          <failOnWarning>true</failOnWarning>
+          <failOnWarning>${maven.compiler.failOnWarning}</failOnWarning>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
           <compilerArgs>
@@ -526,7 +528,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
         <configuration>
-          <failOnWarning>true</failOnWarning>
+          <failOnWarning>${maven.dependency.failOnWarning}</failOnWarning>
           <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
           <ignoredUnusedDeclaredDependencies>
             <dependency>com.dylibso.chicory:wasm-corpus</dependency>
@@ -617,6 +619,22 @@
 
   <profiles>
     <profile>
+      <!-- Disable strict checks during development -->
+      <id>dev</id>
+      <activation>
+        <property>
+          <name>dev</name>
+        </property>
+      </activation>
+      <properties>
+        <spotless.check.skip>true</spotless.check.skip>
+        <checkstyle.skip>true</checkstyle.skip>
+        <enforcer.skip>true</enforcer.skip>
+        <maven.compiler.failOnWarning>false</maven.compiler.failOnWarning>
+        <maven.dependency.failOnWarning>false</maven.dependency.failOnWarning>
+      </properties>
+    </profile>
+    <profile>
       <!-- Performs the quick build: all plugins deactivated -->
       <id>quick-build</id>
       <activation>
@@ -627,6 +645,9 @@
       <properties>
         <spotless.check.skip>true</spotless.check.skip>
         <checkstyle.skip>true</checkstyle.skip>
+        <enforcer.skip>true</enforcer.skip>
+        <maven.compiler.failOnWarning>false</maven.compiler.failOnWarning>
+        <maven.dependency.failOnWarning>false</maven.dependency.failOnWarning>
         <skipITs>true</skipITs>
         <skipTests>true</skipTests>
         <!-- Skip test codegen. -->
