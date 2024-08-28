@@ -85,7 +85,7 @@
     <jgit.version>6.10.0.202406032230-r</jgit.version>
     <jmh.version>1.37</jmh.version>
     <junit.version>5.11.0</junit.version>
-    <maven-plugin-annotations.version>3.14.0</maven-plugin-annotations.version>
+    <maven-plugin-annotations.version>3.15.0</maven-plugin-annotations.version>
     <maven-plugin-api.version>3.9.9</maven-plugin-api.version>
     <picocli.version>4.7.6</picocli.version>
 
