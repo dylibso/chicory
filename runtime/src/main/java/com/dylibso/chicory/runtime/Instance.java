@@ -457,8 +457,9 @@ public class Instance {
         }
 
         private void validateHostMemoryType(MemoryImport i, HostMemory m) {
-            // FIXME is this correct or should MemoryLimits become mutable?
-            var hostMemInitialPages = m.memory().initialPages();
+            // Notice we do not compare to m.memory().initialPages()
+            // because m might have grown in the meantime.
+            // Instead, we use the current number of pages.
             var hostMemCurrentPages = m.memory().pages();
             var hostMemMaxPages = m.memory().maximumPages();
             var importInitialPages = i.limits().initialPages();

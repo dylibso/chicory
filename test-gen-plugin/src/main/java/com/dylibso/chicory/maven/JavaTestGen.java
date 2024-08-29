@@ -223,7 +223,7 @@ public class JavaTestGen {
                 case REGISTER:
                     String lastInstanceVarName = lastModuleVarName + "Instance";
 
-                    generateRegisterInstance(cmd, cmd.as(), lastInstanceVarName);
+                    generateRegisterInstance(cmd.as(), lastInstanceVarName);
 
                     var instantiateMethodName = "register_" + lastInstanceVarName;
                     var instantiateMethod =
@@ -237,7 +237,7 @@ public class JavaTestGen {
                             new BlockStmt()
                                     .addStatement(
                                             generateRegisterInstance(
-                                                    cmd, cmd.as(), lastInstanceVarName)));
+                                                    cmd.as(), lastInstanceVarName)));
 
                     break;
                 case ASSERT_MALFORMED:
@@ -441,8 +441,7 @@ public class JavaTestGen {
     private static final String TAB = "  ";
     private static final String INDENT = TAB + TAB + TAB + TAB + TAB;
 
-    private static NameExpr generateModuleInstantiation(
-            String wasmFile, boolean excludeInvalid) {
+    private static NameExpr generateModuleInstantiation(String wasmFile, boolean excludeInvalid) {
         return new NameExpr(
                 "TestModule.of(\n"
                         + INDENT
@@ -455,7 +454,7 @@ public class JavaTestGen {
                         + ".instantiate(store)");
     }
 
-    private static NameExpr generateRegisterInstance(Command cmd, String name, String instance) {
+    private static NameExpr generateRegisterInstance(String name, String instance) {
         return new NameExpr("store.register(\"" + name + "\", " + instance + ")");
     }
 

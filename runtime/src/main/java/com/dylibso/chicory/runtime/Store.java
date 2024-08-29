@@ -103,7 +103,7 @@ public class Store {
         return this;
     }
 
-    private class Key {
+    private static class Key {
         private final String moduleName;
         private final String name;
 
@@ -114,8 +114,12 @@ public class Store {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Key)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof Key)) {
+                return false;
+            }
             Key key = (Key) o;
             return Objects.equals(moduleName, key.moduleName) && Objects.equals(name, key.name);
         }

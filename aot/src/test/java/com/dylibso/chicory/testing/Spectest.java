@@ -18,8 +18,10 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 
 // https://github.com/WebAssembly/spec/blob/ee82c8e50c5106e0cedada0a083d4cc4129034a2/interpreter/host/spectest.ml
-public class Spectest {
+public final class Spectest {
     private static final WasmFunctionHandle noop = (Instance instance, Value... args) -> null;
+
+    private Spectest() {}
 
     public static HostImports toHostImports() {
         return new HostImports(
