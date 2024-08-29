@@ -35,6 +35,7 @@
 
   <modules>
     <module>aot</module>
+    <module>aot-tests</module>
     <module>bom</module>
     <module>cli</module>
     <module>fuzz</module>
