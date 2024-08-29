@@ -40,8 +40,12 @@ public final class AnnotatedInstruction extends Instruction {
         return labelFalse;
     }
 
-    public List<Integer> labelTable() {
-        return labelTable;
+    public int labelTable(int idx) {
+        return labelTable.get(idx);
+    }
+
+    public int labelTableSize() {
+        return labelTable.size();
     }
 
     public int depth() {

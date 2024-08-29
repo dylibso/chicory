@@ -114,14 +114,13 @@ final class Validator {
         this.declaredFunctions =
                 module.elementSection().stream()
                         .filter(DeclarativeElement.class::isInstance)
-                        .flatMap(element -> element.initializers().stream())
-                        .flatMap(this::declaredFunctions)
+                        .flatMap(element -> declaredFunctions(element.allInitializers()))
                         .collect(toSet());
     }
 
-    private Stream<Integer> declaredFunctions(List<Instruction> init) {
-        if (!init.isEmpty() && init.get(0).opcode() == OpCode.REF_FUNC) {
-            int idx = (int) init.get(0).operands()[0];
+    private Stream<Integer> declaredFunctions(Instruction[] init) {
+        if (!(init.length == 0) && init[0].opcode() == OpCode.REF_FUNC) {
+            int idx = (int) init[0].operands()[0];
             getFunctionType(idx);
             if (idx >= functionImports.size()) {
                 return Stream.of(idx);

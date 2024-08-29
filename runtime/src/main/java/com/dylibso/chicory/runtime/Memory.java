@@ -113,7 +113,7 @@ public final class Memory {
                     throw new InvalidException("unknown memory " + segment.index());
                 }
                 var offsetExpr = segment.offsetInstructions();
-                if (offsetExpr.size() > 1) {
+                if (offsetExpr.length > 1) {
                     throw new InvalidException(
                             "type mismatch, constant expression required, expected only one"
                                     + " initialization instruction");

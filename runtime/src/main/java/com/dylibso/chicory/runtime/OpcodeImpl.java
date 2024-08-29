@@ -848,7 +848,7 @@ public final class OpcodeImpl {
         var elementCount = instance.elementCount();
         var currentElement = instance.element(elementidx);
         var currentElementCount =
-                (currentElement instanceof PassiveElement) ? currentElement.elementCount() : 0;
+                (currentElement instanceof PassiveElement) ? currentElement.initializersCount() : 0;
         boolean isOutOfBounds =
                 (size < 0
                         || elementidx > elementCount
@@ -865,7 +865,7 @@ public final class OpcodeImpl {
 
         for (int i = offset; i < end; i++) {
             var elem = instance.element(elementidx);
-            var val = computeConstantValue(instance, elem.initializers().get(elemidx++));
+            var val = computeConstantValue(instance, elem.initializer(elemidx++));
             if (table.elementType() == ValueType.FuncRef) {
                 if (val.asFuncRef() > instance.functionCount()) {
                     throw new WASMRuntimeException("out of bounds table access");

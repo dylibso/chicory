@@ -25,6 +25,6 @@ public final class Global {
     }
 
     public List<Instruction> initInstructions() {
-        return init;
+        return List.copyOf(init);
     }
 }

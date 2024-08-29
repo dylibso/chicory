@@ -99,7 +99,7 @@ public final class ConstantEvaluators {
         return tos;
     }
 
-    public static Instance computeConstantInstance(Instance instance, List<Instruction> expr) {
+    public static Instance computeConstantInstance(Instance instance, Instruction[] expr) {
         for (Instruction instruction : expr) {
             if (instruction.opcode() == GLOBAL_GET) {
                 return instance.global((int) instruction.operands()[0]).getInstance();

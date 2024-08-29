@@ -37,7 +37,6 @@ import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -117,7 +116,7 @@ public class Instance {
                 var ae = (ActiveElement) el;
                 var table = table(ae.tableIndex());
 
-                if (ae.offset().size() > 1) {
+                if (ae.offset().length > 1) {
                     throw new InvalidException(
                             "constant expression required, type mismatch, expected [] but found"
                                     + " extra instructions");
@@ -127,15 +126,15 @@ public class Instance {
                     throw new InvalidException(
                             "type mismatch, invalid offset type in element " + offset.type());
                 }
-                List<List<Instruction>> initializers = ae.initializers();
+                // List<List<Instruction>> initializers = ae.initializers();
                 if (offset.asInt() > table.limits().min()
-                        || (offset.asInt() + initializers.size() - 1) >= table.size()) {
+                        || (offset.asInt() + ae.initializersCount() - 1) >= table.size()) {
                     throw new UninstantiableException("out of bounds table access");
                 }
-                for (int i = 0; i < initializers.size(); i++) {
-                    final List<Instruction> init = initializers.get(i);
+                for (int i = 0; i < ae.initializersCount(); i++) {
+                    final Instruction[] init = ae.initializer(i);
                     var index = offset.asInt() + i;
-                    if (init.stream().filter(e -> e.opcode() != OpCode.END).count() > 1L) {
+                    if (Arrays.stream(init).filter(e -> e.opcode() != OpCode.END).count() > 1L) {
                         throw new InvalidException(
                                 "constant expression required, type mismatch, expected [] but found"
                                         + " extra instructions");
@@ -166,8 +165,8 @@ public class Instance {
                     }
                 }
             } else if (el instanceof DeclarativeElement) {
-                for (var init : el.initializers()) {
-                    computeConstantValue(this, init);
+                for (int i = 0; i < el.initializersCount(); i++) {
+                    computeConstantValue(this, el.initializer(i));
                 }
             }
         }

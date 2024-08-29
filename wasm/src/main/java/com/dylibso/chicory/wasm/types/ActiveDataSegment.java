@@ -16,7 +16,7 @@ public final class ActiveDataSegment extends DataSegment {
         return idx;
     }
 
-    public List<Instruction> offsetInstructions() {
-        return offsetInstructions;
+    public Instruction[] offsetInstructions() {
+        return offsetInstructions.toArray(new Instruction[0]);
     }
 }

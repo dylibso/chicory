@@ -22,7 +22,7 @@ public class Instruction {
     }
 
     public long[] operands() {
-        return operands;
+        return operands.clone();
     }
 
     @Override

@@ -1918,10 +1918,10 @@ class InterpreterMachine implements Machine {
         if (pred < 0 || pred >= defaultIdx) {
             // choose default
             ctrlJump(frame, stack, (int) instruction.operands()[defaultIdx]);
-            frame.jumpTo(instruction.labelTable().get(defaultIdx));
+            frame.jumpTo(instruction.labelTable(defaultIdx));
         } else {
             ctrlJump(frame, stack, (int) instruction.operands()[pred]);
-            frame.jumpTo(instruction.labelTable().get(pred));
+            frame.jumpTo(instruction.labelTable(pred));
         }
     }
 

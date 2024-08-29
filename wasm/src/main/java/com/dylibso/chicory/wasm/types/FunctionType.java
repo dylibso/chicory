@@ -16,11 +16,11 @@ public final class FunctionType {
     }
 
     public List<ValueType> params() {
-        return params;
+        return List.copyOf(params);
     }
 
     public List<ValueType> returns() {
-        return returns;
+        return List.copyOf(returns);
     }
 
     public boolean paramsMatch(FunctionType other) {

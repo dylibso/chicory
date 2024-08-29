@@ -38,7 +38,7 @@ public final class ActiveElement extends Element {
     /**
      * @return a constant expression defining the offset into the table
      */
-    public List<Instruction> offset() {
-        return offset;
+    public Instruction[] offset() {
+        return offset.toArray(new Instruction[0]);
     }
 }

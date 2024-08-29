@@ -2,6 +2,7 @@ package com.dylibso.chicory.wasm.types;
 
 import static java.util.Objects.requireNonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -32,8 +33,19 @@ public abstract class Element {
     /**
      * @return the list of instruction lists which are used to initialize each element in the range
      */
-    public List<List<Instruction>> initializers() {
-        return initializers;
+    public Instruction[] initializer(int idx) {
+        return initializers.get(idx).toArray(new Instruction[0]);
+    }
+
+    /**
+     * @return the list of all instructions which are used to initialize each element in the range
+     */
+    public Instruction[] allInitializers() {
+        var result = new ArrayList<Instruction>();
+        for (var i : initializers) {
+            result.addAll(i);
+        }
+        return result.toArray(new Instruction[0]);
     }
 
     /**
@@ -41,7 +53,7 @@ public abstract class Element {
      *
      * @return the number of elements defined by this section
      */
-    public int elementCount() {
-        return initializers().size();
+    public int initializersCount() {
+        return initializers.size();
     }
 }
