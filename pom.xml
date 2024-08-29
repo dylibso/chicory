@@ -632,8 +632,10 @@
         <enforcer.skip>true</enforcer.skip>
         <maven.compiler.failOnWarning>false</maven.compiler.failOnWarning>
         <maven.dependency.failOnWarning>false</maven.dependency.failOnWarning>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
       </properties>
     </profile>
+
     <profile>
       <!-- Performs the quick build: all plugins deactivated -->
       <id>quick-build</id>
