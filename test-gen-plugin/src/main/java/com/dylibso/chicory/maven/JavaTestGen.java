@@ -82,6 +82,7 @@ public class JavaTestGen {
         cu.addImport("java.io.File");
         cu.addImport("org.junit.jupiter.api.Disabled");
         cu.addImport("org.junit.jupiter.api.Test");
+        cu.addImport("org.junit.jupiter.api.DisplayName");
         cu.addImport("org.junit.jupiter.api.MethodOrderer");
         cu.addImport("org.junit.jupiter.api.TestMethodOrder");
         cu.addImport("org.junit.jupiter.api.Order");
@@ -159,6 +160,13 @@ public class JavaTestGen {
                         instantiateMethod.addAnnotation("Test");
                         instantiateMethod.addSingleMemberAnnotation(
                                 "Order", new IntegerLiteralExpr(Integer.toString(testNumber++)));
+                        instantiateMethod.addSingleMemberAnnotation(
+                                "DisplayName",
+                                new StringLiteralExpr(
+                                        formatWastFileCoordinates(
+                                                wast.sourceFilename().getName(),
+                                                cmd.line(),
+                                                cmd.filename())));
 
                         instantiateMethod.setBody(
                                 new BlockStmt()
@@ -180,7 +188,13 @@ public class JavaTestGen {
                 case ASSERT_TRAP:
                 case ASSERT_EXHAUSTION:
                     {
-                        method = createTestMethod(testClass, testNumber++, excludedMethods);
+                        method =
+                                createTestMethod(
+                                        wast.sourceFilename().getName(),
+                                        cmd,
+                                        testClass,
+                                        testNumber++,
+                                        excludedMethods);
 
                         var baseVarName = escapedCamelCase(cmd.action().field());
                         var varNum = fallbackVarNumber++;
@@ -213,7 +227,13 @@ public class JavaTestGen {
                 case ASSERT_UNINSTANTIABLE:
                 case ASSERT_UNLINKABLE:
                     {
-                        method = createTestMethod(testClass, testNumber++, excludedMethods);
+                        method =
+                                createTestMethod(
+                                        wast.sourceFilename().getName(),
+                                        cmd,
+                                        testClass,
+                                        testNumber++,
+                                        excludedMethods);
                         String hostFuncs =
                                 detectImports(importsName, "fallback", importsSourceRoot);
                         generateAssertThrows(
@@ -233,6 +253,14 @@ public class JavaTestGen {
         }
 
         return cu;
+    }
+
+    private static String formatWastFileCoordinates(String wastName, int line, String wasmName) {
+        if (wasmName != null) {
+            return wastName + ":" + line + " @ " + wasmName;
+        } else {
+            return wastName + ":" + line;
+        }
     }
 
     private boolean getExcluded(CommandType typ, String name) {
@@ -272,7 +300,11 @@ public class JavaTestGen {
     }
 
     private MethodDeclaration createTestMethod(
-            ClassOrInterfaceDeclaration testClass, int testNumber, List<String> excludedTests) {
+            String wastName,
+            Command cmd,
+            ClassOrInterfaceDeclaration testClass,
+            int testNumber,
+            List<String> excludedTests) {
         var methodName = "test" + testNumber;
         var method = testClass.addMethod(methodName, Modifier.Keyword.PUBLIC);
         if (excludedTests.contains(methodName)) {
@@ -283,6 +315,9 @@ public class JavaTestGen {
         method.addAnnotation("Test");
         method.addSingleMemberAnnotation(
                 "Order", new IntegerLiteralExpr(Integer.toString(testNumber)));
+        method.addSingleMemberAnnotation(
+                "DisplayName",
+                new StringLiteralExpr(formatWastFileCoordinates(wastName, cmd.line(), cmd.filename())));
 
         return method;
     }
@@ -487,7 +522,7 @@ public class JavaTestGen {
         return new NameExpr(
                 "assertTrue(exception.getMessage().contains(\""
                         + text
-                        + "\"), \"'\" + exception.getMessage() + \"' doesn't contains: '"
+                        + "\"), \"'\" + exception.getMessage() + \"' doesn't contain: '"
                         + text
                         + "\")");
     }
