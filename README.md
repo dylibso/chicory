@@ -305,14 +305,14 @@ import com.dylibso.chicory.runtime.Store;
 
 // instantiate the store
 var store = new Store();
-// registers `console.log` defined above in the store
+// registers `console.log` in the store (see the previous section for the definition of `func`)
 store.addHostFunction(func);
 ```
 
 However, the store also automatically exposes the exports of a module to the other instances that are registered.
 
 ```java
-// registers `logger` into the store
+// registers the `instance` created earlier (see the previous section) with the name `logger`
 store.register("logger", instance);
 // now the exported function `logIt` can be imported by other modules as `logger.logIt`
 ```
