@@ -16,6 +16,10 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
+      <artifactId>function-annotations</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
       <artifactId>log</artifactId>
     </dependency>
     <dependency>
@@ -25,6 +29,12 @@
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm</artifactId>
+    </dependency>
+    <!-- fake dependency for reactor build order -->
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>function-processor</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
@@ -111,6 +121,30 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <annotationProcessorPaths combine.children="append">
+            <path>
+              <groupId>com.dylibso.chicory</groupId>
+              <artifactId>function-processor</artifactId>
+              <version>${project.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <configuration>
+          <ignoredUnusedDeclaredDependencies combine.children="append">
+            <dependency>com.dylibso.chicory:function-processor</dependency>
+          </ignoredUnusedDeclaredDependencies>
+        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -38,6 +38,8 @@
     <module>aot-tests</module>
     <module>bom</module>
     <module>cli</module>
+    <module>function-annotations</module>
+    <module>function-processor</module>
     <module>fuzz</module>
     <module>jmh</module>
     <module>log</module>
@@ -143,6 +145,16 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
+        <artifactId>function-annotations</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>function-processor</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
         <artifactId>log</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -177,6 +189,13 @@
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
         <version>${error-prone.version}</version>
+      </dependency>
+
+      <!-- Use latest Guava -->
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>33.3.0-jre</version>
       </dependency>
 
       <!-- Used for WASI tests -->
@@ -224,6 +243,14 @@
         <groupId>com.approvaltests</groupId>
         <artifactId>approvaltests</artifactId>
         <version>${approvaltests.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <!-- Used for annotation processor tests -->
+      <dependency>
+        <groupId>com.google.testing.compile</groupId>
+        <artifactId>compile-testing</artifactId>
+        <version>0.21.0</version>
         <scope>test</scope>
       </dependency>
 
