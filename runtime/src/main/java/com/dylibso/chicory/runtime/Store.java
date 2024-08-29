@@ -11,41 +11,56 @@ import java.util.Objects;
  * The runtime storage for all function, global, memory, table instances.
  */
 public class Store {
-    private final LinkedHashMap<Store.Key, HostFunction> functions = new LinkedHashMap<>();
-    private final LinkedHashMap<Store.Key, HostGlobal> globals = new LinkedHashMap<>();
-    private final LinkedHashMap<Store.Key, HostMemory> memories = new LinkedHashMap<>();
-    private final LinkedHashMap<Store.Key, HostTable> tables = new LinkedHashMap<>();
+    final LinkedHashMap<QualifiedName, HostFunction> functions = new LinkedHashMap<>();
+    final LinkedHashMap<QualifiedName, HostGlobal> globals = new LinkedHashMap<>();
+    final LinkedHashMap<QualifiedName, HostMemory> memories = new LinkedHashMap<>();
+    final LinkedHashMap<QualifiedName, HostTable> tables = new LinkedHashMap<>();
 
     public Store() {}
 
+    /**
+     * Add a function to the store.
+     */
     public Store addFunction(HostFunction... function) {
         for (var f : function) {
-            functions.put(new Key(f.moduleName(), f.fieldName()), f);
+            functions.put(new QualifiedName(f.moduleName(), f.fieldName()), f);
         }
         return this;
     }
 
+    /**
+     * Add a global to the store.
+     */
     public Store addGlobal(HostGlobal... global) {
         for (var g : global) {
-            globals.put(new Key(g.moduleName(), g.fieldName()), g);
+            globals.put(new QualifiedName(g.moduleName(), g.fieldName()), g);
         }
         return this;
     }
 
+    /**
+     * Add a memory to the store.
+     */
     public Store addMemory(HostMemory... memory) {
         for (var m : memory) {
-            memories.put(new Key(m.moduleName(), m.fieldName()), m);
+            memories.put(new QualifiedName(m.moduleName(), m.fieldName()), m);
         }
         return this;
     }
 
+    /**
+     * Add a table to the store.
+     */
     public Store addTable(HostTable... table) {
         for (var t : table) {
-            tables.put(new Key(t.moduleName(), t.fieldName()), t);
+            tables.put(new QualifiedName(t.moduleName(), t.fieldName()), t);
         }
         return this;
     }
 
+    /**
+     * Add the contents of a {@link HostImports} instance to the store.
+     */
     public Store addHostImports(HostImports hostImports) {
         return this.addGlobal(hostImports.globals())
                 .addFunction(hostImports.functions())
@@ -53,6 +68,9 @@ public class Store {
                 .addTable(hostImports.tables());
     }
 
+    /**
+     * Convert the contents of a store to a {@link HostImports} instance.
+     */
     public HostImports toHostImports() {
         return new HostImports(
                 functions.values().toArray(new HostFunction[0]),
@@ -61,13 +79,15 @@ public class Store {
                 tables.values().toArray(new HostTable[0]));
     }
 
-    public Instance instantiate(String name, Module m) {
-        HostImports hostImports = toHostImports();
-        Instance instance = Instance.builder(m).withHostImports(hostImports).build();
-        register(name, instance);
-        return instance;
-    }
-
+    /**
+     * Register an instance in the store with the given name.
+     * All the exported functions, globals, memories, and tables are added to the store
+     * with the given name.
+     *
+     * For instance, if a module named "myModule" exports a function
+     * named "myFunction", the function will be added to the store with the name "myFunction.myModule".
+     *
+     */
     public Store register(String name, Instance instance) {
         ExportSection exportSection = instance.module().exportSection();
         for (int i = 0; i < exportSection.exportCount(); i++) {
@@ -103,11 +123,24 @@ public class Store {
         return this;
     }
 
-    private static class Key {
+    /**
+     * A shorthand for instantiating a module and registering it in the store.
+     */
+    public Instance instantiate(String name, Module m) {
+        HostImports hostImports = toHostImports();
+        Instance instance = Instance.builder(m).withHostImports(hostImports).build();
+        register(name, instance);
+        return instance;
+    }
+
+    /**
+     * QualifiedName is internally used to use pairs (moduleName, name) as keys in the store.
+     */
+    static class QualifiedName {
         private final String moduleName;
         private final String name;
 
-        public Key(String moduleName, String name) {
+        public QualifiedName(String moduleName, String name) {
             this.moduleName = moduleName;
             this.name = name;
         }
@@ -117,11 +150,12 @@ public class Store {
             if (this == o) {
                 return true;
             }
-            if (!(o instanceof Key)) {
+            if (!(o instanceof QualifiedName)) {
                 return false;
             }
-            Key key = (Key) o;
-            return Objects.equals(moduleName, key.moduleName) && Objects.equals(name, key.name);
+            QualifiedName qualifiedName = (QualifiedName) o;
+            return Objects.equals(moduleName, qualifiedName.moduleName)
+                    && Objects.equals(name, qualifiedName.name);
         }
 
         @Override
