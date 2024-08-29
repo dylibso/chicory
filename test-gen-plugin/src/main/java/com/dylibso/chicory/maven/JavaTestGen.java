@@ -245,12 +245,13 @@ public class JavaTestGen {
                 case ASSERT_UNINSTANTIABLE:
                 case ASSERT_UNLINKABLE:
                     {
-                        method = createTestMethod(
-                                wast.sourceFilename().getName(),
-                                cmd,
-                                testClass,
-                                testNumber++,
-                                excludedMethods);
+                        method =
+                                createTestMethod(
+                                        wast.sourceFilename().getName(),
+                                        cmd,
+                                        testClass,
+                                        testNumber++,
+                                        excludedMethods);
                         generateAssertThrows(
                                 wasmFilesFolder,
                                 cmd,

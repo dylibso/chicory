@@ -138,11 +138,11 @@ public class Store {
      */
     static class QualifiedName {
         private final String moduleName;
-        private final String name;
+        private final String fieldName;
 
-        public QualifiedName(String moduleName, String name) {
+        public QualifiedName(String moduleName, String fieldName) {
             this.moduleName = moduleName;
-            this.name = name;
+            this.fieldName = fieldName;
         }
 
         @Override
@@ -155,12 +155,12 @@ public class Store {
             }
             QualifiedName qualifiedName = (QualifiedName) o;
             return Objects.equals(moduleName, qualifiedName.moduleName)
-                    && Objects.equals(name, qualifiedName.name);
+                    && Objects.equals(fieldName, qualifiedName.fieldName);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(moduleName, name);
+            return Objects.hash(moduleName, fieldName);
         }
     }
 }

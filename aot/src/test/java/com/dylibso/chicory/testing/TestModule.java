@@ -62,6 +62,9 @@ public class TestModule {
 
     public Instance instantiate(Store s) {
         HostImports hostImports = s.toHostImports();
-        return Instance.builder(module).withHostImports(hostImports).withMachineFactory(AotMachine::new).build();
+        return Instance.builder(module)
+                .withHostImports(hostImports)
+                .withMachineFactory(AotMachine::new)
+                .build();
     }
 }
