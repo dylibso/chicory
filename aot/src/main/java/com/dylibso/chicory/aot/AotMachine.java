@@ -307,6 +307,10 @@ public final class AotMachine implements Machine {
                     .build();
 
     public AotMachine(Instance instance) {
+        this(DEFAULT_CLASS_NAME, instance);
+    }
+
+    public AotMachine(String className, Instance instance) {
         this.instance = requireNonNull(instance, "instance");
         this.module = instance.module();
 
@@ -315,8 +319,8 @@ public final class AotMachine implements Machine {
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
         this.functionTypes = getFunctionTypes(module);
 
-        this.compiledClass = compileClass(DEFAULT_CLASS_NAME, this.module.functionSection());
-        this.compiledFunctions = compile(loadClass(DEFAULT_CLASS_NAME, compiledClass));
+        this.compiledClass = compileClass(className, this.module.functionSection());
+        this.compiledFunctions = compile(loadClass(className, compiledClass));
     }
 
     private static List<ValueType> getGlobalTypes(Module module) {
