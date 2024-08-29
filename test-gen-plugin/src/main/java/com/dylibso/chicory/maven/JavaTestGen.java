@@ -317,7 +317,8 @@ public class JavaTestGen {
                 "Order", new IntegerLiteralExpr(Integer.toString(testNumber)));
         method.addSingleMemberAnnotation(
                 "DisplayName",
-                new StringLiteralExpr(formatWastFileCoordinates(wastName, cmd.line(), cmd.filename())));
+                new StringLiteralExpr(
+                        formatWastFileCoordinates(wastName, cmd.line(), cmd.filename())));
 
         return method;
     }
