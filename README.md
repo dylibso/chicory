@@ -6,7 +6,7 @@
 
 [![Zulip](https://img.shields.io/badge/zulip-join_chat-brightgreen.svg)](https://chicory.zulipchat.com/join/g4gqsxoys6orfxlrk6hn4cyp/)
 
-<img align="right" width="200" src="chicory1.png">
+<img align="right" width="200" src="imgs/chicory2.png">
 
 Chicory is a JVM native WebAssembly runtime. It allows you to run WebAssembly programs with
 zero native dependencies or JNI. Chicory can run Wasm anywhere that the JVM can go. It is designed with
