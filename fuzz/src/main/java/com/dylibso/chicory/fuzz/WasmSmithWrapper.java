@@ -22,6 +22,7 @@ public class WasmSmithWrapper {
     private String seed = getSeed(BASE_SEED_SIZE);
 
     // A smaller size of the seed speeds up the execution
+    @SuppressWarnings("deprecation")
     private static String getSeed(int size) {
         return RandomStringUtils.randomAlphabetic(size);
     }
