@@ -63,12 +63,6 @@ public class TestGenMojo extends AbstractMojo {
             defaultValue = "${project.build.directory}/generated-test-sources/test-gen")
     private File sourceDestinationFolder;
 
-    /**
-     * Location of the imports sources.
-     */
-    @Parameter(required = true, defaultValue = "${project.basedir}/src/test/java")
-    private File importsSourcesFolder;
-
     @Parameter(required = true, defaultValue = "${project.build.directory}/compiled-wast")
     private File compiledWastTargetFolder;
 
@@ -191,9 +185,8 @@ public class TestGenMojo extends AbstractMojo {
 
             // generate the tests
             final SourceRoot dest = new SourceRoot(sourceDestinationFolder.toPath());
-            final SourceRoot importSourceRoot = new SourceRoot(importsSourcesFolder.toPath());
 
-            TestGenerator testGenerator = new TestGenerator(testGen, importSourceRoot, dest);
+            TestGenerator testGenerator = new TestGenerator(testGen, dest);
 
             includedWasts.parallelStream().forEach(testGenerator::generateTests);
 
@@ -225,12 +218,10 @@ public class TestGenMojo extends AbstractMojo {
     private final class TestGenerator {
 
         private final JavaTestGen testGen;
-        private final SourceRoot importSourceRoot;
         private final SourceRoot dest;
 
-        private TestGenerator(JavaTestGen testGen, SourceRoot importSourceRoot, SourceRoot dest) {
+        private TestGenerator(JavaTestGen testGen, SourceRoot dest) {
             this.testGen = testGen;
-            this.importSourceRoot = importSourceRoot;
             this.dest = dest;
         }
 
@@ -252,7 +243,7 @@ public class TestGenMojo extends AbstractMojo {
             Wast2Json.builder().withFile(wastFile).withOutput(specFile).build().process();
 
             var name = specFile.toPath().getParent().toFile().getName();
-            var cu = testGen.generate(name, readWast(specFile), wasmFilesFolder, importSourceRoot);
+            var cu = testGen.generate(name, readWast(specFile), wasmFilesFolder);
             dest.add(cu);
         }
 

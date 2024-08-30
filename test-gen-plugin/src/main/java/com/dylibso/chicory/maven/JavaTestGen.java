@@ -25,7 +25,6 @@ import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.utils.SourceRoot;
 import com.github.javaparser.utils.StringEscapeUtils;
 import java.io.File;
 import java.util.ArrayList;
@@ -69,8 +68,7 @@ public class JavaTestGen {
         this.excludedUnlinkableWasts = excludedUnlinkableWasts;
     }
 
-    public CompilationUnit generate(
-            String name, Wast wast, File wasmFilesFolder, SourceRoot importsSourceRoot) {
+    public CompilationUnit generate(String name, Wast wast, File wasmFilesFolder) {
         var cu = new CompilationUnit("com.dylibso.chicory.test.gen");
         var testName = "SpecV1" + capitalize(escapedCamelCase(name)) + "Test";
         cu.setStorage(sourceTargetFolder.toPath().resolve(testName + ".java"));
