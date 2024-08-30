@@ -457,19 +457,26 @@ public class Instance {
         }
 
         private void validateHostMemoryType(MemoryImport i, HostMemory m) {
-            var initialExpected = m.memory().initialPages();
-            var maxExpected = m.memory().maximumPages();
-            var initialCurrent = i.limits().initialPages();
-            var maxCurrent =
+            // Notice we do not compare to m.memory().initialPages()
+            // because m might have grown in the meantime.
+            // Instead, we use the current number of pages.
+            var hostMemCurrentPages = m.memory().pages();
+            var hostMemMaxPages = m.memory().maximumPages();
+            var importInitialPages = i.limits().initialPages();
+            var importMaxPages =
                     (i.limits().maximumPages() == MemoryLimits.MAX_PAGES)
                             ? Memory.RUNTIME_MAX_PAGES
                             : i.limits().maximumPages();
-            if (initialCurrent > initialExpected
-                    || (maxCurrent < maxExpected && maxCurrent == initialCurrent)) {
+
+            // HostMem bounds [x,y] must be within the import bounds [a, b]; i.e., a <= x, y >= b.
+            // In other words, the bounds are not valid when:
+            // - HostMem current number of pages cannot be less than the import lower bound.
+            // - HostMem upper bound cannot be larger than the given upper bound.
+            if (hostMemCurrentPages < importInitialPages || hostMemMaxPages > importMaxPages) {
                 throw new UnlinkableException(
-                        "incompatible import type, non-compatible limits, expected: "
+                        "incompatible import type, non-compatible limits, import: "
                                 + i.limits()
-                                + ", current: "
+                                + ", host: "
                                 + m.memory().limits()
                                 + " on memory: "
                                 + m.moduleName()

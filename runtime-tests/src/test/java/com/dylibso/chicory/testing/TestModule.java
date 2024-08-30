@@ -2,6 +2,7 @@ package com.dylibso.chicory.testing;
 
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
@@ -11,9 +12,6 @@ import java.io.File;
 public class TestModule {
 
     private Module module;
-    private Instance instance;
-
-    private HostImports imports;
 
     private static final String HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT =
             "Matching keywords to get the WebAssembly testsuite to pass: "
@@ -62,13 +60,8 @@ public class TestModule {
         this.module = module;
     }
 
-    public Instance build() {
-        this.instance = Instance.builder(module).withHostImports(imports).build();
-        return this.instance;
-    }
-
-    public TestModule withHostImports(HostImports imports) {
-        this.imports = imports;
-        return this;
+    public Instance instantiate(Store s) {
+        HostImports hostImports = s.toHostImports();
+        return Instance.builder(module).withHostImports(hostImports).build();
     }
 }
