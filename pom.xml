@@ -36,6 +36,7 @@
   <modules>
     <module>aot</module>
     <module>aot-tests</module>
+    <module>bindgen</module>
     <module>bom</module>
     <module>cli</module>
     <module>function-annotations</module>
@@ -136,6 +137,11 @@
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>aot</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>bindgen</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -407,6 +413,8 @@
             <includes>
               <include>**/src/main/java/**/*.java</include>
               <include>**/src/test/java/**/*.java</include>
+              <include>**/src/it/**/src/main/java/**/*.java</include>
+              <include>**/src/it/**/src/test/java/**/*.java</include>
             </includes>
             <googleJavaFormat>
               <version>1.18.1</version>
@@ -566,6 +574,7 @@
           <failOnWarning>${maven.dependency.failOnWarning}</failOnWarning>
           <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
           <ignoredUnusedDeclaredDependencies>
+            <dependency>com.dylibso.chicory:bindgen</dependency>
             <dependency>com.dylibso.chicory:wasm-corpus</dependency>
             <dependency>org.junit.jupiter:junit-jupiter-engine</dependency>
           </ignoredUnusedDeclaredDependencies>
