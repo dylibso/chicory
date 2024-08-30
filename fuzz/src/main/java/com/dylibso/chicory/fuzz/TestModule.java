@@ -24,6 +24,7 @@ public class TestModule {
         return type.params().stream().map(p -> randomNumber()).collect(Collectors.toList());
     }
 
+    @SuppressWarnings("deprecation")
     public String randomNumber() {
         // TODO: 2 digits integer seems not enough, but a starting point ...
         return RandomStringUtils.randomNumeric(2);
