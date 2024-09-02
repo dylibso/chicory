@@ -51,6 +51,25 @@ public class ApprovalTest {
     }
 
     @Test
+    public void verifyI32Renamed() {
+        var instance =
+                Instance.builder(
+                                Parser.parse(
+                                        ClassLoader.getSystemClassLoader()
+                                                .getResourceAsStream("compiled/i32.wat.wasm")))
+                        .withMachineFactory(inst -> new AotMachine("FOO", inst))
+                        .withStart(false)
+                        .build();
+        var compiled = ((AotMachine) instance.getMachine()).compiledClass();
+
+        ClassReader cr = new ClassReader(compiled);
+        var out = new ByteArrayOutputStream();
+        cr.accept(new TraceClassVisitor(new PrintWriter(out, false, UTF_8)), 0);
+
+        Approvals.verify(out);
+    }
+
+    @Test
     public void verifyIterFact() {
         verifyGeneratedBytecode("iterfact.wat.wasm");
     }
