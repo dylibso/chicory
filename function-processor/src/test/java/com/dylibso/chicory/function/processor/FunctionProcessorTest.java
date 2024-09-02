@@ -29,16 +29,30 @@ class FunctionProcessorTest {
     }
 
     @Test
-    void invalidParameterType() {
+    void invalidParameterTypeUnsupported() {
         Compilation compilation =
                 javac().withProcessors(new FunctionProcessor())
-                        .compile(JavaFileObjects.forResource("InvalidParameter.java"));
+                        .compile(JavaFileObjects.forResource("InvalidParameterUnsupported.java"));
 
         assertThat(compilation).failed();
 
         assertThat(compilation)
-                .hadErrorContaining("Unsupported WASM type: java.lang.String")
-                .inFile(JavaFileObjects.forResource("InvalidParameter.java"))
+                .hadErrorContaining("Unsupported WASM type: java.math.BigDecimal")
+                .inFile(JavaFileObjects.forResource("InvalidParameterUnsupported.java"))
+                .onLineContaining("public long square(BigDecimal x) {");
+    }
+
+    @Test
+    void invalidParameterTypeString() {
+        Compilation compilation =
+                javac().withProcessors(new FunctionProcessor())
+                        .compile(JavaFileObjects.forResource("InvalidParameterString.java"));
+
+        assertThat(compilation).failed();
+
+        assertThat(compilation)
+                .hadErrorContaining("Missing annotation for WASM type: java.lang.String")
+                .inFile(JavaFileObjects.forResource("InvalidParameterString.java"))
                 .onLineContaining("public long concat(int a, String s) {");
     }
 
