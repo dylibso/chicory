@@ -172,6 +172,13 @@
         <version>${project.version}</version>
       </dependency>
 
+      <!-- Error Prone -->
+      <dependency>
+        <groupId>com.google.errorprone</groupId>
+        <artifactId>error_prone_annotations</artifactId>
+        <version>${error-prone.version}</version>
+      </dependency>
+
       <!-- Used for WASI tests -->
       <dependency>
         <groupId>com.google.jimfs</groupId>
