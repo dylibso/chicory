@@ -1,6 +1,7 @@
 package com.dylibso.chicory.wasi;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -8,11 +9,14 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
 import java.util.List;
+import java.util.Random;
 import org.junit.jupiter.api.Test;
 
 public class WasiPreview1Test {
@@ -122,5 +126,26 @@ public class WasiPreview1Test {
         Instance.builder(module).withHostImports(imports).build();
 
         assertEquals("Hello, Wasi Console!\n", fakeStdout.output());
+    }
+
+    @Test
+    public void wasiRandom() {
+        var seed = 0x12345678;
+        var wasi =
+                new WasiPreview1(
+                        this.logger, WasiOptions.builder().withRandom(new Random(seed)).build());
+
+        var memory = new Memory(new MemoryLimits(8, 8));
+        assertEquals(0, wasi.randomGet(memory, 0, 123_456));
+        assertEquals(0, wasi.randomGet(memory, 222_222, 87_654));
+
+        var random = new Random(seed);
+        byte[] first = new byte[123_456];
+        random.nextBytes(first);
+        byte[] second = new byte[87_654];
+        random.nextBytes(second);
+
+        assertArrayEquals(first, memory.readBytes(0, 123_456));
+        assertArrayEquals(second, memory.readBytes(222_222, 87_654));
     }
 }

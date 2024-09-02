@@ -23,6 +23,7 @@ import com.dylibso.chicory.wasi.Descriptors.Directory;
 import com.dylibso.chicory.wasi.Descriptors.InStream;
 import com.dylibso.chicory.wasi.Descriptors.OutStream;
 import com.dylibso.chicory.wasi.Descriptors.PreopenedDirectory;
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -1079,13 +1080,21 @@ public final class WasiPreview1 implements Closeable {
         if (bufLen < 0) {
             return wasiResult(WasiErrno.EINVAL);
         }
-        if (bufLen >= 100_000) {
-            throw new WASMRuntimeException("random_get: bufLen must be < 100_000");
-        }
 
-        byte[] data = new byte[bufLen];
-        random.nextBytes(data);
-        memory.write(buf, data);
+        byte[] data = new byte[min(bufLen, 4096)];
+        int written = 0;
+        while (written < bufLen) {
+            if (Thread.currentThread().isInterrupted()) {
+                throw new ChicoryException("Thread interrupted");
+            }
+            int size = min(data.length, bufLen - written);
+            if (size < data.length) {
+                data = new byte[size];
+            }
+            random.nextBytes(data);
+            memory.write(buf + written, data, 0, size);
+            written += size;
+        }
         return wasiResult(WasiErrno.ESUCCESS);
     }
 
