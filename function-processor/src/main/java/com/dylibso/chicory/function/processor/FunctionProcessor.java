@@ -6,6 +6,8 @@ import static java.lang.String.format;
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.Diagnostic.Kind.NOTE;
 
+import com.dylibso.chicory.function.annotations.Buffer;
+import com.dylibso.chicory.function.annotations.CString;
 import com.dylibso.chicory.function.annotations.HostModule;
 import com.dylibso.chicory.function.annotations.WasmExport;
 import com.github.javaparser.ast.ArrayCreationLevel;
@@ -145,10 +147,7 @@ public final class FunctionProcessor extends AbstractProcessor {
         NodeList<Expression> paramTypes = new NodeList<>();
         NodeList<Expression> arguments = new NodeList<>();
         for (VariableElement parameter : executable.getParameters()) {
-            var argExpr =
-                    new ArrayAccessExpr(
-                            new NameExpr("args"),
-                            new IntegerLiteralExpr(String.valueOf(paramTypes.size())));
+            var argExpr = argExpr(paramTypes.size());
             switch (parameter.asType().toString()) {
                 case "int":
                     paramTypes.add(valueType("I32"));
@@ -165,6 +164,31 @@ public final class FunctionProcessor extends AbstractProcessor {
                 case "double":
                     paramTypes.add(valueType("F64"));
                     arguments.add(new MethodCallExpr(argExpr, "asDouble"));
+                    break;
+                case "java.lang.String":
+                    if (annotatedWith(parameter, Buffer.class)) {
+                        var lenExpr = argExpr(paramTypes.size() + 1);
+                        paramTypes.add(valueType("I32"));
+                        paramTypes.add(valueType("I32"));
+                        arguments.add(
+                                new MethodCallExpr(
+                                        new MethodCallExpr(new NameExpr("instance"), "memory"),
+                                        "readString",
+                                        new NodeList<>(
+                                                new MethodCallExpr(argExpr, "asInt"),
+                                                new MethodCallExpr(lenExpr, "asInt"))));
+                    } else if (annotatedWith(parameter, CString.class)) {
+                        paramTypes.add(valueType("I32"));
+                        paramTypes.add(valueType("I32"));
+                        arguments.add(
+                                new MethodCallExpr(
+                                        new MethodCallExpr(new NameExpr("instance"), "memory"),
+                                        "readCString",
+                                        new NodeList<>(new MethodCallExpr(argExpr, "asInt"))));
+                    } else {
+                        log(ERROR, "Missing annotation for WASM type: java.lang.String", parameter);
+                        throw new AbortProcessingException();
+                    }
                     break;
                 case "com.dylibso.chicory.runtime.Instance":
                     arguments.add(new NameExpr("instance"));
@@ -280,6 +304,10 @@ public final class FunctionProcessor extends AbstractProcessor {
                 .map(AnnotationMirror::getAnnotationType)
                 .map(TypeMirror::toString)
                 .anyMatch(annotationName::equals);
+    }
+
+    private static Expression argExpr(int n) {
+        return new ArrayAccessExpr(new NameExpr("args"), new IntegerLiteralExpr(String.valueOf(n)));
     }
 
     private static Expression valueType(String type) {

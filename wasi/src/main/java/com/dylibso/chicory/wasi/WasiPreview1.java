@@ -12,6 +12,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 
+import com.dylibso.chicory.function.annotations.Buffer;
 import com.dylibso.chicory.function.annotations.HostModule;
 import com.dylibso.chicory.function.annotations.WasmExport;
 import com.dylibso.chicory.log.Logger;
@@ -694,8 +695,8 @@ public final class WasiPreview1 implements Closeable {
     }
 
     @WasmExport
-    public int pathCreateDirectory(Memory memory, int dirFd, int pathPtr, int pathLen) {
-        logger.infof("path_create_directory: [%s, %s, %s]", dirFd, pathPtr, pathLen);
+    public int pathCreateDirectory(int dirFd, @Buffer String rawPath) {
+        logger.infof("path_create_directory: [%s, \"%s\"]", dirFd, rawPath);
         var descriptor = descriptors.get(dirFd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -706,7 +707,6 @@ public final class WasiPreview1 implements Closeable {
         }
         Path directory = ((Directory) descriptor).path();
 
-        String rawPath = memory.readString(pathPtr, pathLen);
         Path path = resolvePath(directory, rawPath);
         if (path == null) {
             return wasiResult(WasiErrno.EACCES);
@@ -726,10 +726,8 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int pathFilestatGet(
-            Memory memory, int dirFd, int lookupFlags, int pathPtr, int pathLen, int buf) {
-        logger.infof(
-                "path_filestat_get: [%s, %s, %s, %s, %s]",
-                dirFd, lookupFlags, pathPtr, pathLen, buf);
+            Memory memory, int dirFd, int lookupFlags, @Buffer String rawPath, int buf) {
+        logger.infof("path_filestat_get: [%s, %s, \"%s\", %s]", dirFd, lookupFlags, rawPath, buf);
         var descriptor = descriptors.get(dirFd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -740,7 +738,6 @@ public final class WasiPreview1 implements Closeable {
         }
         Path directory = ((Directory) descriptor).path();
 
-        String rawPath = memory.readString(pathPtr, pathLen);
         Path path = resolvePath(directory, rawPath);
         if (path == null) {
             return wasiResult(WasiErrno.EACCES);
@@ -768,14 +765,13 @@ public final class WasiPreview1 implements Closeable {
     public int pathFilestatSetTimes(
             int fd,
             int lookupFlags,
-            int pathPtr,
-            int pathLen,
+            @Buffer String rawPath,
             long accessTime,
             long modifiedTime,
             int fstFlags) {
         logger.infof(
-                "path_filestat_set_times: [%s, %s, %s, %s, %s, %s, %s]",
-                fd, lookupFlags, pathPtr, pathLen, accessTime, modifiedTime, fstFlags);
+                "path_filestat_set_times: [%s, %s, \"%s\", %s, %s, %s]",
+                fd, lookupFlags, rawPath, accessTime, modifiedTime, fstFlags);
         throw new WASMRuntimeException(
                 "We don't yet support this WASI call: path_filestat_set_size");
     }
@@ -784,14 +780,12 @@ public final class WasiPreview1 implements Closeable {
     public int pathLink(
             int oldFd,
             int oldFlags,
-            int oldPathPtr,
-            int oldPathLen,
+            @Buffer String rawOldPath,
             int newFd,
-            int newPathPtr,
-            int newPathLen) {
+            @Buffer String rawNewPath) {
         logger.infof(
-                "path_link: [%s, %s, %s, %s, %s, %s, %s]",
-                oldFd, oldFlags, oldPathPtr, oldPathLen, newFd, newPathPtr, newPathLen);
+                "path_link: [%s, %s, \"%s\", %s, \"%s\"]",
+                oldFd, oldFlags, rawOldPath, newFd, rawNewPath);
         throw new WASMRuntimeException("We don't yet support this WASI call: path_link");
     }
 
@@ -800,19 +794,17 @@ public final class WasiPreview1 implements Closeable {
             Memory memory,
             int dirFd,
             int lookupFlags,
-            int pathPtr,
-            int pathLen,
+            @Buffer String rawPath,
             int openFlags,
             long rightsBase,
             long rightsInheriting,
             int fdFlags,
             int fdPtr) {
         logger.infof(
-                "path_open: [%s, %s, %s, %s, %s, %s, %s, %s, %s]",
+                "path_open: [%s, %s, \"%s\", %s, %s, %s, %s, %s]",
                 dirFd,
                 lookupFlags,
-                pathPtr,
-                pathLen,
+                rawPath,
                 openFlags,
                 rightsBase,
                 rightsInheriting,
@@ -828,7 +820,6 @@ public final class WasiPreview1 implements Closeable {
         }
         Path directory = ((Directory) descriptor).path();
 
-        String rawPath = memory.readString(pathPtr, pathLen);
         Path path = resolvePath(directory, rawPath);
         if (path == null) {
             return wasiResult(WasiErrno.EACCES);
@@ -897,16 +888,15 @@ public final class WasiPreview1 implements Closeable {
     }
 
     @WasmExport
-    public int pathReadlink(int dirFd, int pathPtr, int pathLen, int buf, int bufLen, int bufUsed) {
+    public int pathReadlink(int dirFd, @Buffer String rawPath, int buf, int bufLen, int bufUsed) {
         logger.infof(
-                "path_readlink: [%s, %s, %s, %s, %s, %s]",
-                dirFd, pathPtr, pathLen, buf, bufLen, bufUsed);
+                "path_readlink: [%s, \"%s\", %s, %s, %s]", dirFd, rawPath, buf, bufLen, bufUsed);
         throw new WASMRuntimeException("We don't yet support this WASI call: path_readlink");
     }
 
     @WasmExport
-    public int pathRemoveDirectory(Memory memory, int dirFd, int pathPtr, int pathLen) {
-        logger.infof("path_remove_directory: [%s, %s, %s]", dirFd, pathPtr, pathLen);
+    public int pathRemoveDirectory(int dirFd, @Buffer String rawPath) {
+        logger.infof("path_remove_directory: [%s, \"%s\"]", dirFd, rawPath);
         var descriptor = descriptors.get(dirFd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -917,7 +907,6 @@ public final class WasiPreview1 implements Closeable {
         }
         Path directory = ((Directory) descriptor).path();
 
-        String rawPath = memory.readString(pathPtr, pathLen);
         Path path = resolvePath(directory, rawPath);
         if (path == null) {
             return wasiResult(WasiErrno.EACCES);
@@ -943,16 +932,8 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int pathRename(
-            Memory memory,
-            int oldFd,
-            int oldPathPtr,
-            int oldPathLen,
-            int newFd,
-            int newPathPtr,
-            int newPathLen) {
-        logger.infof(
-                "path_rename: [%s, %s, %s, %s, %s, %s]",
-                oldFd, oldPathPtr, oldPathLen, newFd, newPathPtr, newPathLen);
+            int oldFd, @Buffer String oldRawPath, int newFd, @Buffer String newRawPath) {
+        logger.infof("path_rename: [%s, \"%s\", %s, \"%s\"]", oldFd, oldRawPath, newFd, newRawPath);
         var oldDescriptor = descriptors.get(oldFd);
         if (oldDescriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -971,13 +952,11 @@ public final class WasiPreview1 implements Closeable {
         }
         Path newDirectory = ((Directory) newDescriptor).path();
 
-        String oldRawPath = memory.readString(oldPathPtr, oldPathLen);
         Path oldPath = resolvePath(oldDirectory, oldRawPath);
         if (oldPath == null) {
             return wasiResult(WasiErrno.EACCES);
         }
 
-        String newRawPath = memory.readString(newPathPtr, newPathLen);
         Path newPath = resolvePath(newDirectory, newRawPath);
         if (newPath == null) {
             return wasiResult(WasiErrno.EACCES);
@@ -1010,17 +989,14 @@ public final class WasiPreview1 implements Closeable {
     }
 
     @WasmExport
-    public int pathSymlink(
-            int oldPathPtr, int oldPathLen, int dirFd, int newPathPtr, int newPathLen) {
-        logger.infof(
-                "path_symlink: [%s, %s, %s, %s, %s]",
-                oldPathPtr, oldPathLen, dirFd, newPathPtr, newPathLen);
+    public int pathSymlink(@Buffer String oldRawPath, int dirFd, @Buffer String newRawPath) {
+        logger.infof("path_symlink: [\"%s\", %s, \"%s\"]", oldRawPath, dirFd, newRawPath);
         throw new WASMRuntimeException("We don't yet support this WASI call: path_symlink");
     }
 
     @WasmExport
-    public int pathUnlinkFile(Memory memory, int dirFd, int pathPtr, int pathLen) {
-        logger.infof("path_unlink_file: [%s, %s, %s]", dirFd, pathPtr, pathLen);
+    public int pathUnlinkFile(int dirFd, @Buffer String rawPath) {
+        logger.infof("path_unlink_file: [%s, \"%s\"]", dirFd, rawPath);
         var descriptor = descriptors.get(dirFd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -1031,7 +1007,6 @@ public final class WasiPreview1 implements Closeable {
         }
         Path directory = ((Directory) descriptor).path();
 
-        String rawPath = memory.readString(pathPtr, pathLen);
         Path path = resolvePath(directory, rawPath);
         if (path == null) {
             return wasiResult(WasiErrno.EACCES);
