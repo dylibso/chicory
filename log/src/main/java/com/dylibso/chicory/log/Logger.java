@@ -1,5 +1,6 @@
 package com.dylibso.chicory.log;
 
+import com.google.errorprone.annotations.FormatMethod;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -74,6 +75,7 @@ public interface Logger {
         }
     }
 
+    @FormatMethod
     default void tracef(String format, Object... args) {
         Objects.requireNonNull(format);
 
@@ -115,6 +117,7 @@ public interface Logger {
         }
     }
 
+    @FormatMethod
     default void debugf(String format, Object... args) {
         Objects.requireNonNull(format);
 
@@ -156,6 +159,7 @@ public interface Logger {
         }
     }
 
+    @FormatMethod
     default void infof(String format, Object... args) {
         Objects.requireNonNull(format);
 
@@ -197,6 +201,7 @@ public interface Logger {
         }
     }
 
+    @FormatMethod
     default void warnf(String format, Object... args) {
         Objects.requireNonNull(format);
 
@@ -238,6 +243,7 @@ public interface Logger {
         }
     }
 
+    @FormatMethod
     default void errorf(String format, Object... args) {
         Objects.requireNonNull(format);
 
