@@ -34,10 +34,6 @@
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>aot-maven-plugin</artifactId>
         <version>${project.version}</version>
-        <configuration>
-          <name>chicory.gen.Wast2JsonModule</name>
-          <wasmFile>${project.basedir}/../wabt/src/main/resources/wast2json</wasmFile>
-        </configuration>
         <executions>
           <execution>
             <id>wast2json</id>

@@ -40,8 +40,6 @@ import org.apache.maven.project.MavenProject;
 @Mojo(name = "wasm-aot-gen", defaultPhase = LifecyclePhase.GENERATE_RESOURCES, threadSafe = true)
 public class AotGenMojo extends AbstractMojo {
 
-    // private final Log log = new SystemStreamLog();
-
     /**
      * the wasm module to be used
      */
@@ -75,23 +73,6 @@ public class AotGenMojo extends AbstractMojo {
      */
     @Parameter(property = "project", required = true, readonly = true)
     private MavenProject project;
-
-    // private String adaptParams(int funcId, FunctionType t) {
-    //     var base = "CompiledModule.func_" + funcId + "(";
-    //     for (var i = 0; i < t.params().size(); i++) {
-    //         base += "args[" + i + "].asInt(),";
-    //     }
-    //     base += " instance.memory(), instance)";
-    //     return base;
-    // }
-
-    // private String generateReturn(int funcId, FunctionType t) {
-    //     if (t.returns().size() > 0) {
-    //         return "return new Value[] { Value.i32(" + adaptParams(funcId, t) + ")};";
-    //     } else {
-    //         return adaptParams(funcId, t) + ";\nreturn new Value[] {};";
-    //     }
-    // }
 
     private String valueTypeToConverter(ValueType vt) {
         switch (vt) {
@@ -146,20 +127,7 @@ public class AotGenMojo extends AbstractMojo {
             packageName += "." + split[i];
         }
 
-        // debug
-        // TODO: remove me!
-        // for (var i = 0; i < instance.functionCount(); i++) {
-        //     System.out.println(
-        //             "funcs.put( "
-        //                     + i
-        //                     + ", (instance, args) -> { \n"
-        //                     + generateReturn(i, instance.type(instance.functionType(i)))
-        //                     + "});");
-        // }
-
         // Generate static Machine implementation
-
-        // generate the bindings
         finalSourceFolder.toFile().mkdirs();
         final SourceRoot dest = new SourceRoot(finalSourceFolder);
 
@@ -281,8 +249,6 @@ public class AotGenMojo extends AbstractMojo {
 
         dest.add(cu);
         dest.saveAll();
-
-        // Generate an easy way to access exports!
 
         var targetFile = finalFolder.resolve(split[split.length - 1] + ".class");
         try {

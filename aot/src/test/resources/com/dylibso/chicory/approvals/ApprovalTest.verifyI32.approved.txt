@@ -55,7 +55,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ILOAD 0
     ILOAD 1
     ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
     RETURN
     MAXSTACK = 5
     MAXLOCALS = 3
