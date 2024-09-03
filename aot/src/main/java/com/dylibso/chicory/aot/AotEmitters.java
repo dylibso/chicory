@@ -1,36 +1,5 @@
 package com.dylibso.chicory.aot;
 
-import static com.dylibso.chicory.aot.AotMethods.CHECK_INTERRUPTION;
-import static com.dylibso.chicory.aot.AotMethods.INSTANCE_READ_GLOBAL;
-import static com.dylibso.chicory.aot.AotMethods.INSTANCE_SET_ELEMENT;
-import static com.dylibso.chicory.aot.AotMethods.INSTANCE_WRITE_GLOBAL;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_COPY;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_DROP;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_FILL;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_GROW;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_INIT;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_PAGES;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_READ_BYTE;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_READ_DOUBLE;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_READ_FLOAT;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_READ_INT;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_READ_LONG;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_READ_SHORT;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_WRITE_BYTE;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_WRITE_DOUBLE;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_WRITE_FLOAT;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_WRITE_INT;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_WRITE_LONG;
-import static com.dylibso.chicory.aot.AotMethods.MEMORY_WRITE_SHORT;
-import static com.dylibso.chicory.aot.AotMethods.REF_IS_NULL;
-import static com.dylibso.chicory.aot.AotMethods.TABLE_COPY;
-import static com.dylibso.chicory.aot.AotMethods.TABLE_FILL;
-import static com.dylibso.chicory.aot.AotMethods.TABLE_GET;
-import static com.dylibso.chicory.aot.AotMethods.TABLE_GROW;
-import static com.dylibso.chicory.aot.AotMethods.TABLE_INIT;
-import static com.dylibso.chicory.aot.AotMethods.TABLE_SET;
-import static com.dylibso.chicory.aot.AotMethods.TABLE_SIZE;
-import static com.dylibso.chicory.aot.AotMethods.THROW_OUT_OF_BOUNDS_MEMORY_ACCESS;
 import static com.dylibso.chicory.aot.AotUtil.StackSize;
 import static com.dylibso.chicory.aot.AotUtil.boxer;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
@@ -106,7 +75,7 @@ final class AotEmitters {
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         asm.visitLdcInsn(index);
         asm.visitInsn(Opcodes.ACONST_NULL);
-        emitInvokeVirtual(asm, INSTANCE_SET_ELEMENT);
+        emitInvokeVirtual(asm, AotMethodsRefs.INSTANCE_SET_ELEMENT);
     }
 
     public static void SELECT(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
@@ -130,7 +99,7 @@ final class AotEmitters {
         FunctionType functionType = ctx.functionTypes().get(funcId);
         MethodType methodType = methodTypeFor(functionType);
 
-        emitInvokeStatic(asm, CHECK_INTERRUPTION);
+        emitInvokeStatic(asm, AotMethodsRefs.CHECK_INTERRUPTION);
 
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
@@ -183,7 +152,7 @@ final class AotEmitters {
     }
 
     public static void REF_IS_NULL(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        emitInvokeStatic(asm, REF_IS_NULL);
+        emitInvokeStatic(asm, AotMethodsRefs.REF_IS_NULL);
     }
 
     public static void LOCAL_GET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
@@ -216,7 +185,7 @@ final class AotEmitters {
 
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         asm.visitLdcInsn(globalIndex);
-        emitInvokeVirtual(asm, INSTANCE_READ_GLOBAL);
+        emitInvokeVirtual(asm, AotMethodsRefs.INSTANCE_READ_GLOBAL);
 
         Method unboxer = unboxer(ctx.globalTypes().get(globalIndex));
         emitInvokeVirtual(asm, unboxer);
@@ -232,86 +201,86 @@ final class AotEmitters {
         asm.visitInsn(Opcodes.SWAP);
         asm.visitLdcInsn(globalIndex);
         asm.visitInsn(Opcodes.SWAP);
-        emitInvokeVirtual(asm, INSTANCE_WRITE_GLOBAL);
+        emitInvokeVirtual(asm, AotMethodsRefs.INSTANCE_WRITE_GLOBAL);
     }
 
     public static void TABLE_GET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitLdcInsn((int) ins.operands()[0]);
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
-        emitInvokeStatic(asm, TABLE_GET);
+        emitInvokeStatic(asm, AotMethodsRefs.TABLE_GET);
     }
 
     public static void TABLE_SET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitLdcInsn((int) ins.operands()[0]);
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
-        emitInvokeStatic(asm, TABLE_SET);
+        emitInvokeStatic(asm, AotMethodsRefs.TABLE_SET);
     }
 
     public static void TABLE_SIZE(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitLdcInsn((int) ins.operands()[0]);
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
-        emitInvokeStatic(asm, TABLE_SIZE);
+        emitInvokeStatic(asm, AotMethodsRefs.TABLE_SIZE);
     }
 
     public static void TABLE_GROW(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitLdcInsn((int) ins.operands()[0]);
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
-        emitInvokeStatic(asm, TABLE_GROW);
+        emitInvokeStatic(asm, AotMethodsRefs.TABLE_GROW);
     }
 
     public static void TABLE_FILL(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitLdcInsn((int) ins.operands()[0]);
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
-        emitInvokeStatic(asm, TABLE_FILL);
+        emitInvokeStatic(asm, AotMethodsRefs.TABLE_FILL);
     }
 
     public static void TABLE_COPY(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitLdcInsn((int) ins.operands()[0]);
         asm.visitLdcInsn((int) ins.operands()[1]);
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
-        emitInvokeStatic(asm, TABLE_COPY);
+        emitInvokeStatic(asm, AotMethodsRefs.TABLE_COPY);
     }
 
     public static void TABLE_INIT(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitLdcInsn((int) ins.operands()[0]);
         asm.visitLdcInsn((int) ins.operands()[1]);
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
-        emitInvokeStatic(asm, TABLE_INIT);
+        emitInvokeStatic(asm, AotMethodsRefs.TABLE_INIT);
     }
 
     public static void MEMORY_INIT(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         int segmentId = (int) ins.operands()[0];
         asm.visitLdcInsn(segmentId);
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
-        emitInvokeStatic(asm, MEMORY_INIT);
+        emitInvokeStatic(asm, AotMethodsRefs.MEMORY_INIT);
     }
 
     public static void MEMORY_COPY(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
-        emitInvokeStatic(asm, MEMORY_COPY);
+        emitInvokeStatic(asm, AotMethodsRefs.MEMORY_COPY);
     }
 
     public static void MEMORY_FILL(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
-        emitInvokeStatic(asm, MEMORY_FILL);
+        emitInvokeStatic(asm, AotMethodsRefs.MEMORY_FILL);
     }
 
     public static void MEMORY_GROW(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
         asm.visitInsn(Opcodes.SWAP);
-        emitInvokeVirtual(asm, MEMORY_GROW);
+        emitInvokeVirtual(asm, AotMethodsRefs.MEMORY_GROW);
     }
 
     public static void MEMORY_SIZE(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
-        emitInvokeVirtual(asm, MEMORY_PAGES);
+        emitInvokeVirtual(asm, AotMethodsRefs.MEMORY_PAGES);
     }
 
     public static void DATA_DROP(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         int segmentId = (int) ins.operands()[0];
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
         asm.visitLdcInsn(segmentId);
-        emitInvokeVirtual(asm, MEMORY_DROP);
+        emitInvokeVirtual(asm, AotMethodsRefs.MEMORY_DROP);
     }
 
     public static void I32_ADD(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
@@ -464,11 +433,11 @@ final class AotEmitters {
     }
 
     public static void I32_LOAD(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        emitLoadOrStore(ctx, ins, asm, MEMORY_READ_INT);
+        emitLoadOrStore(ctx, ins, asm, AotMethodsRefs.MEMORY_READ_INT);
     }
 
     public static void I32_LOAD8_S(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        emitLoadOrStore(ctx, ins, asm, MEMORY_READ_BYTE);
+        emitLoadOrStore(ctx, ins, asm, AotMethodsRefs.MEMORY_READ_BYTE);
     }
 
     public static void I32_LOAD8_U(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
@@ -478,7 +447,7 @@ final class AotEmitters {
     }
 
     public static void I32_LOAD16_S(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        emitLoadOrStore(ctx, ins, asm, MEMORY_READ_SHORT);
+        emitLoadOrStore(ctx, ins, asm, AotMethodsRefs.MEMORY_READ_SHORT);
     }
 
     public static void I32_LOAD16_U(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
@@ -488,11 +457,11 @@ final class AotEmitters {
     }
 
     public static void F32_LOAD(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        emitLoadOrStore(ctx, ins, asm, MEMORY_READ_FLOAT);
+        emitLoadOrStore(ctx, ins, asm, AotMethodsRefs.MEMORY_READ_FLOAT);
     }
 
     public static void I64_LOAD(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        emitLoadOrStore(ctx, ins, asm, MEMORY_READ_LONG);
+        emitLoadOrStore(ctx, ins, asm, AotMethodsRefs.MEMORY_READ_LONG);
     }
 
     public static void I64_LOAD8_S(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
@@ -528,25 +497,25 @@ final class AotEmitters {
     }
 
     public static void F64_LOAD(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        emitLoadOrStore(ctx, ins, asm, MEMORY_READ_DOUBLE);
+        emitLoadOrStore(ctx, ins, asm, AotMethodsRefs.MEMORY_READ_DOUBLE);
     }
 
     public static void I32_STORE(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_INT);
+        emitLoadOrStore(ctx, ins, asm, AotMethodsRefs.MEMORY_WRITE_INT);
     }
 
     public static void I32_STORE8(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.I2B);
-        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_BYTE);
+        emitLoadOrStore(ctx, ins, asm, AotMethodsRefs.MEMORY_WRITE_BYTE);
     }
 
     public static void I32_STORE16(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.I2S);
-        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_SHORT);
+        emitLoadOrStore(ctx, ins, asm, AotMethodsRefs.MEMORY_WRITE_SHORT);
     }
 
     public static void F32_STORE(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_FLOAT);
+        emitLoadOrStore(ctx, ins, asm, AotMethodsRefs.MEMORY_WRITE_FLOAT);
     }
 
     public static void I64_STORE8(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
@@ -561,15 +530,15 @@ final class AotEmitters {
 
     public static void I64_STORE32(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.L2I);
-        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_INT);
+        emitLoadOrStore(ctx, ins, asm, AotMethodsRefs.MEMORY_WRITE_INT);
     }
 
     public static void I64_STORE(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_LONG);
+        emitLoadOrStore(ctx, ins, asm, AotMethodsRefs.MEMORY_WRITE_LONG);
     }
 
     public static void F64_STORE(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        emitLoadOrStore(ctx, ins, asm, MEMORY_WRITE_DOUBLE);
+        emitLoadOrStore(ctx, ins, asm, AotMethodsRefs.MEMORY_WRITE_DOUBLE);
     }
 
     private static void emitLoadOrStore(
@@ -577,7 +546,7 @@ final class AotEmitters {
         long offset = ins.operands()[1];
 
         if (offset < 0 || offset >= Integer.MAX_VALUE) {
-            emitInvokeStatic(asm, THROW_OUT_OF_BOUNDS_MEMORY_ACCESS);
+            emitInvokeStatic(asm, AotMethodsRefs.THROW_OUT_OF_BOUNDS_MEMORY_ACCESS);
             asm.visitInsn(Opcodes.ATHROW);
         }
 

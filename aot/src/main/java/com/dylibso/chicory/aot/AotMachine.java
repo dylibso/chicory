@@ -1,8 +1,5 @@
 package com.dylibso.chicory.aot;
 
-import static com.dylibso.chicory.aot.AotMethods.CHECK_INTERRUPTION;
-import static com.dylibso.chicory.aot.AotMethods.INSTANCE_CALL_HOST_FUNCTION;
-import static com.dylibso.chicory.aot.AotMethods.THROW_TRAP_EXCEPTION;
 import static com.dylibso.chicory.aot.AotUtil.boxer;
 import static com.dylibso.chicory.aot.AotUtil.boxerHandle;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
@@ -570,7 +567,7 @@ public final class AotMachine implements Machine {
         asm.visitVarInsn(Opcodes.ILOAD, slot + 1); // tableIdx
         asm.visitVarInsn(Opcodes.ALOAD, slot + 2); // instance
 
-        emitInvokeStatic(asm, AotMethods.CALL_INDIRECT);
+        emitInvokeStatic(asm, AotMethodsRefs.CALL_INDIRECT);
 
         emitUnboxResult(type, asm);
     }
@@ -582,7 +579,7 @@ public final class AotMachine implements Machine {
         asm.visitLdcInsn(funcId);
         emitBoxArguments(asm, type.params());
 
-        emitInvokeVirtual(asm, INSTANCE_CALL_HOST_FUNCTION);
+        emitInvokeVirtual(asm, AotMethodsRefs.INSTANCE_CALL_HOST_FUNCTION);
 
         emitUnboxResult(type, asm);
     }
@@ -697,7 +694,7 @@ public final class AotMachine implements Machine {
                     break;
                 case UNREACHABLE:
                     exitBlockDepth = ins.depth();
-                    emitInvokeStatic(asm, THROW_TRAP_EXCEPTION);
+                    emitInvokeStatic(asm, AotMethodsRefs.THROW_TRAP_EXCEPTION);
                     asm.visitInsn(Opcodes.ATHROW);
                     break;
                 case RETURN:
@@ -720,7 +717,7 @@ public final class AotMachine implements Machine {
                 case BR:
                     exitBlockDepth = ins.depth();
                     if (ins.labelTrue() < idx) {
-                        emitInvokeStatic(asm, CHECK_INTERRUPTION);
+                        emitInvokeStatic(asm, AotMethodsRefs.CHECK_INTERRUPTION);
                     }
                     emitUnwindStack(asm, type, body, ins, ins.labelTrue(), ctx);
                     asm.visitJumpInsn(Opcodes.GOTO, labels.get(ins.labelTrue()));
@@ -730,7 +727,7 @@ public final class AotMachine implements Machine {
                     Label falseLabel = new Label();
                     asm.visitJumpInsn(Opcodes.IFEQ, falseLabel);
                     if (ins.labelTrue() < idx) {
-                        emitInvokeStatic(asm, CHECK_INTERRUPTION);
+                        emitInvokeStatic(asm, AotMethodsRefs.CHECK_INTERRUPTION);
                     }
                     emitUnwindStack(asm, type, body, ins, ins.labelTrue(), ctx);
                     asm.visitJumpInsn(Opcodes.GOTO, labels.get(ins.labelTrue()));
@@ -739,7 +736,7 @@ public final class AotMachine implements Machine {
                 case BR_TABLE:
                     exitBlockDepth = ins.depth();
                     ctx.popStackSize();
-                    emitInvokeStatic(asm, CHECK_INTERRUPTION);
+                    emitInvokeStatic(asm, AotMethodsRefs.CHECK_INTERRUPTION);
                     // skip table switch if it only has a default
                     if (ins.labelTable().size() == 1) {
                         asm.visitInsn(Opcodes.POP);

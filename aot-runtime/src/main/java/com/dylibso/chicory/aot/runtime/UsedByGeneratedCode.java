@@ -1,4 +1,4 @@
-package com.dylibso.chicory.aot;
+package com.dylibso.chicory.aot.runtime;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
