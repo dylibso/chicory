@@ -1,6 +1,6 @@
 // class version 55.0 (55)
 // access flags 0x11
-public final class com/dylibso/chicory/gen/CompiledModule {
+public final class com/dylibso/chicory/$gen/CompiledModule {
 
   // compiled from: wasm
   // debug info: wasm
