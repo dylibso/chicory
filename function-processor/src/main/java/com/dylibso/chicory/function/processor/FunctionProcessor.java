@@ -44,7 +44,9 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
@@ -86,8 +88,13 @@ public final class FunctionProcessor extends AbstractProcessor {
                 functions.add(processMethod(member, (ExecutableElement) member, moduleName));
             }
         }
-
-        var cu = new CompilationUnit(type.getEnclosingElement().toString());
+        var pkg = getPackageName(type);
+        var packageName = pkg.getQualifiedName().toString();
+        var cu = (pkg.isUnnamed()) ? new CompilationUnit() : new CompilationUnit(packageName);
+        if (!pkg.isUnnamed()) {
+            cu.setPackageDeclaration(packageName);
+            cu.addImport(type.getQualifiedName().toString());
+        }
         cu.addImport("com.dylibso.chicory.runtime.HostFunction");
         cu.addImport("com.dylibso.chicory.runtime.Instance");
         cu.addImport("com.dylibso.chicory.wasm.types.Value");
@@ -117,7 +124,8 @@ public final class FunctionProcessor extends AbstractProcessor {
                 .setType("HostFunction[]")
                 .setBody(new BlockStmt(new NodeList<>(new ReturnStmt(newHostFunctions))));
 
-        String qualifiedName = type.getQualifiedName() + "_ModuleFactory";
+        String prefix = (pkg.isUnnamed()) ? "" : packageName + ".";
+        String qualifiedName = prefix + type.getSimpleName() + "_ModuleFactory";
         try (Writer writer = filer().createSourceFile(qualifiedName, type).openWriter()) {
             writer.write(cu.printer(printer()).toString());
         } catch (IOException e) {
@@ -256,6 +264,14 @@ public final class FunctionProcessor extends AbstractProcessor {
 
     private void log(Diagnostic.Kind kind, String message, Element element) {
         processingEnv.getMessager().printMessage(kind, message, element);
+    }
+
+    private static PackageElement getPackageName(Element element) {
+        Element enclosing = element;
+        while (enclosing.getKind() != ElementKind.PACKAGE) {
+            enclosing = enclosing.getEnclosingElement();
+        }
+        return (PackageElement) enclosing;
     }
 
     private static boolean annotatedWith(Element element, Class<? extends Annotation> annotation) {
