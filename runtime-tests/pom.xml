@@ -21,7 +21,7 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wabt</artifactId>
+      <artifactId>wabt-aot</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

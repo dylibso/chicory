@@ -3,7 +3,7 @@ package com.dylibso.chicory.aot.wabt;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
 
-import com.dylibso.chicory.gen.CompiledModule;
+import chicory.gen.Wast2JsonModuleMachine;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostImports;
@@ -89,14 +89,11 @@ public final class Wast2Json {
                                 .withOpts(wasiOpts.build())
                                 .build()) {
                     HostImports imports = new HostImports(wasi.toHostFunctions());
-                    var instance =
-                            Instance.builder(MODULE)
-                                    .withHostImports(imports)
-                                    .withMachineFactory(Wast2JsonMachine::new)
-                                    .withStart(false)
-                                    .build();
 
-                    CompiledModule.func_18(instance.memory(), instance);
+                    Instance.builder(MODULE)
+                            .withHostImports(imports)
+                            .withMachineFactory(Wast2JsonModuleMachine::new)
+                            .build();
                 }
 
                 createDirectories(output.toPath().getParent());

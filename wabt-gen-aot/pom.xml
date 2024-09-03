@@ -16,6 +16,10 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
+      <artifactId>aot</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
       <artifactId>runtime</artifactId>
     </dependency>
     <dependency>
@@ -31,13 +35,29 @@
         <artifactId>aot-maven-plugin</artifactId>
         <version>${project.version}</version>
         <configuration>
-          <wasmFile>src/main/resources/wast2json</wasmFile>
+          <name>chicory.gen.Wast2JsonModule</name>
+          <wasmFile>${project.basedir}/../wabt/src/main/resources/wast2json</wasmFile>
         </configuration>
         <executions>
           <execution>
+            <id>wast2json</id>
             <goals>
               <goal>wasm-aot-gen</goal>
             </goals>
+            <configuration>
+              <name>chicory.gen.Wast2JsonModule</name>
+              <wasmFile>${project.basedir}/../wabt-aot/src/main/resources/wast2json</wasmFile>
+            </configuration>
+          </execution>
+          <execution>
+            <id>wat2wasm</id>
+            <goals>
+              <goal>wasm-aot-gen</goal>
+            </goals>
+            <configuration>
+              <name>chicory.gen.Wat2WasmModule</name>
+              <wasmFile>${project.basedir}/../wabt-aot/src/main/resources/wat2wasm</wasmFile>
+            </configuration>
           </execution>
         </executions>
       </plugin>

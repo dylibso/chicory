@@ -360,7 +360,7 @@ public class Instance {
 
         private boolean initialize = true;
         private boolean start = true;
-        private boolean skipImportMapping = false;
+        private boolean skipImportMapping;
         private ExecutionListener listener;
         private HostImports hostImports;
         private Function<Instance, Machine> machineFactory;
