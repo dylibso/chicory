@@ -15,6 +15,8 @@ class FunctionProcessorTest {
                 javac().withProcessors(new FunctionProcessor())
                         .compile(
                                 JavaFileObjects.forResource("BasicMath.java"),
+                                JavaFileObjects.forResource("Box.java"),
+                                JavaFileObjects.forResource("NoPackage.java"),
                                 JavaFileObjects.forResource("Simple.java"));
 
         assertThat(compilation).succeededWithoutWarnings();
@@ -26,6 +28,14 @@ class FunctionProcessorTest {
         assertThat(compilation)
                 .generatedSourceFile("chicory.testing.Simple_ModuleFactory")
                 .hasSourceEquivalentTo(JavaFileObjects.forResource("SimpleGenerated.java"));
+
+        assertThat(compilation)
+                .generatedSourceFile("chicory.testing.Nested_ModuleFactory")
+                .hasSourceEquivalentTo(JavaFileObjects.forResource("NestedGenerated.java"));
+
+        assertThat(compilation)
+                .generatedSourceFile("NoPackage_ModuleFactory")
+                .hasSourceEquivalentTo(JavaFileObjects.forResource("NoPackageGenerated.java"));
     }
 
     @Test
