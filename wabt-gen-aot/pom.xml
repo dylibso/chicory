@@ -16,10 +16,6 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>aot</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
       <artifactId>runtime</artifactId>
     </dependency>
     <dependency>

@@ -24,11 +24,13 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wasi</artifactId>
+      <artifactId>wasm</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wasm</artifactId>
+      <groupId>org.apache.maven</groupId>
+      <artifactId>maven-core</artifactId>
+      <version>${maven-plugin-api.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>

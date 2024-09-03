@@ -1,7 +1,6 @@
 package com.dylibso.chicory.maven.aot;
 
 import com.dylibso.chicory.aot.AotMachine;
-import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
@@ -9,16 +8,18 @@ import com.dylibso.chicory.wasm.Parser;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 
 /**
  * This plugin generates an invokable library from the compiled Wasm
  */
-@Mojo(name = "wasm-aot-gen", defaultPhase = LifecyclePhase.COMPILE, threadSafe = true)
+@Mojo(name = "wasm-aot-gen", defaultPhase = LifecyclePhase.GENERATE_RESOURCES, threadSafe = true)
 public class AotGenMojo extends AbstractMojo {
 
     // private final Log log = new SystemStreamLog();
@@ -30,10 +31,32 @@ public class AotGenMojo extends AbstractMojo {
     private File wasmFile;
 
     /**
+     * the name to be used by the generated class
+     */
+    @Parameter(required = true, defaultValue = "chicory.gen.CompiledModule")
+    private String name;
+
+    /**
      * the target folder to generate classes
      */
-    @Parameter(required = true, defaultValue = "${project.basedir}/target/classes")
-    private File targetFolder;
+    @Parameter(
+            required = true,
+            defaultValue = "${project.basedir}/target/generated-resources/chicory-aot")
+    private File targetClassFolder;
+
+    /**
+     * the target source folder to generate the Machine implementation
+     */
+    @Parameter(
+            required = true,
+            defaultValue = "${project.basedir}/target/generated-sources/chicory-aot")
+    private File targetSourceFolder;
+
+    /**
+     * The current Maven project.
+     */
+    @Parameter(property = "project", required = true, readonly = true)
+    private MavenProject project;
 
     // private String adaptParams(int funcId, FunctionType t) {
     //     var base = "CompiledModule.func_" + funcId + "(";
@@ -55,14 +78,10 @@ public class AotGenMojo extends AbstractMojo {
     @Override
     @SuppressWarnings("StringSplitter")
     public void execute() throws MojoExecutionException {
-        try (var wasi = WasiPreview1.builder().withOpts(WasiOptions.builder().build()).build()) {
             var instance =
                     Instance.builder(Parser.parse(wasmFile))
-                            .withMachineFactory(AotMachine::new)
-                            .withHostImports(
-                                    HostImports.builder()
-                                            .addFunction(wasi.toHostFunctions())
-                                            .build())
+                            .withMachineFactory(inst -> new AotMachine(name, inst))
+                            .withSkipImportMapping(true)
                             .withStart(false)
                             .build();
             var compiled = ((AotMachine) instance.getMachine()).compiledClass();
@@ -79,17 +98,21 @@ public class AotGenMojo extends AbstractMojo {
             //                     + "});");
             // }
 
-            var finalFolder = targetFolder.toPath();
+            var finalFolder = targetClassFolder.toPath();
             var split = name.split("\\.");
             for (int i = 0; i < (split.length - 1); i++) {
                 finalFolder = finalFolder.resolve(split[i]);
             }
             finalFolder.toFile().mkdirs();
+            var targetFile = finalFolder.resolve(split[split.length - 1] + ".class");
             try {
-                Files.write(finalFolder.resolve(split[split.length - 1] + ".class"), compiled);
+                Files.write(targetFile, compiled);
             } catch (IOException e) {
                 throw new MojoExecutionException("Failed to write " + name, e);
             }
-        }
+
+            Resource resource = new Resource();
+            resource.setDirectory(targetClassFolder.getPath());
+            project.addResource(resource);
     }
 }

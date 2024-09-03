@@ -3,6 +3,7 @@ package com.dylibso.chicory.runtime;
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantInstance;
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.ExternalType.FUNCTION;
+import static com.dylibso.chicory.wasm.types.ExternalType.MEMORY;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.wasm.Module;
@@ -359,6 +360,7 @@ public class Instance {
 
         private boolean initialize = true;
         private boolean start = true;
+        private boolean skipImportMapping = false;
         private ExecutionListener listener;
         private HostImports hostImports;
         private Function<Instance, Machine> machineFactory;
@@ -374,6 +376,11 @@ public class Instance {
 
         public Builder withStart(boolean s) {
             this.start = s;
+            return this;
+        }
+
+        public Builder withSkipImportMapping(boolean s) {
+            this.skipImportMapping = s;
             return this;
         }
 
@@ -677,10 +684,14 @@ public class Instance {
             }
 
             var mappedHostImports =
-                    mapHostImports(
-                            imports,
-                            (hostImports == null) ? new HostImports() : hostImports,
-                            module.memorySection().map(MemorySection::memoryCount).orElse(0));
+                    (!skipImportMapping)
+                            ? mapHostImports(
+                                    imports,
+                                    (hostImports == null) ? new HostImports() : hostImports,
+                                    module.memorySection()
+                                            .map(MemorySection::memoryCount)
+                                            .orElse(0))
+                            : null;
 
             if (module.startSection().isPresent()) {
                 var export =

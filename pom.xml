@@ -82,11 +82,7 @@
 
     <maven.compiler.release>11</maven.compiler.release>
     <maven.compiler.failOnWarning>true</maven.compiler.failOnWarning>
-<<<<<<< HEAD
     <maven.dependency.failOnWarning>true</maven.dependency.failOnWarning>
-=======
-    <maven.dependencies.failOnWarning>true</maven.dependencies.failOnWarning>
->>>>>>> 452c0d0d ([POC] Use the AOT compiled code instead of MH)
 
     <approvaltests.version>24.4.0</approvaltests.version>
     <asm.version>9.7</asm.version>
@@ -580,11 +576,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-dependency-plugin</artifactId>
         <configuration>
-<<<<<<< HEAD
           <failOnWarning>${maven.dependency.failOnWarning}</failOnWarning>
-=======
-          <failOnWarning>${maven.dependencies.failOnWarning}</failOnWarning>
->>>>>>> 452c0d0d ([POC] Use the AOT compiled code instead of MH)
           <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
           <ignoredUnusedDeclaredDependencies>
             <dependency>com.dylibso.chicory:wasm-corpus</dependency>
@@ -687,18 +679,11 @@
         <checkstyle.skip>true</checkstyle.skip>
         <enforcer.skip>true</enforcer.skip>
         <maven.compiler.failOnWarning>false</maven.compiler.failOnWarning>
-<<<<<<< HEAD
         <maven.dependency.failOnWarning>false</maven.dependency.failOnWarning>
         <maven.javadoc.skip>true</maven.javadoc.skip>
       </properties>
     </profile>
 
-=======
-        <maven.dependencies.failOnWarning>false</maven.dependencies.failOnWarning>
-        <maven.javadoc.skip>true</maven.javadoc.skip>
-      </properties>
-    </profile>
->>>>>>> 452c0d0d ([POC] Use the AOT compiled code instead of MH)
     <profile>
       <!-- Performs the quick build: all plugins deactivated -->
       <id>quick-build</id>

@@ -1,6 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -360,5 +361,15 @@ public class ModuleTest {
 
         // IIUC: 3 values returning from last CALL + 1 result
         assertTrue(finalStackSize.get() == 4L);
+    }
+
+    @Test
+    public void shouldIgnoreMissingImports() {
+        assertDoesNotThrow(
+                () ->
+                        Instance.builder(loadModule("compiled/hello-wasi.wat.wasm"))
+                                .withSkipImportMapping(true)
+                                .withStart(false)
+                                .build());
     }
 }
