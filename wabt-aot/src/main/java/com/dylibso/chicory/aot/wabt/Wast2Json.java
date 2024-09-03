@@ -51,8 +51,7 @@ public final class Wast2Json {
     }
 
     public void process() {
-        try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
-                ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
+        try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream()) {
             try (FileInputStream fis = new FileInputStream(input);
                     FileSystem fs =
                             Jimfs.newFileSystem(
