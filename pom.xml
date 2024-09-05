@@ -51,7 +51,6 @@
     <module>wasi-test-gen-plugin</module>
     <module>wasm</module>
     <module>wasm-corpus</module>
-    <module>wasm-support-plugin</module>
   </modules>
 
   <scm>

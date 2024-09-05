@@ -906,8 +906,8 @@ public final class Parser {
         }
 
         // System.out.println("b: " + b + " op: " + op);
-        var signature = OpCode.getSignature(op);
-        // TODO: Encode this in instructions.tsv ?
+        var signature = OpCode.signature(op);
+
         switch (op) {
             case MEMORY_GROW:
             case MEMORY_SIZE:
