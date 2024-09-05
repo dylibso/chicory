@@ -25,13 +25,13 @@ import java.util.stream.Stream;
 /**
  * Generate the OpCodes.java file from a tsv
  */
-public class OpCodeGen {
+public final class OpCodeGen {
+
+    private OpCodeGen() {}
 
     @SuppressWarnings("StringSplitter")
-    public static void generate(
-        File instructionsFile,
-        File sourceDestinationFolder
-    ) throws IOException {
+    public static void generate(File instructionsFile, File sourceDestinationFolder)
+            throws IOException {
         sourceDestinationFolder.mkdirs();
         List<String[]> lines;
         try (Stream<String> stream = Files.lines(instructionsFile.toPath())) {
