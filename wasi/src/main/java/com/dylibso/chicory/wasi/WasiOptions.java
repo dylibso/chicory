@@ -6,11 +6,14 @@ import static java.util.Objects.requireNonNull;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
+import java.security.SecureRandom;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 public final class WasiOptions {
+    private final Random random;
     private final OutputStream stdout;
     private final OutputStream stderr;
     private final InputStream stdin;
@@ -23,18 +26,24 @@ public final class WasiOptions {
     }
 
     private WasiOptions(
+            Random random,
             OutputStream stdout,
             OutputStream stderr,
             InputStream stdin,
             List<String> arguments,
             Map<String, String> environment,
             Map<String, Path> directories) {
+        this.random = requireNonNull(random);
         this.stdout = requireNonNull(stdout);
         this.stderr = requireNonNull(stderr);
         this.stdin = requireNonNull(stdin);
         this.arguments = List.copyOf(arguments);
         this.environment = unmodifiableMap(new LinkedHashMap<>(environment));
         this.directories = unmodifiableMap(new LinkedHashMap<>(directories));
+    }
+
+    public Random random() {
+        return random;
     }
 
     public OutputStream stdout() {
@@ -62,6 +71,7 @@ public final class WasiOptions {
     }
 
     public static final class Builder {
+        private Random random = new SecureRandom();
         private OutputStream stdout = OutputStream.nullOutputStream();
         private OutputStream stderr = OutputStream.nullOutputStream();
         private InputStream stdin = InputStream.nullInputStream();
@@ -70,6 +80,11 @@ public final class WasiOptions {
         private final Map<String, Path> directories = new LinkedHashMap<>();
 
         private Builder() {}
+
+        public Builder withRandom(Random random) {
+            this.random = random;
+            return this;
+        }
 
         public Builder withStdout(OutputStream stdout) {
             this.stdout = stdout;
@@ -109,7 +124,8 @@ public final class WasiOptions {
         }
 
         public WasiOptions build() {
-            return new WasiOptions(stdout, stderr, stdin, arguments, environment, directories);
+            return new WasiOptions(
+                    random, stdout, stderr, stdin, arguments, environment, directories);
         }
     }
 }

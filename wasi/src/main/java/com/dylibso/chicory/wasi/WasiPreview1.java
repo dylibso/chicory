@@ -42,7 +42,6 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -50,12 +49,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Stream;
 
 @HostModule("wasi_snapshot_preview1")
 public final class WasiPreview1 implements Closeable {
     private final Logger logger;
+    private final Random random;
     private final List<byte[]> arguments;
     private final List<Entry<byte[], byte[]>> environment;
     private final Descriptors descriptors = new Descriptors();
@@ -69,6 +70,7 @@ public final class WasiPreview1 implements Closeable {
 
     public WasiPreview1(Logger logger, WasiOptions opts) {
         this.logger = requireNonNull(logger);
+        this.random = opts.random();
         this.arguments =
                 opts.arguments().stream().map(value -> value.getBytes(UTF_8)).collect(toList());
         this.environment =
@@ -1082,7 +1084,7 @@ public final class WasiPreview1 implements Closeable {
         }
 
         byte[] data = new byte[bufLen];
-        new SecureRandom().nextBytes(data);
+        random.nextBytes(data);
         memory.write(buf, data);
         return wasiResult(WasiErrno.ESUCCESS);
     }
