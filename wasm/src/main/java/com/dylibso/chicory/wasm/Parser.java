@@ -896,13 +896,13 @@ public final class Parser {
     private static Instruction parseInstruction(ByteBuffer buffer) {
 
         var address = buffer.position();
-        var b = (int) readByte(buffer) & 0xff;
-        if (b == 0xfc) { // is multi-byte
-            b = (int) ((0xfc << 8) + readVarUInt32(buffer));
+        int b = (int) readByte(buffer) & 0xff;
+        if (b >= 0xfc) { // is multi-byte
+            b = ((b << 8) + readByte(buffer));
         }
         var op = OpCode.byOpCode(b);
         if (op == null) {
-            throw new MalformedException("illegal opcode, op value " + b);
+            throw new MalformedException("illegal opcode, op value " + String.format("%02X ", b));
         }
 
         // System.out.println("b: " + b + " op: " + op);
