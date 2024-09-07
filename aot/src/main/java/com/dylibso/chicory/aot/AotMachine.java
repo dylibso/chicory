@@ -21,6 +21,7 @@ import static com.dylibso.chicory.aot.AotUtil.slotCount;
 import static com.dylibso.chicory.aot.AotUtil.storeTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.unboxer;
 import static com.dylibso.chicory.aot.AotUtil.unboxerHandle;
+import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
 import static java.lang.invoke.MethodHandles.filterArguments;
 import static java.lang.invoke.MethodHandles.filterReturnValue;
 import static java.lang.invoke.MethodHandles.insertArguments;
@@ -81,7 +82,9 @@ import org.objectweb.asm.util.CheckClassAdapter;
 public final class AotMachine implements Machine {
 
     public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.$gen.CompiledModule";
-    private static final Instruction FUNCTION_SCOPE = new Instruction(-1, OpCode.NOP, new long[0]);
+
+    private static final Instruction FUNCTION_SCOPE =
+            new Instruction(-1, OpCode.NOP, EMPTY_OPERANDS);
 
     private final Module module;
     private final Instance instance;
@@ -865,7 +868,7 @@ public final class AotMachine implements Machine {
     }
 
     private FunctionType blockType(Instruction ins) {
-        var typeId = (int) ins.operands()[0];
+        var typeId = (int) ins.operand(0);
         if (typeId == 0x40) {
             return FunctionType.empty();
         }

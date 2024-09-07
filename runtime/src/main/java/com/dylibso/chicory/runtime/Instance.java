@@ -12,7 +12,6 @@ import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
 import com.dylibso.chicory.wasm.exceptions.UnlinkableException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
-import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
@@ -344,9 +343,9 @@ public class Instance {
         return imprt.handle().apply(this, args);
     }
 
-    public void onExecution(AnnotatedInstruction instruction, long[] operands, MStack stack) {
+    public void onExecution(Instruction instruction, MStack stack) {
         if (listener != null) {
-            listener.onExecution(instruction, operands, stack);
+            listener.onExecution(instruction, stack);
         }
     }
 

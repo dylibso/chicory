@@ -23,27 +23,27 @@ public final class ConstantEvaluators {
             switch (instruction.opcode()) {
                 case F32_CONST:
                     {
-                        tos = Value.f32(instruction.operands()[0]);
+                        tos = Value.f32(instruction.operand(0));
                         break;
                     }
                 case F64_CONST:
                     {
-                        tos = Value.f64(instruction.operands()[0]);
+                        tos = Value.f64(instruction.operand(0));
                         break;
                     }
                 case I32_CONST:
                     {
-                        tos = Value.i32(instruction.operands()[0]);
+                        tos = Value.i32(instruction.operand(0));
                         break;
                     }
                 case I64_CONST:
                     {
-                        tos = Value.i64(instruction.operands()[0]);
+                        tos = Value.i64(instruction.operand(0));
                         break;
                     }
                 case REF_NULL:
                     {
-                        ValueType vt = ValueType.refTypeForId((int) instruction.operands()[0]);
+                        ValueType vt = ValueType.refTypeForId((int) instruction.operand(0));
                         if (vt == ValueType.ExternRef) {
                             tos = Value.EXTREF_NULL;
                         } else if (vt == ValueType.FuncRef) {
@@ -56,14 +56,14 @@ public final class ConstantEvaluators {
                     }
                 case REF_FUNC:
                     {
-                        var idx = (int) instruction.operands()[0];
+                        var idx = (int) instruction.operand(0);
                         instance.function(idx);
                         tos = Value.funcRef(idx);
                         break;
                     }
                 case GLOBAL_GET:
                     {
-                        var idx = (int) instruction.operands()[0];
+                        var idx = (int) instruction.operand(0);
                         if (idx < instance.imports().globalCount()) {
                             if (instance.imports().global(idx).instance().getMutabilityType()
                                     != MutabilityType.Const) {
@@ -102,7 +102,7 @@ public final class ConstantEvaluators {
     public static Instance computeConstantInstance(Instance instance, List<Instruction> expr) {
         for (Instruction instruction : expr) {
             if (instruction.opcode() == GLOBAL_GET) {
-                return instance.global((int) instruction.operands()[0]).getInstance();
+                return instance.global((int) instruction.operand(0)).getInstance();
             }
         }
         return instance;

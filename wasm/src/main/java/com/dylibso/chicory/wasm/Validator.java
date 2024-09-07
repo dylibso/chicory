@@ -123,7 +123,7 @@ final class Validator {
 
     private Stream<Integer> declaredFunctions(List<Instruction> init) {
         if (!init.isEmpty() && init.get(0).opcode() == OpCode.REF_FUNC) {
-            int idx = (int) init.get(0).operands()[0];
+            int idx = (int) init.get(0).operand(0);
             getFunctionType(idx);
             if (idx >= functionImports.size()) {
                 return Stream.of(idx);
@@ -240,7 +240,7 @@ final class Validator {
     }
 
     private List<ValueType> getReturns(AnnotatedInstruction op) {
-        var typeId = (int) op.operands()[0];
+        var typeId = (int) op.operand(0);
         if (typeId == 0x40) { // epsilon
             return List.of();
         }
@@ -251,7 +251,7 @@ final class Validator {
     }
 
     private List<ValueType> getParams(AnnotatedInstruction op) {
-        var typeId = (int) op.operands()[0];
+        var typeId = (int) op.operand(0);
         if (typeId == 0x40) { // epsilon
             return List.of();
         }
@@ -372,7 +372,6 @@ final class Validator {
         for (var instruction : expr) {
             ValueType exprType = null;
 
-            long[] operands = instruction.operands();
             switch (instruction.opcode()) {
                 case I32_CONST:
                     exprType = ValueType.I32;
@@ -392,7 +391,7 @@ final class Validator {
                     break;
                 case REF_NULL:
                     {
-                        exprType = ValueType.refTypeForId((int) operands[0]);
+                        exprType = ValueType.refTypeForId((int) instruction.operand(0));
                         constInstrCount++;
                         if (exprType != ValueType.ExternRef && exprType != ValueType.FuncRef) {
                             throw new IllegalStateException(
@@ -404,7 +403,7 @@ final class Validator {
                     {
                         exprType = ValueType.FuncRef;
                         constInstrCount++;
-                        long idx = operands[0];
+                        long idx = instruction.operand(0);
 
                         if (idx < 0 || idx > allFuncCount) {
                             throw new InvalidException("unknown function " + idx);
@@ -414,7 +413,7 @@ final class Validator {
                     }
                 case GLOBAL_GET:
                     {
-                        var idx = (int) operands[0];
+                        var idx = (int) instruction.operand(0);
                         if (idx < globalImports.size()) {
                             var global = globalImports.get(idx);
                             if (global.mutabilityType() != MutabilityType.Const) {
@@ -513,7 +512,7 @@ final class Validator {
                     }
                 case BR:
                     {
-                        var n = (int) op.operands()[0];
+                        var n = (int) op.operand(0);
                         popVals(labelTypes(getCtrl(n)));
                         unreachable();
                         break;
@@ -521,7 +520,7 @@ final class Validator {
                 case BR_IF:
                     {
                         popVal(ValueType.I32);
-                        var n = (int) op.operands()[0];
+                        var n = (int) op.operand(0);
                         var labelTypes = labelTypes(getCtrl(n));
                         popVals(labelTypes);
                         pushVals(labelTypes);
@@ -530,14 +529,14 @@ final class Validator {
                 case BR_TABLE:
                     {
                         popVal(ValueType.I32);
-                        var m = (int) op.operands()[op.operands().length - 1];
+                        var m = (int) op.operand(op.operandCount() - 1);
                         if ((ctrlFrameStack.size() - 1 - m) < 0) {
                             throw new InvalidException("unknown label " + m);
                         }
                         var defaultBranchLabelTypes = labelTypes(getCtrl(m));
                         var arity = defaultBranchLabelTypes.size();
-                        for (var idx = 0; idx < op.operands().length - 1; idx++) {
-                            var n = (int) op.operands()[idx];
+                        for (var idx = 0; idx < op.operandCount() - 1; idx++) {
+                            var n = (int) op.operand(idx);
                             CtrlFrame ctrlFrame;
                             try {
                                 ctrlFrame = getCtrl(n);
@@ -582,15 +581,15 @@ final class Validator {
 
             switch (op.opcode()) {
                 case MEMORY_COPY:
-                    validateMemory((int) op.operands()[0]);
-                    validateMemory((int) op.operands()[1]);
+                    validateMemory((int) op.operand(0));
+                    validateMemory((int) op.operand(1));
                     break;
                 case MEMORY_FILL:
-                    validateMemory((int) op.operands()[0]);
+                    validateMemory((int) op.operand(0));
                     break;
                 case MEMORY_INIT:
-                    validateMemory((int) op.operands()[1]);
-                    validateDataSegment((int) op.operands()[0]);
+                    validateMemory((int) op.operand(1));
+                    validateDataSegment((int) op.operand(0));
                     break;
                 case MEMORY_SIZE:
                 case MEMORY_GROW:
@@ -638,7 +637,7 @@ final class Validator {
                     break;
                 case DATA_DROP:
                     {
-                        validateDataSegment((int) op.operands()[0]);
+                        validateDataSegment((int) op.operand(0));
                         break;
                     }
                 case DROP:
@@ -972,7 +971,7 @@ final class Validator {
                     }
                 case LOCAL_SET:
                     {
-                        var index = (int) op.operands()[0];
+                        var index = (int) op.operand(0);
                         ValueType expectedType =
                                 (index < inputLen)
                                         ? functionType.params().get(index)
@@ -982,7 +981,7 @@ final class Validator {
                     }
                 case LOCAL_GET:
                     {
-                        var index = (int) op.operands()[0];
+                        var index = (int) op.operand(0);
                         ValueType expectedType =
                                 (index < inputLen)
                                         ? functionType.params().get(index)
@@ -992,7 +991,7 @@ final class Validator {
                     }
                 case LOCAL_TEE:
                     {
-                        var index = (int) op.operands()[0];
+                        var index = (int) op.operand(0);
                         ValueType expectedType =
                                 (index < inputLen)
                                         ? functionType.params().get(index)
@@ -1003,13 +1002,13 @@ final class Validator {
                     }
                 case GLOBAL_GET:
                     {
-                        var global = getGlobal((int) op.operands()[0]);
+                        var global = getGlobal((int) op.operand(0));
                         pushVal(global.valueType());
                         break;
                     }
                 case GLOBAL_SET:
                     {
-                        var global = getGlobal((int) op.operands()[0]);
+                        var global = getGlobal((int) op.operand(0));
                         if (global.mutabilityType() == MutabilityType.Const) {
                             throw new InvalidException("global is immutable");
                         }
@@ -1018,7 +1017,7 @@ final class Validator {
                     }
                 case CALL:
                     {
-                        int typeId = getFunctionType((int) op.operands()[0]);
+                        int typeId = getFunctionType((int) op.operand(0));
                         var types = getType(typeId);
                         for (int j = types.params().size() - 1; j >= 0; j--) {
                             popVal(types.params().get(j));
@@ -1028,9 +1027,9 @@ final class Validator {
                     }
                 case CALL_INDIRECT:
                     {
-                        var typeId = (int) op.operands()[0];
+                        var typeId = (int) op.operand(0);
                         popVal(ValueType.I32);
-                        getTableType((int) op.operands()[1]);
+                        getTableType((int) op.operand(1));
                         var types = getType(typeId);
                         for (int j = types.params().size() - 1; j >= 0; j--) {
                             popVal(types.params().get(j));
@@ -1040,7 +1039,7 @@ final class Validator {
                     }
                 case REF_NULL:
                     {
-                        pushVal(ValueType.forId((int) op.operands()[0]));
+                        pushVal(ValueType.forId((int) op.operand(0)));
                         break;
                     }
                 case REF_IS_NULL:
@@ -1055,7 +1054,7 @@ final class Validator {
                     }
                 case REF_FUNC:
                     {
-                        var idx = (int) op.operands()[0];
+                        var idx = (int) op.operand(0);
                         if (idx == funcIdx // reference to self
                                 && !declaredFunctions.contains(idx)) {
                             throw new InvalidException("undeclared function reference");
@@ -1086,7 +1085,7 @@ final class Validator {
                 case SELECT_T:
                     {
                         popVal(ValueType.I32);
-                        var t = ValueType.forId((int) op.operands()[0]);
+                        var t = ValueType.forId((int) op.operand(0));
                         popVal(t);
                         popVal(t);
                         pushVal(t);
@@ -1094,8 +1093,8 @@ final class Validator {
                     }
                 case TABLE_COPY:
                     {
-                        var table1 = getTableType((int) op.operands()[1]);
-                        var table2 = getTableType((int) op.operands()[0]);
+                        var table1 = getTableType((int) op.operand(1));
+                        var table2 = getTableType((int) op.operand(0));
 
                         if (table1 != table2) {
                             throw new InvalidException(
@@ -1112,8 +1111,8 @@ final class Validator {
                     }
                 case TABLE_INIT:
                     {
-                        var table = getTableType((int) op.operands()[1]);
-                        var elemIdx = (int) op.operands()[0];
+                        var table = getTableType((int) op.operand(1));
+                        var elemIdx = (int) op.operand(0);
                         var elem = getElement(elemIdx);
 
                         if (table != elem.type()) {
@@ -1141,32 +1140,32 @@ final class Validator {
                 case TABLE_FILL:
                     {
                         popVal(ValueType.I32);
-                        popVal(getTableType((int) op.operands()[0]));
+                        popVal(getTableType((int) op.operand(0)));
                         popVal(ValueType.I32);
                         break;
                     }
                 case TABLE_GET:
                     {
                         popVal(ValueType.I32);
-                        pushVal(getTableType((int) op.operands()[0]));
+                        pushVal(getTableType((int) op.operand(0)));
                         break;
                     }
                 case TABLE_SET:
                     {
-                        popVal(getTableType((int) op.operands()[0]));
+                        popVal(getTableType((int) op.operand(0)));
                         popVal(ValueType.I32);
                         break;
                     }
                 case TABLE_GROW:
                     {
                         popVal(ValueType.I32);
-                        popVal(getTableType((int) op.operands()[0]));
+                        popVal(getTableType((int) op.operand(0)));
                         pushVal(ValueType.I32);
                         break;
                     }
                 case ELEM_DROP:
                     {
-                        var index = (int) op.operands()[0];
+                        var index = (int) op.operand(0);
                         getElement(index);
                         break;
                     }

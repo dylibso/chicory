@@ -85,9 +85,9 @@ public class ParserTest {
 
             assertTrue(instructions.get(0).toString().contains("0x00000032: I32_CONST [42]"));
             assertEquals(OpCode.I32_CONST, instructions.get(0).opcode());
-            assertEquals(42L, instructions.get(0).operands()[0]);
+            assertEquals(42L, instructions.get(0).operand(0));
             assertEquals(OpCode.CALL, instructions.get(1).opcode());
-            assertEquals(0L, instructions.get(1).operands()[0]);
+            assertEquals(0L, instructions.get(1).operand(0));
             assertEquals(OpCode.END, instructions.get(2).opcode());
         }
     }
@@ -170,9 +170,9 @@ public class ParserTest {
             var module = Parser.parse(is);
             var codeSection = module.codeSection();
             var fbody = codeSection.getFunctionBody(0);
-            var f32 = Float.intBitsToFloat((int) fbody.instructions().get(0).operands()[0]);
+            var f32 = Float.intBitsToFloat((int) fbody.instructions().get(0).operand(0));
             assertEquals(0.12345678f, f32, 0.0);
-            var f64 = Double.longBitsToDouble(fbody.instructions().get(1).operands()[0]);
+            var f64 = Double.longBitsToDouble(fbody.instructions().get(1).operand(0));
             assertEquals(0.123456789012345d, f64, 0.0);
         }
     }
@@ -183,20 +183,20 @@ public class ParserTest {
             var module = Parser.parse(is);
             var codeSection = module.codeSection();
             var fbody = codeSection.getFunctionBody(0);
-            assertEquals(-2147483648L, fbody.instructions().get(0).operands()[0]);
-            assertEquals(0L, fbody.instructions().get(2).operands()[0]);
-            assertEquals(2147483647L, fbody.instructions().get(4).operands()[0]);
-            assertEquals(-9223372036854775808L, fbody.instructions().get(6).operands()[0]);
-            assertEquals(0L, fbody.instructions().get(8).operands()[0]);
-            assertEquals(9223372036854775807L, fbody.instructions().get(10).operands()[0]);
-            assertEquals(-2147483647L, fbody.instructions().get(12).operands()[0]);
-            assertEquals(2147483646L, fbody.instructions().get(14).operands()[0]);
-            assertEquals(-9223372036854775807L, fbody.instructions().get(16).operands()[0]);
-            assertEquals(9223372036854775806L, fbody.instructions().get(18).operands()[0]);
-            assertEquals(-1L, fbody.instructions().get(20).operands()[0]);
-            assertEquals(1L, fbody.instructions().get(22).operands()[0]);
-            assertEquals(-1L, fbody.instructions().get(24).operands()[0]);
-            assertEquals(1L, fbody.instructions().get(26).operands()[0]);
+            assertEquals(-2147483648L, fbody.instructions().get(0).operand(0));
+            assertEquals(0L, fbody.instructions().get(2).operand(0));
+            assertEquals(2147483647L, fbody.instructions().get(4).operand(0));
+            assertEquals(-9223372036854775808L, fbody.instructions().get(6).operand(0));
+            assertEquals(0L, fbody.instructions().get(8).operand(0));
+            assertEquals(9223372036854775807L, fbody.instructions().get(10).operand(0));
+            assertEquals(-2147483647L, fbody.instructions().get(12).operand(0));
+            assertEquals(2147483646L, fbody.instructions().get(14).operand(0));
+            assertEquals(-9223372036854775807L, fbody.instructions().get(16).operand(0));
+            assertEquals(9223372036854775806L, fbody.instructions().get(18).operand(0));
+            assertEquals(-1L, fbody.instructions().get(20).operand(0));
+            assertEquals(1L, fbody.instructions().get(22).operand(0));
+            assertEquals(-1L, fbody.instructions().get(24).operand(0));
+            assertEquals(1L, fbody.instructions().get(26).operand(0));
         }
     }
 
