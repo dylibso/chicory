@@ -5,6 +5,7 @@ import static com.dylibso.chicory.wasm.Encoding.readSigned32Leb128;
 import static com.dylibso.chicory.wasm.Encoding.readSigned64Leb128;
 import static com.dylibso.chicory.wasm.Encoding.readUnsignedLeb128;
 import static com.dylibso.chicory.wasm.WasmLimits.MAX_FUNCTION_LOCALS;
+import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
 import static java.util.Objects.requireNonNull;
 
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
@@ -659,7 +660,7 @@ public final class Parser {
                         List.of(
                                 new Instruction(
                                         -1, OpCode.REF_FUNC, new long[] {readVarUInt32(buffer)}),
-                                new Instruction(-1, OpCode.END, new long[0])));
+                                new Instruction(-1, OpCode.END, EMPTY_OPERANDS)));
             }
         }
         if (declarative) {
@@ -791,7 +792,7 @@ public final class Parser {
                         // fallthrough
                     case BR:
                         {
-                            var offset = (int) baseInstruction.operands()[0];
+                            var offset = (int) baseInstruction.operand(0);
                             ControlTree reference = currentControlFlow;
                             while (offset > 0) {
                                 if (reference == null) {
@@ -805,11 +806,11 @@ public final class Parser {
                         }
                     case BR_TABLE:
                         {
-                            var length = baseInstruction.operands().length;
+                            var length = baseInstruction.operandCount();
                             var labelTable = new ArrayList<Integer>();
                             for (var idx = 0; idx < length; idx++) {
                                 labelTable.add(null);
-                                var offset = (int) baseInstruction.operands()[idx];
+                                var offset = (int) baseInstruction.operand(idx);
                                 ControlTree reference = currentControlFlow;
                                 while (offset > 0) {
                                     if (reference == null) {
@@ -921,6 +922,11 @@ public final class Parser {
             default:
                 break;
         }
+
+        if (signature.isEmpty()) {
+            return new Instruction(address, op, EMPTY_OPERANDS);
+        }
+
         var operands = new ArrayList<Long>();
         for (var sig : signature) {
             switch (sig) {

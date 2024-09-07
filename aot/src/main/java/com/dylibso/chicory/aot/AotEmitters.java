@@ -102,7 +102,7 @@ final class AotEmitters {
     }
 
     public static void ELEM_DROP(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        int index = (int) ins.operands()[0];
+        int index = (int) ins.operand(0);
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         asm.visitLdcInsn(index);
         asm.visitInsn(Opcodes.ACONST_NULL);
@@ -126,7 +126,7 @@ final class AotEmitters {
     }
 
     public static void CALL(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        int funcId = (int) ins.operands()[0];
+        int funcId = (int) ins.operand(0);
         FunctionType functionType = ctx.functionTypes().get(funcId);
         MethodType methodType = methodTypeFor(functionType);
 
@@ -149,8 +149,8 @@ final class AotEmitters {
     }
 
     public static void CALL_INDIRECT(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        int typeId = (int) ins.operands()[0];
-        int tableIdx = (int) ins.operands()[1];
+        int typeId = (int) ins.operand(0);
+        int tableIdx = (int) ins.operand(1);
         FunctionType functionType = ctx.types()[typeId];
 
         MethodType methodType = callIndirectMethodType(functionType);
@@ -175,7 +175,7 @@ final class AotEmitters {
     }
 
     public static void REF_FUNC(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitLdcInsn((int) ins.operand(0));
     }
 
     public static void REF_NULL(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
@@ -187,14 +187,14 @@ final class AotEmitters {
     }
 
     public static void LOCAL_GET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        var loadIndex = (int) ins.operands()[0];
+        var loadIndex = (int) ins.operand(0);
         var localType = localType(ctx.getType(), ctx.getBody(), loadIndex);
         asm.visitVarInsn(loadTypeOpcode(localType), ctx.localSlotIndex(loadIndex));
         ctx.pushStackSize(stackSize(jvmType(localType)));
     }
 
     public static void LOCAL_SET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        int index = (int) ins.operands()[0];
+        int index = (int) ins.operand(0);
         var localType = localType(ctx.getType(), ctx.getBody(), index);
         asm.visitVarInsn(storeTypeOpcode(localType), ctx.localSlotIndex(index));
     }
@@ -212,7 +212,7 @@ final class AotEmitters {
     }
 
     public static void GLOBAL_GET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        int globalIndex = (int) ins.operands()[0];
+        int globalIndex = (int) ins.operand(0);
 
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         asm.visitLdcInsn(globalIndex);
@@ -225,7 +225,7 @@ final class AotEmitters {
     }
 
     public static void GLOBAL_SET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        int globalIndex = (int) ins.operands()[0];
+        int globalIndex = (int) ins.operand(0);
 
         emitInvokeStatic(asm, boxer(ctx.globalTypes().get(globalIndex)));
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
@@ -236,51 +236,51 @@ final class AotEmitters {
     }
 
     public static void TABLE_GET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitLdcInsn((int) ins.operand(0));
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         emitInvokeStatic(asm, TABLE_GET);
     }
 
     public static void TABLE_SET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitLdcInsn((int) ins.operand(0));
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         emitInvokeStatic(asm, TABLE_SET);
     }
 
     public static void TABLE_SIZE(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitLdcInsn((int) ins.operand(0));
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         emitInvokeStatic(asm, TABLE_SIZE);
     }
 
     public static void TABLE_GROW(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitLdcInsn((int) ins.operand(0));
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         emitInvokeStatic(asm, TABLE_GROW);
     }
 
     public static void TABLE_FILL(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitLdcInsn((int) ins.operand(0));
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         emitInvokeStatic(asm, TABLE_FILL);
     }
 
     public static void TABLE_COPY(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operands()[0]);
-        asm.visitLdcInsn((int) ins.operands()[1]);
+        asm.visitLdcInsn((int) ins.operand(0));
+        asm.visitLdcInsn((int) ins.operand(1));
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         emitInvokeStatic(asm, TABLE_COPY);
     }
 
     public static void TABLE_INIT(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operands()[0]);
-        asm.visitLdcInsn((int) ins.operands()[1]);
+        asm.visitLdcInsn((int) ins.operand(0));
+        asm.visitLdcInsn((int) ins.operand(1));
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         emitInvokeStatic(asm, TABLE_INIT);
     }
 
     public static void MEMORY_INIT(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        int segmentId = (int) ins.operands()[0];
+        int segmentId = (int) ins.operand(0);
         asm.visitLdcInsn(segmentId);
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
         emitInvokeStatic(asm, MEMORY_INIT);
@@ -308,7 +308,7 @@ final class AotEmitters {
     }
 
     public static void DATA_DROP(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        int segmentId = (int) ins.operands()[0];
+        int segmentId = (int) ins.operand(0);
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
         asm.visitLdcInsn(segmentId);
         emitInvokeVirtual(asm, MEMORY_DROP);
@@ -323,7 +323,7 @@ final class AotEmitters {
     }
 
     public static void I32_CONST(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operands()[0]);
+        asm.visitLdcInsn((int) ins.operand(0));
     }
 
     public static void I32_MUL(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
@@ -367,7 +367,7 @@ final class AotEmitters {
     }
 
     public static void I64_CONST(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn(ins.operands()[0]);
+        asm.visitLdcInsn(ins.operand(0));
     }
 
     public static void I64_EXTEND_I32_S(
@@ -411,7 +411,7 @@ final class AotEmitters {
     }
 
     public static void F32_CONST(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn(Float.intBitsToFloat((int) ins.operands()[0]));
+        asm.visitLdcInsn(Float.intBitsToFloat((int) ins.operand(0)));
     }
 
     public static void F32_DEMOTE_F64(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
@@ -439,7 +439,7 @@ final class AotEmitters {
     }
 
     public static void F64_CONST(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn(Double.longBitsToDouble(ins.operands()[0]));
+        asm.visitLdcInsn(Double.longBitsToDouble(ins.operand(0)));
     }
 
     public static void F64_DIV(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
@@ -574,7 +574,7 @@ final class AotEmitters {
 
     private static void emitLoadOrStore(
             AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm, Method method) {
-        long offset = ins.operands()[1];
+        long offset = ins.operand(1);
 
         if (offset < 0 || offset >= Integer.MAX_VALUE) {
             emitInvokeStatic(asm, THROW_OUT_OF_BOUNDS_MEMORY_ACCESS);

@@ -3,6 +3,8 @@ package com.dylibso.chicory.wasm.types;
 import java.util.Arrays;
 
 public class Instruction {
+    public static final long[] EMPTY_OPERANDS = new long[0];
+
     private final int address;
     private final OpCode opcode;
     private final long[] operands;
@@ -10,7 +12,7 @@ public class Instruction {
     public Instruction(int address, OpCode opcode, long[] operands) {
         this.address = address;
         this.opcode = opcode;
-        this.operands = operands;
+        this.operands = operands.length == 0 ? EMPTY_OPERANDS : operands.clone();
     }
 
     public int address() {
@@ -22,7 +24,15 @@ public class Instruction {
     }
 
     public long[] operands() {
-        return operands;
+        return operands.clone();
+    }
+
+    public int operandCount() {
+        return operands.length;
+    }
+
+    public long operand(int index) {
+        return operands[index];
     }
 
     @Override

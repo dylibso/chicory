@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
+import com.dylibso.chicory.wasm.types.Instruction;
 
 @FunctionalInterface
 public interface ExecutionListener {
@@ -13,5 +13,5 @@ public interface ExecutionListener {
      *
      * If you have a specific use case for this functionality, please, open an Issue at: https://github.com/dylibso/chicory/issues
      */
-    void onExecution(AnnotatedInstruction instruction, long[] operands, MStack stack);
+    void onExecution(Instruction instruction, MStack stack);
 }
