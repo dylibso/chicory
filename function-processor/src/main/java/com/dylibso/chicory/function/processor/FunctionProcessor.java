@@ -273,7 +273,6 @@ public final class FunctionProcessor extends AbstractProcessor {
                         .addArgument(new StringLiteralExpr(name))
                         .addArgument(new MethodCallExpr(new NameExpr("List"), "of", paramTypes))
                         .addArgument(new MethodCallExpr(new NameExpr("List"), "of", returnType));
-        // TODO: update javaparser and replace with multiline formatting
         function.setLineComment("");
         return function;
     }
