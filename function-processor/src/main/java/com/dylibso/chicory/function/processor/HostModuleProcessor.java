@@ -43,7 +43,7 @@ public final class HostModuleProcessor extends AbstractModuleProcessor {
         var functions = new NodeList<Expression>();
         for (Element member : elements().getAllMembers(type)) {
             if (member instanceof ExecutableElement && annotatedWith(member, WasmExport.class)) {
-                functions.add(processMethod(member, (ExecutableElement) member, moduleName));
+                functions.add(processMethod((ExecutableElement) member, moduleName));
             }
         }
 
@@ -77,8 +77,7 @@ public final class HostModuleProcessor extends AbstractModuleProcessor {
         writeSourceFile(cu, pkg, type, "_ModuleFactory");
     }
 
-    private Expression processMethod(
-            Element member, ExecutableElement executable, String moduleName) {
+    private Expression processMethod(ExecutableElement executable, String moduleName) {
         // compute function name
         var name = executable.getAnnotation(WasmExport.class).value();
         if (name.isEmpty()) {
@@ -175,7 +174,9 @@ public final class HostModuleProcessor extends AbstractModuleProcessor {
         // function invocation
         Expression invocation =
                 new MethodCallExpr(
-                        new NameExpr("functions"), member.getSimpleName().toString(), arguments);
+                        new NameExpr("functions"),
+                        executable.getSimpleName().toString(),
+                        arguments);
 
         // convert return value
         BlockStmt handleBody = new BlockStmt();
