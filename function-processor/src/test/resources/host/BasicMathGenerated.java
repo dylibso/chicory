@@ -7,7 +7,7 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 import javax.annotation.processing.Generated;
 
-@Generated("com.dylibso.chicory.function.processor.FunctionProcessor")
+@Generated("com.dylibso.chicory.function.processor.HostModuleProcessor")
 public final class BasicMath_ModuleFactory {
 
     private BasicMath_ModuleFactory() {}
