@@ -33,6 +33,14 @@ public class ModuleTest {
     }
 
     @Test
+    public void shouldRunABasicAdd() {
+        var instance = Instance.builder(loadModule("compiled/add.wat.wasm")).build();
+        var add = instance.export("add");
+        var result = add.apply(Value.i32(5), Value.i32(6))[0];
+        assertEquals(11, result.asInt());
+    }
+
+    @Test
     public void shouldSupportBrTable() {
         var instance = Instance.builder(loadModule("compiled/br_table.wat.wasm")).build();
         var switchLike = instance.export("switch_like");
