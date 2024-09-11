@@ -34,9 +34,9 @@
       <version>${javaparser.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.eclipse.jgit</groupId>
-      <artifactId>org.eclipse.jgit</artifactId>
-      <version>${jgit.version}</version>
+      <groupId>net.lingala.zip4j</groupId>
+      <artifactId>zip4j</artifactId>
+      <version>${zip4j.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.maven</groupId>
