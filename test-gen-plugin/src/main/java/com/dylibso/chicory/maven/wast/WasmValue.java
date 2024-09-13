@@ -1,5 +1,6 @@
 package com.dylibso.chicory.maven.wast;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class WasmValue {
@@ -8,67 +9,64 @@ public class WasmValue {
     private WasmValueType type;
 
     @JsonProperty("value")
-    private String value;
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    private String[] value;
 
     @JsonProperty("lane_type")
-    private String laneType;
+    private LaneType laneType;
 
     public WasmValueType type() {
         return type;
     }
 
-    public String value() {
-        return value;
-    }
-
-    public String laneType() {
+    public LaneType laneType() {
         return laneType;
     }
 
     public String toJavaValue() {
         switch (type) {
             case I32:
-                return "Integer.parseUnsignedInt(\"" + value + "\")";
+                return "Integer.parseUnsignedInt(\"" + value[0] + "\")";
             case I64:
-                return "Long.parseUnsignedLong(\"" + value + "\")";
+                return "Long.parseUnsignedLong(\"" + value[0] + "\")";
             case F32:
-                if (value != null) {
-                    switch (value) {
+                if (value[0] != null) {
+                    switch (value[0]) {
                         case "nan:canonical":
                         case "nan:arithmetic":
                             return "Float.NaN";
                         default:
                             return "Float.intBitsToFloat(Integer.parseUnsignedInt(\""
-                                    + value
+                                    + value[0]
                                     + "\"))";
                     }
                 } else {
                     return "null";
                 }
             case F64:
-                if (value != null) {
-                    switch (value) {
+                if (value[0] != null) {
+                    switch (value[0]) {
                         case "nan:canonical":
                         case "nan:arithmetic":
                             return "Double.NaN";
                         default:
                             return "Double.longBitsToDouble(Long.parseUnsignedLong(\""
-                                    + value
+                                    + value[0]
                                     + "\"))";
                     }
                 } else {
                     return "null";
                 }
             case EXTERN_REF:
-                if (value.toString().equals("null")) {
+                if (value[0].toString().equals("null")) {
                     return "Value.EXTREF_NULL";
                 }
-                return value;
+                return value[0];
             case FUNC_REF:
-                if (value.toString().equals("null")) {
+                if (value[0].toString().equals("null")) {
                     return "Value.FUNCREF_NULL";
                 }
-                return value;
+                return value[0];
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
@@ -81,26 +79,26 @@ public class WasmValue {
             case I64:
                 return "Value.i64(" + toJavaValue() + ")";
             case F32:
-                return "Value.f32(Integer.parseUnsignedInt(\"" + value + "\"))";
+                return "Value.f32(Integer.parseUnsignedInt(\"" + value[0] + "\"))";
             case F64:
-                return "Value.f64(Long.parseUnsignedLong(\"" + value + "\"))";
+                return "Value.f64(Long.parseUnsignedLong(\"" + value[0] + "\"))";
             case EXTERN_REF:
-                if (value.toString().equals("null")) {
+                if (value[0].toString().equals("null")) {
                     return "Value.EXTREF_NULL";
                 }
-                return "Value.externRef(" + value + ")";
+                return "Value.externRef(" + value[0] + ")";
             case FUNC_REF:
-                if (value.toString().equals("null")) {
+                if (value[0].toString().equals("null")) {
                     return "Value.FUNCREF_NULL";
                 }
-                return "Value.funcRef(" + value + ")";
+                return "Value.funcRef(" + value[0] + ")";
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
     }
 
     public String extractType() {
-        if (value == null || value.equals("null")) {
+        if (value[0] == null || value[0].equals("null")) {
             return "";
         } else {
             switch (type) {

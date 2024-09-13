@@ -17,7 +17,7 @@ import java.util.Map;
 /**
  * This is responsible for holding and interpreting the Wasm code.
  */
-class InterpreterMachine implements Machine {
+public class InterpreterMachine implements Machine {
 
     private final MStack stack;
 

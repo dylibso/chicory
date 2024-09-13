@@ -13,6 +13,10 @@
   <name>Chicory - Runtime tests</name>
   <description>Tests for the Chicory runtime using the WebAssembly testsuite</description>
 
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
