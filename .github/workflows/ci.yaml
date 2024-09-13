@@ -66,7 +66,7 @@ jobs:
           MAVEN_OPTS: "-Dmaven.repo.local=${{ github.workspace }}/repository"
       # Test root Readme
       - name: jbang
-        uses: jbangdev/jbang-action@9f8c55e0a2b6b297711162b20c209c5e07076e59 # tag=v0.117.1
+        uses: jbangdev/jbang-action@4d418212d8b3a80dddd94e8ba1b68e6ef3f7afd2 # tag=v0.118.0
         with:
           script: README.md
         env:
@@ -75,7 +75,7 @@ jobs:
         run: diff -r ./readmes/main/expected ./readmes/main/current
       # Test wasi Readme
       - name: jbang
-        uses: jbangdev/jbang-action@9f8c55e0a2b6b297711162b20c209c5e07076e59 # tag=v0.117.1
+        uses: jbangdev/jbang-action@4d418212d8b3a80dddd94e8ba1b68e6ef3f7afd2 # tag=v0.118.0
         with:
           script: wasi/README.md
         env:
@@ -84,14 +84,14 @@ jobs:
         run: diff -r ./readmes/wasi/expected ./readmes/wasi/current
       # Test AOT Readme
       - name: jbang
-        uses: jbangdev/jbang-action@9f8c55e0a2b6b297711162b20c209c5e07076e59 # tag=v0.117.1
+        uses: jbangdev/jbang-action@4d418212d8b3a80dddd94e8ba1b68e6ef3f7afd2 # tag=v0.118.0
         with:
           script: aot/README.md
         env:
           JBANG_REPO: "${{ github.workspace }}/repository"
       # Test WASM Readme
       - name: jbang
-        uses: jbangdev/jbang-action@9f8c55e0a2b6b297711162b20c209c5e07076e59 # tag=v0.117.1
+        uses: jbangdev/jbang-action@4d418212d8b3a80dddd94e8ba1b68e6ef3f7afd2 # tag=v0.118.0
         with:
           script: wasm/README.md
         env:
