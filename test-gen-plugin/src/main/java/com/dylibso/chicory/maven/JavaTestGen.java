@@ -8,6 +8,7 @@ import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import com.dylibso.chicory.maven.wast.Command;
 import com.dylibso.chicory.maven.wast.CommandType;
 import com.dylibso.chicory.maven.wast.WasmValue;
+import com.dylibso.chicory.maven.wast.WasmValueType;
 import com.dylibso.chicory.maven.wast.Wast;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
@@ -83,6 +84,7 @@ public class JavaTestGen {
         cu.addImport("org.junit.jupiter.api.TestMethodOrder");
         cu.addImport("org.junit.jupiter.api.Order");
         cu.addImport("org.junit.jupiter.api.TestInstance");
+        cu.addImport("org.junit.jupiter.api.Assertions.assertArrayEquals", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertEquals", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertThrows", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertTrue", true, false);
@@ -102,6 +104,11 @@ public class JavaTestGen {
         cu.addImport("com.dylibso.chicory.wasm.exceptions.UninstantiableException");
         cu.addImport("com.dylibso.chicory.wasm.exceptions.UnlinkableException");
         cu.addImport("com.dylibso.chicory.wasm.types.Value");
+
+        cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo8", true, false);
+        cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo16", true, false);
+        cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo32", true, false);
+        cu.addImport("com.dylibso.chicory.wasm.types.Value.vecToFloatArray", true, false);
 
         // import for Store instance
         cu.addImport("com.dylibso.chicory.runtime.Store");
@@ -396,16 +403,44 @@ public class JavaTestGen {
                 var returnVar = expected.toJavaValue();
                 var typeConversion = expected.extractType();
                 var deltaParam = expected.delta();
-                exprs.add(
-                        new NameExpr(
-                                "assertEquals("
-                                        + returnVar
-                                        + ", results["
-                                        + i
-                                        + "]"
-                                        + typeConversion
-                                        + deltaParam
-                                        + ")"));
+
+                if (expected.type() == WasmValueType.V128) {
+                    exprs.add(new NameExpr("var expected = " + returnVar));
+                    switch (expected.laneType()) {
+                        case I8:
+                            exprs.add(
+                                    new NameExpr(
+                                            "assertArrayEquals(expected," + " vecTo8(results))"));
+                            break;
+                        case I16:
+                            exprs.add(
+                                    new NameExpr("assertArrayEquals(expected, vecTo16(results))"));
+                            break;
+                        case I32:
+                            exprs.add(
+                                    new NameExpr(
+                                            "assertArrayEquals(expected," + " vecTo32(results))"));
+                            break;
+                        case F32:
+                            exprs.add(
+                                    new NameExpr(
+                                            "assertArrayEquals(expected,"
+                                                    + " vecToFloatArray(results))"));
+                            break;
+                    }
+
+                } else {
+                    exprs.add(
+                            new NameExpr(
+                                    "assertEquals("
+                                            + returnVar
+                                            + ", results["
+                                            + i
+                                            + "]"
+                                            + typeConversion
+                                            + deltaParam
+                                            + ")"));
+                }
             }
 
             return exprs;

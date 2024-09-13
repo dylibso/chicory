@@ -50,12 +50,67 @@ public class Value {
         return new Value(ValueType.F64, data);
     }
 
+    public static Value v128(long data) {
+        return new Value(ValueType.V128, data);
+    }
+
     public static Value externRef(int data) {
         return new Value(ValueType.ExternRef, data);
     }
 
     public static Value funcRef(int data) {
         return new Value(ValueType.FuncRef, data);
+    }
+
+    public static byte[] vecTo8(Value[] values) {
+        var result = new byte[values.length * 8];
+        var valueIdx = 0;
+        for (int i = 0; i < result.length; i++) {
+            var v = values[valueIdx++];
+            result[i] = (byte) (v.data & 0xFFL);
+            result[++i] = (byte) ((v.data & 0xFF00L) >> 8);
+            result[++i] = (byte) ((v.data & 0xFF0000L) >> 16);
+            result[++i] = (byte) ((v.data & 0xFF000000L) >> 24);
+            result[++i] = (byte) ((v.data & 0xFF00000000L) >> 32);
+            result[++i] = (byte) ((v.data & 0xFF0000000000L) >> 40);
+            result[++i] = (byte) ((v.data & 0xFF000000000000L) >> 48);
+            result[++i] = (byte) ((v.data & 0xFF00000000000000L) >> 56);
+        }
+        return result;
+    }
+
+    public static int[] vecTo16(Value[] values) {
+        var result = new int[values.length * 4];
+        var valueIdx = 0;
+        for (int i = 0; i < result.length; i++) {
+            var v = values[valueIdx++];
+            result[i] = (int) (v.data & 0xFFFFL);
+            result[++i] = (int) ((v.data >> 16) & 0xFFFFL);
+            result[++i] = (int) ((v.data >> 32) & 0xFFFFL);
+            result[++i] = (int) ((v.data >> 48) & 0xFFFFL);
+        }
+        return result;
+    }
+
+    public static long[] vecTo32(Value[] values) {
+        var result = new long[values.length * 2];
+        var valueIdx = 0;
+        for (int i = 0; i < result.length; i++) {
+            var v = values[valueIdx++];
+            result[i] = (v.data & 0xFFFFFFFFL);
+            result[++i] = ((v.data >> 32) & 0xFFFFFFFFL);
+        }
+        return result;
+    }
+
+    public static float[] vecToFloatArray(Value[] values) {
+        var result = new float[values.length];
+        var valueIdx = 0;
+        for (int i = 0; i < result.length; i++) {
+            var v = values[valueIdx++];
+            result[i] = v.asFloat();
+        }
+        return result;
     }
 
     public Value(ValueType type, int value) {
@@ -66,6 +121,10 @@ public class Value {
     public Value(ValueType type, long value) {
         this.type = requireNonNull(type, "type");
         data = value;
+    }
+
+    public boolean isVec() {
+        return this.type == ValueType.V128;
     }
 
     private static ValueType ensure32bitValueType(ValueType type) {
@@ -141,6 +200,7 @@ public class Value {
             case F32:
             case I64:
             case F64:
+            case V128:
                 return data;
             default:
                 throw new IllegalArgumentException(

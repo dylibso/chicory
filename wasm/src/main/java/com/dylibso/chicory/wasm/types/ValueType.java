@@ -79,6 +79,15 @@ public enum ValueType {
         }
     }
 
+    public boolean isVec() {
+        switch (this) {
+            case V128:
+                return true;
+            default:
+                return false;
+        }
+    }
+
     /**
      * @return {@code true} if the type is an integer type, or {@code false} otherwise
      */

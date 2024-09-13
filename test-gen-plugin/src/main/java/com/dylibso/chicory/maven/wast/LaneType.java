@@ -9,7 +9,7 @@ public enum LaneType {
     @JsonProperty("i16")
     I16("i16"),
     @JsonProperty("i32")
-    i32("i32"),
+    I32("i32"),
     @JsonProperty("f32")
     F32("f32");
 

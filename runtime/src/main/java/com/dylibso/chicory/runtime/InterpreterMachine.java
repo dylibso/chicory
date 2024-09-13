@@ -70,7 +70,7 @@ public class InterpreterMachine implements Machine {
         if (func != null) {
             var stackFrame =
                     new StackFrame(func.instructions(), instance, funcId, args, func.localTypes());
-            stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
+            stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
             callStack.push(stackFrame);
 
             try {
@@ -80,7 +80,7 @@ public class InterpreterMachine implements Machine {
             }
         } else {
             var stackFrame = new StackFrame(instance, funcId, args, List.of());
-            stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
+            stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
             callStack.push(stackFrame);
 
             var results = instance.callHostFunction(funcId, args);
@@ -108,7 +108,7 @@ public class InterpreterMachine implements Machine {
             return null;
         }
 
-        var totalResults = type.returns().size();
+        var totalResults = sizeOf(type.returns());
         var results = new Value[totalResults];
         for (var i = totalResults - 1; i >= 0; i--) {
             results[i] = stack.pop();
@@ -1673,7 +1673,7 @@ public class InterpreterMachine implements Machine {
         stack.push(Value.i32(nPages));
     }
 
-    private static int readMemPtr(MStack stack, Operands operands) {
+    public static int readMemPtr(MStack stack, Operands operands) {
         int offset = stack.pop().asInt();
         if (operands.get(1) < 0 || operands.get(1) >= Integer.MAX_VALUE || offset < 0) {
             throw new WASMRuntimeException("out of bounds memory access");
@@ -1881,7 +1881,7 @@ public class InterpreterMachine implements Machine {
         if (ValueType.isValid(typeId)) {
             return 0;
         }
-        return instance.type(typeId).params().size();
+        return sizeOf(instance.type(typeId).params());
     }
 
     private static int numberOfValuesToReturn(Instance instance, AnnotatedInstruction scope) {
@@ -1893,9 +1893,25 @@ public class InterpreterMachine implements Machine {
             return 0;
         }
         if (ValueType.isValid(typeId)) {
-            return 1;
+            if (ValueType.forId(typeId).isVec()) {
+                return 2;
+            } else {
+                return 1;
+            }
         }
-        return instance.type(typeId).returns().size();
+        return sizeOf(instance.type(typeId).returns());
+    }
+
+    private static int sizeOf(List<ValueType> args) {
+        int total = 0;
+        for (var a : args) {
+            if (a.isVec()) {
+                total += 2;
+            } else {
+                total += 1;
+            }
+        }
+        return total;
     }
 
     private static void BLOCK(
@@ -1961,7 +1977,7 @@ public class InterpreterMachine implements Machine {
         if (params == null) {
             return Value.EMPTY_VALUES;
         }
-        var args = new Value[params.size()];
+        var args = new Value[sizeOf(params)];
         for (var i = params.size(); i > 0; i--) {
             var p = stack.pop();
             var t = params.get(i - 1);

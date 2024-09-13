@@ -212,8 +212,10 @@ public enum OpCode {
     TABLE_GROW(0xFC0F, List.of(VARUINT)),
     TABLE_SIZE(0xFC10, List.of(VARUINT)),
     TABLE_FILL(0xFC11, List.of(VARUINT)),
-    V128_LOAD(0xFD00, List.of(VARUINT, VARUINT)),
-    V128_CONST(0xFD0C, List.of(VEC_VARUINT)),
+    V128_LOAD(0xFD00 + 00, List.of(VARUINT, VARUINT)),
+    V128_CONST(0xFD00 + 13, List.of(VEC_VARUINT)),
+    I8x16_EXTRACT_LANE_S(0xFD00 + 21, List.of(VARUINT)),
+    I8x16_EQ(0xFD00 + 35),
     ;
 
     private static final int OP_CODES_SIZE = 0xFF00;

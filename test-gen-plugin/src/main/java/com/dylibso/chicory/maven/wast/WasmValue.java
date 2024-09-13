@@ -67,6 +67,52 @@ public class WasmValue {
                     return "Value.FUNCREF_NULL";
                 }
                 return value[0];
+            case V128:
+                {
+                    var sb = new StringBuilder();
+                    switch (laneType) {
+                        case I8:
+                            sb.append("new byte[] {");
+                            break;
+                        case I16:
+                            sb.append("new int[] {");
+                            break;
+                        case I32:
+                            sb.append("new long[] {");
+                            break;
+                        case F32:
+                            sb.append("new float[] {");
+                            break;
+                    }
+                    var first = true;
+                    for (var v : value) {
+                        if (first) {
+                            first = false;
+                        } else {
+                            sb.append(", ");
+                        }
+
+                        switch (laneType) {
+                            case I8:
+                                sb.append("Byte.parseByte(\"" + v + "\")");
+                                break;
+                            case I16:
+                                sb.append("Integer.parseUnsignedInt(\"" + v + "\")");
+                                break;
+                            case I32:
+                                sb.append("Long.parseUnsignedLong(\"" + v + "\")");
+                                break;
+                            case F32:
+                                sb.append(
+                                        "Float.intBitsToFloat(Integer.parseUnsignedInt(\""
+                                                + v
+                                                + "\"))");
+                                break;
+                        }
+                    }
+                    sb.append(" }");
+                    return sb.toString();
+                }
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
@@ -114,6 +160,20 @@ public class WasmValue {
                     return ".asExtRef()";
                 case FUNC_REF:
                     return ".asFuncRef()";
+                case V128:
+                    var sb = new StringBuilder();
+                    sb.append("new long[] { ");
+                    var first = true;
+                    for (var v : value) {
+                        if (first) {
+                            first = false;
+                        } else {
+                            sb.append(", ");
+                        }
+                        sb.append("Long.parseUnsignedLong(\"" + v + "\")");
+                    }
+                    sb.append(" }");
+                    return sb.toString();
                 default:
                     throw new IllegalArgumentException("Type not recognized " + type);
             }
