@@ -12,6 +12,8 @@ public enum WasmValueType {
     F32("f32"),
     @JsonProperty("f64")
     F64("f64"),
+    @JsonProperty("v128")
+    V128("v128"),
     @JsonProperty("externref")
     EXTERN_REF("externref"),
     @JsonProperty("funcref")

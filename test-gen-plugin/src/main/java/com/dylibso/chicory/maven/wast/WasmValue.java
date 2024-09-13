@@ -10,12 +10,19 @@ public class WasmValue {
     @JsonProperty("value")
     private String value;
 
+    @JsonProperty("lane_type")
+    private String laneType;
+
     public WasmValueType type() {
         return type;
     }
 
     public String value() {
         return value;
+    }
+
+    public String laneType() {
+        return laneType;
     }
 
     public String toJavaValue() {

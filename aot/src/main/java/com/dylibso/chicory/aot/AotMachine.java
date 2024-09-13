@@ -369,6 +369,12 @@ public final class AotMachine implements Machine {
         }
     }
 
+    // TODO: implement SIMD support
+    @Override
+    public Map<OpCode, OpImpl> additionalOpCodes() {
+        return Map.of();
+    }
+
     private MethodHandle[] compile(Class<?> clazz) {
         var functions = module.functionSection();
         var compiled = new MethodHandle[functionImports + functions.functionCount()];

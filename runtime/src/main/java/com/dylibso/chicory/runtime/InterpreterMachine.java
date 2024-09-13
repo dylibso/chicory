@@ -12,6 +12,7 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This is responsible for holding and interpreting the Wasm code.
@@ -24,15 +25,27 @@ class InterpreterMachine implements Machine {
 
     private final Instance instance;
 
+    private final Map<OpCode, OpImpl> additionalOpcodes;
+
     public InterpreterMachine(Instance instance) {
+        this(instance, Map.of());
+    }
+
+    public InterpreterMachine(Instance instance, Map<OpCode, OpImpl> additionalOpcodes) {
         this.instance = instance;
         stack = new MStack();
         this.callStack = new ArrayDeque<>();
+        this.additionalOpcodes = additionalOpcodes;
     }
 
     @Override
     public Value[] call(int funcId, Value[] args) throws ChicoryException {
         return call(stack, instance, callStack, funcId, args, null, true);
+    }
+
+    @Override
+    public Map<OpCode, OpImpl> additionalOpCodes() {
+        return additionalOpcodes;
     }
 
     public static Value[] call(
@@ -745,8 +758,15 @@ class InterpreterMachine implements Machine {
                     ELEM_DROP(instance, operands);
                     break;
                 default:
-                    throw new RuntimeException(
-                            "Machine doesn't recognize Instruction " + instruction);
+                    {
+                        var additionalOpcodes = instance.getMachine().additionalOpCodes();
+                        if (additionalOpcodes.containsKey(opcode)) {
+                            additionalOpcodes.get(opcode).invoke(stack, instance, operands);
+                        } else {
+                            throw new RuntimeException(
+                                    "Machine doesn't recognize Instruction " + instruction);
+                        }
+                    }
             }
         }
     }
@@ -1984,7 +2004,7 @@ class InterpreterMachine implements Machine {
     }
 
     @FunctionalInterface
-    private interface Operands {
+    public interface Operands {
         long get(int index);
     }
 }

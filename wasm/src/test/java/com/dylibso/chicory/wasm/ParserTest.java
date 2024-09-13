@@ -221,4 +221,11 @@ public class ParserTest {
             assertEquals(".rodata", nameSec.nameOfData(0));
         }
     }
+
+    @Test
+    public void shouldParseSIMD() throws IOException {
+        try (InputStream is = getClass().getResourceAsStream("/wasm/simd_load.0.wasm")) {
+            var module = Parser.parse(is);
+        }
+    }
 }

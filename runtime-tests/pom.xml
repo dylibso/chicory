@@ -21,6 +21,11 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
+      <artifactId>simd</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
       <artifactId>wabt</artifactId>
       <scope>test</scope>
     </dependency>
@@ -118,6 +123,7 @@
             <wast>ref_null.wast</wast>
             <wast>return.wast</wast>
             <wast>select.wast</wast>
+            <wast>simd_load.wast</wast>
             <wast>skip-stack-guard-page.wast</wast>
             <wast>stack.wast</wast>
             <wast>start.wast</wast>
@@ -194,7 +200,6 @@
             <wast>simd_int_to_int_extend.wast</wast>
             <wast>simd_lane.wast</wast>
             <wast>simd_linking.wast</wast>
-            <wast>simd_load.wast</wast>
             <wast>simd_load16_lane.wast</wast>
             <wast>simd_load32_lane.wast</wast>
             <wast>simd_load64_lane.wast</wast>

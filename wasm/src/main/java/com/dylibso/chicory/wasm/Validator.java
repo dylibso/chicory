@@ -1169,6 +1169,17 @@ final class Validator {
                         getElement(index);
                         break;
                     }
+                case V128_LOAD:
+                    {
+                        popVal(ValueType.I32);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
+                case V128_CONST:
+                    {
+                        pushVal(ValueType.V128);
+                        break;
+                    }
                 default:
                     throw new IllegalArgumentException(
                             "Missing type validation opcode handling for " + op.opcode());
