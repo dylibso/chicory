@@ -3,8 +3,8 @@ package com.dylibso.chicory.approvals;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.dylibso.chicory.aot.AotMachine;
+import com.dylibso.chicory.runtime.ExternalValues;
 import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -107,7 +107,7 @@ public class ApprovalTest {
                                 Parser.parse(
                                         ClassLoader.getSystemClassLoader()
                                                 .getResourceAsStream("compiled/" + name)))
-                        .withHostImports(new HostImports(hostFunctions))
+                        .withExternalValues(new ExternalValues(hostFunctions))
                         .withMachineFactory(AotMachine::new)
                         .withStart(false)
                         .build();

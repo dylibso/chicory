@@ -103,7 +103,7 @@ public class ModuleTest {
         var funcs = new HostFunction[] {func};
         var instance =
                 Instance.builder(loadModule("compiled/host-function.wat.wasm"))
-                        .withHostImports(new HostImports(funcs))
+                        .withExternalValues(new ExternalValues(funcs))
                         .build();
         var logIt = instance.export("logIt");
         logIt.apply();
@@ -153,7 +153,7 @@ public class ModuleTest {
                         List.of());
         var funcs = new HostFunction[] {func};
         Instance.builder(loadModule("compiled/start.wat.wasm"))
-                .withHostImports(new HostImports(funcs))
+                .withExternalValues(new ExternalValues(funcs))
                 .build();
 
         assertTrue(count.get() > 0);
@@ -287,17 +287,17 @@ public class ModuleTest {
                         "log",
                         List.of(ValueType.I32, ValueType.F64),
                         List.of());
-        var memory = new HostMemory("env", "memory", new Memory(new MemoryLimits(1)));
+        var memory = new ExternalMemory("env", "memory", new Memory(new MemoryLimits(1)));
 
         var hostImports =
-                new HostImports(
+                new ExternalValues(
                         new HostFunction[] {cbrtFunc, logFunc},
-                        new HostGlobal[0],
+                        new ExternalGlobal[0],
                         memory,
-                        new HostTable[0]);
+                        new ExternalTable[0]);
         var instance =
                 Instance.builder(loadModule("compiled/mixed-imports.wat.wasm"))
-                        .withHostImports(hostImports)
+                        .withExternalValues(hostImports)
                         .build();
 
         var run = instance.export("main");

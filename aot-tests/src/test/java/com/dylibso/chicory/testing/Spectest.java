@@ -1,11 +1,11 @@
 package com.dylibso.chicory.testing;
 
+import com.dylibso.chicory.runtime.ExternalGlobal;
+import com.dylibso.chicory.runtime.ExternalMemory;
+import com.dylibso.chicory.runtime.ExternalTable;
+import com.dylibso.chicory.runtime.ExternalValues;
 import com.dylibso.chicory.runtime.GlobalInstance;
 import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.HostGlobal;
-import com.dylibso.chicory.runtime.HostImports;
-import com.dylibso.chicory.runtime.HostMemory;
-import com.dylibso.chicory.runtime.HostTable;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.TableInstance;
@@ -23,8 +23,8 @@ public final class Spectest {
 
     private Spectest() {}
 
-    public static HostImports toHostImports() {
-        return new HostImports(
+    public static ExternalValues toExternalValues() {
+        return new ExternalValues(
                 new HostFunction[] {
                     new HostFunction(noop, "spectest", "print", List.of(), List.of()),
                     new HostFunction(
@@ -56,19 +56,21 @@ public final class Spectest {
                             List.of(ValueType.F64, ValueType.F64),
                             List.of())
                 },
-                new HostGlobal[] {
-                    new HostGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(666))),
-                    new HostGlobal("spectest", "global_i64", new GlobalInstance(Value.i64(666))),
-                    new HostGlobal(
+                new ExternalGlobal[] {
+                    new ExternalGlobal(
+                            "spectest", "global_i32", new GlobalInstance(Value.i32(666))),
+                    new ExternalGlobal(
+                            "spectest", "global_i64", new GlobalInstance(Value.i64(666))),
+                    new ExternalGlobal(
                             "spectest", "global_f32", new GlobalInstance(Value.fromFloat(666.6f))),
-                    new HostGlobal(
+                    new ExternalGlobal(
                             "spectest", "global_f64", new GlobalInstance(Value.fromDouble(666.6))),
                 },
-                new HostMemory[] {
-                    new HostMemory("spectest", "memory", new Memory(new MemoryLimits(1, 2)))
+                new ExternalMemory[] {
+                    new ExternalMemory("spectest", "memory", new Memory(new MemoryLimits(1, 2)))
                 },
-                new HostTable[] {
-                    new HostTable(
+                new ExternalTable[] {
+                    new ExternalTable(
                             "spectest",
                             "table",
                             new TableInstance(new Table(ValueType.FuncRef, new Limits(10, 20))))
