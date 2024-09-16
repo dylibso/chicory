@@ -70,24 +70,10 @@ public class Simd {
         long resultLow = 0L;
         long resultHigh = 0L;
 
-        // for (int i = 0; i < 8; i++) {
-        resultHigh |= compareBytes(val1High & 0xFF, val2High & 0xFF);
-        resultHigh |= compareBytes((val1High >> 8) & 0xFF, (val2High >> 8) & 0xFF) << 8;
-        resultHigh |= compareBytes((val1High >> 16) & 0xFF, (val2High >> 16) & 0xFF) << 16;
-        resultHigh |= compareBytes((val1High >> 24) & 0xFF, (val2High >> 24) & 0xFF) << 24;
-        resultHigh |= compareBytes((val1High >> 32) & 0xFF, (val2High >> 32) & 0xFF) << 32;
-        resultHigh |= compareBytes((val1High >> 40) & 0xFF, (val2High >> 40) & 0xFF) << 40;
-        resultHigh |= compareBytes((val1High >> 48) & 0xFF, (val2High >> 48) & 0xFF) << 48;
-        resultHigh |= compareBytes((val1High >> 56) & 0xFF, (val2High >> 56) & 0xFF) << 56;
-
-        resultLow |= compareBytes(val1Low & 0xFF, val2Low & 0xFF);
-        resultLow |= compareBytes((val1Low >> 8) & 0xFF, (val2Low >> 8) & 0xFF) << 8;
-        resultLow |= compareBytes((val1Low >> 16) & 0xFF, (val2Low >> 16) & 0xFF) << 16;
-        resultLow |= compareBytes((val1Low >> 24) & 0xFF, (val2Low >> 24) & 0xFF) << 24;
-        resultLow |= compareBytes((val1Low >> 32) & 0xFF, (val2Low >> 32) & 0xFF) << 32;
-        resultLow |= compareBytes((val1Low >> 40) & 0xFF, (val2Low >> 40) & 0xFF) << 40;
-        resultLow |= compareBytes((val1Low >> 48) & 0xFF, (val2Low >> 48) & 0xFF) << 48;
-        resultLow |= compareBytes((val1Low >> 56) & 0xFF, (val2Low >> 56) & 0xFF) << 56;
+        for (int i = 0; i < 8; i++) {
+            resultHigh |= compareBytes((val1High >> (8 * i)) & 0xFF, (val2High >> (8 * i)) & 0xFF) << (i * 8);
+            resultLow |= compareBytes((val1Low >> (8 * i)) & 0xFF, (val2Low >> (8 * i)) & 0xFF) << (i * 8);
+        }
 
         stack.push(Value.v128(resultLow));
         stack.push(Value.v128(resultHigh));
