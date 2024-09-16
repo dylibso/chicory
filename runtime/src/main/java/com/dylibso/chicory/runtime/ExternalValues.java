@@ -136,19 +136,19 @@ public class ExternalValues {
     }
 
     public static final class Builder {
-        private List<HostFunction> functions;
+        private List<ExternalFunction> functions;
         private List<ExternalGlobal> globals;
         private List<ExternalMemory> memories;
         private List<ExternalTable> tables;
 
         Builder() {}
 
-        public Builder withFunctions(List<HostFunction> functions) {
+        public Builder withFunctions(List<ExternalFunction> functions) {
             this.functions = functions;
             return this;
         }
 
-        public Builder addFunction(HostFunction... function) {
+        public Builder addFunction(ExternalFunction... function) {
             if (this.functions == null) {
                 this.functions = new ArrayList<>();
             }
