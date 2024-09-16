@@ -222,6 +222,8 @@ public enum OpCode {
     I8x16_ADD(0xFD6E),
     I8x16_SUB(0xFD71),
     F32x4_MUL(0xFDE6),
+    F32x4_ABS(0xFDE0),
+    F32x4_MIN(0xFDE8),
     I8x16_ALL_TRUE(0xFD00 + 99),
     ;
 

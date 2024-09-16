@@ -27,6 +27,8 @@ public class Simd {
         opcodesImpl.put(OpCode.I8x16_ALL_TRUE, Simd::I8x16_ALL_TRUE);
         opcodesImpl.put(OpCode.I8x16_SHL, Simd::I8x16_SHL);
         opcodesImpl.put(OpCode.F32x4_MUL, Simd::F32x4_MUL);
+        opcodesImpl.put(OpCode.F32x4_ABS, Simd::F32x4_ABS);
+        opcodesImpl.put(OpCode.F32x4_MIN, Simd::F32x4_MIN);
     }
 
     private static void V128_CONST(
@@ -226,6 +228,39 @@ public class Simd {
                                                                             & 0xFFFFFFFFL)))
                                     & 0xFFFFFFFFL)
                             << shift;
+        }
+
+        stack.push(Value.v128(resultLow));
+        stack.push(Value.v128(resultHigh));
+    }
+
+    private static void F32x4_ABS(
+            MStack stack, Instance instance, InterpreterMachine.Operands operands) {
+        var valHigh = stack.pop().asLong();
+        var valLow = stack.pop().asLong();
+
+        // https://github.com/tetratelabs/wazero/blob/58488880a334e8bda5be0d715a24d8ddeb34c725/internal/engine/interpreter/interpreter.go#L3168-L3169
+        long resultLow = valLow & (1L<<31 | 1L<<63) ^ 0xFFFFFFFFFFFFFFFFL;
+        long resultHigh = valHigh & (1L<<31 | 1L<<63) ^ 0xFFFFFFFFFFFFFFFFL;
+
+        stack.push(Value.v128(resultLow));
+        stack.push(Value.v128(resultHigh));
+    }
+
+    private static void F32x4_MIN(
+            MStack stack, Instance instance, InterpreterMachine.Operands operands) {
+        var val1High = stack.pop().asLong();
+        var val1Low = stack.pop().asLong();
+        var val2High = stack.pop().asLong();
+        var val2Low = stack.pop().asLong();
+
+        long resultLow = 0L;
+        long resultHigh = 0L;
+
+        for (int i = 0; i < 2; i++) {
+            var shift = i * 32L;
+            resultHigh |= (((val1High >> shift) & 0xFFFFFFFFL) < ((val2High >> shift) & 0xFFFFFFFFL) ? ((val2High >> shift) & 0xFFFFFFFFL) : ((val1High >> shift) & 0xFFFFFFFFL)) << shift;
+            resultLow |= (((val1Low >> shift) & 0xFFFFFFFFL) < ((val2Low >> shift) & 0xFFFFFFFFL) ? ((val2Low >> shift) & 0xFFFFFFFFL) : ((val1Low >> shift) & 0xFFFFFFFFL)) << shift;
         }
 
         stack.push(Value.v128(resultLow));

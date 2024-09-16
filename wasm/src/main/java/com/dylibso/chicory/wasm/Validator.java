@@ -1191,12 +1191,14 @@ final class Validator {
                 case I8x16_SUB:
                 case I8x16_ADD:
                 case F32x4_MUL:
+                case F32x4_MIN:
                     {
                         popVal(ValueType.V128);
                         popVal(ValueType.V128);
                         pushVal(ValueType.V128);
                         break;
                     }
+                case F32x4_ABS:
                 case V128_NOT:
                     {
                         popVal(ValueType.V128);
