@@ -156,6 +156,7 @@ import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.ExternalValues;
+import com.dylibso.chicory.runtime.Instance;
 
 import java.io.File;
 
