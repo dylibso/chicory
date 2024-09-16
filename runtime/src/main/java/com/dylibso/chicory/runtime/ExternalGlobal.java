@@ -26,7 +26,7 @@ public class ExternalGlobal implements ExternalValue {
     }
 
     @Override
-    public Type type() {
+    public ExternalValue.Type type() {
         return Type.GLOBAL;
     }
 }
