@@ -15,12 +15,19 @@
 
   <properties>
     <maven.compiler.release>21</maven.compiler.release>
+
+    <!-- TODO: fixme working around "[WARNING] using incubating module(s): jdk.incubator.vector" -->
+    <maven.compiler.failOnWarning>false</maven.compiler.failOnWarning>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>runtime</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm</artifactId>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -33,5 +40,30 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <arg>--add-modules</arg>
+            <arg>jdk.incubator.vector</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <configuration>
+          <!-- Workaround: "MavenReportException: Error while generating Javadoc:" -->
+          <failOnError>false</failOnError>
+          <failOnWarnings>false</failOnWarnings>
+          <additionalJOption>-Xdoclint:none</additionalJOption>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

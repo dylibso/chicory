@@ -213,6 +213,7 @@ public enum OpCode {
     TABLE_SIZE(0xFC10, List.of(VARUINT)),
     TABLE_FILL(0xFC11, List.of(VARUINT)),
     V128_LOAD(0xFD00, List.of(VARUINT, VARUINT)),
+    I8x16_SWIZZLE(0xFD0E),
     V128_CONST(0xFD00 + 13, List.of(VEC_VARUINT)),
     I8x16_EXTRACT_LANE_S(0xFD00 + 21, List.of(VARUINT)),
     I8x16_EQ(0xFD00 + 35),
@@ -224,6 +225,8 @@ public enum OpCode {
     F32x4_MUL(0xFDE6),
     F32x4_ABS(0xFDE0),
     F32x4_MIN(0xFDE8),
+    I32x4_TRUNC_SAT_F32X4_S(0xFDF8),
+    F32x4_CONVERT_I32x4_U(0xFDFB),
     I8x16_ALL_TRUE(0xFD00 + 99),
     ;
 

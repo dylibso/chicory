@@ -39,13 +39,13 @@ public class InterpreterMachine implements Machine {
     }
 
     @Override
-    public Value[] call(int funcId, Value[] args) throws ChicoryException {
-        return call(stack, instance, callStack, funcId, args, null, true);
+    public Map<OpCode, OpImpl> additionalOpCodes() {
+        return additionalOpcodes;
     }
 
     @Override
-    public Map<OpCode, OpImpl> additionalOpCodes() {
-        return additionalOpcodes;
+    public Value[] call(int funcId, Value[] args) throws ChicoryException {
+        return call(stack, instance, callStack, funcId, args, null, true);
     }
 
     public static Value[] call(

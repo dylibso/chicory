@@ -62,6 +62,7 @@ public class Value {
         return new Value(ValueType.FuncRef, data);
     }
 
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public static byte[] vecTo8(Value[] values) {
         var result = new byte[values.length * 8];
         var valueIdx = 0;
@@ -79,6 +80,7 @@ public class Value {
         return result;
     }
 
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public static Value[] bytesToVec(byte[] bytes) {
         var result = new Value[bytes.length / 8];
         var valueIdx = 0;
@@ -96,6 +98,7 @@ public class Value {
         return result;
     }
 
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public static int[] vecTo16(Value[] values) {
         var result = new int[values.length * 4];
         var valueIdx = 0;
@@ -109,6 +112,7 @@ public class Value {
         return result;
     }
 
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public static long[] vecTo32(Value[] values) {
         var result = new long[values.length * 2];
         var valueIdx = 0;
@@ -120,6 +124,7 @@ public class Value {
         return result;
     }
 
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public static float[] vecToF32(Value[] values) {
         var result = new float[values.length * 2];
         var valueIdx = 0;
