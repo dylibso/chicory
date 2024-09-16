@@ -68,13 +68,30 @@ public class Value {
         for (int i = 0; i < result.length; i++) {
             var v = values[valueIdx++];
             result[i] = (byte) (v.data & 0xFFL);
-            result[++i] = (byte) ((v.data & 0xFF00L) >> 8);
-            result[++i] = (byte) ((v.data & 0xFF0000L) >> 16);
-            result[++i] = (byte) ((v.data & 0xFF000000L) >> 24);
-            result[++i] = (byte) ((v.data & 0xFF00000000L) >> 32);
-            result[++i] = (byte) ((v.data & 0xFF0000000000L) >> 40);
-            result[++i] = (byte) ((v.data & 0xFF000000000000L) >> 48);
-            result[++i] = (byte) ((v.data & 0xFF00000000000000L) >> 56);
+            result[++i] = (byte) ((v.data >> 8) & 0xFFL);
+            result[++i] = (byte) ((v.data >> 16) & 0xFFL);
+            result[++i] = (byte) ((v.data >> 24) & 0xFFL);
+            result[++i] = (byte) ((v.data >> 32) & 0xFFL);
+            result[++i] = (byte) ((v.data >> 40) & 0xFFL);
+            result[++i] = (byte) ((v.data >> 48) & 0xFFL);
+            result[++i] = (byte) ((v.data >> 56) & 0xFFL);
+        }
+        return result;
+    }
+
+    public static Value[] bytesToVec(byte[] bytes) {
+        var result = new Value[bytes.length / 8];
+        var valueIdx = 0;
+        for (int i = 0; i < bytes.length; i++) {
+            result[valueIdx++] = Value.v128(
+                    Byte.toUnsignedLong(bytes[i]) +
+                            (Byte.toUnsignedLong(bytes[++i]) << 8L) |
+                            (Byte.toUnsignedLong(bytes[++i]) << 16L) |
+                            (Byte.toUnsignedLong(bytes[++i]) << 24L) |
+                            (Byte.toUnsignedLong(bytes[++i]) << 32L) |
+                            (Byte.toUnsignedLong(bytes[++i]) << 40L) |
+                            (Byte.toUnsignedLong(bytes[++i]) << 48L) |
+                            (Byte.toUnsignedLong(bytes[++i]) << 56L));
         }
         return result;
     }
@@ -280,6 +297,8 @@ public class Value {
                 return asFloat() + "@f32";
             case F64:
                 return asDouble() + "@f64";
+            case V128:
+                return asLong() + "@v128";
             case FuncRef:
                 return "func[" + (int) data + "]";
             case ExternRef:

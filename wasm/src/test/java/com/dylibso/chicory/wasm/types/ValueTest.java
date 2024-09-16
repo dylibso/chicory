@@ -120,4 +120,16 @@ public class ValueTest {
         assertEquals(14, result[14]);
         assertEquals(15, result[15]);
     }
+
+    @Test
+    public void shouldConvertBackFromBytes() {
+        var value = new byte[] {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+        var result = Value.bytesToVec(value);
+        long xLow = 506097522914230528L;
+        long xHigh = 1084818905618843912L;
+
+        assertEquals(2, result.length);
+        assertEquals(xLow, result[0].asLong());
+        assertEquals(xHigh, result[1].asLong());
+    }
 }

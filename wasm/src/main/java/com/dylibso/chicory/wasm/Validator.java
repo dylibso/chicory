@@ -1187,12 +1187,12 @@ final class Validator {
                         break;
                     }
                 case I8x16_EQ:
-                {
-                    popVal(ValueType.V128);
-                    popVal(ValueType.V128);
-                    pushVal(ValueType.V128);
-                    break;
-                }
+                    {
+                        popVal(ValueType.V128);
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
                 default:
                     throw new IllegalArgumentException(
                             "Missing type validation opcode handling for " + op.opcode());
