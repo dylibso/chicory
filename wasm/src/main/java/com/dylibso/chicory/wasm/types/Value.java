@@ -83,15 +83,15 @@ public class Value {
         var result = new Value[bytes.length / 8];
         var valueIdx = 0;
         for (int i = 0; i < bytes.length; i++) {
-            result[valueIdx++] = Value.v128(
-                    Byte.toUnsignedLong(bytes[i]) +
-                            (Byte.toUnsignedLong(bytes[++i]) << 8L) |
-                            (Byte.toUnsignedLong(bytes[++i]) << 16L) |
-                            (Byte.toUnsignedLong(bytes[++i]) << 24L) |
-                            (Byte.toUnsignedLong(bytes[++i]) << 32L) |
-                            (Byte.toUnsignedLong(bytes[++i]) << 40L) |
-                            (Byte.toUnsignedLong(bytes[++i]) << 48L) |
-                            (Byte.toUnsignedLong(bytes[++i]) << 56L));
+            result[valueIdx++] =
+                    Value.v128(
+                            Byte.toUnsignedLong(bytes[i]) + (Byte.toUnsignedLong(bytes[++i]) << 8L)
+                                    | (Byte.toUnsignedLong(bytes[++i]) << 16L)
+                                    | (Byte.toUnsignedLong(bytes[++i]) << 24L)
+                                    | (Byte.toUnsignedLong(bytes[++i]) << 32L)
+                                    | (Byte.toUnsignedLong(bytes[++i]) << 40L)
+                                    | (Byte.toUnsignedLong(bytes[++i]) << 48L)
+                                    | (Byte.toUnsignedLong(bytes[++i]) << 56L));
         }
         return result;
     }
@@ -120,12 +120,13 @@ public class Value {
         return result;
     }
 
-    public static float[] vecToFloatArray(Value[] values) {
-        var result = new float[values.length];
+    public static float[] vecToF32(Value[] values) {
+        var result = new float[values.length * 2];
         var valueIdx = 0;
         for (int i = 0; i < result.length; i++) {
             var v = values[valueIdx++];
-            result[i] = v.asFloat();
+            result[i] = Float.intBitsToFloat((int) (v.data & 0xFFFFFFFFL));
+            result[++i] = Float.intBitsToFloat((int) ((v.data >> 32) & 0xFFFFFFFFL));
         }
         return result;
     }

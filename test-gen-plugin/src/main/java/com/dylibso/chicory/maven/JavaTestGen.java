@@ -108,7 +108,7 @@ public class JavaTestGen {
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo8", true, false);
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo16", true, false);
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo32", true, false);
-        cu.addImport("com.dylibso.chicory.wasm.types.Value.vecToFloatArray", true, false);
+        cu.addImport("com.dylibso.chicory.wasm.types.Value.vecToF32", true, false);
 
         // import for Store instance
         cu.addImport("com.dylibso.chicory.runtime.Store");
@@ -424,8 +424,7 @@ public class JavaTestGen {
                         case F32:
                             exprs.add(
                                     new NameExpr(
-                                            "assertArrayEquals(expected,"
-                                                    + " vecToFloatArray(results))"));
+                                            "assertArrayEquals(expected," + " vecToF32(results))"));
                             break;
                     }
 

@@ -8,9 +8,6 @@ import com.dylibso.chicory.runtime.MStack;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
-// TODO: verify the import not working
-// import jdk.incubator.vector.LongVector;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +26,7 @@ public class Simd {
         opcodesImpl.put(OpCode.I8x16_ADD, Simd::I8x16_ADD);
         opcodesImpl.put(OpCode.I8x16_ALL_TRUE, Simd::I8x16_ALL_TRUE);
         opcodesImpl.put(OpCode.I8x16_SHL, Simd::I8x16_SHL);
+        opcodesImpl.put(OpCode.F32x4_MUL, Simd::F32x4_MUL);
     }
 
     private static void V128_CONST(
@@ -73,8 +71,14 @@ public class Simd {
         // TODO: refactor in a more generic operation?
         for (int i = 0; i < 8; i++) {
             var shift = i * 8L;
-            resultHigh |= (((val1High >> shift) & 0xFFL) == ((val2High >> shift) & 0xFFL)) ? (0xFFL << shift) : 0;
-            resultLow |= (((val1Low >> shift) & 0xFFL) == ((val2Low >> shift) & 0xFFL)) ? (0xFFL << shift) : 0;
+            resultHigh |=
+                    (((val1High >> shift) & 0xFFL) == ((val2High >> shift) & 0xFFL))
+                            ? (0xFFL << shift)
+                            : 0;
+            resultLow |=
+                    (((val1Low >> shift) & 0xFFL) == ((val2Low >> shift) & 0xFFL))
+                            ? (0xFFL << shift)
+                            : 0;
         }
 
         stack.push(Value.v128(resultLow));
@@ -93,14 +97,17 @@ public class Simd {
 
         for (int i = 0; i < 8; i++) {
             var shift = i * 8L;
-            resultHigh |= ((((val2High >> shift) & 0xFFL) + ((val1High >> shift) & 0xFFL)) & 0xFFL) << shift;
-            resultLow |= ((((val2Low >> shift) & 0xFFL) + ((val1Low >> shift) & 0xFFL)) & 0xFFL) << shift;
+            resultHigh |=
+                    ((((val2High >> shift) & 0xFFL) + ((val1High >> shift) & 0xFFL)) & 0xFFL)
+                            << shift;
+            resultLow |=
+                    ((((val2Low >> shift) & 0xFFL) + ((val1Low >> shift) & 0xFFL)) & 0xFFL)
+                            << shift;
         }
 
         stack.push(Value.v128(resultLow));
         stack.push(Value.v128(resultHigh));
     }
-
 
     private static void I8x16_SUB(
             MStack stack, Instance instance, InterpreterMachine.Operands operands) {
@@ -114,8 +121,12 @@ public class Simd {
 
         for (int i = 0; i < 8; i++) {
             var shift = i * 8L;
-            resultHigh |= ((((val2High >> shift) & 0xFFL) - ((val1High >> shift) & 0xFFL)) & 0xFFL) << shift;
-            resultLow |= ((((val2Low >> shift) & 0xFFL) - ((val1Low >> shift) & 0xFFL)) & 0xFFL) << shift;
+            resultHigh |=
+                    ((((val2High >> shift) & 0xFFL) - ((val1High >> shift) & 0xFFL)) & 0xFFL)
+                            << shift;
+            resultLow |=
+                    ((((val2Low >> shift) & 0xFFL) - ((val1Low >> shift) & 0xFFL)) & 0xFFL)
+                            << shift;
         }
 
         stack.push(Value.v128(resultLow));
@@ -179,10 +190,45 @@ public class Simd {
         stack.push(Value.v128((x1Hi & cHi) | (x2Hi & (cHi ^ 0xFFFFFFFFFFFFFFFFL))));
     }
 
-//  SPLAT 8 implementation
-//        var ptr = readMemPtr(stack, operands);
-//        var b = (long) instance.memory().read(ptr);
-//        var val = Value.v128(b << 56 | b << 48 | b << 40 | b << 32 | b << 24 | b << 16 | b << 8 | b);
-//        stack.push(val);
-//        stack.push(val);
+    private static void F32x4_MUL(
+            MStack stack, Instance instance, InterpreterMachine.Operands operands) {
+        var val1High = stack.pop().asLong();
+        var val1Low = stack.pop().asLong();
+        var val2High = stack.pop().asLong();
+        var val2Low = stack.pop().asLong();
+
+        long resultLow = 0L;
+        long resultHigh = 0L;
+
+        for (int i = 0; i < 2; i++) {
+            var shift = i * 32L;
+            resultHigh |=
+                    (Float.floatToIntBits(
+                                            Float.intBitsToFloat(
+                                                            (int)
+                                                                    ((val1High >> shift)
+                                                                            & 0xFFFFFFFFL))
+                                                    * Float.intBitsToFloat(
+                                                            (int)
+                                                                    ((val2High >> shift)
+                                                                            & 0xFFFFFFFFL)))
+                                    & 0xFFFFFFFFL)
+                            << shift;
+            resultLow |=
+                    (Float.floatToIntBits(
+                                            Float.intBitsToFloat(
+                                                            (int)
+                                                                    ((val1Low >> shift)
+                                                                            & 0xFFFFFFFFL))
+                                                    * Float.intBitsToFloat(
+                                                            (int)
+                                                                    ((val2Low >> shift)
+                                                                            & 0xFFFFFFFFL)))
+                                    & 0xFFFFFFFFL)
+                            << shift;
+        }
+
+        stack.push(Value.v128(resultLow));
+        stack.push(Value.v128(resultHigh));
+    }
 }

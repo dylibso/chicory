@@ -1190,6 +1190,7 @@ final class Validator {
                 case I8x16_EQ:
                 case I8x16_SUB:
                 case I8x16_ADD:
+                case F32x4_MUL:
                     {
                         popVal(ValueType.V128);
                         popVal(ValueType.V128);
@@ -1197,26 +1198,26 @@ final class Validator {
                         break;
                     }
                 case V128_NOT:
-                {
-                    popVal(ValueType.V128);
-                    pushVal(ValueType.V128);
-                    break;
-                }
+                    {
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
                 case V128_BITSELECT:
-                {
-                    popVal(ValueType.V128);
-                    popVal(ValueType.V128);
-                    popVal(ValueType.V128);
-                    pushVal(ValueType.V128);
-                    break;
-                }
+                    {
+                        popVal(ValueType.V128);
+                        popVal(ValueType.V128);
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
                 case I8x16_SHL:
-                {
-                    popVal(ValueType.I32);
-                    popVal(ValueType.V128);
-                    pushVal(ValueType.V128);
-                    break;
-                }
+                    {
+                        popVal(ValueType.I32);
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
                 default:
                     throw new IllegalArgumentException(
                             "Missing type validation opcode handling for " + op.opcode());
