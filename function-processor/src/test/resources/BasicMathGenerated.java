@@ -15,32 +15,26 @@ public final class BasicMath_ModuleFactory {
     public static HostFunction[] toHostFunctions(BasicMath functions) {
         return new HostFunction[] {
             new HostFunction(
-                    (Instance instance, Value... args) -> {
+                    "math", "add", (Instance instance, Value... args) -> {
                         long result = functions.add(args[0].asInt(), args[1].asInt());
                         return new Value[] { Value.i64(result) };
                     },
-                    "math",
-                    "add",
                     List.of(ValueType.I32, ValueType.I32),
                     List.of(ValueType.I64)
             ),
             new HostFunction(
-                    (Instance instance, Value... args) -> {
+                    "math", "square", (Instance instance, Value... args) -> {
                         double result = functions.pow2(args[0].asFloat());
                         return new Value[] { Value.fromDouble(result) };
                     },
-                    "math",
-                    "square",
                     List.of(ValueType.F32),
                     List.of(ValueType.F64)
             ),
             new HostFunction(
-                    (Instance instance, Value... args) -> {
+                    "math", "floor_div", (Instance instance, Value... args) -> {
                         int result = functions.floorDiv(args[0].asInt(), args[1].asInt())
                         return new Value[] { Value.i32(result) };
                     },
-                    "math",
-                    "floor_div",
                     List.of(ValueType.I32, ValueType.I32),
                     List.of(ValueType.I32)
             ),

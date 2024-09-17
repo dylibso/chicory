@@ -83,6 +83,8 @@ public class ModuleTest {
 
         var func =
                 new HostFunction(
+                        "console",
+                        "log",
                         (Instance instance,
                                 Value... args) -> { // decompiled is: console_log(13, 0);
                             Memory memory = instance.memory();
@@ -96,8 +98,6 @@ public class ModuleTest {
 
                             return null;
                         },
-                        "console",
-                        "log",
                         List.of(ValueType.I32, ValueType.I32),
                         List.of());
         var funcs = new HostFunction[] {func};
@@ -138,6 +138,8 @@ public class ModuleTest {
 
         var func =
                 new HostFunction(
+                        "env",
+                        "gotit",
                         (Instance instance, Value... args) -> {
                             var val = args[0];
 
@@ -147,8 +149,6 @@ public class ModuleTest {
 
                             return null;
                         },
-                        "env",
-                        "gotit",
                         List.of(ValueType.I32),
                         List.of());
         var funcs = new HostFunction[] {func};
@@ -265,26 +265,26 @@ public class ModuleTest {
     public void shouldRunMixedImports() {
         var cbrtFunc =
                 new HostFunction(
+                        "env",
+                        "cbrt",
                         (Instance instance, Value... args) -> {
                             var x = args[0].asInt();
                             var cbrt = Math.cbrt(x);
                             return new Value[] {Value.fromDouble(cbrt)};
                         },
-                        "env",
-                        "cbrt",
                         List.of(ValueType.I32),
                         List.of(ValueType.F64));
         var logResult = new AtomicReference<String>(null);
         var logFunc =
                 new HostFunction(
+                        "env",
+                        "log",
                         (Instance instance, Value... args) -> {
                             var logLevel = args[0].asInt();
                             var value = (int) args[1].asDouble();
                             logResult.set(logLevel + ": " + value);
                             return null;
                         },
-                        "env",
-                        "log",
                         List.of(ValueType.I32, ValueType.F64),
                         List.of());
         var memory = new ExternalMemory("env", "memory", new Memory(new MemoryLimits(1)));

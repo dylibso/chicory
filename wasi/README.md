@@ -129,7 +129,7 @@ We do have intentions to support wasip2 in the future, however this work has not
 
 ## How to use
 
-As a host who is running Wasm modules, WASI is just a collection of host imports that you need to provide
+As a host who is running Wasm modules, WASI is just a collection of imports that you need to provide
 to a wasi-compiled module when instantiating it. You'll also need to configure some options for how
 these functions behave and what the module can and cannot do.
 

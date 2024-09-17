@@ -26,33 +26,33 @@ public final class Spectest {
     public static ExternalValues toExternalValues() {
         return new ExternalValues(
                 new HostFunction[] {
-                    new HostFunction(noop, "spectest", "print", List.of(), List.of()),
+                    new HostFunction("spectest", "print", noop, List.of(), List.of()),
                     new HostFunction(
-                            noop, "spectest", "print_i32", List.of(ValueType.I32), List.of()),
+                            "spectest", "print_i32", noop, List.of(ValueType.I32), List.of()),
                     new HostFunction(
-                            noop, "spectest", "print_i32_1", List.of(ValueType.I32), List.of()),
+                            "spectest", "print_i32_1", noop, List.of(ValueType.I32), List.of()),
                     new HostFunction(
-                            noop, "spectest", "print_i32_2", List.of(ValueType.I32), List.of()),
+                            "spectest", "print_i32_2", noop, List.of(ValueType.I32), List.of()),
                     new HostFunction(
-                            noop, "spectest", "print_f32", List.of(ValueType.F32), List.of()),
+                            "spectest", "print_f32", noop, List.of(ValueType.F32), List.of()),
                     new HostFunction(
-                            noop,
                             "spectest",
                             "print_i32_f32",
+                            noop,
                             List.of(ValueType.I32, ValueType.F32),
                             List.of()),
                     new HostFunction(
-                            noop, "spectest", "print_i64", List.of(ValueType.I64), List.of()),
+                            "spectest", "print_i64", noop, List.of(ValueType.I64), List.of()),
                     new HostFunction(
-                            noop, "spectest", "print_i64_1", List.of(ValueType.I64), List.of()),
+                            "spectest", "print_i64_1", noop, List.of(ValueType.I64), List.of()),
                     new HostFunction(
-                            noop, "spectest", "print_i64_2", List.of(ValueType.I64), List.of()),
+                            "spectest", "print_i64_2", noop, List.of(ValueType.I64), List.of()),
                     new HostFunction(
-                            noop, "spectest", "print_f64", List.of(ValueType.F64), List.of()),
+                            "spectest", "print_f64", noop, List.of(ValueType.F64), List.of()),
                     new HostFunction(
-                            noop,
                             "spectest",
                             "print_f64_f64",
+                            noop,
                             List.of(ValueType.F64, ValueType.F64),
                             List.of())
                 },

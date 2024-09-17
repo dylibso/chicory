@@ -38,9 +38,9 @@ public class ApprovalTest {
         verifyGeneratedBytecode(
                 "hello-wasi.wat.wasm",
                 new HostFunction(
-                        (instance, args) -> null,
                         "wasi_snapshot_preview1",
                         "fd_write",
+                        (instance, args) -> null,
                         List.of(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
                         List.of(ValueType.I32)));
     }
@@ -89,9 +89,9 @@ public class ApprovalTest {
         verifyGeneratedBytecode(
                 "start.wat.wasm",
                 new HostFunction(
-                        (instance, args) -> null,
                         "env",
                         "gotit",
+                        (instance, args) -> null,
                         List.of(ValueType.I32),
                         List.of()));
     }

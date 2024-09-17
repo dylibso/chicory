@@ -30,8 +30,8 @@ class ExternalValuesTest {
                         ExternalValues.builder()
                                 .withFunctions(
                                         Arrays.asList(
-                                                new HostFunction(null, "module_1", "", null, null),
-                                                new HostFunction(null, "module_2", "", null, null)))
+                                                new HostFunction("module_1", "", null, null, null),
+                                                new HostFunction("module_2", "", null, null, null)))
                                 .build();
                 assertEquals(2, result.functionCount());
             }
@@ -40,8 +40,8 @@ class ExternalValuesTest {
             void addFunction() {
                 final ExternalValues result =
                         ExternalValues.builder()
-                                .addFunction(new HostFunction(null, "module_1", "", null, null))
-                                .addFunction(new HostFunction(null, "module_2", "", null, null))
+                                .addFunction(new HostFunction("module_1", "", null, null, null))
+                                .addFunction(new HostFunction("module_2", "", null, null, null))
                                 .build();
                 assertEquals(2, result.functionCount());
             }

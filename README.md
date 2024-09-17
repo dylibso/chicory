@@ -251,6 +251,8 @@ public void println(String value) {
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.wasm.types.ValueType;
 var func = new HostFunction(
+    "console",
+    "log",
     (Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
         var len = args[0].asInt();
         var offset = args[1].asInt();
@@ -258,8 +260,6 @@ var func = new HostFunction(
         println(message);
         return null;
     },
-    "console",
-    "log",
     List.of(ValueType.I32, ValueType.I32),
     List.of());
 ```

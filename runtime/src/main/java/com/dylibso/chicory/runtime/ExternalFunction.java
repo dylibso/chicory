@@ -11,9 +11,9 @@ public class ExternalFunction implements ExternalValue {
     private final List<ValueType> returnTypes;
 
     public ExternalFunction(
-            WasmFunctionHandle handle,
             String moduleName,
             String fieldName,
+            WasmFunctionHandle handle,
             List<ValueType> paramTypes,
             List<ValueType> returnTypes) {
         this.handle = handle;

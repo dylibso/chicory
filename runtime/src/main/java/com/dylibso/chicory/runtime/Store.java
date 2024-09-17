@@ -99,9 +99,9 @@ public class Store {
                     FunctionType ftype = instance.exportType(exportName);
                     this.addFunction(
                             new ExternalFunction(
-                                    (inst, args) -> f.apply(args),
                                     name,
                                     exportName,
+                                    (inst, args) -> f.apply(args),
                                     ftype.params(),
                                     ftype.returns()));
                     break;
