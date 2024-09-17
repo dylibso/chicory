@@ -23,7 +23,7 @@ public class Store {
      */
     public Store addFunction(ExternalFunction... function) {
         for (var f : function) {
-            functions.put(new QualifiedName(f.moduleName(), f.fieldName()), f);
+            functions.put(new QualifiedName(f.moduleName(), f.symbolName()), f);
         }
         return this;
     }
@@ -33,7 +33,7 @@ public class Store {
      */
     public Store addGlobal(ExternalGlobal... global) {
         for (var g : global) {
-            globals.put(new QualifiedName(g.moduleName(), g.fieldName()), g);
+            globals.put(new QualifiedName(g.moduleName(), g.symbolName()), g);
         }
         return this;
     }
@@ -43,7 +43,7 @@ public class Store {
      */
     public Store addMemory(ExternalMemory... memory) {
         for (var m : memory) {
-            memories.put(new QualifiedName(m.moduleName(), m.fieldName()), m);
+            memories.put(new QualifiedName(m.moduleName(), m.symbolName()), m);
         }
         return this;
     }
@@ -53,7 +53,7 @@ public class Store {
      */
     public Store addTable(ExternalTable... table) {
         for (var t : table) {
-            tables.put(new QualifiedName(t.moduleName(), t.fieldName()), t);
+            tables.put(new QualifiedName(t.moduleName(), t.symbolName()), t);
         }
         return this;
     }
@@ -139,11 +139,11 @@ public class Store {
      */
     static class QualifiedName {
         private final String moduleName;
-        private final String fieldName;
+        private final String symbolName;
 
-        public QualifiedName(String moduleName, String fieldName) {
+        public QualifiedName(String moduleName, String symbolName) {
             this.moduleName = moduleName;
-            this.fieldName = fieldName;
+            this.symbolName = symbolName;
         }
 
         @Override
@@ -156,12 +156,12 @@ public class Store {
             }
             QualifiedName qualifiedName = (QualifiedName) o;
             return Objects.equals(moduleName, qualifiedName.moduleName)
-                    && Objects.equals(fieldName, qualifiedName.fieldName);
+                    && Objects.equals(symbolName, qualifiedName.symbolName);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(moduleName, fieldName);
+            return Objects.hash(moduleName, symbolName);
         }
     }
 }

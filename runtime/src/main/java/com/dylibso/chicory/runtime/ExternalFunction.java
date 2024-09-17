@@ -6,19 +6,19 @@ import java.util.List;
 public class ExternalFunction implements ExternalValue {
     private final WasmFunctionHandle handle;
     private final String moduleName;
-    private final String fieldName;
+    private final String symbolName;
     private final List<ValueType> paramTypes;
     private final List<ValueType> returnTypes;
 
     public ExternalFunction(
             String moduleName,
-            String fieldName,
+            String symbolName,
             WasmFunctionHandle handle,
             List<ValueType> paramTypes,
             List<ValueType> returnTypes) {
         this.handle = handle;
         this.moduleName = moduleName;
-        this.fieldName = fieldName;
+        this.symbolName = symbolName;
         this.paramTypes = paramTypes;
         this.returnTypes = returnTypes;
     }
@@ -33,8 +33,8 @@ public class ExternalFunction implements ExternalValue {
     }
 
     @Override
-    public String fieldName() {
-        return fieldName;
+    public String symbolName() {
+        return symbolName;
     }
 
     @Override

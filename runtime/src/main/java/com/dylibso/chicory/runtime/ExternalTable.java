@@ -7,18 +7,18 @@ import java.util.Map;
 
 public class ExternalTable implements ExternalValue {
     private final String moduleName;
-    private final String fieldName;
+    private final String symbolName;
     private final TableInstance table;
 
-    public ExternalTable(String moduleName, String fieldName, TableInstance table) {
+    public ExternalTable(String moduleName, String symbolName, TableInstance table) {
         this.moduleName = moduleName;
-        this.fieldName = fieldName;
+        this.symbolName = symbolName;
         this.table = table;
     }
 
-    public ExternalTable(String moduleName, String fieldName, Map<Integer, Integer> funcRefs) {
+    public ExternalTable(String moduleName, String symbolName, Map<Integer, Integer> funcRefs) {
         this.moduleName = moduleName;
-        this.fieldName = fieldName;
+        this.symbolName = symbolName;
 
         long maxFuncRef = 0;
         for (var k : funcRefs.keySet()) {
@@ -38,8 +38,8 @@ public class ExternalTable implements ExternalValue {
     }
 
     @Override
-    public String fieldName() {
-        return fieldName;
+    public String symbolName() {
+        return symbolName;
     }
 
     @Override

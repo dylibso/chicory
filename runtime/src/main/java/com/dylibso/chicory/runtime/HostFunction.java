@@ -9,10 +9,10 @@ import java.util.List;
 public class HostFunction extends ExternalFunction {
     public HostFunction(
             String moduleName,
-            String fieldName,
+            String symbolName,
             WasmFunctionHandle handle,
             List<ValueType> paramTypes,
             List<ValueType> returnTypes) {
-        super(moduleName, fieldName, handle, paramTypes, returnTypes);
+        super(moduleName, symbolName, handle, paramTypes, returnTypes);
     }
 }

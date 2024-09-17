@@ -17,7 +17,7 @@ public interface ExternalValue {
 
     String moduleName();
 
-    String fieldName();
+    String symbolName();
 
     ExternalValue.Type type();
 }

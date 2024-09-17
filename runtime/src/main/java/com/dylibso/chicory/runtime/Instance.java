@@ -402,7 +402,7 @@ public class Instance {
                         "incompatible import type for host function "
                                 + f.moduleName()
                                 + "."
-                                + f.fieldName());
+                                + f.symbolName());
             }
             for (int i = 0; i < expectedType.params().size(); i++) {
                 var expected = expectedType.params().get(i);
@@ -412,7 +412,7 @@ public class Instance {
                             "incompatible import type for host function "
                                     + f.moduleName()
                                     + "."
-                                    + f.fieldName());
+                                    + f.symbolName());
                 }
             }
             for (int i = 0; i < expectedType.returns().size(); i++) {
@@ -423,7 +423,7 @@ public class Instance {
                             "incompatible import type for host function "
                                     + f.moduleName()
                                     + "."
-                                    + f.fieldName());
+                                    + f.symbolName());
                 }
             }
         }
@@ -451,7 +451,7 @@ public class Instance {
                                 + " on table: "
                                 + t.moduleName()
                                 + "."
-                                + t.fieldName());
+                                + t.symbolName());
             }
         }
 
@@ -480,14 +480,14 @@ public class Instance {
                                 + " on memory: "
                                 + m.moduleName()
                                 + "."
-                                + m.fieldName());
+                                + m.symbolName());
             }
         }
 
         private void validateNegativeImportType(
                 String moduleName, String name, ExternalValue[] external) {
             for (var fh : external) {
-                if (fh.moduleName().equals(moduleName) && fh.fieldName().equals(name)) {
+                if (fh.moduleName().equals(moduleName) && fh.symbolName().equals(name)) {
                     throw new UnlinkableException("incompatible import type");
                 }
             }
@@ -565,7 +565,7 @@ public class Instance {
                 Function<ExternalValue, Boolean> checkName =
                         (ExternalValue fh) ->
                                 i.moduleName().equals(fh.moduleName())
-                                        && i.name().equals(fh.fieldName());
+                                        && i.name().equals(fh.symbolName());
                 switch (i.importType()) {
                     case FUNCTION:
                         cnt = externalValues.functionCount();

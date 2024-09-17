@@ -3,12 +3,12 @@ package com.dylibso.chicory.runtime;
 public class ExternalGlobal implements ExternalValue {
     private final GlobalInstance instance;
     private final String moduleName;
-    private final String fieldName;
+    private final String symbolName;
 
-    public ExternalGlobal(String moduleName, String fieldName, GlobalInstance instance) {
+    public ExternalGlobal(String moduleName, String symbolName, GlobalInstance instance) {
         this.instance = instance;
         this.moduleName = moduleName;
-        this.fieldName = fieldName;
+        this.symbolName = symbolName;
     }
 
     public GlobalInstance instance() {
@@ -21,8 +21,8 @@ public class ExternalGlobal implements ExternalValue {
     }
 
     @Override
-    public String fieldName() {
-        return fieldName;
+    public String symbolName() {
+        return symbolName;
     }
 
     @Override

@@ -2,12 +2,12 @@ package com.dylibso.chicory.runtime;
 
 public class ExternalMemory implements ExternalValue {
     private final String moduleName;
-    private final String fieldName;
+    private final String symbolName;
     private final Memory memory;
 
-    public ExternalMemory(String moduleName, String fieldName, Memory memory) {
+    public ExternalMemory(String moduleName, String symbolName, Memory memory) {
         this.moduleName = moduleName;
-        this.fieldName = fieldName;
+        this.symbolName = symbolName;
         this.memory = memory;
     }
 
@@ -17,8 +17,8 @@ public class ExternalMemory implements ExternalValue {
     }
 
     @Override
-    public String fieldName() {
-        return fieldName;
+    public String symbolName() {
+        return symbolName;
     }
 
     @Override
