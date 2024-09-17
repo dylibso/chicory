@@ -8,11 +8,11 @@ import java.util.Objects;
 
 public class Value {
 
-    public static final Value TRUE = Value.i32(1);
+    public static final long TRUE = 1L;
 
-    public static final Value FALSE = Value.i32(0);
+    public static final long FALSE = 0L;
 
-    public static final int REF_NULL_VALUE = -1;
+    public static final long REF_NULL_VALUE = -1L;
     public static final Value EXTREF_NULL = Value.externRef(REF_NULL_VALUE);
     public static final Value FUNCREF_NULL = Value.funcRef(REF_NULL_VALUE);
 
@@ -26,8 +26,16 @@ public class Value {
         return Value.f32(Float.floatToRawIntBits(data));
     }
 
+    public static long floatToLong(float data) {
+        return Float.floatToRawIntBits(data);
+    }
+
     public static Value fromDouble(double data) {
         return Value.f64(Double.doubleToRawLongBits(data));
+    }
+
+    public static long doubleToLong(double data) {
+        return Double.doubleToRawLongBits(data);
     }
 
     public static Value i32(int data) {
@@ -50,11 +58,11 @@ public class Value {
         return new Value(ValueType.F64, data);
     }
 
-    public static Value externRef(int data) {
+    public static Value externRef(long data) {
         return new Value(ValueType.ExternRef, data);
     }
 
-    public static Value funcRef(int data) {
+    public static Value funcRef(long data) {
         return new Value(ValueType.FuncRef, data);
     }
 
@@ -86,20 +94,16 @@ public class Value {
      * @param valueType must be a valid zeroable type.
      * @return a zero.
      */
-    public static Value zero(ValueType valueType) {
+    public static long zero(ValueType valueType) {
         switch (valueType) {
             case I32:
-                return Value.i32(0);
             case F32:
-                return Value.f32(0);
             case I64:
-                return Value.i64(0);
             case F64:
-                return Value.f64(0);
+                return 0L;
             case FuncRef:
-                return Value.FUNCREF_NULL;
             case ExternRef:
-                return Value.EXTREF_NULL;
+                return REF_NULL_VALUE;
             default:
                 throw new IllegalArgumentException(
                         "Can't create a zero value for type " + valueType);
@@ -148,6 +152,10 @@ public class Value {
         }
     }
 
+    public long raw() {
+        return data;
+    }
+
     // TODO memoize these
     public byte asByte() {
         switch (type) {
@@ -185,8 +193,16 @@ public class Value {
         return Float.intBitsToFloat(asInt());
     }
 
+    public static float longToFloat(long data) {
+        return Float.intBitsToFloat((int) data);
+    }
+
     public double asDouble() {
         return Double.longBitsToDouble(asLong());
+    }
+
+    public static double longToDouble(long data) {
+        return Double.longBitsToDouble(data);
     }
 
     public ValueType type() {

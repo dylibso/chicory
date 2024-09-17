@@ -25,12 +25,12 @@ public class StackFrame {
 
     private final int funcId;
     private int pc;
-    private final Value[] locals;
+    private final long[] locals;
     private final Instance instance;
 
     private final List<CtrlFrame> ctrlStack = new ArrayList<>();
 
-    public StackFrame(Instance instance, int funcId, Value[] args, List<ValueType> localTypes) {
+    public StackFrame(Instance instance, int funcId, long[] args, List<ValueType> localTypes) {
         this(Collections.emptyList(), instance, funcId, args, localTypes);
     }
 
@@ -38,7 +38,7 @@ public class StackFrame {
             List<AnnotatedInstruction> code,
             Instance instance,
             int funcId,
-            Value[] args,
+            long[] args,
             List<ValueType> localTypes) {
         this.code = code;
         this.instance = instance;
@@ -55,11 +55,11 @@ public class StackFrame {
         }
     }
 
-    void setLocal(int i, Value v) {
+    void setLocal(int i, long v) {
         this.locals[i] = v;
     }
 
-    Value local(int i) {
+    long local(int i) {
         return locals[i];
     }
 
@@ -132,7 +132,7 @@ public class StackFrame {
 
     public static void doControlTransfer(CtrlFrame ctrlFrame, MStack stack) {
         var endResults = ctrlFrame.startValues + ctrlFrame.endValues; // unwind stack
-        Value[] returns = new Value[endResults];
+        long[] returns = new long[endResults];
         for (int i = 0; i < returns.length; i++) {
             if (stack.size() > 0) {
                 returns[i] = stack.pop();
@@ -144,10 +144,8 @@ public class StackFrame {
         }
 
         for (int i = 0; i < returns.length; i++) {
-            Value value = returns[returns.length - 1 - i];
-            if (value != null) {
-                stack.push(value);
-            }
+            long value = returns[returns.length - 1 - i];
+            stack.push(value);
         }
     }
 }

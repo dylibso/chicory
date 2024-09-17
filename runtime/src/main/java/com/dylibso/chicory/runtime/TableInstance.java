@@ -14,12 +14,12 @@ public class TableInstance {
 
     private final Table table;
     private Instance[] instances;
-    private int[] refs;
+    private long[] refs;
 
     public TableInstance(Table table) {
         this.table = table;
         this.instances = new Instance[(int) table.limits().min()];
-        refs = new int[(int) table.limits().min()];
+        refs = new long[(int) table.limits().min()];
         Arrays.fill(refs, REF_NULL_VALUE);
     }
 
@@ -50,11 +50,12 @@ public class TableInstance {
         return oldSize;
     }
 
+    // TODO: this should return a long instead
     public Value ref(int index) {
         if (index < 0 || index >= this.refs.length) {
             throw new ChicoryException("undefined element");
         }
-        int res = this.refs[index];
+        long res = this.refs[index];
         if (this.elementType() == ValueType.FuncRef) {
             return Value.funcRef(res);
         } else {

@@ -1,6 +1,5 @@
 package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
@@ -10,33 +9,22 @@ import java.util.Deque;
  * We should replace with something more idiomatic and performant.
  */
 public class MStack {
-    private final Deque<Value> stack;
+    private final Deque<Long> stack;
 
     public MStack() {
         this.stack = new ArrayDeque<>();
     }
 
-    public void push(Value v) {
-        if (v == null) {
-            throw new RuntimeException("Can't push null value onto stack");
-        }
+    public void push(long v) {
         this.stack.push(v);
     }
 
-    public Value pop() {
-        var r = this.stack.pollFirst();
-        if (r == null) {
-            throw new RuntimeException("Stack underflow exception");
-        }
-        return r;
+    public long pop() {
+        return this.stack.pollFirst();
     }
 
-    public Value peek() {
-        var r = this.stack.peek();
-        if (r == null) {
-            throw new RuntimeException("Stack underflow exception");
-        }
-        return r;
+    public long peek() {
+        return this.stack.peek();
     }
 
     public int size() {

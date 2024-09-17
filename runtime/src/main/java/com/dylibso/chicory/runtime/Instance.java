@@ -267,7 +267,7 @@ public class Instance {
         return globals[idx - importedGlobalsOffset];
     }
 
-    public void writeGlobal(int idx, Value val) {
+    public void writeGlobal(int idx, long val) {
         if (idx < importedGlobalsOffset) {
             imports.global(idx).instance().setValue(val);
         }
