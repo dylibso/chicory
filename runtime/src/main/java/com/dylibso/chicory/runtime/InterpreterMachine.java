@@ -1683,66 +1683,66 @@ class InterpreterMachine implements Machine {
         var ptr = readMemPtr(stack, operands);
         // TODO: make all the memory.readThings to return long
         var val = instance.memory().readU32(ptr);
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void I64_LOAD32_S(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI32(ptr);
         // TODO this is a bit hacky
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void I64_LOAD16_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readU16(ptr);
         // TODO this is a bit hacky
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void I32_LOAD16_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readU16(ptr);
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void I64_LOAD16_S(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI16(ptr);
         // TODO this is a bit hacky
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void I32_LOAD16_S(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI16(ptr);
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void I64_LOAD8_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readU8(ptr);
         // TODO a bit hacky
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void I32_LOAD8_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readU8(ptr);
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void I64_LOAD8_S(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI8(ptr);
         // TODO a bit hacky
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void I32_LOAD8_S(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI8(ptr);
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void F64_LOAD(MStack stack, Instance instance, Operands operands) {
@@ -1754,19 +1754,19 @@ class InterpreterMachine implements Machine {
     private static void F32_LOAD(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readF32(ptr);
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void I64_LOAD(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI64(ptr);
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void I32_LOAD(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI32(ptr);
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void TABLE_SET(MStack stack, Instance instance, Operands operands) {
@@ -1781,7 +1781,7 @@ class InterpreterMachine implements Machine {
     private static void TABLE_GET(MStack stack, Instance instance, Operands operands) {
         var idx = (int) operands.get(0);
         var i = (int) stack.pop();
-        stack.push(OpcodeImpl.TABLE_GET(instance, idx, i).raw());
+        stack.push(OpcodeImpl.TABLE_GET(instance, idx, i));
     }
 
     private static void GLOBAL_SET(MStack stack, Instance instance, Operands operands) {
@@ -1794,7 +1794,7 @@ class InterpreterMachine implements Machine {
         int idx = (int) operands.get(0);
         var val = instance.readGlobal(idx);
 
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void SELECT(MStack stack) {
@@ -1826,7 +1826,7 @@ class InterpreterMachine implements Machine {
 
         var typeId = (int) operands.get(0);
         int funcTableIdx = (int) stack.pop();
-        int funcId = table.ref(funcTableIdx).asFuncRef();
+        int funcId = (int) table.ref(funcTableIdx);
         var tableInstance = table.instance(funcTableIdx);
         if (tableInstance != null) {
             instance = tableInstance;

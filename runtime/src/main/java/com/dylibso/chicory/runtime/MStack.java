@@ -9,6 +9,10 @@ import java.util.Deque;
  * We should replace with something more idiomatic and performant.
  */
 public class MStack {
+    // TODO:
+    // implement a Deque for long:
+    // inspiration from:
+    // https://github.com/real-logic/agrona/blob/6e15a5c18af85f0d715c8fec06ddcf1e389c8f72/agrona/src/main/java/org/agrona/collections/IntArrayQueue.java
     private final Deque<Long> stack;
 
     public MStack() {

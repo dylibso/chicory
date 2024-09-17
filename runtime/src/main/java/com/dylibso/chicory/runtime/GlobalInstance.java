@@ -5,34 +5,39 @@ import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 
 public class GlobalInstance {
-    private Value value;
-    // TODO: we can remove the boxing also here
+    private long value;
     private final ValueType valueType;
     private Instance instance;
     private final MutabilityType mutabilityType;
 
     public GlobalInstance(Value value, MutabilityType mutabilityType) {
-        this.value = value;
+        this.value = value.raw();
         this.valueType = value.type();
         this.mutabilityType = mutabilityType;
     }
 
     public GlobalInstance(Value value) {
-        this.value = value;
+        this.value = value.raw();
         this.valueType = value.type();
         this.mutabilityType = MutabilityType.Const;
     }
 
-    public Value getValue() {
+    public long getValue() {
         return value;
     }
 
+    public ValueType getType() {
+        return valueType;
+    }
+
     public void setValue(Value value) {
-        this.value = value;
+        // globals can not be type polimorphic
+        assert (value.type() == valueType);
+        this.value = value.raw();
     }
 
     public void setValue(long value) {
-        this.value = new Value(valueType, value);
+        this.value = value;
     }
 
     public Instance getInstance() {

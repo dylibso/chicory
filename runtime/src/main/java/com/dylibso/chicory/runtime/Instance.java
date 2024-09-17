@@ -233,7 +233,9 @@ public class Instance {
                 {
                     return args -> {
                         assert (args.length == 0);
-                        return new Value[] {readGlobal(export.index())};
+                        var t = readGlobalType(export.index());
+                        var v = readGlobal(export.index());
+                        return new Value[] {new Value(t, v)};
                     };
                 }
             default:
@@ -274,7 +276,15 @@ public class Instance {
         globals[idx - importedGlobalsOffset].setValue(val);
     }
 
-    public Value readGlobal(int idx) {
+    public ValueType readGlobalType(int idx) {
+        if (idx < importedGlobalsOffset) {
+            return imports.global(idx).instance().getType();
+        }
+        var i = idx - importedGlobalsOffset;
+        return globals[idx - importedGlobalsOffset].getType();
+    }
+
+    public long readGlobal(int idx) {
         if (idx < importedGlobalsOffset) {
             return imports.global(idx).instance().getValue();
         }
@@ -430,7 +440,7 @@ public class Instance {
         }
 
         private void validateHostGlobalType(GlobalImport i, ExternalGlobal g) {
-            if (i.type() != g.instance().getValue().type()
+            if (i.type() != g.instance().getType()
                     || i.mutabilityType() != g.instance().getMutabilityType()) {
                 throw new UnlinkableException("incompatible import type");
             }

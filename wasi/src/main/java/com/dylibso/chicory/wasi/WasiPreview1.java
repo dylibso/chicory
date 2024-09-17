@@ -475,8 +475,8 @@ public final class WasiPreview1 implements Closeable {
         int totalRead = 0;
         for (var i = 0; i < iovsLen; i++) {
             int base = iovs + (i * 8);
-            int iovBase = memory.readI32(base).asInt();
-            var iovLen = memory.readI32(base + 4).asInt();
+            int iovBase = (int) memory.readI32(base);
+            var iovLen = (int) memory.readI32(base + 4);
             try {
                 byte[] data = new byte[iovLen];
                 int read = reader.read(data);
@@ -676,8 +676,8 @@ public final class WasiPreview1 implements Closeable {
         var totalWritten = 0;
         for (var i = 0; i < iovsLen; i++) {
             var base = iovs + (i * 8);
-            var iovBase = memory.readI32(base).asInt();
-            var iovLen = memory.readI32(base + 4).asInt();
+            var iovBase = (int) memory.readI32(base);
+            var iovLen = (int) memory.readI32(base + 4);
             var data = memory.readBytes(iovBase, iovLen);
             try {
                 int written = writer.write(data);

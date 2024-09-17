@@ -6,7 +6,6 @@ import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
 import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Table;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 
@@ -50,20 +49,14 @@ public class TableInstance {
         return oldSize;
     }
 
-    // TODO: this should return a long instead
-    public Value ref(int index) {
+    public long ref(int index) {
         if (index < 0 || index >= this.refs.length) {
             throw new ChicoryException("undefined element");
         }
-        long res = this.refs[index];
-        if (this.elementType() == ValueType.FuncRef) {
-            return Value.funcRef(res);
-        } else {
-            return Value.externRef(res);
-        }
+        return this.refs[index];
     }
 
-    public void setRef(int index, int value, Instance instance) {
+    public void setRef(int index, long value, Instance instance) {
         if (index < 0 || index >= this.refs.length || index >= this.instances.length) {
             throw new UninstantiableException("out of bounds table access");
         }

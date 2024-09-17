@@ -7,7 +7,6 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValu
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveElement;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 
 /**
@@ -796,7 +795,7 @@ public final class OpcodeImpl {
 
     // ========= Tables =========
 
-    public static Value TABLE_GET(Instance instance, int tableIndex, int index) {
+    public static long TABLE_GET(Instance instance, int tableIndex, int index) {
         TableInstance table = instance.table(tableIndex);
         if (index < 0 || index >= table.limits().max() || index >= table.size()) {
             throw new WASMRuntimeException("out of bounds table access");
@@ -831,11 +830,11 @@ public final class OpcodeImpl {
             if (d <= s) {
                 var val = src.ref(s++);
                 var inst = src.instance(d);
-                dest.setRef(d++, val.asFuncRef(), inst);
+                dest.setRef(d++, val, inst);
             } else {
                 var val = src.ref(s + i);
                 var inst = src.instance(d + i);
-                dest.setRef(d + i, val.asFuncRef(), inst);
+                dest.setRef(d + i, val, inst);
             }
         }
     }
