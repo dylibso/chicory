@@ -31,16 +31,16 @@ class InterpreterMachine implements Machine {
     }
 
     @Override
-    public Value[] call(int funcId, Value[] args) throws ChicoryException {
+    public long[] call(int funcId, long[] args) throws ChicoryException {
         return call(stack, instance, callStack, funcId, args, null, true);
     }
 
-    public static Value[] call(
+    public static long[] call(
             MStack stack,
             Instance instance,
             Deque<StackFrame> callStack,
             int funcId,
-            Value[] typedArgs,
+            long[] args,
             FunctionType callType,
             boolean popResults)
             throws ChicoryException {
@@ -51,12 +51,6 @@ class InterpreterMachine implements Machine {
 
         if (callType != null) {
             verifyIndirectCall(type, callType);
-        }
-
-        // TODO: verify if we should push higher the boundary long/Value here
-        var args = new long[typedArgs.length];
-        for (int i = 0; i < typedArgs.length; i++) {
-            args[i] = typedArgs[i].raw();
         }
 
         var func = instance.function(funcId);
@@ -76,6 +70,11 @@ class InterpreterMachine implements Machine {
             stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
             callStack.push(stackFrame);
 
+            // TODO: evaluate the boxing in this case ...
+            var typedArgs = new Value[type.params().size()];
+            for (int i = 0; i < type.params().size(); i++) {
+                typedArgs[i] = new Value(type.params().get(i), args[i]);
+            }
             var results = instance.callHostFunction(funcId, typedArgs);
             // a host function can return null or an array of ints
             // which we will push onto the stack
@@ -102,10 +101,9 @@ class InterpreterMachine implements Machine {
         }
 
         var totalResults = type.returns().size();
-        var results = new Value[totalResults];
+        var results = new long[totalResults];
         for (var i = totalResults - 1; i >= 0; i--) {
-            var t = type.returns().get(i);
-            results[i] = new Value(t, stack.pop());
+            results[i] = stack.pop();
         }
         return results;
     }
@@ -1748,7 +1746,7 @@ class InterpreterMachine implements Machine {
     private static void F64_LOAD(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readF64(ptr);
-        stack.push(val.raw());
+        stack.push(val);
     }
 
     private static void F32_LOAD(MStack stack, Instance instance, Operands operands) {
@@ -1924,15 +1922,17 @@ class InterpreterMachine implements Machine {
         }
     }
 
-    static Value[] extractArgsForParams(MStack stack, List<ValueType> params) {
+    static long[] extractArgsForParams(MStack stack, List<ValueType> params) {
         if (params == null) {
             return Value.EMPTY_VALUES;
         }
-        var args = new Value[params.size()];
+        var args = new long[params.size()];
         for (var i = params.size(); i > 0; i--) {
             var p = stack.pop();
             var t = params.get(i - 1);
             // TODO: re-enable the check and verify the boxing/unboxing
+            // This section and checks can be moved in Instance.export!
+            //
             //            if (p.type() != t) {
             //                // Similar to what is happening in WaZero
             //                //
@@ -1949,7 +1949,8 @@ class InterpreterMachine implements Machine {
             // Found: " + t);
             //                }
             //            }
-            args[i - 1] = new Value(t, p);
+            // args[i - 1] = new Value(t, p);
+            args[i - 1] = p;
         }
         return args;
     }

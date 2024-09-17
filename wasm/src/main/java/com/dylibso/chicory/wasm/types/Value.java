@@ -16,7 +16,7 @@ public class Value {
     public static final Value EXTREF_NULL = Value.externRef(REF_NULL_VALUE);
     public static final Value FUNCREF_NULL = Value.funcRef(REF_NULL_VALUE);
 
-    public static final Value[] EMPTY_VALUES = new Value[0];
+    public static final long[] EMPTY_VALUES = new long[0];
 
     private final ValueType type;
 

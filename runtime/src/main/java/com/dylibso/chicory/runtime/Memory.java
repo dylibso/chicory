@@ -354,9 +354,9 @@ public final class Memory {
         }
     }
 
-    public Value readF64(int addr) {
+    public long readF64(int addr) {
         try {
-            return Value.f64(buffer.getLong(addr));
+            return buffer.getLong(addr);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
