@@ -546,7 +546,6 @@
               -Xep:OperatorPrecedence:OFF \
               -Xep:ReferenceEquality:OFF \
               -Xep:UnnecessaryParentheses:OFF \
-              -Xep:InlineMeSuggester:OFF \
               -XepExcludedPaths:.*/target/generated-(|test-)sources/.*</arg>
           </compilerArgs>
           <annotationProcessorPaths>
