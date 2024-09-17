@@ -12,8 +12,6 @@ public class HostFunction extends ExternalFunction {
      * List, List)}
      */
     @Deprecated
-    // Prevent error-prone from failing, avoid adding run-time dependency on it
-    @SuppressWarnings("InlineMeSuggester")
     public HostFunction(
             WasmFunctionHandle handle,
             String moduleName,
