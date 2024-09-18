@@ -70,7 +70,7 @@ class InterpreterMachine implements Machine {
             stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
             callStack.push(stackFrame);
 
-            // TODO: evaluate the boxing in this case ...
+            // TODO: evaluate if we can remove the boxing in this case ...
             var typedArgs = new Value[type.params().size()];
             for (int i = 0; i < type.params().size(); i++) {
                 typedArgs[i] = new Value(type.params().get(i), args[i]);

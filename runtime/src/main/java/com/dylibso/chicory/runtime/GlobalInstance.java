@@ -10,16 +10,14 @@ public class GlobalInstance {
     private Instance instance;
     private final MutabilityType mutabilityType;
 
+    public GlobalInstance(Value value) {
+        this(value, MutabilityType.Const);
+    }
+
     public GlobalInstance(Value value, MutabilityType mutabilityType) {
         this.value = value.raw();
         this.valueType = value.type();
         this.mutabilityType = mutabilityType;
-    }
-
-    public GlobalInstance(Value value) {
-        this.value = value.raw();
-        this.valueType = value.type();
-        this.mutabilityType = MutabilityType.Const;
     }
 
     public long getValue() {
