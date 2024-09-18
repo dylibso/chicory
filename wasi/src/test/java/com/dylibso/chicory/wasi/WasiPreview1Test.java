@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
@@ -15,6 +16,7 @@ import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
@@ -126,6 +128,29 @@ public class WasiPreview1Test {
         Instance.builder(module).withHostImports(imports).build();
 
         assertEquals("Hello, Wasi Console!\n", fakeStdout.output());
+    }
+
+    @Test
+    public void shouldRunC2WModule() {
+        /* Preparation:
+         * run the "build-c2w.yaml" GH Action and produce the relevant artifact.
+         * For example, you can download this: https://github.com/andreaTP/chicory/actions/runs/10922065693
+         *
+         */
+        var fakeStdout = new MockPrintStream();
+        var filename = "ubuntu22.c2w.wasm";
+        var args = List.of(filename, "uname", "-a");
+        var wasiOpts = WasiOptions.builder().withArguments(args).withStdout(fakeStdout).build();
+        var wasi = new WasiPreview1(this.logger, wasiOpts);
+        var imports = new HostImports(wasi.toHostFunctions());
+        var module = Parser.parse(new File("../" + filename));
+        var exit =
+                assertThrows(
+                        WasiExitException.class,
+                        () -> Instance.builder(module).withHostImports(imports).build());
+        assertEquals(0, exit.exitCode());
+        System.out.println(fakeStdout.output());
+        assertTrue(fakeStdout.output().startsWith("Linux localhost"));
     }
 
     @Test
