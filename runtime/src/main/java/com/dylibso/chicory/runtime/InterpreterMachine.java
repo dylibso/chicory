@@ -1277,15 +1277,30 @@ class InterpreterMachine implements Machine {
         instance.memory().writeByte(ptr, value);
     }
 
-    private static void F64_PROMOTE_F32(MStack stack) {}
+    private static void F64_PROMOTE_F32(MStack stack) {
+        var tos = stack.pop();
+        stack.push(Double.doubleToRawLongBits(Float.intBitsToFloat((int) tos)));
+    }
 
-    private static void F64_REINTERPRET_I64(MStack stack) {}
+    private static void F64_REINTERPRET_I64(MStack stack) {
+        long tos = stack.pop();
+        stack.push(Value.doubleToLong(OpcodeImpl.F64_REINTERPRET_I64(tos)));
+    }
 
-    private static void I32_WRAP_I64(MStack stack) {}
+    private static void I32_WRAP_I64(MStack stack) {
+        var tos = stack.pop();
+        stack.push((int) tos);
+    }
 
-    private static void I64_EXTEND_I32_S(MStack stack) {}
+    private static void I64_EXTEND_I32_S(MStack stack) {
+        var tos = stack.pop();
+        stack.push((int) tos);
+    }
 
-    private static void I64_EXTEND_I32_U(MStack stack) {}
+    private static void I64_EXTEND_I32_U(MStack stack) {
+        var tos = stack.pop();
+        stack.push(OpcodeImpl.I64_EXTEND_I32_U((int) tos));
+    }
 
     private static void I32_REINTERPRET_F32(MStack stack) {
         float tos = Value.longToFloat(stack.pop());
