@@ -354,9 +354,9 @@ public final class AotMachine implements Machine {
     }
 
     @Override
-    public Value[] call(int funcId, Value[] args) throws ChicoryException {
+    public long[] call(int funcId, long[] args) throws ChicoryException {
         try {
-            return (Value[]) compiledFunctions[funcId].invokeExact(args);
+            return (long[]) compiledFunctions[funcId].invokeExact(args);
         } catch (ChicoryException e) {
             // propagate ChicoryExceptions
             throw e;
@@ -567,7 +567,11 @@ public final class AotMachine implements Machine {
         int slot = type.params().stream().mapToInt(AotUtil::slotCount).sum();
 
         // parameters: arguments, funcTableIdx, tableIdx, instance
-        emitBoxArguments(asm, type.params());
+        // emitBoxArguments(asm, type.params());
+        // asm.visitLdcInsn(LONG);
+        for (int i = 0; i < type.params().size(); i++) {
+            asm.visitVarInsn(Opcodes.LLOAD, i);
+        }
         asm.visitLdcInsn(typeId);
         asm.visitVarInsn(Opcodes.ILOAD, slot); // funcTableIdx
         asm.visitVarInsn(Opcodes.ILOAD, slot + 1); // tableIdx
@@ -575,7 +579,7 @@ public final class AotMachine implements Machine {
 
         emitInvokeStatic(asm, AotMethods.CALL_INDIRECT);
 
-        emitUnboxResult(type, asm);
+        asm.visitInsn(returnTypeOpcode(type));
     }
 
     private static void compileHostFunction(int funcId, FunctionType type, MethodVisitor asm) {

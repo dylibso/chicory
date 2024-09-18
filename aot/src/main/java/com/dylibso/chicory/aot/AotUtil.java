@@ -54,8 +54,8 @@ final class AotUtil {
             BOX_I64 = Value.class.getMethod("i64", long.class);
             BOX_F32 = Value.class.getMethod("fromFloat", float.class);
             BOX_F64 = Value.class.getMethod("fromDouble", double.class);
-            BOX_EXTREF = Value.class.getMethod("externRef", int.class);
-            BOX_FUNCREF = Value.class.getMethod("funcRef", int.class);
+            BOX_EXTREF = Value.class.getMethod("externRef", long.class);
+            BOX_FUNCREF = Value.class.getMethod("funcRef", long.class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }
@@ -64,9 +64,9 @@ final class AotUtil {
     public static Class<?> jvmType(ValueType type) {
         switch (type) {
             case I32:
+                return int.class;
             case ExternRef:
             case FuncRef:
-                return int.class;
             case I64:
                 return long.class;
             case F32:
@@ -202,7 +202,7 @@ final class AotUtil {
             case 1:
                 return jvmType(type.returns().get(0));
             default:
-                return Value[].class;
+                return long[].class;
         }
     }
 

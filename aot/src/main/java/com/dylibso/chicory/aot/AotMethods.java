@@ -60,7 +60,7 @@ public final class AotMethods {
             CALL_INDIRECT =
                     AotMethods.class.getMethod(
                             "callIndirect",
-                            Value[].class,
+                            long[].class,
                             int.class,
                             int.class,
                             int.class,
@@ -68,7 +68,7 @@ public final class AotMethods {
             INSTANCE_CALL_HOST_FUNCTION =
                     Instance.class.getMethod("callHostFunction", int.class, Value[].class);
             INSTANCE_READ_GLOBAL = Instance.class.getMethod("readGlobal", int.class);
-            INSTANCE_WRITE_GLOBAL = Instance.class.getMethod("writeGlobal", int.class, Value.class);
+            INSTANCE_WRITE_GLOBAL = Instance.class.getMethod("writeGlobal", int.class, long.class);
             INSTANCE_SET_ELEMENT = Instance.class.getMethod("setElement", int.class, Element.class);
             MEMORY_COPY =
                     AotMethods.class.getMethod(
@@ -165,13 +165,13 @@ public final class AotMethods {
     private AotMethods() {}
 
     @UsedByGeneratedCode
-    public static Value[] callIndirect(
-            Value[] args, int typeId, int funcTableIdx, int tableIdx, Instance instance) {
+    public static long[] callIndirect(
+            long[] args, int typeId, int funcTableIdx, int tableIdx, Instance instance) {
         TableInstance table = instance.table(tableIdx);
 
         instance = requireNonNullElse(table.instance(funcTableIdx), instance);
 
-        int funcId = table.ref(funcTableIdx).asFuncRef();
+        int funcId = (int) table.ref(funcTableIdx);
         if (funcId == REF_NULL_VALUE) {
             throw new ChicoryException("uninitialized element " + funcTableIdx);
         }
@@ -183,6 +183,9 @@ public final class AotMethods {
         }
 
         checkInterruption();
+        // TODO: verify
+        // here we should not pass through the external "call" method
+        // but directly emit the invocation of the underlying function
         return instance.getMachine().call(funcId, args);
     }
 
@@ -193,7 +196,7 @@ public final class AotMethods {
 
     @UsedByGeneratedCode
     public static int tableGet(int index, int tableIndex, Instance instance) {
-        return OpcodeImpl.TABLE_GET(instance, tableIndex, index).asFuncRef();
+        return (int) OpcodeImpl.TABLE_GET(instance, tableIndex, index);
     }
 
     @UsedByGeneratedCode
