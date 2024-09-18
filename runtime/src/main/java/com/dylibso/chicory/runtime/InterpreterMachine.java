@@ -738,10 +738,10 @@ class InterpreterMachine implements Machine {
                     TABLE_GROW(stack, instance, operands);
                     break;
                 case REF_FUNC:
-                    stack.push((int) operands.get(0));
+                    stack.push(operands.get(0));
                     break;
                 case REF_NULL:
-                    REF_NULL(stack, operands);
+                    REF_NULL(stack);
                     break;
                 case REF_IS_NULL:
                     REF_IS_NULL(stack);
@@ -862,8 +862,8 @@ class InterpreterMachine implements Machine {
     }
 
     private static void I32_MUL(MStack stack) {
-        var a = (int) stack.pop();
-        var b = (int) stack.pop();
+        var a = stack.pop();
+        var b = stack.pop();
         stack.push(a * b);
     }
 
@@ -1288,13 +1288,13 @@ class InterpreterMachine implements Machine {
     }
 
     private static void I32_WRAP_I64(MStack stack) {
-        var tos = stack.pop();
-        stack.push((int) tos);
+        int tos = (int) stack.pop();
+        stack.push(tos);
     }
 
     private static void I64_EXTEND_I32_S(MStack stack) {
-        var tos = stack.pop();
-        stack.push((int) tos);
+        int tos = (int) stack.pop();
+        stack.push(tos);
     }
 
     private static void I64_EXTEND_I32_U(MStack stack) {
@@ -1424,8 +1424,7 @@ class InterpreterMachine implements Machine {
         stack.push(Value.floatToLong(OpcodeImpl.F32_CONVERT_I64_S(tos)));
     }
 
-    private static void REF_NULL(MStack stack, Operands operands) {
-        var type = ValueType.forId((int) operands.get(0));
+    private static void REF_NULL(MStack stack) {
         stack.push(REF_NULL_VALUE);
     }
 
@@ -1944,27 +1943,6 @@ class InterpreterMachine implements Machine {
         var args = new long[params.size()];
         for (var i = params.size(); i > 0; i--) {
             var p = stack.pop();
-            var t = params.get(i - 1);
-            // TODO: re-enable the check and verify the boxing/unboxing
-            // This section and checks can be moved in Instance.export!
-            //
-            //            if (p.type() != t) {
-            //                // Similar to what is happening in WaZero
-            //                //
-            // https://github.com/tetratelabs/wazero/blob/36676928d22ab92c34299eb0dca7608c92c94b22/internal/wasm/gofunc.go#L109
-            //                switch (t) {
-            //                    case I32:
-            //                    case I64:
-            //                    case F32:
-            //                    case F64:
-            //                        p = new Value(t, p);
-            //                        break;
-            //                    default:
-            //                        throw new RuntimeException("Type error when extracting args.
-            // Found: " + t);
-            //                }
-            //            }
-            // args[i - 1] = new Value(t, p);
             args[i - 1] = p;
         }
         return args;

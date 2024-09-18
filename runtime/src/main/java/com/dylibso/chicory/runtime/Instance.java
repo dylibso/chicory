@@ -293,7 +293,6 @@ public class Instance {
         if (idx < importedGlobalsOffset) {
             return imports.global(idx).instance().getType();
         }
-        var i = idx - importedGlobalsOffset;
         return globals[idx - importedGlobalsOffset].getType();
     }
 
