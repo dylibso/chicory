@@ -82,7 +82,7 @@
 
     <approvaltests.version>24.5.0</approvaltests.version>
     <asm.version>9.7</asm.version>
-    <commons-io.version>2.16.1</commons-io.version>
+    <commons-io.version>2.17.0</commons-io.version>
     <commons-lang.version>3.17.0</commons-lang.version>
     <jackson.version>2.17.2</jackson.version>
     <javaparser.version>3.26.2</javaparser.version>
