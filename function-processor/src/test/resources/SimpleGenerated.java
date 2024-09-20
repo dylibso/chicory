@@ -32,7 +32,7 @@ public final class Simple_ModuleFactory {
                     },
                     "simple",
                     "printx",
-                    List.of(ValueType.I32, ValueType.I32),
+                    List.of(ValueType.I32),
                     List.of()
             ),
             new HostFunction(
