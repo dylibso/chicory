@@ -12,11 +12,12 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This is responsible for holding and interpreting the Wasm code.
  */
-class InterpreterMachine implements Machine {
+public class InterpreterMachine implements Machine {
 
     private final MStack stack;
 
@@ -24,10 +25,22 @@ class InterpreterMachine implements Machine {
 
     private final Instance instance;
 
+    private final Map<OpCode, OpImpl> additionalOpcodes;
+
     public InterpreterMachine(Instance instance) {
+        this(instance, Map.of());
+    }
+
+    public InterpreterMachine(Instance instance, Map<OpCode, OpImpl> additionalOpcodes) {
         this.instance = instance;
         stack = new MStack();
         this.callStack = new ArrayDeque<>();
+        this.additionalOpcodes = additionalOpcodes;
+    }
+
+    @Override
+    public Map<OpCode, OpImpl> additionalOpCodes() {
+        return additionalOpcodes;
     }
 
     @Override
@@ -57,7 +70,7 @@ class InterpreterMachine implements Machine {
         if (func != null) {
             var stackFrame =
                     new StackFrame(func.instructions(), instance, funcId, args, func.localTypes());
-            stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
+            stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
             callStack.push(stackFrame);
 
             try {
@@ -67,7 +80,7 @@ class InterpreterMachine implements Machine {
             }
         } else {
             var stackFrame = new StackFrame(instance, funcId, args, List.of());
-            stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
+            stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
             callStack.push(stackFrame);
 
             var results = instance.callHostFunction(funcId, args);
@@ -95,7 +108,7 @@ class InterpreterMachine implements Machine {
             return null;
         }
 
-        var totalResults = type.returns().size();
+        var totalResults = sizeOf(type.returns());
         var results = new Value[totalResults];
         for (var i = totalResults - 1; i >= 0; i--) {
             results[i] = stack.pop();
@@ -745,8 +758,15 @@ class InterpreterMachine implements Machine {
                     ELEM_DROP(instance, operands);
                     break;
                 default:
-                    throw new RuntimeException(
-                            "Machine doesn't recognize Instruction " + instruction);
+                    {
+                        var additionalOpcodes = instance.getMachine().additionalOpCodes();
+                        if (additionalOpcodes.containsKey(opcode)) {
+                            additionalOpcodes.get(opcode).invoke(stack, instance, operands);
+                        } else {
+                            throw new RuntimeException(
+                                    "Machine doesn't recognize Instruction " + instruction);
+                        }
+                    }
             }
         }
     }
@@ -1653,7 +1673,7 @@ class InterpreterMachine implements Machine {
         stack.push(Value.i32(nPages));
     }
 
-    private static int readMemPtr(MStack stack, Operands operands) {
+    public static int readMemPtr(MStack stack, Operands operands) {
         int offset = stack.pop().asInt();
         if (operands.get(1) < 0 || operands.get(1) >= Integer.MAX_VALUE || offset < 0) {
             throw new WASMRuntimeException("out of bounds memory access");
@@ -1861,7 +1881,7 @@ class InterpreterMachine implements Machine {
         if (ValueType.isValid(typeId)) {
             return 0;
         }
-        return instance.type(typeId).params().size();
+        return sizeOf(instance.type(typeId).params());
     }
 
     private static int numberOfValuesToReturn(Instance instance, AnnotatedInstruction scope) {
@@ -1873,9 +1893,25 @@ class InterpreterMachine implements Machine {
             return 0;
         }
         if (ValueType.isValid(typeId)) {
-            return 1;
+            if (ValueType.forId(typeId).isVec()) {
+                return 2;
+            } else {
+                return 1;
+            }
         }
-        return instance.type(typeId).returns().size();
+        return sizeOf(instance.type(typeId).returns());
+    }
+
+    private static int sizeOf(List<ValueType> args) {
+        int total = 0;
+        for (var a : args) {
+            if (a.isVec()) {
+                total += 2;
+            } else {
+                total += 1;
+            }
+        }
+        return total;
     }
 
     private static void BLOCK(
@@ -1941,7 +1977,7 @@ class InterpreterMachine implements Machine {
         if (params == null) {
             return Value.EMPTY_VALUES;
         }
-        var args = new Value[params.size()];
+        var args = new Value[sizeOf(params)];
         for (var i = params.size(); i > 0; i--) {
             var p = stack.pop();
             var t = params.get(i - 1);
@@ -1984,7 +2020,7 @@ class InterpreterMachine implements Machine {
     }
 
     @FunctionalInterface
-    private interface Operands {
+    public interface Operands {
         long get(int index);
     }
 }

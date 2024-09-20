@@ -45,6 +45,7 @@
     <module>log</module>
     <module>runtime</module>
     <module>runtime-tests</module>
+    <module>simd</module>
     <module>test-gen-plugin</module>
     <module>wabt</module>
     <module>wasi</module>
@@ -160,6 +161,11 @@
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>runtime</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>simd</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

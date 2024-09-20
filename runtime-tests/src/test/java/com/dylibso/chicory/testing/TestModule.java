@@ -2,7 +2,9 @@ package com.dylibso.chicory.testing;
 
 import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.InterpreterMachine;
 import com.dylibso.chicory.runtime.Store;
+import com.dylibso.chicory.simd.Simd;
 import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
@@ -62,6 +64,9 @@ public class TestModule {
 
     public Instance instantiate(Store s) {
         HostImports hostImports = s.toHostImports();
-        return Instance.builder(module).withHostImports(hostImports).build();
+        return Instance.builder(module)
+                .withMachineFactory((inst) -> new InterpreterMachine(inst, Simd.opcodesImpl))
+                .withHostImports(hostImports)
+                .build();
     }
 }

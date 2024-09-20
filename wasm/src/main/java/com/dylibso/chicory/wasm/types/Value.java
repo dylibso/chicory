@@ -50,12 +50,90 @@ public class Value {
         return new Value(ValueType.F64, data);
     }
 
+    public static Value v128(long data) {
+        return new Value(ValueType.V128, data);
+    }
+
     public static Value externRef(int data) {
         return new Value(ValueType.ExternRef, data);
     }
 
     public static Value funcRef(int data) {
         return new Value(ValueType.FuncRef, data);
+    }
+
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
+    public static byte[] vecTo8(Value[] values) {
+        var result = new byte[values.length * 8];
+        var valueIdx = 0;
+        for (int i = 0; i < result.length; i++) {
+            var v = values[valueIdx++];
+            result[i] = (byte) (v.data & 0xFFL);
+            result[++i] = (byte) ((v.data >> 8) & 0xFFL);
+            result[++i] = (byte) ((v.data >> 16) & 0xFFL);
+            result[++i] = (byte) ((v.data >> 24) & 0xFFL);
+            result[++i] = (byte) ((v.data >> 32) & 0xFFL);
+            result[++i] = (byte) ((v.data >> 40) & 0xFFL);
+            result[++i] = (byte) ((v.data >> 48) & 0xFFL);
+            result[++i] = (byte) ((v.data >> 56) & 0xFFL);
+        }
+        return result;
+    }
+
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
+    public static Value[] bytesToVec(byte[] bytes) {
+        var result = new Value[bytes.length / 8];
+        var valueIdx = 0;
+        for (int i = 0; i < bytes.length; i++) {
+            result[valueIdx++] =
+                    Value.v128(
+                            Byte.toUnsignedLong(bytes[i]) + (Byte.toUnsignedLong(bytes[++i]) << 8L)
+                                    | (Byte.toUnsignedLong(bytes[++i]) << 16L)
+                                    | (Byte.toUnsignedLong(bytes[++i]) << 24L)
+                                    | (Byte.toUnsignedLong(bytes[++i]) << 32L)
+                                    | (Byte.toUnsignedLong(bytes[++i]) << 40L)
+                                    | (Byte.toUnsignedLong(bytes[++i]) << 48L)
+                                    | (Byte.toUnsignedLong(bytes[++i]) << 56L));
+        }
+        return result;
+    }
+
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
+    public static int[] vecTo16(Value[] values) {
+        var result = new int[values.length * 4];
+        var valueIdx = 0;
+        for (int i = 0; i < result.length; i++) {
+            var v = values[valueIdx++];
+            result[i] = (int) (v.data & 0xFFFFL);
+            result[++i] = (int) ((v.data >> 16) & 0xFFFFL);
+            result[++i] = (int) ((v.data >> 32) & 0xFFFFL);
+            result[++i] = (int) ((v.data >> 48) & 0xFFFFL);
+        }
+        return result;
+    }
+
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
+    public static long[] vecTo32(Value[] values) {
+        var result = new long[values.length * 2];
+        var valueIdx = 0;
+        for (int i = 0; i < result.length; i++) {
+            var v = values[valueIdx++];
+            result[i] = (v.data & 0xFFFFFFFFL);
+            result[++i] = ((v.data >> 32) & 0xFFFFFFFFL);
+        }
+        return result;
+    }
+
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
+    public static float[] vecToF32(Value[] values) {
+        var result = new float[values.length * 2];
+        var valueIdx = 0;
+        for (int i = 0; i < result.length; i++) {
+            var v = values[valueIdx++];
+            result[i] = Float.intBitsToFloat((int) (v.data & 0xFFFFFFFFL));
+            result[++i] = Float.intBitsToFloat((int) ((v.data >> 32) & 0xFFFFFFFFL));
+        }
+        return result;
     }
 
     public Value(ValueType type, int value) {
@@ -66,6 +144,10 @@ public class Value {
     public Value(ValueType type, long value) {
         this.type = requireNonNull(type, "type");
         data = value;
+    }
+
+    public boolean isVec() {
+        return this.type == ValueType.V128;
     }
 
     private static ValueType ensure32bitValueType(ValueType type) {
@@ -141,6 +223,7 @@ public class Value {
             case F32:
             case I64:
             case F64:
+            case V128:
                 return data;
             default:
                 throw new IllegalArgumentException(
@@ -220,6 +303,8 @@ public class Value {
                 return asFloat() + "@f32";
             case F64:
                 return asDouble() + "@f64";
+            case V128:
+                return asLong() + "@v128";
             case FuncRef:
                 return "func[" + (int) data + "]";
             case ExternRef:

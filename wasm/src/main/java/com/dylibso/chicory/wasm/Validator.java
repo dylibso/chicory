@@ -1169,6 +1169,60 @@ final class Validator {
                         getElement(index);
                         break;
                     }
+                case V128_LOAD:
+                    {
+                        popVal(ValueType.I32);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
+                case V128_CONST:
+                    {
+                        pushVal(ValueType.V128);
+                        break;
+                    }
+                case I8x16_ALL_TRUE:
+                case I8x16_EXTRACT_LANE_S:
+                    {
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.I32);
+                        break;
+                    }
+                case I8x16_EQ:
+                case I8x16_SUB:
+                case I8x16_ADD:
+                case I8x16_SWIZZLE:
+                case F32x4_MUL:
+                case F32x4_MIN:
+                    {
+                        popVal(ValueType.V128);
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
+                case F32x4_ABS:
+                case I32x4_TRUNC_SAT_F32X4_S:
+                case F32x4_CONVERT_I32x4_U:
+                case V128_NOT:
+                    {
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
+                case V128_BITSELECT:
+                    {
+                        popVal(ValueType.V128);
+                        popVal(ValueType.V128);
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
+                case I8x16_SHL:
+                    {
+                        popVal(ValueType.I32);
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
                 default:
                     throw new IllegalArgumentException(
                             "Missing type validation opcode handling for " + op.opcode());

@@ -13,10 +13,19 @@
   <name>Chicory - Runtime tests</name>
   <description>Tests for the Chicory runtime using the WebAssembly testsuite</description>
 
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>runtime</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>simd</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -48,6 +57,7 @@
 
   <build>
     <plugins>
+
       <plugin>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>test-gen-plugin</artifactId>
@@ -118,6 +128,7 @@
             <wast>ref_null.wast</wast>
             <wast>return.wast</wast>
             <wast>select.wast</wast>
+            <wast>simd_load.wast</wast>
             <wast>skip-stack-guard-page.wast</wast>
             <wast>stack.wast</wast>
             <wast>start.wast</wast>
@@ -194,7 +205,6 @@
             <wast>simd_int_to_int_extend.wast</wast>
             <wast>simd_lane.wast</wast>
             <wast>simd_linking.wast</wast>
-            <wast>simd_load.wast</wast>
             <wast>simd_load16_lane.wast</wast>
             <wast>simd_load32_lane.wast</wast>
             <wast>simd_load64_lane.wast</wast>
@@ -217,6 +227,20 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <configuration>
+          <argLine>--add-modules jdk.incubator.vector</argLine>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <argLine>--add-modules jdk.incubator.vector</argLine>
+        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -364,6 +364,14 @@ public final class Memory {
         }
     }
 
+    public Value readV128(int addr) {
+        try {
+            return Value.v128(buffer.getLong(addr));
+        } catch (IndexOutOfBoundsException e) {
+            throw new WASMRuntimeException("out of bounds memory access");
+        }
+    }
+
     public void zero() {
         this.fill((byte) 0);
     }
