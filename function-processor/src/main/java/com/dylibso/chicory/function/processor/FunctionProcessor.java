@@ -179,7 +179,6 @@ public final class FunctionProcessor extends AbstractProcessor {
                                                 new MethodCallExpr(lenExpr, "asInt"))));
                     } else if (annotatedWith(parameter, CString.class)) {
                         paramTypes.add(valueType("I32"));
-                        paramTypes.add(valueType("I32"));
                         arguments.add(
                                 new MethodCallExpr(
                                         new MethodCallExpr(new NameExpr("instance"), "memory"),
