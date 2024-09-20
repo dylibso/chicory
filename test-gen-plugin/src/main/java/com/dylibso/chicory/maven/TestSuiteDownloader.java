@@ -2,15 +2,16 @@ package com.dylibso.chicory.maven;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.stream.Stream;
+import net.lingala.zip4j.ZipFile;
 import org.apache.maven.plugin.logging.Log;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.errors.ConfigInvalidException;
-import org.eclipse.jgit.util.SystemReader;
 
 public class TestSuiteDownloader {
 
@@ -35,21 +36,25 @@ public class TestSuiteDownloader {
         }
         if (!testSuiteFolder.exists()) {
             log.warn("Cloning the testsuite at ref: " + testSuiteRepoRef);
-            try {
-                SystemReader.getInstance().getUserConfig().clear();
-            } catch (ConfigInvalidException e) {
-                throw new IOException(e);
+            // target URL:
+            // https://github.com/WebAssembly/testsuite/archive/c2a67a575ddc815ff2212f68301d333e5e30a923.tar.gz
+            // https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives#source-code-archive-urls
+            String zipName = testSuiteRepoRef + ".zip";
+            URL url = new URL(testSuiteRepo + "/archive/" + zipName);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+
+            try (InputStream in = con.getInputStream()) {
+                var zipFile = Paths.get("target/" + zipName);
+                Files.write(zipFile, in.readAllBytes());
+                try (var zip = new ZipFile(zipFile.toFile())) {
+                    zip.renameFile("testsuite-" + testSuiteRepoRef + "/", "testsuite");
+                    zip.extractAll(".");
+                }
+            } finally {
+                con.disconnect();
             }
-            try (Git git =
-                    Git.cloneRepository()
-                            .setURI(testSuiteRepo)
-                            .setDirectory(testSuiteFolder)
-                            .call()) {
-                git.checkout().setName(testSuiteRepoRef).call();
-                log.warn("Cloned the testsuite at ref: " + testSuiteRepoRef);
-            } catch (GitAPIException e) {
-                throw new IOException(e);
-            }
+            log.warn("Cloned the testsuite at ref: " + testSuiteRepoRef);
         }
     }
 }

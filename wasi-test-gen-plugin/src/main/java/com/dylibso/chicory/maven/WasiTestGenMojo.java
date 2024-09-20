@@ -34,8 +34,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.model.fileset.FileSet;
 import org.apache.maven.shared.model.fileset.util.FileSetManager;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.errors.ConfigInvalidException;
 
 /**
  * This plugin generates test classes for the WASI test suite.
@@ -101,7 +99,7 @@ public class WasiTestGenMojo extends AbstractMojo {
         try {
             new WasiTestSuiteDownloader(log)
                     .downloadTestsuite(testSuiteRepo, testSuiteRepoRef, testSuiteFolder);
-        } catch (GitAPIException | ConfigInvalidException | IOException e) {
+        } catch (IOException e) {
             throw new MojoExecutionException("Failed to download testsuite: " + e.getMessage(), e);
         }
 
