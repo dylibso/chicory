@@ -15,9 +15,9 @@ public interface ExternalValue {
         TABLE
     }
 
-    String moduleName();
+    String module();
 
-    String symbolName();
+    String name();
 
     ExternalValue.Type type();
 }

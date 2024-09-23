@@ -23,7 +23,7 @@ public class Store {
      */
     public Store addFunction(ExternalFunction... function) {
         for (var f : function) {
-            functions.put(new QualifiedName(f.moduleName(), f.symbolName()), f);
+            functions.put(new QualifiedName(f.module(), f.name()), f);
         }
         return this;
     }
@@ -33,7 +33,7 @@ public class Store {
      */
     public Store addGlobal(ExternalGlobal... global) {
         for (var g : global) {
-            globals.put(new QualifiedName(g.moduleName(), g.symbolName()), g);
+            globals.put(new QualifiedName(g.module(), g.name()), g);
         }
         return this;
     }
@@ -43,7 +43,7 @@ public class Store {
      */
     public Store addMemory(ExternalMemory... memory) {
         for (var m : memory) {
-            memories.put(new QualifiedName(m.moduleName(), m.symbolName()), m);
+            memories.put(new QualifiedName(m.module(), m.name()), m);
         }
         return this;
     }
@@ -53,7 +53,7 @@ public class Store {
      */
     public Store addTable(ExternalTable... table) {
         for (var t : table) {
-            tables.put(new QualifiedName(t.moduleName(), t.symbolName()), t);
+            tables.put(new QualifiedName(t.module(), t.name()), t);
         }
         return this;
     }
@@ -138,12 +138,12 @@ public class Store {
      * QualifiedName is internally used to use pairs (moduleName, name) as keys in the store.
      */
     static class QualifiedName {
-        private final String moduleName;
-        private final String symbolName;
+        private final String module;
+        private final String name;
 
-        public QualifiedName(String moduleName, String symbolName) {
-            this.moduleName = moduleName;
-            this.symbolName = symbolName;
+        public QualifiedName(String module, String name) {
+            this.module = module;
+            this.name = name;
         }
 
         @Override
@@ -155,13 +155,13 @@ public class Store {
                 return false;
             }
             QualifiedName qualifiedName = (QualifiedName) o;
-            return Objects.equals(moduleName, qualifiedName.moduleName)
-                    && Objects.equals(symbolName, qualifiedName.symbolName);
+            return Objects.equals(module, qualifiedName.module)
+                    && Objects.equals(name, qualifiedName.name);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(moduleName, symbolName);
+            return Objects.hash(module, name);
         }
     }
 }

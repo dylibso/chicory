@@ -6,19 +6,19 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Map;
 
 public class ExternalTable implements ExternalValue {
-    private final String moduleName;
-    private final String symbolName;
+    private final String module;
+    private final String name;
     private final TableInstance table;
 
-    public ExternalTable(String moduleName, String symbolName, TableInstance table) {
-        this.moduleName = moduleName;
-        this.symbolName = symbolName;
+    public ExternalTable(String module, String name, TableInstance table) {
+        this.module = module;
+        this.name = name;
         this.table = table;
     }
 
-    public ExternalTable(String moduleName, String symbolName, Map<Integer, Integer> funcRefs) {
-        this.moduleName = moduleName;
-        this.symbolName = symbolName;
+    public ExternalTable(String module, String name, Map<Integer, Integer> funcRefs) {
+        this.module = module;
+        this.name = name;
 
         long maxFuncRef = 0;
         for (var k : funcRefs.keySet()) {
@@ -33,13 +33,13 @@ public class ExternalTable implements ExternalValue {
     }
 
     @Override
-    public String moduleName() {
-        return moduleName;
+    public String module() {
+        return module;
     }
 
     @Override
-    public String symbolName() {
-        return symbolName;
+    public String name() {
+        return name;
     }
 
     @Override
