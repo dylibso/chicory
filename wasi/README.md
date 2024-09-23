@@ -129,7 +129,7 @@ We do have intentions to support wasip2 in the future, however this work has not
 
 ## How to use
 
-As a host who is running Wasm modules, WASI is just a collection of host imports that you need to provide
+As a host who is running Wasm modules, WASI is just a collection of imports that you need to provide
 to a wasi-compiled module when instantiating it. You'll also need to configure some options for how
 these functions behave and what the module can and cannot do.
 
@@ -154,9 +154,8 @@ copyFileFromWasmCorpus("hello-wasi.wat.wasm", "hello-wasi.wasm");
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
-import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.runtime.HostImports;
+import com.dylibso.chicory.runtime.ExternalValues;
 import com.dylibso.chicory.runtime.Instance;
 
 import java.io.File;
@@ -166,11 +165,11 @@ var logger = new SystemLogger();
 var options = WasiOptions.builder().build();
 // create our instance of wasip1
 var wasi = new WasiPreview1(logger, WasiOptions.builder().build());
-// turn those into host imports. Here we could add any other custom imports we have
-var imports = new HostImports(wasi.toHostFunctions());
-// create the module and connect imports
+// turn those into host functions. Here we could add any other custom definitions we have
+var hostFunctions = new ExternalValues(wasi.toHostFunctions());
+// create the module and connect the external values
 // this will execute the module if it's a WASI command-pattern module
-Instance.builder(Parser.parse(new File("hello-wasi.wasm"))).withHostImports(imports).build();
+Instance.builder(Parser.parse(new File("hello-wasi.wasm"))).withExternalValues(hostFunctions).build();
 ```
 
 > **Note**: Take note that we don't explicitly execute the module. The module will run when you instantiate it. This
@@ -205,11 +204,11 @@ var fakeStderr = new ByteArrayOutputStream();
 var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStderr(fakeStderr).withStdin(fakeStdin).build();
 
 var wasi = new WasiPreview1(logger, wasiOpts);
-var imports = new HostImports(wasi.toHostFunctions());
+var hostFunctions = new ExternalValues(wasi.toHostFunctions());
 
 // greet-wasi is a rust program that greets the string passed in stdin
 // instantiating will execute the module if it's a WASI command-pattern module
-Instance.builder(Parser.parse(new File("greet-wasi.wasm"))).withHostImports(imports).build();
+Instance.builder(Parser.parse(new File("greet-wasi.wasm"))).withExternalValues(hostFunctions).build();
 
 // check that we output the greeting
 assert(fakeStdout.toString().equals("Hello, Andrea!"));

@@ -4,7 +4,7 @@ import static com.dylibso.chicory.wasi.Files.copyDirectory;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.HostImports;
+import com.dylibso.chicory.runtime.ExternalValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import com.google.common.jimfs.Configuration;
@@ -84,7 +84,7 @@ public final class WasiTestRunner {
     private static int execute(File test, WasiOptions wasiOptions) {
         try (var wasi = new WasiPreview1(LOGGER, wasiOptions)) {
             Instance.builder(Parser.parse(test))
-                    .withHostImports(new HostImports(wasi.toHostFunctions()))
+                    .withExternalValues(new ExternalValues(wasi.toHostFunctions()))
                     .build();
         } catch (WasiExitException e) {
             return e.exitCode();

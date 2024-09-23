@@ -13,22 +13,18 @@ public final class NoPackage_ModuleFactory {
     public static HostFunction[] toHostFunctions(NoPackage functions) {
         return new HostFunction[] {
             new HostFunction(
-                    (Instance instance, Value... args) -> {
+                    "nopackage", "print", (Instance instance, Value... args) -> {
                         functions.print(instance.memory(), args[0].asInt(), args[1].asInt());
                         return null;
                     },
-                    "nopackage",
-                    "print",
                     List.of(ValueType.I32, ValueType.I32),
                     List.of()
             ),
             new HostFunction(
-                    (Instance instance, Value... args) -> {
+                    "nopackage", "exit", (Instance instance, Value... args) -> {
                         functions.exit();
                         return null;
                     },
-                    "nopackage",
-                    "exit",
                     List.of(),
                     List.of()
             ),

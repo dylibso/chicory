@@ -3,8 +3,8 @@ package com.dylibso.chicory.approvals;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.dylibso.chicory.aot.AotMachine;
+import com.dylibso.chicory.runtime.ExternalValues;
 import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.HostImports;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -38,9 +38,9 @@ public class ApprovalTest {
         verifyGeneratedBytecode(
                 "hello-wasi.wat.wasm",
                 new HostFunction(
-                        (instance, args) -> null,
                         "wasi_snapshot_preview1",
                         "fd_write",
+                        (instance, args) -> null,
                         List.of(ValueType.I32, ValueType.I32, ValueType.I32, ValueType.I32),
                         List.of(ValueType.I32)));
     }
@@ -89,9 +89,9 @@ public class ApprovalTest {
         verifyGeneratedBytecode(
                 "start.wat.wasm",
                 new HostFunction(
-                        (instance, args) -> null,
                         "env",
                         "gotit",
+                        (instance, args) -> null,
                         List.of(ValueType.I32),
                         List.of()));
     }
@@ -107,7 +107,7 @@ public class ApprovalTest {
                                 Parser.parse(
                                         ClassLoader.getSystemClassLoader()
                                                 .getResourceAsStream("compiled/" + name)))
-                        .withHostImports(new HostImports(hostFunctions))
+                        .withExternalValues(new ExternalValues(hostFunctions))
                         .withMachineFactory(AotMachine::new)
                         .withStart(false)
                         .build();

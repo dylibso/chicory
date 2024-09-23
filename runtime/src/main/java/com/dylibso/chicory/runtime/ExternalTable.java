@@ -5,18 +5,18 @@ import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Map;
 
-public class HostTable implements FromHost {
+public class ExternalTable implements ExternalValue {
     private final String moduleName;
     private final String fieldName;
     private final TableInstance table;
 
-    public HostTable(String moduleName, String fieldName, TableInstance table) {
+    public ExternalTable(String moduleName, String fieldName, TableInstance table) {
         this.moduleName = moduleName;
         this.fieldName = fieldName;
         this.table = table;
     }
 
-    public HostTable(String moduleName, String fieldName, Map<Integer, Integer> funcRefs) {
+    public ExternalTable(String moduleName, String fieldName, Map<Integer, Integer> funcRefs) {
         this.moduleName = moduleName;
         this.fieldName = fieldName;
 
@@ -43,8 +43,8 @@ public class HostTable implements FromHost {
     }
 
     @Override
-    public FromHostType type() {
-        return FromHostType.TABLE;
+    public ExternalValue.Type type() {
+        return Type.TABLE;
     }
 
     public TableInstance table() {

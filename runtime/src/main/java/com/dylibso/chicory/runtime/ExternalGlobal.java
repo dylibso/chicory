@@ -1,14 +1,18 @@
 package com.dylibso.chicory.runtime;
 
-public class HostMemory implements FromHost {
+public class ExternalGlobal implements ExternalValue {
+    private final GlobalInstance instance;
     private final String moduleName;
     private final String fieldName;
-    private final Memory memory;
 
-    public HostMemory(String moduleName, String fieldName, Memory memory) {
+    public ExternalGlobal(String moduleName, String fieldName, GlobalInstance instance) {
+        this.instance = instance;
         this.moduleName = moduleName;
         this.fieldName = fieldName;
-        this.memory = memory;
+    }
+
+    public GlobalInstance instance() {
+        return instance;
     }
 
     @Override
@@ -22,11 +26,7 @@ public class HostMemory implements FromHost {
     }
 
     @Override
-    public FromHostType type() {
-        return FromHostType.MEMORY;
-    }
-
-    public Memory memory() {
-        return memory;
+    public ExternalValue.Type type() {
+        return Type.GLOBAL;
     }
 }

@@ -19,11 +19,11 @@ public class StoreTest {
     public void nameClashesShouldOverwriteTheStore() {
         Store store = new Store();
 
-        HostFunction f1 = new HostFunction(null, "m", "f", null, null);
+        HostFunction f1 = new HostFunction("m", "f", null, null, null);
         store.addFunction(f1);
         assertEquals(f1, store.functions.get(new Store.QualifiedName("m", "f")));
 
-        HostFunction f2 = new HostFunction(null, "m", "f", null, null);
+        HostFunction f2 = new HostFunction("m", "f", null, null, null);
         store.addFunction(f2);
         assertEquals(f2, store.functions.get(new Store.QualifiedName("m", "f")));
     }

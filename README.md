@@ -251,6 +251,8 @@ public void println(String value) {
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.wasm.types.ValueType;
 var func = new HostFunction(
+    "console",
+    "log",
     (Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
         var len = args[0].asInt();
         var offset = args[1].asInt();
@@ -258,8 +260,6 @@ var func = new HostFunction(
         println(message);
         return null;
     },
-    "console",
-    "log",
     List.of(ValueType.I32, ValueType.I32),
     List.of());
 ```
@@ -277,9 +277,9 @@ Note that the HostFunction needs 3 things:
 Now we just need to pass this host function in during our instantiation phase:
 
 ```java
-import com.dylibso.chicory.runtime.HostImports;
-var imports = new HostImports(new HostFunction[] {func});
-var instance = Instance.builder(Parser.parse(new File("./logger.wasm"))).withHostImports(imports).build();
+import com.dylibso.chicory.runtime.ExternalValues;
+var hostFunctions = new ExternalValues(new HostFunction[] {func});
+var instance = Instance.builder(Parser.parse(new File("./logger.wasm"))).withExternalValues(hostFunctions).build();
 var logIt = instance.export("logIt");
 logIt.apply();
 // should print "Hello, World!" 10 times
@@ -306,7 +306,7 @@ import com.dylibso.chicory.runtime.Store;
 // instantiate the store
 var store = new Store();
 // registers `console.log` in the store (see the previous section for the definition of `func`)
-store.addHostFunction(func);
+store.addFunction(func);
 ```
 
 However, the store also automatically exposes the exports of a module to the other instances that are registered.
@@ -326,8 +326,9 @@ var logger2 = store.instantiate("logger2", Parser.parse(new File("./logger.wasm"
 This is equivalent to:
 
 ```java
-var hostImports = store.toHostImports();
-var instance = Instance.builder(m).withHostImports(hostImports).build();
+var external = store.toExternalValues();
+var m = Parser.parse(new File("./logger.wasm"));
+var instance = Instance.builder(m).withExternalValues(external).build();
 store.register("logger2", instance);
 ```
 

@@ -8,13 +8,13 @@ import java.util.Collections;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-class HostImportsTest {
+class ExternalValuesTest {
 
     @Nested
     class Builder {
         @Test
         void empty() {
-            final HostImports result = HostImports.builder().build();
+            final ExternalValues result = ExternalValues.builder().build();
             assertEquals(0, result.functionCount());
             assertEquals(0, result.globalCount());
             assertEquals(0, result.memoryCount());
@@ -26,22 +26,22 @@ class HostImportsTest {
 
             @Test
             void withFunctions() {
-                final HostImports result =
-                        HostImports.builder()
+                final ExternalValues result =
+                        ExternalValues.builder()
                                 .withFunctions(
                                         Arrays.asList(
-                                                new HostFunction(null, "module_1", "", null, null),
-                                                new HostFunction(null, "module_2", "", null, null)))
+                                                new HostFunction("module_1", "", null, null, null),
+                                                new HostFunction("module_2", "", null, null, null)))
                                 .build();
                 assertEquals(2, result.functionCount());
             }
 
             @Test
             void addFunction() {
-                final HostImports result =
-                        HostImports.builder()
-                                .addFunction(new HostFunction(null, "module_1", "", null, null))
-                                .addFunction(new HostFunction(null, "module_2", "", null, null))
+                final ExternalValues result =
+                        ExternalValues.builder()
+                                .addFunction(new HostFunction("module_1", "", null, null, null))
+                                .addFunction(new HostFunction("module_2", "", null, null, null))
                                 .build();
                 assertEquals(2, result.functionCount());
             }
@@ -52,15 +52,15 @@ class HostImportsTest {
 
             @Test
             void withGlobals() {
-                final HostImports result =
-                        HostImports.builder()
+                final ExternalValues result =
+                        ExternalValues.builder()
                                 .withGlobals(
                                         Arrays.asList(
-                                                new HostGlobal(
+                                                new ExternalGlobal(
                                                         "spectest",
                                                         "global_i32",
                                                         new GlobalInstance(Value.i32(666))),
-                                                new HostGlobal(
+                                                new ExternalGlobal(
                                                         "spectest",
                                                         "global_i64",
                                                         new GlobalInstance(Value.i64(666)))))
@@ -70,15 +70,15 @@ class HostImportsTest {
 
             @Test
             void addGlobal() {
-                final HostImports result =
-                        HostImports.builder()
+                final ExternalValues result =
+                        ExternalValues.builder()
                                 .addGlobal(
-                                        new HostGlobal(
+                                        new ExternalGlobal(
                                                 "spectest",
                                                 "global_i32",
                                                 new GlobalInstance(Value.i32(666))))
                                 .addGlobal(
-                                        new HostGlobal(
+                                        new ExternalGlobal(
                                                 "spectest",
                                                 "global_i64",
                                                 new GlobalInstance(Value.i64(666))))
@@ -92,22 +92,22 @@ class HostImportsTest {
 
             @Test
             void withMemories() {
-                final HostImports result =
-                        HostImports.builder()
+                final ExternalValues result =
+                        ExternalValues.builder()
                                 .withMemories(
                                         Arrays.asList(
-                                                new HostMemory("spectest", "memory", null),
-                                                new HostMemory("spectest", "memory_2", null)))
+                                                new ExternalMemory("spectest", "memory", null),
+                                                new ExternalMemory("spectest", "memory_2", null)))
                                 .build();
                 assertEquals(2, result.memoryCount());
             }
 
             @Test
             void addMemory() {
-                final HostImports result =
-                        HostImports.builder()
-                                .addMemory(new HostMemory("spectest", "memory", null))
-                                .addMemory(new HostMemory("spectest", "memory_2", null))
+                final ExternalValues result =
+                        ExternalValues.builder()
+                                .addMemory(new ExternalMemory("spectest", "memory", null))
+                                .addMemory(new ExternalMemory("spectest", "memory_2", null))
                                 .build();
                 assertEquals(2, result.memoryCount());
             }
@@ -118,15 +118,15 @@ class HostImportsTest {
 
             @Test
             void withTables() {
-                final HostImports result =
-                        HostImports.builder()
+                final ExternalValues result =
+                        ExternalValues.builder()
                                 .withTables(
                                         Arrays.asList(
-                                                new HostTable(
+                                                new ExternalTable(
                                                         "spectest",
                                                         "table",
                                                         Collections.emptyMap()),
-                                                new HostTable(
+                                                new ExternalTable(
                                                         "spectest",
                                                         "table_2",
                                                         Collections.emptyMap())))
@@ -136,12 +136,13 @@ class HostImportsTest {
 
             @Test
             void addMemory() {
-                final HostImports result =
-                        HostImports.builder()
+                final ExternalValues result =
+                        ExternalValues.builder()
                                 .addTable(
-                                        new HostTable("spectest", "table", Collections.emptyMap()))
+                                        new ExternalTable(
+                                                "spectest", "table", Collections.emptyMap()))
                                 .addTable(
-                                        new HostTable(
+                                        new ExternalTable(
                                                 "spectest", "table_2", Collections.emptyMap()))
                                 .build();
                 assertEquals(2, result.tableCount());

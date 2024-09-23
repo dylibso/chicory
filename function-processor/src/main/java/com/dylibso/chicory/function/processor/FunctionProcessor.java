@@ -267,9 +267,9 @@ public final class FunctionProcessor extends AbstractProcessor {
         var function =
                 new ObjectCreationExpr()
                         .setType("HostFunction")
-                        .addArgument(handle)
                         .addArgument(new StringLiteralExpr(moduleName))
                         .addArgument(new StringLiteralExpr(name))
+                        .addArgument(handle)
                         .addArgument(new MethodCallExpr(new NameExpr("List"), "of", paramTypes))
                         .addArgument(new MethodCallExpr(new NameExpr("List"), "of", returnType));
         // TODO: update javaparser and replace with multiline formatting

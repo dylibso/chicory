@@ -1,6 +1,6 @@
 package com.dylibso.chicory.testing;
 
-import com.dylibso.chicory.runtime.HostImports;
+import com.dylibso.chicory.runtime.ExternalValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wabt.Wat2Wasm;
@@ -61,7 +61,7 @@ public class TestModule {
     }
 
     public Instance instantiate(Store s) {
-        HostImports hostImports = s.toHostImports();
-        return Instance.builder(module).withHostImports(hostImports).build();
+        ExternalValues externalValues = s.toExternalValues();
+        return Instance.builder(module).withExternalValues(externalValues).build();
     }
 }

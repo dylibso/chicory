@@ -132,7 +132,7 @@ public class JavaTestGen {
         testClass.addFieldWithInitializer(
                 "Store",
                 "store",
-                new NameExpr("new Store().addHostImports(Spectest.toHostImports())"));
+                new NameExpr("new Store().addExternalValues(Spectest.toExternalValues())"));
 
         String currentWasmFile = null;
         for (var cmd : wast.commands()) {

@@ -4,7 +4,7 @@ import static java.nio.file.Files.copy;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.HostImports;
+import com.dylibso.chicory.runtime.ExternalValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
@@ -71,8 +71,8 @@ public final class Wat2Wasm {
 
                 try (var wasi =
                         WasiPreview1.builder().withLogger(logger).withOpts(wasiOpts).build()) {
-                    HostImports imports = new HostImports(wasi.toHostFunctions());
-                    Instance.builder(MODULE).withHostImports(imports).build();
+                    ExternalValues imports = new ExternalValues(wasi.toHostFunctions());
+                    Instance.builder(MODULE).withExternalValues(imports).build();
                 }
 
                 return stdoutStream.toByteArray();
