@@ -15,7 +15,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
 
   // access flags 0x9
   public static func_0(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.throwTrapException ()Ljava/lang/RuntimeException;
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.throwTrapException ()Ljava/lang/RuntimeException;
     ATHROW
    L0
    FRAME FULL [] [java/lang/Throwable]
@@ -25,7 +25,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
 
   // access flags 0x9
   public static func_1(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.checkInterruption ()V
     ALOAD 0
     ALOAD 1
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_0 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
@@ -35,7 +35,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
 
   // access flags 0x9
   public static func_2(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.checkInterruption ()V
     ALOAD 0
     ALOAD 1
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_1 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
@@ -51,7 +51,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ILOAD 0
     ILOAD 1
     ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
     RETURN
     MAXSTACK = 5
     MAXLOCALS = 3

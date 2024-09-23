@@ -19,11 +19,11 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ILOAD 0
     ICONST_0
     ALOAD 1
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryWriteInt (IIILcom/dylibso/chicory/runtime/Memory;)V
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.memoryWriteInt (IIILcom/dylibso/chicory/runtime/Memory;)V
     ICONST_0
     ICONST_0
     ALOAD 1
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryReadInt (IILcom/dylibso/chicory/runtime/Memory;)I
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.memoryReadInt (IILcom/dylibso/chicory/runtime/Memory;)I
     IRETURN
    L0
    FRAME FULL [] [java/lang/Throwable]
@@ -37,11 +37,11 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     LLOAD 0
     ICONST_0
     ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryWriteLong (IJILcom/dylibso/chicory/runtime/Memory;)V
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.memoryWriteLong (IJILcom/dylibso/chicory/runtime/Memory;)V
     ICONST_0
     ICONST_0
     ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryReadLong (IILcom/dylibso/chicory/runtime/Memory;)J
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.memoryReadLong (IILcom/dylibso/chicory/runtime/Memory;)J
     LRETURN
    L0
    FRAME FULL [] [java/lang/Throwable]
@@ -62,7 +62,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ILOAD 1
     ILOAD 2
     ALOAD 3
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
     ICONST_0
     AALOAD
     INVOKEVIRTUAL com/dylibso/chicory/wasm/types/Value.asInt ()I
@@ -83,7 +83,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ILOAD 2
     ILOAD 3
     ALOAD 4
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
     ICONST_0
     AALOAD
     INVOKEVIRTUAL com/dylibso/chicory/wasm/types/Value.asLong ()J

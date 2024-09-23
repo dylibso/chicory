@@ -56,7 +56,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ILOAD 1
     ILOAD 2
     ALOAD 3
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
     ICONST_0
     AALOAD
     INVOKEVIRTUAL com/dylibso/chicory/wasm/types/Value.asInt ()I

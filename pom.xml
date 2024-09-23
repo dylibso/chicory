@@ -35,6 +35,8 @@
 
   <modules>
     <module>aot</module>
+    <module>aot-maven-plugin</module>
+    <module>aot-runtime</module>
     <module>aot-tests</module>
     <module>bom</module>
     <module>cli</module>
@@ -46,7 +48,8 @@
     <module>runtime</module>
     <module>runtime-tests</module>
     <module>test-gen-plugin</module>
-    <module>wabt</module>
+    <module>wabt-aot</module>
+    <module>wabt-gen-aot</module>
     <module>wasi</module>
     <module>wasi-test-gen-plugin</module>
     <module>wasm</module>
@@ -139,6 +142,11 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
+        <artifactId>aot-runtime</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
         <artifactId>cli</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -164,7 +172,12 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>wabt</artifactId>
+        <artifactId>wabt-aot</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wabt-gen-aot</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -565,6 +578,7 @@
           <failOnWarning>${maven.dependency.failOnWarning}</failOnWarning>
           <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
           <ignoredUnusedDeclaredDependencies>
+            <dependency>com.dylibso.chicory:aot-runtime</dependency>
             <dependency>com.dylibso.chicory:wasm-corpus</dependency>
             <dependency>org.junit.jupiter:junit-jupiter-engine</dependency>
           </ignoredUnusedDeclaredDependencies>
