@@ -43,18 +43,18 @@ final class AotUtil {
 
     static {
         try {
-            UNBOX_I32 = ValueConversions.class.getMethod("asLong", int.class);
-            UNBOX_I64 = ValueConversions.class.getMethod("asLong", long.class);
-            UNBOX_F32 = ValueConversions.class.getMethod("asLong", float.class);
-            UNBOX_F64 = ValueConversions.class.getMethod("asLong", double.class);
-            UNBOX_EXTREF = ValueConversions.class.getMethod("asLong", long.class);
-            UNBOX_FUNCREF = ValueConversions.class.getMethod("asLong", long.class);
-            BOX_I32 = ValueConversions.class.getMethod("toInt", long.class);
-            BOX_I64 = ValueConversions.class.getMethod("toLong", long.class);
-            BOX_F32 = ValueConversions.class.getMethod("toFloat", long.class);
-            BOX_F64 = ValueConversions.class.getMethod("toDouble", long.class);
-            BOX_EXTREF = ValueConversions.class.getMethod("toLong", long.class);
-            BOX_FUNCREF = ValueConversions.class.getMethod("toLong", long.class);
+            BOX_I32 = ValueConversions.class.getMethod("asLong", int.class);
+            BOX_I64 = ValueConversions.class.getMethod("asLong", long.class);
+            BOX_F32 = ValueConversions.class.getMethod("asLong", float.class);
+            BOX_F64 = ValueConversions.class.getMethod("asLong", double.class);
+            BOX_EXTREF = ValueConversions.class.getMethod("asLong", long.class);
+            BOX_FUNCREF = ValueConversions.class.getMethod("asLong", long.class);
+            UNBOX_I32 = ValueConversions.class.getMethod("toInt", long.class);
+            UNBOX_I64 = ValueConversions.class.getMethod("toLong", long.class);
+            UNBOX_F32 = ValueConversions.class.getMethod("toFloat", long.class);
+            UNBOX_F64 = ValueConversions.class.getMethod("toDouble", long.class);
+            UNBOX_EXTREF = ValueConversions.class.getMethod("toLong", long.class);
+            UNBOX_FUNCREF = ValueConversions.class.getMethod("toLong", long.class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }

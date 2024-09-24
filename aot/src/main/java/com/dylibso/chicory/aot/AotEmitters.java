@@ -228,7 +228,7 @@ final class AotEmitters {
         int globalIndex = (int) ins.operand(0);
 
         emitInvokeStatic(asm, boxer(ctx.globalTypes().get(globalIndex)));
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        asm.visitVarInsn(Opcodes.LLOAD, ctx.instanceSlot());
         asm.visitInsn(Opcodes.SWAP);
         asm.visitLdcInsn(globalIndex);
         asm.visitInsn(Opcodes.SWAP);
