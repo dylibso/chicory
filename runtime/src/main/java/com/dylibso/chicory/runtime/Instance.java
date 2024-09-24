@@ -400,9 +400,9 @@ public class Instance {
                     || expectedType.returns().size() != f.returnTypes().size()) {
                 throw new UnlinkableException(
                         "incompatible import type for host function "
-                                + f.moduleName()
+                                + f.module()
                                 + "."
-                                + f.fieldName());
+                                + f.name());
             }
             for (int i = 0; i < expectedType.params().size(); i++) {
                 var expected = expectedType.params().get(i);
@@ -410,9 +410,9 @@ public class Instance {
                 if (expected != got) {
                     throw new UnlinkableException(
                             "incompatible import type for host function "
-                                    + f.moduleName()
+                                    + f.module()
                                     + "."
-                                    + f.fieldName());
+                                    + f.name());
                 }
             }
             for (int i = 0; i < expectedType.returns().size(); i++) {
@@ -421,9 +421,9 @@ public class Instance {
                 if (expected != got) {
                     throw new UnlinkableException(
                             "incompatible import type for host function "
-                                    + f.moduleName()
+                                    + f.module()
                                     + "."
-                                    + f.fieldName());
+                                    + f.name());
                 }
             }
         }
@@ -449,9 +449,9 @@ public class Instance {
                                 + ", current: "
                                 + t.table().limits()
                                 + " on table: "
-                                + t.moduleName()
+                                + t.module()
                                 + "."
-                                + t.fieldName());
+                                + t.name());
             }
         }
 
@@ -478,16 +478,16 @@ public class Instance {
                                 + ", host: "
                                 + m.memory().limits()
                                 + " on memory: "
-                                + m.moduleName()
+                                + m.module()
                                 + "."
-                                + m.fieldName());
+                                + m.name());
             }
         }
 
         private void validateNegativeImportType(
                 String moduleName, String name, ExternalValue[] external) {
             for (var fh : external) {
-                if (fh.moduleName().equals(moduleName) && fh.fieldName().equals(name)) {
+                if (fh.module().equals(moduleName) && fh.name().equals(name)) {
                     throw new UnlinkableException("incompatible import type");
                 }
             }
@@ -558,14 +558,12 @@ public class Instance {
             int cnt;
             for (var impIdx = 0; impIdx < imports.length; impIdx++) {
                 var i = imports[impIdx];
-                var name = i.moduleName() + "." + i.name();
+                var name = i.module() + "." + i.name();
                 var found = false;
-                validateNegativeImportType(
-                        i.moduleName(), i.name(), i.importType(), externalValues);
+                validateNegativeImportType(i.module(), i.name(), i.importType(), externalValues);
                 Function<ExternalValue, Boolean> checkName =
                         (ExternalValue fh) ->
-                                i.moduleName().equals(fh.moduleName())
-                                        && i.name().equals(fh.fieldName());
+                                i.module().equals(fh.module()) && i.name().equals(fh.name());
                 switch (i.importType()) {
                     case FUNCTION:
                         cnt = externalValues.functionCount();

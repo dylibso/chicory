@@ -11,19 +11,19 @@ import java.util.Objects;
  * reference.
  */
 public abstract class Import {
-    private final String moduleName;
+    private final String module;
     private final String name;
 
-    Import(String moduleName, String name) {
-        this.moduleName = requireNonNull(moduleName, "moduleName");
+    Import(String module, String name) {
+        this.module = requireNonNull(module, "moduleName");
         this.name = requireNonNull(name, "name");
     }
 
     /**
      * @return the module name to import from
      */
-    public String moduleName() {
-        return moduleName;
+    public String module() {
+        return module;
     }
 
     /**
@@ -44,16 +44,16 @@ public abstract class Import {
     }
 
     public boolean equals(Import other) {
-        return other != null && moduleName.equals(other.moduleName) && name.equals(other.name);
+        return other != null && module.equals(other.module) && name.equals(other.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(moduleName, name);
+        return Objects.hash(module, name);
     }
 
     public StringBuilder toString(StringBuilder b) {
-        return b.append('<').append(moduleName).append('.').append(name).append('>');
+        return b.append('<').append(module).append('.').append(name).append('>');
     }
 
     @Override
