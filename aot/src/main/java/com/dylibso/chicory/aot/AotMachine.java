@@ -572,8 +572,8 @@ public final class AotMachine implements Machine {
         asm.visitVarInsn(Opcodes.ALOAD, slot + 2); // instance
 
         emitInvokeStatic(asm, AotMethods.CALL_INDIRECT);
+
         emitUnboxResult(type, asm);
-        asm.visitInsn(returnTypeOpcode(type));
     }
 
     private static void compileHostFunction(int funcId, FunctionType type, MethodVisitor asm) {
