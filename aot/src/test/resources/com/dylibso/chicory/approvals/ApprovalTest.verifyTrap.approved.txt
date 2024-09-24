@@ -46,12 +46,12 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
   // access flags 0x9
   public static call_indirect_0(IILcom/dylibso/chicory/runtime/Instance;)V
     ICONST_0
-    ANEWARRAY com/dylibso/chicory/wasm/types/Value
+    NEWARRAY T_LONG
     ICONST_0
     ILOAD 0
     ILOAD 1
     ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([JIIILcom/dylibso/chicory/runtime/Instance;)[J
     RETURN
     MAXSTACK = 5
     MAXLOCALS = 3

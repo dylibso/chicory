@@ -1,6 +1,8 @@
 package com.dylibso.chicory.aot;
 
-public class ValueConversions {
+public final class ValueConversions {
+
+    private ValueConversions() {}
 
     // From long
     public static int toInt(long val) {

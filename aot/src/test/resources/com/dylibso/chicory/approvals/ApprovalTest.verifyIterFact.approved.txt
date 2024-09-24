@@ -51,20 +51,20 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
   // access flags 0x9
   public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Instance;)I
     ICONST_1
-    ANEWARRAY com/dylibso/chicory/wasm/types/Value
+    NEWARRAY T_LONG
     DUP
     ICONST_0
     ILOAD 0
-    INVOKESTATIC com/dylibso/chicory/wasm/types/Value.i32 (I)Lcom/dylibso/chicory/wasm/types/Value;
-    AASTORE
+    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    LASTORE
     ICONST_0
     ILOAD 1
     ILOAD 2
     ALOAD 3
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([JIIILcom/dylibso/chicory/runtime/Instance;)[J
     ICONST_0
-    AALOAD
-    INVOKEVIRTUAL com/dylibso/chicory/wasm/types/Value.asInt ()I
+    LALOAD
+    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.toInt (J)I
     IRETURN
     MAXSTACK = 5
     MAXLOCALS = 4

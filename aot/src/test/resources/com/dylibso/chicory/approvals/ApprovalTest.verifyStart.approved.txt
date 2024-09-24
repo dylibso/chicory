@@ -18,15 +18,15 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ALOAD 2
     ICONST_0
     ICONST_1
-    ANEWARRAY com/dylibso/chicory/wasm/types/Value
+    NEWARRAY T_LONG
     DUP
     ICONST_0
     ILOAD 0
-    INVOKESTATIC com/dylibso/chicory/wasm/types/Value.i32 (I)Lcom/dylibso/chicory/wasm/types/Value;
-    AASTORE
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.callHostFunction (I[Lcom/dylibso/chicory/wasm/types/Value;)[Lcom/dylibso/chicory/wasm/types/Value;
+    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    LASTORE
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.callHostFunction (I[J)[J
     RETURN
-    MAXSTACK = 6
+    MAXSTACK = 7
     MAXLOCALS = 3
 
   // access flags 0x9
@@ -43,17 +43,17 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
   // access flags 0x9
   public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Instance;)V
     ICONST_1
-    ANEWARRAY com/dylibso/chicory/wasm/types/Value
+    NEWARRAY T_LONG
     DUP
     ICONST_0
     ILOAD 0
-    INVOKESTATIC com/dylibso/chicory/wasm/types/Value.i32 (I)Lcom/dylibso/chicory/wasm/types/Value;
-    AASTORE
+    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    LASTORE
     ICONST_0
     ILOAD 1
     ILOAD 2
     ALOAD 3
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([JIIILcom/dylibso/chicory/runtime/Instance;)[J
     RETURN
     MAXSTACK = 5
     MAXLOCALS = 4
@@ -61,12 +61,12 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
   // access flags 0x9
   public static call_indirect_1(IILcom/dylibso/chicory/runtime/Instance;)V
     ICONST_0
-    ANEWARRAY com/dylibso/chicory/wasm/types/Value
+    NEWARRAY T_LONG
     ICONST_1
     ILOAD 0
     ILOAD 1
     ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([Lcom/dylibso/chicory/wasm/types/Value;IIILcom/dylibso/chicory/runtime/Instance;)[Lcom/dylibso/chicory/wasm/types/Value;
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([JIIILcom/dylibso/chicory/runtime/Instance;)[J
     RETURN
     MAXSTACK = 5
     MAXLOCALS = 3
