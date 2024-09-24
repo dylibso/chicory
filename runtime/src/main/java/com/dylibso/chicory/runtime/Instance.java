@@ -227,28 +227,14 @@ public class Instance {
         switch (export.exportType()) {
             case FUNCTION:
                 {
-                    return args -> {
-                        var functionType = type(functionType(export.index()));
-                        // we can do additional validation logic here
-                        var unboxedArgs = new long[functionType.params().size()];
-                        for (int i = 0; i < functionType.params().size(); i++) {
-                            unboxedArgs[i] = args[i].raw();
-                        }
-                        var result = machine.call(export.index(), unboxedArgs);
-                        var boxedResults = new Value[functionType.returns().size()];
-                        for (int i = 0; i < functionType.returns().size(); i++) {
-                            boxedResults[i] = new Value(functionType.returns().get(i), result[i]);
-                        }
-                        return boxedResults;
-                    };
+                    return args -> machine.call(export.index(), args);
                 }
             case GLOBAL:
                 {
                     return args -> {
                         assert (args.length == 0);
-                        var t = readGlobalType(export.index());
                         var v = readGlobal(export.index());
-                        return new Value[] {new Value(t, v)};
+                        return new long[] {v};
                     };
                 }
             default:
@@ -358,7 +344,7 @@ public class Instance {
         return machine;
     }
 
-    public Value[] callHostFunction(int funcId, Value[] args) {
+    public long[] callHostFunction(int funcId, long[] args) {
         var imprt = imports.function(funcId);
         if (imprt == null) {
             throw new ChicoryException("Missing host import, number: " + funcId);

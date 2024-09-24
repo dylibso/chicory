@@ -18,6 +18,7 @@ import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.ArrayAccessExpr;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
+import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
@@ -99,7 +100,6 @@ public final class FunctionProcessor extends AbstractProcessor {
         }
         cu.addImport("com.dylibso.chicory.runtime.HostFunction");
         cu.addImport("com.dylibso.chicory.runtime.Instance");
-        cu.addImport("com.dylibso.chicory.wasm.types.Value");
         cu.addImport("com.dylibso.chicory.wasm.types.ValueType");
         cu.addImport("java.util.List");
 
@@ -151,19 +151,27 @@ public final class FunctionProcessor extends AbstractProcessor {
             switch (parameter.asType().toString()) {
                 case "int":
                     paramTypes.add(valueType("I32"));
-                    arguments.add(new MethodCallExpr(argExpr, "asInt"));
+                    arguments.add(new CastExpr(parseType("int"), argExpr));
                     break;
                 case "long":
                     paramTypes.add(valueType("I64"));
-                    arguments.add(new MethodCallExpr(argExpr, "asLong"));
+                    arguments.add(argExpr);
                     break;
                 case "float":
                     paramTypes.add(valueType("F32"));
-                    arguments.add(new MethodCallExpr(argExpr, "asFloat"));
+                    arguments.add(
+                            new MethodCallExpr(
+                                    new NameExpr("Float"),
+                                    "intBitsToFloat",
+                                    new NodeList<>(new CastExpr(parseType("int"), argExpr))));
                     break;
                 case "double":
                     paramTypes.add(valueType("F64"));
-                    arguments.add(new MethodCallExpr(argExpr, "asDouble"));
+                    arguments.add(
+                            new MethodCallExpr(
+                                    new NameExpr("Double"),
+                                    "doubleToLongBits",
+                                    new NodeList<>(argExpr)));
                     break;
                 case "java.lang.String":
                     if (annotatedWith(parameter, Buffer.class)) {
@@ -175,15 +183,15 @@ public final class FunctionProcessor extends AbstractProcessor {
                                         new MethodCallExpr(new NameExpr("instance"), "memory"),
                                         "readString",
                                         new NodeList<>(
-                                                new MethodCallExpr(argExpr, "asInt"),
-                                                new MethodCallExpr(lenExpr, "asInt"))));
+                                                new CastExpr(parseType("int"), argExpr),
+                                                new CastExpr(parseType("int"), lenExpr))));
                     } else if (annotatedWith(parameter, CString.class)) {
                         paramTypes.add(valueType("I32"));
                         arguments.add(
                                 new MethodCallExpr(
                                         new MethodCallExpr(new NameExpr("instance"), "memory"),
                                         "readCString",
-                                        new NodeList<>(new MethodCallExpr(argExpr, "asInt"))));
+                                        new NodeList<>(new CastExpr(parseType("int"), argExpr))));
                     } else {
                         log(ERROR, "Missing annotation for WASM type: java.lang.String", parameter);
                         throw new AbortProcessingException();
@@ -204,25 +212,33 @@ public final class FunctionProcessor extends AbstractProcessor {
         // compute return type and conversion
         String returnName = executable.getReturnType().toString();
         NodeList<Expression> returnType = new NodeList<>();
-        String returnExpr = null;
+        Expression returnExpr = null;
         switch (returnName) {
             case "void":
                 break;
             case "int":
                 returnType.add(valueType("I32"));
-                returnExpr = "i32";
+                returnExpr = new CastExpr(parseType("long"), new NameExpr("result"));
                 break;
             case "long":
                 returnType.add(valueType("I64"));
-                returnExpr = "i64";
+                returnExpr = new NameExpr("result");
                 break;
             case "float":
                 returnType.add(valueType("F32"));
-                returnExpr = "fromFloat";
+                returnExpr =
+                        new MethodCallExpr(
+                                new NameExpr("Float"),
+                                "floatToRawIntBits",
+                                new NodeList<>(new NameExpr("result")));
                 break;
             case "double":
                 returnType.add(valueType("F64"));
-                returnExpr = "fromDouble";
+                returnExpr =
+                        new MethodCallExpr(
+                                new NameExpr("Double"),
+                                "doubleToLongBits",
+                                new NodeList<>(new NameExpr("result")));
                 break;
             default:
                 log(ERROR, "Unsupported WASM type: " + returnName, executable);
@@ -240,16 +256,11 @@ public final class FunctionProcessor extends AbstractProcessor {
             handleBody.addStatement(invocation).addStatement(new ReturnStmt(new NullLiteralExpr()));
         } else {
             var result = new VariableDeclarator(parseType(returnName), "result", invocation);
-            var boxed =
-                    new MethodCallExpr(
-                            new NameExpr("Value"),
-                            returnExpr,
-                            new NodeList<>(new NameExpr("result")));
             var wrapped =
                     new ArrayCreationExpr(
-                            parseType("Value"),
+                            parseType("long"),
                             new NodeList<>(new ArrayCreationLevel()),
-                            new ArrayInitializerExpr(new NodeList<>(boxed)));
+                            new ArrayInitializerExpr(new NodeList<>(returnExpr)));
             handleBody
                     .addStatement(new ExpressionStmt(new VariableDeclarationExpr(result)))
                     .addStatement(new ReturnStmt(wrapped));
@@ -259,7 +270,7 @@ public final class FunctionProcessor extends AbstractProcessor {
         var handle =
                 new LambdaExpr()
                         .addParameter("Instance", "instance")
-                        .addParameter(new Parameter(parseType("Value"), "args").setVarArgs(true))
+                        .addParameter(new Parameter(parseType("long"), "args").setVarArgs(true))
                         .setEnclosingParameters(true)
                         .setBody(handleBody);
 

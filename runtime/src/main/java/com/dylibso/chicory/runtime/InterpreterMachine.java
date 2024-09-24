@@ -70,17 +70,12 @@ class InterpreterMachine implements Machine {
             stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
             callStack.push(stackFrame);
 
-            // TODO: evaluate if we can remove the boxing in this case ...
-            var typedArgs = new Value[type.params().size()];
-            for (int i = 0; i < type.params().size(); i++) {
-                typedArgs[i] = new Value(type.params().get(i), args[i]);
-            }
-            var results = instance.callHostFunction(funcId, typedArgs);
+            var results = instance.callHostFunction(funcId, args);
             // a host function can return null or an array of ints
             // which we will push onto the stack
             if (results != null) {
                 for (var result : results) {
-                    stack.push(result.raw());
+                    stack.push(result);
                 }
             }
         }

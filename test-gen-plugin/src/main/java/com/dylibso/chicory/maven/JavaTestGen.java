@@ -367,7 +367,7 @@ public class JavaTestGen {
         var args =
                 (cmd.action().args() != null)
                         ? Arrays.stream(cmd.action().args())
-                                .map(WasmValue::toWasmValue)
+                                .map(WasmValue::toArgsValue)
                                 .collect(Collectors.joining(", "))
                         : "";
 
@@ -393,19 +393,9 @@ public class JavaTestGen {
 
             for (int i = 0; i < cmd.expected().length; i++) {
                 var expected = cmd.expected()[i];
-                var returnVar = expected.toJavaValue();
-                var typeConversion = expected.extractType();
-                var deltaParam = expected.delta();
-                exprs.add(
-                        new NameExpr(
-                                "assertEquals("
-                                        + returnVar
-                                        + ", results["
-                                        + i
-                                        + "]"
-                                        + typeConversion
-                                        + deltaParam
-                                        + ")"));
+                var expectedVar = expected.toExpectedValue();
+                var resultVar = expected.toResultValue("results[" + i + "]");
+                exprs.add(new NameExpr("assertEquals(" + expectedVar + ", " + resultVar + ")"));
             }
 
             return exprs;
@@ -421,7 +411,7 @@ public class JavaTestGen {
         if (cmd.action().type() == INVOKE) {
             var args =
                     Arrays.stream(cmd.action().args())
-                            .map(WasmValue::toWasmValue)
+                            .map(WasmValue::toArgsValue)
                             .collect(Collectors.joining(", "));
             invocationMethod = ".apply(" + args + ")";
         } else {

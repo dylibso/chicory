@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiExitException;
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.types.Value;
 import java.io.File;
 import org.junit.jupiter.api.Test;
 
@@ -37,10 +36,8 @@ public class Wat2WasmTest {
 
         var addFunction = moduleInstance.export("add");
         var results =
-                addFunction.apply(
-                        Value.i32(Integer.parseUnsignedInt("1")),
-                        Value.i32(Integer.parseUnsignedInt("41")));
-        assertEquals(Integer.parseUnsignedInt("42"), results[0].asInt());
+                addFunction.apply(Integer.parseUnsignedInt("1"), Integer.parseUnsignedInt("41"));
+        assertEquals(Integer.parseUnsignedInt("42"), results[0]);
     }
 
     @Test
