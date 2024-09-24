@@ -219,7 +219,7 @@ final class AotEmitters {
         emitInvokeVirtual(asm, INSTANCE_READ_GLOBAL);
 
         Method unboxer = unboxer(ctx.globalTypes().get(globalIndex));
-        emitInvokeVirtual(asm, unboxer);
+        emitInvokeStatic(asm, unboxer);
 
         ctx.pushStackSize(stackSize(unboxer.getReturnType()));
     }
@@ -772,8 +772,8 @@ final class AotEmitters {
             ValueType type = types.get(i);
             asm.visitVarInsn(Opcodes.ALOAD, ctx.tempSlot());
             asm.visitLdcInsn(i);
-            asm.visitInsn(Opcodes.AALOAD);
-            emitInvokeVirtual(asm, unboxer(type));
+            asm.visitInsn(Opcodes.LALOAD);
+            emitInvokeStatic(asm, unboxer(type));
         }
     }
 }

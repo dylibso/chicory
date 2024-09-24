@@ -52,7 +52,6 @@ import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.GlobalImport;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
@@ -391,7 +390,6 @@ public final class AotMachine implements Machine {
                                 instance.memory(),
                                 instance);
                 compiled[funcId] = adaptSignature(type, handle);
-
             } catch (ReflectiveOperationException e) {
                 throw new ChicoryException(e);
             }
@@ -567,18 +565,14 @@ public final class AotMachine implements Machine {
         int slot = type.params().stream().mapToInt(AotUtil::slotCount).sum();
 
         // parameters: arguments, funcTableIdx, tableIdx, instance
-        // emitBoxArguments(asm, type.params());
-        // asm.visitLdcInsn(LONG);
-        for (int i = 0; i < type.params().size(); i++) {
-            asm.visitVarInsn(Opcodes.LLOAD, i);
-        }
+        emitBoxArguments(asm, type.params());
         asm.visitLdcInsn(typeId);
         asm.visitVarInsn(Opcodes.ILOAD, slot); // funcTableIdx
         asm.visitVarInsn(Opcodes.ILOAD, slot + 1); // tableIdx
         asm.visitVarInsn(Opcodes.ALOAD, slot + 2); // instance
 
         emitInvokeStatic(asm, AotMethods.CALL_INDIRECT);
-
+        emitUnboxResult(type, asm);
         asm.visitInsn(returnTypeOpcode(type));
     }
 
@@ -598,14 +592,14 @@ public final class AotMachine implements Machine {
         int slot = 0;
         // box the arguments into long[]
         asm.visitLdcInsn(types.size());
-        asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(Value.class));
+        asm.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_LONG); // long
         for (int i = 0; i < types.size(); i++) {
             asm.visitInsn(Opcodes.DUP);
             asm.visitLdcInsn(i);
             ValueType valueType = types.get(i);
             asm.visitVarInsn(loadTypeOpcode(valueType), slot);
             emitInvokeStatic(asm, boxer(valueType));
-            asm.visitInsn(Opcodes.AASTORE);
+            asm.visitInsn(Opcodes.LASTORE);
             slot += slotCount(valueType);
         }
     }
@@ -619,8 +613,8 @@ public final class AotMachine implements Machine {
         } else {
             // unbox the result from long[0]
             asm.visitLdcInsn(0);
-            asm.visitInsn(Opcodes.LALOAD); // verify!
-            emitInvokeVirtual(asm, unboxer(type.returns().get(0)));
+            asm.visitInsn(Opcodes.LALOAD);
+            emitInvokeStatic(asm, unboxer(type.returns().get(0)));
             asm.visitInsn(returnTypeOpcode(type));
         }
     }

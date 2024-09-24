@@ -10,7 +10,6 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -44,18 +43,18 @@ final class AotUtil {
 
     static {
         try {
-            UNBOX_I32 = Value.class.getMethod("asInt");
-            UNBOX_I64 = Value.class.getMethod("asLong");
-            UNBOX_F32 = Value.class.getMethod("asFloat");
-            UNBOX_F64 = Value.class.getMethod("asDouble");
-            UNBOX_EXTREF = Value.class.getMethod("asExtRef");
-            UNBOX_FUNCREF = Value.class.getMethod("asFuncRef");
-            BOX_I32 = Value.class.getMethod("i32", int.class);
-            BOX_I64 = Value.class.getMethod("i64", long.class);
-            BOX_F32 = Value.class.getMethod("fromFloat", float.class);
-            BOX_F64 = Value.class.getMethod("fromDouble", double.class);
-            BOX_EXTREF = Value.class.getMethod("externRef", long.class);
-            BOX_FUNCREF = Value.class.getMethod("funcRef", long.class);
+            UNBOX_I32 = ValueConversions.class.getMethod("asLong", int.class);
+            UNBOX_I64 = ValueConversions.class.getMethod("asLong", long.class);
+            UNBOX_F32 = ValueConversions.class.getMethod("asLong", float.class);
+            UNBOX_F64 = ValueConversions.class.getMethod("asLong", double.class);
+            UNBOX_EXTREF = ValueConversions.class.getMethod("asLong", long.class);
+            UNBOX_FUNCREF = ValueConversions.class.getMethod("asLong", long.class);
+            BOX_I32 = ValueConversions.class.getMethod("toInt", long.class);
+            BOX_I64 = ValueConversions.class.getMethod("toLong", long.class);
+            BOX_F32 = ValueConversions.class.getMethod("toFloat", long.class);
+            BOX_F64 = ValueConversions.class.getMethod("toDouble", long.class);
+            BOX_EXTREF = ValueConversions.class.getMethod("toLong", long.class);
+            BOX_FUNCREF = ValueConversions.class.getMethod("toLong", long.class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }
