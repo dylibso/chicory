@@ -12,7 +12,6 @@ import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.Value;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -66,7 +65,7 @@ public final class AotMethods {
                             int.class,
                             Instance.class);
             INSTANCE_CALL_HOST_FUNCTION =
-                    Instance.class.getMethod("callHostFunction", int.class, Value[].class);
+                    Instance.class.getMethod("callHostFunction", int.class, long[].class);
             INSTANCE_READ_GLOBAL = Instance.class.getMethod("readGlobal", int.class);
             INSTANCE_WRITE_GLOBAL = Instance.class.getMethod("writeGlobal", int.class, long.class);
             INSTANCE_SET_ELEMENT = Instance.class.getMethod("setElement", int.class, Element.class);

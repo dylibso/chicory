@@ -531,16 +531,16 @@ public final class AotMachine implements Machine {
             argHandlers[i] = unboxerHandle(argTypes.get(i));
         }
         MethodHandle result = filterArguments(handle, 0, argHandlers);
-        result = result.asSpreader(Value[].class, argTypes.size());
+        result = result.asSpreader(long[].class, argTypes.size());
 
         if (type.returns().isEmpty()) {
-            return result.asType(result.type().changeReturnType(Value[].class));
+            return result.asType(result.type().changeReturnType(long[].class));
         }
         if (type.returns().size() > 1) {
             return result;
         }
         result = filterReturnValue(result, boxerHandle(type.returns().get(0)));
-        return filterReturnValue(result, ValueWrapper.HANDLE);
+        return filterReturnValue(result, LongArrayWrapper.HANDLE);
     }
 
     private static void emitConstructor(ClassVisitor writer) {
@@ -596,7 +596,7 @@ public final class AotMachine implements Machine {
 
     private static void emitBoxArguments(MethodVisitor asm, List<ValueType> types) {
         int slot = 0;
-        // box the arguments into Value[]
+        // box the arguments into long[]
         asm.visitLdcInsn(types.size());
         asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(Value.class));
         for (int i = 0; i < types.size(); i++) {
@@ -614,12 +614,12 @@ public final class AotMachine implements Machine {
         Class<?> returnType = jvmReturnType(type);
         if (returnType == void.class) {
             asm.visitInsn(Opcodes.RETURN);
-        } else if (returnType == Value[].class) {
+        } else if (returnType == long[].class) {
             asm.visitInsn(Opcodes.ARETURN);
         } else {
-            // unbox the result from Value[0]
+            // unbox the result from long[0]
             asm.visitLdcInsn(0);
-            asm.visitInsn(Opcodes.AALOAD);
+            asm.visitInsn(Opcodes.LALOAD); // verify!
             emitInvokeVirtual(asm, unboxer(type.returns().get(0)));
             asm.visitInsn(returnTypeOpcode(type));
         }
@@ -883,7 +883,7 @@ public final class AotMachine implements Machine {
     }
 
     private static MethodType valueMethodType(List<ValueType> types) {
-        return methodType(Value[].class, jvmTypes(types));
+        return methodType(long[].class, jvmTypes(types));
     }
 
     private static String valueMethodName(List<ValueType> types) {
@@ -895,7 +895,7 @@ public final class AotMachine implements Machine {
 
     private static int returnTypeOpcode(FunctionType type) {
         Class<?> returnType = jvmReturnType(type);
-        if (returnType == Value[].class) {
+        if (returnType == long[].class) {
             return Opcodes.ARETURN;
         }
         if (returnType == int.class) {
