@@ -12,7 +12,7 @@ public class Value {
 
     public static final long FALSE = 0L;
 
-    public static final long REF_NULL_VALUE = -1L;
+    public static final int REF_NULL_VALUE = -1;
     public static final Value EXTREF_NULL = Value.externRef(REF_NULL_VALUE);
     public static final Value FUNCREF_NULL = Value.funcRef(REF_NULL_VALUE);
 

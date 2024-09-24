@@ -47,14 +47,14 @@ final class AotUtil {
             BOX_I64 = ValueConversions.class.getMethod("asLong", long.class);
             BOX_F32 = ValueConversions.class.getMethod("asLong", float.class);
             BOX_F64 = ValueConversions.class.getMethod("asLong", double.class);
-            BOX_EXTREF = ValueConversions.class.getMethod("asLong", long.class);
-            BOX_FUNCREF = ValueConversions.class.getMethod("asLong", long.class);
+            BOX_EXTREF = ValueConversions.class.getMethod("asLong", int.class);
+            BOX_FUNCREF = ValueConversions.class.getMethod("asLong", int.class);
             UNBOX_I32 = ValueConversions.class.getMethod("toInt", long.class);
             UNBOX_I64 = ValueConversions.class.getMethod("toLong", long.class);
             UNBOX_F32 = ValueConversions.class.getMethod("toFloat", long.class);
             UNBOX_F64 = ValueConversions.class.getMethod("toDouble", long.class);
-            UNBOX_EXTREF = ValueConversions.class.getMethod("toLong", long.class);
-            UNBOX_FUNCREF = ValueConversions.class.getMethod("toLong", long.class);
+            UNBOX_EXTREF = ValueConversions.class.getMethod("toInt", int.class);
+            UNBOX_FUNCREF = ValueConversions.class.getMethod("toInt", int.class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }
@@ -63,9 +63,9 @@ final class AotUtil {
     public static Class<?> jvmType(ValueType type) {
         switch (type) {
             case I32:
-                return int.class;
             case ExternRef:
             case FuncRef:
+                return int.class;
             case I64:
                 return long.class;
             case F32:
