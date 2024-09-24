@@ -175,6 +175,7 @@ public final class AotMethods {
             throw new ChicoryException("uninitialized element " + funcTableIdx);
         }
 
+        // TODO: this check can be performed statically, I guess
         FunctionType expectedType = instance.type(typeId);
         FunctionType actualType = instance.type(instance.functionType(funcId));
         if (!actualType.typesMatch(expectedType)) {

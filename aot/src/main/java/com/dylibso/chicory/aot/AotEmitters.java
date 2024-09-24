@@ -228,7 +228,7 @@ final class AotEmitters {
         int globalIndex = (int) ins.operand(0);
 
         emitInvokeStatic(asm, boxer(ctx.globalTypes().get(globalIndex)));
-        asm.visitVarInsn(Opcodes.LLOAD, ctx.instanceSlot());
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         asm.visitInsn(Opcodes.SWAP);
         asm.visitLdcInsn(globalIndex);
         asm.visitInsn(Opcodes.SWAP);
@@ -767,10 +767,10 @@ final class AotEmitters {
     }
 
     private static void emitUnboxResult(MethodVisitor asm, AotContext ctx, List<ValueType> types) {
-        asm.visitVarInsn(Opcodes.ASTORE, ctx.tempSlot());
+        asm.visitVarInsn(Opcodes.LSTORE, ctx.tempSlot());
         for (int i = 0; i < types.size(); i++) {
             ValueType type = types.get(i);
-            asm.visitVarInsn(Opcodes.ALOAD, ctx.tempSlot());
+            asm.visitVarInsn(Opcodes.LLOAD, ctx.tempSlot());
             asm.visitLdcInsn(i);
             asm.visitInsn(Opcodes.LALOAD);
             emitInvokeStatic(asm, unboxer(type));
