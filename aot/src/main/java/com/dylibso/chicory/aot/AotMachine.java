@@ -73,7 +73,6 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.InstructionAdapter;
 import org.objectweb.asm.util.CheckClassAdapter;
-import org.objectweb.asm.util.TraceClassVisitor;
 
 /**
  * Simple Machine implementation that AOT compiles function bodies and runtime-links them
@@ -512,11 +511,8 @@ public final class AotMachine implements Machine {
         } catch (VerifyError e) {
             // run ASM verifier to help with debugging
             try {
-                PrintWriter pw = new PrintWriter(System.out, true, UTF_8);
                 ClassReader reader = new ClassReader(classBytes);
-                CheckClassAdapter.verify(reader, true, pw);
-
-                reader.accept(new TraceClassVisitor(pw), 0);
+                CheckClassAdapter.verify(reader, true, new PrintWriter(System.out, false, UTF_8));
             } catch (NoClassDefFoundError ignored) {
                 // the ASM verifier is an optional dependency
             } catch (Throwable t) {
