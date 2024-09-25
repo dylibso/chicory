@@ -9,11 +9,6 @@ public final class ValueConversions {
         return (int) val;
     }
 
-    // for compatibility with Refs, can this be removed?
-    public static int toInt(int val) {
-        return val;
-    }
-
     public static long toLong(long val) {
         return val;
     }

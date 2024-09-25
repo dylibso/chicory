@@ -53,8 +53,8 @@ final class AotUtil {
             UNBOX_I64 = ValueConversions.class.getMethod("toLong", long.class);
             UNBOX_F32 = ValueConversions.class.getMethod("toFloat", long.class);
             UNBOX_F64 = ValueConversions.class.getMethod("toDouble", long.class);
-            UNBOX_EXTREF = ValueConversions.class.getMethod("toInt", int.class);
-            UNBOX_FUNCREF = ValueConversions.class.getMethod("toInt", int.class);
+            UNBOX_EXTREF = ValueConversions.class.getMethod("toInt", long.class);
+            UNBOX_FUNCREF = ValueConversions.class.getMethod("toInt", long.class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }
