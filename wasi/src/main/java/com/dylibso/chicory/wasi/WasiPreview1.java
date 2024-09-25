@@ -1109,7 +1109,12 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int sockShutdown(int sock, int how) {
         logger.infof("sock_shutdown: [%s, %s]", sock, how);
-        throw new WASMRuntimeException("We don't yet support this WASI call: sock_shutdown");
+        Descriptor descriptor = descriptors.get(sock);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        // sockets are not supported, so this cannot be a socket
+        return wasiResult(WasiErrno.ENOTSOCK);
     }
 
     public HostFunction[] toHostFunctions() {

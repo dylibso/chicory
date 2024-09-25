@@ -78,9 +78,6 @@
               <!-- pwrite is not implemented -->
               <exclude>tests/c/testsuite/pwrite-with-access.wasm</exclude>
               <exclude>tests/c/testsuite/pwrite-with-append.wasm</exclude>
-              <!-- sockets are not implemented -->
-              <exclude>tests/c/testsuite/sock_shutdown-invalid_fd.wasm</exclude>
-              <exclude>tests/c/testsuite/sock_shutdown-not_sock.wasm</exclude>
               <!-- Java does not support READ+APPEND -->
               <exclude>tests/rust/testsuite/fd_flags_set.wasm</exclude>
               <!-- pread is not implemented -->

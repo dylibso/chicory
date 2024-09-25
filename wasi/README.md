@@ -78,7 +78,7 @@ We also have a table:
 | sock_accept             | ❌         |                                                                                                                                                                                        |
 | sock_recv               | ❌         |                                                                                                                                                                                        |
 | sock_send               | ❌         |                                                                                                                                                                                        |
-| sock_shutdown           | ❌         |                                                                                                                                                                                        |
+| sock_shutdown           | ✅         |                                                                                                                                                                                        |
 
 
 > **Note**: 💀 means the function is no longer part of WASI.
