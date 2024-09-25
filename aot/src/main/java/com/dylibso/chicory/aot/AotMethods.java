@@ -175,7 +175,6 @@ public final class AotMethods {
             throw new ChicoryException("uninitialized element " + funcTableIdx);
         }
 
-        // TODO: this check can be performed statically, I guess
         FunctionType expectedType = instance.type(typeId);
         FunctionType actualType = instance.type(instance.functionType(funcId));
         if (!actualType.typesMatch(expectedType)) {
@@ -183,9 +182,6 @@ public final class AotMethods {
         }
 
         checkInterruption();
-        // TODO: verify
-        // here we should not pass through the external "call" method
-        // but directly emit the invocation of the underlying function
         return instance.getMachine().call(funcId, args);
     }
 
