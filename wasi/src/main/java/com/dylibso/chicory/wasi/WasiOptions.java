@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
 import java.security.SecureRandom;
+import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import java.util.Random;
 
 public final class WasiOptions {
     private final Random random;
+    private final Clock clock;
     private final OutputStream stdout;
     private final OutputStream stderr;
     private final InputStream stdin;
@@ -27,6 +29,7 @@ public final class WasiOptions {
 
     private WasiOptions(
             Random random,
+            Clock clock,
             OutputStream stdout,
             OutputStream stderr,
             InputStream stdin,
@@ -34,6 +37,7 @@ public final class WasiOptions {
             Map<String, String> environment,
             Map<String, Path> directories) {
         this.random = requireNonNull(random);
+        this.clock = requireNonNull(clock);
         this.stdout = requireNonNull(stdout);
         this.stderr = requireNonNull(stderr);
         this.stdin = requireNonNull(stdin);
@@ -44,6 +48,10 @@ public final class WasiOptions {
 
     public Random random() {
         return random;
+    }
+
+    public Clock clock() {
+        return clock;
     }
 
     public OutputStream stdout() {
@@ -72,6 +80,7 @@ public final class WasiOptions {
 
     public static final class Builder {
         private Random random = new SecureRandom();
+        private Clock clock = Clock.systemUTC();
         private OutputStream stdout = OutputStream.nullOutputStream();
         private OutputStream stderr = OutputStream.nullOutputStream();
         private InputStream stdin = InputStream.nullInputStream();
@@ -83,6 +92,11 @@ public final class WasiOptions {
 
         public Builder withRandom(Random random) {
             this.random = random;
+            return this;
+        }
+
+        public Builder withClock(Clock clock) {
+            this.clock = clock;
             return this;
         }
 
@@ -125,7 +139,7 @@ public final class WasiOptions {
 
         public WasiOptions build() {
             return new WasiOptions(
-                    random, stdout, stderr, stdin, arguments, environment, directories);
+                    random, clock, stdout, stderr, stdin, arguments, environment, directories);
         }
     }
 }

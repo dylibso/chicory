@@ -44,6 +44,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -59,6 +60,7 @@ import java.util.stream.Stream;
 public final class WasiPreview1 implements Closeable {
     private final Logger logger;
     private final Random random;
+    private final Clock clock;
     private final List<byte[]> arguments;
     private final List<Entry<byte[], byte[]>> environment;
     private final Descriptors descriptors = new Descriptors();
@@ -73,6 +75,7 @@ public final class WasiPreview1 implements Closeable {
     public WasiPreview1(Logger logger, WasiOptions opts) {
         this.logger = requireNonNull(logger);
         this.random = opts.random();
+        this.clock = opts.clock();
         this.arguments =
                 opts.arguments().stream().map(value -> value.getBytes(UTF_8)).collect(toList());
         this.environment =
@@ -187,7 +190,7 @@ public final class WasiPreview1 implements Closeable {
         logger.infof("clock_time_get: [%s, %s, %s]", clockId, precision, resultPtr);
         switch (clockId) {
             case WasiClockId.REALTIME:
-                Instant now = Instant.now();
+                Instant now = clock.instant();
                 long epochNanos = SECONDS.toNanos(now.getEpochSecond()) + now.getNano();
                 memory.writeLong(resultPtr, epochNanos);
                 return wasiResult(WasiErrno.ESUCCESS);
