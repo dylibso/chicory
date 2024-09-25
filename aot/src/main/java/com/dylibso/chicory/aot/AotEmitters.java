@@ -771,10 +771,10 @@ final class AotEmitters {
     }
 
     private static void emitUnboxResult(MethodVisitor asm, AotContext ctx, List<ValueType> types) {
-        asm.visitVarInsn(Opcodes.LSTORE, ctx.tempSlot());
+        asm.visitVarInsn(Opcodes.ASTORE, ctx.tempSlot());
         for (int i = 0; i < types.size(); i++) {
             ValueType type = types.get(i);
-            asm.visitVarInsn(Opcodes.LLOAD, ctx.tempSlot());
+            asm.visitVarInsn(Opcodes.ALOAD, ctx.tempSlot());
             asm.visitLdcInsn(i);
             asm.visitInsn(Opcodes.LALOAD);
             emitInvokeStatic(asm, unboxer(type));

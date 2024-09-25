@@ -4,7 +4,6 @@ import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.types.Value;
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -51,12 +50,12 @@ public class BenchmarkFactorialExecution {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void benchmarkInt(Blackhole bh) {
-        bh.consume(iterFactInt.apply(Value.i32(input)));
+        bh.consume(iterFactInt.apply(input));
     }
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void benchmarkAot(Blackhole bh) {
-        bh.consume(iterFactAot.apply(Value.i32(input)));
+        bh.consume(iterFactAot.apply(input));
     }
 }

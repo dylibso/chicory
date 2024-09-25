@@ -593,10 +593,9 @@ public final class AotMachine implements Machine {
     }
 
     private static void emitBoxArguments(MethodVisitor asm, List<ValueType> types) {
-        int slotCount = types.stream().mapToInt(AotUtil::slotCount).sum();
         int slot = 0;
         // box the arguments into long[]
-        asm.visitLdcInsn(slotCount);
+        asm.visitLdcInsn(types.size());
         asm.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_LONG); // long
         for (int i = 0; i < types.size(); i++) {
             asm.visitInsn(Opcodes.DUP);

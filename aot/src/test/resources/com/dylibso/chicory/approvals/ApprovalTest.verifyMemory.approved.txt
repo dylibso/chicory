@@ -72,7 +72,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
 
   // access flags 0x9
   public static call_indirect_1(JIILcom/dylibso/chicory/runtime/Instance;)J
-    ICONST_2
+    ICONST_1
     NEWARRAY T_LONG
     DUP
     ICONST_0
