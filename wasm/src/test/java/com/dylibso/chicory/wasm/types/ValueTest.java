@@ -1,10 +1,8 @@
 package com.dylibso.chicory.wasm.types;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -28,23 +26,17 @@ public class ValueTest {
         var f32Ref = 0.12345678f;
         var f32 = Value.f32(1039980265L);
         assertEquals(f32Ref, f32.asFloat(), 0.0);
-        assertArrayEquals(f32.data(), Value.fromFloat(f32Ref).data());
+        assertEquals(f32.raw(), Value.fromFloat(f32Ref).raw());
         var f64Ref = 0.123456789012345d;
         var f64 = Value.f64(4593560419847042606L);
         assertEquals(f64Ref, f64.asDouble(), 0.0);
-        assertArrayEquals(f64.data(), Value.fromDouble(f64Ref).data());
+        assertEquals(f64.raw(), Value.fromDouble(f64Ref).raw());
     }
 
     @Test
     public void validConstruction() {
-
         new Value(ValueType.I32, 42);
         assertTrue(true);
-    }
-
-    @Test
-    public void invalidConstruction() {
-        assertThrows(IllegalArgumentException.class, () -> new Value(ValueType.I64, 42));
     }
 
     @Test

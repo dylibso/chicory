@@ -32,9 +32,10 @@ import static com.dylibso.chicory.aot.AotMethods.TABLE_SET;
 import static com.dylibso.chicory.aot.AotMethods.TABLE_SIZE;
 import static com.dylibso.chicory.aot.AotMethods.THROW_OUT_OF_BOUNDS_MEMORY_ACCESS;
 import static com.dylibso.chicory.aot.AotUtil.StackSize;
-import static com.dylibso.chicory.aot.AotUtil.boxer;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
+import static com.dylibso.chicory.aot.AotUtil.convertFromLong;
+import static com.dylibso.chicory.aot.AotUtil.convertToLong;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
 import static com.dylibso.chicory.aot.AotUtil.emitPop;
@@ -45,7 +46,6 @@ import static com.dylibso.chicory.aot.AotUtil.methodNameFor;
 import static com.dylibso.chicory.aot.AotUtil.methodTypeFor;
 import static com.dylibso.chicory.aot.AotUtil.stackSize;
 import static com.dylibso.chicory.aot.AotUtil.storeTypeOpcode;
-import static com.dylibso.chicory.aot.AotUtil.unboxer;
 import static com.dylibso.chicory.aot.AotUtil.validateArgumentType;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
@@ -218,7 +218,7 @@ final class AotEmitters {
         asm.visitLdcInsn(globalIndex);
         emitInvokeVirtual(asm, INSTANCE_READ_GLOBAL);
 
-        Method unboxer = unboxer(ctx.globalTypes().get(globalIndex));
+        Method unboxer = convertFromLong(ctx.globalTypes().get(globalIndex));
         emitInvokeStatic(asm, unboxer);
 
         ctx.pushStackSize(stackSize(unboxer.getReturnType()));
@@ -227,7 +227,7 @@ final class AotEmitters {
     public static void GLOBAL_SET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         int globalIndex = (int) ins.operand(0);
 
-        emitInvokeStatic(asm, boxer(ctx.globalTypes().get(globalIndex)));
+        emitInvokeStatic(asm, convertToLong(ctx.globalTypes().get(globalIndex)));
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         // from long | integer on top of the stack
         // to integer | long
@@ -777,7 +777,7 @@ final class AotEmitters {
             asm.visitVarInsn(Opcodes.ALOAD, ctx.tempSlot());
             asm.visitLdcInsn(i);
             asm.visitInsn(Opcodes.LALOAD);
-            emitInvokeStatic(asm, unboxer(type));
+            emitInvokeStatic(asm, convertFromLong(type));
         }
     }
 }

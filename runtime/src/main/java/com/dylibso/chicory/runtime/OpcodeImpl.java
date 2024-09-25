@@ -865,14 +865,15 @@ public final class OpcodeImpl {
         for (int i = offset; i < end; i++) {
             var elem = instance.element(elementidx);
             var val = computeConstantValue(instance, elem.initializers().get(elemidx++));
+            var rawValue = (int) val.raw();
             if (table.elementType() == ValueType.FuncRef) {
-                if (val.asFuncRef() > instance.functionCount()) {
+                if (rawValue > instance.functionCount()) {
                     throw new WASMRuntimeException("out of bounds table access");
                 }
-                table.setRef(i, val.asFuncRef(), instance);
+                table.setRef(i, rawValue, instance);
             } else {
                 assert table.elementType() == ValueType.ExternRef;
-                table.setRef(i, val.asExtRef(), instance);
+                table.setRef(i, rawValue, instance);
             }
         }
     }

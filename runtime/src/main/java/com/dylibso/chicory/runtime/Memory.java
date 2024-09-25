@@ -11,7 +11,6 @@ import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
@@ -178,10 +177,6 @@ public final class Memory {
 
     public String readCString(int addr) {
         return readCString(addr, StandardCharsets.UTF_8);
-    }
-
-    public void write(int addr, Value data) {
-        write(addr, data.data());
     }
 
     public void write(int addr, byte[] data) {

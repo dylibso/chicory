@@ -133,7 +133,7 @@ public class Instance {
                 }
                 for (int i = 0; i < initializers.size(); i++) {
                     final List<Instruction> init = initializers.get(i);
-                    var index = offset.asInt() + i;
+                    int index = offset.asInt() + i;
                     if (init.stream().filter(e -> e.opcode() != OpCode.END).count() > 1L) {
                         throw new InvalidException(
                                 "constant expression required, type mismatch, expected [] but found"
@@ -151,17 +151,17 @@ public class Instance {
                                         + value.type());
                     }
                     if (ae.type() == ValueType.FuncRef) {
-                        if (value.asFuncRef() != REF_NULL_VALUE) {
+                        if (((int) value.raw()) != REF_NULL_VALUE) {
                             try {
-                                function(value.asFuncRef());
+                                function(value.raw());
                             } catch (InvalidException e) {
                                 throw new InvalidException("type mismatch, " + e.getMessage(), e);
                             }
                         }
-                        table.setRef(index, value.asFuncRef(), inst);
+                        table.setRef(index, (int) value.raw(), inst);
                     } else {
                         assert ae.type() == ValueType.ExternRef;
-                        table.setRef(index, value.asExtRef(), inst);
+                        table.setRef(index, (int) value.raw(), inst);
                     }
                 }
             } else if (el instanceof DeclarativeElement) {

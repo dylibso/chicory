@@ -2,41 +2,71 @@ package com.dylibso.chicory.wasm.types;
 
 import static java.util.Objects.requireNonNull;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Objects;
 
 public class Value {
 
     public static final long TRUE = 1L;
-
     public static final long FALSE = 0L;
-
     public static final int REF_NULL_VALUE = -1;
     public static final Value EXTREF_NULL = Value.externRef(REF_NULL_VALUE);
     public static final Value FUNCREF_NULL = Value.funcRef(REF_NULL_VALUE);
-
     public static final long[] EMPTY_VALUES = new long[0];
 
     private final ValueType type;
 
     private final long data;
 
-    // TODO: before the PR is ready review the type conversions everywhere
-    public static Value fromFloat(float data) {
-        return Value.f32(Float.floatToRawIntBits(data));
+    public long raw() {
+        return data;
+    }
+
+    public ValueType type() {
+        return type;
     }
 
     public static long floatToLong(float data) {
         return Float.floatToRawIntBits(data);
     }
 
-    public static Value fromDouble(double data) {
-        return Value.f64(Double.doubleToRawLongBits(data));
+    public static float longToFloat(long data) {
+        return Float.intBitsToFloat((int) data);
     }
 
     public static long doubleToLong(double data) {
         return Double.doubleToRawLongBits(data);
+    }
+
+    public static double longToDouble(long data) {
+        return Double.longBitsToDouble(data);
+    }
+
+    public static Value fromFloat(float data) {
+        return Value.f32(floatToLong(data));
+    }
+
+    public int asInt() {
+        assert (type == ValueType.I32);
+        return (int) data;
+    }
+
+    public long asLong() {
+        assert (type == ValueType.I64);
+        return data;
+    }
+
+    public float asFloat() {
+        assert (type == ValueType.F32);
+        return longToFloat(data);
+    }
+
+    public double asDouble() {
+        assert (type == ValueType.F64);
+        return longToDouble(data);
+    }
+
+    public static Value fromDouble(double data) {
+        return Value.f64(doubleToLong(data));
     }
 
     public static Value i32(int data) {
@@ -67,26 +97,9 @@ public class Value {
         return new Value(ValueType.FuncRef, data);
     }
 
-    public Value(ValueType type, int value) {
-        this.type = requireNonNull(ensure32bitValueType(type), "type");
-        this.data = value;
-    }
-
     public Value(ValueType type, long value) {
         this.type = requireNonNull(type, "type");
         data = value;
-    }
-
-    private static ValueType ensure32bitValueType(ValueType type) {
-        switch (type) {
-            case I32:
-            case F32:
-            case ExternRef:
-            case FuncRef:
-                return type;
-            default:
-                throw new IllegalArgumentException("Invalid type for 32 bit value: " + type);
-        }
     }
 
     /**
@@ -111,132 +124,17 @@ public class Value {
         }
     }
 
-    // TODO memoize these
-    public int asInt() {
-        switch (type) {
-            case I64:
-            case F64:
-            case I32:
-            case F32:
-                return (int) data;
-            default:
-                throw new IllegalArgumentException(
-                        "Can't turn wasm value of type " + type + " to a int");
-        }
-    }
-
-    // The unsigned representation of the int, stored in a long
-    // so there are enough bits
-    public long asUInt() {
-        switch (type) {
-            case I32:
-            case F32:
-            case I64:
-            case F64:
-                return data & 0xFFFFFFFFL;
-            default:
-                throw new IllegalArgumentException(
-                        "Can't turn wasm value of type " + type + " to a uint");
-        }
-    }
-
-    public long asLong() {
-        switch (type) {
-            case I32:
-            case F32:
-            case I64:
-            case F64:
-                return data;
-            default:
-                throw new IllegalArgumentException(
-                        "Can't turn wasm value of type " + type + " to a long");
-        }
-    }
-
-    public long raw() {
-        return data;
-    }
-
-    // TODO memoize these
-    public byte asByte() {
-        switch (type) {
-            case I32:
-            case F32:
-            case I64:
-            case F64:
-                return (byte) (data & 0xff);
-            default:
-                throw new IllegalArgumentException(
-                        "Can't turn wasm value of type " + type + " to a byte");
-        }
-    }
-
-    public short asShort() {
-        switch (type) {
-            case I32:
-            case I64:
-                return (short) (data & 0xffff);
-            default:
-                throw new IllegalArgumentException(
-                        "Can't turn wasm value of type " + type + " to a short");
-        }
-    }
-
-    public int asExtRef() {
-        return (int) data;
-    }
-
-    public int asFuncRef() {
-        return (int) data;
-    }
-
-    public float asFloat() {
-        return Float.intBitsToFloat(asInt());
-    }
-
-    public static float longToFloat(long data) {
-        return Float.intBitsToFloat((int) data);
-    }
-
-    public double asDouble() {
-        return Double.longBitsToDouble(asLong());
-    }
-
-    public static double longToDouble(long data) {
-        return Double.longBitsToDouble(data);
-    }
-
-    public ValueType type() {
-        return type;
-    }
-
-    public byte[] data() {
-        switch (type) {
-            case I64:
-            case F64:
-                ByteBuffer buffer = ByteBuffer.allocate(8);
-                buffer.order(ByteOrder.LITTLE_ENDIAN);
-                buffer.putLong(data);
-                return buffer.array();
-            default:
-                ByteBuffer buffer2 = ByteBuffer.allocate(4);
-                buffer2.order(ByteOrder.LITTLE_ENDIAN);
-                buffer2.putInt((int) data);
-                return buffer2.array();
-        }
-    }
-
     @Override
     public String toString() {
         switch (type) {
             case I32:
-                return asInt() + "@i32";
+                return ((int) data) + "@i32";
             case I64:
-                return asLong() + "@i64";
+                return data + "@i64";
             case F32:
-                return asFloat() + "@f32";
+                return longToFloat(data) + "@f32";
             case F64:
-                return asDouble() + "@f64";
+                return longToDouble(data) + "@f64";
             case FuncRef:
                 return "func[" + (int) data + "]";
             case ExternRef:

@@ -3,10 +3,12 @@ package com.dylibso.chicory.aot;
 import static com.dylibso.chicory.aot.AotMethods.CHECK_INTERRUPTION;
 import static com.dylibso.chicory.aot.AotMethods.INSTANCE_CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.aot.AotMethods.THROW_TRAP_EXCEPTION;
-import static com.dylibso.chicory.aot.AotUtil.boxer;
-import static com.dylibso.chicory.aot.AotUtil.boxerHandle;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
+import static com.dylibso.chicory.aot.AotUtil.convertFromLong;
+import static com.dylibso.chicory.aot.AotUtil.convertFromLongHandle;
+import static com.dylibso.chicory.aot.AotUtil.convertToLong;
+import static com.dylibso.chicory.aot.AotUtil.convertToLongHandle;
 import static com.dylibso.chicory.aot.AotUtil.defaultValue;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
@@ -19,8 +21,6 @@ import static com.dylibso.chicory.aot.AotUtil.methodNameFor;
 import static com.dylibso.chicory.aot.AotUtil.methodTypeFor;
 import static com.dylibso.chicory.aot.AotUtil.slotCount;
 import static com.dylibso.chicory.aot.AotUtil.storeTypeOpcode;
-import static com.dylibso.chicory.aot.AotUtil.unboxer;
-import static com.dylibso.chicory.aot.AotUtil.unboxerHandle;
 import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
 import static java.lang.invoke.MethodHandles.filterArguments;
 import static java.lang.invoke.MethodHandles.filterReturnValue;
@@ -530,7 +530,7 @@ public final class AotMachine implements Machine {
         var argTypes = type.params();
         var argHandlers = new MethodHandle[type.params().size()];
         for (int i = 0; i < argHandlers.length; i++) {
-            argHandlers[i] = unboxerHandle(argTypes.get(i));
+            argHandlers[i] = convertFromLongHandle(argTypes.get(i));
         }
         MethodHandle result = filterArguments(handle, 0, argHandlers);
         result = result.asSpreader(long[].class, argTypes.size());
@@ -541,7 +541,7 @@ public final class AotMachine implements Machine {
         if (type.returns().size() > 1) {
             return result;
         }
-        result = filterReturnValue(result, boxerHandle(type.returns().get(0)));
+        result = filterReturnValue(result, convertToLongHandle(type.returns().get(0)));
         return filterReturnValue(result, LongArrayWrapper.HANDLE);
     }
 
@@ -602,7 +602,7 @@ public final class AotMachine implements Machine {
             asm.visitLdcInsn(i);
             ValueType valueType = types.get(i);
             asm.visitVarInsn(loadTypeOpcode(valueType), slot);
-            emitInvokeStatic(asm, boxer(valueType));
+            emitInvokeStatic(asm, convertToLong(valueType));
             asm.visitInsn(Opcodes.LASTORE);
             slot += slotCount(valueType);
         }
@@ -618,7 +618,7 @@ public final class AotMachine implements Machine {
             // unbox the result from long[0]
             asm.visitLdcInsn(0);
             asm.visitInsn(Opcodes.LALOAD);
-            emitInvokeStatic(asm, unboxer(type.returns().get(0)));
+            emitInvokeStatic(asm, convertFromLong(type.returns().get(0)));
             asm.visitInsn(returnTypeOpcode(type));
         }
     }

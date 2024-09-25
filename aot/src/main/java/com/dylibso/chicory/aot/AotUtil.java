@@ -28,33 +28,33 @@ final class AotUtil {
         TWO
     }
 
-    private static final Method UNBOX_I32;
-    private static final Method UNBOX_I64;
-    private static final Method UNBOX_F32;
-    private static final Method UNBOX_F64;
-    private static final Method UNBOX_EXTREF;
-    private static final Method UNBOX_FUNCREF;
-    private static final Method BOX_I32;
-    private static final Method BOX_I64;
-    private static final Method BOX_F32;
-    private static final Method BOX_F64;
-    private static final Method BOX_EXTREF;
-    private static final Method BOX_FUNCREF;
+    private static final Method LONG_2_I32;
+    private static final Method LONG_2_I64;
+    private static final Method LONG_2_F32;
+    private static final Method LONG_2_F64;
+    private static final Method LONG_2_EXTREF;
+    private static final Method LONG_2_FUNCREF;
+    private static final Method I32_2_LONG;
+    private static final Method I64_2_LONG;
+    private static final Method F32_2_LONG;
+    private static final Method F64_2_LONG;
+    private static final Method EXTREF_2_LONG;
+    private static final Method FUNCREF_2_LONG;
 
     static {
         try {
-            BOX_I32 = ValueConversions.class.getMethod("asLong", int.class);
-            BOX_I64 = ValueConversions.class.getMethod("asLong", long.class);
-            BOX_F32 = ValueConversions.class.getMethod("asLong", float.class);
-            BOX_F64 = ValueConversions.class.getMethod("asLong", double.class);
-            BOX_EXTREF = ValueConversions.class.getMethod("asLong", int.class);
-            BOX_FUNCREF = ValueConversions.class.getMethod("asLong", int.class);
-            UNBOX_I32 = ValueConversions.class.getMethod("toInt", long.class);
-            UNBOX_I64 = ValueConversions.class.getMethod("toLong", long.class);
-            UNBOX_F32 = ValueConversions.class.getMethod("toFloat", long.class);
-            UNBOX_F64 = ValueConversions.class.getMethod("toDouble", long.class);
-            UNBOX_EXTREF = ValueConversions.class.getMethod("toInt", long.class);
-            UNBOX_FUNCREF = ValueConversions.class.getMethod("toInt", long.class);
+            I32_2_LONG = ValueConversions.class.getMethod("asLong", int.class);
+            I64_2_LONG = ValueConversions.class.getMethod("asLong", long.class);
+            F32_2_LONG = ValueConversions.class.getMethod("asLong", float.class);
+            F64_2_LONG = ValueConversions.class.getMethod("asLong", double.class);
+            EXTREF_2_LONG = ValueConversions.class.getMethod("asLong", int.class);
+            FUNCREF_2_LONG = ValueConversions.class.getMethod("asLong", int.class);
+            LONG_2_I32 = ValueConversions.class.getMethod("toInt", long.class);
+            LONG_2_I64 = ValueConversions.class.getMethod("toLong", long.class);
+            LONG_2_F32 = ValueConversions.class.getMethod("toFloat", long.class);
+            LONG_2_F64 = ValueConversions.class.getMethod("toDouble", long.class);
+            LONG_2_EXTREF = ValueConversions.class.getMethod("toInt", long.class);
+            LONG_2_FUNCREF = ValueConversions.class.getMethod("toInt", long.class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }
@@ -119,55 +119,55 @@ final class AotUtil {
         }
     }
 
-    public static Method unboxer(ValueType type) {
+    public static Method convertFromLong(ValueType type) {
         switch (type) {
             case I32:
-                return UNBOX_I32;
+                return LONG_2_I32;
             case I64:
-                return UNBOX_I64;
+                return LONG_2_I64;
             case F32:
-                return UNBOX_F32;
+                return LONG_2_F32;
             case F64:
-                return UNBOX_F64;
+                return LONG_2_F64;
             case ExternRef:
-                return UNBOX_EXTREF;
+                return LONG_2_EXTREF;
             case FuncRef:
-                return UNBOX_FUNCREF;
+                return LONG_2_FUNCREF;
             default:
                 throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
         }
     }
 
-    public static Method boxer(ValueType type) {
+    public static Method convertToLong(ValueType type) {
         switch (type) {
             case I32:
-                return BOX_I32;
+                return I32_2_LONG;
             case I64:
-                return BOX_I64;
+                return I64_2_LONG;
             case F32:
-                return BOX_F32;
+                return F32_2_LONG;
             case F64:
-                return BOX_F64;
+                return F64_2_LONG;
             case ExternRef:
-                return BOX_EXTREF;
+                return EXTREF_2_LONG;
             case FuncRef:
-                return BOX_FUNCREF;
+                return FUNCREF_2_LONG;
             default:
                 throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
         }
     }
 
-    public static MethodHandle unboxerHandle(ValueType type) {
+    public static MethodHandle convertFromLongHandle(ValueType type) {
         try {
-            return publicLookup().unreflect(unboxer(type));
+            return publicLookup().unreflect(convertFromLong(type));
         } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         }
     }
 
-    public static MethodHandle boxerHandle(ValueType type) {
+    public static MethodHandle convertToLongHandle(ValueType type) {
         try {
-            return publicLookup().unreflect(boxer(type));
+            return publicLookup().unreflect(convertToLong(type));
         } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         }

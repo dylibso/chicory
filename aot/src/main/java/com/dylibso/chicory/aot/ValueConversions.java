@@ -1,5 +1,7 @@
 package com.dylibso.chicory.aot;
 
+import com.dylibso.chicory.wasm.types.Value;
+
 public final class ValueConversions {
 
     private ValueConversions() {}
@@ -14,11 +16,11 @@ public final class ValueConversions {
     }
 
     public static float toFloat(long val) {
-        return Float.intBitsToFloat((int) val);
+        return Value.longToFloat(val);
     }
 
     public static double toDouble(long val) {
-        return Double.longBitsToDouble(val);
+        return Value.longToDouble(val);
     }
 
     // To Long
@@ -31,10 +33,10 @@ public final class ValueConversions {
     }
 
     public static long asLong(float val) {
-        return Float.floatToRawIntBits(val);
+        return Value.floatToLong(val);
     }
 
     public static long asLong(double val) {
-        return Double.doubleToLongBits(val);
+        return Value.doubleToLong(val);
     }
 }
