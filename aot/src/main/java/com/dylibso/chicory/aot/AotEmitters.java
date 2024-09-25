@@ -229,9 +229,13 @@ final class AotEmitters {
 
         emitInvokeStatic(asm, boxer(ctx.globalTypes().get(globalIndex)));
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
-        asm.visitInsn(Opcodes.SWAP);
+        // from long | integer on top of the stack
+        // to integer | long
+        asm.visitInsn(Opcodes.DUP_X2);
+        asm.visitInsn(Opcodes.POP);
         asm.visitLdcInsn(globalIndex);
-        asm.visitInsn(Opcodes.SWAP);
+        asm.visitInsn(Opcodes.DUP_X2);
+        asm.visitInsn(Opcodes.POP);
         emitInvokeVirtual(asm, INSTANCE_WRITE_GLOBAL);
     }
 
