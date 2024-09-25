@@ -1133,7 +1133,7 @@ public final class WasiPreview1 implements Closeable {
 
     private int wasiResult(WasiErrno errno) {
         if (errno != WasiErrno.ESUCCESS) {
-            logger.info("result = " + errno.name());
+            logger.infof("result = %s", errno.name());
         }
         return errno.value();
     }
