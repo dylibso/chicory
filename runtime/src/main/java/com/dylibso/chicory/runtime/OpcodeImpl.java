@@ -795,7 +795,7 @@ public final class OpcodeImpl {
 
     // ========= Tables =========
 
-    public static long TABLE_GET(Instance instance, int tableIndex, int index) {
+    public static int TABLE_GET(Instance instance, int tableIndex, int index) {
         TableInstance table = instance.table(tableIndex);
         if (index < 0 || index >= table.limits().max() || index >= table.size()) {
             throw new WASMRuntimeException("out of bounds table access");

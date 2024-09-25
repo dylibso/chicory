@@ -13,12 +13,12 @@ public class TableInstance {
 
     private final Table table;
     private Instance[] instances;
-    private long[] refs;
+    private int[] refs;
 
     public TableInstance(Table table) {
         this.table = table;
         this.instances = new Instance[(int) table.limits().min()];
-        refs = new long[(int) table.limits().min()];
+        refs = new int[(int) table.limits().min()];
         Arrays.fill(refs, REF_NULL_VALUE);
     }
 
@@ -49,7 +49,7 @@ public class TableInstance {
         return oldSize;
     }
 
-    public long ref(int index) {
+    public int ref(int index) {
         if (index < 0 || index >= this.refs.length) {
             throw new ChicoryException("undefined element");
         }

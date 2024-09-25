@@ -170,7 +170,7 @@ public final class AotMethods {
 
         instance = requireNonNullElse(table.instance(funcTableIdx), instance);
 
-        int funcId = (int) table.ref(funcTableIdx);
+        int funcId = table.ref(funcTableIdx);
         if (funcId == REF_NULL_VALUE) {
             throw new ChicoryException("uninitialized element " + funcTableIdx);
         }

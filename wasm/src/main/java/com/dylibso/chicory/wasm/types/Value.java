@@ -22,6 +22,7 @@ public class Value {
 
     private final long data;
 
+    // TODO: before the PR is ready review the type conversions everywhere
     public static Value fromFloat(float data) {
         return Value.f32(Float.floatToRawIntBits(data));
     }
