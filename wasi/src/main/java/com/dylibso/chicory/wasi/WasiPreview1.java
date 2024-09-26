@@ -683,7 +683,32 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int fdRenumber(int from, int to) {
         logger.infof("fd_renumber: [%s, %s]", from, to);
-        throw new WASMRuntimeException("We don't yet support this WASI call: fd_renumber");
+
+        var fromDescriptor = descriptors.get(from);
+        if (fromDescriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (from == to) {
+            return wasiResult(WasiErrno.ESUCCESS);
+        }
+
+        var toDescriptor = descriptors.get(to);
+        if (toDescriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        try {
+            if (toDescriptor instanceof Closeable) {
+                ((Closeable) toDescriptor).close();
+            }
+        } catch (IOException e) {
+            // ignored
+        }
+
+        descriptors.free(from);
+        descriptors.set(to, fromDescriptor);
+        return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport

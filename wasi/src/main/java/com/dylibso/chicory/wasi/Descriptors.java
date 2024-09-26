@@ -42,6 +42,10 @@ final class Descriptors {
         freeFds.add(fd);
     }
 
+    public void set(int fd, Descriptor descriptor) {
+        descriptors.set(fd, descriptor);
+    }
+
     public void closeAll() {
         RuntimeException exception = null;
         for (var descriptor : descriptors) {
