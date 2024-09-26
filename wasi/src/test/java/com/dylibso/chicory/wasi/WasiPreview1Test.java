@@ -57,12 +57,14 @@ public class WasiPreview1Test {
     public void shouldRunWasiGreetRustModule() {
         // check with: wasmtime src/test/resources/compiled/greet-wasi.rs.wasm
         var fakeStdin = new ByteArrayInputStream("Benjamin".getBytes(UTF_8));
-        var wasiOpts = WasiOptions.builder().withStdout(System.out).withStdin(fakeStdin).build();
+        var fakeStdout = new MockPrintStream();
+        var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStdin(fakeStdin).build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new ExternalValues(wasi.toHostFunctions());
         Instance.builder(loadModule("compiled/greet-wasi.rs.wasm"))
                 .withExternalValues(imports)
                 .build();
+        assertEquals(fakeStdout.output().strip(), "Hello, Benjamin!");
     }
 
     @Test
