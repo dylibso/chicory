@@ -29,6 +29,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.DirectoryNotEmptyException;
@@ -293,7 +294,7 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int fdDatasync(int fd) {
         logger.infof("fd_datasync: [%s]", fd);
-        throw new WASMRuntimeException("We don't yet support this WASI call: fd_datasync");
+        return wasiResult(fileSync(fd, false));
     }
 
     @WasmExport
@@ -698,7 +699,7 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int fdSync(int fd) {
         logger.infof("fd_sync: [%s]", fd);
-        throw new WASMRuntimeException("We don't yet support this WASI call: fd_sync");
+        return wasiResult(fileSync(fd, true));
     }
 
     @WasmExport
@@ -1247,6 +1248,35 @@ public final class WasiPreview1 implements Closeable {
             return FileTime.from(clock.instant());
         }
         return null;
+    }
+
+    private WasiErrno fileSync(int fd, boolean metadata) {
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return WasiErrno.EBADF;
+        }
+
+        if ((descriptor instanceof InStream)
+                || (descriptor instanceof OutStream)
+                || (descriptor instanceof Directory)) {
+            return WasiErrno.EINVAL;
+        }
+
+        if (!(descriptor instanceof OpenFile)) {
+            throw unhandledDescriptor(descriptor);
+        }
+        var channel = ((OpenFile) descriptor).channel();
+        if (!(channel instanceof FileChannel)) {
+            return WasiErrno.ENOTSUP;
+        }
+        var fileChannel = (FileChannel) channel;
+
+        try {
+            fileChannel.force(metadata);
+        } catch (IOException e) {
+            return WasiErrno.EIO;
+        }
+        return WasiErrno.ESUCCESS;
     }
 
     private static Path resolvePath(Path directory, String rawPathString) {
