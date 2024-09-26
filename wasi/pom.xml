@@ -103,9 +103,6 @@
               <!-- fd_fdstat_set_rights is not implemented -->
               <exclude>tests/rust/testsuite/fd_fdstat_set_rights.wasm</exclude>
               <exclude>tests/rust/testsuite/truncation_rights.wasm</exclude>
-              <!-- fd_allocate is not implemented -->
-              <exclude>tests/rust/testsuite/fd_advise.wasm</exclude>
-              <exclude>tests/rust/testsuite/file_allocate.wasm</exclude>
               <!-- fd_renumber is not implemented -->
               <exclude>tests/rust/testsuite/overwrite_preopen.wasm</exclude>
               <exclude>tests/rust/testsuite/renumber.wasm</exclude>
