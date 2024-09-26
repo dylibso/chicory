@@ -270,7 +270,44 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int fdAllocate(int fd, long offset, long len) {
         logger.infof("fd_allocate: [%s, %s, %s]", fd, offset, len);
-        throw new WASMRuntimeException("We don't yet support this WASI call: fd_allocate");
+
+        if (len <= 0 || offset < 0) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+        if (descriptor instanceof Directory) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+        if (!(descriptor instanceof OpenFile)) {
+            throw unhandledDescriptor(descriptor);
+        }
+
+        var channel = ((OpenFile) descriptor).channel();
+        try {
+            long size = offset + len;
+            if (size > channel.size()) {
+                long position = channel.position();
+                try {
+                    channel.position(size - 1);
+                    if (channel.write(ByteBuffer.wrap(new byte[1])) != 1) {
+                        return wasiResult(WasiErrno.EIO);
+                    }
+                } finally {
+                    channel.position(position);
+                }
+            }
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+        return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport
