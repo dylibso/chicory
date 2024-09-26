@@ -25,6 +25,7 @@ import com.dylibso.chicory.wasi.Descriptors.InStream;
 import com.dylibso.chicory.wasi.Descriptors.OutStream;
 import com.dylibso.chicory.wasi.Descriptors.PreopenedDirectory;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.types.Value;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -53,6 +54,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Stream;
 
 @HostModule("wasi_snapshot_preview1")
@@ -1031,10 +1033,167 @@ public final class WasiPreview1 implements Closeable {
         return wasiResult(WasiErrno.ESUCCESS);
     }
 
+    // processClockEvent supports only relative name events, as that's what's used
+    // to implement sleep in various compilers including Rust, Zig and TinyGo.
+    private WasiErrno errnoClockEvent(byte[] inBuf) {
+        var flags = ByteBuffer.wrap(Arrays.copyOfRange(inBuf, 24, 32)).asShortBuffer().get();
+
+        if (flags == 0) {
+            // relative time
+            return WasiErrno.ESUCCESS;
+        } else if (flags == 1) {
+            // subscription_clock_abstime
+            return WasiErrno.ENOTSUP;
+        } else {
+            return WasiErrno.EINVAL;
+        }
+    }
+
+    private int processClockEvent(byte[] inBuf) {
+        // var id = ByteBuffer.wrap(Arrays.copyOfRange(inBuf, 0, 8)).asIntBuffer().get(); // See
+        // below
+        var timeout =
+                ByteBuffer.wrap(Arrays.copyOfRange(inBuf, 8, 16))
+                        .asIntBuffer()
+                        .get(); // nanos if relative
+        // var precision =
+        //        ByteBuffer.wrap(Arrays.copyOfRange(inBuf, 16, 24)).asLongBuffer().get(); // Unused
+
+        // https://linux.die.net/man/3/clock_settime says relative timers are
+        // unaffected. Since this function only supports relative timeout, we can
+        // skip name ID validation and use a single sleep function.
+        return timeout;
+    }
+
+    // writeEvent writes the event corresponding to the processed subscription.
+    // https://github.com/WebAssembly/WASI/blob/snapshot-01/phases/snapshot/docs.md#-event-struct
+    private void writeEvent(
+            byte[] outBuf, int offset, byte eventType, WasiErrno errno, byte[] userData) {
+        // userdata
+        for (int i = 0; i < userData.length; i++) {
+            outBuf[offset + i] = userData[i];
+        }
+        outBuf[offset + 8] = (byte) errno.value(); // uint16, but safe as < 255
+        outBuf[offset + 9] = 0;
+        var eventTypeData = Value.i32(eventType).data();
+        for (int i = 0; i < eventTypeData.length; i++) {
+            outBuf[offset + 10 + i] = eventTypeData[i];
+        }
+        // TODO: When FD events are supported, write outOffset+16
+    }
+
     @WasmExport
-    public int pollOneoff(int inPtr, int outPtr, int nsubscriptions, int neventsPtr) {
+    public int pollOneoff(
+            Memory memory, int inPtr, int outPtr, int nsubscriptions, int neventsPtr) {
         logger.infof("poll_oneoff: [%s, %s, %s, %s]", inPtr, outPtr, nsubscriptions, neventsPtr);
-        throw new WASMRuntimeException("We don't yet support this WASI call: poll_oneoff");
+        // Ported from:
+        // https://github.com/tetratelabs/wazero/blob/dbc4b62466477a7f3ac6537ce06ecfe66d7861fa/imports/wasi_snapshot_preview1/poll.go
+        var in = inPtr;
+        var out = outPtr;
+        var resultNevents = neventsPtr;
+
+        if (nsubscriptions == 0) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+
+        // Ensure capacity prior to the read loop to reduce error handling.
+        byte[] inBuf;
+        byte[] outBuf;
+        try {
+            inBuf = memory.readBytes(in, nsubscriptions * 48);
+            outBuf = memory.readBytes(out, nsubscriptions * 32);
+            // zero-out all buffer before writing
+            memory.fill((byte) 0, out, out + nsubscriptions * 32);
+
+            // Eagerly write the number of events which will equal subscriptions unless
+            // there's a fault in parsing (not processing).
+            memory.writeI32(resultNevents, nsubscriptions);
+        } catch (ChicoryException e) {
+            logger.error("Error using memory " + e);
+            return wasiResult(WasiErrno.EFAULT);
+        }
+
+        // Loop through all subscriptions and write their output.
+
+        // Extract FS context, used in the body of the for loop for FS access.
+        // fsc := mod.(*wasm.ModuleInstance).Sys.FS()
+        // Slice of events that are processed out of the loop (blocking stdin
+        // subscribers).
+        // var blockingStdinSubs []*event
+        // The timeout is initialized at max Duration, the loop will find the minimum.
+        var timeout = 1 << 63 - 1;
+        // Count of all the subscriptions that have been already written back to outBuf.
+        // nevents*32 returns at all times the offset where the next event should be
+        // written:
+        // this way we ensure that there are no gaps between records.
+        var nevents = 0;
+
+        // Layout is subscription_u: Union
+        // https://github.com/WebAssembly/WASI/blob/snapshot-01/phases/snapshot/docs.md#subscription_u
+        for (int i = 0; i < nsubscriptions; i++) {
+            var inOffset = i * 40;
+            var outOffset = nevents * 32;
+
+            var eventType = inBuf[inOffset + 8]; // +8 past userdata
+            // +8 past userdata +8 contents_offset
+            // inBuf[inOffset+8+8:]
+            var argBuf = Arrays.copyOfRange(inBuf, inOffset + 8 + 8, inBuf.length);
+            var userData = Arrays.copyOfRange(inBuf, inOffset, inOffset + 8);
+
+            switch (eventType) {
+                case WasiEventType.Clock:
+                    {
+                        var clockEventErrno = errnoClockEvent(argBuf);
+                        if (clockEventErrno != WasiErrno.ESUCCESS) {
+                            return wasiResult(clockEventErrno);
+                        }
+
+                        var newTimeout = processClockEvent(argBuf);
+                        // Min timeout.
+                        timeout = Math.min(newTimeout, timeout);
+                        // Ack the clock event to the outBuf.
+
+                        writeEvent(outBuf, outOffset, eventType, WasiErrno.ESUCCESS, userData);
+                        memory.write(out, outBuf);
+                        nevents++;
+                        break;
+                    }
+                case WasiEventType.FdRead:
+                    {
+                        // TODO: either complete the implementation or throw an
+                        // Exception
+                        var fd = ByteBuffer.wrap(argBuf).asIntBuffer().get();
+                        var descriptor = descriptors.get(fd);
+                        if (descriptor == null) {
+                            return wasiResult(WasiErrno.EBADF);
+                        }
+
+                        // if (descriptor instanceof OpenFile) {
+                        // go on from here ...
+                        // }
+                        break;
+                    }
+                case WasiEventType.FdWrite:
+                    {
+                        // TODO: either complete the implementation or throw an
+                        // Exception
+                    }
+            }
+        }
+
+        if (nevents == nsubscriptions) {
+            // We already wrote back all the results. We already wrote this number
+            // earlier to offset `resultNevents`.
+            // We only need to observe the timeout (nonzero if there are clock
+            // subscriptions)
+            // and return.
+            if (timeout > 0) {
+                LockSupport.parkNanos(timeout);
+            }
+            return wasiResult(WasiErrno.ESUCCESS);
+        }
+
+        return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport

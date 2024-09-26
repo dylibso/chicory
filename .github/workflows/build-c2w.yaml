@@ -1,0 +1,58 @@
+name: Build C2W images in CI
+
+on:
+  push:
+
+jobs:
+  c2w:
+    name: C2W
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install c2w
+        run: |
+          export C2W_VERSION="0.6.5"
+          curl -L -O https://github.com/ktock/container2wasm/releases/download/v${C2W_VERSION}/container2wasm-v${C2W_VERSION}-linux-amd64.tar.gz
+          tar -C ${PWD} -xzf container2wasm-v${C2W_VERSION}-linux-amd64.tar.gz
+          rm container2wasm-v${C2W_VERSION}-linux-amd64.tar.gz
+          ls -al $PWD
+          chmod a+x c2w
+      # - name: Setup tmate session
+      #   uses: mxschmitt/action-tmate@v3
+      - name: Run c2w
+        run: |
+          ./c2w ubuntu:22.04 ubuntu22.c2w.wasm
+      - name: Upload the wasm
+        uses: actions/upload-artifact@v4
+        with:
+          name: ubuntu22.c2w
+          path: ubuntu22.c2w.wasm
+          retention-days: 1
+          overwrite: true
+          if-no-files-found: error
+      
+# Now let's demonstrate that it works in CI
+  test:
+    name: Test c2w in CI
+    needs:
+      - c2w
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Download the c2w image
+        uses: actions/download-artifact@v4
+        with:
+          name: ubuntu22.c2w
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+      - name: Run the test
+        run: mvn -B install -Dsurefire.failIfNoSpecifiedTests=false -Dtest=WasiPreview1Test#shouldRunC2WModule -pl wasi -am
