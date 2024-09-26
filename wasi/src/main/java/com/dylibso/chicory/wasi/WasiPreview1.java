@@ -1077,28 +1077,10 @@ public final class WasiPreview1 implements Closeable {
     }
 
     @WasmExport
-    public void resetAdapterState() {
-        logger.info("reset_adapter_state");
-        throw new WASMRuntimeException("We don't yet support this WASI call: reset_adapter_state");
-    }
-
-    @WasmExport
     public int schedYield() {
         logger.info("sched_yield");
         // do nothing here
         return wasiResult(WasiErrno.ESUCCESS);
-    }
-
-    @WasmExport
-    public void setAllocationState(int state) {
-        logger.infof("set_allocation_state: [%s]", state);
-        throw new WASMRuntimeException("We don't yet support this WASI call: set_allocation_state");
-    }
-
-    @WasmExport
-    public void setStatePtr(int state) {
-        logger.infof("set_state_ptr: [%s]", state);
-        throw new WASMRuntimeException("We don't yet support this WASI call: set_state_ptr");
     }
 
     @WasmExport
