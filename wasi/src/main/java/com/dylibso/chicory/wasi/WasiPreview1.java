@@ -42,6 +42,7 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Clock;
@@ -394,15 +395,67 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int fdFilestatSetSize(int fd, long size) {
         logger.infof("fd_filestat_set_size: [%s, %s]", fd, size);
-        throw new WASMRuntimeException("We don't yet support this WASI call: fd_filestat_set_size");
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+        if (descriptor instanceof Directory) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+        if (!(descriptor instanceof OpenFile)) {
+            throw unhandledDescriptor(descriptor);
+        }
+
+        SeekableByteChannel channel = ((OpenFile) descriptor).channel();
+        try {
+            long position = channel.position();
+            try {
+                if (size <= channel.size()) {
+                    channel.truncate(size);
+                } else {
+                    channel.position(size - 1);
+                    if (channel.write(ByteBuffer.wrap(new byte[1])) != 1) {
+                        return wasiResult(WasiErrno.EIO);
+                    }
+                }
+            } finally {
+                channel.position(position);
+            }
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+        return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport
     public int fdFilestatSetTimes(int fd, long accessTime, long modifiedTime, int fstFlags) {
         logger.infof(
                 "fd_filestat_set_times: [%s, %s, %s, %s]", fd, accessTime, modifiedTime, fstFlags);
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: fd_filestat_set_times");
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+
+        Path path;
+        if (descriptor instanceof OpenFile) {
+            path = ((OpenFile) descriptor).path();
+        } else if (descriptor instanceof Directory) {
+            path = ((Directory) descriptor).path();
+        } else {
+            throw unhandledDescriptor(descriptor);
+        }
+
+        return wasiResult(setFileTimes(path, modifiedTime, accessTime, fstFlags));
     }
 
     @WasmExport
@@ -775,8 +828,23 @@ public final class WasiPreview1 implements Closeable {
         logger.infof(
                 "path_filestat_set_times: [%s, %s, \"%s\", %s, %s, %s]",
                 fd, lookupFlags, rawPath, accessTime, modifiedTime, fstFlags);
-        throw new WASMRuntimeException(
-                "We don't yet support this WASI call: path_filestat_set_size");
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (!(descriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path directory = ((Directory) descriptor).path();
+
+        Path path = resolvePath(directory, rawPath);
+        if (path == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        return wasiResult(setFileTimes(path, modifiedTime, accessTime, fstFlags));
     }
 
     @WasmExport
@@ -1126,6 +1194,38 @@ public final class WasiPreview1 implements Closeable {
             logger.infof("result = %s", errno.name());
         }
         return errno.value();
+    }
+
+    private WasiErrno setFileTimes(Path path, long modifiedTime, long accessTime, int flags) {
+        boolean modifiedSet = flagSet(flags, WasiFstFlags.MTIM);
+        boolean modifiedNow = flagSet(flags, WasiFstFlags.MTIM_NOW);
+        boolean accessSet = flagSet(flags, WasiFstFlags.ATIM);
+        boolean accessNow = flagSet(flags, WasiFstFlags.ATIM_NOW);
+
+        if ((modifiedSet && modifiedNow) || (accessSet && accessNow)) {
+            return WasiErrno.EINVAL;
+        }
+
+        FileTime lastModifiedTime = toFileTime(modifiedTime, modifiedSet, modifiedNow);
+        FileTime lastAccessTime = toFileTime(accessTime, accessSet, accessNow);
+
+        try {
+            Files.getFileAttributeView(path, BasicFileAttributeView.class)
+                    .setTimes(lastModifiedTime, lastAccessTime, null);
+        } catch (IOException e) {
+            return WasiErrno.EIO;
+        }
+        return WasiErrno.ESUCCESS;
+    }
+
+    private FileTime toFileTime(long time, boolean set, boolean now) {
+        if (set) {
+            return FileTime.from(time, NANOSECONDS);
+        }
+        if (now) {
+            return FileTime.from(clock.instant());
+        }
+        return null;
     }
 
     private static Path resolvePath(Path directory, String rawPathString) {
