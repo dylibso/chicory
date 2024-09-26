@@ -39,7 +39,7 @@ We also have a table:
 | clock_time_get          | 👷        | Clock IDs process_cputime_id and thread_cputime_id are not supported. realtime and monotonic are supported. |
 | environ_get             | ✅         |                                                                                                                                                                                        |
 | environ_sizes_get       | ✅         |                                                                                                                                                                                        |
-| fd_advise               | ❌         |                                                                                                                                                                                        |
+| fd_advise               | ✅         |                                                                                                                                                                                        |
 | fd_allocate             | ❌         |                                                                                                                                                                                        |
 | fd_close                | ✅         |                                                                                                                                                                                        |
 | fd_datasync             | ❌         |                                                                                                                                                                                        |

@@ -242,7 +242,28 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int fdAdvise(int fd, long offset, long len, int advice) {
         logger.infof("fd_advise: [%s, %s, %s, %s]", fd, offset, len, advice);
-        throw new WASMRuntimeException("We don't yet support this WASI call: fd_advise");
+
+        if (len < 0 || offset < 0) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if ((descriptor instanceof InStream) || (descriptor instanceof OutStream)) {
+            return wasiResult(WasiErrno.ESPIPE);
+        }
+        if (descriptor instanceof Directory) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+        if (!(descriptor instanceof OpenFile)) {
+            throw unhandledDescriptor(descriptor);
+        }
+
+        // do nothing: advise is optional, and Java does not support it
+        return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport
