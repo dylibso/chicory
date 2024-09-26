@@ -100,13 +100,8 @@
               <exclude>tests/rust/testsuite/symlink_loop.wasm</exclude>
               <!-- path_link is not implemented -->
               <exclude>tests/rust/testsuite/path_link.wasm</exclude>
-              <!-- path_filestat_set_times is not implemented -->
-              <exclude>tests/rust/testsuite/path_filestat.wasm</exclude>
-              <!-- fd_filestat_set_size is not implemented -->
+              <!-- fd_advise is not implemented -->
               <exclude>tests/rust/testsuite/fd_advise.wasm</exclude>
-              <exclude>tests/rust/testsuite/fd_filestat_set.wasm</exclude>
-              <!-- fd_filestat_set_times is not implemented -->
-              <exclude>tests/rust/testsuite/fstflags_validate.wasm</exclude>
               <!-- fd_fdstat_set_rights is not implemented -->
               <exclude>tests/rust/testsuite/fd_fdstat_set_rights.wasm</exclude>
               <exclude>tests/rust/testsuite/truncation_rights.wasm</exclude>
