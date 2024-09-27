@@ -31,6 +31,12 @@ compileJavy() {
   (set -x; javy compile $1 -o "./compiled/$filename.javy.wasm")
 }
 
+compileJavyDynamic() {
+  filename=$(basename "$1")
+  (set -x; javy emit-provider -o "./compiled/quickjs-provider.javy-dynamic.wasm" && \
+  javy compile -d $1 -o "./compiled/$filename.javy-dynamic.wasm")
+}
+
 compileTinyGo() {
   filename=$(basename "$1")
   (set -x; tinygo build -o "./compiled/$filename.tiny.wasm" -target=wasi $1)
@@ -61,6 +67,9 @@ compile() {
     javy)
       compileJavy $2
       ;;
+    javy-dynamic)
+      compileJavyDynamic $2
+      ;;
     tinygo)
       compileTinyGo $2
       ;;
@@ -81,7 +90,7 @@ lang="${1:-all}"
 path="${2:-all}"
 
 if [[ "$lang" == "all" ]]; then
-  langs=("wat" "rust" "c" "javy" "tinygo", "go", "dotnet")
+  langs=("wat" "rust" "c" "javy" "javy-dynamic" "tinygo", "go", "dotnet")
 else
   langs=("$lang")
 fi

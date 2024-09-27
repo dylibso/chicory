@@ -10,11 +10,13 @@ import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ExternalValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
+import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
@@ -78,6 +80,82 @@ public class WasiPreview1Test {
                 .build();
 
         assertEquals(fakeStdout.output(), "{\"foo\":3,\"newBar\":\"baz!\"}");
+    }
+
+    @Test
+    public void shouldUseQuickJsProvider() {
+        ByteArrayInputStream stdin = new ByteArrayInputStream("".getBytes(UTF_8));
+        var stdout = new ByteArrayOutputStream();
+        var stderr = new ByteArrayOutputStream();
+
+        var wasiOpts =
+                WasiOptions.builder()
+                        .withStdout(stdout)
+                        .withStderr(stderr)
+                        .withStdin(stdin)
+                        .build();
+        var logger = new SystemLogger();
+
+        var wasi = new WasiPreview1(logger, wasiOpts);
+        var quickjs =
+                Instance.builder(loadModule("compiled/quickjs-provider.javy-dynamic.wasm"))
+                        .withExternalValues(new ExternalValues(wasi.toHostFunctions()))
+                        .build();
+
+        var greetingMsg = "Hello QuickJS!";
+
+        byte[] jsCode = ("console.log(\"" + greetingMsg + "\");").getBytes(UTF_8);
+        var ptr =
+                quickjs.export("canonical_abi_realloc")
+                        .apply(
+                                Value.i32(0), // original_ptr
+                                Value.i32(0), // original_size
+                                Value.i32(1), // alignment
+                                Value.i32(jsCode.length) // new size
+                                )[0];
+
+        quickjs.memory().write(ptr.asInt(), jsCode);
+        var aggregatedCodePtr =
+                quickjs.export("compile_src").apply(ptr, Value.i64(jsCode.length))[0];
+
+        var codePtr = quickjs.memory().readI32(aggregatedCodePtr.asInt()); // 32 bit
+        var codeLength = quickjs.memory().readU32(aggregatedCodePtr.asInt() + 4);
+
+        quickjs.export("eval_bytecode").apply(codePtr, codeLength);
+
+        // stderr?
+        assertEquals(greetingMsg + "\n", stderr.toString(UTF_8));
+    }
+
+    @Test
+    public void shouldUseDynamicallyLinkedJavyModules() {
+        ByteArrayInputStream stdin = new ByteArrayInputStream("".getBytes(UTF_8));
+        var stdout = new ByteArrayOutputStream();
+        var stderr = new ByteArrayOutputStream();
+
+        var wasiOpts =
+                WasiOptions.builder()
+                        .withStdout(stdout)
+                        .withStderr(stderr)
+                        .withStdin(stdin)
+                        .build();
+        var logger = new SystemLogger();
+
+        var wasi = new WasiPreview1(logger, wasiOpts);
+        var quickjs =
+                Instance.builder(loadModule("compiled/quickjs-provider.javy-dynamic.wasm"))
+                        .withExternalValues(new ExternalValues(wasi.toHostFunctions()))
+                        .build();
+
+        var store = new Store();
+        store.register("javy_quickjs_provider_v1", quickjs);
+
+        Instance.builder(loadModule("compiled/hello-world.js.javy-dynamic.wasm"))
+                .withExternalValues(store.toExternalValues())
+                .build();
+
+        // stderr?
+        assertEquals("Hello world dynamic Javy!\n", stderr.toString(UTF_8));
     }
 
     @Test

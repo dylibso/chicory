@@ -187,7 +187,8 @@ public class Instance {
             globals[i].setInstance(this);
         }
 
-        if (memory != null) {
+        if (memory != null && imports.memories().length == 0) {
+            memory.zero();
             memory.initialize(this, dataSegments);
         } else if (imports.memories().length > 0) {
             imports.memories()[0].memory().initialize(this, dataSegments);
