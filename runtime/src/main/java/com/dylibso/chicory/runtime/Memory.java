@@ -104,8 +104,6 @@ public final class Memory {
             return;
         }
 
-        this.zero();
-
         for (var s : dataSegments) {
             if (s instanceof ActiveDataSegment) {
                 var segment = (ActiveDataSegment) s;
