@@ -1,0 +1,18 @@
+bhelx:
+  name: Benjamin Eckel
+  title: CTO @ Dylibso
+  url: https://github.com/bhelx
+  image_url: https://avatars.githubusercontent.com/u/185919
+  page: true
+  socials:
+    x: bhelx
+    github: bhelx
+
+andreaTP:
+  name: Andrea Peruffo
+  title: Principal Software Engineer @ Red Hat
+  url: https://github.com/andreaTP
+  image_url: https://avatars.githubusercontent.com/u/5792097?v=4
+  socials:
+    x: and_prf
+    github: andreaTP

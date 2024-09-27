@@ -1,0 +1,14 @@
+chicory:
+  label: Chicory
+  permalink: /chicory
+  description: Chicory tag description
+
+wasm:
+  label: Wasm
+  permalink: /wasm
+  description: Wasm tag description
+
+dylibso:
+  label: Dylibso
+  permalink: /dylibso
+  description: Dylibso
