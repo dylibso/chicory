@@ -142,11 +142,13 @@ final class Descriptors {
         private final Path path;
         private final SeekableByteChannel channel;
         private final int fdFlags;
+        private final long rights;
 
-        public OpenFile(Path path, SeekableByteChannel channel, int fdFlags) {
+        public OpenFile(Path path, SeekableByteChannel channel, int fdFlags, long rights) {
             this.path = requireNonNull(path);
             this.channel = requireNonNull(channel);
             this.fdFlags = fdFlags;
+            this.rights = rights;
         }
 
         public Path path() {
@@ -159,6 +161,10 @@ final class Descriptors {
 
         public int fdFlags() {
             return fdFlags;
+        }
+
+        public long rights() {
+            return rights;
         }
 
         @Override
