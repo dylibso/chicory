@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.nio.channels.NonReadableChannelException;
+import java.nio.channels.NonWritableChannelException;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.DirectoryNotEmptyException;
@@ -338,8 +340,8 @@ public final class WasiPreview1 implements Closeable {
     public int fdFdstatGet(Memory memory, int fd, int buf) {
         logger.infof("fd_fdstat_get: [%s, %s]", fd, buf);
         int flags = 0;
-        int rightsBase;
-        int rightsInheriting = 0;
+        long rightsBase;
+        long rightsInheriting = 0;
 
         var descriptor = descriptors.get(fd);
         if (descriptor == null) {
@@ -358,9 +360,10 @@ public final class WasiPreview1 implements Closeable {
             rightsBase = WasiRights.DIRECTORY_RIGHTS_BASE;
             rightsInheriting = rightsBase | WasiRights.FILE_RIGHTS_BASE;
         } else if (descriptor instanceof OpenFile) {
+            var file = (OpenFile) descriptor;
             fileType = WasiFileType.REGULAR_FILE;
-            rightsBase = WasiRights.FILE_RIGHTS_BASE;
-            flags = ((OpenFile) descriptor).fdFlags();
+            rightsBase = file.rights() & WasiRights.FILE_RIGHTS_BASE;
+            flags = file.fdFlags();
         } else {
             throw unhandledDescriptor(descriptor);
         }
@@ -603,6 +606,8 @@ public final class WasiPreview1 implements Closeable {
                 if (read < iovLen) {
                     break;
                 }
+            } catch (NonReadableChannelException e) {
+                return wasiResult(WasiErrno.ENOTCAPABLE);
             } catch (IOException e) {
                 return wasiResult(WasiErrno.EIO);
             }
@@ -825,6 +830,8 @@ public final class WasiPreview1 implements Closeable {
                 if (written < iovLen) {
                     break;
                 }
+            } catch (NonWritableChannelException e) {
+                return wasiResult(WasiErrno.ENOTCAPABLE);
             } catch (IOException e) {
                 return wasiResult(WasiErrno.EIO);
             }
@@ -1010,10 +1017,12 @@ public final class WasiPreview1 implements Closeable {
         if (append && truncate) {
             return wasiResult(WasiErrno.ENOTSUP);
         }
-        if (!append) {
+        if (!append && flagSet(rightsBase, WasiRights.FD_READ)) {
             openOptions.add(StandardOpenOption.READ);
         }
-        openOptions.add(StandardOpenOption.WRITE);
+        if (flagSet(rightsBase, WasiRights.FD_WRITE)) {
+            openOptions.add(StandardOpenOption.WRITE);
+        }
 
         if (flagSet(openFlags, WasiOpenFlags.CREAT)) {
             if (flagSet(openFlags, WasiOpenFlags.EXCL)) {
@@ -1021,6 +1030,7 @@ public final class WasiPreview1 implements Closeable {
             } else {
                 openOptions.add(StandardOpenOption.CREATE);
             }
+            openOptions.add(StandardOpenOption.WRITE);
         }
         if (truncate) {
             openOptions.add(StandardOpenOption.TRUNCATE_EXISTING);
@@ -1039,7 +1049,7 @@ public final class WasiPreview1 implements Closeable {
         int fd;
         try {
             SeekableByteChannel channel = Files.newByteChannel(path, openOptions);
-            fd = descriptors.allocate(new OpenFile(path, channel, fdFlags));
+            fd = descriptors.allocate(new OpenFile(path, channel, fdFlags, rightsBase));
         } catch (FileAlreadyExistsException e) {
             return wasiResult(WasiErrno.EEXIST);
         } catch (NoSuchFileException e) {
