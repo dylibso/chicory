@@ -75,9 +75,6 @@
             <excludes>
               <!-- Java does not support READ+APPEND -->
               <exclude>tests/rust/testsuite/fd_flags_set.wasm</exclude>
-              <!-- wrong error code for path_open -->
-              <exclude>tests/rust/testsuite/interesting_paths.wasm</exclude>
-              <exclude>tests/rust/testsuite/path_open_preopen.wasm</exclude>
               <!-- wrong rights from fd_fdstat_get -->
               <exclude>tests/rust/testsuite/path_open_read_write.wasm</exclude>
               <!-- fd_pread is not implemented -->

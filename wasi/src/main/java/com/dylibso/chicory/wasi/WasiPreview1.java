@@ -975,19 +975,29 @@ public final class WasiPreview1 implements Closeable {
         }
         Path directory = ((Directory) descriptor).path();
 
+        if (rawPath.endsWith("\0")) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+
         Path path = resolvePath(directory, rawPath);
         if (path == null) {
-            return wasiResult(WasiErrno.EACCES);
+            return wasiResult(WasiErrno.EPERM);
         }
 
         LinkOption[] linkOptions = toLinkOptions(lookupFlags);
 
         if (Files.isDirectory(path, linkOptions)) {
+            if (flagSet(rightsBase, WasiRights.FD_WRITE)) {
+                return wasiResult(WasiErrno.EISDIR);
+            }
             int fd = descriptors.allocate(new OpenDirectory(path));
             memory.writeI32(fdPtr, fd);
             return wasiResult(WasiErrno.ESUCCESS);
         }
 
+        if (rawPath.endsWith("/")) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
         if (flagSet(openFlags, WasiOpenFlags.DIRECTORY) && Files.exists(path, linkOptions)) {
             return wasiResult(WasiErrno.ENOTDIR);
         }
