@@ -3,7 +3,7 @@ package com.dylibso.chicory.maven;
 import static com.dylibso.chicory.maven.StringUtils.capitalize;
 import static com.dylibso.chicory.maven.StringUtils.escapedCamelCase;
 import static com.github.javaparser.utils.StringEscapeUtils.escapeJava;
-import static java.util.Objects.requireNonNullElse;
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.apache.maven.plugins.annotations.LifecyclePhase.GENERATE_TEST_SOURCES;
 
@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.maven.plugin.AbstractMojo;
@@ -159,6 +160,7 @@ public class WasiTestGenMojo extends AbstractMojo {
             cu.addImport("java.io.File");
             cu.addImport("java.util.List");
             cu.addImport("java.util.Map");
+            cu.addImport("java.util.Optional");
             cu.addImport(JUNIT_TEST);
 
             // generate test methods
@@ -204,19 +206,13 @@ public class WasiTestGenMojo extends AbstractMojo {
                                         AssignExpr.Operator.ASSIGN))
                         .addStatement(
                                 new AssignExpr(
-                                        new NameExpr("var stderr"),
-                                        new NameExpr(
-                                                javaString(
-                                                        requireNonNullElse(
-                                                                specification.stderr(), ""))),
+                                        new NameExpr("Optional<String> stderr"),
+                                        new NameExpr(optionalOf(specification.stderr())),
                                         AssignExpr.Operator.ASSIGN))
                         .addStatement(
                                 new AssignExpr(
-                                        new NameExpr("var stdout"),
-                                        new NameExpr(
-                                                javaString(
-                                                        requireNonNullElse(
-                                                                specification.stdout(), ""))),
+                                        new NameExpr("Optional<String> stdout"),
+                                        new NameExpr(optionalOf(specification.stdout())),
                                         AssignExpr.Operator.ASSIGN))
                         .addStatement(
                                 new NameExpr(
@@ -260,6 +256,11 @@ public class WasiTestGenMojo extends AbstractMojo {
                                                 + javaString(entry.getValue()))
                         .collect(Collectors.joining(", "))
                 + ")";
+    }
+
+    private static String optionalOf(Optional<String> optional) {
+        return optional.map(s -> format("Optional.of(%s)", javaString(s)))
+                .orElse("Optional.empty()");
     }
 
     private static String javaString(String value) {

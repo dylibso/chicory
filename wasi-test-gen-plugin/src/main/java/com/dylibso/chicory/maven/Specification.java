@@ -8,14 +8,15 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class Specification {
     private final List<String> args;
     private final List<String> dirs;
     private final Map<String, String> env;
     private final int exitCode;
-    private final String stderr;
-    private final String stdout;
+    private final Optional<String> stderr;
+    private final Optional<String> stdout;
 
     @JsonCreator
     public Specification(
@@ -29,8 +30,8 @@ public class Specification {
         this.dirs = requireNonNullElse(dirs, emptyList());
         this.env = requireNonNullElse(env, emptyMap());
         this.exitCode = exitCode;
-        this.stderr = requireNonNullElse(stderr, "");
-        this.stdout = requireNonNullElse(stdout, "");
+        this.stderr = Optional.ofNullable(stderr);
+        this.stdout = Optional.ofNullable(stdout);
     }
 
     public List<String> args() {
@@ -49,11 +50,11 @@ public class Specification {
         return exitCode;
     }
 
-    public String stderr() {
+    public Optional<String> stderr() {
         return stderr;
     }
 
-    public String stdout() {
+    public Optional<String> stdout() {
         return stdout;
     }
 

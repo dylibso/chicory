@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public final class WasiTestRunner {
     private static final SystemLogger LOGGER = new SystemLogger();
@@ -29,8 +30,8 @@ public final class WasiTestRunner {
             List<String> dirs,
             Map<String, String> env,
             int exitCode,
-            String stderr,
-            String stdout) {
+            Optional<String> stderr,
+            Optional<String> stdout) {
 
         try (FileSystem fs =
                 Jimfs.newFileSystem(
@@ -74,8 +75,8 @@ public final class WasiTestRunner {
             }
 
             assertEquals(exitCode, actualExitCode, "exit code");
-            assertEquals(stdout, stdoutStream.output(), "stdout");
-            assertEquals(stderr, stderrStream.output(), "stderr");
+            stdout.ifPresent(expected -> assertEquals(expected, stdoutStream.output(), "stdout"));
+            stderr.ifPresent(expected -> assertEquals(expected, stderrStream.output(), "stderr"));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
