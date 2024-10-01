@@ -390,6 +390,7 @@ public final class AotMachine implements Machine {
                                 instance.memory(),
                                 instance);
                 compiled[funcId] = adaptSignature(type, handle);
+
             } catch (ReflectiveOperationException e) {
                 throw new ChicoryException(e);
             }
