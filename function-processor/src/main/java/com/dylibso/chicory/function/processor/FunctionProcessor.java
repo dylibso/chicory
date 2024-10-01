@@ -100,6 +100,7 @@ public final class FunctionProcessor extends AbstractProcessor {
         }
         cu.addImport("com.dylibso.chicory.runtime.HostFunction");
         cu.addImport("com.dylibso.chicory.runtime.Instance");
+        cu.addImport("com.dylibso.chicory.wasm.types.Value");
         cu.addImport("com.dylibso.chicory.wasm.types.ValueType");
         cu.addImport("java.util.List");
 
@@ -161,16 +162,14 @@ public final class FunctionProcessor extends AbstractProcessor {
                     paramTypes.add(valueType("F32"));
                     arguments.add(
                             new MethodCallExpr(
-                                    new NameExpr("Float"),
-                                    "intBitsToFloat",
-                                    new NodeList<>(new CastExpr(parseType("int"), argExpr))));
+                                    new NameExpr("Value"), "longToFloat", new NodeList<>(argExpr)));
                     break;
                 case "double":
                     paramTypes.add(valueType("F64"));
                     arguments.add(
                             new MethodCallExpr(
-                                    new NameExpr("Double"),
-                                    "doubleToLongBits",
+                                    new NameExpr("Value"),
+                                    "longToDouble",
                                     new NodeList<>(argExpr)));
                     break;
                 case "java.lang.String":
@@ -228,16 +227,16 @@ public final class FunctionProcessor extends AbstractProcessor {
                 returnType.add(valueType("F32"));
                 returnExpr =
                         new MethodCallExpr(
-                                new NameExpr("Float"),
-                                "floatToRawIntBits",
+                                new NameExpr("Value"),
+                                "floatToLong",
                                 new NodeList<>(new NameExpr("result")));
                 break;
             case "double":
                 returnType.add(valueType("F64"));
                 returnExpr =
                         new MethodCallExpr(
-                                new NameExpr("Double"),
-                                "doubleToLongBits",
+                                new NameExpr("Value"),
+                                "doubleToLong",
                                 new NodeList<>(new NameExpr("result")));
                 break;
             default:

@@ -11,10 +11,6 @@ public final class ValueConversions {
         return (int) val;
     }
 
-    public static long longToI64(long val) {
-        return val;
-    }
-
     public static float longToF32(long val) {
         return Value.longToFloat(val);
     }
@@ -25,10 +21,6 @@ public final class ValueConversions {
 
     // To Long
     public static long i32ToLong(int val) {
-        return val;
-    }
-
-    public static long i64ToLong(long val) {
         return val;
     }
 

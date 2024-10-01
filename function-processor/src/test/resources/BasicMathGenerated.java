@@ -2,6 +2,7 @@ package chicory.testing;
 
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 import javax.annotation.processing.Generated;
@@ -27,8 +28,8 @@ public final class BasicMath_ModuleFactory {
                 new HostFunction("math",
                         "square",
                         (Instance instance, long... args) -> {
-                            double result = functions.pow2(Float.intBitsToFloat((int) args[0]));
-                            return new long[] { Double.doubleToLongBits(result) };
+                            double result = functions.pow2(Value.longToFloat(args[0]));
+                            return new long[] { Value.doubleToLong(result) };
                         },
                         List.of(ValueType.F32),
                         List.of(ValueType.F64)), //

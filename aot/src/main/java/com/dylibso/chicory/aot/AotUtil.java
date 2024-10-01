@@ -1,6 +1,7 @@
 package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+import static java.lang.invoke.MethodHandles.identity;
 import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
 import static org.objectweb.asm.Type.getInternalName;
@@ -29,39 +30,31 @@ final class AotUtil {
     }
 
     private static final Method LONG_TO_I32;
-    private static final Method LONG_TO_I64;
     private static final Method LONG_TO_F32;
     private static final Method LONG_TO_F64;
     private static final Method I32_TO_LONG;
-    private static final Method I64_TO_LONG;
     private static final Method F32_TO_LONG;
     private static final Method F64_TO_LONG;
     private static final MethodHandle LONG_TO_I32_MH;
-    private static final MethodHandle LONG_TO_I64_MH;
     private static final MethodHandle LONG_TO_F32_MH;
     private static final MethodHandle LONG_TO_F64_MH;
     private static final MethodHandle I32_TO_LONG_MH;
-    private static final MethodHandle I64_TO_LONG_MH;
     private static final MethodHandle F32_TO_LONG_MH;
     private static final MethodHandle F64_TO_LONG_MH;
 
     static {
         try {
             LONG_TO_I32 = ValueConversions.class.getMethod("longToI32", long.class);
-            LONG_TO_I64 = ValueConversions.class.getMethod("longToI64", long.class);
             LONG_TO_F32 = ValueConversions.class.getMethod("longToF32", long.class);
             LONG_TO_F64 = ValueConversions.class.getMethod("longToF64", long.class);
             I32_TO_LONG = ValueConversions.class.getMethod("i32ToLong", int.class);
-            I64_TO_LONG = ValueConversions.class.getMethod("i64ToLong", long.class);
             F32_TO_LONG = ValueConversions.class.getMethod("f32ToLong", float.class);
             F64_TO_LONG = ValueConversions.class.getMethod("f64ToLong", double.class);
 
             LONG_TO_I32_MH = publicLookup().unreflect(LONG_TO_I32);
-            LONG_TO_I64_MH = publicLookup().unreflect(LONG_TO_I64);
             LONG_TO_F32_MH = publicLookup().unreflect(LONG_TO_F32);
             LONG_TO_F64_MH = publicLookup().unreflect(LONG_TO_F64);
             I32_TO_LONG_MH = publicLookup().unreflect(I32_TO_LONG);
-            I64_TO_LONG_MH = publicLookup().unreflect(I64_TO_LONG);
             F32_TO_LONG_MH = publicLookup().unreflect(F32_TO_LONG);
             F64_TO_LONG_MH = publicLookup().unreflect(F64_TO_LONG);
         } catch (NoSuchMethodException e) {
@@ -196,7 +189,7 @@ final class AotUtil {
             case FuncRef:
                 return I32_TO_LONG_MH;
             case I64:
-                return I64_TO_LONG_MH;
+                return identity(long.class);
             case F32:
                 return F32_TO_LONG_MH;
             case F64:
