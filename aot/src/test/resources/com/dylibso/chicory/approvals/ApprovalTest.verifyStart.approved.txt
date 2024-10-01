@@ -22,7 +22,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     DUP
     ICONST_0
     ILOAD 0
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    I2L
     LASTORE
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.callHostFunction (I[J)[J
     RETURN
@@ -47,7 +47,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     DUP
     ICONST_0
     ILOAD 0
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    I2L
     LASTORE
     ICONST_0
     ILOAD 1

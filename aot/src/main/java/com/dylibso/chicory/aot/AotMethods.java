@@ -21,7 +21,7 @@ public final class AotMethods {
     static final Method CALL_INDIRECT;
     static final Method INSTANCE_CALL_HOST_FUNCTION;
     static final Method INSTANCE_READ_GLOBAL;
-    static final Method INSTANCE_WRITE_GLOBAL;
+    static final Method WRITE_GLOBAL;
     static final Method INSTANCE_SET_ELEMENT;
     static final Method MEMORY_COPY;
     static final Method MEMORY_FILL;
@@ -67,7 +67,9 @@ public final class AotMethods {
             INSTANCE_CALL_HOST_FUNCTION =
                     Instance.class.getMethod("callHostFunction", int.class, long[].class);
             INSTANCE_READ_GLOBAL = Instance.class.getMethod("readGlobal", int.class);
-            INSTANCE_WRITE_GLOBAL = Instance.class.getMethod("writeGlobal", int.class, long.class);
+            WRITE_GLOBAL =
+                    AotMethods.class.getMethod(
+                            "writeGlobal", long.class, int.class, Instance.class);
             INSTANCE_SET_ELEMENT = Instance.class.getMethod("setElement", int.class, Element.class);
             MEMORY_COPY =
                     AotMethods.class.getMethod(
@@ -339,5 +341,10 @@ public final class AotMethods {
         if (Thread.currentThread().isInterrupted()) {
             throw new ChicoryException("Thread interrupted");
         }
+    }
+
+    @UsedByGeneratedCode
+    public static void writeGlobal(long value, int index, Instance instance) {
+        instance.writeGlobal(index, value);
     }
 }

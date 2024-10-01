@@ -7,36 +7,36 @@ public final class ValueConversions {
     private ValueConversions() {}
 
     // From long
-    public static int toInt(long val) {
+    public static int longToI32(long val) {
         return (int) val;
     }
 
-    public static long toLong(long val) {
+    public static long longToI64(long val) {
         return val;
     }
 
-    public static float toFloat(long val) {
+    public static float longToF32(long val) {
         return Value.longToFloat(val);
     }
 
-    public static double toDouble(long val) {
+    public static double longToF64(long val) {
         return Value.longToDouble(val);
     }
 
     // To Long
-    public static long asLong(int val) {
+    public static long i32ToLong(int val) {
         return val;
     }
 
-    public static long asLong(long val) {
+    public static long i64ToLong(long val) {
         return val;
     }
 
-    public static long asLong(float val) {
+    public static long f32ToLong(float val) {
         return Value.floatToLong(val);
     }
 
-    public static long asLong(double val) {
+    public static long f64ToLong(double val) {
         return Value.doubleToLong(val);
     }
 }

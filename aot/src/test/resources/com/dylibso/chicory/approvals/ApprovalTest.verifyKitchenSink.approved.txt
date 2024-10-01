@@ -50,7 +50,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     DUP
     ICONST_0
     ILOAD 0
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    I2L
     LASTORE
     ICONST_0
     ILOAD 1
@@ -59,7 +59,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([JIIILcom/dylibso/chicory/runtime/Instance;)[J
     ICONST_0
     LALOAD
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.toInt (J)I
+    L2I
     IRETURN
     MAXSTACK = 5
     MAXLOCALS = 4

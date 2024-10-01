@@ -5,18 +5,18 @@ import static com.dylibso.chicory.aot.AotMethods.INSTANCE_CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.aot.AotMethods.THROW_TRAP_EXCEPTION;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
-import static com.dylibso.chicory.aot.AotUtil.convertFromLong;
-import static com.dylibso.chicory.aot.AotUtil.convertFromLongHandle;
-import static com.dylibso.chicory.aot.AotUtil.convertToLong;
-import static com.dylibso.chicory.aot.AotUtil.convertToLongHandle;
 import static com.dylibso.chicory.aot.AotUtil.defaultValue;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
+import static com.dylibso.chicory.aot.AotUtil.emitJvmToLong;
+import static com.dylibso.chicory.aot.AotUtil.emitLongToJvm;
 import static com.dylibso.chicory.aot.AotUtil.emitPop;
 import static com.dylibso.chicory.aot.AotUtil.jvmReturnType;
+import static com.dylibso.chicory.aot.AotUtil.jvmToLongHandle;
 import static com.dylibso.chicory.aot.AotUtil.jvmTypes;
 import static com.dylibso.chicory.aot.AotUtil.loadTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.localType;
+import static com.dylibso.chicory.aot.AotUtil.longToJvmHandle;
 import static com.dylibso.chicory.aot.AotUtil.methodNameFor;
 import static com.dylibso.chicory.aot.AotUtil.methodTypeFor;
 import static com.dylibso.chicory.aot.AotUtil.slotCount;
@@ -526,7 +526,7 @@ public final class AotMachine implements Machine {
         var argTypes = type.params();
         var argHandlers = new MethodHandle[type.params().size()];
         for (int i = 0; i < argHandlers.length; i++) {
-            argHandlers[i] = convertFromLongHandle(argTypes.get(i));
+            argHandlers[i] = longToJvmHandle(argTypes.get(i));
         }
         MethodHandle result = filterArguments(handle, 0, argHandlers);
         result = result.asSpreader(long[].class, argTypes.size());
@@ -537,7 +537,7 @@ public final class AotMachine implements Machine {
         if (type.returns().size() > 1) {
             return result;
         }
-        result = filterReturnValue(result, convertToLongHandle(type.returns().get(0)));
+        result = filterReturnValue(result, jvmToLongHandle(type.returns().get(0)));
         return filterReturnValue(result, LongArrayWrapper.HANDLE);
     }
 
@@ -598,7 +598,7 @@ public final class AotMachine implements Machine {
             asm.visitLdcInsn(i);
             ValueType valueType = types.get(i);
             asm.visitVarInsn(loadTypeOpcode(valueType), slot);
-            emitInvokeStatic(asm, convertToLong(valueType));
+            emitJvmToLong(asm, valueType);
             asm.visitInsn(Opcodes.LASTORE);
             slot += slotCount(valueType);
         }
@@ -614,7 +614,7 @@ public final class AotMachine implements Machine {
             // unbox the result from long[0]
             asm.visitLdcInsn(0);
             asm.visitInsn(Opcodes.LALOAD);
-            emitInvokeStatic(asm, convertFromLong(type.returns().get(0)));
+            emitLongToJvm(asm, type.returns().get(0));
             asm.visitInsn(returnTypeOpcode(type));
         }
     }

@@ -3,7 +3,6 @@ package com.dylibso.chicory.aot;
 import static com.dylibso.chicory.aot.AotMethods.CHECK_INTERRUPTION;
 import static com.dylibso.chicory.aot.AotMethods.INSTANCE_READ_GLOBAL;
 import static com.dylibso.chicory.aot.AotMethods.INSTANCE_SET_ELEMENT;
-import static com.dylibso.chicory.aot.AotMethods.INSTANCE_WRITE_GLOBAL;
 import static com.dylibso.chicory.aot.AotMethods.MEMORY_COPY;
 import static com.dylibso.chicory.aot.AotMethods.MEMORY_DROP;
 import static com.dylibso.chicory.aot.AotMethods.MEMORY_FILL;
@@ -31,13 +30,14 @@ import static com.dylibso.chicory.aot.AotMethods.TABLE_INIT;
 import static com.dylibso.chicory.aot.AotMethods.TABLE_SET;
 import static com.dylibso.chicory.aot.AotMethods.TABLE_SIZE;
 import static com.dylibso.chicory.aot.AotMethods.THROW_OUT_OF_BOUNDS_MEMORY_ACCESS;
+import static com.dylibso.chicory.aot.AotMethods.WRITE_GLOBAL;
 import static com.dylibso.chicory.aot.AotUtil.StackSize;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
-import static com.dylibso.chicory.aot.AotUtil.convertFromLong;
-import static com.dylibso.chicory.aot.AotUtil.convertToLong;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
+import static com.dylibso.chicory.aot.AotUtil.emitJvmToLong;
+import static com.dylibso.chicory.aot.AotUtil.emitLongToJvm;
 import static com.dylibso.chicory.aot.AotUtil.emitPop;
 import static com.dylibso.chicory.aot.AotUtil.jvmType;
 import static com.dylibso.chicory.aot.AotUtil.loadTypeOpcode;
@@ -218,25 +218,19 @@ final class AotEmitters {
         asm.visitLdcInsn(globalIndex);
         emitInvokeVirtual(asm, INSTANCE_READ_GLOBAL);
 
-        Method unboxer = convertFromLong(ctx.globalTypes().get(globalIndex));
-        emitInvokeStatic(asm, unboxer);
+        var globalType = ctx.globalTypes().get(globalIndex);
+        emitLongToJvm(asm, ctx.globalTypes().get(globalIndex));
 
-        ctx.pushStackSize(stackSize(unboxer.getReturnType()));
+        ctx.pushStackSize(stackSize(globalType));
     }
 
     public static void GLOBAL_SET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         int globalIndex = (int) ins.operand(0);
 
-        emitInvokeStatic(asm, convertToLong(ctx.globalTypes().get(globalIndex)));
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
-        // from long | integer on top of the stack
-        // to integer | long
-        asm.visitInsn(Opcodes.DUP_X2);
-        asm.visitInsn(Opcodes.POP);
+        emitJvmToLong(asm, ctx.globalTypes().get(globalIndex));
         asm.visitLdcInsn(globalIndex);
-        asm.visitInsn(Opcodes.DUP_X2);
-        asm.visitInsn(Opcodes.POP);
-        emitInvokeVirtual(asm, INSTANCE_WRITE_GLOBAL);
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        emitInvokeStatic(asm, WRITE_GLOBAL);
     }
 
     public static void TABLE_GET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
@@ -777,7 +771,7 @@ final class AotEmitters {
             asm.visitVarInsn(Opcodes.ALOAD, ctx.tempSlot());
             asm.visitLdcInsn(i);
             asm.visitInsn(Opcodes.LALOAD);
-            emitInvokeStatic(asm, convertFromLong(type));
+            emitLongToJvm(asm, type);
         }
     }
 }

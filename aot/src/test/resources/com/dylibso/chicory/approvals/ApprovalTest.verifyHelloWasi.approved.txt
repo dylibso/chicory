@@ -22,27 +22,27 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     DUP
     ICONST_0
     ILOAD 0
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    I2L
     LASTORE
     DUP
     ICONST_1
     ILOAD 1
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    I2L
     LASTORE
     DUP
     ICONST_2
     ILOAD 2
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    I2L
     LASTORE
     DUP
     ICONST_3
     ILOAD 3
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    I2L
     LASTORE
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.callHostFunction (I[J)[J
     ICONST_0
     LALOAD
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.toInt (J)I
+    L2I
     IRETURN
     MAXSTACK = 7
     MAXLOCALS = 6
@@ -79,22 +79,22 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     DUP
     ICONST_0
     ILOAD 0
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    I2L
     LASTORE
     DUP
     ICONST_1
     ILOAD 1
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    I2L
     LASTORE
     DUP
     ICONST_2
     ILOAD 2
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    I2L
     LASTORE
     DUP
     ICONST_3
     ILOAD 3
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.asLong (I)J
+    I2L
     LASTORE
     ICONST_0
     ILOAD 4
@@ -103,7 +103,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([JIIILcom/dylibso/chicory/runtime/Instance;)[J
     ICONST_0
     LALOAD
-    INVOKESTATIC com/dylibso/chicory/aot/ValueConversions.toInt (J)I
+    L2I
     IRETURN
     MAXSTACK = 5
     MAXLOCALS = 7

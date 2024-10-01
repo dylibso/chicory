@@ -34,7 +34,6 @@
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm-util</artifactId>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>com.approvaltests</groupId>
