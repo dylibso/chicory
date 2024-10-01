@@ -95,7 +95,7 @@
 
     <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
     <checkstyle.version>10.18.2</checkstyle.version>
-    <error-prone.version>2.32.0</error-prone.version>
+    <error-prone.version>2.33.0</error-prone.version>
     <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
     <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
