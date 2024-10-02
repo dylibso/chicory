@@ -6,8 +6,10 @@ by many of the compilers out there.
 
 ## Version Support
 
-There are currently 2 versions of WASI at the moment, [preview1](https://github.com/WebAssembly/WASI/blob/main/legacy/README.md) and [preview2](https://github.com/WebAssembly/WASI/blob/main/preview2/README.md). This library is currently
-aimed at `preview1`.
+There are currently 2 versions of WASI at the moment,
+[preview1](https://github.com/WebAssembly/WASI/blob/v0.2.1/legacy/README.md) and
+[preview2](https://github.com/WebAssembly/WASI/blob/v0.2.1/wasip2/README.md).
+This library is currently aimed at `preview1`.
 
 > **Note**: You might hear the terms `preview1/preview1` or `0.1/0.2` when referring to the versions inside the WASI docs.
 > And you might hear `wasip1` when being used as a flag to a compiler target. We tend to prefer the nomenclature wasip1 / wasip2.
