@@ -49,17 +49,17 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     BIPUSH 8
     ICONST_0
     ALOAD 0
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryWriteInt (IIILcom/dylibso/chicory/runtime/Memory;)V
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.memoryWriteInt (IIILcom/dylibso/chicory/runtime/Memory;)V
     ICONST_4
     BIPUSH 12
     ICONST_0
     ALOAD 0
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.memoryWriteInt (IIILcom/dylibso/chicory/runtime/Memory;)V
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.memoryWriteInt (IIILcom/dylibso/chicory/runtime/Memory;)V
     ICONST_1
     ICONST_0
     ICONST_1
     BIPUSH 20
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.checkInterruption ()V
     ALOAD 0
     ALOAD 1
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_0 (IIIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
@@ -68,14 +68,14 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
 
   // access flags 0x9
   public static call_indirect_0(IIIIIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.checkInterruption ()V
     ALOAD 7
     ILOAD 5
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
     ASTORE 8
     ALOAD 8
     ILOAD 4
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.tableRef (Lcom/dylibso/chicory/runtime/TableInstance;I)I
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.tableRef (Lcom/dylibso/chicory/runtime/TableInstance;I)I
     ISTORE 9
     ALOAD 8
     ILOAD 4
@@ -101,7 +101,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_0 (IIIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     GOTO L4
    L3
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
     ATHROW
    L4
     IRETURN
@@ -131,7 +131,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ICONST_0
     ILOAD 9
     ALOAD 10
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
     ICONST_0
     LALOAD
     L2I
@@ -139,14 +139,14 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
 
   // access flags 0x9
   public static call_indirect_1(IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.checkInterruption ()V
     ALOAD 3
     ILOAD 1
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
     ASTORE 4
     ALOAD 4
     ILOAD 0
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.tableRef (Lcom/dylibso/chicory/runtime/TableInstance;I)I
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.tableRef (Lcom/dylibso/chicory/runtime/TableInstance;I)I
     ISTORE 5
     ALOAD 4
     ILOAD 0
@@ -168,7 +168,7 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_1 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     GOTO L4
    L3
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
     ATHROW
    L4
     RETURN
@@ -178,6 +178,6 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ICONST_1
     ILOAD 5
     ALOAD 6
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
     RETURN
 }

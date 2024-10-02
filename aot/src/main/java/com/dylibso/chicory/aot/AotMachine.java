@@ -1,12 +1,13 @@
 package com.dylibso.chicory.aot;
 
-import static com.dylibso.chicory.aot.AotMethods.CHECK_INTERRUPTION;
-import static com.dylibso.chicory.aot.AotMethods.INSTANCE_CALL_HOST_FUNCTION;
-import static com.dylibso.chicory.aot.AotMethods.INSTANCE_TABLE;
-import static com.dylibso.chicory.aot.AotMethods.TABLE_INSTANCE;
-import static com.dylibso.chicory.aot.AotMethods.TABLE_REF;
-import static com.dylibso.chicory.aot.AotMethods.THROW_INDIRECT_CALL_TYPE_MISMATCH;
-import static com.dylibso.chicory.aot.AotMethods.THROW_TRAP_EXCEPTION;
+import static com.dylibso.chicory.aot.AotMethodRefs.CALL_INDIRECT;
+import static com.dylibso.chicory.aot.AotMethodRefs.CHECK_INTERRUPTION;
+import static com.dylibso.chicory.aot.AotMethodRefs.INSTANCE_CALL_HOST_FUNCTION;
+import static com.dylibso.chicory.aot.AotMethodRefs.INSTANCE_TABLE;
+import static com.dylibso.chicory.aot.AotMethodRefs.TABLE_INSTANCE;
+import static com.dylibso.chicory.aot.AotMethodRefs.TABLE_REF;
+import static com.dylibso.chicory.aot.AotMethodRefs.THROW_INDIRECT_CALL_TYPE_MISMATCH;
+import static com.dylibso.chicory.aot.AotMethodRefs.THROW_TRAP_EXCEPTION;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
 import static com.dylibso.chicory.aot.AotUtil.defaultValue;
@@ -654,7 +655,7 @@ public final class AotMachine implements Machine {
         asm.visitVarInsn(Opcodes.ILOAD, funcId);
         asm.visitVarInsn(Opcodes.ALOAD, refInstance);
 
-        emitInvokeStatic(asm, AotMethods.CALL_INDIRECT);
+        emitInvokeStatic(asm, CALL_INDIRECT);
 
         emitUnboxResult(type, asm);
     }
