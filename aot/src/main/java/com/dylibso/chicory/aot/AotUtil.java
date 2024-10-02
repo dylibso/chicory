@@ -201,7 +201,7 @@ final class AotUtil {
 
     public static MethodType callIndirectMethodType(FunctionType functionType) {
         return rawMethodTypeFor(functionType)
-                .appendParameterTypes(int.class, int.class, Instance.class);
+                .appendParameterTypes(int.class, int.class, Memory.class, Instance.class);
     }
 
     public static MethodType methodTypeFor(FunctionType type) {

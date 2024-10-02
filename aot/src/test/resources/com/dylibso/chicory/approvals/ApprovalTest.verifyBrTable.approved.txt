@@ -44,7 +44,42 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ATHROW
 
   // access flags 0x9
-  public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Instance;)I
+  public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.checkInterruption ()V
+    ALOAD 4
+    ILOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
+    ASTORE 5
+    ALOAD 5
+    ILOAD 1
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.tableRef (Lcom/dylibso/chicory/runtime/TableInstance;I)I
+    ISTORE 6
+    ALOAD 5
+    ILOAD 1
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.instance (I)Lcom/dylibso/chicory/runtime/Instance;
+    ASTORE 7
+    ALOAD 7
+    IFNULL L0
+    ALOAD 7
+    ALOAD 4
+    IF_ACMPNE L1
+   L0
+    ILOAD 0
+    ALOAD 3
+    ALOAD 4
+    ILOAD 6
+    LOOKUPSWITCH
+      0: L2
+      default: L3
+   L2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    GOTO L4
+   L3
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
+    ATHROW
+   L4
+    IRETURN
+   L1
     ICONST_1
     NEWARRAY T_LONG
     DUP
@@ -53,10 +88,9 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     I2L
     LASTORE
     ICONST_0
-    ILOAD 1
-    ILOAD 2
-    ALOAD 3
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([JIIILcom/dylibso/chicory/runtime/Instance;)[J
+    ILOAD 6
+    ALOAD 7
+    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
     ICONST_0
     LALOAD
     L2I

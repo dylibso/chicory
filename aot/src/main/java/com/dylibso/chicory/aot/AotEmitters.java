@@ -146,8 +146,9 @@ final class AotEmitters {
         FunctionType functionType = ctx.types()[typeId];
 
         asm.visitLdcInsn(tableIdx);
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
-        // stack: arguments, funcTableIdx, tableIdx, instance
+        // stack: arguments, funcTableIdx, tableIdx, memory, instance
 
         asm.visitMethodInsn(
                 Opcodes.INVOKESTATIC,

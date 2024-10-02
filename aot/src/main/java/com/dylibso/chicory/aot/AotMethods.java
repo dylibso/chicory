@@ -1,7 +1,6 @@
 package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
-import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
@@ -23,6 +22,7 @@ public final class AotMethods {
     static final Method INSTANCE_READ_GLOBAL;
     static final Method WRITE_GLOBAL;
     static final Method INSTANCE_SET_ELEMENT;
+    static final Method INSTANCE_TABLE;
     static final Method MEMORY_COPY;
     static final Method MEMORY_FILL;
     static final Method MEMORY_INIT;
@@ -49,7 +49,10 @@ public final class AotMethods {
     static final Method TABLE_FILL;
     static final Method TABLE_COPY;
     static final Method TABLE_INIT;
+    static final Method TABLE_REF;
+    static final Method TABLE_INSTANCE;
     static final Method VALIDATE_BASE;
+    static final Method THROW_INDIRECT_CALL_TYPE_MISMATCH;
     static final Method THROW_OUT_OF_BOUNDS_MEMORY_ACCESS;
     static final Method THROW_TRAP_EXCEPTION;
 
@@ -58,12 +61,7 @@ public final class AotMethods {
             CHECK_INTERRUPTION = AotMethods.class.getMethod("checkInterruption");
             CALL_INDIRECT =
                     AotMethods.class.getMethod(
-                            "callIndirect",
-                            long[].class,
-                            int.class,
-                            int.class,
-                            int.class,
-                            Instance.class);
+                            "callIndirect", long[].class, int.class, int.class, Instance.class);
             INSTANCE_CALL_HOST_FUNCTION =
                     Instance.class.getMethod("callHostFunction", int.class, long[].class);
             INSTANCE_READ_GLOBAL = Instance.class.getMethod("readGlobal", int.class);
@@ -71,6 +69,7 @@ public final class AotMethods {
                     AotMethods.class.getMethod(
                             "writeGlobal", long.class, int.class, Instance.class);
             INSTANCE_SET_ELEMENT = Instance.class.getMethod("setElement", int.class, Element.class);
+            INSTANCE_TABLE = Instance.class.getMethod("table", int.class);
             MEMORY_COPY =
                     AotMethods.class.getMethod(
                             "memoryCopy", int.class, int.class, int.class, Memory.class);
@@ -154,7 +153,11 @@ public final class AotMethods {
                             int.class,
                             int.class,
                             Instance.class);
+            TABLE_REF = AotMethods.class.getMethod("tableRef", TableInstance.class, int.class);
+            TABLE_INSTANCE = TableInstance.class.getMethod("instance", int.class);
             VALIDATE_BASE = AotMethods.class.getMethod("validateBase", int.class);
+            THROW_INDIRECT_CALL_TYPE_MISMATCH =
+                    AotMethods.class.getMethod("throwIndirectCallTypeMismatch");
             THROW_OUT_OF_BOUNDS_MEMORY_ACCESS =
                     AotMethods.class.getMethod("throwOutOfBoundsMemoryAccess");
             THROW_TRAP_EXCEPTION = AotMethods.class.getMethod("throwTrapException");
@@ -166,24 +169,12 @@ public final class AotMethods {
     private AotMethods() {}
 
     @UsedByGeneratedCode
-    public static long[] callIndirect(
-            long[] args, int typeId, int funcTableIdx, int tableIdx, Instance instance) {
-        TableInstance table = instance.table(tableIdx);
-
-        instance = requireNonNullElse(table.instance(funcTableIdx), instance);
-
-        int funcId = table.ref(funcTableIdx);
-        if (funcId == REF_NULL_VALUE) {
-            throw new ChicoryException("uninitialized element " + funcTableIdx);
-        }
-
+    public static long[] callIndirect(long[] args, int typeId, int funcId, Instance instance) {
         FunctionType expectedType = instance.type(typeId);
         FunctionType actualType = instance.type(instance.functionType(funcId));
         if (!actualType.typesMatch(expectedType)) {
-            throw new ChicoryException("indirect call type mismatch");
+            throw throwIndirectCallTypeMismatch();
         }
-
-        checkInterruption();
         return instance.getMachine().call(funcId, args);
     }
 
@@ -228,6 +219,15 @@ public final class AotMethods {
     public static void tableInit(
             int offset, int elemidx, int size, int elementidx, int tableidx, Instance instance) {
         OpcodeImpl.TABLE_INIT(instance, tableidx, elementidx, size, elemidx, offset);
+    }
+
+    @UsedByGeneratedCode
+    public static int tableRef(TableInstance table, int index) {
+        int funcId = table.ref(index);
+        if (funcId == REF_NULL_VALUE) {
+            throw new ChicoryException("uninitialized element " + index);
+        }
+        return funcId;
     }
 
     @UsedByGeneratedCode
@@ -324,6 +324,11 @@ public final class AotMethods {
         if (base < 0) {
             throwOutOfBoundsMemoryAccess();
         }
+    }
+
+    @UsedByGeneratedCode
+    public static RuntimeException throwIndirectCallTypeMismatch() {
+        return new ChicoryException("indirect call type mismatch");
     }
 
     @UsedByGeneratedCode
