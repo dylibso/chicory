@@ -1,5 +1,8 @@
 package com.dylibso.chicory.wasi;
 
+/**
+ * WASI <a href="https://github.com/WebAssembly/WASI/blob/v0.2.1/legacy/preview1/docs.md#errno">errno</a>
+ */
 enum WasiErrno {
     ESUCCESS,
     E2BIG,
