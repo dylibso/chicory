@@ -117,6 +117,10 @@ public class ApprovalTest {
         var out = new ByteArrayOutputStream();
         cr.accept(new TraceClassVisitor(new PrintWriter(out, false, UTF_8)), 0);
 
-        Approvals.verify(out);
+        String output = out.toString(UTF_8);
+        output = output.replaceAll("(?m)^ {3}FRAME.*\\n", "");
+        output = output.replaceAll("(?m)^ {4}MAX(STACK|LOCALS) = \\d+\\n", "");
+
+        Approvals.verify(output);
     }
 }

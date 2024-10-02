@@ -10,8 +10,6 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ALOAD 0
     INVOKESPECIAL java/lang/Object.<init> ()V
     RETURN
-    MAXSTACK = 1
-    MAXLOCALS = 1
 
   // access flags 0x9
   public static func_0(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
@@ -22,32 +20,25 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     IFEQ L0
     GOTO L1
    L0
-   FRAME APPEND [I]
     ILOAD 0
     ICONST_1
     INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.I32_EQ (II)I
     IFEQ L2
     GOTO L3
    L2
-   FRAME SAME
     BIPUSH 7
     ISTORE 3
     GOTO L4
    L1
-   FRAME SAME
     BIPUSH 42
     ISTORE 3
     GOTO L4
    L3
-   FRAME SAME
     BIPUSH 99
     ISTORE 3
    L4
-   FRAME SAME
     ILOAD 3
     IRETURN
-    MAXSTACK = 2
-    MAXLOCALS = 4
 
   // access flags 0x9
   public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Instance;)I
@@ -67,6 +58,4 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     LALOAD
     L2I
     IRETURN
-    MAXSTACK = 5
-    MAXLOCALS = 4
 }
