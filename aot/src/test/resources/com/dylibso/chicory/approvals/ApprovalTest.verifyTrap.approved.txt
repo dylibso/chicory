@@ -10,18 +10,13 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ALOAD 0
     INVOKESPECIAL java/lang/Object.<init> ()V
     RETURN
-    MAXSTACK = 1
-    MAXLOCALS = 1
 
   // access flags 0x9
   public static func_0(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     INVOKESTATIC com/dylibso/chicory/aot/AotMethods.throwTrapException ()Ljava/lang/RuntimeException;
     ATHROW
    L0
-   FRAME FULL [] [java/lang/Throwable]
     ATHROW
-    MAXSTACK = 1
-    MAXLOCALS = 2
 
   // access flags 0x9
   public static func_1(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
@@ -30,8 +25,6 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ALOAD 1
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_0 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     RETURN
-    MAXSTACK = 2
-    MAXLOCALS = 2
 
   // access flags 0x9
   public static func_2(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
@@ -40,8 +33,6 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ALOAD 1
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_1 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     RETURN
-    MAXSTACK = 2
-    MAXLOCALS = 2
 
   // access flags 0x9
   public static call_indirect_0(IILcom/dylibso/chicory/runtime/Instance;)V
@@ -53,6 +44,4 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([JIIILcom/dylibso/chicory/runtime/Instance;)[J
     RETURN
-    MAXSTACK = 5
-    MAXLOCALS = 3
 }
