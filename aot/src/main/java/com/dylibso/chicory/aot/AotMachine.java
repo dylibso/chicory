@@ -2,10 +2,15 @@ package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.aot.AotMethods.CHECK_INTERRUPTION;
 import static com.dylibso.chicory.aot.AotMethods.INSTANCE_CALL_HOST_FUNCTION;
+import static com.dylibso.chicory.aot.AotMethods.INSTANCE_TABLE;
+import static com.dylibso.chicory.aot.AotMethods.TABLE_INSTANCE;
+import static com.dylibso.chicory.aot.AotMethods.TABLE_REF;
+import static com.dylibso.chicory.aot.AotMethods.THROW_INDIRECT_CALL_TYPE_MISMATCH;
 import static com.dylibso.chicory.aot.AotMethods.THROW_TRAP_EXCEPTION;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
 import static com.dylibso.chicory.aot.AotUtil.defaultValue;
+import static com.dylibso.chicory.aot.AotUtil.emitInvokeFunction;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
 import static com.dylibso.chicory.aot.AotUtil.emitJvmToLong;
@@ -57,6 +62,7 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -444,7 +450,7 @@ public final class AotMachine implements Machine {
                     classWriter,
                     callIndirectMethodName(typeId),
                     callIndirectMethodType(type),
-                    asm -> compileCallIndirect(asm, typeId, type));
+                    asm -> compileCallIndirect(internalClassName, typeId, type, asm));
         }
 
         var returnTypes =
@@ -560,15 +566,93 @@ public final class AotMachine implements Machine {
         cons.visitEnd();
     }
 
-    private static void compileCallIndirect(MethodVisitor asm, int typeId, FunctionType type) {
-        int slot = type.params().stream().mapToInt(AotUtil::slotCount).sum();
+    private void compileCallIndirect(
+            String internalClassName, int typeId, FunctionType type, MethodVisitor asm) {
+        int slots = type.params().stream().mapToInt(AotUtil::slotCount).sum();
+        int funcTableIdx = slots;
+        int tableIdx = slots + 1;
+        int memory = slots + 2;
+        int instance = slots + 3;
+        int table = slots + 4;
+        int funcId = slots + 5;
+        int refInstance = slots + 6;
 
-        // parameters: arguments, funcTableIdx, tableIdx, instance
+        emitInvokeStatic(asm, CHECK_INTERRUPTION);
+
+        // TableInstance table = instance.table(tableIdx);
+        asm.visitVarInsn(Opcodes.ALOAD, instance);
+        asm.visitVarInsn(Opcodes.ILOAD, tableIdx);
+        emitInvokeVirtual(asm, INSTANCE_TABLE);
+        asm.visitVarInsn(Opcodes.ASTORE, table);
+
+        // int funcId = tableRef(table, funcTableIdx);
+        asm.visitVarInsn(Opcodes.ALOAD, table);
+        asm.visitVarInsn(Opcodes.ILOAD, funcTableIdx);
+        emitInvokeStatic(asm, TABLE_REF);
+        asm.visitVarInsn(Opcodes.ISTORE, funcId);
+
+        // Instance refInstance = table.instance(funcTableIdx);
+        asm.visitVarInsn(Opcodes.ALOAD, table);
+        asm.visitVarInsn(Opcodes.ILOAD, funcTableIdx);
+        emitInvokeVirtual(asm, TABLE_INSTANCE);
+        asm.visitVarInsn(Opcodes.ASTORE, refInstance);
+
+        Label local = new Label();
+        Label other = new Label();
+
+        // if (refInstance == null || refInstance == instance)
+        asm.visitVarInsn(Opcodes.ALOAD, refInstance);
+        asm.visitJumpInsn(Opcodes.IFNULL, local);
+        asm.visitVarInsn(Opcodes.ALOAD, refInstance);
+        asm.visitVarInsn(Opcodes.ALOAD, instance);
+        asm.visitJumpInsn(Opcodes.IF_ACMPNE, other);
+
+        // local: call function in this module
+        asm.visitLabel(local);
+
+        int slot = 0;
+        for (ValueType param : type.params()) {
+            asm.visitVarInsn(loadTypeOpcode(param), slot);
+            slot += slotCount(param);
+        }
+        asm.visitVarInsn(Opcodes.ALOAD, memory);
+        asm.visitVarInsn(Opcodes.ALOAD, instance);
+
+        List<Integer> validIds = new ArrayList<>();
+        for (int i = 0; i < functionTypes.size(); i++) {
+            if (type.equals(functionTypes.get(i))) {
+                validIds.add(i);
+            }
+        }
+
+        Label invalid = new Label();
+        int[] keys = validIds.stream().mapToInt(x -> x).toArray();
+        Label[] labels = validIds.stream().map(x -> new Label()).toArray(Label[]::new);
+
+        asm.visitVarInsn(Opcodes.ILOAD, funcId);
+        asm.visitLookupSwitchInsn(invalid, keys, labels);
+
+        Label done = new Label();
+        for (int i = 0; i < validIds.size(); i++) {
+            asm.visitLabel(labels[i]);
+            emitInvokeFunction(asm, internalClassName, keys[i], type);
+            asm.visitJumpInsn(Opcodes.GOTO, done);
+        }
+
+        asm.visitLabel(invalid);
+        emitInvokeStatic(asm, THROW_INDIRECT_CALL_TYPE_MISMATCH);
+        asm.visitInsn(Opcodes.ATHROW);
+
+        asm.visitLabel(done);
+        asm.visitInsn(returnTypeOpcode(type));
+
+        // other: call function in another module
+        asm.visitLabel(other);
+
         emitBoxArguments(asm, type.params());
         asm.visitLdcInsn(typeId);
-        asm.visitVarInsn(Opcodes.ILOAD, slot); // funcTableIdx
-        asm.visitVarInsn(Opcodes.ILOAD, slot + 1); // tableIdx
-        asm.visitVarInsn(Opcodes.ALOAD, slot + 2); // instance
+        asm.visitVarInsn(Opcodes.ILOAD, funcId);
+        asm.visitVarInsn(Opcodes.ALOAD, refInstance);
 
         emitInvokeStatic(asm, AotMethods.CALL_INDIRECT);
 
