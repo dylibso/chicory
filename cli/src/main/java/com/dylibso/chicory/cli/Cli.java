@@ -6,7 +6,6 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -76,9 +75,9 @@ public class Cli implements Runnable {
         if (functionName != null) {
             var type = instance.exportType(functionName);
             var export = instance.export(functionName);
-            var params = new Value[type.params().size()];
+            var params = new long[type.params().size()];
             for (var i = 0; i < type.params().size(); i++) {
-                params[i] = new Value(type.params().get(i), Long.valueOf(arguments[i]));
+                params[i] = Long.valueOf(arguments[i]);
             }
 
             var result = export.apply(params);
@@ -87,7 +86,7 @@ public class Cli implements Runnable {
                     if (result == null) {
                         System.out.println(0);
                     } else {
-                        System.out.println(r.asLong()); // Check floating point results
+                        System.out.println(r); // Check floating point results
                     }
                 }
             }

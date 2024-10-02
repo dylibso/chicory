@@ -133,7 +133,7 @@ public class Instance {
                 }
                 for (int i = 0; i < initializers.size(); i++) {
                     final List<Instruction> init = initializers.get(i);
-                    var index = offset.asInt() + i;
+                    int index = offset.asInt() + i;
                     if (init.stream().filter(e -> e.opcode() != OpCode.END).count() > 1L) {
                         throw new InvalidException(
                                 "constant expression required, type mismatch, expected [] but found"
@@ -151,17 +151,17 @@ public class Instance {
                                         + value.type());
                     }
                     if (ae.type() == ValueType.FuncRef) {
-                        if (value.asFuncRef() != REF_NULL_VALUE) {
+                        if (((int) value.raw()) != REF_NULL_VALUE) {
                             try {
-                                function(value.asFuncRef());
+                                function(value.raw());
                             } catch (InvalidException e) {
                                 throw new InvalidException("type mismatch, " + e.getMessage(), e);
                             }
                         }
-                        table.setRef(index, value.asFuncRef(), inst);
+                        table.setRef(index, (int) value.raw(), inst);
                     } else {
                         assert ae.type() == ValueType.ExternRef;
-                        table.setRef(index, value.asExtRef(), inst);
+                        table.setRef(index, (int) value.raw(), inst);
                     }
                 }
             } else if (el instanceof DeclarativeElement) {
@@ -233,7 +233,8 @@ public class Instance {
                 {
                     return args -> {
                         assert (args.length == 0);
-                        return new Value[] {readGlobal(export.index())};
+                        var v = readGlobal(export.index());
+                        return new long[] {v};
                     };
                 }
             default:
@@ -267,14 +268,21 @@ public class Instance {
         return globals[idx - importedGlobalsOffset];
     }
 
-    public void writeGlobal(int idx, Value val) {
+    public void writeGlobal(int idx, long val) {
         if (idx < importedGlobalsOffset) {
             imports.global(idx).instance().setValue(val);
         }
         globals[idx - importedGlobalsOffset].setValue(val);
     }
 
-    public Value readGlobal(int idx) {
+    public ValueType readGlobalType(int idx) {
+        if (idx < importedGlobalsOffset) {
+            return imports.global(idx).instance().getType();
+        }
+        return globals[idx - importedGlobalsOffset].getType();
+    }
+
+    public long readGlobal(int idx) {
         if (idx < importedGlobalsOffset) {
             return imports.global(idx).instance().getValue();
         }
@@ -336,7 +344,7 @@ public class Instance {
         return machine;
     }
 
-    public Value[] callHostFunction(int funcId, Value[] args) {
+    public long[] callHostFunction(int funcId, long[] args) {
         var imprt = imports.function(funcId);
         if (imprt == null) {
             throw new ChicoryException("Missing host import, number: " + funcId);
@@ -430,7 +438,7 @@ public class Instance {
         }
 
         private void validateHostGlobalType(GlobalImport i, ExternalGlobal g) {
-            if (i.type() != g.instance().getValue().type()
+            if (i.type() != g.instance().getType()
                     || i.mutabilityType() != g.instance().getMutabilityType()) {
                 throw new UnlinkableException("incompatible import type");
             }

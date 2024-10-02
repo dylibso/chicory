@@ -11,7 +11,6 @@ import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
@@ -180,10 +179,6 @@ public final class Memory {
         return readCString(addr, StandardCharsets.UTF_8);
     }
 
-    public void write(int addr, Value data) {
-        write(addr, data.data());
-    }
-
     public void write(int addr, byte[] data) {
         write(addr, data, 0, data.length);
     }
@@ -234,12 +229,12 @@ public final class Memory {
         }
     }
 
-    public Value readI32(int addr) {
-        return Value.i32(readInt(addr));
+    public long readI32(int addr) {
+        return readInt(addr);
     }
 
-    public Value readU32(int addr) {
-        return Value.i32(Integer.toUnsignedLong(readInt(addr)));
+    public long readU32(int addr) {
+        return Integer.toUnsignedLong(readInt(addr));
     }
 
     public void writeLong(int addr, long data) {
@@ -258,8 +253,8 @@ public final class Memory {
         }
     }
 
-    public Value readI64(int addr) {
-        return Value.i64(readLong(addr));
+    public long readI64(int addr) {
+        return readLong(addr);
     }
 
     public void writeShort(int addr, short data) {
@@ -278,13 +273,13 @@ public final class Memory {
         }
     }
 
-    public Value readI16(int addr) {
-        return Value.i32(readShort(addr));
+    public long readI16(int addr) {
+        return readShort(addr);
     }
 
-    public Value readU16(int addr) {
+    public long readU16(int addr) {
         try {
-            return Value.i32(buffer.getShort(addr) & 0xffff);
+            return buffer.getShort(addr) & 0xffff;
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
@@ -298,17 +293,17 @@ public final class Memory {
         }
     }
 
-    public Value readU8(int addr) {
+    public long readU8(int addr) {
         try {
-            return Value.i32(read(addr) & 0xFF);
+            return read(addr) & 0xFF;
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
     }
 
-    public Value readI8(int addr) {
+    public long readI8(int addr) {
         try {
-            return Value.i32(read(addr));
+            return read(addr);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
@@ -322,9 +317,9 @@ public final class Memory {
         }
     }
 
-    public Value readF32(int addr) {
+    public long readF32(int addr) {
         try {
-            return Value.f32(buffer.getInt(addr));
+            return buffer.getInt(addr);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }
@@ -354,9 +349,9 @@ public final class Memory {
         }
     }
 
-    public Value readF64(int addr) {
+    public long readF64(int addr) {
         try {
-            return Value.f64(buffer.getLong(addr));
+            return buffer.getLong(addr);
         } catch (IndexOutOfBoundsException e) {
             throw new WASMRuntimeException("out of bounds memory access");
         }

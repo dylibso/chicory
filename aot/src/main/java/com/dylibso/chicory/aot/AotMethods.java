@@ -12,7 +12,6 @@ import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.Value;
 import java.lang.reflect.Method;
 import java.util.List;
 
@@ -22,7 +21,7 @@ public final class AotMethods {
     static final Method CALL_INDIRECT;
     static final Method INSTANCE_CALL_HOST_FUNCTION;
     static final Method INSTANCE_READ_GLOBAL;
-    static final Method INSTANCE_WRITE_GLOBAL;
+    static final Method WRITE_GLOBAL;
     static final Method INSTANCE_SET_ELEMENT;
     static final Method MEMORY_COPY;
     static final Method MEMORY_FILL;
@@ -60,15 +59,17 @@ public final class AotMethods {
             CALL_INDIRECT =
                     AotMethods.class.getMethod(
                             "callIndirect",
-                            Value[].class,
+                            long[].class,
                             int.class,
                             int.class,
                             int.class,
                             Instance.class);
             INSTANCE_CALL_HOST_FUNCTION =
-                    Instance.class.getMethod("callHostFunction", int.class, Value[].class);
+                    Instance.class.getMethod("callHostFunction", int.class, long[].class);
             INSTANCE_READ_GLOBAL = Instance.class.getMethod("readGlobal", int.class);
-            INSTANCE_WRITE_GLOBAL = Instance.class.getMethod("writeGlobal", int.class, Value.class);
+            WRITE_GLOBAL =
+                    AotMethods.class.getMethod(
+                            "writeGlobal", long.class, int.class, Instance.class);
             INSTANCE_SET_ELEMENT = Instance.class.getMethod("setElement", int.class, Element.class);
             MEMORY_COPY =
                     AotMethods.class.getMethod(
@@ -165,13 +166,13 @@ public final class AotMethods {
     private AotMethods() {}
 
     @UsedByGeneratedCode
-    public static Value[] callIndirect(
-            Value[] args, int typeId, int funcTableIdx, int tableIdx, Instance instance) {
+    public static long[] callIndirect(
+            long[] args, int typeId, int funcTableIdx, int tableIdx, Instance instance) {
         TableInstance table = instance.table(tableIdx);
 
         instance = requireNonNullElse(table.instance(funcTableIdx), instance);
 
-        int funcId = table.ref(funcTableIdx).asFuncRef();
+        int funcId = table.ref(funcTableIdx);
         if (funcId == REF_NULL_VALUE) {
             throw new ChicoryException("uninitialized element " + funcTableIdx);
         }
@@ -193,7 +194,7 @@ public final class AotMethods {
 
     @UsedByGeneratedCode
     public static int tableGet(int index, int tableIndex, Instance instance) {
-        return OpcodeImpl.TABLE_GET(instance, tableIndex, index).asFuncRef();
+        return (int) OpcodeImpl.TABLE_GET(instance, tableIndex, index);
     }
 
     @UsedByGeneratedCode
@@ -340,5 +341,10 @@ public final class AotMethods {
         if (Thread.currentThread().isInterrupted()) {
             throw new ChicoryException("Thread interrupted");
         }
+    }
+
+    @UsedByGeneratedCode
+    public static void writeGlobal(long value, int index, Instance instance) {
+        instance.writeGlobal(index, value);
     }
 }

@@ -1,6 +1,7 @@
 package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+import static java.lang.invoke.MethodHandles.identity;
 import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
 import static org.objectweb.asm.Type.getInternalName;
@@ -10,7 +11,6 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
@@ -29,34 +29,37 @@ final class AotUtil {
         TWO
     }
 
-    private static final Method UNBOX_I32;
-    private static final Method UNBOX_I64;
-    private static final Method UNBOX_F32;
-    private static final Method UNBOX_F64;
-    private static final Method UNBOX_EXTREF;
-    private static final Method UNBOX_FUNCREF;
-    private static final Method BOX_I32;
-    private static final Method BOX_I64;
-    private static final Method BOX_F32;
-    private static final Method BOX_F64;
-    private static final Method BOX_EXTREF;
-    private static final Method BOX_FUNCREF;
+    private static final Method LONG_TO_I32;
+    private static final Method LONG_TO_F32;
+    private static final Method LONG_TO_F64;
+    private static final Method I32_TO_LONG;
+    private static final Method F32_TO_LONG;
+    private static final Method F64_TO_LONG;
+    private static final MethodHandle LONG_TO_I32_MH;
+    private static final MethodHandle LONG_TO_F32_MH;
+    private static final MethodHandle LONG_TO_F64_MH;
+    private static final MethodHandle I32_TO_LONG_MH;
+    private static final MethodHandle F32_TO_LONG_MH;
+    private static final MethodHandle F64_TO_LONG_MH;
 
     static {
         try {
-            UNBOX_I32 = Value.class.getMethod("asInt");
-            UNBOX_I64 = Value.class.getMethod("asLong");
-            UNBOX_F32 = Value.class.getMethod("asFloat");
-            UNBOX_F64 = Value.class.getMethod("asDouble");
-            UNBOX_EXTREF = Value.class.getMethod("asExtRef");
-            UNBOX_FUNCREF = Value.class.getMethod("asFuncRef");
-            BOX_I32 = Value.class.getMethod("i32", int.class);
-            BOX_I64 = Value.class.getMethod("i64", long.class);
-            BOX_F32 = Value.class.getMethod("fromFloat", float.class);
-            BOX_F64 = Value.class.getMethod("fromDouble", double.class);
-            BOX_EXTREF = Value.class.getMethod("externRef", int.class);
-            BOX_FUNCREF = Value.class.getMethod("funcRef", int.class);
+            LONG_TO_I32 = ValueConversions.class.getMethod("longToI32", long.class);
+            LONG_TO_F32 = ValueConversions.class.getMethod("longToF32", long.class);
+            LONG_TO_F64 = ValueConversions.class.getMethod("longToF64", long.class);
+            I32_TO_LONG = ValueConversions.class.getMethod("i32ToLong", int.class);
+            F32_TO_LONG = ValueConversions.class.getMethod("f32ToLong", float.class);
+            F64_TO_LONG = ValueConversions.class.getMethod("f64ToLong", double.class);
+
+            LONG_TO_I32_MH = publicLookup().unreflect(LONG_TO_I32);
+            LONG_TO_F32_MH = publicLookup().unreflect(LONG_TO_F32);
+            LONG_TO_F64_MH = publicLookup().unreflect(LONG_TO_F64);
+            I32_TO_LONG_MH = publicLookup().unreflect(I32_TO_LONG);
+            F32_TO_LONG_MH = publicLookup().unreflect(F32_TO_LONG);
+            F64_TO_LONG_MH = publicLookup().unreflect(F64_TO_LONG);
         } catch (NoSuchMethodException e) {
+            throw new AssertionError(e);
+        } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         }
     }
@@ -120,57 +123,79 @@ final class AotUtil {
         }
     }
 
-    public static Method unboxer(ValueType type) {
+    public static void emitLongToJvm(MethodVisitor asm, ValueType type) {
         switch (type) {
             case I32:
-                return UNBOX_I32;
-            case I64:
-                return UNBOX_I64;
-            case F32:
-                return UNBOX_F32;
-            case F64:
-                return UNBOX_F64;
             case ExternRef:
-                return UNBOX_EXTREF;
             case FuncRef:
-                return UNBOX_FUNCREF;
+                asm.visitInsn(Opcodes.L2I);
+                return;
+            case I64:
+                return;
+            case F32:
+                emitInvokeStatic(asm, LONG_TO_F32);
+                return;
+            case F64:
+                emitInvokeStatic(asm, LONG_TO_F64);
+                return;
             default:
                 throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
         }
     }
 
-    public static Method boxer(ValueType type) {
+    public static void emitJvmToLong(MethodVisitor asm, ValueType type) {
         switch (type) {
             case I32:
-                return BOX_I32;
-            case I64:
-                return BOX_I64;
-            case F32:
-                return BOX_F32;
-            case F64:
-                return BOX_F64;
             case ExternRef:
-                return BOX_EXTREF;
             case FuncRef:
-                return BOX_FUNCREF;
+                asm.visitInsn(Opcodes.I2L);
+                return;
+            case I64:
+                return;
+            case F32:
+                emitInvokeStatic(asm, F32_TO_LONG);
+                return;
+            case F64:
+                emitInvokeStatic(asm, F64_TO_LONG);
+                return;
             default:
                 throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
         }
     }
 
-    public static MethodHandle unboxerHandle(ValueType type) {
-        try {
-            return publicLookup().unreflect(unboxer(type));
-        } catch (IllegalAccessException e) {
-            throw new AssertionError(e);
+    public static MethodHandle longToJvmHandle(ValueType type) {
+        switch (type) {
+            case I32:
+            case ExternRef:
+            case FuncRef:
+                return LONG_TO_I32_MH;
+            case I64:
+                // filterArguments:
+                // Null arguments in the array are treated as identity functions
+                return null;
+            case F32:
+                return LONG_TO_F32_MH;
+            case F64:
+                return LONG_TO_F64_MH;
+            default:
+                throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
         }
     }
 
-    public static MethodHandle boxerHandle(ValueType type) {
-        try {
-            return publicLookup().unreflect(boxer(type));
-        } catch (IllegalAccessException e) {
-            throw new AssertionError(e);
+    public static MethodHandle jvmToLongHandle(ValueType type) {
+        switch (type) {
+            case I32:
+            case ExternRef:
+            case FuncRef:
+                return I32_TO_LONG_MH;
+            case I64:
+                return identity(long.class);
+            case F32:
+                return F32_TO_LONG_MH;
+            case F64:
+                return F64_TO_LONG_MH;
+            default:
+                throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
         }
     }
 
@@ -202,7 +227,7 @@ final class AotUtil {
             case 1:
                 return jvmType(type.returns().get(0));
             default:
-                return Value[].class;
+                return long[].class;
         }
     }
 
@@ -237,6 +262,21 @@ final class AotUtil {
             return StackSize.TWO;
         }
         throw new IllegalArgumentException("Unsupported JVM type: " + clazz);
+    }
+
+    public static StackSize stackSize(ValueType type) {
+        switch (type) {
+            case I32:
+            case F32:
+            case ExternRef:
+            case FuncRef:
+                return StackSize.ONE;
+            case I64:
+            case F64:
+                return StackSize.TWO;
+            default:
+                throw new IllegalArgumentException("Unsupported type: " + type);
+        }
     }
 
     public static int slotCount(ValueType type) {

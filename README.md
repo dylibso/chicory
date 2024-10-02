@@ -140,13 +140,13 @@ when we want to go back to Java. This export function takes an `i32` argument. W
 on the return value to get back the Java integer:
 
 ```java
-Value result = iterFact.apply(Value.i32(5))[0];
-System.out.println("Result: " + result.asInt()); // should print 120 (5!)
+long result = iterFact.apply(5)[0];
+System.out.println("Result: " + result); // should print 120 (5!)
 ```
 
 <!--
 ```java
-writeResultFile("factorial.result", "" + result.asInt());
+writeResultFile("factorial.result", "" + result);
 ```
 -->
 
@@ -192,7 +192,7 @@ Memory memory = instance.memory();
 String message = "Hello, World!";
 int len = message.getBytes().length;
 // allocate {len} bytes of memory, this returns a pointer to that memory
-int ptr = alloc.apply(Value.i32(len))[0].asInt();
+int ptr = (int) alloc.apply(len)[0];
 // We can now write the message to the module's memory:
 memory.writeString(ptr, message);
 ```
@@ -201,14 +201,14 @@ Now we can call `countVowels` with this pointer to the string. It will do it's j
 call `dealloc` to free that memory in the module. Though the module could do this itself if you want:
 
 ```java
-Value result = countVowels.apply(Value.i32(ptr), Value.i32(len))[0];
-dealloc.apply(Value.i32(ptr), Value.i32(len));
-assert(3 == result.asInt()); // 3 vowels in Hello, World!
+var result = countVowels.apply(ptr, len)[0];
+dealloc.apply(ptr, len);
+assert(3L == result); // 3 vowels in Hello, World!
 ```
 
 <!--
 ```java
-writeResultFile("countVowels.result", "" + result.asInt());
+writeResultFile("countVowels.result", "" + result);
 ```
 -->
 
@@ -253,9 +253,9 @@ import com.dylibso.chicory.wasm.types.ValueType;
 var func = new HostFunction(
     "console",
     "log",
-    (Instance instance, Value... args) -> { // decompiled is: console_log(13, 0);
-        var len = args[0].asInt();
-        var offset = args[1].asInt();
+    (Instance instance, long... args) -> { // decompiled is: console_log(13, 0);
+        var len = (int) args[0];
+        var offset = (int) args[1];
         var message = instance.memory().readString(offset, len);
         println(message);
         return null;

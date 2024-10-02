@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.types.Value;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +34,7 @@ public class InterruptionTest {
                                                 .getResourceAsStream("compiled/power.c.wasm")))
                         .build();
         var function = instance.export("run");
-        assertInterruption(() -> function.apply(Value.i32(100)));
+        assertInterruption(() -> function.apply(100));
     }
 
     private static void assertInterruption(Runnable function) throws InterruptedException {

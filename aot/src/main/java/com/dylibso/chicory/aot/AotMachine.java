@@ -3,24 +3,24 @@ package com.dylibso.chicory.aot;
 import static com.dylibso.chicory.aot.AotMethods.CHECK_INTERRUPTION;
 import static com.dylibso.chicory.aot.AotMethods.INSTANCE_CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.aot.AotMethods.THROW_TRAP_EXCEPTION;
-import static com.dylibso.chicory.aot.AotUtil.boxer;
-import static com.dylibso.chicory.aot.AotUtil.boxerHandle;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
 import static com.dylibso.chicory.aot.AotUtil.defaultValue;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
+import static com.dylibso.chicory.aot.AotUtil.emitJvmToLong;
+import static com.dylibso.chicory.aot.AotUtil.emitLongToJvm;
 import static com.dylibso.chicory.aot.AotUtil.emitPop;
 import static com.dylibso.chicory.aot.AotUtil.jvmReturnType;
+import static com.dylibso.chicory.aot.AotUtil.jvmToLongHandle;
 import static com.dylibso.chicory.aot.AotUtil.jvmTypes;
 import static com.dylibso.chicory.aot.AotUtil.loadTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.localType;
+import static com.dylibso.chicory.aot.AotUtil.longToJvmHandle;
 import static com.dylibso.chicory.aot.AotUtil.methodNameFor;
 import static com.dylibso.chicory.aot.AotUtil.methodTypeFor;
 import static com.dylibso.chicory.aot.AotUtil.slotCount;
 import static com.dylibso.chicory.aot.AotUtil.storeTypeOpcode;
-import static com.dylibso.chicory.aot.AotUtil.unboxer;
-import static com.dylibso.chicory.aot.AotUtil.unboxerHandle;
 import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
 import static java.lang.invoke.MethodHandles.filterArguments;
 import static java.lang.invoke.MethodHandles.filterReturnValue;
@@ -52,7 +52,6 @@ import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.GlobalImport;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
@@ -354,9 +353,9 @@ public final class AotMachine implements Machine {
     }
 
     @Override
-    public Value[] call(int funcId, Value[] args) throws ChicoryException {
+    public long[] call(int funcId, long[] args) throws ChicoryException {
         try {
-            return (Value[]) compiledFunctions[funcId].invokeExact(args);
+            return (long[]) compiledFunctions[funcId].invokeExact(args);
         } catch (ChicoryException e) {
             // propagate ChicoryExceptions
             throw e;
@@ -528,19 +527,19 @@ public final class AotMachine implements Machine {
         var argTypes = type.params();
         var argHandlers = new MethodHandle[type.params().size()];
         for (int i = 0; i < argHandlers.length; i++) {
-            argHandlers[i] = unboxerHandle(argTypes.get(i));
+            argHandlers[i] = longToJvmHandle(argTypes.get(i));
         }
         MethodHandle result = filterArguments(handle, 0, argHandlers);
-        result = result.asSpreader(Value[].class, argTypes.size());
+        result = result.asSpreader(long[].class, argTypes.size());
 
         if (type.returns().isEmpty()) {
-            return result.asType(result.type().changeReturnType(Value[].class));
+            return result.asType(result.type().changeReturnType(long[].class));
         }
         if (type.returns().size() > 1) {
             return result;
         }
-        result = filterReturnValue(result, boxerHandle(type.returns().get(0)));
-        return filterReturnValue(result, ValueWrapper.HANDLE);
+        result = filterReturnValue(result, jvmToLongHandle(type.returns().get(0)));
+        return filterReturnValue(result, LongArrayWrapper.HANDLE);
     }
 
     private static void emitConstructor(ClassVisitor writer) {
@@ -592,16 +591,16 @@ public final class AotMachine implements Machine {
 
     private static void emitBoxArguments(MethodVisitor asm, List<ValueType> types) {
         int slot = 0;
-        // box the arguments into Value[]
+        // box the arguments into long[]
         asm.visitLdcInsn(types.size());
-        asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(Value.class));
+        asm.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_LONG); // long
         for (int i = 0; i < types.size(); i++) {
             asm.visitInsn(Opcodes.DUP);
             asm.visitLdcInsn(i);
             ValueType valueType = types.get(i);
             asm.visitVarInsn(loadTypeOpcode(valueType), slot);
-            emitInvokeStatic(asm, boxer(valueType));
-            asm.visitInsn(Opcodes.AASTORE);
+            emitJvmToLong(asm, valueType);
+            asm.visitInsn(Opcodes.LASTORE);
             slot += slotCount(valueType);
         }
     }
@@ -610,13 +609,13 @@ public final class AotMachine implements Machine {
         Class<?> returnType = jvmReturnType(type);
         if (returnType == void.class) {
             asm.visitInsn(Opcodes.RETURN);
-        } else if (returnType == Value[].class) {
+        } else if (returnType == long[].class) {
             asm.visitInsn(Opcodes.ARETURN);
         } else {
-            // unbox the result from Value[0]
+            // unbox the result from long[0]
             asm.visitLdcInsn(0);
-            asm.visitInsn(Opcodes.AALOAD);
-            emitInvokeVirtual(asm, unboxer(type.returns().get(0)));
+            asm.visitInsn(Opcodes.LALOAD);
+            emitLongToJvm(asm, type.returns().get(0));
             asm.visitInsn(returnTypeOpcode(type));
         }
     }
@@ -879,7 +878,7 @@ public final class AotMachine implements Machine {
     }
 
     private static MethodType valueMethodType(List<ValueType> types) {
-        return methodType(Value[].class, jvmTypes(types));
+        return methodType(long[].class, jvmTypes(types));
     }
 
     private static String valueMethodName(List<ValueType> types) {
@@ -891,7 +890,7 @@ public final class AotMachine implements Machine {
 
     private static int returnTypeOpcode(FunctionType type) {
         Class<?> returnType = jvmReturnType(type);
-        if (returnType == Value[].class) {
+        if (returnType == long[].class) {
             return Opcodes.ARETURN;
         }
         if (returnType == int.class) {

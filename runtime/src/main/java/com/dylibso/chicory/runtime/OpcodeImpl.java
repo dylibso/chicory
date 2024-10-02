@@ -7,7 +7,6 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValu
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveElement;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 
 /**
@@ -796,7 +795,7 @@ public final class OpcodeImpl {
 
     // ========= Tables =========
 
-    public static Value TABLE_GET(Instance instance, int tableIndex, int index) {
+    public static int TABLE_GET(Instance instance, int tableIndex, int index) {
         TableInstance table = instance.table(tableIndex);
         if (index < 0 || index >= table.limits().max() || index >= table.size()) {
             throw new WASMRuntimeException("out of bounds table access");
@@ -831,11 +830,11 @@ public final class OpcodeImpl {
             if (d <= s) {
                 var val = src.ref(s++);
                 var inst = src.instance(d);
-                dest.setRef(d++, val.asFuncRef(), inst);
+                dest.setRef(d++, (int) val, inst);
             } else {
                 var val = src.ref(s + i);
                 var inst = src.instance(d + i);
-                dest.setRef(d + i, val.asFuncRef(), inst);
+                dest.setRef(d + i, (int) val, inst);
             }
         }
     }
@@ -866,14 +865,15 @@ public final class OpcodeImpl {
         for (int i = offset; i < end; i++) {
             var elem = instance.element(elementidx);
             var val = computeConstantValue(instance, elem.initializers().get(elemidx++));
+            var rawValue = (int) val.raw();
             if (table.elementType() == ValueType.FuncRef) {
-                if (val.asFuncRef() > instance.functionCount()) {
+                if (rawValue > instance.functionCount()) {
                     throw new WASMRuntimeException("out of bounds table access");
                 }
-                table.setRef(i, val.asFuncRef(), instance);
+                table.setRef(i, rawValue, instance);
             } else {
                 assert table.elementType() == ValueType.ExternRef;
-                table.setRef(i, val.asExtRef(), instance);
+                table.setRef(i, rawValue, instance);
             }
         }
     }

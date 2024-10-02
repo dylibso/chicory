@@ -9,7 +9,6 @@ import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,36 +26,36 @@ public class ModuleTest {
     public void shouldWorkFactorial() {
         var instance = Instance.builder(loadModule("compiled/iterfact.wat.wasm")).build();
         var iterFact = instance.export("iterFact");
-        var result = iterFact.apply(Value.i32(5))[0];
-        assertEquals(120, result.asInt());
+        var result = iterFact.apply(5L)[0];
+        assertEquals(120L, result);
     }
 
     @Test
     public void shouldRunABasicAdd() {
         var instance = Instance.builder(loadModule("compiled/add.wat.wasm")).build();
         var add = instance.export("add");
-        var result = add.apply(Value.i32(5), Value.i32(6))[0];
-        assertEquals(11, result.asInt());
+        var result = add.apply(5L, 6L)[0];
+        assertEquals(11L, result);
     }
 
     @Test
     public void shouldSupportBrTable() {
         var instance = Instance.builder(loadModule("compiled/br_table.wat.wasm")).build();
         var switchLike = instance.export("switch_like");
-        var result = switchLike.apply(Value.i32(0))[0];
-        assertEquals(102, result.asInt());
-        result = switchLike.apply(Value.i32(1))[0];
-        assertEquals(101, result.asInt());
-        result = switchLike.apply(Value.i32(2))[0];
-        assertEquals(100, result.asInt());
-        result = switchLike.apply(Value.i32(-1))[0];
-        assertEquals(103, result.asInt());
-        result = switchLike.apply(Value.i32(3))[0];
-        assertEquals(103, result.asInt());
-        result = switchLike.apply(Value.i32(4))[0];
-        assertEquals(103, result.asInt());
-        result = switchLike.apply(Value.i32(100))[0];
-        assertEquals(103, result.asInt());
+        var result = switchLike.apply(0L)[0];
+        assertEquals(102L, result);
+        result = switchLike.apply(1)[0];
+        assertEquals(101L, result);
+        result = switchLike.apply(2)[0];
+        assertEquals(100L, result);
+        result = switchLike.apply(-1)[0];
+        assertEquals(103L, result);
+        result = switchLike.apply(3)[0];
+        assertEquals(103L, result);
+        result = switchLike.apply(4)[0];
+        assertEquals(103L, result);
+        result = switchLike.apply(100)[0];
+        assertEquals(103L, result);
     }
 
     @Test
@@ -64,15 +63,15 @@ public class ModuleTest {
         var module = Instance.builder(loadModule("compiled/branching.wat.wasm")).build();
         var foo = module.export("foo");
 
-        var result = foo.apply(Value.i32(0))[0];
-        assertEquals(42, result.asInt());
+        var result = foo.apply(0)[0];
+        assertEquals(42L, result);
 
-        result = foo.apply(Value.i32(1))[0];
-        assertEquals(99, result.asInt());
+        result = foo.apply(1)[0];
+        assertEquals(99L, result);
 
         for (var i = 2; i < 100; i++) {
-            result = foo.apply(Value.i32(i))[0];
-            assertEquals(7, result.asInt());
+            result = foo.apply(i)[0];
+            assertEquals(7L, result);
         }
     }
 
@@ -85,11 +84,10 @@ public class ModuleTest {
                 new HostFunction(
                         "console",
                         "log",
-                        (Instance instance,
-                                Value... args) -> { // decompiled is: console_log(13, 0);
+                        (Instance instance, long... args) -> { // decompiled is: console_log(13, 0);
                             Memory memory = instance.memory();
-                            var len = args[0].asInt();
-                            var offset = args[1].asInt();
+                            int len = (int) args[0];
+                            int offset = (int) args[1];
                             var message = memory.readString(offset, len);
 
                             if (expected.equals(message)) {
@@ -118,9 +116,9 @@ public class ModuleTest {
 
         // don't make this too big we will overflow 32 bits
         for (var i = 0; i < 10; i++) {
-            var result = iterFact.apply(Value.i32(i))[0];
+            var result = iterFact.apply(i)[0];
             // test against an oracle Java implementation
-            assertEquals(factorial(i), result.asInt());
+            assertEquals(factorial(i), result);
         }
     }
 
@@ -140,10 +138,10 @@ public class ModuleTest {
                 new HostFunction(
                         "env",
                         "gotit",
-                        (Instance instance, Value... args) -> {
+                        (Instance instance, long... args) -> {
                             var val = args[0];
 
-                            if (val.asInt() == 42) {
+                            if (val == 42L) {
                                 count.incrementAndGet();
                             }
 
@@ -169,8 +167,8 @@ public class ModuleTest {
     public void shouldSupportGlobals() {
         var instance = Instance.builder(loadModule("compiled/globals.wat.wasm")).build();
         var doit = instance.export("doit");
-        var result = doit.apply(Value.i32(32))[0];
-        assertEquals(42, result.asInt());
+        var result = doit.apply(32)[0];
+        assertEquals(42L, result);
     }
 
     @Test
@@ -182,11 +180,11 @@ public class ModuleTest {
         var memory = instance.memory();
         var message = "Hello, World!";
         var len = message.getBytes(UTF_8).length;
-        var ptr = alloc.apply(Value.i32(len))[0].asInt();
+        int ptr = (int) alloc.apply(len)[0];
         memory.writeString(ptr, message);
-        var result = countVowels.apply(Value.i32(ptr), Value.i32(len));
-        dealloc.apply(Value.i32(ptr), Value.i32(len));
-        assertEquals(3, result[0].asInt());
+        var result = countVowels.apply(ptr, len);
+        dealloc.apply(ptr, len);
+        assertEquals(3L, result[0]);
     }
 
     @Test
@@ -195,7 +193,7 @@ public class ModuleTest {
         var instance = Instance.builder(loadModule("compiled/basic.c.wasm")).build();
         var run = instance.export("run");
         var result = run.apply()[0];
-        assertEquals(42, result.asInt());
+        assertEquals(42L, result);
     }
 
     @Test
@@ -204,7 +202,7 @@ public class ModuleTest {
         var instance = Instance.builder(loadModule("compiled/complex.c.wasm")).build();
         var run = instance.export("run");
         var result = run.apply();
-        assertEquals(-679, result[0].asInt());
+        assertEquals(-679, (int) result[0]);
     }
 
     @Test
@@ -213,34 +211,34 @@ public class ModuleTest {
         var instance = Instance.builder(loadModule("compiled/memory.c.wasm")).build();
         var run = instance.export("run");
         var result = run.apply();
-        assertEquals(11, result[0].asInt());
+        assertEquals(11L, result[0]);
     }
 
     @Test
     public void shouldWorkWithMemoryOps() {
         var instance = Instance.builder(loadModule("compiled/memory.wat.wasm")).build();
         var run = instance.export("run32");
-        var results = run.apply(Value.i32(42));
+        var results = run.apply(42);
         var result = results[0];
-        assertEquals(42, result.asInt());
+        assertEquals(42L, result);
 
-        result = run.apply(Value.i32(Integer.MAX_VALUE))[0];
-        assertEquals(Integer.MAX_VALUE, result.asInt());
+        result = run.apply(Integer.MAX_VALUE)[0];
+        assertEquals(Integer.MAX_VALUE, (int) result);
 
-        result = run.apply(Value.i32(Integer.MIN_VALUE))[0];
-        assertEquals(Integer.MIN_VALUE, result.asInt());
-
-        run = instance.export("run64");
-        result = run.apply(Value.i64(42))[0];
-        assertEquals(42L, result.asLong());
+        result = run.apply(Integer.MIN_VALUE)[0];
+        assertEquals(Integer.MIN_VALUE, (int) result);
 
         run = instance.export("run64");
-        result = run.apply(Value.i64(Long.MIN_VALUE))[0];
-        assertEquals(Long.MIN_VALUE, result.asLong());
+        result = run.apply(42L)[0];
+        assertEquals(42L, result);
 
         run = instance.export("run64");
-        result = run.apply(Value.i64(Long.MAX_VALUE))[0];
-        assertEquals(Long.MAX_VALUE, result.asLong());
+        result = run.apply(Long.MIN_VALUE)[0];
+        assertEquals(Long.MIN_VALUE, result);
+
+        run = instance.export("run64");
+        result = run.apply(Long.MAX_VALUE)[0];
+        assertEquals(Long.MAX_VALUE, result);
     }
 
     @Test
@@ -250,7 +248,7 @@ public class ModuleTest {
         var instance = Instance.builder(loadModule("compiled/kitchensink.wat.wasm")).build();
 
         var run = instance.export("run");
-        assertEquals(6, run.apply(Value.i32(100))[0].asInt());
+        assertEquals(6L, run.apply(100)[0]);
     }
 
     @Test
@@ -258,7 +256,7 @@ public class ModuleTest {
         // check with: wasmtime memories.wat.wasm --invoke run 100
         var instance = Instance.builder(loadModule("compiled/memories.wat.wasm")).build();
         var run = instance.export("run");
-        assertEquals(-25438, run.apply(Value.i32(100))[0].asInt());
+        assertEquals(-25438, (int) run.apply(100)[0]);
     }
 
     @Test
@@ -267,10 +265,10 @@ public class ModuleTest {
                 new HostFunction(
                         "env",
                         "cbrt",
-                        (Instance instance, Value... args) -> {
-                            var x = args[0].asInt();
-                            var cbrt = Math.cbrt(x);
-                            return new Value[] {Value.fromDouble(cbrt)};
+                        (Instance instance, long... args) -> {
+                            var x = args[0];
+                            var cbrt = Math.cbrt((double) x);
+                            return new long[] {Double.doubleToRawLongBits(cbrt)};
                         },
                         List.of(ValueType.I32),
                         List.of(ValueType.F64));
@@ -279,9 +277,9 @@ public class ModuleTest {
                 new HostFunction(
                         "env",
                         "log",
-                        (Instance instance, Value... args) -> {
-                            var logLevel = args[0].asInt();
-                            var value = (int) args[1].asDouble();
+                        (Instance instance, long... args) -> {
+                            var logLevel = args[0];
+                            var value = (int) Double.longBitsToDouble(args[1]);
                             logResult.set(logLevel + ": " + value);
                             return null;
                         },
@@ -310,7 +308,7 @@ public class ModuleTest {
         var instance = Instance.builder(loadModule("compiled/issue294_brif.wat.wasm")).build();
 
         var main = instance.export("main");
-        assertEquals(5, main.apply(Value.i32(5))[0].asInt());
+        assertEquals(5L, main.apply(5)[0]);
     }
 
     @Test
@@ -318,7 +316,7 @@ public class ModuleTest {
         var instance = Instance.builder(loadModule("compiled/issue294_br.wat.wasm")).build();
 
         var main = instance.export("main");
-        assertEquals(4, main.apply()[0].asInt());
+        assertEquals(4L, main.apply()[0]);
     }
 
     @Test
@@ -326,7 +324,7 @@ public class ModuleTest {
         var instance = Instance.builder(loadModule("compiled/issue294_brtable.wat.wasm")).build();
 
         var main = instance.export("main");
-        assertEquals(4, main.apply()[0].asInt());
+        assertEquals(4L, main.apply()[0]);
     }
 
     @Test
@@ -339,7 +337,7 @@ public class ModuleTest {
                         .build();
         var iterFact = instance.export("iterFact");
 
-        iterFact.apply(Value.i32(100));
+        iterFact.apply(100L);
 
         // current result is: 1109
         assertTrue(count.get() > 0);
@@ -357,8 +355,8 @@ public class ModuleTest {
         var facSsa = instance.export("fac-ssa");
 
         var number = 100;
-        var result = facSsa.apply(Value.i32(number));
-        assertEquals(factorial(number), result[0].asInt());
+        var result = facSsa.apply(number);
+        assertEquals(factorial(number), result[0]);
 
         // IIUC: 3 values returning from last CALL + 1 result
         assertTrue(finalStackSize.get() == 4L);

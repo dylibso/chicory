@@ -3,7 +3,6 @@ package com.dylibso.chicory.aot;
 import static java.lang.invoke.MethodHandles.lookup;
 
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.wasm.types.Value;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 
@@ -15,7 +14,7 @@ final class HostFunctionInvoker {
             HANDLE =
                     lookup().unreflect(
                                     HostFunctionInvoker.class.getMethod(
-                                            "invoke", Instance.class, int.class, Value[].class));
+                                            "invoke", Instance.class, int.class, long[].class));
         } catch (NoSuchMethodException | IllegalAccessException e) {
             throw new LinkageError(e.getMessage(), e);
         }
@@ -27,7 +26,7 @@ final class HostFunctionInvoker {
         return MethodHandles.insertArguments(HANDLE, 0, instance, funcId);
     }
 
-    public static Value[] invoke(Instance instance, int funcId, Value[] args) {
+    public static long[] invoke(Instance instance, int funcId, long[] args) {
         return instance.callHostFunction(funcId, args);
     }
 }

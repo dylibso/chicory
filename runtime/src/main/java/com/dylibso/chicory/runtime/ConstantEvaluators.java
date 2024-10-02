@@ -71,7 +71,8 @@ public final class ConstantEvaluators {
                                         "constant expression required, initializer expression"
                                                 + " cannot reference a mutable global");
                             }
-                            return instance.readGlobal(idx);
+                            var t = instance.imports().global(idx).instance().getType();
+                            return new Value(t, instance.readGlobal(idx));
                         } else {
                             throw new InvalidException(
                                     "unknown global "

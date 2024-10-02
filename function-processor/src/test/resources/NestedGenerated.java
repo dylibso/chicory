@@ -11,26 +11,29 @@ import javax.annotation.processing.Generated;
 @Generated("com.dylibso.chicory.function.processor.FunctionProcessor")
 public final class Nested_ModuleFactory {
 
-    private Nested_ModuleFactory() {}
+    private Nested_ModuleFactory() {
+    }
 
     public static HostFunction[] toHostFunctions(Nested functions) {
-        return new HostFunction[] {
-            new HostFunction(
-                    "nested", "print", (Instance instance, Value... args) -> {
-                        functions.print(instance.memory(), args[0].asInt(), args[1].asInt());
-                        return null;
-                    },
-                    List.of(ValueType.I32, ValueType.I32),
-                    List.of()
-            ),
-            new HostFunction(
-                    "nested", "exit", (Instance instance, Value... args) -> {
-                        functions.exit();
-                        return null;
-                    },
-                    List.of(),
-                    List.of()
-            ),
-        };
+        return new HostFunction[] { //
+                new HostFunction("nested",
+                        "print",
+                        (Instance instance, long... args) -> {
+                            functions.print(instance.memory(),
+                                    (int) args[0],
+                                    (int) args[1]);
+                            return null;
+                        },
+                        List.of(ValueType.I32,
+                                ValueType.I32),
+                        List.of()), //
+                new HostFunction("nested",
+                        "exit",
+                        (Instance instance, long... args) -> {
+                            functions.exit();
+                            return null;
+                        },
+                        List.of(),
+                        List.of()) };
     }
 }

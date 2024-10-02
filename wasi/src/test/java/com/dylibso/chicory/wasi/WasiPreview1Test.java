@@ -14,7 +14,6 @@ import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
-import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
@@ -108,18 +107,17 @@ public class WasiPreview1Test {
         var ptr =
                 quickjs.export("canonical_abi_realloc")
                         .apply(
-                                Value.i32(0), // original_ptr
-                                Value.i32(0), // original_size
-                                Value.i32(1), // alignment
-                                Value.i32(jsCode.length) // new size
+                                0, // original_ptr
+                                0, // original_size
+                                1, // alignment
+                                jsCode.length // new size
                                 )[0];
 
-        quickjs.memory().write(ptr.asInt(), jsCode);
-        var aggregatedCodePtr =
-                quickjs.export("compile_src").apply(ptr, Value.i64(jsCode.length))[0];
+        quickjs.memory().write((int) ptr, jsCode);
+        var aggregatedCodePtr = quickjs.export("compile_src").apply(ptr, jsCode.length)[0];
 
-        var codePtr = quickjs.memory().readI32(aggregatedCodePtr.asInt()); // 32 bit
-        var codeLength = quickjs.memory().readU32(aggregatedCodePtr.asInt() + 4);
+        var codePtr = quickjs.memory().readI32((int) aggregatedCodePtr); // 32 bit
+        var codeLength = quickjs.memory().readU32((int) aggregatedCodePtr + 4);
 
         quickjs.export("eval_bytecode").apply(codePtr, codeLength);
 
@@ -166,9 +164,9 @@ public class WasiPreview1Test {
         var module = loadModule("compiled/sum.go.tiny.wasm");
         var instance = Instance.builder(module).withExternalValues(imports).build();
         var sum = instance.export("add");
-        var result = sum.apply(Value.i32(20), Value.i32(22))[0];
+        var result = sum.apply(20, 22)[0];
 
-        assertEquals(result.asInt(), 42);
+        assertEquals(result, 42);
     }
 
     @Test

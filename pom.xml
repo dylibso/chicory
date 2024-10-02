@@ -567,6 +567,7 @@
           <ignoredUnusedDeclaredDependencies>
             <dependency>com.dylibso.chicory:wasm-corpus</dependency>
             <dependency>org.junit.jupiter:junit-jupiter-engine</dependency>
+            <dependency>org.ow2.asm:asm-util</dependency>
           </ignoredUnusedDeclaredDependencies>
         </configuration>
         <executions>
