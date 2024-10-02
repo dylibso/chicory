@@ -319,6 +319,16 @@ final class AotUtil {
                 false);
     }
 
+    public static void emitInvokeFunction(
+            MethodVisitor asm, String internalClassName, int funcId, FunctionType functionType) {
+        asm.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                internalClassName,
+                methodNameFor(funcId),
+                methodTypeFor(functionType).toMethodDescriptorString(),
+                false);
+    }
+
     public static String methodNameFor(int funcId) {
         return "func_" + funcId;
     }

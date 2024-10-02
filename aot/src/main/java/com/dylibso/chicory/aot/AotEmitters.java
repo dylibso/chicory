@@ -34,6 +34,7 @@ import static com.dylibso.chicory.aot.AotMethods.WRITE_GLOBAL;
 import static com.dylibso.chicory.aot.AotUtil.StackSize;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.aot.AotUtil.callIndirectMethodType;
+import static com.dylibso.chicory.aot.AotUtil.emitInvokeFunction;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
 import static com.dylibso.chicory.aot.AotUtil.emitJvmToLong;
@@ -42,8 +43,6 @@ import static com.dylibso.chicory.aot.AotUtil.emitPop;
 import static com.dylibso.chicory.aot.AotUtil.jvmType;
 import static com.dylibso.chicory.aot.AotUtil.loadTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.localType;
-import static com.dylibso.chicory.aot.AotUtil.methodNameFor;
-import static com.dylibso.chicory.aot.AotUtil.methodTypeFor;
 import static com.dylibso.chicory.aot.AotUtil.stackSize;
 import static com.dylibso.chicory.aot.AotUtil.storeTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.validateArgumentType;
@@ -54,7 +53,6 @@ import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.ValueType;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
@@ -128,18 +126,12 @@ final class AotEmitters {
     public static void CALL(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         int funcId = (int) ins.operand(0);
         FunctionType functionType = ctx.functionTypes().get(funcId);
-        MethodType methodType = methodTypeFor(functionType);
 
         emitInvokeStatic(asm, CHECK_INTERRUPTION);
 
         asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
-        asm.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
-                ctx.internalClassName(),
-                methodNameFor(funcId),
-                methodType.toMethodDescriptorString(),
-                false);
+        emitInvokeFunction(asm, ctx.internalClassName(), funcId, functionType);
 
         if (functionType.returns().size() > 1) {
             emitUnboxResult(asm, ctx, functionType.returns());
@@ -153,8 +145,6 @@ final class AotEmitters {
         int tableIdx = (int) ins.operand(1);
         FunctionType functionType = ctx.types()[typeId];
 
-        MethodType methodType = callIndirectMethodType(functionType);
-
         asm.visitLdcInsn(tableIdx);
         asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         // stack: arguments, funcTableIdx, tableIdx, instance
@@ -163,7 +153,7 @@ final class AotEmitters {
                 Opcodes.INVOKESTATIC,
                 ctx.internalClassName(),
                 callIndirectMethodName(typeId),
-                methodType.toMethodDescriptorString(),
+                callIndirectMethodType(functionType).toMethodDescriptorString(),
                 false);
 
         if (functionType.returns().size() > 1) {
