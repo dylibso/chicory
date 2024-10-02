@@ -514,8 +514,6 @@ public final class AotMachine implements Machine {
             try {
                 ClassReader reader = new ClassReader(classBytes);
                 CheckClassAdapter.verify(reader, true, new PrintWriter(System.out, false, UTF_8));
-            } catch (NoClassDefFoundError ignored) {
-                // the ASM verifier is an optional dependency
             } catch (Throwable t) {
                 e.addSuppressed(t);
             }
