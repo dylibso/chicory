@@ -49,14 +49,14 @@ public final class FOO {
 
   // access flags 0x9
   public static call_indirect_0(IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.checkInterruption ()V
     ALOAD 3
     ILOAD 1
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
     ASTORE 4
     ALOAD 4
     ILOAD 0
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.tableRef (Lcom/dylibso/chicory/runtime/TableInstance;I)I
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.tableRef (Lcom/dylibso/chicory/runtime/TableInstance;I)I
     ISTORE 5
     ALOAD 4
     ILOAD 0
@@ -81,7 +81,7 @@ public final class FOO {
     GOTO L4
    L3
    FRAME FULL [I I com/dylibso/chicory/runtime/Memory com/dylibso/chicory/runtime/Instance com/dylibso/chicory/runtime/TableInstance I com/dylibso/chicory/runtime/Instance] [com/dylibso/chicory/runtime/Memory com/dylibso/chicory/runtime/Instance]
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
     ATHROW
    L4
    FRAME SAME
@@ -93,7 +93,7 @@ public final class FOO {
     ICONST_0
     ILOAD 5
     ALOAD 6
-    INVOKESTATIC com/dylibso/chicory/aot/AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
+    INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
     RETURN
     MAXSTACK = 4
     MAXLOCALS = 7
