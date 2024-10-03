@@ -72,7 +72,10 @@ public final class Wat2Wasm {
                 try (var wasi =
                         WasiPreview1.builder().withLogger(logger).withOpts(wasiOpts).build()) {
                     ExternalValues imports = new ExternalValues(wasi.toHostFunctions());
-                    Instance.builder(MODULE).withExternalValues(imports).build();
+                    Instance.builder(MODULE)
+                            .withMachineFactory(Wat2WasmModuleMachineFactory::create)
+                            .withExternalValues(imports)
+                            .build();
                 }
 
                 return stdoutStream.toByteArray();

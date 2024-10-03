@@ -4,6 +4,7 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantInst
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.ExternalType.FUNCTION;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+import static java.util.Objects.requireNonNullElseGet;
 
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
@@ -686,7 +687,7 @@ public class Instance {
             var mappedHostImports =
                     mapHostImports(
                             imports,
-                            (externalValues == null) ? new ExternalValues() : externalValues,
+                            requireNonNullElseGet(externalValues, ExternalValues::new),
                             module.memorySection().map(MemorySection::memoryCount).orElse(0));
 
             if (module.startSection().isPresent()) {
@@ -717,7 +718,7 @@ public class Instance {
                     memory = new Memory(memories.getMemory(0).memoryLimits());
                 }
             } else {
-                if (mappedHostImports.memoryCount() > 0) {
+                if (mappedHostImports != null && mappedHostImports.memoryCount() > 0) {
                     if (mappedHostImports.memory(0) == null
                             || mappedHostImports.memory(0).memory() == null) {
                         throw new InvalidException(

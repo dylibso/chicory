@@ -50,8 +50,7 @@ public final class Wast2Json {
     }
 
     public void process() {
-        try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
-                ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
+        try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream()) {
             try (FileInputStream fis = new FileInputStream(input);
                     FileSystem fs =
                             Jimfs.newFileSystem(
@@ -88,7 +87,11 @@ public final class Wast2Json {
                                 .withOpts(wasiOpts.build())
                                 .build()) {
                     ExternalValues imports = new ExternalValues(wasi.toHostFunctions());
-                    Instance.builder(MODULE).withExternalValues(imports).build();
+
+                    Instance.builder(MODULE)
+                            .withExternalValues(imports)
+                            .withMachineFactory(Wast2JsonModuleMachineFactory::create)
+                            .build();
                 }
 
                 createDirectories(output.toPath().getParent());
