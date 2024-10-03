@@ -35,9 +35,8 @@ public class Wat2WasmTest {
                         .build();
 
         var addFunction = moduleInstance.export("add");
-        var results =
-                addFunction.apply(Integer.parseUnsignedInt("1"), Integer.parseUnsignedInt("41"));
-        assertEquals(Integer.parseUnsignedInt("42"), results[0]);
+        var results = addFunction.apply(1, 41);
+        assertEquals(42L, results[0]);
     }
 
     @Test
