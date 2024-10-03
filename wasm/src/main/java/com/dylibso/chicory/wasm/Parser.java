@@ -1,9 +1,14 @@
 package com.dylibso.chicory.wasm;
 
-import static com.dylibso.chicory.wasm.Encoding.MAX_VARINT_LEN_32;
-import static com.dylibso.chicory.wasm.Encoding.readSigned32Leb128;
-import static com.dylibso.chicory.wasm.Encoding.readSigned64Leb128;
-import static com.dylibso.chicory.wasm.Encoding.readUnsignedLeb128;
+import static com.dylibso.chicory.wasm.Encoding.readByte;
+import static com.dylibso.chicory.wasm.Encoding.readBytes;
+import static com.dylibso.chicory.wasm.Encoding.readFloat32;
+import static com.dylibso.chicory.wasm.Encoding.readFloat64;
+import static com.dylibso.chicory.wasm.Encoding.readInt;
+import static com.dylibso.chicory.wasm.Encoding.readName;
+import static com.dylibso.chicory.wasm.Encoding.readVarSInt32;
+import static com.dylibso.chicory.wasm.Encoding.readVarSInt64;
+import static com.dylibso.chicory.wasm.Encoding.readVarUInt32;
 import static com.dylibso.chicory.wasm.WasmLimits.MAX_FUNCTION_LOCALS;
 import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
 import static java.util.Objects.requireNonNull;
@@ -56,10 +61,8 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
@@ -1014,125 +1017,5 @@ public final class Parser {
             expr.add(i);
         }
         return expr.toArray(new Instruction[0]);
-    }
-
-    private static int readInt(ByteBuffer buffer) {
-        if (buffer.remaining() < 4) {
-            throw new MalformedException("length out of bounds");
-        }
-        return buffer.getInt();
-    }
-
-    private static byte readByte(ByteBuffer buffer) {
-        if (!buffer.hasRemaining()) {
-            throw new MalformedException("length out of bounds");
-        }
-        return buffer.get();
-    }
-
-    private static void readBytes(ByteBuffer buffer, byte[] dest) {
-        if (buffer.remaining() < dest.length) {
-            throw new MalformedException("length out of bounds");
-        }
-        buffer.get(dest);
-    }
-
-    // https://webassembly.github.io/spec/core/syntax/values.html#integers
-    public static final long MIN_SIGNED_INT = Integer.MIN_VALUE; // -2^(32-1)
-    public static final long MAX_SIGNED_INT = Integer.MAX_VALUE; // 2^(32-1)-1
-    public static final long MAX_UNSIGNED_INT = 0xFFFFFFFFL; // 2^(32)-1
-
-    /**
-     * Read an unsigned I32 from the buffer. We can't fit an unsigned 32bit int
-     * into a java int, so we must use a long.
-     * See <a href="https://www.w3.org/TR/wasm-core-1/#integers">2.2.2. Integers</a> of the WebAssembly Core Specification.
-     *
-     * @param buffer the byte buffer
-     * @return the resulting long
-     */
-    public static long readVarUInt32(ByteBuffer buffer) {
-        var value = readUnsignedLeb128(buffer, MAX_VARINT_LEN_32);
-        if (value < 0 || value > MAX_UNSIGNED_INT) {
-            throw new MalformedException("integer too large");
-        }
-        return value;
-    }
-
-    /**
-     * Read a signed I32 from the buffer. We can't fit an unsigned 32bit int into a java int, so we must use a long to use the same type as unsigned.
-     * See <a href="https://www.w3.org/TR/wasm-core-1/#integers">2.2.2. Integers</a> of the WebAssembly Core Specification.
-     *
-     * @param buffer the byte buffer
-     * @return the resulting long
-     */
-    public static long readVarSInt32(ByteBuffer buffer) {
-        var value = readSigned32Leb128(buffer);
-        if (value < MIN_SIGNED_INT || value > MAX_SIGNED_INT) {
-            throw new MalformedException("integer too large");
-        }
-        return value;
-    }
-
-    /**
-     * Read a signed I64 from the buffer which fits neatly into a long.
-     * See <a href="https://www.w3.org/TR/wasm-core-1/#integers">2.2.2. Integers</a> of the WebAssembly Core Specification.
-     *
-     * @param buffer the byte buffer
-     * @return the resulting long
-     */
-    public static long readVarSInt64(ByteBuffer buffer) {
-        return readSigned64Leb128(buffer);
-    }
-
-    /**
-     * Read a F64 from the buffer which fits neatly into a long.
-     * See <a href="https://www.w3.org/TR/wasm-core-1/#floating-point">2.2.3. Floating-Point</a> of the WebAssembly Core Specification.
-     *
-     * @param buffer the byte buffer
-     * @return the resulting long
-     */
-    public static long readFloat64(ByteBuffer buffer) {
-        return buffer.getLong();
-    }
-
-    /**
-     * Read a F32 from the buffer which fits neatly into a long.
-     * See <a href="https://www.w3.org/TR/wasm-core-1/#floating-point">2.2.3. Floating-Point</a> of the WebAssembly Core Specification.
-     *
-     * @param buffer the byte buffer
-     * @return the resulting long
-     */
-    public static long readFloat32(ByteBuffer buffer) {
-        return readInt(buffer);
-    }
-
-    /**
-     * Read a symbol name from the buffer as UTF-8 String.
-     * See <a href="https://www.w3.org/TR/wasm-core-1/#names%E2%91%A0">2.2.4. Names</a> of the WebAssembly Core Specification.
-     *
-     * @param buffer the byte buffer
-     * @return the resulting long
-     */
-    public static String readName(ByteBuffer buffer) {
-        return readName(buffer, true);
-    }
-
-    public static String readName(ByteBuffer buffer, boolean checkMalformed) {
-        var length = (int) readVarUInt32(buffer);
-        byte[] bytes = new byte[length];
-        try {
-            readBytes(buffer, bytes);
-        } catch (BufferUnderflowException e) {
-            throw new MalformedException("length out of bounds");
-        }
-        var name = new String(bytes, StandardCharsets.UTF_8);
-        if (checkMalformed && !isValidIdentifier(name)) {
-            throw new MalformedException("malformed UTF-8 encoding");
-        }
-        return name;
-    }
-
-    private static boolean isValidIdentifier(String string) {
-        return string.chars().allMatch(ch -> ch < 0x80 || Character.isUnicodeIdentifierPart(ch));
     }
 }

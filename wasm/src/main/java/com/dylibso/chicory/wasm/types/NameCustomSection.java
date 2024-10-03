@@ -1,8 +1,9 @@
 package com.dylibso.chicory.wasm.types;
 
+import static com.dylibso.chicory.wasm.Encoding.readName;
+import static com.dylibso.chicory.wasm.Encoding.readVarUInt32;
 import static java.util.Objects.requireNonNull;
 
-import com.dylibso.chicory.wasm.Parser;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -69,12 +70,12 @@ public final class NameCustomSection extends CustomSection {
         while (buf.hasRemaining()) {
             byte id = buf.get();
             // discard subsection size
-            ByteBuffer slice = slice(buf, (int) Parser.readVarUInt32(buf));
+            ByteBuffer slice = slice(buf, (int) readVarUInt32(buf));
             // todo: IDs 4 and 10 are reserved for the Host GC spec
             switch (id) {
                 case 0:
                     assert (moduleName == null);
-                    moduleName = Parser.readName(slice);
+                    moduleName = readName(slice);
                     break;
                 case 1:
                     oneLevelParse(slice, funcNames);
@@ -209,20 +210,19 @@ public final class NameCustomSection extends CustomSection {
     // parsing helpers
 
     private static void oneLevelParse(ByteBuffer slice, List<NameEntry> list) {
-        int cnt = (int) Parser.readVarUInt32(slice);
+        int cnt = (int) readVarUInt32(slice);
         for (int i = 0; i < cnt; i++) {
-            oneLevelStore(list, (int) Parser.readVarUInt32(slice), Parser.readName(slice));
+            oneLevelStore(list, (int) readVarUInt32(slice), readName(slice));
         }
     }
 
     private static void twoLevelParse(ByteBuffer slice, List<ListEntry<NameEntry>> list) {
-        int listCnt = (int) Parser.readVarUInt32(slice);
+        int listCnt = (int) readVarUInt32(slice);
         for (int i = 0; i < listCnt; i++) {
-            int groupIdx = (int) Parser.readVarUInt32(slice);
-            int cnt = (int) Parser.readVarUInt32(slice);
+            int groupIdx = (int) readVarUInt32(slice);
+            int cnt = (int) readVarUInt32(slice);
             for (int j = 0; j < cnt; j++) {
-                twoLevelStore(
-                        list, groupIdx, (int) Parser.readVarUInt32(slice), Parser.readName(slice));
+                twoLevelStore(list, groupIdx, (int) readVarUInt32(slice), readName(slice));
             }
         }
     }
