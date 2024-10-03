@@ -97,6 +97,25 @@ jobs:
         env:
           JBANG_REPO: "${{ github.workspace }}/repository"
 
+      # Test docs index
+      - name: jbang
+        uses: jbangdev/jbang-action@36d4a384d215d91c2c7e74014a486cedfe09d760 # tag=v0.119.0
+        with:
+          script: docs/docs/index.md
+        env:
+          JBANG_REPO: "${{ github.workspace }}/repository"
+      - name: compare results
+        run: diff -r ./readmes/index/expected ./readmes/index/current
+      # Test docs memory
+      - name: jbang
+        uses: jbangdev/jbang-action@36d4a384d215d91c2c7e74014a486cedfe09d760 # tag=v0.119.0
+        with:
+          script: docs/docs/usage/memory.md
+        env:
+          JBANG_REPO: "${{ github.workspace }}/repository"
+      - name: compare results
+        run: diff -r ./readmes/memory/expected ./readmes/memory/current
+
   test-results:
     name: Test Results
     runs-on: ubuntu-latest

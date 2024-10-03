@@ -21,7 +21,7 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Easy integration',
-    Svg: require('@site/static/img/easy-integration.svg').default,
+    Svg: require('@site/static/img/pure-java.svg').default,
     description: (
       <>
         Integrating Chicory in your project is smooth and only requires a few steps.
