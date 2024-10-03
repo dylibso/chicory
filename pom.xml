@@ -38,6 +38,7 @@
     <module>aot-tests</module>
     <module>bom</module>
     <module>cli</module>
+    <module>docs-lib</module>
     <module>function-annotations</module>
     <module>function-processor</module>
     <module>fuzz</module>

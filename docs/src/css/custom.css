@@ -6,26 +6,25 @@
 
 /* You can override the default Infima variables here. */
 :root {
-  --ifm-color-primary: #514154;
+  --ifm-color-primary: #4a7c99; /* Adjusted to a teal color */
   --ifm-color-primary-dark: #2a202b;
-  --ifm-color-primary-darker: #120d13;
+  --ifm-color-primary-darker: #1f2e3d; /* Darkened to contrast with the lighter colors */
   --ifm-color-primary-darkest: #000000;
-  --ifm-color-primary-light: #503a54;
-  --ifm-color-primary-lighter: #644869;
-  --ifm-color-primary-lightest: #916798;
+  --ifm-color-primary-light: #6ea5bd; /* A lighter tone for readability */
+  --ifm-color-primary-lighter: #88b2c7; /* A softer shade */
+  --ifm-color-primary-lightest: #9cc4d4; /* Very light for accents */
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
 }
 
-/* TODO: FIXME the dark view palette */
-/* For readability concerns, you should choose a lighter palette in dark mode. */
+/* Dark mode adjustments */
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
-  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+  --ifm-color-primary: #209683; /* Muted teal color */
+  --ifm-color-primary-dark: #1b7a6a; /* A bit darker but still within the same hue */
+  --ifm-color-primary-darker: #176f61; /* Darker tone for depth */
+  --ifm-color-primary-darkest: #13564e; /* Deepest tone for contrast */
+  --ifm-color-primary-light: #27a792; /* Softened light version */
+  --ifm-color-primary-lighter: #3cb7a2; /* Lighter for accents */
+  --ifm-color-primary-lightest: #57c6b3; /* Lightest, slightly muted */
+  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.2); /* Soft highlight */
 }

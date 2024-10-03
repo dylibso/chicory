@@ -21,3 +21,8 @@
   align-items: center;
   justify-content: center;
 }
+
+.underConstruction {
+  height: 30%;
+  max-height: 500px;
+}
