@@ -62,11 +62,7 @@ public class ApprovalTest {
                         .build();
         var compiled = ((AotMachine) instance.getMachine()).compiledClass();
 
-        ClassReader cr = new ClassReader(compiled);
-        var out = new ByteArrayOutputStream();
-        cr.accept(new TraceClassVisitor(new PrintWriter(out, false, UTF_8)), 0);
-
-        Approvals.verify(out);
+        verifyClass(compiled);
     }
 
     @Test
@@ -113,6 +109,10 @@ public class ApprovalTest {
                         .build();
         var compiled = ((AotMachine) instance.getMachine()).compiledClass();
 
+        verifyClass(compiled);
+    }
+
+    private static void verifyClass(byte[] compiled) {
         ClassReader cr = new ClassReader(compiled);
         var out = new ByteArrayOutputStream();
         cr.accept(new TraceClassVisitor(new PrintWriter(out, false, UTF_8)), 0);
