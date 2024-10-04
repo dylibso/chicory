@@ -1,24 +1,16 @@
-// class version 55.0 (55)
-// access flags 0x11
 public final class com/dylibso/chicory/$gen/CompiledModule {
 
-  // compiled from: wasm
-  // debug info: wasm
-
-  // access flags 0x2
   private <init>()V
     ALOAD 0
     INVOKESPECIAL java/lang/Object.<init> ()V
     RETURN
 
-  // access flags 0x9
   public static func_0(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.throwTrapException ()Ljava/lang/RuntimeException;
     ATHROW
    L0
     ATHROW
 
-  // access flags 0x9
   public static func_1(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.checkInterruption ()V
     ALOAD 0
@@ -26,7 +18,6 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_0 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     RETURN
 
-  // access flags 0x9
   public static func_2(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.checkInterruption ()V
     ALOAD 0
@@ -34,7 +25,6 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_1 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     RETURN
 
-  // access flags 0x9
   public static call_indirect_0(IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.checkInterruption ()V
     ALOAD 3

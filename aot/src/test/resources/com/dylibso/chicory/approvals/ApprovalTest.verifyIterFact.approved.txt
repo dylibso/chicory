@@ -1,17 +1,10 @@
-// class version 55.0 (55)
-// access flags 0x11
 public final class com/dylibso/chicory/$gen/CompiledModule {
 
-  // compiled from: wasm
-  // debug info: wasm
-
-  // access flags 0x2
   private <init>()V
     ALOAD 0
     INVOKESPECIAL java/lang/Object.<init> ()V
     RETURN
 
-  // access flags 0x9
   public static func_0(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     ICONST_0
     ISTORE 3
@@ -41,7 +34,6 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
     ILOAD 3
     IRETURN
 
-  // access flags 0x9
   public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.checkInterruption ()V
     ALOAD 4
