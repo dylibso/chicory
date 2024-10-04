@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 
+// To approve everything use the env var: `APPROVAL_TESTS_USE_REPORTER=AutoApproveReporter`
 public class ApprovalTest {
 
     @Test
