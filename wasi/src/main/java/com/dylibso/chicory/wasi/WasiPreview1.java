@@ -139,19 +139,19 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int adapterCloseBadfd(int fd) {
-        logger.infof("adapter_close_badfd: [%s]", fd);
+        logger.tracef("adapter_close_badfd: [%s]", fd);
         throw new WASMRuntimeException("We don't yet support this WASI call: adapter_close_badfd");
     }
 
     @WasmExport
     public int adapterOpenBadfd(int fd) {
-        logger.infof("adapter_open_badfd: [%s]", fd);
+        logger.tracef("adapter_open_badfd: [%s]", fd);
         throw new WASMRuntimeException("We don't yet support this WASI call: adapter_open_badfd");
     }
 
     @WasmExport
     public int argsGet(Memory memory, int argv, int argvBuf) {
-        logger.infof("args_get: [%s, %s]", argv, argvBuf);
+        logger.tracef("args_get: [%s, %s]", argv, argvBuf);
         for (byte[] argument : arguments) {
             memory.writeI32(argv, argvBuf);
             argv += 4;
@@ -165,7 +165,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int argsSizesGet(Memory memory, int argc, int argvBufSize) {
-        logger.infof("args_sizes_get: [%s, %s]", argc, argvBufSize);
+        logger.tracef("args_sizes_get: [%s, %s]", argc, argvBufSize);
         int bufSize = arguments.stream().mapToInt(x -> x.length + 1).sum();
         memory.writeI32(argc, arguments.size());
         memory.writeI32(argvBufSize, bufSize);
@@ -174,7 +174,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int clockResGet(Memory memory, int clockId, int resultPtr) {
-        logger.infof("clock_res_get: [%s, %s]", clockId, resultPtr);
+        logger.tracef("clock_res_get: [%s, %s]", clockId, resultPtr);
         switch (clockId) {
             case WasiClockId.REALTIME:
             case WasiClockId.MONOTONIC:
@@ -191,7 +191,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int clockTimeGet(Memory memory, int clockId, long precision, int resultPtr) {
-        logger.infof("clock_time_get: [%s, %s, %s]", clockId, precision, resultPtr);
+        logger.tracef("clock_time_get: [%s, %s, %s]", clockId, precision, resultPtr);
         switch (clockId) {
             case WasiClockId.REALTIME:
                 Instant now = clock.instant();
@@ -212,7 +212,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int environGet(Memory memory, int environ, int environBuf) {
-        logger.infof("environ_get: [%s, %s]", environ, environBuf);
+        logger.tracef("environ_get: [%s, %s]", environ, environBuf);
         for (Entry<byte[], byte[]> entry : environment) {
             byte[] name = entry.getKey();
             byte[] value = entry.getValue();
@@ -232,7 +232,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int environSizesGet(Memory memory, int environCount, int environBufSize) {
-        logger.infof("environ_sizes_get: [%s, %s]", environCount, environBufSize);
+        logger.tracef("environ_sizes_get: [%s, %s]", environCount, environBufSize);
         int bufSize =
                 environment.stream()
                         .mapToInt(x -> x.getKey().length + x.getValue().length + 2)
@@ -244,7 +244,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdAdvise(int fd, long offset, long len, int advice) {
-        logger.infof("fd_advise: [%s, %s, %s, %s]", fd, offset, len, advice);
+        logger.tracef("fd_advise: [%s, %s, %s, %s]", fd, offset, len, advice);
 
         if (len < 0 || offset < 0) {
             return wasiResult(WasiErrno.EINVAL);
@@ -271,7 +271,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdAllocate(int fd, long offset, long len) {
-        logger.infof("fd_allocate: [%s, %s, %s]", fd, offset, len);
+        logger.tracef("fd_allocate: [%s, %s, %s]", fd, offset, len);
 
         if (len <= 0 || offset < 0) {
             return wasiResult(WasiErrno.EINVAL);
@@ -314,7 +314,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdClose(int fd) {
-        logger.infof("fd_close: [%s]", fd);
+        logger.tracef("fd_close: [%s]", fd);
         Descriptor descriptor = descriptors.get(fd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -332,13 +332,13 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdDatasync(int fd) {
-        logger.infof("fd_datasync: [%s]", fd);
+        logger.tracef("fd_datasync: [%s]", fd);
         return wasiResult(fileSync(fd, false));
     }
 
     @WasmExport
     public int fdFdstatGet(Memory memory, int fd, int buf) {
-        logger.infof("fd_fdstat_get: [%s, %s]", fd, buf);
+        logger.tracef("fd_fdstat_get: [%s, %s]", fd, buf);
         int flags = 0;
         long rightsBase;
         long rightsInheriting = 0;
@@ -378,7 +378,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdFdstatSetFlags(int fd, int flags) {
-        logger.infof("fd_fdstat_set_flags: [%s, %s]", fd, flags);
+        logger.tracef("fd_fdstat_set_flags: [%s, %s]", fd, flags);
 
         var descriptor = descriptors.get(fd);
         if (descriptor == null) {
@@ -405,13 +405,13 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdFdstatSetRights(int fd, long rightsBase, long rightsInheriting) {
-        logger.infof("fd_fdstat_set_rights: [%s, %s, %s]", fd, rightsBase, rightsInheriting);
+        logger.tracef("fd_fdstat_set_rights: [%s, %s, %s]", fd, rightsBase, rightsInheriting);
         throw new WASMRuntimeException("We don't yet support this WASI call: fd_fdstat_set_rights");
     }
 
     @WasmExport
     public int fdFilestatGet(Memory memory, int fd, int buf) {
-        logger.infof("fd_filestat_get: [%s, %s]", fd, buf);
+        logger.tracef("fd_filestat_get: [%s, %s]", fd, buf);
 
         var descriptor = descriptors.get(fd);
         if (descriptor == null) {
@@ -456,7 +456,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdFilestatSetSize(int fd, long size) {
-        logger.infof("fd_filestat_set_size: [%s, %s]", fd, size);
+        logger.tracef("fd_filestat_set_size: [%s, %s]", fd, size);
 
         var descriptor = descriptors.get(fd);
         if (descriptor == null) {
@@ -496,7 +496,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdFilestatSetTimes(int fd, long accessTime, long modifiedTime, int fstFlags) {
-        logger.infof(
+        logger.tracef(
                 "fd_filestat_set_times: [%s, %s, %s, %s]", fd, accessTime, modifiedTime, fstFlags);
 
         var descriptor = descriptors.get(fd);
@@ -522,13 +522,13 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdPread(int fd, int iovs, int iovsLen, long offset, int nreadPtr) {
-        logger.infof("fd_pread: [%s, %s, %s, %s, %s]", fd, iovs, iovsLen, offset, nreadPtr);
+        logger.tracef("fd_pread: [%s, %s, %s, %s, %s]", fd, iovs, iovsLen, offset, nreadPtr);
         throw new WASMRuntimeException("We don't yet support this WASI call: fd_pread");
     }
 
     @WasmExport
     public int fdPrestatDirName(Memory memory, int fd, int path, int pathLen) {
-        logger.infof("fd_prestat_dir_name: [%s, %s, %s]", fd, path, pathLen);
+        logger.tracef("fd_prestat_dir_name: [%s, %s, %s]", fd, path, pathLen);
         var descriptor = descriptors.get(fd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -549,7 +549,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdPrestatGet(Memory memory, int fd, int buf) {
-        logger.infof("fd_prestat_get: [%s, %s]", fd, buf);
+        logger.tracef("fd_prestat_get: [%s, %s]", fd, buf);
         var descriptor = descriptors.get(fd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -567,13 +567,13 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdPwrite(int fd, int iovs, int iovsLen, long offset, int nwrittenPtr) {
-        logger.infof("fd_pwrite: [%s, %s, %s, %s, %s]", fd, iovs, iovsLen, offset, nwrittenPtr);
+        logger.tracef("fd_pwrite: [%s, %s, %s, %s, %s]", fd, iovs, iovsLen, offset, nwrittenPtr);
         throw new WASMRuntimeException("We don't yet support this WASI call: fd_pwrite");
     }
 
     @WasmExport
     public int fdRead(Memory memory, int fd, int iovs, int iovsLen, int nreadPtr) {
-        logger.infof("fd_read: [%s, %s, %s, %s]", fd, iovs, iovsLen, nreadPtr);
+        logger.tracef("fd_read: [%s, %s, %s, %s]", fd, iovs, iovsLen, nreadPtr);
         var descriptor = descriptors.get(fd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -620,7 +620,7 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int fdReaddir(
             Memory memory, int dirFd, int buf, int bufLen, long cookie, int bufUsedPtr) {
-        logger.infof("fd_readdir: [%s, %s, %s, %s, %s]", dirFd, buf, bufLen, cookie, bufUsedPtr);
+        logger.tracef("fd_readdir: [%s, %s, %s, %s, %s]", dirFd, buf, bufLen, cookie, bufUsedPtr);
         if (cookie < 0) {
             return wasiResult(WasiErrno.EINVAL);
         }
@@ -687,7 +687,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdRenumber(int from, int to) {
-        logger.infof("fd_renumber: [%s, %s]", from, to);
+        logger.tracef("fd_renumber: [%s, %s]", from, to);
 
         var fromDescriptor = descriptors.get(from);
         if (fromDescriptor == null) {
@@ -718,7 +718,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdSeek(Memory memory, int fd, long offset, int whence, int newOffsetPtr) {
-        logger.infof("fd_seek: [%s, %s, %s, %s]", fd, offset, whence, newOffsetPtr);
+        logger.tracef("fd_seek: [%s, %s, %s, %s]", fd, offset, whence, newOffsetPtr);
         if (whence < 0 || whence > 2) {
             return wasiResult(WasiErrno.EINVAL);
         }
@@ -765,13 +765,13 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdSync(int fd) {
-        logger.infof("fd_sync: [%s]", fd);
+        logger.tracef("fd_sync: [%s]", fd);
         return wasiResult(fileSync(fd, true));
     }
 
     @WasmExport
     public int fdTell(Memory memory, int fd, int offsetPtr) {
-        logger.infof("fd_tell: [%s, %s]", fd, offsetPtr);
+        logger.tracef("fd_tell: [%s, %s]", fd, offsetPtr);
         var descriptor = descriptors.get(fd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -801,7 +801,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdWrite(Memory memory, int fd, int iovs, int iovsLen, int nwrittenPtr) {
-        logger.infof("fd_write: [%s, %s, %s, %s]", fd, iovs, iovsLen, nwrittenPtr);
+        logger.tracef("fd_write: [%s, %s, %s, %s]", fd, iovs, iovsLen, nwrittenPtr);
         var descriptor = descriptors.get(fd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -843,7 +843,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int pathCreateDirectory(int dirFd, @Buffer String rawPath) {
-        logger.infof("path_create_directory: [%s, \"%s\"]", dirFd, rawPath);
+        logger.tracef("path_create_directory: [%s, \"%s\"]", dirFd, rawPath);
         var descriptor = descriptors.get(dirFd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -874,7 +874,7 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int pathFilestatGet(
             Memory memory, int dirFd, int lookupFlags, @Buffer String rawPath, int buf) {
-        logger.infof("path_filestat_get: [%s, %s, \"%s\", %s]", dirFd, lookupFlags, rawPath, buf);
+        logger.tracef("path_filestat_get: [%s, %s, \"%s\", %s]", dirFd, lookupFlags, rawPath, buf);
         var descriptor = descriptors.get(dirFd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -916,7 +916,7 @@ public final class WasiPreview1 implements Closeable {
             long accessTime,
             long modifiedTime,
             int fstFlags) {
-        logger.infof(
+        logger.tracef(
                 "path_filestat_set_times: [%s, %s, \"%s\", %s, %s, %s]",
                 fd, lookupFlags, rawPath, accessTime, modifiedTime, fstFlags);
 
@@ -945,7 +945,7 @@ public final class WasiPreview1 implements Closeable {
             @Buffer String rawOldPath,
             int newFd,
             @Buffer String rawNewPath) {
-        logger.infof(
+        logger.tracef(
                 "path_link: [%s, %s, \"%s\", %s, \"%s\"]",
                 oldFd, oldFlags, rawOldPath, newFd, rawNewPath);
         throw new WASMRuntimeException("We don't yet support this WASI call: path_link");
@@ -962,7 +962,7 @@ public final class WasiPreview1 implements Closeable {
             long rightsInheriting,
             int fdFlags,
             int fdPtr) {
-        logger.infof(
+        logger.tracef(
                 "path_open: [%s, %s, \"%s\", %s, %s, %s, %s, %s]",
                 dirFd,
                 lookupFlags,
@@ -1064,14 +1064,14 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int pathReadlink(int dirFd, @Buffer String rawPath, int buf, int bufLen, int bufUsed) {
-        logger.infof(
+        logger.tracef(
                 "path_readlink: [%s, \"%s\", %s, %s, %s]", dirFd, rawPath, buf, bufLen, bufUsed);
         throw new WASMRuntimeException("We don't yet support this WASI call: path_readlink");
     }
 
     @WasmExport
     public int pathRemoveDirectory(int dirFd, @Buffer String rawPath) {
-        logger.infof("path_remove_directory: [%s, \"%s\"]", dirFd, rawPath);
+        logger.tracef("path_remove_directory: [%s, \"%s\"]", dirFd, rawPath);
         var descriptor = descriptors.get(dirFd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -1108,7 +1108,8 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int pathRename(
             int oldFd, @Buffer String oldRawPath, int newFd, @Buffer String newRawPath) {
-        logger.infof("path_rename: [%s, \"%s\", %s, \"%s\"]", oldFd, oldRawPath, newFd, newRawPath);
+        logger.tracef(
+                "path_rename: [%s, \"%s\", %s, \"%s\"]", oldFd, oldRawPath, newFd, newRawPath);
         var oldDescriptor = descriptors.get(oldFd);
         if (oldDescriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -1165,13 +1166,13 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int pathSymlink(@Buffer String oldRawPath, int dirFd, @Buffer String newRawPath) {
-        logger.infof("path_symlink: [\"%s\", %s, \"%s\"]", oldRawPath, dirFd, newRawPath);
+        logger.tracef("path_symlink: [\"%s\", %s, \"%s\"]", oldRawPath, dirFd, newRawPath);
         throw new WASMRuntimeException("We don't yet support this WASI call: path_symlink");
     }
 
     @WasmExport
     public int pathUnlinkFile(int dirFd, @Buffer String rawPath) {
-        logger.infof("path_unlink_file: [%s, \"%s\"]", dirFd, rawPath);
+        logger.tracef("path_unlink_file: [%s, \"%s\"]", dirFd, rawPath);
         var descriptor = descriptors.get(dirFd);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -1208,25 +1209,25 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int pollOneoff(int inPtr, int outPtr, int nsubscriptions, int neventsPtr) {
-        logger.infof("poll_oneoff: [%s, %s, %s, %s]", inPtr, outPtr, nsubscriptions, neventsPtr);
+        logger.tracef("poll_oneoff: [%s, %s, %s, %s]", inPtr, outPtr, nsubscriptions, neventsPtr);
         throw new WASMRuntimeException("We don't yet support this WASI call: poll_oneoff");
     }
 
     @WasmExport
     public void procExit(int code) {
-        logger.infof("proc_exit: [%s]", code);
+        logger.tracef("proc_exit: [%s]", code);
         throw new WasiExitException(code);
     }
 
     @WasmExport
     public int procRaise(int sig) {
-        logger.infof("proc_raise: [%s]", sig);
+        logger.tracef("proc_raise: [%s]", sig);
         throw new WASMRuntimeException("We don't yet support this WASI call: proc_raise");
     }
 
     @WasmExport
     public int randomGet(Memory memory, int buf, int bufLen) {
-        logger.infof("random_get: [%s, %s]", buf, bufLen);
+        logger.tracef("random_get: [%s, %s]", buf, bufLen);
         if (bufLen < 0) {
             return wasiResult(WasiErrno.EINVAL);
         }
@@ -1250,21 +1251,21 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int schedYield() {
-        logger.info("sched_yield");
+        logger.trace("sched_yield");
         // do nothing here
         return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport
     public int sockAccept(int sock, int fdFlags, int roFdPtr) {
-        logger.infof("sock_accept: [%s, %s, %s]", sock, fdFlags, roFdPtr);
+        logger.tracef("sock_accept: [%s, %s, %s]", sock, fdFlags, roFdPtr);
         throw new WASMRuntimeException("We don't yet support this WASI call: sock_accept");
     }
 
     @WasmExport
     public int sockRecv(
             int sock, int riDataPtr, int riDataLen, int riFlags, int roDataLenPtr, int roFlagsPtr) {
-        logger.infof(
+        logger.tracef(
                 "sock_recv: [%s, %s, %s, %s, %s, %s]",
                 sock, riDataPtr, riDataLen, riFlags, roDataLenPtr, roFlagsPtr);
         throw new WASMRuntimeException("We don't yet support this WASI call: sock_recv");
@@ -1272,7 +1273,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int sockSend(int sock, int siDataPtr, int siDataLen, int siFlags, int retDataLenPtr) {
-        logger.infof(
+        logger.tracef(
                 "sock_send: [%s, %s, %s, %s, %s]",
                 sock, siDataPtr, siDataLen, siFlags, retDataLenPtr);
         throw new WASMRuntimeException("We don't yet support this WASI call: sock_send");
@@ -1280,7 +1281,7 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int sockShutdown(int sock, int how) {
-        logger.infof("sock_shutdown: [%s, %s]", sock, how);
+        logger.tracef("sock_shutdown: [%s, %s]", sock, how);
         Descriptor descriptor = descriptors.get(sock);
         if (descriptor == null) {
             return wasiResult(WasiErrno.EBADF);
@@ -1295,7 +1296,7 @@ public final class WasiPreview1 implements Closeable {
 
     private int wasiResult(WasiErrno errno) {
         if (errno != WasiErrno.ESUCCESS) {
-            logger.infof("result = %s", errno.name());
+            logger.tracef("result = %s", errno.name());
         }
         return errno.value();
     }
