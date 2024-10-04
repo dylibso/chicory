@@ -11,6 +11,7 @@ public final class AotMethodRefs {
 
     static final Method CHECK_INTERRUPTION;
     static final Method CALL_INDIRECT;
+    static final Method INSTANCE_MEMORY;
     static final Method INSTANCE_CALL_HOST_FUNCTION;
     static final Method INSTANCE_READ_GLOBAL;
     static final Method WRITE_GLOBAL;
@@ -45,9 +46,11 @@ public final class AotMethodRefs {
     static final Method TABLE_REF;
     static final Method TABLE_INSTANCE;
     static final Method VALIDATE_BASE;
+    static final Method THROW_CALL_STACK_EXHAUSTED;
     static final Method THROW_INDIRECT_CALL_TYPE_MISMATCH;
     static final Method THROW_OUT_OF_BOUNDS_MEMORY_ACCESS;
     static final Method THROW_TRAP_EXCEPTION;
+    static final Method THROW_UNKNOWN_FUNCTION;
 
     static {
         try {
@@ -55,6 +58,7 @@ public final class AotMethodRefs {
             CALL_INDIRECT =
                     AotMethods.class.getMethod(
                             "callIndirect", long[].class, int.class, int.class, Instance.class);
+            INSTANCE_MEMORY = Instance.class.getMethod("memory");
             INSTANCE_CALL_HOST_FUNCTION =
                     Instance.class.getMethod("callHostFunction", int.class, long[].class);
             INSTANCE_READ_GLOBAL = Instance.class.getMethod("readGlobal", int.class);
@@ -149,11 +153,14 @@ public final class AotMethodRefs {
             TABLE_REF = AotMethods.class.getMethod("tableRef", TableInstance.class, int.class);
             TABLE_INSTANCE = TableInstance.class.getMethod("instance", int.class);
             VALIDATE_BASE = AotMethods.class.getMethod("validateBase", int.class);
+            THROW_CALL_STACK_EXHAUSTED =
+                    AotMethods.class.getMethod("throwCallStackExhausted", StackOverflowError.class);
             THROW_INDIRECT_CALL_TYPE_MISMATCH =
                     AotMethods.class.getMethod("throwIndirectCallTypeMismatch");
             THROW_OUT_OF_BOUNDS_MEMORY_ACCESS =
                     AotMethods.class.getMethod("throwOutOfBoundsMemoryAccess");
             THROW_TRAP_EXCEPTION = AotMethods.class.getMethod("throwTrapException");
+            THROW_UNKNOWN_FUNCTION = AotMethods.class.getMethod("throwUnknownFunction", int.class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }

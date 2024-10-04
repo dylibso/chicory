@@ -1,7 +1,6 @@
 package com.dylibso.chicory.aot.runtime;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
-import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
@@ -10,33 +9,13 @@ import com.dylibso.chicory.runtime.TableInstance;
 import com.dylibso.chicory.runtime.TrapException;
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import java.util.List;
 
 public final class AotMethods {
 
     private AotMethods() {}
-
-    public static long[] callIndirect(
-            long[] args, int typeId, int funcTableIdx, int tableIdx, Instance instance) {
-        TableInstance table = instance.table(tableIdx);
-
-        instance = requireNonNullElse(table.instance(funcTableIdx), instance);
-
-        int funcId = table.ref(funcTableIdx);
-        if (funcId == REF_NULL_VALUE) {
-            throw new ChicoryException("uninitialized element " + funcTableIdx);
-        }
-
-        FunctionType expectedType = instance.type(typeId);
-        FunctionType actualType = instance.type(instance.functionType(funcId));
-        if (!actualType.typesMatch(expectedType)) {
-            throw new ChicoryException("indirect call type mismatch");
-        }
-
-        checkInterruption();
-        return instance.getMachine().call(funcId, args);
-    }
 
     public static long[] callIndirect(long[] args, int typeId, int funcId, Instance instance) {
         FunctionType expectedType = instance.type(typeId);
@@ -170,6 +149,10 @@ public final class AotMethods {
         }
     }
 
+    public static RuntimeException throwCallStackExhausted(StackOverflowError e) {
+        throw new ChicoryException("call stack exhausted", e);
+    }
+
     public static RuntimeException throwIndirectCallTypeMismatch() {
         return new ChicoryException("indirect call type mismatch");
     }
@@ -180,6 +163,10 @@ public final class AotMethods {
 
     public static RuntimeException throwTrapException() {
         throw new TrapException("Trapped on unreachable instruction", List.of());
+    }
+
+    public static RuntimeException throwUnknownFunction(int index) {
+        throw new InvalidException("unknown function " + index);
     }
 
     public static void checkInterruption() {

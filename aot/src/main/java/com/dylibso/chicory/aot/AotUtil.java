@@ -1,8 +1,6 @@
 package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
-import static java.lang.invoke.MethodHandles.identity;
-import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
@@ -11,8 +9,8 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -29,37 +27,18 @@ final class AotUtil {
         TWO
     }
 
-    private static final Method LONG_TO_I32;
     private static final Method LONG_TO_F32;
     private static final Method LONG_TO_F64;
-    private static final Method I32_TO_LONG;
     private static final Method F32_TO_LONG;
     private static final Method F64_TO_LONG;
-    private static final MethodHandle LONG_TO_I32_MH;
-    private static final MethodHandle LONG_TO_F32_MH;
-    private static final MethodHandle LONG_TO_F64_MH;
-    private static final MethodHandle I32_TO_LONG_MH;
-    private static final MethodHandle F32_TO_LONG_MH;
-    private static final MethodHandle F64_TO_LONG_MH;
 
     static {
         try {
-            LONG_TO_I32 = ValueConversions.class.getMethod("longToI32", long.class);
-            LONG_TO_F32 = ValueConversions.class.getMethod("longToF32", long.class);
-            LONG_TO_F64 = ValueConversions.class.getMethod("longToF64", long.class);
-            I32_TO_LONG = ValueConversions.class.getMethod("i32ToLong", int.class);
-            F32_TO_LONG = ValueConversions.class.getMethod("f32ToLong", float.class);
-            F64_TO_LONG = ValueConversions.class.getMethod("f64ToLong", double.class);
-
-            LONG_TO_I32_MH = publicLookup().unreflect(LONG_TO_I32);
-            LONG_TO_F32_MH = publicLookup().unreflect(LONG_TO_F32);
-            LONG_TO_F64_MH = publicLookup().unreflect(LONG_TO_F64);
-            I32_TO_LONG_MH = publicLookup().unreflect(I32_TO_LONG);
-            F32_TO_LONG_MH = publicLookup().unreflect(F32_TO_LONG);
-            F64_TO_LONG_MH = publicLookup().unreflect(F64_TO_LONG);
+            LONG_TO_F32 = Value.class.getMethod("longToFloat", long.class);
+            LONG_TO_F64 = Value.class.getMethod("longToDouble", long.class);
+            F32_TO_LONG = Value.class.getMethod("floatToLong", float.class);
+            F64_TO_LONG = Value.class.getMethod("doubleToLong", double.class);
         } catch (NoSuchMethodException e) {
-            throw new AssertionError(e);
-        } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         }
     }
@@ -158,42 +137,6 @@ final class AotUtil {
             case F64:
                 emitInvokeStatic(asm, F64_TO_LONG);
                 return;
-            default:
-                throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
-        }
-    }
-
-    public static MethodHandle longToJvmHandle(ValueType type) {
-        switch (type) {
-            case I32:
-            case ExternRef:
-            case FuncRef:
-                return LONG_TO_I32_MH;
-            case I64:
-                // filterArguments:
-                // Null arguments in the array are treated as identity functions
-                return null;
-            case F32:
-                return LONG_TO_F32_MH;
-            case F64:
-                return LONG_TO_F64_MH;
-            default:
-                throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
-        }
-    }
-
-    public static MethodHandle jvmToLongHandle(ValueType type) {
-        switch (type) {
-            case I32:
-            case ExternRef:
-            case FuncRef:
-                return I32_TO_LONG_MH;
-            case I64:
-                return identity(long.class);
-            case F32:
-                return F32_TO_LONG_MH;
-            case F64:
-                return F64_TO_LONG_MH;
             default:
                 throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
         }
