@@ -79,6 +79,11 @@ Because we are all humans, and to ensure Chicory evolves in the right direction,
 Don't forget to include tests in your pull requests.
 Also don't forget the documentation (reference documentation, javadoc...).
 
+To automatically apply and approve e new version of the "Golden samples" used by the Approval tests you can use the environment variable:
+```
+APPROVAL_TESTS_USE_REPORTER=AutoApproveReporter
+```
+
 ## Reporting an issue
 
 This project uses GitHub issues to manage the issues. Open an issue directly in GitHub.
