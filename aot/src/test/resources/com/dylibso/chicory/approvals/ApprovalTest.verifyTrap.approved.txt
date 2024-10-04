@@ -55,18 +55,16 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
       default: L5
    L2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_0 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    GOTO L6
+    RETURN
    L3
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_1 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    GOTO L6
+    RETURN
    L4
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_2 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    GOTO L6
+    RETURN
    L5
     INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
     ATHROW
-   L6
-    RETURN
    L1
     ICONST_0
     NEWARRAY T_LONG

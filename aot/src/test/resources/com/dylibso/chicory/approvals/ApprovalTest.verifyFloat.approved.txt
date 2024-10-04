@@ -40,12 +40,10 @@ public final class com/dylibso/chicory/$gen/CompiledModule {
       default: L3
    L2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledModule.func_0 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    GOTO L4
+    RETURN
    L3
     INVOKESTATIC com/dylibso/chicory/aot/runtime/AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
     ATHROW
-   L4
-    RETURN
    L1
     ICONST_0
     NEWARRAY T_LONG

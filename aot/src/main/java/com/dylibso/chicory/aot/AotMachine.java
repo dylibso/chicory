@@ -633,19 +633,15 @@ public final class AotMachine implements Machine {
         asm.visitVarInsn(Opcodes.ILOAD, funcId);
         asm.visitLookupSwitchInsn(invalid, keys, labels);
 
-        Label done = new Label();
         for (int i = 0; i < validIds.size(); i++) {
             asm.visitLabel(labels[i]);
             emitInvokeFunction(asm, internalClassName, keys[i], type);
-            asm.visitJumpInsn(Opcodes.GOTO, done);
+            asm.visitInsn(returnTypeOpcode(type));
         }
 
         asm.visitLabel(invalid);
         emitInvokeStatic(asm, THROW_INDIRECT_CALL_TYPE_MISMATCH);
         asm.visitInsn(Opcodes.ATHROW);
-
-        asm.visitLabel(done);
-        asm.visitInsn(returnTypeOpcode(type));
 
         // other: call function in another module
         asm.visitLabel(other);
