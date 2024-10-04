@@ -120,6 +120,9 @@ public class ApprovalTest {
         String output = out.toString(UTF_8);
         output = output.replaceAll("(?m)^ {3}FRAME.*\\n", "");
         output = output.replaceAll("(?m)^ {4}MAX(STACK|LOCALS) = \\d+\\n", "");
+        output = output.replaceAll("(?m)^ *// .*\\n", "");
+        output = output.replaceAll("\\n{3,}", "\n\n");
+        output = output.stripLeading();
 
         Approvals.verify(output);
     }
