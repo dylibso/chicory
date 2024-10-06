@@ -710,7 +710,7 @@ public final class AotCompiler {
                         break;
                     }
                     // collect unique target labels
-                    Map<Integer, Label> targets = new HashMap<>();
+                    Map<Integer, Label> targets = new TreeMap<>();
                     Label[] table = new Label[ins.labelTable().size() - 1];
                     for (int i = 0; i < table.length; i++) {
                         table[i] =
