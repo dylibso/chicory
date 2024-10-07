@@ -1,6 +1,8 @@
 package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.aot.AotEmitterMap.EMITTERS;
+import static com.dylibso.chicory.aot.AotMethodInliner.aotMethodsRemapper;
+import static com.dylibso.chicory.aot.AotMethodInliner.createAotMethodsClass;
 import static com.dylibso.chicory.aot.AotMethodRefs.CALL_INDIRECT;
 import static com.dylibso.chicory.aot.AotMethodRefs.CHECK_INTERRUPTION;
 import static com.dylibso.chicory.aot.AotMethodRefs.INSTANCE_CALL_HOST_FUNCTION;
@@ -21,6 +23,7 @@ import static com.dylibso.chicory.aot.AotUtil.emitInvokeVirtual;
 import static com.dylibso.chicory.aot.AotUtil.emitJvmToLong;
 import static com.dylibso.chicory.aot.AotUtil.emitLongToJvm;
 import static com.dylibso.chicory.aot.AotUtil.emitPop;
+import static com.dylibso.chicory.aot.AotUtil.internalClassName;
 import static com.dylibso.chicory.aot.AotUtil.jvmReturnType;
 import static com.dylibso.chicory.aot.AotUtil.jvmTypes;
 import static com.dylibso.chicory.aot.AotUtil.loadTypeOpcode;
@@ -64,6 +67,7 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -92,16 +96,21 @@ public final class AotCompiler {
     private static final MethodType CALL_METHOD_TYPE =
             methodType(long[].class, Instance.class, Memory.class, long[].class);
 
+    private final AotClassLoader classLoader = new AotClassLoader();
+    private final String className;
     private final Module module;
     private final List<ValueType> globalTypes;
     private final int functionImports;
     private final List<FunctionType> functionTypes;
+    private final Map<String, byte[]> extraClasses;
 
-    private AotCompiler(Module module) {
+    private AotCompiler(Module module, String className) {
+        this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.globalTypes = getGlobalTypes(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
         this.functionTypes = getFunctionTypes(module);
+        this.extraClasses = compileExtraClasses();
     }
 
     public static CompilerResult compileModule(Module module) {
@@ -109,10 +118,15 @@ public final class AotCompiler {
     }
 
     public static CompilerResult compileModule(Module module, String className) {
-        var compiler = new AotCompiler(module);
-        var bytes = compiler.compileClass(className, module.functionSection());
+        var compiler = new AotCompiler(module, className);
+
+        var bytes = compiler.compileClass(module.functionSection());
         var factory = compiler.createMachineFactory(bytes);
-        return new CompilerResult(factory, new TreeMap<>(Map.of(className, bytes)));
+
+        Map<String, byte[]> classBytes = new LinkedHashMap<>();
+        classBytes.put(className, bytes);
+        classBytes.putAll(compiler.extraClasses);
+        return new CompilerResult(factory, classBytes);
     }
 
     private static List<ValueType> getGlobalTypes(Module module) {
@@ -158,7 +172,6 @@ public final class AotCompiler {
 
     private Class<?> loadClass(byte[] classBytes) {
         try {
-            var classLoader = new ByteArrayClassLoader(getClass().getClassLoader());
             var clazz = classLoader.loadFromBytes(classBytes);
             // force initialization to run JVM verifier
             Class.forName(clazz.getName(), true, clazz.getClassLoader());
@@ -177,10 +190,23 @@ public final class AotCompiler {
         }
     }
 
-    private byte[] compileClass(String className, FunctionSection functions) {
-        var internalClassName = className.replace('.', '/');
+    private void loadExtraClass(Map<String, byte[]> classes, byte[] bytes) {
+        Class<?> clazz = loadClass(bytes);
+        classes.put(clazz.getName(), bytes);
+    }
 
-        var classWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+    private Map<String, byte[]> compileExtraClasses() {
+        Map<String, byte[]> classes = new LinkedHashMap<>();
+        loadExtraClass(classes, createAotMethodsClass(className));
+        return classes;
+    }
+
+    private byte[] compileClass(FunctionSection functions) {
+        var internalClassName = internalClassName(className);
+
+        ClassWriter binaryWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        ClassVisitor classWriter = aotMethodsRemapper(binaryWriter, className);
+
         classWriter.visit(
                 Opcodes.V11,
                 Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL,
@@ -189,7 +215,11 @@ public final class AotCompiler {
                 getInternalName(Object.class),
                 new String[] {getInternalName(Machine.class)});
 
-        classWriter.visitSource("wasm", "wasm");
+        classWriter.visitSource("wasm", null);
+
+        for (String name : extraClasses.keySet()) {
+            classWriter.visitNestMember(internalClassName(name));
+        }
 
         classWriter.visitField(
                 Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
@@ -280,7 +310,7 @@ public final class AotCompiler {
         classWriter.visitEnd();
 
         try {
-            return classWriter.toByteArray();
+            return binaryWriter.toByteArray();
         } catch (MethodTooLargeException e) {
             throw new ChicoryException(
                     String.format(

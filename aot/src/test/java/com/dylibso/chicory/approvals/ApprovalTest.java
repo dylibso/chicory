@@ -3,7 +3,10 @@ package com.dylibso.chicory.approvals;
 import static com.dylibso.chicory.aot.AotCompiler.compileModule;
 import static com.dylibso.chicory.wasm.Parser.parse;
 import static java.lang.ClassLoader.getSystemClassLoader;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.objectweb.asm.Type.getInternalName;
 
+import com.dylibso.chicory.aot.runtime.AotMethods;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
@@ -44,7 +47,7 @@ public class ApprovalTest {
     public void verifyI32Renamed() {
         var module = parse(getSystemClassLoader().getResourceAsStream("compiled/i32.wat.wasm"));
         var result = compileModule(module, "FOO");
-        verifyClass(result.classBytes());
+        verifyClass(result.classBytes(), false);
     }
 
     @Test
@@ -75,14 +78,17 @@ public class ApprovalTest {
     private static void verifyGeneratedBytecode(String name) {
         var module = parse(getSystemClassLoader().getResourceAsStream("compiled/" + name));
         var result = compileModule(module);
-        verifyClass(result.classBytes());
+        verifyClass(result.classBytes(), true);
     }
 
-    private static void verifyClass(Map<String, byte[]> classBytes) {
+    private static void verifyClass(Map<String, byte[]> classBytes, boolean skipAotMethods) {
         var writer = new StringWriter();
 
         for (byte[] bytes : classBytes.values()) {
             ClassReader cr = new ClassReader(bytes);
+            if (skipAotMethods && cr.getClassName().endsWith("$AotMethods")) {
+                continue;
+            }
             cr.accept(new TraceClassVisitor(new PrintWriter(writer)), 0);
             writer.append("\n");
         }
@@ -90,10 +96,15 @@ public class ApprovalTest {
         String output = writer.toString();
         output = output.replaceAll("(?m)^ {3}FRAME.*\\n", "");
         output = output.replaceAll("(?m)^ {4}MAX(STACK|LOCALS) = \\d+\\n", "");
+        output = output.replaceAll("(?m)^ {4}(LINENUMBER|LOCALVARIABLE) .*\\n", "");
         output = output.replaceAll("(?m)^ *// .*\\n", "");
         output = output.replaceAll("\\n{3,}", "\n\n");
         output = output.strip() + "\n";
 
         Approvals.verify(output);
+
+        assertFalse(
+                output.contains(getInternalName(AotMethods.class)),
+                "Class contains non-inlined reference to AotMethods");
     }
 }

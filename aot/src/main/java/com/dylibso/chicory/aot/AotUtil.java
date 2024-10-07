@@ -279,4 +279,8 @@ final class AotUtil {
     public static String callIndirectMethodName(int typeId) {
         return "call_indirect_" + typeId;
     }
+
+    public static String internalClassName(String name) {
+        return name.replace('.', '/');
+    }
 }
