@@ -2,10 +2,10 @@ package com.dylibso.chicory.aot;
 
 import org.objectweb.asm.ClassReader;
 
-final class ByteArrayClassLoader extends ClassLoader {
+final class AotClassLoader extends ClassLoader {
 
-    public ByteArrayClassLoader(ClassLoader parent) {
-        super(parent);
+    public AotClassLoader() {
+        super(AotClassLoader.class.getClassLoader());
     }
 
     public Class<?> loadFromBytes(byte[] bytes) {
