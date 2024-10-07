@@ -6,7 +6,7 @@ import static java.lang.ClassLoader.getSystemClassLoader;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.objectweb.asm.Type.getInternalName;
 
-import com.dylibso.chicory.aot.runtime.AotMethods;
+import com.dylibso.chicory.aot.AotMethods;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
