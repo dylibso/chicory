@@ -1,4 +1,4 @@
-package com.dylibso.chicory.aot.runtime;
+package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
