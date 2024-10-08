@@ -4,6 +4,7 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantInst
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.ExternalType.FUNCTION;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+import static java.util.Objects.requireNonNullElseGet;
 
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
@@ -367,6 +368,7 @@ public class Instance {
 
         private boolean initialize = true;
         private boolean start = true;
+        private boolean skipImportMapping;
         private ExecutionListener listener;
         private ExternalValues externalValues;
         private Function<Instance, Machine> machineFactory;
@@ -382,6 +384,11 @@ public class Instance {
 
         public Builder withStart(boolean s) {
             this.start = s;
+            return this;
+        }
+
+        public Builder withSkipImportMapping(boolean s) {
+            this.skipImportMapping = s;
             return this;
         }
 
@@ -684,10 +691,14 @@ public class Instance {
             }
 
             var mappedHostImports =
-                    mapHostImports(
-                            imports,
-                            (externalValues == null) ? new ExternalValues() : externalValues,
-                            module.memorySection().map(MemorySection::memoryCount).orElse(0));
+                    skipImportMapping
+                            ? null
+                            : mapHostImports(
+                                    imports,
+                                    requireNonNullElseGet(externalValues, ExternalValues::new),
+                                    module.memorySection()
+                                            .map(MemorySection::memoryCount)
+                                            .orElse(0));
 
             if (module.startSection().isPresent()) {
                 var export =
@@ -717,7 +728,7 @@ public class Instance {
                     memory = new Memory(memories.getMemory(0).memoryLimits());
                 }
             } else {
-                if (mappedHostImports.memoryCount() > 0) {
+                if (mappedHostImports != null && mappedHostImports.memoryCount() > 0) {
                     if (mappedHostImports.memory(0) == null
                             || mappedHostImports.memory(0).memory() == null) {
                         throw new InvalidException(

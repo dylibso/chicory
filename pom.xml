@@ -35,6 +35,7 @@
 
   <modules>
     <module>aot</module>
+    <module>aot-maven-plugin</module>
     <module>aot-runtime</module>
     <module>aot-tests</module>
     <module>bom</module>
@@ -45,6 +46,7 @@
     <module>fuzz</module>
     <module>jmh</module>
     <module>log</module>
+    <module>machine-tests</module>
     <module>runtime</module>
     <module>runtime-tests</module>
     <module>test-gen-plugin</module>
@@ -289,6 +291,11 @@
           <groupId>com.diffplug.spotless</groupId>
           <artifactId>spotless-maven-plugin</artifactId>
           <version>${spotless-maven-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>com.dylibso.chicory</groupId>
+          <artifactId>aot-maven-plugin</artifactId>
+          <version>${project.version}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>

@@ -361,4 +361,13 @@ public class ModuleTest {
         // IIUC: 3 values returning from last CALL + 1 result
         assertTrue(finalStackSize.get() == 4L);
     }
+
+    @Test
+    public void shouldIgnoreMissingImports() {
+        Instance.builder(loadModule("compiled/hello-wasi.wat.wasm"))
+                .withStart(false)
+                .withInitialize(false)
+                .withSkipImportMapping(true)
+                .build();
+    }
 }

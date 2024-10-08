@@ -7,11 +7,10 @@
     <artifactId>chicory</artifactId>
     <version>999-SNAPSHOT</version>
   </parent>
-  <artifactId>wabt</artifactId>
+  <artifactId>machine-tests</artifactId>
   <packaging>jar</packaging>
 
-  <name>Chicory - wabt</name>
-  <description>wabt tools compiled to pure Java with Chicory</description>
+  <name>Chicory - Machines tests</name>
 
   <dependencies>
     <dependency>
@@ -20,23 +19,36 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>log</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
       <artifactId>runtime</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wasi</artifactId>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>aot</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>log</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasi</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm-corpus</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.google.jimfs</groupId>
       <artifactId>jimfs</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -52,13 +64,23 @@
         <artifactId>aot-maven-plugin</artifactId>
         <executions>
           <execution>
-            <id>wast2json</id>
+            <id>compile-quickjs</id>
             <goals>
               <goal>wasm-aot-gen</goal>
             </goals>
             <configuration>
-              <name>com.dylibso.chicory.wabt.Wast2JsonModule</name>
-              <wasmFile>src/main/resources/wast2json</wasmFile>
+              <name>com.dylibso.chicory.testing.gen.QuickJS</name>
+              <wasmFile>${project.basedir}/../wasm-corpus/src/main/resources/compiled/quickjs-provider.javy-dynamic.wasm</wasmFile>
+            </configuration>
+          </execution>
+          <execution>
+            <id>compile-dynamic-js</id>
+            <goals>
+              <goal>wasm-aot-gen</goal>
+            </goals>
+            <configuration>
+              <name>com.dylibso.chicory.testing.gen.DynamicHelloJS</name>
+              <wasmFile>${project.basedir}/../wasm-corpus/src/main/resources/compiled/hello-world.js.javy-dynamic.wasm</wasmFile>
             </configuration>
           </execution>
           <execution>
@@ -67,8 +89,8 @@
               <goal>wasm-aot-gen</goal>
             </goals>
             <configuration>
-              <name>com.dylibso.chicory.wabt.Wat2WasmModule</name>
-              <wasmFile>src/main/resources/wat2wasm</wasmFile>
+              <name>com.dylibso.chicory.wabt.Wat2Wasm</name>
+              <wasmFile>${project.basedir}/../wabt/src/main/resources/wat2wasm</wasmFile>
             </configuration>
           </execution>
         </executions>
