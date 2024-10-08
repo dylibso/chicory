@@ -1,4 +1,4 @@
-package com.dylibso.chicory.aot.runtime;
+package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
@@ -31,7 +31,7 @@ public final class AotMethods {
     }
 
     public static int tableGet(int index, int tableIndex, Instance instance) {
-        return (int) OpcodeImpl.TABLE_GET(instance, tableIndex, index);
+        return OpcodeImpl.TABLE_GET(instance, tableIndex, index);
     }
 
     public static void tableSet(int index, int value, int tableIndex, Instance instance) {

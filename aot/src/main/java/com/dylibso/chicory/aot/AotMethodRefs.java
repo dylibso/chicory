@@ -1,6 +1,5 @@
 package com.dylibso.chicory.aot;
 
-import com.dylibso.chicory.aot.runtime.AotMethods;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.TableInstance;
