@@ -2,6 +2,7 @@ package com.dylibso.chicory.wasi;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -163,12 +164,26 @@ public class WasiPreview1Test {
         var wasiOpts = WasiOptions.builder().build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
         var imports = new ExternalValues(wasi.toHostFunctions());
-        var module = loadModule("compiled/sum.go.tiny.wasm");
+        var module = loadModule("compiled/sum.tinygo.wasm");
         var instance = Instance.builder(module).withExternalValues(imports).build();
         var sum = instance.export("add");
         var result = sum.apply(20, 22)[0];
 
         assertEquals(result, 42);
+    }
+
+    @Test
+    public void shouldRunTinyGoModuleWithDependency() {
+        var fakeStdout = new MockPrintStream();
+        var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).build();
+        var wasi = new WasiPreview1(this.logger, wasiOpts);
+        var imports = new ExternalValues(wasi.toHostFunctions());
+        var module = loadModule("compiled/indicator.tinygo.wasm");
+        assertDoesNotThrow(
+                () -> {
+                    Instance.builder(module).withExternalValues(imports).build();
+                },
+                fakeStdout::output);
     }
 
     @Test

@@ -39,7 +39,7 @@ compileJavyDynamic() {
 
 compileTinyGo() {
   filename=$(basename "$1")
-  (set -x; tinygo build -o "./compiled/$filename.tiny.wasm" -target=wasi $1)
+  (set -x; cd $1; tinygo build -o "../../compiled/$filename.tinygo.wasm" -target=wasi .)
 }
 
 compileGo() {
