@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasi;
 
+import static com.dylibso.chicory.wasi.Files.copyDirectory;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -14,8 +15,14 @@ import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileSystem;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
@@ -225,5 +232,44 @@ public class WasiPreview1Test {
 
         assertArrayEquals(first, memory.readBytes(0, 123_456));
         assertArrayEquals(second, memory.readBytes(222_222, 87_654));
+    }
+
+    @Test
+    public void wasiPositionedWriteWithAppendShouldFail() throws IOException {
+        try (FileSystem fs =
+                Jimfs.newFileSystem(
+                        Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
+
+            var dir = "fs-tests.dir";
+            Path source = new File("../wasi-testsuite/tests/c/testsuite").toPath().resolve(dir);
+            Path target = fs.getPath(dir);
+            copyDirectory(source, target);
+
+            var options = WasiOptions.builder().withDirectory(target.toString(), target).build();
+
+            try (var wasi = WasiPreview1.builder().withOpts(options).build()) {
+                var memory = new Memory(new MemoryLimits(1));
+
+                int fdPtr = 0;
+                int result =
+                        wasi.pathOpen(
+                                memory,
+                                3,
+                                WasiLookupFlags.SYMLINK_FOLLOW,
+                                "pwrite.cleanup",
+                                WasiOpenFlags.CREAT,
+                                0,
+                                0,
+                                WasiFdFlags.APPEND,
+                                fdPtr);
+                assertEquals(WasiErrno.ESUCCESS.value(), result);
+
+                int fd = memory.readInt(fdPtr);
+                assertEquals(4, fd);
+
+                result = wasi.fdPwrite(memory, fd, 0, 0, 0, 0);
+                assertEquals(WasiErrno.ENOTSUP.value(), result);
+            }
+        }
     }
 }

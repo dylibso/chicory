@@ -172,9 +172,17 @@ final class Descriptors {
             return channel.read(ByteBuffer.wrap(data));
         }
 
+        public int read(byte[] data, long position) throws IOException {
+            return channel.read(ByteBuffer.wrap(data), position);
+        }
+
         @Override
         public int write(byte[] data) throws IOException {
             return channel.write(ByteBuffer.wrap(data));
+        }
+
+        public int write(byte[] data, long position) throws IOException {
+            return channel.write(ByteBuffer.wrap(data), position);
         }
 
         @Override
