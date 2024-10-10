@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
-import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -140,11 +140,11 @@ final class Descriptors {
 
     static final class OpenFile implements Descriptor, Closeable, DataReader, DataWriter {
         private final Path path;
-        private final SeekableByteChannel channel;
+        private final FileChannel channel;
         private final int fdFlags;
         private final long rights;
 
-        public OpenFile(Path path, SeekableByteChannel channel, int fdFlags, long rights) {
+        public OpenFile(Path path, FileChannel channel, int fdFlags, long rights) {
             this.path = requireNonNull(path);
             this.channel = requireNonNull(channel);
             this.fdFlags = fdFlags;
@@ -155,7 +155,7 @@ final class Descriptors {
             return path;
         }
 
-        public SeekableByteChannel channel() {
+        public FileChannel channel() {
             return channel;
         }
 
