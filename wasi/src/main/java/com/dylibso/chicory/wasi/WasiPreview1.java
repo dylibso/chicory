@@ -1046,7 +1046,7 @@ public final class WasiPreview1 implements Closeable {
 
         int fd;
         try {
-            SeekableByteChannel channel = Files.newByteChannel(path, openOptions);
+            FileChannel channel = FileChannel.open(path, openOptions);
             fd = descriptors.allocate(new OpenFile(path, channel, fdFlags, rightsBase));
         } catch (FileAlreadyExistsException e) {
             return wasiResult(WasiErrno.EEXIST);
@@ -1347,13 +1347,9 @@ public final class WasiPreview1 implements Closeable {
             throw unhandledDescriptor(descriptor);
         }
         var channel = ((OpenFile) descriptor).channel();
-        if (!(channel instanceof FileChannel)) {
-            return WasiErrno.ENOTSUP;
-        }
-        var fileChannel = (FileChannel) channel;
 
         try {
-            fileChannel.force(metadata);
+            channel.force(metadata);
         } catch (IOException e) {
             return WasiErrno.EIO;
         }
