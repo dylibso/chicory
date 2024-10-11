@@ -207,21 +207,6 @@ final class AotUtil {
         throw new IllegalArgumentException("Unsupported JVM type: " + clazz);
     }
 
-    public static StackSize stackSize(ValueType type) {
-        switch (type) {
-            case I32:
-            case F32:
-            case ExternRef:
-            case FuncRef:
-                return StackSize.ONE;
-            case I64:
-            case F64:
-                return StackSize.TWO;
-            default:
-                throw new IllegalArgumentException("Unsupported type: " + type);
-        }
-    }
-
     public static int slotCount(ValueType type) {
         switch (type) {
             case I32:
