@@ -5,9 +5,11 @@ import static com.dylibso.chicory.wasi.Descriptors.DataWriter;
 import static com.dylibso.chicory.wasi.Descriptors.Descriptor;
 import static com.dylibso.chicory.wasi.Descriptors.OpenDirectory;
 import static com.dylibso.chicory.wasi.Descriptors.OpenFile;
+import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
@@ -51,6 +53,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -61,6 +64,9 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Stream;
 
+/**
+ * <a href="https://github.com/WebAssembly/WASI/blob/v0.2.1/legacy/preview1/docs.md">WASI preview 1</a> implementation
+ */
 @HostModule("wasi_snapshot_preview1")
 public final class WasiPreview1 implements Closeable {
     private final Logger logger;
@@ -190,12 +196,8 @@ public final class WasiPreview1 implements Closeable {
         logger.tracef("clock_time_get: [%s, %s, %s]", clockId, precision, resultPtr);
         switch (clockId) {
             case WasiClockId.REALTIME:
-                Instant now = clock.instant();
-                long epochNanos = SECONDS.toNanos(now.getEpochSecond()) + now.getNano();
-                memory.writeLong(resultPtr, epochNanos);
-                return wasiResult(WasiErrno.ESUCCESS);
             case WasiClockId.MONOTONIC:
-                memory.writeLong(resultPtr, System.nanoTime());
+                memory.writeLong(resultPtr, clockTime(clockId));
                 return wasiResult(WasiErrno.ESUCCESS);
             case WasiClockId.PROCESS_CPUTIME_ID:
             case WasiClockId.THREAD_CPUTIME_ID:
@@ -1335,9 +1337,126 @@ public final class WasiPreview1 implements Closeable {
     }
 
     @WasmExport
-    public int pollOneoff(int inPtr, int outPtr, int nsubscriptions, int neventsPtr) {
+    public int pollOneoff(
+            Memory memory, int inPtr, int outPtr, int nsubscriptions, int neventsPtr) {
         logger.tracef("poll_oneoff: [%s, %s, %s, %s]", inPtr, outPtr, nsubscriptions, neventsPtr);
-        throw new WasmRuntimeException("We don't yet support this WASI call: poll_oneoff");
+        if (nsubscriptions <= 0) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+
+        int nevents = 0;
+        List<Entry<Long, Long>> clockSubs = new ArrayList<>();
+        List<Entry<InStream, Long>> readSubs = new ArrayList<>();
+
+        // collect clock and read subscriptions
+        for (int i = 0; i < nsubscriptions; i++) {
+            long userData = memory.readLong(inPtr);
+            byte eventType = memory.read(inPtr + 8);
+            inPtr += 16;
+            switch (eventType) {
+                case WasiEventType.CLOCK:
+                    int clockId = memory.readInt(inPtr);
+                    long timeout = memory.readLong(inPtr + 8);
+                    short flags = memory.readShort(inPtr + 24);
+                    if (clockId != WasiClockId.REALTIME && clockId != WasiClockId.MONOTONIC) {
+                        return wasiResult(WasiErrno.EINVAL);
+                    }
+                    if (flagSet(flags, WasiSubClockFlags.SUBSCRIPTION_CLOCK_ABSTIME)) {
+                        timeout -= clockTime(clockId);
+                    }
+                    clockSubs.add(Map.entry(timeout, userData));
+                    break;
+                case WasiEventType.FD_READ:
+                case WasiEventType.FD_WRITE:
+                    int fd = memory.readInt(inPtr);
+                    if (fd < 0) {
+                        return wasiResult(WasiErrno.EBADF);
+                    }
+                    var descriptor = descriptors.get(fd);
+                    if (descriptor instanceof InStream && eventType == WasiEventType.FD_READ) {
+                        readSubs.add(Map.entry((InStream) descriptor, userData));
+                    } else if (descriptor instanceof OutStream
+                            && eventType == WasiEventType.FD_WRITE) {
+                        // assume output streams are always writable
+                        writeEvent(memory, outPtr, userData, eventType, WasiErrno.ESUCCESS);
+                        outPtr += 32;
+                        nevents++;
+                    } else {
+                        WasiErrno errno;
+                        if (descriptor == null) {
+                            errno = WasiErrno.EBADF;
+                        } else if (descriptor instanceof OpenFile) {
+                            // per specification: this event always triggers for regular files
+                            errno = WasiErrno.ESUCCESS;
+                        } else {
+                            errno = WasiErrno.ENOTSUP;
+                        }
+                        writeEvent(memory, outPtr, userData, eventType, errno);
+                        outPtr += 32;
+                        nevents++;
+                    }
+                    break;
+                default:
+                    return wasiResult(WasiErrno.EINVAL);
+            }
+            inPtr += 32;
+        }
+
+        // sleep until the earliest clock sub, or forever if we only have read subs
+        long minTimeout = clockSubs.stream().mapToLong(Entry::getKey).min().orElse(Long.MAX_VALUE);
+
+        // loop until at least one event is triggered
+        long start = System.nanoTime();
+        do {
+            // process available read events
+            for (var entry : readSubs) {
+                InStream stream = entry.getKey();
+                long userData = entry.getValue();
+                try {
+                    int available = stream.available();
+                    if (available <= 0) {
+                        continue;
+                    }
+                    writeEvent(memory, outPtr, userData, WasiEventType.FD_READ, WasiErrno.ESUCCESS);
+                    memory.writeLong(outPtr + 16, available);
+                    outPtr += 32;
+                    nevents++;
+                } catch (IOException e) {
+                    writeEvent(memory, outPtr, userData, WasiEventType.FD_READ, WasiErrno.EIO);
+                    outPtr += 32;
+                    nevents++;
+                }
+            }
+
+            // sleep if no events have triggered
+            long elapsed = System.nanoTime() - start;
+            if (nevents == 0) {
+                long duration = max(minTimeout, 0) - elapsed;
+                // poll if we have read subs, rather than waiting for the full clock timeout
+                if (!readSubs.isEmpty()) {
+                    duration = min(duration, MILLISECONDS.toNanos(100));
+                }
+                try {
+                    NANOSECONDS.sleep(duration);
+                } catch (InterruptedException e) {
+                    throw new ChicoryException("Thread interrupted", e);
+                }
+            }
+
+            // process available clock events
+            for (var entry : clockSubs) {
+                long timeout = entry.getKey();
+                long userData = entry.getValue();
+                if (timeout <= elapsed) {
+                    writeEvent(memory, outPtr, userData, WasiEventType.CLOCK, WasiErrno.ESUCCESS);
+                    outPtr += 32;
+                    nevents++;
+                }
+            }
+        } while (nevents == 0);
+
+        memory.writeI32(neventsPtr, nevents);
+        return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport
@@ -1426,6 +1545,26 @@ public final class WasiPreview1 implements Closeable {
             logger.tracef("result = %s", errno.name());
         }
         return errno.value();
+    }
+
+    private static void writeEvent(
+            Memory memory, int index, long userData, byte eventType, WasiErrno errno) {
+        memory.fill((byte) 0, index, index + 32);
+        memory.writeLong(index, userData);
+        memory.writeShort(index + 8, (short) errno.value());
+        memory.writeByte(index + 10, eventType);
+    }
+
+    private long clockTime(int clockId) {
+        switch (clockId) {
+            case WasiClockId.REALTIME:
+                Instant now = clock.instant();
+                return SECONDS.toNanos(now.getEpochSecond()) + now.getNano();
+            case WasiClockId.MONOTONIC:
+                return System.nanoTime();
+            default:
+                throw new IllegalArgumentException("Invalid clockId: " + clockId);
+        }
     }
 
     private WasiErrno setFileTimes(Path path, long modifiedTime, long accessTime, int flags) {

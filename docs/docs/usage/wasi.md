@@ -236,7 +236,7 @@ For the most up-to-date info, and to see what specific functions we support, see
 | path_rename             | ✅         |                                                                           |
 | path_symlink            | ❌         |                                                                           |
 | path_unlink_file        | ✅         |                                                                           |
-| poll_oneoff             | ❌         |                                                                           |
+| poll_oneoff             | ✅         |                                                                           |
 | proc_exit               | ✅         |                                                                           |
 | proc_raise              | 💀         | This function is no longer part of WASI.                                  |
 | random_get              | ✅         |                                                                           |
