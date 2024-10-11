@@ -181,9 +181,8 @@ public final class WasiPreview1 implements Closeable {
                 memory.writeLong(resultPtr, 1L);
                 return wasiResult(WasiErrno.ESUCCESS);
             case WasiClockId.PROCESS_CPUTIME_ID:
-                throw new WASMRuntimeException("We don't yet support clockid process_cputime_id");
             case WasiClockId.THREAD_CPUTIME_ID:
-                throw new WASMRuntimeException("We don't yet support clockid thread_cputime_id");
+                return wasiResult(WasiErrno.ENOTSUP);
             default:
                 return wasiResult(WasiErrno.EINVAL);
         }
@@ -202,9 +201,8 @@ public final class WasiPreview1 implements Closeable {
                 memory.writeLong(resultPtr, System.nanoTime());
                 return wasiResult(WasiErrno.ESUCCESS);
             case WasiClockId.PROCESS_CPUTIME_ID:
-                throw new WASMRuntimeException("We don't yet support clockid process_cputime_id");
             case WasiClockId.THREAD_CPUTIME_ID:
-                throw new WASMRuntimeException("We don't yet support clockid thread_cputime_id");
+                return wasiResult(WasiErrno.ENOTSUP);
             default:
                 return wasiResult(WasiErrno.EINVAL);
         }
