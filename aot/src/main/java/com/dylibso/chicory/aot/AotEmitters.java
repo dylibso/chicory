@@ -212,7 +212,7 @@ final class AotEmitters {
         var globalType = ctx.globalTypes().get(globalIndex);
         emitLongToJvm(asm, ctx.globalTypes().get(globalIndex));
 
-        ctx.pushStackSize(stackSize(globalType));
+        ctx.pushStackSize(stackSize(jvmType(globalType)));
     }
 
     public static void GLOBAL_SET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
