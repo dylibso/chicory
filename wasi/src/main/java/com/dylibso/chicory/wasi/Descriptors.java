@@ -18,8 +18,6 @@ final class Descriptors {
     private final List<Descriptor> descriptors = new ArrayList<>();
     private final NavigableSet<Integer> freeFds = new TreeSet<>();
 
-    Descriptors() {}
-
     public Descriptor get(int fd) {
         if (fd < 0 || fd >= descriptors.size()) {
             return null;
@@ -89,6 +87,10 @@ final class Descriptors {
         @Override
         public int read(byte[] data) throws IOException {
             return in.read(data);
+        }
+
+        public int available() throws IOException {
+            return in.available();
         }
     }
 
