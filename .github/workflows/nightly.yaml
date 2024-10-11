@@ -52,7 +52,7 @@ jobs:
           mvn -B clean verify -pl fuzz -DskipTests=false -Dfuzz.test.numeric=10 -Dfuzz.test.table=10
 
       - name: Create Pull Request with the crash repro
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@5e914681df9dc83aa4e4905692ca88beb2f9e91f
         if: failure()
         with:
           token: ${{secrets.GH_TOKEN}}
