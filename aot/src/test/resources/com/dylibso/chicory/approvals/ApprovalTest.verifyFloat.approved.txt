@@ -44,8 +44,8 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ARETURN
 
   public static func_0(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    LDC 0.12345678
-    LDC 0.123456789012345
+    LDC 0.12345678F
+    LDC 0.123456789012345D
     POP2
     POP
     RETURN
