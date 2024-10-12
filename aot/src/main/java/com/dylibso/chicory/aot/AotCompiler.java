@@ -209,7 +209,7 @@ public final class AotCompiler {
 
         classWriter.visit(
                 Opcodes.V11,
-                Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL,
+                Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
                 internalClassName,
                 null,
                 getInternalName(Object.class),
