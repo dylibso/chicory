@@ -71,4 +71,57 @@ public class ValueTest {
         var i32FortyTwo = Value.i32(42);
         assertNotNull(i32FortyTwo.toString());
     }
+
+    @Test
+    public void shouldConvertToArrays() {
+        long x = 506097522914230528L;
+        var result = Value.vecTo8(new long[] {x});
+
+        assertEquals(8, result.length);
+        assertEquals(0, result[0]);
+        assertEquals(1, result[1]);
+        assertEquals(2, result[2]);
+        assertEquals(3, result[3]);
+        assertEquals(4, result[4]);
+        assertEquals(5, result[5]);
+        assertEquals(6, result[6]);
+        assertEquals(7, result[7]);
+    }
+
+    @Test
+    public void shouldConvertToArraysHL() {
+        long xLow = 506097522914230528L;
+        long xHigh = 1084818905618843912L;
+        var result = Value.vecTo8(new long[] {xLow, xHigh});
+
+        assertEquals(16, result.length);
+        assertEquals(0, result[0]);
+        assertEquals(1, result[1]);
+        assertEquals(2, result[2]);
+        assertEquals(3, result[3]);
+        assertEquals(4, result[4]);
+        assertEquals(5, result[5]);
+        assertEquals(6, result[6]);
+        assertEquals(7, result[7]);
+        assertEquals(8, result[8]);
+        assertEquals(9, result[9]);
+        assertEquals(10, result[10]);
+        assertEquals(11, result[11]);
+        assertEquals(12, result[12]);
+        assertEquals(13, result[13]);
+        assertEquals(14, result[14]);
+        assertEquals(15, result[15]);
+    }
+
+    @Test
+    public void shouldConvertBackFromBytes() {
+        var value = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+        var result = Value.bytesToVec(value);
+        long xLow = 506097522914230528L;
+        long xHigh = 1084818905618843912L;
+
+        assertEquals(2, result.length);
+        assertEquals(xLow, result[0]);
+        assertEquals(xHigh, result[1]);
+    }
 }
