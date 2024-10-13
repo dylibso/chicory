@@ -51,10 +51,10 @@ We also have a table:
 | fd_filestat_get         | ✅         |                                                                           |
 | fd_filestat_set_size    | ✅         |                                                                           |
 | fd_filestat_set_times   | ✅         |                                                                           |
-| fd_pread                | ❌         |                                                                           |
+| fd_pread                | ✅         |                                                                           |
 | fd_prestat_dir_name     | ✅         |                                                                           |
 | fd_prestat_get          | ✅         |                                                                           |
-| fd_pwrite               | ❌         |                                                                           |
+| fd_pwrite               | 🟡        | Not supported for files opened in append mode.                            |
 | fd_read                 | ✅         |                                                                           |
 | fd_readdir              | ✅         |                                                                           |
 | fd_renumber             | ✅         |                                                                           |
