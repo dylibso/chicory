@@ -90,8 +90,8 @@ public class ValueTest {
 
     @Test
     public void shouldConvertToArraysHL() {
-        long xLow = 506097522914230528L;
-        long xHigh = 1084818905618843912L;
+        long xLow = 0x0706_0504_0302_0100L;
+        long xHigh = 0x0F0E_0D0C_0B0A_0908L;
         var result = Value.vecTo8(new long[] {xLow, xHigh});
 
         assertEquals(16, result.length);
