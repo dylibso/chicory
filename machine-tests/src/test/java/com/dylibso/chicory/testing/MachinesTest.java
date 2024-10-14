@@ -185,7 +185,8 @@ public final class MachinesTest {
             var logger = new SystemLogger();
             try (var wasi = WasiPreview1.builder().withLogger(logger).withOpts(wasiOpts).build()) {
                 ExternalValues imports = new ExternalValues(wasi.toHostFunctions());
-                var wat2WasmModule = Parser.parse(new File("../wabt/src/main/resources/wat2wasm"));
+                var wat2WasmModule =
+                        Parser.parse(new File("../wabt-gen/src/main/resources/wat2wasm"));
                 var startFunctionIndex = new AtomicInteger();
                 for (int i = 0; i < wat2WasmModule.exportSection().exportCount(); i++) {
                     var export = wat2WasmModule.exportSection().getExport(i);
@@ -197,7 +198,7 @@ public final class MachinesTest {
                 // This index is subject to change when we update the wat2wasm version
                 assertEquals(18, startFunctionIndex.get());
 
-                Instance.builder(Parser.parse(new File("../wabt/src/main/resources/wat2wasm")))
+                Instance.builder(Parser.parse(new File("../wabt-gen/src/main/resources/wat2wasm")))
                         .withMachineFactory(
                                 (inst) -> {
                                     var machine = Wat2WasmMachineFactory.create(inst);

@@ -50,6 +50,7 @@
     <module>runtime-tests</module>
     <module>test-gen-plugin</module>
     <module>wabt</module>
+    <module>wabt-gen</module>
     <module>wasi</module>
     <module>wasi-test-gen-plugin</module>
     <module>wasm</module>
@@ -168,6 +169,11 @@
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>wabt</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wabt-gen</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

@@ -86,7 +86,7 @@
             </goals>
             <configuration>
               <name>com.dylibso.chicory.wabt.Wat2Wasm</name>
-              <wasmFile>${project.basedir}/../wabt/src/main/resources/wat2wasm</wasmFile>
+              <wasmFile>${project.basedir}/../wabt-gen/src/main/resources/wat2wasm</wasmFile>
             </configuration>
           </execution>
         </executions>

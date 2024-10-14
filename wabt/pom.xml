@@ -24,6 +24,10 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wabt-gen</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasi</artifactId>
     </dependency>
     <dependency>
@@ -41,34 +45,4 @@
     </dependency>
   </dependencies>
 
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>aot-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>wast2json</id>
-            <goals>
-              <goal>wasm-aot-gen</goal>
-            </goals>
-            <configuration>
-              <name>com.dylibso.chicory.wabt.Wast2JsonModule</name>
-              <wasmFile>src/main/resources/wast2json</wasmFile>
-            </configuration>
-          </execution>
-          <execution>
-            <id>wat2wasm</id>
-            <goals>
-              <goal>wasm-aot-gen</goal>
-            </goals>
-            <configuration>
-              <name>com.dylibso.chicory.wabt.Wat2WasmModule</name>
-              <wasmFile>src/main/resources/wat2wasm</wasmFile>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 </project>
