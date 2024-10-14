@@ -74,7 +74,7 @@ public class ValueTest {
 
     @Test
     public void shouldConvertToArrays() {
-        long x = 506097522914230528L;
+        long x = 0x0706_0504_0302_0100L;
         var result = Value.vecTo8(new long[] {x});
 
         assertEquals(8, result.length);
@@ -90,9 +90,9 @@ public class ValueTest {
 
     @Test
     public void shouldConvertToArraysHL() {
-        long xLow = 0x0706_0504_0302_0100L;
-        long xHigh = 0x0F0E_0D0C_0B0A_0908L;
-        var result = Value.vecTo8(new long[] {xLow, xHigh});
+        long xLo = 0x0706_0504_0302_0100L;
+        long xHi = 0x0F0E_0D0C_0B0A_0908L;
+        var result = Value.vecTo8(new long[] {xLo, xHi});
 
         assertEquals(16, result.length);
         assertEquals(0, result[0]);
@@ -117,11 +117,11 @@ public class ValueTest {
     public void shouldConvertBackFromBytes() {
         var value = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
         var result = Value.bytesToVec(value);
-        long xLow = 0x0706_0504_0302_0100L;
-        long xHigh = 0x0F0E_0D0C_0B0A_0908L;
+        long xLo = 0x0706_0504_0302_0100L;
+        long xHi = 0x0F0E_0D0C_0B0A_0908L;
 
         assertEquals(2, result.length);
-        assertEquals(xLow, result[0]);
-        assertEquals(xHigh, result[1]);
+        assertEquals(xLo, result[0]);
+        assertEquals(xHi, result[1]);
     }
 }

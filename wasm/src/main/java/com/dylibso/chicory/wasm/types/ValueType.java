@@ -118,15 +118,6 @@ public enum ValueType {
         }
     }
 
-    public boolean isVec() {
-        switch (this) {
-            case V128:
-                return true;
-            default:
-                return false;
-        }
-    }
-
     /**
      * @return {@code true} if the given type ID is a valid value type ID, or {@code false} if it is not
      */
