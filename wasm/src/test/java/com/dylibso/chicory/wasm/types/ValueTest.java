@@ -117,8 +117,8 @@ public class ValueTest {
     public void shouldConvertBackFromBytes() {
         var value = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
         var result = Value.bytesToVec(value);
-        long xLow = 506097522914230528L;
-        long xHigh = 1084818905618843912L;
+        long xLow = 0x0706_0504_0302_0100L;
+        long xHigh = 0x0F0E_0D0C_0B0A_0908L;
 
         assertEquals(2, result.length);
         assertEquals(xLow, result[0]);
