@@ -48,9 +48,9 @@ jobs:
       - name: Test Java
         run: mvn -B clean install
 
-  readme-ci:
+  docs-ci:
     runs-on: ubuntu-latest
-    name: CI - Readme
+    name: CI - Docs
     steps:
       - name: checkout
         uses: actions/checkout@v4
@@ -60,61 +60,19 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
           cache: maven
+      - name: set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'yarn'
+          cache-dependency-path: 'docs/yarn.lock'
       - name: Build Chicory
         run: mvn -B -Dquickly
-        env:
-          MAVEN_OPTS: "-Dmaven.repo.local=${{ github.workspace }}/repository"
-      # Test root Readme
-      - name: jbang
-        uses: jbangdev/jbang-action@36d4a384d215d91c2c7e74014a486cedfe09d760 # tag=v0.119.0
-        with:
-          script: README.md
-        env:
-          JBANG_REPO: "${{ github.workspace }}/repository"
-      - name: compare results
-        run: diff -r ./readmes/main/expected ./readmes/main/current
-      # Test wasi Readme
-      - name: jbang
-        uses: jbangdev/jbang-action@36d4a384d215d91c2c7e74014a486cedfe09d760 # tag=v0.119.0
-        with:
-          script: wasi/README.md
-        env:
-          JBANG_REPO: "${{ github.workspace }}/repository"
-      - name: compare results
-        run: diff -r ./readmes/wasi/expected ./readmes/wasi/current
-      # Test AOT Readme
-      - name: jbang
-        uses: jbangdev/jbang-action@36d4a384d215d91c2c7e74014a486cedfe09d760 # tag=v0.119.0
-        with:
-          script: aot/README.md
-        env:
-          JBANG_REPO: "${{ github.workspace }}/repository"
-      # Test WASM Readme
-      - name: jbang
-        uses: jbangdev/jbang-action@36d4a384d215d91c2c7e74014a486cedfe09d760 # tag=v0.119.0
-        with:
-          script: wasm/README.md
-        env:
-          JBANG_REPO: "${{ github.workspace }}/repository"
-
-      # Test docs index
-      - name: jbang
-        uses: jbangdev/jbang-action@36d4a384d215d91c2c7e74014a486cedfe09d760 # tag=v0.119.0
-        with:
-          script: docs/docs/index.md
-        env:
-          JBANG_REPO: "${{ github.workspace }}/repository"
-      - name: compare results
-        run: diff -r ./readmes/index/expected ./readmes/index/current
-      # Test docs memory
-      - name: jbang
-        uses: jbangdev/jbang-action@36d4a384d215d91c2c7e74014a486cedfe09d760 # tag=v0.119.0
-        with:
-          script: docs/docs/usage/memory.md
-        env:
-          JBANG_REPO: "${{ github.workspace }}/repository"
-      - name: compare results
-        run: diff -r ./readmes/memory/expected ./readmes/memory/current
+      - name: Test Docs
+        working-directory: docs
+        run: |
+          yarn install --frozen-lockfile
+          yarn test
 
   test-results:
     name: Test Results

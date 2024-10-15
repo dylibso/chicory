@@ -104,7 +104,7 @@ System.out.println("Result: " + result); // should print 120 (5!)
 
 <!--
 ```java
-docs.FileOps.writeResult("readmes/index/current", "factorial.result", "" + result);
+docs.FileOps.writeResult("docs", "index.md.result", "" + result);
 ```
 -->
 
