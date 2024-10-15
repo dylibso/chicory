@@ -69,6 +69,6 @@ assert(3L == result); // 3 vowels in Hello, World!
 
 <!--
 ```java
-docs.FileOps.writeResult("readmes/memory/current", "countVowels.result", "" + result);
+docs.FileOps.writeResult("docs/usage", "memory.md.result", "" + result);
 ```
 -->

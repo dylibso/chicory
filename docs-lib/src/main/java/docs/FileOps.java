@@ -17,7 +17,7 @@ public final class FileOps {
             dest.toFile().delete();
         }
         Files.copy(
-                new File(".")
+                new File("..")
                         .toPath()
                         .resolve("wasm-corpus")
                         .resolve("src")
