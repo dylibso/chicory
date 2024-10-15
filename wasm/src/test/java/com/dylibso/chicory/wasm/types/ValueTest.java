@@ -71,4 +71,57 @@ public class ValueTest {
         var i32FortyTwo = Value.i32(42);
         assertNotNull(i32FortyTwo.toString());
     }
+
+    @Test
+    public void shouldConvertToArrays() {
+        long x = 0x0706_0504_0302_0100L;
+        var result = Value.vecTo8(new long[] {x});
+
+        assertEquals(8, result.length);
+        assertEquals(0, result[0]);
+        assertEquals(1, result[1]);
+        assertEquals(2, result[2]);
+        assertEquals(3, result[3]);
+        assertEquals(4, result[4]);
+        assertEquals(5, result[5]);
+        assertEquals(6, result[6]);
+        assertEquals(7, result[7]);
+    }
+
+    @Test
+    public void shouldConvertToArraysHL() {
+        long xLo = 0x0706_0504_0302_0100L;
+        long xHi = 0x0F0E_0D0C_0B0A_0908L;
+        var result = Value.vecTo8(new long[] {xLo, xHi});
+
+        assertEquals(16, result.length);
+        assertEquals(0, result[0]);
+        assertEquals(1, result[1]);
+        assertEquals(2, result[2]);
+        assertEquals(3, result[3]);
+        assertEquals(4, result[4]);
+        assertEquals(5, result[5]);
+        assertEquals(6, result[6]);
+        assertEquals(7, result[7]);
+        assertEquals(8, result[8]);
+        assertEquals(9, result[9]);
+        assertEquals(10, result[10]);
+        assertEquals(11, result[11]);
+        assertEquals(12, result[12]);
+        assertEquals(13, result[13]);
+        assertEquals(14, result[14]);
+        assertEquals(15, result[15]);
+    }
+
+    @Test
+    public void shouldConvertBackFromBytes() {
+        var value = new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+        var result = Value.bytesToVec(value);
+        long xLo = 0x0706_0504_0302_0100L;
+        long xHi = 0x0F0E_0D0C_0B0A_0908L;
+
+        assertEquals(2, result.length);
+        assertEquals(xLo, result[0]);
+        assertEquals(xHi, result[1]);
+    }
 }

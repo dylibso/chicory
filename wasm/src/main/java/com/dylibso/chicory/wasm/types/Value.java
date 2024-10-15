@@ -102,6 +102,79 @@ public class Value {
         data = value;
     }
 
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
+    public static byte[] vecTo8(long[] values) {
+        var result = new byte[values.length * 8];
+        var valueIdx = 0;
+        for (int i = 0; i < result.length; i++) {
+            var v = values[valueIdx++];
+            result[i] = (byte) (v & 0xFFL);
+            result[++i] = (byte) ((v >> 8) & 0xFFL);
+            result[++i] = (byte) ((v >> 16) & 0xFFL);
+            result[++i] = (byte) ((v >> 24) & 0xFFL);
+            result[++i] = (byte) ((v >> 32) & 0xFFL);
+            result[++i] = (byte) ((v >> 40) & 0xFFL);
+            result[++i] = (byte) ((v >> 48) & 0xFFL);
+            result[++i] = (byte) ((v >> 56) & 0xFFL);
+        }
+        return result;
+    }
+
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
+    public static long[] bytesToVec(byte[] bytes) {
+        var result = new long[bytes.length / 8];
+        var valueIdx = 0;
+        for (int i = 0; i < bytes.length; i++) {
+            result[valueIdx++] =
+                    Byte.toUnsignedLong(bytes[i]) + (Byte.toUnsignedLong(bytes[++i]) << 8L)
+                            | (Byte.toUnsignedLong(bytes[++i]) << 16L)
+                            | (Byte.toUnsignedLong(bytes[++i]) << 24L)
+                            | (Byte.toUnsignedLong(bytes[++i]) << 32L)
+                            | (Byte.toUnsignedLong(bytes[++i]) << 40L)
+                            | (Byte.toUnsignedLong(bytes[++i]) << 48L)
+                            | (Byte.toUnsignedLong(bytes[++i]) << 56L);
+        }
+        return result;
+    }
+
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
+    public static int[] vecTo16(long[] values) {
+        var result = new int[values.length * 4];
+        var valueIdx = 0;
+        for (int i = 0; i < result.length; i++) {
+            var v = values[valueIdx++];
+            result[i] = (int) (v & 0xFFFFL);
+            result[++i] = (int) ((v >> 16) & 0xFFFFL);
+            result[++i] = (int) ((v >> 32) & 0xFFFFL);
+            result[++i] = (int) ((v >> 48) & 0xFFFFL);
+        }
+        return result;
+    }
+
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
+    public static long[] vecTo32(long[] values) {
+        var result = new long[values.length * 2];
+        var valueIdx = 0;
+        for (int i = 0; i < result.length; i++) {
+            var v = values[valueIdx++];
+            result[i] = (v & 0xFFFFFFFFL);
+            result[++i] = ((v >> 32) & 0xFFFFFFFFL);
+        }
+        return result;
+    }
+
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
+    public static float[] vecToF32(long[] values) {
+        var result = new float[values.length * 2];
+        var valueIdx = 0;
+        for (int i = 0; i < result.length; i++) {
+            var v = values[valueIdx++];
+            result[i] = Float.intBitsToFloat((int) (v & 0xFFFFFFFFL));
+            result[++i] = Float.intBitsToFloat((int) ((v >> 32) & 0xFFFFFFFFL));
+        }
+        return result;
+    }
+
     /**
      * Create a zeroed value for the particular type.
      *
@@ -135,6 +208,8 @@ public class Value {
                 return longToFloat(data) + "@f32";
             case F64:
                 return longToDouble(data) + "@f64";
+            case V128:
+                return data + "@v128";
             case FuncRef:
                 return "func[" + (int) data + "]";
             case ExternRef:
