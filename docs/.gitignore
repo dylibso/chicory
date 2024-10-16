@@ -24,3 +24,5 @@ yarn-error.log*
 .pnp.*
 *.wasm
 *.result
+
+yarn.lock
