@@ -21,6 +21,11 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
+        <artifactId>function-processor</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
         <artifactId>log</artifactId>
         <version>${project.version}</version>
       </dependency>
