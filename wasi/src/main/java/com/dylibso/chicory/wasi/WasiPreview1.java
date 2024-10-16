@@ -12,9 +12,9 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 
-import com.dylibso.chicory.function.annotations.Buffer;
-import com.dylibso.chicory.function.annotations.HostModule;
-import com.dylibso.chicory.function.annotations.WasmExport;
+import com.dylibso.chicory.hostmodule.annotations.Buffer;
+import com.dylibso.chicory.hostmodule.annotations.HostModule;
+import com.dylibso.chicory.hostmodule.annotations.WasmExport;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostFunction;

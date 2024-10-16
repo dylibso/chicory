@@ -16,7 +16,7 @@
     <dependencies>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>function-annotations</artifactId>
+        <artifactId>host-module-annotations</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
