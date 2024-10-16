@@ -64,15 +64,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'yarn'
-          cache-dependency-path: 'docs/yarn.lock'
       - name: Build Chicory
         run: mvn -B -Dquickly
       - name: Test Docs
         working-directory: docs
         run: |
-          yarn install --frozen-lockfile
-          yarn test
+          npm install
+          npm run test
 
   test-results:
     name: Test Results
