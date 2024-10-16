@@ -40,9 +40,8 @@
     <module>bom</module>
     <module>cli</module>
     <module>docs-lib</module>
-    <module>function-annotations</module>
-    <module>function-processor</module>
     <module>fuzz</module>
+    <module>host-module</module>
     <module>jmh</module>
     <module>log</module>
     <module>machine-tests</module>
@@ -117,6 +116,7 @@
     <maven-site-plugin.version>3.20.0</maven-site-plugin.version>
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.5.1</maven-surefire-plugin.version>
+    <maven-invoker-plugin.version>3.8.0</maven-invoker-plugin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <spotless-maven-plugin.version>2.43.0</spotless-maven-plugin.version>
     <templating-maven-plugin.version>3.0.0</templating-maven-plugin.version>
@@ -147,12 +147,12 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>function-annotations</artifactId>
+        <artifactId>host-module-annotations</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>function-processor</artifactId>
+        <artifactId>host-module-processor</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -184,6 +184,25 @@
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>wasm-corpus</artifactId>
         <version>${project.version}</version>
+      </dependency>
+
+      <!-- Jackson -->
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-annotations</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson.version}</version>
+      </dependency>
+
+      <!-- Javaparser -->
+      <dependency>
+        <groupId>com.github.javaparser</groupId>
+        <artifactId>javaparser-core</artifactId>
+        <version>${javaparser.version}</version>
       </dependency>
 
       <!-- Error Prone -->
@@ -219,6 +238,13 @@
         <groupId>info.picocli</groupId>
         <artifactId>picocli</artifactId>
         <version>${picocli.version}</version>
+      </dependency>
+
+      <!-- Zip4J -->
+      <dependency>
+        <groupId>net.lingala.zip4j</groupId>
+        <artifactId>zip4j</artifactId>
+        <version>${zip4j.version}</version>
       </dependency>
 
       <!-- Used in the infrastructure of Fuzz tests -->
