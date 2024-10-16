@@ -16,7 +16,7 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>function-annotations</artifactId>
+      <artifactId>host-module-annotations</artifactId>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
@@ -33,7 +33,7 @@
     <!-- fake dependency for reactor build order -->
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>function-processor</artifactId>
+      <artifactId>host-module-processor</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -117,7 +117,7 @@
           <annotationProcessorPaths combine.children="append">
             <path>
               <groupId>com.dylibso.chicory</groupId>
-              <artifactId>function-processor</artifactId>
+              <artifactId>host-module-processor</artifactId>
               <version>${project.version}</version>
             </path>
           </annotationProcessorPaths>
@@ -129,7 +129,7 @@
         <artifactId>maven-dependency-plugin</artifactId>
         <configuration>
           <ignoredUnusedDeclaredDependencies combine.children="append">
-            <dependency>com.dylibso.chicory:function-processor</dependency>
+            <dependency>com.dylibso.chicory:host-module-processor</dependency>
           </ignoredUnusedDeclaredDependencies>
         </configuration>
       </plugin>
