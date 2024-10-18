@@ -1,5 +1,6 @@
 ---
 sidebar_position: 1
+sidebar_label: Docs
 ---
 
 ## Getting Started
