@@ -69,7 +69,7 @@ public class AotGenMojo extends AbstractMojo {
     private MavenProject project;
 
     @Override
-    @SuppressWarnings({"StringSplitter", "deprecation"})
+    @SuppressWarnings("deprecation")
     public void execute() throws MojoExecutionException {
         var module = Parser.parse(wasmFile);
         var result = AotCompiler.compileModule(module, name);
@@ -77,7 +77,7 @@ public class AotGenMojo extends AbstractMojo {
         var finalFolder = targetClassFolder.toPath();
         var finalSourceFolder = targetSourceFolder.toPath();
 
-        String[] splitName = name.split("\\.");
+        String[] splitName = name.split("\\.", -1);
         finalFolder = targetClassFolder.toPath();
         finalSourceFolder = targetSourceFolder.toPath();
         String packageName = createPackageName(splitName);
