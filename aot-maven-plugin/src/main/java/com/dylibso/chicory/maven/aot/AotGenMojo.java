@@ -80,7 +80,7 @@ public class AotGenMojo extends AbstractMojo {
         String[] splitName = name.split("\\.", -1);
         finalFolder = targetClassFolder.toPath();
         finalSourceFolder = targetSourceFolder.toPath();
-        String packageName = createPackageName(splitName);
+        var packageName = createPackageName(splitName);
 
         finalFolder = resolvePath(finalFolder, splitName);
         finalSourceFolder = resolvePath(finalSourceFolder, splitName);
@@ -97,14 +97,14 @@ public class AotGenMojo extends AbstractMojo {
                     e);
         }
 
-        String machineName = splitName[splitName.length - 1] + "MachineFactory";
+        var machineName = splitName[splitName.length - 1] + "MachineFactory";
         generateClass(finalSourceFolder, packageName, machineName);
         writeCompiledClasses(result, finalFolder);
         addProjectResources(targetClassFolder.getPath(), targetSourceFolder.getPath());
     }
 
     private void addProjectResources(String classFolder, String sourceFolder) {
-        Resource resource = new Resource();
+        var resource = new Resource();
         resource.setDirectory(classFolder);
         project.addResource(resource);
         project.addCompileSourceRoot(sourceFolder);
@@ -113,8 +113,8 @@ public class AotGenMojo extends AbstractMojo {
     private void writeCompiledClasses(CompilerResult result, Path finalFolder)
             throws MojoExecutionException {
         for (Map.Entry<String, byte[]> entry : result.classBytes().entrySet()) {
-            String binaryName = entry.getKey().replace('.', '/') + ".class";
-            Path targetFile = finalFolder.resolve(binaryName);
+            var binaryName = entry.getKey().replace('.', '/') + ".class";
+            var targetFile = finalFolder.resolve(binaryName);
             try {
                 Files.write(targetFile, entry.getValue());
             } catch (IOException e) {
