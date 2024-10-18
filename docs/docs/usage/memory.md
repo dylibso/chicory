@@ -1,5 +1,7 @@
 ---
+id: Memory usage
 sidebar_position: 1
+sidebar_label: Memory usage
 ---
 
 ## Using the memory to share data
