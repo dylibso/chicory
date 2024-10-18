@@ -92,7 +92,7 @@ public class AotGenMojo extends AbstractMojo {
                     "Failed to create either "
                             + finalFolder.toString()
                             + " or "
-                            + finalFolder.toString()
+                            + finalSourceFolder.toString()
                             + "folders.",
                     e);
         }
