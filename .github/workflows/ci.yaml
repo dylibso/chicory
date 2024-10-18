@@ -69,7 +69,7 @@ jobs:
       - name: Test Docs
         working-directory: docs
         run: |
-          npm install
+          npm ci
           npm run test
 
   test-results:
