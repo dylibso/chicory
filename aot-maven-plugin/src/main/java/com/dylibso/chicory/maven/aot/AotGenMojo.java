@@ -84,15 +84,23 @@ public class AotGenMojo extends AbstractMojo {
 
         finalFolder = resolvePath(finalFolder, splitName);
         finalSourceFolder = resolvePath(finalSourceFolder, splitName);
-        Files.createDirectories(finalFolder);
-        Files.createDirectories(finalSourceFolder);
-        e.printStackTrace();
+        try {
+            Files.createDirectories(finalFolder);
+            Files.createDirectories(finalSourceFolder);
+        } catch (IOException e) {
+            throw new MojoExecutionException(
+                    "Failed to create either "
+                            + finalFolder.toString()
+                            + " or "
+                            + finalFolder.toString()
+                            + "folders.",
+                    e);
+        }
 
         String machineName = splitName[splitName.length - 1] + "MachineFactory";
         generateClass(finalSourceFolder, packageName, machineName);
         writeCompiledClasses(result, finalFolder);
         addProjectResources(targetClassFolder.getPath(), targetSourceFolder.getPath());
-        e.printStackTrace();
     }
 
     private void addProjectResources(String classFolder, String sourceFolder) {
