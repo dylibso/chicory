@@ -4,6 +4,7 @@ import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import static com.github.javaparser.StaticJavaParser.parseType;
 
 import com.dylibso.chicory.aot.AotCompiler;
+import com.dylibso.chicory.aot.CompilerResult;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.Parser;
 import com.github.javaparser.ast.CompilationUnit;
@@ -16,7 +17,9 @@ import com.github.javaparser.utils.SourceRoot;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.StringJoiner;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -70,26 +73,52 @@ public class AotGenMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException {
         var module = Parser.parse(wasmFile);
         var result = AotCompiler.compileModule(module, name);
-        var split = name.split("\\.");
+
         var finalFolder = targetClassFolder.toPath();
         var finalSourceFolder = targetSourceFolder.toPath();
-        for (int i = 0; i < (split.length - 1); i++) {
-            finalFolder = finalFolder.resolve(split[i]);
-            finalSourceFolder = finalSourceFolder.resolve(split[i]);
+
+        String[] splitName = name.split("\\.");
+        finalFolder = targetClassFolder.toPath();
+        finalSourceFolder = targetSourceFolder.toPath();
+        String packageName = createPackageName(splitName);
+
+        finalFolder = resolvePath(finalFolder, splitName);
+        finalSourceFolder = resolvePath(finalSourceFolder, splitName);
+        Files.createDirectories(finalFolder);
+        Files.createDirectories(finalSourceFolder);
+        e.printStackTrace();
+
+        String machineName = splitName[splitName.length - 1] + "MachineFactory";
+        generateClass(finalSourceFolder, packageName, machineName);
+        writeCompiledClasses(result, finalFolder);
+        addProjectResources(targetClassFolder.getPath(), targetSourceFolder.getPath());
+        e.printStackTrace();
+    }
+
+    private void addProjectResources(String classFolder, String sourceFolder) {
+        Resource resource = new Resource();
+        resource.setDirectory(classFolder);
+        project.addResource(resource);
+        project.addCompileSourceRoot(sourceFolder);
+    }
+
+    private void writeCompiledClasses(CompilerResult result, Path finalFolder)
+            throws MojoExecutionException {
+        for (Map.Entry<String, byte[]> entry : result.classBytes().entrySet()) {
+            String binaryName = entry.getKey().replace('.', '/') + ".class";
+            Path targetFile = finalFolder.resolve(binaryName);
+            try {
+                Files.write(targetFile, entry.getValue());
+            } catch (IOException e) {
+                throw new MojoExecutionException("Failed to write " + targetFile, e);
+            }
         }
-        finalFolder.toFile().mkdirs();
-        var packageName = split[0];
-        for (int i = 1; i < (split.length - 1); i++) {
-            packageName += "." + split[i];
-        }
+    }
 
-        // Generate static Machine implementation
-        finalSourceFolder.toFile().mkdirs();
-        final SourceRoot dest = new SourceRoot(finalSourceFolder);
+    private void generateClass(Path finalSourceFolder, String packageName, String machineName) {
+        SourceRoot dest = new SourceRoot(finalSourceFolder);
 
-        var machineName = split[split.length - 1] + "MachineFactory";
-
-        var cu = new CompilationUnit(packageName);
+        CompilationUnit cu = new CompilationUnit(packageName);
         cu.setPackageDeclaration(packageName);
         cu.setStorage(finalSourceFolder.resolve(machineName + ".java"));
 
@@ -97,15 +126,13 @@ public class AotGenMojo extends AbstractMojo {
         cu.addImport("com.dylibso.chicory.runtime.Machine");
 
         var clazz = cu.addClass(machineName, Modifier.Keyword.PUBLIC, Modifier.Keyword.FINAL);
-
-        var constr = clazz.addConstructor(Modifier.Keyword.PRIVATE);
-        constr.createBody();
+        clazz.addConstructor(Modifier.Keyword.PRIVATE).createBody();
 
         var method = clazz.addMethod("create", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
         method.addParameter(parseType("Instance"), "instance");
         method.setType(Machine.class);
-        var methodBody = method.createBody();
 
+        var methodBody = method.createBody();
         var constructorInvocation =
                 new ObjectCreationExpr(
                         null,
@@ -115,20 +142,20 @@ public class AotGenMojo extends AbstractMojo {
 
         dest.add(cu);
         dest.saveAll();
+    }
 
-        for (Map.Entry<String, byte[]> entry : result.classBytes().entrySet()) {
-            var binaryName = entry.getKey().replace('.', '/') + ".class";
-            var targetFile = targetClassFolder.toPath().resolve(binaryName);
-            try {
-                Files.write(targetFile, entry.getValue());
-            } catch (IOException e) {
-                throw new MojoExecutionException("Failed to write " + targetFile, e);
-            }
+    private String createPackageName(String[] splitName) {
+        StringJoiner packageName = new StringJoiner(".");
+        for (int i = 0; i < splitName.length - 1; i++) {
+            packageName.add(splitName[i]);
         }
+        return packageName.toString();
+    }
 
-        Resource resource = new Resource();
-        resource.setDirectory(targetClassFolder.getPath());
-        project.addResource(resource);
-        project.addCompileSourceRoot(targetSourceFolder.getPath());
+    private Path resolvePath(Path baseFolder, String[] splitName) {
+        for (int i = 0; i < splitName.length - 1; i++) {
+            baseFolder = baseFolder.resolve(splitName[i]);
+        }
+        return baseFolder;
     }
 }
