@@ -106,18 +106,3 @@ as interpreting bytecode can only be so fast.
 * [asmble](https://github.com/cretz/asmble)
 * [kwasm](https://github.com/jasonwyatt/KWasm)
 * [wazero](https://wazero.io/)
-
-### Building the Runtime
-
-Contributors and other advanced users may want to build the runtime from source. To do so, you'll need to have Maven installed.
-`Java version 11+` required for a proper build. You can download and install [Java 11 Temurin](https://adoptium.net/temurin/releases/?version=11)
-
-Basic steps:
-
-* `mvn clean install` to run all of the project's tests and install the library in your local repo
-* `mvn -Dquickly` to install the library skipping all tests
-* `mvn -Ddev <...goals>` to disable linters and enforcers during development
-* `mvn spotless:apply` to autoformat the code
-* `./scripts/compile-resources.sh` will recompile and regenerate the `resources/compiled` folders
-
-NOTE: The `install` target relies on the `wabt` library to compile the test suite. This is not currently released for ARM (e.g. new Macs with Apple Silicon). However, `wabt` is available from Homebrew, so `brew install wabt` before running `mvn clean install` should work.

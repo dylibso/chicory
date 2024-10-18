@@ -70,6 +70,19 @@ All submissions, including submissions by project members, need to be reviewed a
  * Commits should be atomic and semantic. Please properly squash your pull requests before submitting them. Fixup commits can be used temporarily during the review process but things should be squashed at the end to have meaningful commits.
  * We typically squash and merge pull requests when they are approved. This tends to keep the commit history a little bit more tidy without placing undue burden on the developers.
 
+### Building the Runtime
+
+Contributors and other advanced users may want to build the runtime from source. To do so, you'll need to have Maven installed.
+`Java version 11+` required for a proper build. You can download and install [Java 11 Temurin](https://adoptium.net/temurin/releases/?version=11)
+
+Basic steps:
+
+* `mvn clean install` to run all of the project's tests and install the library in your local repo
+* `mvn -Dquickly` to install the library skipping all tests
+* `mvn -Ddev <...goals>` to disable linters and enforcers during development
+* `mvn spotless:apply` to autoformat the code
+* `./scripts/compile-resources.sh` will recompile and regenerate the `resources/compiled` folders
+
 ### Continuous Integration
 
 Because we are all humans, and to ensure Chicory evolves in the right direction, all changes must pass continuous integration before being merged. The CI is based on GitHub Actions, which means that pull requests will receive automatic feedback.  Please watch out for the results of these workflows to see if your PR passes all tests.
