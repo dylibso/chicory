@@ -78,12 +78,8 @@ public class AotGenMojo extends AbstractMojo {
         var finalSourceFolder = targetSourceFolder.toPath();
 
         String[] splitName = name.split("\\.", -1);
-        finalFolder = targetClassFolder.toPath();
-        finalSourceFolder = targetSourceFolder.toPath();
         var packageName = createPackageName(splitName);
 
-        finalFolder = resolvePath(finalFolder, splitName);
-        finalSourceFolder = resolvePath(finalSourceFolder, splitName);
         try {
             Files.createDirectories(finalFolder);
             Files.createDirectories(finalSourceFolder);
@@ -96,6 +92,9 @@ public class AotGenMojo extends AbstractMojo {
                             + "folders.",
                     e);
         }
+
+        finalFolder = resolvePath(finalFolder, splitName);
+        finalSourceFolder = resolvePath(finalSourceFolder, splitName);
 
         var machineName = splitName[splitName.length - 1] + "MachineFactory";
         generateClass(finalSourceFolder, packageName, machineName);
