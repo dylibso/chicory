@@ -125,7 +125,7 @@ public class AotGenMojo extends AbstractMojo {
     private void generateClass(Path finalSourceFolder, String packageName, String machineName) {
         SourceRoot dest = new SourceRoot(finalSourceFolder);
 
-        CompilationUnit cu = new CompilationUnit(packageName);
+        var cu = new CompilationUnit(packageName);
         cu.setPackageDeclaration(packageName);
         cu.setStorage(finalSourceFolder.resolve(machineName + ".java"));
 
@@ -133,7 +133,8 @@ public class AotGenMojo extends AbstractMojo {
         cu.addImport("com.dylibso.chicory.runtime.Machine");
 
         var clazz = cu.addClass(machineName, Modifier.Keyword.PUBLIC, Modifier.Keyword.FINAL);
-        clazz.addConstructor(Modifier.Keyword.PRIVATE).createBody();
+        var constr = clazz.addConstructor(Modifier.Keyword.PRIVATE);
+        constr.createBody();
 
         var method = clazz.addMethod("create", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
         method.addParameter(parseType("Instance"), "instance");
