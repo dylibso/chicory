@@ -55,33 +55,24 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
 
   public static func_0(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     ILOAD 0
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
     TABLESWITCH
       0: L0
       1: L1
       2: L2
       default: L3
    L2
-    GOTO L4
-   L1
-    GOTO L5
-   L0
-    GOTO L6
-   L3
-    GOTO L7
-   L4
     BIPUSH 100
     IRETURN
-   L5
+   L1
     BIPUSH 101
     IRETURN
-   L6
+   L0
     BIPUSH 102
     IRETURN
-   L7
+   L3
     BIPUSH 103
     IRETURN
-   L8
+   L4
     ATHROW
 
   public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I

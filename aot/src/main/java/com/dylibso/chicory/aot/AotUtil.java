@@ -25,11 +25,6 @@ final class AotUtil {
 
     private AotUtil() {}
 
-    public enum StackSize {
-        ONE,
-        TWO
-    }
-
     private static final Method LONG_TO_F32;
     private static final Method LONG_TO_F64;
     private static final Method F32_TO_LONG;
@@ -222,21 +217,6 @@ final class AotUtil {
         }
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
-    public static void validateArgumentType(Class<?> clazz) {
-        stackSize(clazz);
-    }
-
-    public static StackSize stackSize(Class<?> clazz) {
-        if (clazz == int.class || clazz == float.class) {
-            return StackSize.ONE;
-        }
-        if (clazz == long.class || clazz == double.class) {
-            return StackSize.TWO;
-        }
-        throw new IllegalArgumentException("Unsupported JVM type: " + clazz);
-    }
-
     public static int slotCount(ValueType type) {
         switch (type) {
             case I32:
@@ -252,8 +232,8 @@ final class AotUtil {
         }
     }
 
-    public static void emitPop(MethodVisitor asm, StackSize size) {
-        asm.visitInsn(size == StackSize.ONE ? Opcodes.POP : Opcodes.POP2);
+    public static void emitPop(MethodVisitor asm, ValueType type) {
+        asm.visitInsn(slotCount(type) == 1 ? Opcodes.POP : Opcodes.POP2);
     }
 
     public static void emitInvokeStatic(MethodVisitor asm, Method method) {
