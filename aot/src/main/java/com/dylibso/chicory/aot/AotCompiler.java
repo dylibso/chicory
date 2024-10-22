@@ -36,7 +36,6 @@ import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
 import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
 import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
@@ -63,6 +62,7 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.lang.invoke.MethodType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -181,8 +181,9 @@ public final class AotCompiler {
         } catch (VerifyError e) {
             // run ASM verifier to help with debugging
             try {
-                var writer = new PrintWriter(System.out, false, UTF_8);
-                CheckClassAdapter.verify(new ClassReader(classBytes), true, writer);
+                var out = new StringWriter().append("ASM verifier:\n\n");
+                CheckClassAdapter.verify(new ClassReader(classBytes), true, new PrintWriter(out));
+                e.addSuppressed(new RuntimeException(out.toString()));
             } catch (Throwable t) {
                 e.addSuppressed(t);
             }
