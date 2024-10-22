@@ -1,11 +1,11 @@
 package com.dylibso.chicory.runtime;
 
-public class ExternalMemory implements ExternalValue {
+public class ImportMemory implements ImportValue {
     private final String module;
     private final String name;
     private final Memory memory;
 
-    public ExternalMemory(String module, String name, Memory memory) {
+    public ImportMemory(String module, String name, Memory memory) {
         this.module = module;
         this.name = name;
         this.memory = memory;
@@ -22,7 +22,7 @@ public class ExternalMemory implements ExternalValue {
     }
 
     @Override
-    public ExternalValue.Type type() {
+    public ImportValue.Type type() {
         return Type.MEMORY;
     }
 

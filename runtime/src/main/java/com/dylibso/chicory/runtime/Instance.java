@@ -57,7 +57,7 @@ public class Instance {
     private final int importedTablesOffset;
     private final FunctionType[] types;
     private final int[] functionTypes;
-    private final ExternalValues imports;
+    private final ImportValues imports;
     private final Table[] roughTables;
     private final TableInstance[] tables;
     private final Element[] elements;
@@ -75,7 +75,7 @@ public class Instance {
             FunctionBody[] functions,
             FunctionType[] types,
             int[] functionTypes,
-            ExternalValues imports,
+            ImportValues imports,
             Table[] tables,
             Element[] elements,
             Map<String, Export> exports,
@@ -308,7 +308,7 @@ public class Instance {
         return functionTypes[idx];
     }
 
-    public ExternalValues imports() {
+    public ImportValues imports() {
         return imports;
     }
 
@@ -369,7 +369,7 @@ public class Instance {
         private boolean initialize = true;
         private boolean start = true;
         private ExecutionListener listener;
-        private ExternalValues externalValues;
+        private ImportValues importValues;
         private Function<Instance, Machine> machineFactory;
 
         private Builder(Module module) {
@@ -394,8 +394,8 @@ public class Instance {
             return this;
         }
 
-        public Builder withExternalValues(ExternalValues externalValues) {
-            this.externalValues = externalValues;
+        public Builder withImportValues(ImportValues importValues) {
+            this.importValues = importValues;
             return this;
         }
 
@@ -404,7 +404,7 @@ public class Instance {
             return this;
         }
 
-        private void validateExternalFunctionSignature(FunctionImport imprt, ExternalFunction f) {
+        private void validateExternalFunctionSignature(FunctionImport imprt, ImportFunction f) {
             var expectedType = module.typeSection().getType(imprt.typeIndex());
             if (expectedType.params().size() != f.paramTypes().size()
                     || expectedType.returns().size() != f.returnTypes().size()) {
@@ -438,14 +438,14 @@ public class Instance {
             }
         }
 
-        private void validateHostGlobalType(GlobalImport i, ExternalGlobal g) {
+        private void validateHostGlobalType(GlobalImport i, ImportGlobal g) {
             if (i.type() != g.instance().getType()
                     || i.mutabilityType() != g.instance().getMutabilityType()) {
                 throw new UnlinkableException("incompatible import type");
             }
         }
 
-        private void validateHostTableType(TableImport i, ExternalTable t) {
+        private void validateHostTableType(TableImport i, ImportTable t) {
             var minExpected = t.table().limits().min();
             var maxExpected = t.table().limits().max();
             var minCurrent = i.limits().min();
@@ -465,7 +465,7 @@ public class Instance {
             }
         }
 
-        private void validateHostMemoryType(MemoryImport i, ExternalMemory m) {
+        private void validateHostMemoryType(MemoryImport i, ImportMemory m) {
             // Notice we do not compare to m.memory().initialPages()
             // because m might have grown in the meantime.
             // Instead, we use the current number of pages.
@@ -495,7 +495,7 @@ public class Instance {
         }
 
         private void validateNegativeImportType(
-                String moduleName, String name, ExternalValue[] external) {
+                String moduleName, String name, ImportValue[] external) {
             for (var fh : external) {
                 if (fh.module().equals(moduleName) && fh.name().equals(name)) {
                     throw new UnlinkableException("incompatible import type");
@@ -504,33 +504,33 @@ public class Instance {
         }
 
         private void validateNegativeImportType(
-                String moduleName, String name, ExternalType typ, ExternalValues externalValues) {
+                String moduleName, String name, ExternalType typ, ImportValues importValues) {
             switch (typ) {
                 case FUNCTION:
-                    validateNegativeImportType(moduleName, name, externalValues.globals());
-                    validateNegativeImportType(moduleName, name, externalValues.memories());
-                    validateNegativeImportType(moduleName, name, externalValues.tables());
+                    validateNegativeImportType(moduleName, name, importValues.globals());
+                    validateNegativeImportType(moduleName, name, importValues.memories());
+                    validateNegativeImportType(moduleName, name, importValues.tables());
                     break;
                 case GLOBAL:
-                    validateNegativeImportType(moduleName, name, externalValues.functions());
-                    validateNegativeImportType(moduleName, name, externalValues.memories());
-                    validateNegativeImportType(moduleName, name, externalValues.tables());
+                    validateNegativeImportType(moduleName, name, importValues.functions());
+                    validateNegativeImportType(moduleName, name, importValues.memories());
+                    validateNegativeImportType(moduleName, name, importValues.tables());
                     break;
                 case MEMORY:
-                    validateNegativeImportType(moduleName, name, externalValues.functions());
-                    validateNegativeImportType(moduleName, name, externalValues.globals());
-                    validateNegativeImportType(moduleName, name, externalValues.tables());
+                    validateNegativeImportType(moduleName, name, importValues.functions());
+                    validateNegativeImportType(moduleName, name, importValues.globals());
+                    validateNegativeImportType(moduleName, name, importValues.tables());
                     break;
                 case TABLE:
-                    validateNegativeImportType(moduleName, name, externalValues.functions());
-                    validateNegativeImportType(moduleName, name, externalValues.globals());
-                    validateNegativeImportType(moduleName, name, externalValues.memories());
+                    validateNegativeImportType(moduleName, name, importValues.functions());
+                    validateNegativeImportType(moduleName, name, importValues.globals());
+                    validateNegativeImportType(moduleName, name, importValues.memories());
                     break;
             }
         }
 
-        private ExternalValues mapHostImports(
-                Import[] imports, ExternalValues externalValues, int memoryCount) {
+        private ImportValues mapHostImports(
+                Import[] imports, ImportValues importValues, int memoryCount) {
             int hostFuncNum = 0;
             int hostGlobalNum = 0;
             int hostMemNum = 0;
@@ -557,28 +557,28 @@ public class Instance {
             }
 
             // TODO: this can probably be refactored ...
-            var hostFuncs = new ExternalFunction[hostFuncNum];
+            var hostFuncs = new ImportFunction[hostFuncNum];
             var hostFuncIdx = 0;
-            var hostGlobals = new ExternalGlobal[hostGlobalNum];
+            var hostGlobals = new ImportGlobal[hostGlobalNum];
             var hostGlobalIdx = 0;
-            var hostMems = new ExternalMemory[hostMemNum];
+            var hostMems = new ImportMemory[hostMemNum];
             var hostMemIdx = 0;
-            var hostTables = new ExternalTable[hostTableNum];
+            var hostTables = new ImportTable[hostTableNum];
             var hostTableIdx = 0;
             int cnt;
             for (var impIdx = 0; impIdx < imports.length; impIdx++) {
                 var i = imports[impIdx];
                 var name = i.module() + "." + i.name();
                 var found = false;
-                validateNegativeImportType(i.module(), i.name(), i.importType(), externalValues);
-                Function<ExternalValue, Boolean> checkName =
-                        (ExternalValue fh) ->
+                validateNegativeImportType(i.module(), i.name(), i.importType(), importValues);
+                Function<ImportValue, Boolean> checkName =
+                        (ImportValue fh) ->
                                 i.module().equals(fh.module()) && i.name().equals(fh.name());
                 switch (i.importType()) {
                     case FUNCTION:
-                        cnt = externalValues.functionCount();
+                        cnt = importValues.functionCount();
                         for (int j = 0; j < cnt; j++) {
-                            ExternalFunction f = externalValues.function(j);
+                            ImportFunction f = importValues.function(j);
                             if (checkName.apply(f)) {
                                 validateExternalFunctionSignature((FunctionImport) i, f);
                                 hostFuncs[hostFuncIdx] = f;
@@ -589,9 +589,9 @@ public class Instance {
                         hostFuncIdx++;
                         break;
                     case GLOBAL:
-                        cnt = externalValues.globalCount();
+                        cnt = importValues.globalCount();
                         for (int j = 0; j < cnt; j++) {
-                            ExternalGlobal g = externalValues.global(j);
+                            ImportGlobal g = importValues.global(j);
                             if (checkName.apply(g)) {
                                 validateHostGlobalType((GlobalImport) i, g);
                                 hostGlobals[hostGlobalIdx] = g;
@@ -602,9 +602,9 @@ public class Instance {
                         hostGlobalIdx++;
                         break;
                     case MEMORY:
-                        cnt = externalValues.memoryCount();
+                        cnt = importValues.memoryCount();
                         for (int j = 0; j < cnt; j++) {
-                            ExternalMemory m = externalValues.memory(j);
+                            ImportMemory m = importValues.memory(j);
                             if (checkName.apply(m)) {
                                 validateHostMemoryType((MemoryImport) i, m);
                                 hostMems[hostMemIdx] = m;
@@ -615,9 +615,9 @@ public class Instance {
                         hostMemIdx++;
                         break;
                     case TABLE:
-                        cnt = externalValues.tableCount();
+                        cnt = importValues.tableCount();
                         for (int j = 0; j < cnt; j++) {
-                            ExternalTable t = externalValues.table(j);
+                            ImportTable t = importValues.table(j);
                             if (checkName.apply(t)) {
                                 validateHostTableType((TableImport) i, t);
                                 hostTables[hostTableIdx] = t;
@@ -637,7 +637,7 @@ public class Instance {
                 }
             }
 
-            return new ExternalValues(hostFuncs, hostGlobals, hostMems, hostTables);
+            return new ImportValues(hostFuncs, hostGlobals, hostMems, hostTables);
         }
 
         private Map<String, Export> genExports(ExportSection export) {
@@ -687,7 +687,7 @@ public class Instance {
             var mappedHostImports =
                     mapHostImports(
                             imports,
-                            requireNonNullElseGet(externalValues, ExternalValues::new),
+                            requireNonNullElseGet(importValues, ImportValues::new),
                             module.memorySection().map(MemorySection::memoryCount).orElse(0));
 
             if (module.startSection().isPresent()) {

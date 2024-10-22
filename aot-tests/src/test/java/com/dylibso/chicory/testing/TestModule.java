@@ -1,7 +1,7 @@
 package com.dylibso.chicory.testing;
 
 import com.dylibso.chicory.aot.AotMachine;
-import com.dylibso.chicory.runtime.ExternalValues;
+import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wabt.Wat2Wasm;
@@ -62,9 +62,9 @@ public class TestModule {
     }
 
     public Instance instantiate(Store s) {
-        ExternalValues externalValues = s.toExternalValues();
+        ImportValues importValues = s.toImportValues();
         return Instance.builder(module)
-                .withExternalValues(externalValues)
+                .withImportValues(importValues)
                 .withMachineFactory(AotMachine::new)
                 .build();
     }

@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.hostmodule.annotations.HostModule;
 import com.dylibso.chicory.hostmodule.annotations.WasmExport;
-import com.dylibso.chicory.runtime.ExternalValues;
+import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -24,8 +24,8 @@ class WithImportsTest {
                                     Parser.parse(
                                             WithImportsTest.class.getResourceAsStream(
                                                     "/compiled/host-function.wat.wasm")))
-                            .withExternalValues(
-                                    new ExternalValues(
+                            .withImportValues(
+                                    new ImportValues(
                                             TestModule_ModuleFactory.toHostFunctions(this)))
                             .build();
         }

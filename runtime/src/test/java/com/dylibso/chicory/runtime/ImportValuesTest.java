@@ -8,13 +8,13 @@ import java.util.Collections;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-class ExternalValuesTest {
+class ImportValuesTest {
 
     @Nested
     class Builder {
         @Test
         void empty() {
-            final ExternalValues result = ExternalValues.builder().build();
+            final ImportValues result = ImportValues.builder().build();
             assertEquals(0, result.functionCount());
             assertEquals(0, result.globalCount());
             assertEquals(0, result.memoryCount());
@@ -26,8 +26,8 @@ class ExternalValuesTest {
 
             @Test
             void withFunctions() {
-                final ExternalValues result =
-                        ExternalValues.builder()
+                final ImportValues result =
+                        ImportValues.builder()
                                 .withFunctions(
                                         Arrays.asList(
                                                 new HostFunction("module_1", "", null, null, null),
@@ -38,8 +38,8 @@ class ExternalValuesTest {
 
             @Test
             void addFunction() {
-                final ExternalValues result =
-                        ExternalValues.builder()
+                final ImportValues result =
+                        ImportValues.builder()
                                 .addFunction(new HostFunction("module_1", "", null, null, null))
                                 .addFunction(new HostFunction("module_2", "", null, null, null))
                                 .build();
@@ -52,15 +52,15 @@ class ExternalValuesTest {
 
             @Test
             void withGlobals() {
-                final ExternalValues result =
-                        ExternalValues.builder()
+                final ImportValues result =
+                        ImportValues.builder()
                                 .withGlobals(
                                         Arrays.asList(
-                                                new ExternalGlobal(
+                                                new ImportGlobal(
                                                         "spectest",
                                                         "global_i32",
                                                         new GlobalInstance(Value.i32(666))),
-                                                new ExternalGlobal(
+                                                new ImportGlobal(
                                                         "spectest",
                                                         "global_i64",
                                                         new GlobalInstance(Value.i64(666)))))
@@ -70,15 +70,15 @@ class ExternalValuesTest {
 
             @Test
             void addGlobal() {
-                final ExternalValues result =
-                        ExternalValues.builder()
+                final ImportValues result =
+                        ImportValues.builder()
                                 .addGlobal(
-                                        new ExternalGlobal(
+                                        new ImportGlobal(
                                                 "spectest",
                                                 "global_i32",
                                                 new GlobalInstance(Value.i32(666))))
                                 .addGlobal(
-                                        new ExternalGlobal(
+                                        new ImportGlobal(
                                                 "spectest",
                                                 "global_i64",
                                                 new GlobalInstance(Value.i64(666))))
@@ -92,22 +92,22 @@ class ExternalValuesTest {
 
             @Test
             void withMemories() {
-                final ExternalValues result =
-                        ExternalValues.builder()
+                final ImportValues result =
+                        ImportValues.builder()
                                 .withMemories(
                                         Arrays.asList(
-                                                new ExternalMemory("spectest", "memory", null),
-                                                new ExternalMemory("spectest", "memory_2", null)))
+                                                new ImportMemory("spectest", "memory", null),
+                                                new ImportMemory("spectest", "memory_2", null)))
                                 .build();
                 assertEquals(2, result.memoryCount());
             }
 
             @Test
             void addMemory() {
-                final ExternalValues result =
-                        ExternalValues.builder()
-                                .addMemory(new ExternalMemory("spectest", "memory", null))
-                                .addMemory(new ExternalMemory("spectest", "memory_2", null))
+                final ImportValues result =
+                        ImportValues.builder()
+                                .addMemory(new ImportMemory("spectest", "memory", null))
+                                .addMemory(new ImportMemory("spectest", "memory_2", null))
                                 .build();
                 assertEquals(2, result.memoryCount());
             }
@@ -118,15 +118,15 @@ class ExternalValuesTest {
 
             @Test
             void withTables() {
-                final ExternalValues result =
-                        ExternalValues.builder()
+                final ImportValues result =
+                        ImportValues.builder()
                                 .withTables(
                                         Arrays.asList(
-                                                new ExternalTable(
+                                                new ImportTable(
                                                         "spectest",
                                                         "table",
                                                         Collections.emptyMap()),
-                                                new ExternalTable(
+                                                new ImportTable(
                                                         "spectest",
                                                         "table_2",
                                                         Collections.emptyMap())))
@@ -136,13 +136,13 @@ class ExternalValuesTest {
 
             @Test
             void addMemory() {
-                final ExternalValues result =
-                        ExternalValues.builder()
+                final ImportValues result =
+                        ImportValues.builder()
                                 .addTable(
-                                        new ExternalTable(
+                                        new ImportTable(
                                                 "spectest", "table", Collections.emptyMap()))
                                 .addTable(
-                                        new ExternalTable(
+                                        new ImportTable(
                                                 "spectest", "table_2", Collections.emptyMap()))
                                 .build();
                 assertEquals(2, result.tableCount());
