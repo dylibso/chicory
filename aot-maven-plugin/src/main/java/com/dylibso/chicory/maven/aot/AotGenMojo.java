@@ -68,7 +68,6 @@ public class AotGenMojo extends AbstractMojo {
     private MavenProject project;
 
     @Override
-    @SuppressWarnings("deprecation")
     public void execute() throws MojoExecutionException {
         var module = Parser.parse(wasmFile);
         var result = AotCompiler.compileModule(module, name);
@@ -77,9 +76,9 @@ public class AotGenMojo extends AbstractMojo {
         var finalFolder = targetClassFolder.toPath();
         var finalSourceFolder = targetSourceFolder.toPath();
 
-        handleFolders(finalFolder, finalSourceFolder, split);
+        createFolders(finalFolder, finalSourceFolder, split);
 
-        String packageName = handlePackage(split);
+        String packageName = getPackageName(split);
 
         // Generate static Machine implementation
         final SourceRoot dest = new SourceRoot(finalSourceFolder);
@@ -129,16 +128,17 @@ public class AotGenMojo extends AbstractMojo {
         project.addCompileSourceRoot(targetSourceFolder.getPath());
     }
 
-    void handleFolders(Path finalFolder, Path finalSourceFolder, String[] split) {
+    static void createFolders(
+            Path classFilesBaseFolder, Path generatedSourceBaseFolder, String[] split) {
         for (int i = 0; i < (split.length - 1); i++) {
-            finalFolder = finalFolder.resolve(split[i]);
-            finalSourceFolder = finalSourceFolder.resolve(split[i]);
+            classFilesBaseFolder = classFilesBaseFolder.resolve(split[i]);
+            generatedSourceBaseFolder = generatedSourceBaseFolder.resolve(split[i]);
         }
-        finalFolder.toFile().mkdirs();
-        finalSourceFolder.toFile().mkdirs();
+        classFilesBaseFolder.toFile().mkdirs();
+        generatedSourceBaseFolder.toFile().mkdirs();
     }
 
-    public static String handlePackage(String[] split) {
+    static String getPackageName(String[] split) {
         StringJoiner packageName = new StringJoiner(".");
         for (int i = 0; i < split.length - 1; i++) {
             packageName.add(split[i]);
