@@ -2,11 +2,13 @@ package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.lang.invoke.MethodType.methodType;
+import static java.util.stream.Collectors.joining;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Value;
@@ -15,6 +17,7 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.List;
+import java.util.Locale;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -94,6 +97,29 @@ final class AotUtil {
         }
     }
 
+    public static int returnTypeOpcode(FunctionType type) {
+        Class<?> returnType = jvmReturnType(type);
+        if (returnType == long[].class) {
+            return Opcodes.ARETURN;
+        }
+        if (returnType == int.class) {
+            return Opcodes.IRETURN;
+        }
+        if (returnType == long.class) {
+            return Opcodes.LRETURN;
+        }
+        if (returnType == float.class) {
+            return Opcodes.FRETURN;
+        }
+        if (returnType == double.class) {
+            return Opcodes.DRETURN;
+        }
+        if (returnType == void.class) {
+            return Opcodes.RETURN;
+        }
+        throw new ChicoryException("Unsupported return type: " + returnType.getName());
+    }
+
     public static ValueType localType(FunctionType type, FunctionBody body, int localIndex) {
         if (localIndex < type.params().size()) {
             return type.params().get(localIndex);
@@ -140,6 +166,10 @@ final class AotUtil {
             default:
                 throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
         }
+    }
+
+    public static MethodType valueMethodType(List<ValueType> types) {
+        return methodType(long[].class, jvmTypes(types));
     }
 
     public static MethodType callIndirectMethodType(FunctionType functionType) {
@@ -255,6 +285,13 @@ final class AotUtil {
                 methodNameFor(funcId),
                 methodTypeFor(functionType).toMethodDescriptorString(),
                 false);
+    }
+
+    public static String valueMethodName(List<ValueType> types) {
+        return "value_"
+                + types.stream()
+                        .map(type -> type.name().toLowerCase(Locale.ROOT))
+                        .collect(joining("_"));
     }
 
     public static String methodNameFor(int funcId) {

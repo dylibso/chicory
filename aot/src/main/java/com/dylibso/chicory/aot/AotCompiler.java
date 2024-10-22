@@ -25,19 +25,20 @@ import static com.dylibso.chicory.aot.AotUtil.emitLongToJvm;
 import static com.dylibso.chicory.aot.AotUtil.emitPop;
 import static com.dylibso.chicory.aot.AotUtil.internalClassName;
 import static com.dylibso.chicory.aot.AotUtil.jvmReturnType;
-import static com.dylibso.chicory.aot.AotUtil.jvmTypes;
 import static com.dylibso.chicory.aot.AotUtil.loadTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.localType;
 import static com.dylibso.chicory.aot.AotUtil.methodNameFor;
 import static com.dylibso.chicory.aot.AotUtil.methodTypeFor;
+import static com.dylibso.chicory.aot.AotUtil.returnTypeOpcode;
 import static com.dylibso.chicory.aot.AotUtil.slotCount;
 import static com.dylibso.chicory.aot.AotUtil.storeTypeOpcode;
+import static com.dylibso.chicory.aot.AotUtil.valueMethodName;
+import static com.dylibso.chicory.aot.AotUtil.valueMethodType;
 import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
 import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
 import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableList;
 import static org.objectweb.asm.Type.VOID_TYPE;
@@ -69,7 +70,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Consumer;
@@ -868,41 +868,7 @@ public final class AotCompiler {
         return module.typeSection().types()[typeId];
     }
 
-    public static String callMethodName(int functId) {
+    private static String callMethodName(int functId) {
         return "call_" + functId;
-    }
-
-    private static MethodType valueMethodType(List<ValueType> types) {
-        return methodType(long[].class, jvmTypes(types));
-    }
-
-    private static String valueMethodName(List<ValueType> types) {
-        return "value_"
-                + types.stream()
-                        .map(type -> type.name().toLowerCase(Locale.ROOT))
-                        .collect(joining("_"));
-    }
-
-    private static int returnTypeOpcode(FunctionType type) {
-        Class<?> returnType = jvmReturnType(type);
-        if (returnType == long[].class) {
-            return Opcodes.ARETURN;
-        }
-        if (returnType == int.class) {
-            return Opcodes.IRETURN;
-        }
-        if (returnType == long.class) {
-            return Opcodes.LRETURN;
-        }
-        if (returnType == float.class) {
-            return Opcodes.FRETURN;
-        }
-        if (returnType == double.class) {
-            return Opcodes.DRETURN;
-        }
-        if (returnType == void.class) {
-            return Opcodes.RETURN;
-        }
-        throw new ChicoryException("Unsupported return type: " + returnType.getName());
     }
 }
