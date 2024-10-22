@@ -16,7 +16,9 @@ import com.github.javaparser.utils.SourceRoot;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
+import java.util.StringJoiner;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -66,25 +68,19 @@ public class AotGenMojo extends AbstractMojo {
     private MavenProject project;
 
     @Override
-    @SuppressWarnings({"StringSplitter", "deprecation"})
     public void execute() throws MojoExecutionException {
         var module = Parser.parse(wasmFile);
         var result = AotCompiler.compileModule(module, name);
         var split = name.split("\\.");
+
         var finalFolder = targetClassFolder.toPath();
         var finalSourceFolder = targetSourceFolder.toPath();
-        for (int i = 0; i < (split.length - 1); i++) {
-            finalFolder = finalFolder.resolve(split[i]);
-            finalSourceFolder = finalSourceFolder.resolve(split[i]);
-        }
-        finalFolder.toFile().mkdirs();
-        var packageName = split[0];
-        for (int i = 1; i < (split.length - 1); i++) {
-            packageName += "." + split[i];
-        }
+
+        createFolders(finalFolder, finalSourceFolder, split);
+
+        String packageName = getPackageName(split);
 
         // Generate static Machine implementation
-        finalSourceFolder.toFile().mkdirs();
         final SourceRoot dest = new SourceRoot(finalSourceFolder);
 
         var machineName = split[split.length - 1] + "MachineFactory";
@@ -130,5 +126,23 @@ public class AotGenMojo extends AbstractMojo {
         resource.setDirectory(targetClassFolder.getPath());
         project.addResource(resource);
         project.addCompileSourceRoot(targetSourceFolder.getPath());
+    }
+
+    static void createFolders(
+            Path classFilesBaseFolder, Path generatedSourceBaseFolder, String[] split) {
+        for (int i = 0; i < (split.length - 1); i++) {
+            classFilesBaseFolder = classFilesBaseFolder.resolve(split[i]);
+            generatedSourceBaseFolder = generatedSourceBaseFolder.resolve(split[i]);
+        }
+        classFilesBaseFolder.toFile().mkdirs();
+        generatedSourceBaseFolder.toFile().mkdirs();
+    }
+
+    static String getPackageName(String[] split) {
+        StringJoiner packageName = new StringJoiner(".");
+        for (int i = 0; i < split.length - 1; i++) {
+            packageName.add(split[i]);
+        }
+        return packageName.toString();
     }
 }
