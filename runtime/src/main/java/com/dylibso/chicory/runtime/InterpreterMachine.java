@@ -269,7 +269,7 @@ class InterpreterMachine implements Machine {
                     MEMORY_GROW(stack, instance);
                     break;
                 case MEMORY_FILL:
-                    MEMORY_FILL(stack, instance, operands);
+                    MEMORY_FILL(stack, instance);
                     break;
                 case I32_STORE8:
                 case I64_STORE8:
@@ -718,7 +718,7 @@ class InterpreterMachine implements Machine {
                     DATA_DROP(instance, operands);
                     break;
                 case MEMORY_COPY:
-                    MEMORY_COPY(stack, instance, operands);
+                    MEMORY_COPY(stack, instance);
                     break;
                 case TABLE_COPY:
                     TABLE_COPY(stack, instance, operands);
@@ -1482,13 +1482,7 @@ class InterpreterMachine implements Machine {
         OpcodeImpl.TABLE_COPY(instance, tableidxSrc, tableidxDst, size, s, d);
     }
 
-    private static void MEMORY_COPY(MStack stack, Instance instance, Operands operands) {
-        var memidxSrc = (int) operands.get(0);
-        var memidxDst = (int) operands.get(1);
-        if (memidxDst != 0 && memidxSrc != 0) {
-            throw new WASMRuntimeException(
-                    "We don't support non zero index for memory: " + memidxSrc + " " + memidxDst);
-        }
+    private static void MEMORY_COPY(MStack stack, Instance instance) {
         var size = (int) stack.pop();
         var offset = (int) stack.pop();
         var destination = (int) stack.pop();
@@ -1508,10 +1502,6 @@ class InterpreterMachine implements Machine {
 
     private static void MEMORY_INIT(MStack stack, Instance instance, Operands operands) {
         var segmentId = (int) operands.get(0);
-        var memidx = (int) operands.get(1);
-        if (memidx != 0) {
-            throw new WASMRuntimeException("We don't support non zero index for memory: " + memidx);
-        }
         var size = (int) stack.pop();
         var offset = (int) stack.pop();
         var destination = (int) stack.pop();
@@ -1630,11 +1620,7 @@ class InterpreterMachine implements Machine {
         stack.push(Value.floatToLong(-tos));
     }
 
-    private static void MEMORY_FILL(MStack stack, Instance instance, Operands operands) {
-        var memidx = (int) operands.get(0);
-        if (memidx != 0) {
-            throw new WASMRuntimeException("We don't support multiple memories just yet");
-        }
+    private static void MEMORY_FILL(MStack stack, Instance instance) {
         var size = (int) stack.pop();
         var val = (byte) stack.pop();
         var offset = (int) stack.pop();
@@ -1696,14 +1682,12 @@ class InterpreterMachine implements Machine {
     private static void I64_LOAD32_S(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI32(ptr);
-        // TODO this is a bit hacky
         stack.push(val);
     }
 
     private static void I64_LOAD16_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readU16(ptr);
-        // TODO this is a bit hacky
         stack.push(val);
     }
 
@@ -1716,7 +1700,6 @@ class InterpreterMachine implements Machine {
     private static void I64_LOAD16_S(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI16(ptr);
-        // TODO this is a bit hacky
         stack.push(val);
     }
 
@@ -1729,7 +1712,6 @@ class InterpreterMachine implements Machine {
     private static void I64_LOAD8_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readU8(ptr);
-        // TODO a bit hacky
         stack.push(val);
     }
 
@@ -1742,7 +1724,6 @@ class InterpreterMachine implements Machine {
     private static void I64_LOAD8_S(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
         var val = instance.memory().readI8(ptr);
-        // TODO a bit hacky
         stack.push(val);
     }
 
@@ -1833,7 +1814,7 @@ class InterpreterMachine implements Machine {
 
         var typeId = (int) operands.get(0);
         int funcTableIdx = (int) stack.pop();
-        int funcId = (int) table.ref(funcTableIdx);
+        int funcId = table.ref(funcTableIdx);
         var tableInstance = table.instance(funcTableIdx);
         if (tableInstance != null) {
             instance = tableInstance;
