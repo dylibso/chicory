@@ -6,13 +6,27 @@ sidebar_label: Host functions
 
 ### Host Functions
 
-On its own, Wasm can't do anything but compute. It cannot affect the outside world. This might seem like a weakness
-but it's actually Wasm's greatest strength. By default, programs are sandboxed and have no capabilities. If you want a program
-to have capabilities, you must provide them. This puts you in the seat of the operating system. A module can
-ask for a capability by listing an "import" function in it's bytecode format. You can fulfill this import with a host
-function written in Java. Regardless of the language of the module, it can call this Java function when it needs.
-If it helps, you can think of host functions like syscalls or a languages standard library but you decide what they
-are and how they behave and it's written in Java.
+In Wasm, the instance of a module is generally regarded as the _guest_,
+and the surrounding runtime environment is usually called the _host_.
+
+For example, an application using Chicory as a library would be the host
+to a Wasm module you have instantiated.
+
+In previous section, we saw that Wasm modules may _export_ functions, so that
+they can be externally invoked. But Wasm modules may also _import_ functions. 
+These imports have to be resolved at the time when a module is instantiated;
+in other words, when a module is instantiated, the runtime has to provide
+references for all the imports that a module declares. 
+
+The import/export mechanism is the way through which Wasm interacts 
+with the outside world: without imports, a Wasm module is "pure compute",
+in other words, it cannot perform any kind of I/O. This puts you in the seat of the operating system. 
+
+One way to fulfill imports is with a host function written in Java. 
+Regardless of the source language that originated your Wasm module, it will be able to call this Java function when needed.
+
+If it helps, you can think of host functions like of syscalls or a the standard library of your favorite language.
+However, instead of having a default implementation, you use Java to decide what they do and how they behave.
 
 Let's download another example module to demonstrate this:
 
@@ -64,17 +78,20 @@ var func = new HostFunction(
     });
 ```
 
-Again we're dealing with pointers here. The module calls `console.log` with the length of the string
-and the pointer (offset) in its memory. We again use the `Memory` class but this time we're pulling a string
-*out* of memory. We can then print that to stdout on behalf of our Wasm program.
+The module calls `console.log` with the length of the string and an index (offset) in its memory. 
+This is essentially a pointer into the Wasm's "linear memory".
+The `Instance` class provides a reference to a `Memory` object instance, that allows 
+to pull a value out of memory. You can use the `readString()` convenience method
+to read a buffer into a `String`; we can then print that to stdout on behalf of our Wasm program.
 
-Note that the HostFunction needs 3 things:
+Note that the `HostFunction` needs 3 things:
 
 1. A lambda to call when the Wasm module invokes the import
-2. The namespace and function name of the import (in our case it's console and log respectively)
+2. The namespace and function name of the import (in our case it's `console` and `log` respectively)
 3. The Wasm type signature (this function takes 2 i32s as arguments and returns nothing)
 
-Now we just need to pass this host function in during our instantiation phase:
+
+Now we just need to pass this host function when we instantiate the module:
 
 ```java
 import com.dylibso.chicory.wasm.Parser;
