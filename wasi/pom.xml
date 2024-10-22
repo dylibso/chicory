@@ -75,12 +75,7 @@
             <excludes>
               <!-- Java does not support READ+APPEND -->
               <exclude>tests/rust/testsuite/fd_flags_set.wasm</exclude>
-              <!-- fd_pread is not implemented -->
-              <exclude>tests/c/testsuite/pread-with-access.wasm</exclude>
-              <exclude>tests/rust/testsuite/dir_fd_op_failures.wasm</exclude>
-              <exclude>tests/rust/testsuite/file_pread_pwrite.wasm</exclude>
-              <!-- fd_pwrite is not implemented -->
-              <exclude>tests/c/testsuite/pwrite-with-access.wasm</exclude>
+              <!-- Linux and Jimfs always append with APPEND -->
               <exclude>tests/c/testsuite/pwrite-with-append.wasm</exclude>
               <!-- poll_oneoff is not implemented -->
               <exclude>tests/rust/testsuite/poll_oneoff_stdio.wasm</exclude>

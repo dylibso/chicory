@@ -181,9 +181,8 @@ public final class WasiPreview1 implements Closeable {
                 memory.writeLong(resultPtr, 1L);
                 return wasiResult(WasiErrno.ESUCCESS);
             case WasiClockId.PROCESS_CPUTIME_ID:
-                throw new WASMRuntimeException("We don't yet support clockid process_cputime_id");
             case WasiClockId.THREAD_CPUTIME_ID:
-                throw new WASMRuntimeException("We don't yet support clockid thread_cputime_id");
+                return wasiResult(WasiErrno.ENOTSUP);
             default:
                 return wasiResult(WasiErrno.EINVAL);
         }
@@ -202,9 +201,8 @@ public final class WasiPreview1 implements Closeable {
                 memory.writeLong(resultPtr, System.nanoTime());
                 return wasiResult(WasiErrno.ESUCCESS);
             case WasiClockId.PROCESS_CPUTIME_ID:
-                throw new WASMRuntimeException("We don't yet support clockid process_cputime_id");
             case WasiClockId.THREAD_CPUTIME_ID:
-                throw new WASMRuntimeException("We don't yet support clockid thread_cputime_id");
+                return wasiResult(WasiErrno.ENOTSUP);
             default:
                 return wasiResult(WasiErrno.EINVAL);
         }
@@ -521,9 +519,58 @@ public final class WasiPreview1 implements Closeable {
     }
 
     @WasmExport
-    public int fdPread(int fd, int iovs, int iovsLen, long offset, int nreadPtr) {
+    public int fdPread(Memory memory, int fd, int iovs, int iovsLen, long offset, int nreadPtr) {
         logger.tracef("fd_pread: [%s, %s, %s, %s, %s]", fd, iovs, iovsLen, offset, nreadPtr);
-        throw new WASMRuntimeException("We don't yet support this WASI call: fd_pread");
+
+        if (offset < 0) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (descriptor instanceof InStream) {
+            return wasiResult(WasiErrno.ESPIPE);
+        }
+        if (descriptor instanceof OutStream) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        if (descriptor instanceof Directory) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+        if (!(descriptor instanceof OpenFile)) {
+            throw unhandledDescriptor(descriptor);
+        }
+        var file = (OpenFile) descriptor;
+
+        int totalRead = 0;
+        for (var i = 0; i < iovsLen; i++) {
+            int base = iovs + (i * 8);
+            int iovBase = memory.readInt(base);
+            var iovLen = memory.readInt(base + 4);
+            try {
+                byte[] data = new byte[iovLen];
+                int read = file.read(data, offset);
+                if (read < 0) {
+                    break;
+                }
+                memory.write(iovBase, data, 0, read);
+                offset += read;
+                totalRead += read;
+                if (read < iovLen) {
+                    break;
+                }
+            } catch (NonReadableChannelException e) {
+                return wasiResult(WasiErrno.ENOTCAPABLE);
+            } catch (IOException e) {
+                return wasiResult(WasiErrno.EIO);
+            }
+        }
+
+        memory.writeI32(nreadPtr, totalRead);
+        return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport
@@ -566,9 +613,60 @@ public final class WasiPreview1 implements Closeable {
     }
 
     @WasmExport
-    public int fdPwrite(int fd, int iovs, int iovsLen, long offset, int nwrittenPtr) {
+    public int fdPwrite(
+            Memory memory, int fd, int iovs, int iovsLen, long offset, int nwrittenPtr) {
         logger.tracef("fd_pwrite: [%s, %s, %s, %s, %s]", fd, iovs, iovsLen, offset, nwrittenPtr);
-        throw new WASMRuntimeException("We don't yet support this WASI call: fd_pwrite");
+
+        if (offset < 0) {
+            return wasiResult(WasiErrno.EINVAL);
+        }
+
+        var descriptor = descriptors.get(fd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (descriptor instanceof InStream) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        if (descriptor instanceof OutStream) {
+            return wasiResult(WasiErrno.ESPIPE);
+        }
+        if (descriptor instanceof Directory) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+
+        if (!(descriptor instanceof OpenFile)) {
+            throw unhandledDescriptor(descriptor);
+        }
+        var file = (OpenFile) descriptor;
+
+        if (flagSet(file.fdFlags(), WasiFdFlags.APPEND)) {
+            return wasiResult(WasiErrno.ENOTSUP);
+        }
+
+        var totalWritten = 0;
+        for (var i = 0; i < iovsLen; i++) {
+            var base = iovs + (i * 8);
+            var iovBase = memory.readInt(base);
+            var iovLen = memory.readInt(base + 4);
+            var data = memory.readBytes(iovBase, iovLen);
+            try {
+                int written = file.write(data, offset);
+                offset += written;
+                totalWritten += written;
+                if (written < iovLen) {
+                    break;
+                }
+            } catch (NonWritableChannelException e) {
+                return wasiResult(WasiErrno.ENOTCAPABLE);
+            } catch (IOException e) {
+                return wasiResult(WasiErrno.EIO);
+            }
+        }
+
+        memory.writeI32(nwrittenPtr, totalWritten);
+        return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport
@@ -1048,7 +1146,7 @@ public final class WasiPreview1 implements Closeable {
 
         int fd;
         try {
-            SeekableByteChannel channel = Files.newByteChannel(path, openOptions);
+            FileChannel channel = FileChannel.open(path, openOptions);
             fd = descriptors.allocate(new OpenFile(path, channel, fdFlags, rightsBase));
         } catch (FileAlreadyExistsException e) {
             return wasiResult(WasiErrno.EEXIST);
@@ -1349,13 +1447,9 @@ public final class WasiPreview1 implements Closeable {
             throw unhandledDescriptor(descriptor);
         }
         var channel = ((OpenFile) descriptor).channel();
-        if (!(channel instanceof FileChannel)) {
-            return WasiErrno.ENOTSUP;
-        }
-        var fileChannel = (FileChannel) channel;
 
         try {
-            fileChannel.force(metadata);
+            channel.force(metadata);
         } catch (IOException e) {
             return WasiErrno.EIO;
         }

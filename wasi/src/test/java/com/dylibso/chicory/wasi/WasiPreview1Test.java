@@ -16,9 +16,13 @@ import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 
 public class WasiPreview1Test {
     private final Logger logger = new SystemLogger();
@@ -225,5 +229,28 @@ public class WasiPreview1Test {
 
         assertArrayEquals(first, memory.readBytes(0, 123_456));
         assertArrayEquals(second, memory.readBytes(222_222, 87_654));
+    }
+
+    @Test
+    public void wasiPositionedWriteWithAppend() {
+        var test = new File("../wasi-testsuite/tests/c/testsuite/pwrite-with-append.wasm");
+        List<String> args = List.of();
+        List<String> dirs = List.of("fs-tests.dir");
+        Map<String, String> env = Map.of();
+        var exitCode = 0;
+        Optional<String> stderr = Optional.empty();
+        Optional<String> stdout = Optional.empty();
+        Executable executable =
+                () -> WasiTestRunner.execute(test, args, dirs, env, exitCode, stderr, stdout);
+
+        var exception = assertThrows(RuntimeException.class, executable);
+        assertEquals(
+                "Failed to execute test: "
+                        + "../wasi-testsuite/tests/c/testsuite/pwrite-with-append.wasm\n"
+                        + "<<<<<\n"
+                        + "Assertion failed: size == sizeof(buf) "
+                        + "(testsuite/pwrite-with-append.c: main: 22)\n"
+                        + ">>>>>",
+                exception.getMessage());
     }
 }
