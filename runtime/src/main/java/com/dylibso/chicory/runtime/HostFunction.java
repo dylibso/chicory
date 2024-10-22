@@ -13,6 +13,6 @@ public class HostFunction extends ImportFunction {
             WasmFunctionHandle handle,
             List<ValueType> paramTypes,
             List<ValueType> returnTypes) {
-        super(moduleName, symbolName, handle, paramTypes, returnTypes);
+        super(moduleName, symbolName, paramTypes, returnTypes, handle);
     }
 }

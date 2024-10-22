@@ -101,9 +101,9 @@ public class Store {
                             new ImportFunction(
                                     name,
                                     exportName,
-                                    (inst, args) -> f.apply(args),
                                     ftype.params(),
-                                    ftype.returns()));
+                                    ftype.returns(),
+                                    (inst, args) -> f.apply(args)));
                     break;
 
                 case TABLE:
