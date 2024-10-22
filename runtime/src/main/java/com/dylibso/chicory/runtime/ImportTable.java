@@ -5,18 +5,18 @@ import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Map;
 
-public class ExternalTable implements ExternalValue {
+public class ImportTable implements ImportValue {
     private final String module;
     private final String name;
     private final TableInstance table;
 
-    public ExternalTable(String module, String name, TableInstance table) {
+    public ImportTable(String module, String name, TableInstance table) {
         this.module = module;
         this.name = name;
         this.table = table;
     }
 
-    public ExternalTable(String module, String name, Map<Integer, Integer> funcRefs) {
+    public ImportTable(String module, String name, Map<Integer, Integer> funcRefs) {
         this.module = module;
         this.name = name;
 
@@ -43,7 +43,7 @@ public class ExternalTable implements ExternalValue {
     }
 
     @Override
-    public ExternalValue.Type type() {
+    public ImportValue.Type type() {
         return Type.TABLE;
     }
 

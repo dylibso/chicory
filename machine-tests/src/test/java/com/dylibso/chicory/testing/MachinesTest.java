@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.ExternalValues;
+import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.testing.gen.DynamicHelloJSMachineFactory;
@@ -76,13 +76,13 @@ public final class MachinesTest {
         var quickjs =
                 quickJsInstanceBuilder()
                         .withMachineFactory(QuickJSMachineFactory::create)
-                        .withExternalValues(new ExternalValues(wasi.toHostFunctions()))
+                        .withImportValues(new ImportValues(wasi.toHostFunctions()))
                         .build();
 
         var store = new Store().register("javy_quickjs_provider_v1", quickjs);
 
         // the module is going to use the interpreter instead
-        moduleInstanceBuilder().withExternalValues(store.toExternalValues()).build();
+        moduleInstanceBuilder().withImportValues(store.toImportValues()).build();
 
         // stderr?
         assertEquals(expectedOutput, stderr.toString(UTF_8));
@@ -90,7 +90,7 @@ public final class MachinesTest {
         // and now runtime AOT
         moduleInstanceBuilder()
                 .withMachineFactory(AotMachine::new)
-                .withExternalValues(store.toExternalValues())
+                .withImportValues(store.toImportValues())
                 .build();
 
         assertEquals(expectedOutput + expectedOutput, stderr.toString(UTF_8));
@@ -106,7 +106,7 @@ public final class MachinesTest {
         // using the pre-compiled version of QuickJS
         var quickjs =
                 quickJsInstanceBuilder()
-                        .withExternalValues(new ExternalValues(wasi.toHostFunctions()))
+                        .withImportValues(new ImportValues(wasi.toHostFunctions()))
                         .build();
 
         var store = new Store().register("javy_quickjs_provider_v1", quickjs);
@@ -114,7 +114,7 @@ public final class MachinesTest {
         // the module is going to use the pre compiled aot
         moduleInstanceBuilder()
                 .withMachineFactory(DynamicHelloJSMachineFactory::create)
-                .withExternalValues(store.toExternalValues())
+                .withImportValues(store.toImportValues())
                 .build();
 
         // stderr?
@@ -123,7 +123,7 @@ public final class MachinesTest {
         // and now runtime AOT
         moduleInstanceBuilder()
                 .withMachineFactory(AotMachine::new)
-                .withExternalValues(store.toExternalValues())
+                .withImportValues(store.toImportValues())
                 .build();
 
         assertEquals(expectedOutput + expectedOutput, stderr.toString(UTF_8));
@@ -140,7 +140,7 @@ public final class MachinesTest {
         var quickjs =
                 quickJsInstanceBuilder()
                         .withMachineFactory(AotMachine::new)
-                        .withExternalValues(new ExternalValues(wasi.toHostFunctions()))
+                        .withImportValues(new ImportValues(wasi.toHostFunctions()))
                         .build();
 
         var store = new Store().register("javy_quickjs_provider_v1", quickjs);
@@ -148,14 +148,14 @@ public final class MachinesTest {
         // the module is going to use the pre compiled aot
         moduleInstanceBuilder()
                 .withMachineFactory(DynamicHelloJSMachineFactory::create)
-                .withExternalValues(store.toExternalValues())
+                .withImportValues(store.toImportValues())
                 .build();
 
         // stderr?
         assertEquals(expectedOutput, stderr.toString(UTF_8));
 
         // and now the interpreter
-        moduleInstanceBuilder().withExternalValues(store.toExternalValues()).build();
+        moduleInstanceBuilder().withImportValues(store.toImportValues()).build();
 
         assertEquals(expectedOutput + expectedOutput, stderr.toString(UTF_8));
     }
@@ -184,7 +184,7 @@ public final class MachinesTest {
                             .build();
             var logger = new SystemLogger();
             try (var wasi = WasiPreview1.builder().withLogger(logger).withOpts(wasiOpts).build()) {
-                ExternalValues imports = new ExternalValues(wasi.toHostFunctions());
+                ImportValues imports = new ImportValues(wasi.toHostFunctions());
                 var wat2WasmModule = Parser.parse(new File("../wabt/src/main/resources/wat2wasm"));
                 var startFunctionIndex = new AtomicInteger();
                 for (int i = 0; i < wat2WasmModule.exportSection().exportCount(); i++) {
@@ -206,7 +206,7 @@ public final class MachinesTest {
                                         return machine.call(funcId, args);
                                     };
                                 })
-                        .withExternalValues(imports)
+                        .withImportValues(imports)
                         .build();
             }
 

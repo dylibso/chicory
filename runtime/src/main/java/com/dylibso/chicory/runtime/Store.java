@@ -11,17 +11,17 @@ import java.util.Objects;
  * The runtime storage for all function, global, memory, table instances.
  */
 public class Store {
-    final LinkedHashMap<QualifiedName, ExternalFunction> functions = new LinkedHashMap<>();
-    final LinkedHashMap<QualifiedName, ExternalGlobal> globals = new LinkedHashMap<>();
-    final LinkedHashMap<QualifiedName, ExternalMemory> memories = new LinkedHashMap<>();
-    final LinkedHashMap<QualifiedName, ExternalTable> tables = new LinkedHashMap<>();
+    final LinkedHashMap<QualifiedName, ImportFunction> functions = new LinkedHashMap<>();
+    final LinkedHashMap<QualifiedName, ImportGlobal> globals = new LinkedHashMap<>();
+    final LinkedHashMap<QualifiedName, ImportMemory> memories = new LinkedHashMap<>();
+    final LinkedHashMap<QualifiedName, ImportTable> tables = new LinkedHashMap<>();
 
     public Store() {}
 
     /**
      * Add a function to the store.
      */
-    public Store addFunction(ExternalFunction... function) {
+    public Store addFunction(ImportFunction... function) {
         for (var f : function) {
             functions.put(new QualifiedName(f.module(), f.name()), f);
         }
@@ -31,7 +31,7 @@ public class Store {
     /**
      * Add a global to the store.
      */
-    public Store addGlobal(ExternalGlobal... global) {
+    public Store addGlobal(ImportGlobal... global) {
         for (var g : global) {
             globals.put(new QualifiedName(g.module(), g.name()), g);
         }
@@ -41,7 +41,7 @@ public class Store {
     /**
      * Add a memory to the store.
      */
-    public Store addMemory(ExternalMemory... memory) {
+    public Store addMemory(ImportMemory... memory) {
         for (var m : memory) {
             memories.put(new QualifiedName(m.module(), m.name()), m);
         }
@@ -51,7 +51,7 @@ public class Store {
     /**
      * Add a table to the store.
      */
-    public Store addTable(ExternalTable... table) {
+    public Store addTable(ImportTable... table) {
         for (var t : table) {
             tables.put(new QualifiedName(t.module(), t.name()), t);
         }
@@ -59,24 +59,24 @@ public class Store {
     }
 
     /**
-     * Add the contents of a {@link ExternalValues} instance to the store.
+     * Add the contents of a {@link ImportValues} instance to the store.
      */
-    public Store addExternalValues(ExternalValues externalValues) {
-        return this.addGlobal(externalValues.globals())
-                .addFunction(externalValues.functions())
-                .addMemory(externalValues.memories())
-                .addTable(externalValues.tables());
+    public Store addImportValues(ImportValues importValues) {
+        return this.addGlobal(importValues.globals())
+                .addFunction(importValues.functions())
+                .addMemory(importValues.memories())
+                .addTable(importValues.tables());
     }
 
     /**
-     * Convert the contents of a store to a {@link ExternalValues} instance.
+     * Convert the contents of a store to a {@link ImportValues} instance.
      */
-    public ExternalValues toExternalValues() {
-        return new ExternalValues(
-                functions.values().toArray(new ExternalFunction[0]),
-                globals.values().toArray(new ExternalGlobal[0]),
-                memories.values().toArray(new ExternalMemory[0]),
-                tables.values().toArray(new ExternalTable[0]));
+    public ImportValues toImportValues() {
+        return new ImportValues(
+                functions.values().toArray(new ImportFunction[0]),
+                globals.values().toArray(new ImportGlobal[0]),
+                memories.values().toArray(new ImportMemory[0]),
+                tables.values().toArray(new ImportTable[0]));
     }
 
     /**
@@ -98,7 +98,7 @@ public class Store {
                     ExportFunction f = instance.export(exportName);
                     FunctionType ftype = instance.exportType(exportName);
                     this.addFunction(
-                            new ExternalFunction(
+                            new ImportFunction(
                                     name,
                                     exportName,
                                     (inst, args) -> f.apply(args),
@@ -108,16 +108,16 @@ public class Store {
 
                 case TABLE:
                     this.addTable(
-                            new ExternalTable(name, exportName, instance.table(export.index())));
+                            new ImportTable(name, exportName, instance.table(export.index())));
                     break;
 
                 case MEMORY:
-                    this.addMemory(new ExternalMemory(name, exportName, instance.memory()));
+                    this.addMemory(new ImportMemory(name, exportName, instance.memory()));
                     break;
 
                 case GLOBAL:
                     GlobalInstance g = instance.global(export.index());
-                    this.addGlobal(new ExternalGlobal(name, exportName, g));
+                    this.addGlobal(new ImportGlobal(name, exportName, g));
                     break;
             }
         }
@@ -128,8 +128,8 @@ public class Store {
      * A shorthand for instantiating a module and registering it in the store.
      */
     public Instance instantiate(String name, Module m) {
-        ExternalValues externalValues = this.toExternalValues();
-        Instance instance = Instance.builder(m).withExternalValues(externalValues).build();
+        ImportValues importValues = this.toImportValues();
+        Instance instance = Instance.builder(m).withImportValues(importValues).build();
         register(name, instance);
         return instance;
     }

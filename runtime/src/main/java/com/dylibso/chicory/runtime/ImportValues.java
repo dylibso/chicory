@@ -4,82 +4,82 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class ExternalValues {
-    private static final ExternalFunction[] NO_EXTERNAL_FUNCTIONS = new ExternalFunction[0];
-    private static final ExternalGlobal[] NO_EXTERNAL_GLOBALS = new ExternalGlobal[0];
-    private static final ExternalMemory[] NO_EXTERNAL_MEMORIES = new ExternalMemory[0];
-    private static final ExternalTable[] NO_EXTERNAL_TABLES = new ExternalTable[0];
+public class ImportValues {
+    private static final ImportFunction[] NO_EXTERNAL_FUNCTIONS = new ImportFunction[0];
+    private static final ImportGlobal[] NO_EXTERNAL_GLOBALS = new ImportGlobal[0];
+    private static final ImportMemory[] NO_EXTERNAL_MEMORIES = new ImportMemory[0];
+    private static final ImportTable[] NO_EXTERNAL_TABLES = new ImportTable[0];
 
-    private final ExternalFunction[] functions;
-    private final ExternalGlobal[] globals;
-    private final ExternalMemory[] memories;
-    private final ExternalTable[] tables;
+    private final ImportFunction[] functions;
+    private final ImportGlobal[] globals;
+    private final ImportMemory[] memories;
+    private final ImportTable[] tables;
 
-    public ExternalValues() {
+    public ImportValues() {
         this.functions = NO_EXTERNAL_FUNCTIONS;
         this.globals = NO_EXTERNAL_GLOBALS;
         this.memories = NO_EXTERNAL_MEMORIES;
         this.tables = NO_EXTERNAL_TABLES;
     }
 
-    public ExternalValues(HostFunction[] functions) {
+    public ImportValues(HostFunction[] functions) {
         this.functions = functions.clone();
         this.globals = NO_EXTERNAL_GLOBALS;
         this.memories = NO_EXTERNAL_MEMORIES;
         this.tables = NO_EXTERNAL_TABLES;
     }
 
-    public ExternalValues(ExternalGlobal[] globals) {
+    public ImportValues(ImportGlobal[] globals) {
         this.functions = NO_EXTERNAL_FUNCTIONS;
         this.globals = globals.clone();
         this.memories = NO_EXTERNAL_MEMORIES;
         this.tables = NO_EXTERNAL_TABLES;
     }
 
-    public ExternalValues(ExternalMemory[] memories) {
+    public ImportValues(ImportMemory[] memories) {
         this.functions = NO_EXTERNAL_FUNCTIONS;
         this.globals = NO_EXTERNAL_GLOBALS;
         this.memories = memories.clone();
         this.tables = NO_EXTERNAL_TABLES;
     }
 
-    public ExternalValues(ExternalMemory memory) {
+    public ImportValues(ImportMemory memory) {
         this.functions = NO_EXTERNAL_FUNCTIONS;
         this.globals = NO_EXTERNAL_GLOBALS;
-        this.memories = new ExternalMemory[] {memory};
+        this.memories = new ImportMemory[] {memory};
         this.tables = NO_EXTERNAL_TABLES;
     }
 
-    public ExternalValues(ExternalTable[] tables) {
+    public ImportValues(ImportTable[] tables) {
         this.functions = NO_EXTERNAL_FUNCTIONS;
         this.globals = NO_EXTERNAL_GLOBALS;
         this.memories = NO_EXTERNAL_MEMORIES;
         this.tables = tables.clone();
     }
 
-    public ExternalValues(
-            ExternalFunction[] functions,
-            ExternalGlobal[] globals,
-            ExternalMemory memory,
-            ExternalTable[] tables) {
+    public ImportValues(
+            ImportFunction[] functions,
+            ImportGlobal[] globals,
+            ImportMemory memory,
+            ImportTable[] tables) {
         this.functions = functions.clone();
         this.globals = globals.clone();
-        this.memories = new ExternalMemory[] {memory};
+        this.memories = new ImportMemory[] {memory};
         this.tables = tables.clone();
     }
 
-    public ExternalValues(
-            ExternalFunction[] functions,
-            ExternalGlobal[] globals,
-            ExternalMemory[] memories,
-            ExternalTable[] tables) {
+    public ImportValues(
+            ImportFunction[] functions,
+            ImportGlobal[] globals,
+            ImportMemory[] memories,
+            ImportTable[] tables) {
         this.functions = functions.clone();
         this.globals = globals.clone();
         this.memories = memories.clone();
         this.tables = tables.clone();
     }
 
-    public ExternalFunction[] functions() {
+    public ImportFunction[] functions() {
         return functions.clone();
     }
 
@@ -87,11 +87,11 @@ public class ExternalValues {
         return functions.length;
     }
 
-    public ExternalFunction function(int idx) {
+    public ImportFunction function(int idx) {
         return functions[idx];
     }
 
-    public ExternalGlobal[] globals() {
+    public ImportGlobal[] globals() {
         return globals;
     }
 
@@ -99,11 +99,11 @@ public class ExternalValues {
         return globals.length;
     }
 
-    public ExternalGlobal global(int idx) {
+    public ImportGlobal global(int idx) {
         return globals[idx];
     }
 
-    public ExternalMemory[] memories() {
+    public ImportMemory[] memories() {
         return memories;
     }
 
@@ -111,11 +111,11 @@ public class ExternalValues {
         return memories.length;
     }
 
-    public ExternalMemory memory(int idx) {
+    public ImportMemory memory(int idx) {
         return memories[idx];
     }
 
-    public ExternalTable[] tables() {
+    public ImportTable[] tables() {
         return tables;
     }
 
@@ -123,7 +123,7 @@ public class ExternalValues {
         return tables.length;
     }
 
-    public ExternalTable table(int idx) {
+    public ImportTable table(int idx) {
         return tables[idx];
     }
 
@@ -131,24 +131,24 @@ public class ExternalValues {
         return new Builder();
     }
 
-    public static ExternalValues empty() {
+    public static ImportValues empty() {
         return new Builder().build();
     }
 
     public static final class Builder {
-        private List<ExternalFunction> functions;
-        private List<ExternalGlobal> globals;
-        private List<ExternalMemory> memories;
-        private List<ExternalTable> tables;
+        private List<ImportFunction> functions;
+        private List<ImportGlobal> globals;
+        private List<ImportMemory> memories;
+        private List<ImportTable> tables;
 
         Builder() {}
 
-        public Builder withFunctions(List<ExternalFunction> functions) {
+        public Builder withFunctions(List<ImportFunction> functions) {
             this.functions = functions;
             return this;
         }
 
-        public Builder addFunction(ExternalFunction... function) {
+        public Builder addFunction(ImportFunction... function) {
             if (this.functions == null) {
                 this.functions = new ArrayList<>();
             }
@@ -156,12 +156,12 @@ public class ExternalValues {
             return this;
         }
 
-        public Builder withGlobals(List<ExternalGlobal> globals) {
+        public Builder withGlobals(List<ImportGlobal> globals) {
             this.globals = globals;
             return this;
         }
 
-        public Builder addGlobal(ExternalGlobal... global) {
+        public Builder addGlobal(ImportGlobal... global) {
             if (this.globals == null) {
                 this.globals = new ArrayList<>();
             }
@@ -169,12 +169,12 @@ public class ExternalValues {
             return this;
         }
 
-        public Builder withMemories(List<ExternalMemory> memories) {
+        public Builder withMemories(List<ImportMemory> memories) {
             this.memories = memories;
             return this;
         }
 
-        public Builder addMemory(ExternalMemory... memory) {
+        public Builder addMemory(ImportMemory... memory) {
             if (this.memories == null) {
                 this.memories = new ArrayList<>();
             }
@@ -182,12 +182,12 @@ public class ExternalValues {
             return this;
         }
 
-        public Builder withTables(List<ExternalTable> tables) {
+        public Builder withTables(List<ImportTable> tables) {
             this.tables = tables;
             return this;
         }
 
-        public Builder addTable(ExternalTable... table) {
+        public Builder addTable(ImportTable... table) {
             if (this.tables == null) {
                 this.tables = new ArrayList<>();
             }
@@ -195,22 +195,22 @@ public class ExternalValues {
             return this;
         }
 
-        public ExternalValues build() {
-            final ExternalValues externalValues =
-                    new ExternalValues(
+        public ImportValues build() {
+            final ImportValues importValues =
+                    new ImportValues(
                             functions == null
                                     ? new HostFunction[0]
                                     : functions.toArray(new HostFunction[0]),
                             globals == null
-                                    ? new ExternalGlobal[0]
-                                    : globals.toArray(new ExternalGlobal[0]),
+                                    ? new ImportGlobal[0]
+                                    : globals.toArray(new ImportGlobal[0]),
                             memories == null
-                                    ? new ExternalMemory[0]
-                                    : memories.toArray(new ExternalMemory[0]),
+                                    ? new ImportMemory[0]
+                                    : memories.toArray(new ImportMemory[0]),
                             tables == null
-                                    ? new ExternalTable[0]
-                                    : tables.toArray(new ExternalTable[0]));
-            return externalValues;
+                                    ? new ImportTable[0]
+                                    : tables.toArray(new ImportTable[0]));
+            return importValues;
         }
     }
 }

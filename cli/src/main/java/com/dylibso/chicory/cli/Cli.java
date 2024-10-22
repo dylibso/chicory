@@ -1,7 +1,7 @@
 package com.dylibso.chicory.cli;
 
 import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.ExternalValues;
+import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
@@ -59,17 +59,17 @@ public class Cli implements Runnable {
         var module = Parser.parse(file);
         var imports =
                 wasi
-                        ? new ExternalValues(
+                        ? new ImportValues(
                                 new WasiPreview1(
                                                 logger,
                                                 WasiOptions.builder().inheritSystem().build())
                                         .toHostFunctions())
-                        : new ExternalValues();
+                        : new ImportValues();
         var instance =
                 Instance.builder(module)
                         .withInitialize(true)
                         .withStart(false)
-                        .withExternalValues(imports)
+                        .withImportValues(imports)
                         .build();
 
         if (functionName != null) {

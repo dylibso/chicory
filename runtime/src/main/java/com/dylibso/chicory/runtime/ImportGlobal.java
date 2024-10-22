@@ -1,11 +1,11 @@
 package com.dylibso.chicory.runtime;
 
-public class ExternalGlobal implements ExternalValue {
+public class ImportGlobal implements ImportValue {
     private final GlobalInstance instance;
     private final String module;
     private final String name;
 
-    public ExternalGlobal(String module, String name, GlobalInstance instance) {
+    public ImportGlobal(String module, String name, GlobalInstance instance) {
         this.instance = instance;
         this.module = module;
         this.name = name;
@@ -26,7 +26,7 @@ public class ExternalGlobal implements ExternalValue {
     }
 
     @Override
-    public ExternalValue.Type type() {
+    public ImportValue.Type type() {
         return Type.GLOBAL;
     }
 }

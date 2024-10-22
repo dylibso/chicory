@@ -5,7 +5,7 @@ import static java.nio.file.Files.createDirectories;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.ExternalValues;
+import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
@@ -86,10 +86,10 @@ public final class Wast2Json {
                                 .withLogger(logger)
                                 .withOpts(wasiOpts.build())
                                 .build()) {
-                    ExternalValues imports = new ExternalValues(wasi.toHostFunctions());
+                    ImportValues imports = new ImportValues(wasi.toHostFunctions());
 
                     Instance.builder(MODULE)
-                            .withExternalValues(imports)
+                            .withImportValues(imports)
                             .withMachineFactory(Wast2JsonModuleMachineFactory::create)
                             .build();
                 }

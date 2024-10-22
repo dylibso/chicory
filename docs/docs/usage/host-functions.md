@@ -78,9 +78,9 @@ Now we just need to pass this host function in during our instantiation phase:
 
 ```java
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.runtime.ExternalValues;
-var hostFunctions = new ExternalValues(new HostFunction[] {func});
-var instance = Instance.builder(Parser.parse(new File("./logger.wasm"))).withExternalValues(hostFunctions).build();
+import com.dylibso.chicory.runtime.ImportValues;
+var hostFunctions = new ImportValues(new HostFunction[] {func});
+var instance = Instance.builder(Parser.parse(new File("./logger.wasm"))).withImportValues(hostFunctions).build();
 var logIt = instance.export("logIt");
 logIt.apply();
 // should print "Hello, World!" 10 times

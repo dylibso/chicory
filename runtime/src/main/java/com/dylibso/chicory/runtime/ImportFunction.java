@@ -3,14 +3,14 @@ package com.dylibso.chicory.runtime;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 
-public class ExternalFunction implements ExternalValue {
+public class ImportFunction implements ImportValue {
     private final WasmFunctionHandle handle;
     private final String module;
     private final String name;
     private final List<ValueType> paramTypes;
     private final List<ValueType> returnTypes;
 
-    public ExternalFunction(
+    public ImportFunction(
             String module,
             String name,
             WasmFunctionHandle handle,

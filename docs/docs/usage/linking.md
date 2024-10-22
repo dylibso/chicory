@@ -22,7 +22,7 @@ TODO: should we make this more explicit?
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.ExternalValues;
+import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.wasm.types.ValueType;
 
 var func = new HostFunction(
@@ -37,8 +37,8 @@ var func = new HostFunction(
     },
     List.of(ValueType.I32, ValueType.I32),
     List.of());
-var hostFunctions = new ExternalValues(new HostFunction[] {func});
-var instance = Instance.builder(Parser.parse(new File("./logger.wasm"))).withExternalValues(hostFunctions).build();
+var hostFunctions = new ImportValues(new HostFunction[] {func});
+var instance = Instance.builder(Parser.parse(new File("./logger.wasm"))).withImportValues(hostFunctions).build();
 ```
 -->
 
@@ -68,9 +68,9 @@ var logger2 = store.instantiate("logger2", Parser.parse(new File("./logger.wasm"
 This is equivalent to:
 
 ```java
-var external = store.toExternalValues();
+var external = store.toImportValues();
 var m = Parser.parse(new File("./logger.wasm"));
-var instance = Instance.builder(m).withExternalValues(external).build();
+var instance = Instance.builder(m).withImportValues(external).build();
 store.register("logger2", instance);
 ```
 

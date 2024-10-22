@@ -1,11 +1,11 @@
 package com.dylibso.chicory.testing;
 
-import com.dylibso.chicory.runtime.ExternalGlobal;
-import com.dylibso.chicory.runtime.ExternalMemory;
-import com.dylibso.chicory.runtime.ExternalTable;
-import com.dylibso.chicory.runtime.ExternalValues;
 import com.dylibso.chicory.runtime.GlobalInstance;
 import com.dylibso.chicory.runtime.HostFunction;
+import com.dylibso.chicory.runtime.ImportGlobal;
+import com.dylibso.chicory.runtime.ImportMemory;
+import com.dylibso.chicory.runtime.ImportTable;
+import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.TableInstance;
@@ -23,8 +23,8 @@ public final class Spectest {
 
     private Spectest() {}
 
-    public static ExternalValues toExternalValues() {
-        return new ExternalValues(
+    public static ImportValues toImportValues() {
+        return new ImportValues(
                 new HostFunction[] {
                     new HostFunction("spectest", "print", noop, List.of(), List.of()),
                     new HostFunction(
@@ -56,21 +56,19 @@ public final class Spectest {
                             List.of(ValueType.F64, ValueType.F64),
                             List.of())
                 },
-                new ExternalGlobal[] {
-                    new ExternalGlobal(
-                            "spectest", "global_i32", new GlobalInstance(Value.i32(666))),
-                    new ExternalGlobal(
-                            "spectest", "global_i64", new GlobalInstance(Value.i64(666))),
-                    new ExternalGlobal(
+                new ImportGlobal[] {
+                    new ImportGlobal("spectest", "global_i32", new GlobalInstance(Value.i32(666))),
+                    new ImportGlobal("spectest", "global_i64", new GlobalInstance(Value.i64(666))),
+                    new ImportGlobal(
                             "spectest", "global_f32", new GlobalInstance(Value.fromFloat(666.6f))),
-                    new ExternalGlobal(
+                    new ImportGlobal(
                             "spectest", "global_f64", new GlobalInstance(Value.fromDouble(666.6))),
                 },
-                new ExternalMemory[] {
-                    new ExternalMemory("spectest", "memory", new Memory(new MemoryLimits(1, 2)))
+                new ImportMemory[] {
+                    new ImportMemory("spectest", "memory", new Memory(new MemoryLimits(1, 2)))
                 },
-                new ExternalTable[] {
-                    new ExternalTable(
+                new ImportTable[] {
+                    new ImportTable(
                             "spectest",
                             "table",
                             new TableInstance(new Table(ValueType.FuncRef, new Limits(10, 20))))
