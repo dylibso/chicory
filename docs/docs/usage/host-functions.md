@@ -86,18 +86,23 @@ to read a buffer into a `String`; we can then print that to stdout on behalf of 
 
 Note that the `HostFunction` needs 3 things:
 
-1. A lambda to call when the Wasm module invokes the import
-2. The namespace and function name of the import (in our case it's `console` and `log` respectively)
-3. The Wasm type signature (this function takes 2 i32s as arguments and returns nothing)
+1. The namespace and function name of the import (in our case it's `console` and `log` respectively)
+2. The Wasm type signature (this function takes 2 `i32`s as arguments and returns nothing)
+3. A lambda to call when the Wasm module invokes the import
 
 
-Now we just need to pass this host function when we instantiate the module:
+Now we just need to pass this host function when we instantiate the module. We can do so by using a `Store`. 
 
 ```java
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.ImportValues;
-var hostFunctions = new ImportValues(new HostFunction[] {func});
-var instance = Instance.builder(Parser.parse(new File("./logger.wasm"))).withImportValues(hostFunctions).build();
+import com.dylibso.chicory.runtime.Store;
+
+// instantiate the store
+var store = new Store();
+// registers `console.log` in the store
+store.addFunction(func);
+var instance = store.instantiate("logger", Parser.parse(new File("./logger.wasm")));
 var logIt = instance.export("logIt");
 logIt.apply();
 // should print "Hello, World!" 10 times
