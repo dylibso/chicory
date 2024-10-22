@@ -116,7 +116,7 @@
     <maven-site-plugin.version>3.20.0</maven-site-plugin.version>
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.5.1</maven-surefire-plugin.version>
-    <maven-invoker-plugin.version>3.8.0</maven-invoker-plugin.version>
+    <maven-invoker-plugin.version>3.8.1</maven-invoker-plugin.version>
     <nexus-staging-maven-plugin.version>1.7.0</nexus-staging-maven-plugin.version>
     <spotless-maven-plugin.version>2.43.0</spotless-maven-plugin.version>
     <templating-maven-plugin.version>3.0.0</templating-maven-plugin.version>
