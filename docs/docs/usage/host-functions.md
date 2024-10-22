@@ -53,15 +53,15 @@ import com.dylibso.chicory.wasm.types.ValueType;
 var func = new HostFunction(
     "console",
     "log",
+    List.of(ValueType.I32, ValueType.I32),
+    List.of(),
     (Instance instance, long... args) -> { // decompiled is: console_log(13, 0);
         var len = (int) args[0];
         var offset = (int) args[1];
         var message = instance.memory().readString(offset, len);
         println(message);
         return null;
-    },
-    List.of(ValueType.I32, ValueType.I32),
-    List.of());
+    });
 ```
 
 Again we're dealing with pointers here. The module calls `console.log` with the length of the string

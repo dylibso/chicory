@@ -279,9 +279,9 @@ public final class HostModuleProcessor extends AbstractProcessor {
                         .setType("HostFunction")
                         .addArgument(new StringLiteralExpr(moduleName))
                         .addArgument(new StringLiteralExpr(name))
-                        .addArgument(handle)
                         .addArgument(new MethodCallExpr(new NameExpr("List"), "of", paramTypes))
-                        .addArgument(new MethodCallExpr(new NameExpr("List"), "of", returnType));
+                        .addArgument(new MethodCallExpr(new NameExpr("List"), "of", returnType))
+                        .addArgument(handle);
         // TODO: update javaparser and replace with multiline formatting
         function.setLineComment("");
         return function;

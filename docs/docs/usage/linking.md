@@ -28,15 +28,15 @@ import com.dylibso.chicory.wasm.types.ValueType;
 var func = new HostFunction(
     "console",
     "log",
+    List.of(ValueType.I32, ValueType.I32),
+    List.of(),
     (Instance instance, long... args) -> { // decompiled is: console_log(13, 0);
         var len = (int) args[0];
         var offset = (int) args[1];
         var message = instance.memory().readString(offset, len);
         println(message);
         return null;
-    },
-    List.of(ValueType.I32, ValueType.I32),
-    List.of());
+    });
 var hostFunctions = new ImportValues(new HostFunction[] {func});
 var instance = Instance.builder(Parser.parse(new File("./logger.wasm"))).withImportValues(hostFunctions).build();
 ```

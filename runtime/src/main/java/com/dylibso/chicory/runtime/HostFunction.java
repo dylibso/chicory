@@ -10,9 +10,9 @@ public class HostFunction extends ImportFunction {
     public HostFunction(
             String moduleName,
             String symbolName,
-            WasmFunctionHandle handle,
             List<ValueType> paramTypes,
-            List<ValueType> returnTypes) {
+            List<ValueType> returnTypes,
+            WasmFunctionHandle handle) {
         super(moduleName, symbolName, paramTypes, returnTypes, handle);
     }
 }
