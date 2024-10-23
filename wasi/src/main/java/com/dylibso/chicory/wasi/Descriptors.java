@@ -18,7 +18,7 @@ final class Descriptors {
     private final List<Descriptor> descriptors = new ArrayList<>();
     private final NavigableSet<Integer> freeFds = new TreeSet<>();
 
-    public Descriptors() {}
+    Descriptors() {}
 
     public Descriptor get(int fd) {
         if (fd < 0 || fd >= descriptors.size()) {
@@ -79,7 +79,7 @@ final class Descriptors {
         Path path();
     }
 
-    public static final class InStream implements Descriptor, DataReader {
+    static final class InStream implements Descriptor, DataReader {
         private final InputStream in;
 
         public InStream(InputStream in) {
@@ -92,7 +92,7 @@ final class Descriptors {
         }
     }
 
-    public static final class OutStream implements Descriptor, DataWriter {
+    static final class OutStream implements Descriptor, DataWriter {
         private final OutputStream out;
 
         public OutStream(OutputStream out) {
@@ -106,7 +106,7 @@ final class Descriptors {
         }
     }
 
-    public static final class PreopenedDirectory implements Descriptor, Directory {
+    static final class PreopenedDirectory implements Descriptor, Directory {
         private final byte[] name;
         private final Path path;
 
@@ -125,7 +125,7 @@ final class Descriptors {
         }
     }
 
-    public static final class OpenDirectory implements Descriptor, Directory {
+    static final class OpenDirectory implements Descriptor, Directory {
         private final Path path;
 
         public OpenDirectory(Path path) {
@@ -138,7 +138,7 @@ final class Descriptors {
         }
     }
 
-    public static final class OpenFile implements Descriptor, Closeable, DataReader, DataWriter {
+    static final class OpenFile implements Descriptor, Closeable, DataReader, DataWriter {
         private final Path path;
         private final SeekableByteChannel channel;
         private final int fdFlags;

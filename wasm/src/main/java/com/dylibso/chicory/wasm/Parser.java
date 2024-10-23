@@ -908,8 +908,6 @@ public final class Parser {
         if (op == null) {
             throw new MalformedException("illegal opcode, op value " + String.format("%02X ", b));
         }
-
-        // System.out.println("b: " + b + " op: " + op);
         var signature = OpCode.signature(op);
 
         switch (op) {

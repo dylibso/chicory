@@ -1,15 +1,14 @@
 package com.dylibso.chicory.runtime;
 
-/**
- * A temporary class that gives us a little more control over the interface.
- * It allows us to assert non-nulls as well as throw stack under and overflow exceptions
- * We should replace with something more idiomatic and performant.
- */
 public class MStack {
     public static final int MIN_CAPACITY = 8;
 
     private int count;
     private long[] elements;
+
+    public MStack() {
+        this.elements = new long[MIN_CAPACITY];
+    }
 
     private void increaseCapacity() {
         final int newCapacity = elements.length << 1;
@@ -18,10 +17,6 @@ public class MStack {
         System.arraycopy(elements, 0, array, 0, elements.length);
 
         elements = array;
-    }
-
-    public MStack() {
-        this.elements = new long[MIN_CAPACITY];
     }
 
     public void push(long v) {

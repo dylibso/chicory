@@ -1,7 +1,6 @@
 package com.dylibso.chicory.aot;
 
 import static com.dylibso.chicory.aot.AotMethodRefs.CHECK_INTERRUPTION;
-import static com.dylibso.chicory.aot.AotMethodRefs.INSTANCE_READ_GLOBAL;
 import static com.dylibso.chicory.aot.AotMethodRefs.INSTANCE_SET_ELEMENT;
 import static com.dylibso.chicory.aot.AotMethodRefs.MEMORY_COPY;
 import static com.dylibso.chicory.aot.AotMethodRefs.MEMORY_DROP;
@@ -21,6 +20,7 @@ import static com.dylibso.chicory.aot.AotMethodRefs.MEMORY_WRITE_FLOAT;
 import static com.dylibso.chicory.aot.AotMethodRefs.MEMORY_WRITE_INT;
 import static com.dylibso.chicory.aot.AotMethodRefs.MEMORY_WRITE_LONG;
 import static com.dylibso.chicory.aot.AotMethodRefs.MEMORY_WRITE_SHORT;
+import static com.dylibso.chicory.aot.AotMethodRefs.READ_GLOBAL;
 import static com.dylibso.chicory.aot.AotMethodRefs.REF_IS_NULL;
 import static com.dylibso.chicory.aot.AotMethodRefs.TABLE_COPY;
 import static com.dylibso.chicory.aot.AotMethodRefs.TABLE_FILL;
@@ -205,9 +205,9 @@ final class AotEmitters {
     public static void GLOBAL_GET(AotContext ctx, AnnotatedInstruction ins, MethodVisitor asm) {
         int globalIndex = (int) ins.operand(0);
 
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
         asm.visitLdcInsn(globalIndex);
-        emitInvokeVirtual(asm, INSTANCE_READ_GLOBAL);
+        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        emitInvokeStatic(asm, READ_GLOBAL);
 
         var globalType = ctx.globalTypes().get(globalIndex);
         emitLongToJvm(asm, ctx.globalTypes().get(globalIndex));

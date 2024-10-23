@@ -13,4 +13,10 @@ public class WasiExitException extends ChicoryException {
     public int exitCode() {
         return exitCode;
     }
+
+    // no need to capture the Stack Trace
+    @Override
+    public Throwable fillInStackTrace() {
+        return this;
+    }
 }

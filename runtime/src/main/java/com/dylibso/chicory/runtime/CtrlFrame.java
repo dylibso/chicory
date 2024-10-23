@@ -2,7 +2,7 @@ package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.OpCode;
 
-public class CtrlFrame {
+final class CtrlFrame {
     // OpCode of the current Control Flow instruction
     public final OpCode opCode;
     // params or inputs
