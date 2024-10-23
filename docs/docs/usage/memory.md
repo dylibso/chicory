@@ -1,10 +1,4 @@
----
-id: Memory usage
-sidebar_position: 1
-sidebar_label: Memory usage
----
-
-## Using the memory to share data
+# Using Memory to Share Data
 
 Wasm only understands basic integer and float primitives. So passing more complex types across the boundary involves
 passing pointers. To read, write, or allocate memory in a module, Chicory provides the `Memory` class. Let's look at an

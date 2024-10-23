@@ -1,10 +1,4 @@
----
-id: Linking
-sidebar_position: 1
-sidebar_label: Linking
----
-
-### The Store Object and Instantiating Multiple Modules
+# Instantiating Modules
 
 In the [Host Functions section](host-functions.md) we met the `Store` for the first-time.
 
@@ -62,7 +56,7 @@ var instance = store.instantiate("logger", Parser.parse(new File("./logger.wasm"
 
 Because this instance is now named, now any exports in the `logger` module will be automatically qualified. For instance, the exported function `logIt` will be visible by other modules as `logger.logIt`.
 
-### Notes
+## Notes
 
 - The invocation `store.instantiate("logger", ...)` is in fact equivalent to the lower-level sequence:
 

@@ -1,34 +1,40 @@
----
-id: Host functions
-sidebar_position: 1
-sidebar_label: Host functions
----
+# Guests and Hosts
 
-### Host Functions
+In Wasm, the instance of a module is generally regarded as the **guest**,
+and the surrounding runtime environment is usually called the **host**.
 
-In Wasm, the instance of a module is generally regarded as the _guest_,
-and the surrounding runtime environment is usually called the _host_.
 
-For example, an application using Chicory as a library would be the host
+For example, an **application** using Chicory as a **library** would be the **host**
 to a Wasm module you have instantiated.
 
-In previous section, we saw that Wasm modules may _export_ functions, so that
-they can be externally invoked. But Wasm modules may also _import_ functions. 
+In previous section, we saw that Wasm modules may **export** functions, so that
+they can be externally invoked. But Wasm modules may also **import** functions. 
 These imports have to be resolved at the time when a module is instantiated;
 in other words, when a module is instantiated, the runtime has to provide
 references for all the imports that a module declares. 
 
 The import/export mechanism is the way through which Wasm interacts 
 with the outside world: without imports, a Wasm module is "pure compute",
-in other words, it cannot perform any kind of I/O. This puts you in the seat of the operating system. 
+that is, it cannot perform any kind of I/O, nor can it interact with other
+modules. 
 
-One way to fulfill imports is with a host function written in Java. 
-Regardless of the source language that originated your Wasm module, it will be able to call this Java function when needed.
+## Host Functions
 
-If it helps, you can think of host functions like of syscalls or a the standard library of your favorite language.
-However, instead of having a default implementation, you use Java to decide what they do and how they behave.
+One way to fulfill imports is providing a **host function** written in Java. 
+Regardless of the source language that originated your Wasm module, 
+it will be able to call this Java function when needed.
 
-Let's download another example module to demonstrate this:
+It is called a **host** function, because it is written in the language of the
+**host** (in this case, a JVM). As opposed to any other Wasm function, 
+a **host function** is _unrestricted_ and it may interact with the surrounding
+environment in any arbitrary way. This let you "escape the sandbox".
+
+If it helps, you can think of host functions as similar to system calls 
+or the standard library in your favorite programming language. The key difference is that, 
+instead of relying on a default implementation, you use Java to define their behavior 
+and determine what they do.
+
+Let's see it with another example. Download now the following Wasm binary:
 
 ```bash
 curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/main/resources/compiled/host-function.wat.wasm > logger.wasm
@@ -46,15 +52,15 @@ docs.FileOps.copyFromWasmCorpus("host-function.wat.wasm", "logger.wasm");
 ```
 -->
 
-This module expects us to fulfil an import with the name `console.log` which will allow the module to log to the stdout.
-Let's write that host function:
+This module expects us to fulfil an import with the name `console.log`. 
+As the name implies, this function allows a caller to log a message to standard output.
+We could write it as the host function:
 
 <!--
 ```java
-public String hostFunctionResult = "";
-public void println(String value) {
-  hostFunctionResult += value + "\n";
-}
+System.setOut(new PrintStream(
+  new BufferedOutputStream(
+    new FileOutputStream("docs/usage/host-functions.md.result"))));
 ```
 -->
 
@@ -73,7 +79,7 @@ var func = new HostFunction(
         var len = (int) args[0];
         var offset = (int) args[1];
         var message = instance.memory().readString(offset, len);
-        println(message);
+        System.out.println(message);
         return null;
     });
 ```
@@ -108,8 +114,3 @@ logIt.apply();
 // should print "Hello, World!" 10 times
 ```
 
-<!--
-```java
-docs.FileOps.writeResult("docs/usage", "host-functions.md.result", hostFunctionResult);
-```
--->
