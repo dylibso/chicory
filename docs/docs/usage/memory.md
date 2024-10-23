@@ -1,14 +1,8 @@
----
-id: Memory usage
-sidebar_position: 1
-sidebar_label: Memory usage
----
-
-## Using the memory to share data
+# Using Memory to Share Data
 
 Wasm only understands basic integer and float primitives. So passing more complex types across the boundary involves
-passing pointers. To read, write, or allocate memory in a module, Chicory gives you the `Memory` class. Let's look at an
-example where we have a module `count_vowels.wasm`, written in rust, that takes a string input and counts the number of vowels
+passing pointers. To read, write, or allocate memory in a module, Chicory provides the `Memory` class. Let's look at an
+example where we have a module `count_vowels.wasm`, written in Rust, that takes a string input and counts the number of vowels
 in the string:
 
 ```bash
@@ -39,7 +33,7 @@ Instance instance = Instance.builder(Parser.parse(new File("./count_vowels.wasm"
 ExportFunction countVowels = instance.export("count_vowels");
 ```
 
-To pass it a string, we first need to put the string in the module's memory. To make this easier and safe,
+To pass it a string, we first need to write the string into the module's memory. To make this easier and safe,
 the module gives us some extra exports to allow us to allocate and deallocate memory:
 
 ```java
@@ -47,7 +41,7 @@ ExportFunction alloc = instance.export("alloc");
 ExportFunction dealloc = instance.export("dealloc");
 ```
 
-Let's allocate Wasm memory for a string and put in the instance's memory. We can do this with `Memory#put`:
+Let's allocate Wasm memory for a string and write it into the instance memory. We can do this with `Memory#put`:
 
 ```java
 import com.dylibso.chicory.runtime.Memory;
@@ -60,7 +54,7 @@ int ptr = (int) alloc.apply(len)[0];
 memory.writeString(ptr, message);
 ```
 
-Now we can call `countVowels` with this pointer to the string. It will do it's job and return the count. We will
+Now we can call `countVowels` with this pointer to the string. It will do its job and return the count. We will
 call `dealloc` to free that memory in the module. Though the module could do this itself if you want:
 
 ```java

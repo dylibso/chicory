@@ -1,6 +1,7 @@
 ---
 sidebar_position: 1
 sidebar_label: Docs
+title: Docs
 ---
 
 ## Getting Started
@@ -34,7 +35,7 @@ The Chicory CLI is available for download on Maven at the link:
 https://repo1.maven.org/maven2/com/dylibso/chicory/cli/<version>/cli-<version>.sh
 ```
 
-you can download the latest version and use it locally with few lines:
+you can download the latest version and use it locally by typing:
 
 ```bash
 export VERSION=$(wget -q -O - https://api.github.com/repos/dylibso/chicory/tags --header "Accept: application/json" | jq -r '.[0].name')
@@ -82,19 +83,20 @@ Module module = Parser.parse(new File("./factorial.wasm"));
 Instance instance = Instance.builder(module).build();
 ```
 
-You can think of the `module` as the inert code and the `instance` as a virtual machine
-loaded with the code and ready to execute.
+You can think of the `module` as of inert code, and the `instance` 
+is the run-time representation of that code: a virtual machine ready to execute.
 
 ### Invoking an Export Function
 
 Wasm modules, like all code modules, can export functions to the outside
-world. This module exports a function called `"iterFact"`. We can get a handle to this function using `Instance#export(String)`:
+world. This module exports a function called `"iterFact"`. 
+We can get a handle to this function using `Instance#export(String)`:
 
 ```java
 ExportFunction iterFact = instance.export("iterFact");
 ```
 
-iterFact can be invoked with the `apply()` method. We must map any java types to a wasm type and do the reverse
+iterFact can be invoked with the `apply()` method. We must map any Java types to a Wasm type and do the reverse
 when we want to go back to Java. This export function takes an `i32` argument. We can use a method like `Value#asInt()`
 on the return value to get back the Java integer:
 

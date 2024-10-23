@@ -1,17 +1,11 @@
----
-id: Linking
-sidebar_position: 1
-sidebar_label: Linking
----
+# Instantiating Modules
 
-### Store and Instantiating Multiple Modules
+In the [Host Functions section](host-functions.md) we met the `Store` for the first-time.
 
 A [Store][spec] is an intermediate-level abstraction that collects Wasm function, global, memory, and table instances
-as named entities.
+as named entities. It simplifies creating instances, especially when there are a lot of interdependencies.
 
-It simplifies creating instances when there are a lot of interdependencies, by collecting all the
-
-In the simplest case, it allows to register single host functions, globals, memories and tables:
+In the simplest case, it allows to register single host functions, globals, memories and tables. For instance, we already saw how to register a `console.log()` host function to the `Store`:
 
 <!--
 TODO: should we make this more explicit?
@@ -23,6 +17,15 @@ import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.ImportValues;
+import com.dylibso.chicory.wasm.types.ValueType;
+
+```
+-->
+
+```java
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.HostFunction;
+import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wasm.types.ValueType;
 
 var func = new HostFunction(
@@ -37,50 +40,42 @@ var func = new HostFunction(
         println(message);
         return null;
     });
-var hostFunctions = new ImportValues(new HostFunction[] {func});
-var instance = Instance.builder(Parser.parse(new File("./logger.wasm"))).withImportValues(hostFunctions).build();
-```
--->
-
-```java
-import com.dylibso.chicory.runtime.Store;
 
 // instantiate the store
 var store = new Store();
-// registers `console.log` in the store (see the previous section for the definition of `func`)
+// registers `console.log` in the store
 store.addFunction(func);
 ```
 
-However, the store also automatically exposes the exports of a module to the other instances that are registered.
+However, the store also automatically exposes the exports of a module to the other instances that are registered. In fact, in the [Host Functions section](host-functions.md), when we created our instance from the `logger.wasm` module, we also passed a string `"logger"`. This is the name of the instance:
 
 ```java
-// registers the `instance` created earlier (see the previous section) with the name `logger`
-store.register("logger", instance);
-// now the exported function `logIt` can be imported by other modules as `logger.logIt`
+// create a named `instance` with name `logger`
+var instance = store.instantiate("logger", Parser.parse(new File("./logger.wasm")));
 ```
 
-There is also a shorthand method to instantiate a module and register the resulting instance:
+Because this instance is now named, now any exports in the `logger` module will be automatically qualified. For instance, the exported function `logIt` will be visible by other modules as `logger.logIt`.
 
-```java
-var logger2 = store.instantiate("logger2", Parser.parse(new File("./logger.wasm")));
-```
+## Notes
 
-This is equivalent to:
+- The invocation `store.instantiate("logger", ...)` is in fact equivalent to the lower-level sequence:
 
-```java
-var external = store.toImportValues();
-var m = Parser.parse(new File("./logger.wasm"));
-var instance = Instance.builder(m).withImportValues(external).build();
-store.register("logger2", instance);
-```
+    ```java
+    var imports = store.toImportValues();
+    var m = Parser.parse(new File("./logger.wasm"));
+    var instance = Instance.builder(m).withImportValues(imports).build();
+    store.register("logger", instance);
+    ```
 
-Notice that registering two instances with the same name results in overwriting the
+    However, in most cases we recommend to use the shorthand form.
+
+- Also notice that registering two instances with the same name results in overwriting the
 functions, globals, memories, tables with matching names. In this case, the new `logger2.logIt` function
 overwrote the old `logger2.logIt` function.
 
-The current `Store` is a mutable object, not meant to be shared (it is not thread-safe).
+- The current `Store` is a mutable object, not meant to be shared (it is not thread-safe).
 
-A `Store` _does not_ resolve interdependencies between modules in itself: if your set of modules
+- A `Store` _does not_ resolve interdependencies between modules in itself: if your set of modules
 have interdependencies, you will have to instantiate and register them in the right order.
 
 [spec]: https://www.w3.org/TR/2019/REC-wasm-core-1-20191205/#store%E2%91%A0
