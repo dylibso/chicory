@@ -10,16 +10,15 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Represents a frame. It's maybe a misonomer to call it a stack frame.
- * It doesn't hold the stack, just local variables and the `pc` which
+ * Represents a frame, doesn't hold the stack, just local variables and the `pc` which
  * is the program counter in this function. Instead of keeping an absolute pointer
  * to positions in code the program counter is relative to the function and we store it
  * here so we know where to resume when we return from an inner function call.
  * This also means it's not possible to set the program counter to an instruction in another function
- * on accident which is a good thing, as this is not allowed in the spec. You can only jump to instructions
+ * on accident, as this is not allowed in the spec. You can only jump to instructions
  * within the function you are in and only specific places.
  */
-public class StackFrame {
+class StackFrame {
     private final List<AnnotatedInstruction> code;
     private AnnotatedInstruction currentInstruction;
 
@@ -30,16 +29,16 @@ public class StackFrame {
 
     private final List<CtrlFrame> ctrlStack = new ArrayList<>();
 
-    public StackFrame(Instance instance, int funcId, long[] args, List<ValueType> localTypes) {
-        this(Collections.emptyList(), instance, funcId, args, localTypes);
+    StackFrame(Instance instance, int funcId, long[] args, List<ValueType> localTypes) {
+        this(instance, funcId, args, localTypes, Collections.emptyList());
     }
 
-    public StackFrame(
-            List<AnnotatedInstruction> code,
+    StackFrame(
             Instance instance,
             int funcId,
             long[] args,
-            List<ValueType> localTypes) {
+            List<ValueType> localTypes,
+            List<AnnotatedInstruction> code) {
         this.code = code;
         this.instance = instance;
         this.funcId = funcId;
@@ -76,33 +75,33 @@ public class StackFrame {
         return id + "\n\tpc=" + pc + " locals=" + Arrays.toString(locals);
     }
 
-    public AnnotatedInstruction loadCurrentInstruction() {
+    AnnotatedInstruction loadCurrentInstruction() {
         currentInstruction = code.get(pc++);
         return currentInstruction;
     }
 
-    public boolean isLastBlock() {
+    boolean isLastBlock() {
         return currentInstruction.depth() == 0;
     }
 
-    public boolean terminated() {
+    boolean terminated() {
         return pc >= code.size();
     }
 
-    public void pushCtrl(CtrlFrame ctrlFrame) {
+    void pushCtrl(CtrlFrame ctrlFrame) {
         ctrlStack.add(ctrlFrame);
     }
 
-    public void pushCtrl(OpCode opcode, int startValues, int returnValues, int height) {
+    void pushCtrl(OpCode opcode, int startValues, int returnValues, int height) {
         ctrlStack.add(new CtrlFrame(opcode, startValues, returnValues, height));
     }
 
-    public CtrlFrame popCtrl() {
+    CtrlFrame popCtrl() {
         var ctrlFrame = ctrlStack.remove(ctrlStack.size() - 1);
         return ctrlFrame;
     }
 
-    public CtrlFrame popCtrl(int n) {
+    CtrlFrame popCtrl(int n) {
         int mostRecentCallHeight = ctrlStack.size();
         while (true) {
             if (ctrlStack.get(--mostRecentCallHeight).opCode == OpCode.CALL) {
@@ -117,7 +116,7 @@ public class StackFrame {
         return ctrlFrame;
     }
 
-    public CtrlFrame popCtrlTillCall() {
+    CtrlFrame popCtrlTillCall() {
         while (true) {
             var ctrlFrame = popCtrl();
             if (ctrlFrame.opCode == OpCode.CALL) {
@@ -126,11 +125,11 @@ public class StackFrame {
         }
     }
 
-    public void jumpTo(int newPc) {
+    void jumpTo(int newPc) {
         pc = newPc;
     }
 
-    public static void doControlTransfer(CtrlFrame ctrlFrame, MStack stack) {
+    static void doControlTransfer(CtrlFrame ctrlFrame, MStack stack) {
         var endResults = ctrlFrame.startValues + ctrlFrame.endValues; // unwind stack
         long[] returns = new long[endResults];
         for (int i = 0; i < returns.length; i++) {

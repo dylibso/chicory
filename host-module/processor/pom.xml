@@ -21,7 +21,6 @@
     <dependency>
       <groupId>com.github.javaparser</groupId>
       <artifactId>javaparser-core</artifactId>
-      <version>${javaparser.version}</version>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>

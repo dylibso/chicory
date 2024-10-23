@@ -87,7 +87,7 @@ final class Validator {
     private final int memoryImports;
     private final Set<Integer> declaredFunctions;
 
-    public Validator(Module module) {
+    Validator(Module module) {
         this.module = requireNonNull(module);
 
         this.globalImports =
@@ -315,7 +315,7 @@ final class Validator {
         return module.elementSection().getElement(idx);
     }
 
-    public void validateModule() {
+    void validateModule() {
         if (module.functionSection().functionCount() != module.codeSection().functionBodyCount()) {
             throw new MalformedException("function and code section have inconsistent lengths");
         }
@@ -339,7 +339,7 @@ final class Validator {
         }
     }
 
-    public void validateData() {
+    void validateData() {
         // Validate offsets.
         for (var ds : module.dataSection().dataSegments()) {
             if (ds instanceof ActiveDataSegment) {
@@ -352,7 +352,7 @@ final class Validator {
         }
     }
 
-    public void validateElements() {
+    void validateElements() {
         // Validate offsets.
         for (Element el : module.elementSection().elements()) {
             if (el instanceof ActiveElement) {
@@ -362,7 +362,7 @@ final class Validator {
         }
     }
 
-    public void validateGlobals() {
+    void validateGlobals() {
         for (Global g : module.globalSection().globals()) {
             validateConstantExpression(g.initInstructions(), g.valueType());
         }
@@ -458,7 +458,7 @@ final class Validator {
         }
     }
 
-    public void validateFunctions() {
+    void validateFunctions() {
         for (var i = 0; i < module.codeSection().functionBodyCount(); i++) {
             var body = module.codeSection().getFunctionBody(i);
             var idx = functionImports.size() + i;
@@ -468,7 +468,7 @@ final class Validator {
     }
 
     @SuppressWarnings("UnnecessaryCodeBlock")
-    public void validateFunction(int funcIdx, FunctionBody body, FunctionType functionType) {
+    void validateFunction(int funcIdx, FunctionBody body, FunctionType functionType) {
         var localTypes = body.localTypes();
         var inputLen = functionType.params().size();
         pushCtrl(null, new ArrayList<>(), functionType.returns());

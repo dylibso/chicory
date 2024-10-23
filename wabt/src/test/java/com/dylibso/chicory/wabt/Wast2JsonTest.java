@@ -22,7 +22,6 @@ public class Wast2JsonTest {
         // Act
         wast2Json.process();
 
-        System.out.println(outputFile.getAbsolutePath());
         // Assert
         assertTrue(outputFile.exists());
         assertTrue(outputFile.toPath().getParent().resolve("spec.0.wasm").toFile().exists());

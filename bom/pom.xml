@@ -16,7 +16,27 @@
     <dependencies>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
+        <artifactId>aot</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>aot-maven-plugin</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>cli</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
         <artifactId>host-module-annotations</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>host-module-processor</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -27,6 +47,11 @@
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>runtime</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wabt</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

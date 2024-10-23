@@ -65,7 +65,7 @@ public class Instance {
     private final Map<String, Export> exports;
     private final ExecutionListener listener;
 
-    public Instance(
+    Instance(
             Module module,
             Global[] globalInitializers,
             int importedGlobalsOffset,
@@ -230,7 +230,7 @@ public class Instance {
                 {
                     return args -> {
                         assert (args.length == 0);
-                        var v = readGlobal(export.index());
+                        var v = global(export.index()).getValue();
                         return new long[] {v};
                     };
                 }
@@ -262,32 +262,11 @@ public class Instance {
         if (idx < importedGlobalsOffset) {
             return imports.global(idx).instance();
         }
-        return globals[idx - importedGlobalsOffset];
-    }
-
-    public void writeGlobal(int idx, long val) {
-        if (idx < importedGlobalsOffset) {
-            imports.global(idx).instance().setValue(val);
-        }
-        globals[idx - importedGlobalsOffset].setValue(val);
-    }
-
-    public ValueType readGlobalType(int idx) {
-        if (idx < importedGlobalsOffset) {
-            return imports.global(idx).instance().getType();
-        }
-        return globals[idx - importedGlobalsOffset].getType();
-    }
-
-    public long readGlobal(int idx) {
-        if (idx < importedGlobalsOffset) {
-            return imports.global(idx).instance().getValue();
-        }
         var i = idx - importedGlobalsOffset;
         if (i < 0 || i >= globals.length) {
             throw new InvalidException("unknown global " + idx);
         }
-        return globals[idx - importedGlobalsOffset].getValue();
+        return globals[idx - importedGlobalsOffset];
     }
 
     public FunctionType type(int idx) {
@@ -349,7 +328,7 @@ public class Instance {
         return imprt.handle().apply(this, args);
     }
 
-    public void onExecution(Instruction instruction, MStack stack) {
+    void onExecution(Instruction instruction, MStack stack) {
         if (listener != null) {
             listener.onExecution(instruction, stack);
         }
@@ -481,8 +460,10 @@ public class Instance {
                 throw new UnlinkableException(
                         "incompatible import type, non-compatible limits, import: "
                                 + i.limits()
-                                + ", host: "
-                                + m.memory().limits()
+                                + ", host initial pages: "
+                                + m.memory().initialPages()
+                                + ", host max pages: "
+                                + m.memory().maximumPages()
                                 + " on memory: "
                                 + m.module()
                                 + "."

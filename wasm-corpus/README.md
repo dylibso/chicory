@@ -24,7 +24,7 @@ cd wasm-corpus
 
 
 If you want to run on your host machine you can run the `compile.sh` subscript yourself.
-It has the same arguments (assumes you have WASI_SDK_PATH set for compiling c:
+It has the same arguments (assumes you have WASI_SDK_PATH set for compiling c):
 
 ```bash
 cd wasm-corpus/src/main/resources

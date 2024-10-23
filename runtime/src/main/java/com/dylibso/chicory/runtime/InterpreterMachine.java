@@ -35,7 +35,7 @@ class InterpreterMachine implements Machine {
         return call(stack, instance, callStack, funcId, args, null, true);
     }
 
-    public static long[] call(
+    private static long[] call(
             MStack stack,
             Instance instance,
             Deque<StackFrame> callStack,
@@ -56,7 +56,7 @@ class InterpreterMachine implements Machine {
         var func = instance.function(funcId);
         if (func != null) {
             var stackFrame =
-                    new StackFrame(func.instructions(), instance, funcId, args, func.localTypes());
+                    new StackFrame(instance, funcId, args, func.localTypes(), func.instructions());
             stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
             callStack.push(stackFrame);
 
@@ -1775,12 +1775,12 @@ class InterpreterMachine implements Machine {
     private static void GLOBAL_SET(MStack stack, Instance instance, Operands operands) {
         var id = (int) operands.get(0);
         var val = stack.pop();
-        instance.writeGlobal(id, val);
+        instance.global(id).setValue(val);
     }
 
     private static void GLOBAL_GET(MStack stack, Instance instance, Operands operands) {
         int idx = (int) operands.get(0);
-        var val = instance.readGlobal(idx);
+        var val = instance.global(idx).getValue();
 
         stack.push(val);
     }

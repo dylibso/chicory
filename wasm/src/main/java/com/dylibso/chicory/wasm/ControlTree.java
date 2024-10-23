@@ -57,7 +57,7 @@ final class ControlTree {
     private final List<ControlTree> nested;
     private final List<Consumer<Integer>> callbacks;
 
-    public ControlTree() {
+    ControlTree() {
         this.instruction = null;
         this.initialInstructionNumber = 0;
         this.parent = null;
@@ -76,35 +76,33 @@ final class ControlTree {
         this.callbacks = new ArrayList<>();
     }
 
-    public ControlTree spawn(
-            int initialInstructionNumber, AnnotatedInstruction.Builder instruction) {
+    ControlTree spawn(int initialInstructionNumber, AnnotatedInstruction.Builder instruction) {
         var node = new ControlTree(initialInstructionNumber, instruction, this);
         this.addNested(node);
         return node;
     }
 
-    public AnnotatedInstruction.Builder instruction() {
+    AnnotatedInstruction.Builder instruction() {
         return instruction;
     }
 
-    public int instructionNumber() {
+    int instructionNumber() {
         return initialInstructionNumber;
     }
 
-    public void addNested(ControlTree nested) {
+    void addNested(ControlTree nested) {
         this.nested.add(nested);
     }
 
-    public ControlTree parent() {
+    ControlTree parent() {
         return parent;
     }
 
-    public void addCallback(Consumer<Integer> callback) {
+    void addCallback(Consumer<Integer> callback) {
         this.callbacks.add(callback);
     }
 
-    public void setFinalInstructionNumber(
-            int finalInstructionNumber, AnnotatedInstruction.Builder end) {
+    void setFinalInstructionNumber(int finalInstructionNumber, AnnotatedInstruction.Builder end) {
         // to be set when END is reached
         if (end.scope().isPresent() && end.scope().get().opcode() == OpCode.LOOP) {
             var lastLoopInstruction = 0;

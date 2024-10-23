@@ -175,7 +175,11 @@ public final class AotMethods {
         }
     }
 
+    public static long readGlobal(int index, Instance instance) {
+        return instance.global(index).getValue();
+    }
+
     public static void writeGlobal(long value, int index, Instance instance) {
-        instance.writeGlobal(index, value);
+        instance.global(index).setValue(value);
     }
 }

@@ -12,7 +12,7 @@ public final class AotMethodRefs {
     static final Method CALL_INDIRECT;
     static final Method INSTANCE_MEMORY;
     static final Method INSTANCE_CALL_HOST_FUNCTION;
-    static final Method INSTANCE_READ_GLOBAL;
+    static final Method READ_GLOBAL;
     static final Method WRITE_GLOBAL;
     static final Method INSTANCE_SET_ELEMENT;
     static final Method INSTANCE_TABLE;
@@ -60,7 +60,7 @@ public final class AotMethodRefs {
             INSTANCE_MEMORY = Instance.class.getMethod("memory");
             INSTANCE_CALL_HOST_FUNCTION =
                     Instance.class.getMethod("callHostFunction", int.class, long[].class);
-            INSTANCE_READ_GLOBAL = Instance.class.getMethod("readGlobal", int.class);
+            READ_GLOBAL = AotMethods.class.getMethod("readGlobal", int.class, Instance.class);
             WRITE_GLOBAL =
                     AotMethods.class.getMethod(
                             "writeGlobal", long.class, int.class, Instance.class);

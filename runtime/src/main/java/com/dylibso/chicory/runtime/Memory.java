@@ -62,7 +62,6 @@ public final class Memory {
     }
 
     public int grow(int size) {
-
         var prevPages = nPages;
         var numPages = prevPages + size;
 
@@ -91,11 +90,7 @@ public final class Memory {
         return min(this.limits.maximumPages(), RUNTIME_MAX_PAGES);
     }
 
-    /**
-     * This zeros out the memory and re-writes the data segments
-     * TODO - there is probably a more efficient way to handle this and do we need to do this?
-     */
-    public void initialize(Instance instance, DataSegment[] dataSegments) {
+    void initialize(Instance instance, DataSegment[] dataSegments) {
         this.dataSegments = dataSegments;
         if (dataSegments == null) {
             return;
@@ -365,13 +360,5 @@ public final class Memory {
 
     public void drop(int segment) {
         dataSegments[segment] = PassiveDataSegment.EMPTY;
-    }
-
-    public DataSegment[] dataSegments() {
-        return dataSegments;
-    }
-
-    public MemoryLimits limits() {
-        return limits;
     }
 }

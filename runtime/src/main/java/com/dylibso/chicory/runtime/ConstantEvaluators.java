@@ -10,7 +10,7 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 import java.util.List;
 
-public final class ConstantEvaluators {
+final class ConstantEvaluators {
     private ConstantEvaluators() {}
 
     public static long computeConstantValue(Instance instance, Instruction[] expr) {
@@ -38,7 +38,7 @@ public final class ConstantEvaluators {
                 case GLOBAL_GET:
                     {
                         var idx = (int) instruction.operand(0);
-                        tos = instance.readGlobal(idx);
+                        tos = instance.global(idx).getValue();
                         break;
                     }
                 case END:

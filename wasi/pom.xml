@@ -16,10 +16,6 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>host-module-annotations</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
       <artifactId>log</artifactId>
     </dependency>
     <dependency>
@@ -29,6 +25,11 @@
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>host-module-annotations</artifactId>
+      <scope>provided</scope>
     </dependency>
     <!-- fake dependency for reactor build order -->
     <dependency>

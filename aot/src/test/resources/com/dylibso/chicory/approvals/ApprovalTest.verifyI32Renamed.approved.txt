@@ -557,12 +557,22 @@ private final class FOO$AotMethods {
    L1
     RETURN
 
+  public static readGlobal(ILcom/dylibso/chicory/runtime/Instance;)J
+   L0
+    ALOAD 1
+    ILOAD 0
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.global (I)Lcom/dylibso/chicory/runtime/GlobalInstance;
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/GlobalInstance.getValue ()J
+    LRETURN
+   L1
+
   public static writeGlobal(JILcom/dylibso/chicory/runtime/Instance;)V
    L0
     ALOAD 3
     ILOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.global (I)Lcom/dylibso/chicory/runtime/GlobalInstance;
     LLOAD 0
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.writeGlobal (IJ)V
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/GlobalInstance.setValue (J)V
    L1
     RETURN
    L2
