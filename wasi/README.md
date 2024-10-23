@@ -6,5 +6,3 @@ by many of the compilers out there. This library implements the widely-available
 of the spec, also known as `wasip1`.
 
 For further details see the [corresponding docs](https://chicory.dev/docs/usage/wasi) section
-
-
