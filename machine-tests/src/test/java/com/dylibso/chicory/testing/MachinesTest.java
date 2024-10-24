@@ -9,6 +9,7 @@ import com.dylibso.chicory.aot.AotMachine;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.testing.gen.DynamicHelloJSMachineFactory;
 import com.dylibso.chicory.testing.gen.QuickJSMachineFactory;
@@ -16,7 +17,9 @@ import com.dylibso.chicory.wabt.Wat2WasmMachineFactory;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.ExternalType;
+import com.dylibso.chicory.wasm.types.OpCode;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayOutputStream;
@@ -27,6 +30,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
@@ -201,9 +205,18 @@ public final class MachinesTest {
                         .withMachineFactory(
                                 (inst) -> {
                                     var machine = Wat2WasmMachineFactory.create(inst);
-                                    return (funcId, args) -> {
-                                        assertEquals(startFunctionIndex.get(), funcId);
-                                        return machine.call(funcId, args);
+                                    return new Machine() {
+                                        @Override
+                                        public long[] call(int funcId, long[] args)
+                                                throws ChicoryException {
+                                            assertEquals(startFunctionIndex.get(), funcId);
+                                            return machine.call(funcId, args);
+                                        }
+
+                                        @Override
+                                        public Map<OpCode, OpImpl> additionalOpCodes() {
+                                            return Map.of();
+                                        }
                                     };
                                 })
                         .withImportValues(imports)

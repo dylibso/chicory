@@ -1,5 +1,6 @@
 package com.dylibso.chicory.maven.wast;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class WasmValue {
@@ -8,14 +9,18 @@ public class WasmValue {
     private WasmValueType type;
 
     @JsonProperty("value")
-    private String value;
+    @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)
+    private String[] value;
+
+    @JsonProperty("lane_type")
+    private LaneType laneType;
 
     public WasmValueType type() {
         return type;
     }
 
-    public String value() {
-        return value;
+    public LaneType laneType() {
+        return laneType;
     }
 
     public String toResultValue(String result) {
@@ -34,6 +39,52 @@ public class WasmValue {
                     return "Value.REF_NULL_VALUE";
                 }
                 return result;
+            case V128:
+                {
+                    var sb = new StringBuilder();
+                    switch (laneType) {
+                        case I8:
+                            sb.append("new byte[] {");
+                            break;
+                        case I16:
+                            sb.append("new int[] {");
+                            break;
+                        case I32:
+                            sb.append("new long[] {");
+                            break;
+                        case F32:
+                            sb.append("new float[] {");
+                            break;
+                    }
+                    var first = true;
+                    for (var v : value) {
+                        if (first) {
+                            first = false;
+                        } else {
+                            sb.append(", ");
+                        }
+
+                        switch (laneType) {
+                            case I8:
+                                sb.append("Byte.parseByte(\"" + v + "\")");
+                                break;
+                            case I16:
+                                sb.append("Integer.parseUnsignedInt(\"" + v + "\")");
+                                break;
+                            case I32:
+                                sb.append("Long.parseUnsignedLong(\"" + v + "\")");
+                                break;
+                            case F32:
+                                sb.append(
+                                        "Float.intBitsToFloat(Integer.parseUnsignedInt(\""
+                                                + v
+                                                + "\"))");
+                                break;
+                        }
+                    }
+                    sb.append(" }");
+                    return sb.toString();
+                }
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
@@ -42,32 +93,32 @@ public class WasmValue {
     public String toExpectedValue() {
         switch (type) {
             case I32:
-                return "Integer.parseUnsignedInt(\"" + value + "\")";
+                return "Integer.parseUnsignedInt(\"" + value[0] + "\")";
             case I64:
-                return "Long.parseUnsignedLong(\"" + value + "\")";
+                return "Long.parseUnsignedLong(\"" + value[0] + "\")";
             case F32:
-                if (value != null) {
-                    switch (value) {
+                if (value[0] != null) {
+                    switch (value[0]) {
                         case "nan:canonical":
                         case "nan:arithmetic":
                             return "Float.NaN";
                         default:
                             return "Float.intBitsToFloat(Integer.parseUnsignedInt(\""
-                                    + value
+                                    + value[0]
                                     + "\"))";
                     }
                 } else {
                     return "null";
                 }
             case F64:
-                if (value != null) {
-                    switch (value) {
+                if (value[0] != null) {
+                    switch (value[0]) {
                         case "nan:canonical":
                         case "nan:arithmetic":
                             return "Double.NaN";
                         default:
                             return "Double.longBitsToDouble(Long.parseUnsignedLong(\""
-                                    + value
+                                    + value[0]
                                     + "\"))";
                     }
                 } else {
@@ -75,10 +126,56 @@ public class WasmValue {
                 }
             case EXTERN_REF:
             case FUNC_REF:
-                if (value.equals("null")) {
+                if (value[0].equals("null")) {
                     return "Value.REF_NULL_VALUE";
                 }
-                return value;
+                return value[0];
+            case V128:
+                {
+                    var sb = new StringBuilder();
+                    switch (laneType) {
+                        case I8:
+                            sb.append("new byte[] {");
+                            break;
+                        case I16:
+                            sb.append("new int[] {");
+                            break;
+                        case I32:
+                            sb.append("new long[] {");
+                            break;
+                        case F32:
+                            sb.append("new float[] {");
+                            break;
+                    }
+                    var first = true;
+                    for (var v : value) {
+                        if (first) {
+                            first = false;
+                        } else {
+                            sb.append(", ");
+                        }
+
+                        switch (laneType) {
+                            case I8:
+                                sb.append("Byte.parseByte(\"" + v + "\")");
+                                break;
+                            case I16:
+                                sb.append("Integer.parseUnsignedInt(\"" + v + "\")");
+                                break;
+                            case I32:
+                                sb.append("Long.parseUnsignedLong(\"" + v + "\")");
+                                break;
+                            case F32:
+                                sb.append(
+                                        "Float.intBitsToFloat(Integer.parseUnsignedInt(\""
+                                                + v
+                                                + "\"))");
+                                break;
+                        }
+                    }
+                    sb.append(" }");
+                    return sb.toString();
+                }
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
@@ -88,36 +185,50 @@ public class WasmValue {
         switch (type) {
             case I32:
             case F32:
-                if (value != null) {
-                    switch (value) {
+                if (value[0] != null) {
+                    switch (value[0]) {
                         case "nan:canonical":
                         case "nan:arithmetic":
                             return "(int) Float.NaN";
                         default:
-                            return "Integer.parseUnsignedInt(\"" + value + "\")";
+                            return "Integer.parseUnsignedInt(\"" + value[0] + "\")";
                     }
                 } else {
                     return "null";
                 }
             case I64:
             case F64:
-                if (value != null) {
-                    switch (value) {
+                if (value[0] != null) {
+                    switch (value[0]) {
                         case "nan:canonical":
                         case "nan:arithmetic":
                             return "(long) Double.NaN";
                         default:
-                            return "Long.parseUnsignedLong(\"" + value + "\")";
+                            return "Long.parseUnsignedLong(\"" + value[0] + "\")";
                     }
                 } else {
                     return "null";
                 }
             case EXTERN_REF:
             case FUNC_REF:
-                if (value.toString().equals("null")) {
+                if (value[0].toString().equals("null")) {
                     return "Value.REF_NULL_VALUE";
                 }
-                return value;
+                return value[0];
+            case V128:
+                var sb = new StringBuilder();
+                sb.append("new long[] { ");
+                var first = true;
+                for (var v : value) {
+                    if (first) {
+                        first = false;
+                    } else {
+                        sb.append(", ");
+                    }
+                    sb.append(v);
+                }
+                sb.append(" }");
+                return sb.toString();
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
