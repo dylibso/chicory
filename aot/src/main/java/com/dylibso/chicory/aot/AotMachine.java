@@ -3,6 +3,8 @@ package com.dylibso.chicory.aot;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.types.OpCode;
+import java.util.Map;
 
 /**
  * Machine implementation that AOT compiles function bodies.
@@ -19,5 +21,11 @@ public final class AotMachine implements Machine {
     @Override
     public long[] call(int funcId, long[] args) throws ChicoryException {
         return machine.call(funcId, args);
+    }
+
+    // TODO: implement SIMD support
+    @Override
+    public Map<OpCode, OpImpl> additionalOpCodes() {
+        return Map.of();
     }
 }

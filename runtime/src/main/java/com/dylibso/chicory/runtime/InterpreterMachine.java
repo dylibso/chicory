@@ -2,7 +2,6 @@ package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
-import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -12,11 +11,12 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This is responsible for holding and interpreting the Wasm code.
  */
-class InterpreterMachine implements Machine {
+public class InterpreterMachine implements Machine {
 
     private final MStack stack;
 
@@ -24,10 +24,22 @@ class InterpreterMachine implements Machine {
 
     private final Instance instance;
 
+    private final Map<OpCode, OpImpl> additionalOpcodes;
+
     public InterpreterMachine(Instance instance) {
+        this(instance, Map.of());
+    }
+
+    public InterpreterMachine(Instance instance, Map<OpCode, OpImpl> additionalOpcodes) {
         this.instance = instance;
         stack = new MStack();
         this.callStack = new ArrayDeque<>();
+        this.additionalOpcodes = additionalOpcodes;
+    }
+
+    @Override
+    public Map<OpCode, OpImpl> additionalOpCodes() {
+        return additionalOpcodes;
     }
 
     @Override
@@ -57,7 +69,7 @@ class InterpreterMachine implements Machine {
         if (func != null) {
             var stackFrame =
                     new StackFrame(instance, funcId, args, func.localTypes(), func.instructions());
-            stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
+            stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
             callStack.push(stackFrame);
 
             try {
@@ -67,7 +79,7 @@ class InterpreterMachine implements Machine {
             }
         } else {
             var stackFrame = new StackFrame(instance, funcId, args, List.of());
-            stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
+            stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
             callStack.push(stackFrame);
 
             var results = instance.callHostFunction(funcId, args);
@@ -95,7 +107,7 @@ class InterpreterMachine implements Machine {
             return null;
         }
 
-        var totalResults = type.returns().size();
+        var totalResults = sizeOf(type.returns());
         var results = new long[totalResults];
         for (var i = totalResults - 1; i >= 0; i--) {
             results[i] = stack.pop();
@@ -745,8 +757,16 @@ class InterpreterMachine implements Machine {
                     ELEM_DROP(instance, operands);
                     break;
                 default:
-                    throw new RuntimeException(
-                            "Machine doesn't recognize Instruction " + instruction);
+                    {
+                        var additionalOpcodes = instance.getMachine().additionalOpCodes();
+                        if (additionalOpcodes.containsKey(opcode)) {
+                            additionalOpcodes.get(opcode).invoke(stack, instance, operands);
+                        } else {
+                            throw new RuntimeException(
+                                    "Machine doesn't recognize Instruction " + instruction);
+                        }
+                        break;
+                    }
             }
         }
     }
@@ -1634,125 +1654,117 @@ class InterpreterMachine implements Machine {
         stack.push(nPages);
     }
 
-    private static int readMemPtr(MStack stack, Operands operands) {
-        int offset = (int) stack.pop();
-        if (operands.get(1) < 0 || operands.get(1) >= Integer.MAX_VALUE || offset < 0) {
-            throw new WASMRuntimeException("out of bounds memory access");
-        }
-        return (int) (operands.get(1) + offset);
-    }
-
     private static void F64_STORE(MStack stack, Instance instance, Operands operands) {
         var value = Value.longToDouble(stack.pop());
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         instance.memory().writeF64(ptr, value);
     }
 
     private static void F32_STORE(MStack stack, Instance instance, Operands operands) {
         var value = Value.longToFloat(stack.pop());
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         instance.memory().writeF32(ptr, value);
     }
 
     private static void I64_STORE(MStack stack, Instance instance, Operands operands) {
         var value = stack.pop();
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         instance.memory().writeLong(ptr, value);
     }
 
     private static void I64_STORE16(MStack stack, Instance instance, Operands operands) {
         var value = (short) stack.pop();
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         instance.memory().writeShort(ptr, value);
     }
 
     private static void I32_STORE(MStack stack, Instance instance, Operands operands) {
         var value = (int) stack.pop();
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         instance.memory().writeI32(ptr, value);
     }
 
     private static void I64_LOAD32_U(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         // TODO: make all the memory.readThings to return long
         var val = instance.memory().readU32(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD32_S(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         var val = instance.memory().readI32(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD16_U(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         var val = instance.memory().readU16(ptr);
         stack.push(val);
     }
 
     private static void I32_LOAD16_U(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         var val = instance.memory().readU16(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD16_S(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         var val = instance.memory().readI16(ptr);
         stack.push(val);
     }
 
     private static void I32_LOAD16_S(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         var val = instance.memory().readI16(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD8_U(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         var val = instance.memory().readU8(ptr);
         stack.push(val);
     }
 
     private static void I32_LOAD8_U(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         var val = instance.memory().readU8(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD8_S(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         var val = instance.memory().readI8(ptr);
         stack.push(val);
     }
 
     private static void I32_LOAD8_S(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         var val = instance.memory().readI8(ptr);
         stack.push(val);
     }
 
     private static void F64_LOAD(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         var val = instance.memory().readF64(ptr);
         stack.push(val);
     }
 
     private static void F32_LOAD(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         var val = instance.memory().readF32(ptr);
         stack.push(val);
     }
 
     private static void I64_LOAD(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         var val = instance.memory().readI64(ptr);
         stack.push(val);
     }
 
     private static void I32_LOAD(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
+        var ptr = Machine.readMemPtr(stack, operands);
         var val = instance.memory().readI32(ptr);
         stack.push(val);
     }
@@ -1838,7 +1850,7 @@ class InterpreterMachine implements Machine {
         if (ValueType.isValid(typeId)) {
             return 0;
         }
-        return instance.type(typeId).params().size();
+        return sizeOf(instance.type(typeId).params());
     }
 
     private static int numberOfValuesToReturn(Instance instance, AnnotatedInstruction scope) {
@@ -1850,9 +1862,25 @@ class InterpreterMachine implements Machine {
             return 0;
         }
         if (ValueType.isValid(typeId)) {
-            return 1;
+            if (ValueType.forId(typeId) == ValueType.V128) {
+                return 2;
+            } else {
+                return 1;
+            }
         }
-        return instance.type(typeId).returns().size();
+        return sizeOf(instance.type(typeId).returns());
+    }
+
+    private static int sizeOf(List<ValueType> args) {
+        int total = 0;
+        for (var a : args) {
+            if (a == ValueType.V128) {
+                total += 2;
+            } else {
+                total += 1;
+            }
+        }
+        return total;
     }
 
     private static void BLOCK(
@@ -1916,7 +1944,7 @@ class InterpreterMachine implements Machine {
         if (params == null) {
             return Value.EMPTY_VALUES;
         }
-        var args = new long[params.size()];
+        var args = new long[sizeOf(params)];
         for (var i = params.size(); i > 0; i--) {
             var p = stack.pop();
             args[i - 1] = p;
@@ -1941,10 +1969,5 @@ class InterpreterMachine implements Machine {
         if (Thread.currentThread().isInterrupted()) {
             throw new ChicoryException("Thread interrupted");
         }
-    }
-
-    @FunctionalInterface
-    private interface Operands {
-        long get(int index);
     }
 }

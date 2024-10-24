@@ -2,12 +2,16 @@ package com.dylibso.chicory.testing;
 
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.InterpreterMachine;
+import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.exceptions.MalformedException;
+import com.dylibso.chicory.wasm.types.OpCode;
 import java.io.File;
+import java.util.Map;
 
 public class TestModule {
 
@@ -60,8 +64,27 @@ public class TestModule {
         this.module = module;
     }
 
+    private static Map<OpCode, Machine.OpImpl> additionalOpcodes;
+
+    static {
+        // TODO: discuss - either we use reflection or we need to restructure the project modules
+        try {
+            additionalOpcodes =
+                    (Map<OpCode, Machine.OpImpl>)
+                            Class.forName("com.dylibso.chicory.simd.Simd")
+                                    .getField("opcodesImpl")
+                                    .get(null);
+        } catch (IllegalAccessException | NoSuchFieldException | ClassNotFoundException e) {
+            additionalOpcodes = Map.of();
+        }
+    }
+
     public Instance instantiate(Store s) {
         ImportValues importValues = s.toImportValues();
-        return Instance.builder(module).withImportValues(importValues).build();
+
+        return Instance.builder(module)
+                .withImportValues(importValues)
+                .withMachineFactory(inst -> new InterpreterMachine(inst, additionalOpcodes))
+                .build();
     }
 }

@@ -19,6 +19,11 @@ public class MStack {
         elements = array;
     }
 
+    // internal use only!
+    public long[] array() {
+        return elements;
+    }
+
     public void push(long v) {
         elements[count] = v;
         count++;

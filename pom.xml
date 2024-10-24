@@ -171,6 +171,11 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
+        <artifactId>simd</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
         <artifactId>wabt</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -634,6 +639,7 @@
           <failOnWarning>${maven.dependency.failOnWarning}</failOnWarning>
           <ignoreUnusedRuntime>true</ignoreUnusedRuntime>
           <ignoredUnusedDeclaredDependencies>
+            <dependency>com.dylibso.chicory:simd</dependency>
             <dependency>com.dylibso.chicory:wasm-corpus</dependency>
             <dependency>org.junit.jupiter:junit-jupiter-engine</dependency>
           </ignoredUnusedDeclaredDependencies>
@@ -796,6 +802,16 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+
+    <profile>
+      <id>java21</id>
+      <activation>
+        <jdk>21</jdk>
+      </activation>
+      <modules>
+        <module>simd</module>
+      </modules>
     </profile>
 
     <profile>
