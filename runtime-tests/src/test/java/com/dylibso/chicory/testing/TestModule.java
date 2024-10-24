@@ -62,6 +62,10 @@ public class TestModule {
 
     public Instance instantiate(Store s) {
         ImportValues importValues = s.toImportValues();
-        return Instance.builder(module).withImportValues(importValues).build();
+
+        return Instance.builder(module)
+                .withImportValues(importValues)
+                .withMachineFactory(InterpreterMachineFactory::create)
+                .build();
     }
 }
