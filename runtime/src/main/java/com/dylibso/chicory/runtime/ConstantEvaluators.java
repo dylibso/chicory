@@ -13,41 +13,74 @@ import java.util.List;
 public final class ConstantEvaluators {
     private ConstantEvaluators() {}
 
-    public static Value computeConstantValue(Instance instance, Instruction[] expr) {
+    public static long computeConstantValue(Instance instance, Instruction[] expr) {
         return computeConstantValue(instance, Arrays.asList(expr));
     }
 
-    public static Value computeConstantValue(Instance instance, List<Instruction> expr) {
-        Value tos = null;
+    public static long computeConstantValue(Instance instance, List<Instruction> expr) {
+        long tos = -1L;
+        for (var instruction : expr) {
+            switch (instruction.opcode()) {
+                case F32_CONST:
+                case F64_CONST:
+                case I32_CONST:
+                case I64_CONST:
+                case REF_FUNC:
+                    {
+                        tos = instruction.operand(0);
+                        break;
+                    }
+                case REF_NULL:
+                    {
+                        tos = Value.REF_NULL_VALUE;
+                        break;
+                    }
+                case GLOBAL_GET:
+                    {
+                        var idx = (int) instruction.operand(0);
+                        tos = instance.readGlobal(idx);
+                        break;
+                    }
+                case END:
+                    {
+                        break;
+                    }
+            }
+        }
+        return tos;
+    }
+
+    public static ValueType computeConstantType(Instance instance, List<Instruction> expr) {
+        ValueType tos = null;
         for (var instruction : expr) {
             switch (instruction.opcode()) {
                 case F32_CONST:
                     {
-                        tos = Value.f32(instruction.operand(0));
+                        tos = ValueType.F32;
                         break;
                     }
                 case F64_CONST:
                     {
-                        tos = Value.f64(instruction.operand(0));
+                        tos = ValueType.F64;
                         break;
                     }
                 case I32_CONST:
                     {
-                        tos = Value.i32(instruction.operand(0));
+                        tos = ValueType.I32;
                         break;
                     }
                 case I64_CONST:
                     {
-                        tos = Value.i64(instruction.operand(0));
+                        tos = ValueType.I64;
                         break;
                     }
                 case REF_NULL:
                     {
                         ValueType vt = ValueType.refTypeForId((int) instruction.operand(0));
                         if (vt == ValueType.ExternRef) {
-                            tos = Value.EXTREF_NULL;
+                            tos = ValueType.ExternRef;
                         } else if (vt == ValueType.FuncRef) {
-                            tos = Value.FUNCREF_NULL;
+                            tos = ValueType.FuncRef;
                         } else {
                             throw new IllegalStateException(
                                     "Unexpected wrong type for ref.null instruction");
@@ -58,7 +91,7 @@ public final class ConstantEvaluators {
                     {
                         var idx = (int) instruction.operand(0);
                         instance.function(idx);
-                        tos = Value.funcRef(idx);
+                        tos = ValueType.FuncRef;
                         break;
                     }
                 case GLOBAL_GET:
@@ -71,8 +104,7 @@ public final class ConstantEvaluators {
                                         "constant expression required, initializer expression"
                                                 + " cannot reference a mutable global");
                             }
-                            var t = instance.imports().global(idx).instance().getType();
-                            return new Value(t, instance.readGlobal(idx));
+                            tos = instance.imports().global(idx).instance().getType();
                         } else {
                             throw new InvalidException(
                                     "unknown global "
@@ -80,6 +112,7 @@ public final class ConstantEvaluators {
                                             + ", initializer expression can only reference"
                                             + " an imported global");
                         }
+                        break;
                     }
                 case END:
                     {

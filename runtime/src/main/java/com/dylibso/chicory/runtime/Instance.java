@@ -1,6 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantInstance;
+import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantType;
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.ExternalType.FUNCTION;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
@@ -116,53 +117,46 @@ public class Instance {
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
                 var table = table(ae.tableIndex());
+                int offset = (int) computeConstantValue(this, ae.offset());
 
-                if (ae.offset().size() > 1) {
-                    throw new InvalidException(
-                            "constant expression required, type mismatch, expected [] but found"
-                                    + " extra instructions");
-                }
-                Value offset = computeConstantValue(this, ae.offset());
-                if (offset.type() != ValueType.I32) {
-                    throw new InvalidException(
-                            "type mismatch, invalid offset type in element " + offset.type());
-                }
                 List<List<Instruction>> initializers = ae.initializers();
-                if (offset.asInt() > table.limits().min()
-                        || (offset.asInt() + initializers.size() - 1) >= table.size()) {
+                if (offset > table.limits().min()
+                        || (offset + initializers.size() - 1) >= table.size()) {
                     throw new UninstantiableException("out of bounds table access");
                 }
                 for (int i = 0; i < initializers.size(); i++) {
                     final List<Instruction> init = initializers.get(i);
-                    int index = offset.asInt() + i;
+                    int index = offset + i;
                     if (init.stream().filter(e -> e.opcode() != OpCode.END).count() > 1L) {
                         throw new InvalidException(
                                 "constant expression required, type mismatch, expected [] but found"
                                         + " extra instructions");
                     }
-                    var value = computeConstantValue(this, init);
-                    var inst = computeConstantInstance(this, init);
-                    if (value.type() != ae.type() || table.elementType() != ae.type()) {
+                    var valueType = computeConstantType(this, init);
+                    if (valueType != ae.type() || table.elementType() != ae.type()) {
                         throw new InvalidException(
                                 "type mismatch, element type: "
                                         + ae.type()
                                         + ", table type: "
                                         + table.elementType()
                                         + ", value type: "
-                                        + value.type());
+                                        + valueType);
                     }
+                    var value = computeConstantValue(this, init);
+                    var inst = computeConstantInstance(this, init);
+
                     if (ae.type() == ValueType.FuncRef) {
-                        if (((int) value.raw()) != REF_NULL_VALUE) {
+                        if (value != REF_NULL_VALUE) {
                             try {
-                                function(value.raw());
+                                function(value);
                             } catch (InvalidException e) {
                                 throw new InvalidException("type mismatch, " + e.getMessage(), e);
                             }
                         }
-                        table.setRef(index, (int) value.raw(), inst);
+                        table.setRef(index, (int) value, inst);
                     } else {
                         assert ae.type() == ValueType.ExternRef;
-                        table.setRef(index, (int) value.raw(), inst);
+                        table.setRef(index, (int) value, inst);
                     }
                 }
             } else if (el instanceof DeclarativeElement) {
@@ -179,12 +173,14 @@ public class Instance {
                         "constant expression required, type mismatch, expected [] but found extra"
                                 + " instructions");
             }
-            var value = computeConstantValue(this, g.initInstructions());
-            if (g.valueType() != value.type()) {
+            var valueType = computeConstantType(this, g.initInstructions());
+            if (g.valueType() != valueType) {
                 throw new InvalidException(
-                        "type mismatch, expected: " + g.valueType() + ", got: " + value.type());
+                        "type mismatch, expected: " + g.valueType() + ", got: " + valueType);
             }
-            globals[i] = new GlobalInstance(value, g.mutabilityType());
+            var value = computeConstantValue(this, g.initInstructions());
+
+            globals[i] = new GlobalInstance(new Value(valueType, value), g.mutabilityType());
             globals[i].setInstance(this);
         }
 

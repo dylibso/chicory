@@ -5,13 +5,11 @@ import static java.lang.Math.min;
 
 import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.exceptions.InvalidException;
 import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
-import com.dylibso.chicory.wasm.types.ValueType;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
@@ -106,25 +104,10 @@ public final class Memory {
         for (var s : dataSegments) {
             if (s instanceof ActiveDataSegment) {
                 var segment = (ActiveDataSegment) s;
-                if (segment.index() != 0) {
-                    throw new InvalidException("unknown memory " + segment.index());
-                }
                 var offsetExpr = segment.offsetInstructions();
-                if (offsetExpr.size() > 1) {
-                    throw new InvalidException(
-                            "type mismatch, constant expression required, expected only one"
-                                    + " initialization instruction");
-                }
                 var data = segment.data();
-                var offsetValue = computeConstantValue(instance, offsetExpr);
-                if (offsetValue.type() != ValueType.I32) {
-                    throw new InvalidException(
-                            "type mismatch, expected I32 but found "
-                                    + offsetValue.type()
-                                    + " in offset memory initialization");
-                }
-                var offset = offsetValue.asInt();
-                write(offset, data);
+                var offset = computeConstantValue(instance, offsetExpr);
+                write((int) offset, data);
             } else if (s instanceof PassiveDataSegment) {
                 // Passive segment should be skipped
             } else {
