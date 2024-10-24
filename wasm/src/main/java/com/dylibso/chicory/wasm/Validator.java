@@ -344,6 +344,9 @@ final class Validator {
         for (var ds : module.dataSection().dataSegments()) {
             if (ds instanceof ActiveDataSegment) {
                 var ads = (ActiveDataSegment) ds;
+                if (ads.index() != 0) {
+                    throw new InvalidException("unknown memory " + ads.index());
+                }
                 validateConstantExpression(ads.offsetInstructions(), ValueType.I32);
             }
         }
@@ -449,6 +452,9 @@ final class Validator {
             if (constInstrCount > 1) {
                 throw new InvalidException("type mismatch, multiple constant expressions found");
             }
+        }
+        if (constInstrCount <= 0) {
+            throw new InvalidException("type mismatch, no constant expressions found");
         }
     }
 
