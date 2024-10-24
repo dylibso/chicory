@@ -83,6 +83,8 @@ Basic steps:
 * `mvn spotless:apply` to autoformat the code
 * `./scripts/compile-resources.sh` will recompile and regenerate the `resources/compiled` folders
 
+note: if you're working using a *corporate proxy* (or anything like this), you might need to pass the usual `-Dhttps.proxyHost=...` and `-Dhttps.proxyPort=...` in order to properly instruct Maven about this (this can be required for example for `test-gen-plugin` since it downloads the testsuite).
+
 ### Continuous Integration
 
 Because we are all humans, and to ensure Chicory evolves in the right direction, all changes must pass continuous integration before being merged. The CI is based on GitHub Actions, which means that pull requests will receive automatic feedback.  Please watch out for the results of these workflows to see if your PR passes all tests.
