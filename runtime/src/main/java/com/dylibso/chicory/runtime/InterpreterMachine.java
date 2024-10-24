@@ -5,6 +5,7 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -15,7 +16,7 @@ import java.util.List;
 /**
  * This is responsible for holding and interpreting the Wasm code.
  */
-class InterpreterMachine implements Machine {
+public class InterpreterMachine implements Machine {
 
     private final MStack stack;
 
@@ -23,15 +24,49 @@ class InterpreterMachine implements Machine {
 
     private final Instance instance;
 
+    protected final EvalDefault evalDefault;
+
     public InterpreterMachine(Instance instance) {
+        this(instance, InterpreterMachine::evalDefault);
+    }
+
+    protected InterpreterMachine(Instance instance, EvalDefault evalDefault) {
         this.instance = instance;
         stack = new MStack();
         this.callStack = new ArrayDeque<>();
+        this.evalDefault = evalDefault;
+    }
+
+    @FunctionalInterface
+    protected interface Operands {
+        long get(int index);
+    }
+
+    @FunctionalInterface
+    protected interface EvalDefault {
+        void apply(
+                MStack stack,
+                Instance instance,
+                Deque<StackFrame> callStack,
+                Instruction instruction,
+                Operands operands)
+                throws ChicoryException;
+    }
+
+    @SuppressWarnings("DoNotCallSuggester")
+    protected static void evalDefault(
+            MStack stack,
+            Instance instance,
+            Deque<StackFrame> callStack,
+            Instruction instruction,
+            Operands operands)
+            throws ChicoryException {
+        throw new RuntimeException("Machine doesn't recognize Instruction " + instruction);
     }
 
     @Override
     public long[] call(int funcId, long[] args) throws ChicoryException {
-        return call(stack, instance, callStack, funcId, args, null, true);
+        return call(stack, instance, callStack, funcId, args, null, true, evalDefault);
     }
 
     private static long[] call(
@@ -41,7 +76,8 @@ class InterpreterMachine implements Machine {
             int funcId,
             long[] args,
             FunctionType callType,
-            boolean popResults)
+            boolean popResults,
+            EvalDefault evalDefault)
             throws ChicoryException {
 
         checkInterruption();
@@ -56,17 +92,17 @@ class InterpreterMachine implements Machine {
         if (func != null) {
             var stackFrame =
                     new StackFrame(instance, funcId, args, func.localTypes(), func.instructions());
-            stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
+            stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
             callStack.push(stackFrame);
 
             try {
-                eval(stack, instance, callStack);
+                eval(stack, instance, callStack, evalDefault);
             } catch (StackOverflowError e) {
                 throw new ChicoryException("call stack exhausted", e);
             }
         } else {
             var stackFrame = new StackFrame(instance, funcId, args, List.of());
-            stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
+            stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
             callStack.push(stackFrame);
 
             var imprt = instance.imports().function(funcId);
@@ -95,7 +131,7 @@ class InterpreterMachine implements Machine {
             return null;
         }
 
-        var totalResults = type.returns().size();
+        var totalResults = sizeOf(type.returns());
         var results = new long[totalResults];
         for (var i = totalResults - 1; i >= 0; i--) {
             results[i] = stack.pop();
@@ -103,7 +139,8 @@ class InterpreterMachine implements Machine {
         return results;
     }
 
-    static void eval(MStack stack, Instance instance, Deque<StackFrame> callStack)
+    static void eval(
+            MStack stack, Instance instance, Deque<StackFrame> callStack, EvalDefault evalDefault)
             throws ChicoryException {
         var frame = callStack.peek();
         boolean shouldReturn = false;
@@ -173,7 +210,7 @@ class InterpreterMachine implements Machine {
                         break;
                     }
                 case CALL_INDIRECT:
-                    CALL_INDIRECT(stack, instance, callStack, operands);
+                    CALL_INDIRECT(stack, instance, callStack, operands, evalDefault);
                     break;
                 case DROP:
                     stack.pop();
@@ -457,7 +494,7 @@ class InterpreterMachine implements Machine {
                     F64_NEG(stack);
                     break;
                 case CALL:
-                    CALL(stack, instance, callStack, operands);
+                    CALL(stack, instance, callStack, operands, evalDefault);
                     break;
                 case I32_AND:
                     I32_AND(stack);
@@ -745,8 +782,10 @@ class InterpreterMachine implements Machine {
                     ELEM_DROP(instance, operands);
                     break;
                 default:
-                    throw new RuntimeException(
-                            "Machine doesn't recognize Instruction " + instruction);
+                    {
+                        evalDefault.apply(stack, instance, callStack, instruction, operands);
+                        break;
+                    }
             }
         }
     }
@@ -1600,14 +1639,18 @@ class InterpreterMachine implements Machine {
     }
 
     private static void CALL(
-            MStack stack, Instance instance, Deque<StackFrame> callStack, Operands operands) {
+            MStack stack,
+            Instance instance,
+            Deque<StackFrame> callStack,
+            Operands operands,
+            EvalDefault evalDefault) {
         var funcId = (int) operands.get(0);
         var typeId = instance.functionType(funcId);
         var type = instance.type(typeId);
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.params());
-        call(stack, instance, callStack, funcId, args, type, false);
+        call(stack, instance, callStack, funcId, args, type, false, evalDefault);
     }
 
     private static void F64_NEG(MStack stack) {
@@ -1634,7 +1677,7 @@ class InterpreterMachine implements Machine {
         stack.push(nPages);
     }
 
-    private static int readMemPtr(MStack stack, Operands operands) {
+    protected static int readMemPtr(MStack stack, Operands operands) {
         int offset = (int) stack.pop();
         if (operands.get(1) < 0 || operands.get(1) >= Integer.MAX_VALUE || offset < 0) {
             throw new WasmRuntimeException("out of bounds memory access");
@@ -1808,7 +1851,11 @@ class InterpreterMachine implements Machine {
     }
 
     private static void CALL_INDIRECT(
-            MStack stack, Instance instance, Deque<StackFrame> callStack, Operands operands) {
+            MStack stack,
+            Instance instance,
+            Deque<StackFrame> callStack,
+            Operands operands,
+            EvalDefault evalDefault) {
         var tableIdx = (int) operands.get(1);
         var table = instance.table(tableIdx);
 
@@ -1827,7 +1874,7 @@ class InterpreterMachine implements Machine {
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.params());
-        call(stack, instance, callStack, funcId, args, type, false);
+        call(stack, instance, callStack, funcId, args, type, false, evalDefault);
     }
 
     private static int numberOfParams(Instance instance, AnnotatedInstruction scope) {
@@ -1838,7 +1885,7 @@ class InterpreterMachine implements Machine {
         if (ValueType.isValid(typeId)) {
             return 0;
         }
-        return instance.type(typeId).params().size();
+        return sizeOf(instance.type(typeId).params());
     }
 
     private static int numberOfValuesToReturn(Instance instance, AnnotatedInstruction scope) {
@@ -1850,9 +1897,25 @@ class InterpreterMachine implements Machine {
             return 0;
         }
         if (ValueType.isValid(typeId)) {
-            return 1;
+            if (ValueType.forId(typeId) == ValueType.V128) {
+                return 2;
+            } else {
+                return 1;
+            }
         }
-        return instance.type(typeId).returns().size();
+        return sizeOf(instance.type(typeId).returns());
+    }
+
+    private static int sizeOf(List<ValueType> args) {
+        int total = 0;
+        for (var a : args) {
+            if (a == ValueType.V128) {
+                total += 2;
+            } else {
+                total += 1;
+            }
+        }
+        return total;
     }
 
     private static void BLOCK(
@@ -1916,7 +1979,7 @@ class InterpreterMachine implements Machine {
         if (params == null) {
             return Value.EMPTY_VALUES;
         }
-        var args = new long[params.size()];
+        var args = new long[sizeOf(params)];
         for (var i = params.size(); i > 0; i--) {
             var p = stack.pop();
             args[i - 1] = p;
@@ -1941,10 +2004,5 @@ class InterpreterMachine implements Machine {
         if (Thread.currentThread().isInterrupted()) {
             throw new ChicoryException("Thread interrupted");
         }
-    }
-
-    @FunctionalInterface
-    private interface Operands {
-        long get(int index);
     }
 }

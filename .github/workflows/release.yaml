@@ -26,7 +26,7 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: 11
+          java-version: 21
           distribution: 'temurin'
           server-id: ossrh
           server-username: MAVEN_USERNAME
