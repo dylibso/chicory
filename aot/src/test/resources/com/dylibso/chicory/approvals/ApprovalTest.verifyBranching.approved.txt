@@ -58,26 +58,22 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ISTORE 3
     ILOAD 0
     INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.I32_EQZ (I)I
-    IFEQ L0
-    GOTO L1
-   L0
+    IFNE L0
     ILOAD 0
     ICONST_1
     INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.I32_EQ (II)I
-    IFEQ L2
-    GOTO L3
-   L2
+    IFNE L1
     BIPUSH 7
     ISTORE 3
-    GOTO L4
-   L1
+    GOTO L2
+   L0
     BIPUSH 42
     ISTORE 3
-    GOTO L4
-   L3
+    GOTO L2
+   L1
     BIPUSH 99
     ISTORE 3
-   L4
+   L2
     ILOAD 3
     IRETURN
 
