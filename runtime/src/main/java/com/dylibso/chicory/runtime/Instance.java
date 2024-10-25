@@ -1,9 +1,11 @@
 package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantInstance;
-import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantType;
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.ExternalType.FUNCTION;
+import static com.dylibso.chicory.wasm.types.ExternalType.GLOBAL;
+import static com.dylibso.chicory.wasm.types.ExternalType.MEMORY;
+import static com.dylibso.chicory.wasm.types.ExternalType.TABLE;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -15,7 +17,6 @@ import com.dylibso.chicory.wasm.UnlinkableException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.DataSegment;
-import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
@@ -30,8 +31,6 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MemoryImport;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MemorySection;
-import com.dylibso.chicory.wasm.types.MutabilityType;
-import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.Value;
@@ -53,13 +52,9 @@ public class Instance {
     private final DataSegment[] dataSegments;
     private final Global[] globalInitializers;
     private final GlobalInstance[] globals;
-    private final int importedGlobalsOffset;
-    private final int importedFunctionsOffset;
-    private final int importedTablesOffset;
     private final FunctionType[] types;
     private final int[] functionTypes;
     private final ImportValues imports;
-    private final Table[] roughTables;
     private final TableInstance[] tables;
     private final Element[] elements;
     private final Map<String, Export> exports;
@@ -68,9 +63,6 @@ public class Instance {
     Instance(
             Module module,
             Global[] globalInitializers,
-            int importedGlobalsOffset,
-            int importedFunctionsOffset,
-            int importedTablesOffset,
             Memory memory,
             DataSegment[] dataSegments,
             FunctionBody[] functions,
@@ -87,9 +79,6 @@ public class Instance {
         this.module = module;
         this.globalInitializers = globalInitializers.clone();
         this.globals = new GlobalInstance[globalInitializers.length];
-        this.importedGlobalsOffset = importedGlobalsOffset;
-        this.importedFunctionsOffset = importedFunctionsOffset;
-        this.importedTablesOffset = importedTablesOffset;
         this.memory = memory;
         this.dataSegments = dataSegments;
         this.functions = functions.clone();
@@ -97,8 +86,10 @@ public class Instance {
         this.functionTypes = functionTypes.clone();
         this.imports = imports;
         this.machine = machineFactory.apply(this);
-        this.roughTables = tables.clone();
-        this.tables = new TableInstance[this.roughTables.length];
+        this.tables = new TableInstance[tables.length];
+        for (int i = 0; i < tables.length; i++) {
+            this.tables[i] = new TableInstance(tables[i]);
+        }
         this.elements = elements.clone();
         this.exports = exports;
         this.listener = listener;
@@ -109,10 +100,6 @@ public class Instance {
     }
 
     public Instance initialize(boolean start) {
-        for (var i = 0; i < this.roughTables.length; i++) {
-            this.tables[i] = new TableInstance(this.roughTables[i]);
-        }
-
         for (var el : elements) {
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
@@ -127,31 +114,14 @@ public class Instance {
                 for (int i = 0; i < initializers.size(); i++) {
                     final List<Instruction> init = initializers.get(i);
                     int index = offset + i;
-                    if (init.stream().filter(e -> e.opcode() != OpCode.END).count() > 1L) {
-                        throw new InvalidException(
-                                "constant expression required, type mismatch, expected [] but found"
-                                        + " extra instructions");
-                    }
-                    var valueType = computeConstantType(this, init);
-                    if (valueType != ae.type() || table.elementType() != ae.type()) {
-                        throw new InvalidException(
-                                "type mismatch, element type: "
-                                        + ae.type()
-                                        + ", table type: "
-                                        + table.elementType()
-                                        + ", value type: "
-                                        + valueType);
-                    }
                     var value = computeConstantValue(this, init);
                     var inst = computeConstantInstance(this, init);
 
                     if (ae.type() == ValueType.FuncRef) {
-                        if (value != REF_NULL_VALUE) {
-                            try {
-                                function(value);
-                            } catch (InvalidException e) {
-                                throw new InvalidException("type mismatch, " + e.getMessage(), e);
-                            }
+                        if (value != REF_NULL_VALUE
+                                && (value < 0
+                                        || value >= (functions.length + imports.functionCount()))) {
+                            throw new InvalidException("unknown function " + value);
                         }
                         table.setRef(index, (int) value, inst);
                     } else {
@@ -159,28 +129,13 @@ public class Instance {
                         table.setRef(index, (int) value, inst);
                     }
                 }
-            } else if (el instanceof DeclarativeElement) {
-                for (var init : el.initializers()) {
-                    computeConstantValue(this, init);
-                }
             }
         }
 
         for (var i = 0; i < globalInitializers.length; i++) {
             var g = globalInitializers[i];
-            if (g.mutabilityType() == MutabilityType.Const && g.initInstructions().size() > 1) {
-                throw new InvalidException(
-                        "constant expression required, type mismatch, expected [] but found extra"
-                                + " instructions");
-            }
-            var valueType = computeConstantType(this, g.initInstructions());
-            if (g.valueType() != valueType) {
-                throw new InvalidException(
-                        "type mismatch, expected: " + g.valueType() + ", got: " + valueType);
-            }
             var value = computeConstantValue(this, g.initInstructions());
-
-            globals[i] = new GlobalInstance(new Value(valueType, value), g.mutabilityType());
+            globals[i] = new GlobalInstance(new Value(g.valueType(), value), g.mutabilityType());
             globals[i].setInstance(this);
         }
 
@@ -242,16 +197,16 @@ public class Instance {
     }
 
     public FunctionBody function(long idx) {
-        if (idx < 0 || idx >= (functions.length + importedFunctionsOffset)) {
+        if (idx < 0 || idx >= (functions.length + imports.functionCount())) {
             throw new InvalidException("unknown function " + idx);
-        } else if (idx < importedFunctionsOffset) {
+        } else if (idx < imports.functionCount()) {
             return null;
         }
-        return functions[(int) idx - importedFunctionsOffset];
+        return functions[(int) idx - imports.functionCount()];
     }
 
     public int functionCount() {
-        return importedFunctionsOffset + functions.length;
+        return imports.functionCount() + functions.length;
     }
 
     public Memory memory() {
@@ -259,14 +214,14 @@ public class Instance {
     }
 
     public GlobalInstance global(int idx) {
-        if (idx < importedGlobalsOffset) {
+        if (idx < imports.globalCount()) {
             return imports.global(idx).instance();
         }
-        var i = idx - importedGlobalsOffset;
+        var i = idx - imports.globalCount();
         if (i < 0 || i >= globals.length) {
             throw new InvalidException("unknown global " + idx);
         }
-        return globals[idx - importedGlobalsOffset];
+        return globals[idx - imports.globalCount()];
     }
 
     public FunctionType type(int idx) {
@@ -292,13 +247,13 @@ public class Instance {
     }
 
     public TableInstance table(int idx) {
-        if (idx < 0 || idx >= (tables.length + importedTablesOffset)) {
+        if (idx < 0 || idx >= (tables.length + imports.tableCount())) {
             throw new InvalidException("unknown table " + idx);
         }
-        if (idx < importedTablesOffset) {
+        if (idx < imports.tableCount()) {
             return imports.table(idx).table();
         }
-        return tables[idx - importedTablesOffset];
+        return tables[idx - imports.tableCount()];
     }
 
     public Element element(int idx) {
@@ -500,39 +455,20 @@ public class Instance {
 
         private ImportValues mapHostImports(
                 Import[] imports, ImportValues importValues, int memoryCount) {
-            int hostFuncNum = 0;
-            int hostGlobalNum = 0;
-            int hostMemNum = 0;
-            int hostTableNum = 0;
-            for (var imprt : imports) {
-                switch (imprt.importType()) {
-                    case FUNCTION:
-                        hostFuncNum++;
-                        break;
-                    case GLOBAL:
-                        hostGlobalNum++;
-                        break;
-                    case MEMORY:
-                        hostMemNum++;
-                        break;
-                    case TABLE:
-                        hostTableNum++;
-                        break;
-                }
-            }
-
-            if (hostMemNum + memoryCount > 1) {
-                throw new InvalidException("multiple memories");
-            }
+            Function<ExternalType, Integer> count =
+                    t -> (int) Arrays.stream(imports).filter(i -> i.importType() == t).count();
 
             // TODO: this can probably be refactored ...
-            var hostFuncs = new ImportFunction[hostFuncNum];
+            var hostFuncs = new ImportFunction[count.apply(FUNCTION)];
             var hostFuncIdx = 0;
-            var hostGlobals = new ImportGlobal[hostGlobalNum];
+            var hostGlobals = new ImportGlobal[count.apply(GLOBAL)];
             var hostGlobalIdx = 0;
-            var hostMems = new ImportMemory[hostMemNum];
+            var hostMems = new ImportMemory[count.apply(MEMORY)];
             var hostMemIdx = 0;
-            var hostTables = new ImportTable[hostTableNum];
+            if (hostMems.length + memoryCount > 1) {
+                throw new InvalidException("multiple memories");
+            }
+            var hostTables = new ImportTable[count.apply(TABLE)];
             var hostTableIdx = 0;
             int cnt;
             for (var impIdx = 0; impIdx < imports.length; impIdx++) {
@@ -700,37 +636,13 @@ public class Instance {
                 }
             }
 
-            // TODO: refactor with "mapHostImports"
-            var globalImportsOffset = 0;
-            var functionImportsOffset = 0;
-            var tablesImportsOffset = 0;
-            var memoryImportsOffset = 0;
-            for (Import imp : imports) {
-                switch (imp.importType()) {
-                    case GLOBAL:
-                        globalImportsOffset++;
-                        break;
-                    case FUNCTION:
-                        functionImportsOffset++;
-                        break;
-                    case TABLE:
-                        tablesImportsOffset++;
-                        break;
-                    case MEMORY:
-                        memoryImportsOffset++;
-                        break;
-                    default:
-                        break;
-                }
-            }
-
             for (var e : exports.values()) {
                 switch (e.exportType()) {
                     case FUNCTION:
                         {
                             if (e.index()
                                     >= module.functionSection().functionCount()
-                                            + functionImportsOffset) {
+                                            + mappedHostImports.functionCount()) {
                                 throw new InvalidException("unknown function " + e.index());
                             }
                             break;
@@ -738,7 +650,8 @@ public class Instance {
                     case GLOBAL:
                         {
                             if (e.index()
-                                    >= module.globalSection().globalCount() + globalImportsOffset) {
+                                    >= module.globalSection().globalCount()
+                                            + mappedHostImports.globalCount()) {
                                 throw new InvalidException("unknown global " + e.index());
                             }
                             break;
@@ -746,7 +659,8 @@ public class Instance {
                     case TABLE:
                         {
                             if (e.index()
-                                    >= module.tableSection().tableCount() + tablesImportsOffset) {
+                                    >= module.tableSection().tableCount()
+                                            + mappedHostImports.tableCount()) {
                                 throw new InvalidException("unknown table " + e.index());
                             }
                             break;
@@ -757,7 +671,7 @@ public class Instance {
                                     module.memorySection()
                                             .map(MemorySection::memoryCount)
                                             .orElse(0);
-                            if (e.index() >= memoryCount + memoryImportsOffset) {
+                            if (e.index() >= memoryCount + mappedHostImports.memoryCount()) {
                                 throw new InvalidException("unknown memory " + e);
                             }
                             break;
@@ -772,9 +686,6 @@ public class Instance {
             return new Instance(
                     module,
                     globalInitializers,
-                    globalImportsOffset,
-                    functionImportsOffset,
-                    tablesImportsOffset,
                     memory,
                     dataSegments,
                     functions,

@@ -356,6 +356,22 @@ final class Validator {
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
                 validateConstantExpression(ae.offset(), ValueType.I32);
+                for (int i = 0; i < ae.initializers().size(); i++) {
+                    var initializers = ae.initializers().get(i);
+                    if (initializers.stream().filter(x -> x.opcode() != OpCode.END).count() != 1) {
+                        // TODO: this indicates that error messages should be concatenated
+                        // space for further refactoring
+                        throw new InvalidException("type mismatch, constant expression required");
+                    }
+                    validateConstantExpression(
+                            ae.initializers().get(i), getTableType(ae.tableIndex()));
+                }
+            } else if (el instanceof DeclarativeElement) {
+                for (var init : el.initializers()) {
+                    if (init.stream().filter(x -> x.opcode() != OpCode.END).count() != 1) {
+                        throw new InvalidException("type mismatch, constant expression required");
+                    }
+                }
             }
         }
     }
@@ -363,6 +379,9 @@ final class Validator {
     void validateGlobals() {
         for (Global g : module.globalSection().globals()) {
             validateConstantExpression(g.initInstructions(), g.valueType());
+            if (g.mutabilityType() == MutabilityType.Const && g.initInstructions().size() > 1) {
+                throw new InvalidException("constant expression required");
+            }
         }
     }
 

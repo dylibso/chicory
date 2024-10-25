@@ -2,11 +2,8 @@ package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.wasm.types.OpCode.GLOBAL_GET;
 
-import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.Instruction;
-import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 import java.util.List;
 
@@ -46,89 +43,6 @@ final class ConstantEvaluators {
                         break;
                     }
             }
-        }
-        return tos;
-    }
-
-    public static ValueType computeConstantType(Instance instance, List<Instruction> expr) {
-        ValueType tos = null;
-        for (var instruction : expr) {
-            switch (instruction.opcode()) {
-                case F32_CONST:
-                    {
-                        tos = ValueType.F32;
-                        break;
-                    }
-                case F64_CONST:
-                    {
-                        tos = ValueType.F64;
-                        break;
-                    }
-                case I32_CONST:
-                    {
-                        tos = ValueType.I32;
-                        break;
-                    }
-                case I64_CONST:
-                    {
-                        tos = ValueType.I64;
-                        break;
-                    }
-                case REF_NULL:
-                    {
-                        ValueType vt = ValueType.refTypeForId((int) instruction.operand(0));
-                        if (vt == ValueType.ExternRef) {
-                            tos = ValueType.ExternRef;
-                        } else if (vt == ValueType.FuncRef) {
-                            tos = ValueType.FuncRef;
-                        } else {
-                            throw new IllegalStateException(
-                                    "Unexpected wrong type for ref.null instruction");
-                        }
-                        break;
-                    }
-                case REF_FUNC:
-                    {
-                        var idx = (int) instruction.operand(0);
-                        instance.function(idx);
-                        tos = ValueType.FuncRef;
-                        break;
-                    }
-                case GLOBAL_GET:
-                    {
-                        var idx = (int) instruction.operand(0);
-                        if (idx < instance.imports().globalCount()) {
-                            if (instance.imports().global(idx).instance().getMutabilityType()
-                                    != MutabilityType.Const) {
-                                throw new InvalidException(
-                                        "constant expression required, initializer expression"
-                                                + " cannot reference a mutable global");
-                            }
-                            tos = instance.imports().global(idx).instance().getType();
-                        } else {
-                            throw new InvalidException(
-                                    "unknown global "
-                                            + idx
-                                            + ", initializer expression can only reference"
-                                            + " an imported global");
-                        }
-                        break;
-                    }
-                case END:
-                    {
-                        break;
-                    }
-                default:
-                    {
-                        throw new InvalidException(
-                                "constant expression required, but non-constant instruction"
-                                        + " encountered: "
-                                        + instruction);
-                    }
-            }
-        }
-        if (tos == null) {
-            throw new InvalidException("type mismatch, expected constant value");
         }
         return tos;
     }
