@@ -10,9 +10,9 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.TableInstance;
 import com.dylibso.chicory.runtime.WasmFunctionHandle;
-import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.Table;
+import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
@@ -71,7 +71,8 @@ public final class Spectest {
                     new ImportTable(
                             "spectest",
                             "table",
-                            new TableInstance(new Table(ValueType.FuncRef, new Limits(10, 20))))
+                            new TableInstance(
+                                    new Table(ValueType.FuncRef, new TableLimits(10, 20))))
                 });
     }
 }

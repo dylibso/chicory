@@ -4,8 +4,8 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.wasm.exceptions.ChicoryException;
 import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
-import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Table;
+import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 
@@ -30,7 +30,7 @@ public class TableInstance {
         return table.elementType();
     }
 
-    public Limits limits() {
+    public TableLimits limits() {
         return table.limits();
     }
 

@@ -38,7 +38,6 @@ import com.dylibso.chicory.wasm.types.GlobalImport;
 import com.dylibso.chicory.wasm.types.GlobalSection;
 import com.dylibso.chicory.wasm.types.ImportSection;
 import com.dylibso.chicory.wasm.types.Instruction;
-import com.dylibso.chicory.wasm.types.Limits;
 import com.dylibso.chicory.wasm.types.Memory;
 import com.dylibso.chicory.wasm.types.MemoryImport;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
@@ -53,6 +52,7 @@ import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
+import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.TableSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.UnknownCustomSection;
@@ -444,8 +444,8 @@ public final class Parser {
                         var min = (int) readVarUInt32(buffer);
                         var limits =
                                 limitType > 0
-                                        ? new Limits(min, readVarUInt32(buffer))
-                                        : new Limits(min);
+                                        ? new TableLimits(min, readVarUInt32(buffer))
+                                        : new TableLimits(min);
 
                         importSection.addImport(
                                 new TableImport(moduleName, importName, tableType, limits));
@@ -510,7 +510,10 @@ public final class Parser {
                 throw new MalformedException("integer representation too long, integer too large");
             }
             var min = readVarUInt32(buffer);
-            var limits = limitType > 0 ? new Limits(min, readVarUInt32(buffer)) : new Limits(min);
+            var limits =
+                    limitType > 0
+                            ? new TableLimits(min, readVarUInt32(buffer))
+                            : new TableLimits(min);
             tableSection.addTable(new Table(tableType, limits));
         }
 

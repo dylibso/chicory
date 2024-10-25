@@ -7,7 +7,7 @@ import java.util.Objects;
  */
 public final class TableImport extends Import {
     private final ValueType entryType;
-    private final Limits limits;
+    private final TableLimits limits;
 
     /**
      * Construct a new instance.
@@ -17,7 +17,7 @@ public final class TableImport extends Import {
      * @param entryType the table entry type (must not be {@code null})
      * @param limits the table limits (must not be {@code null})
      */
-    public TableImport(String moduleName, String name, ValueType entryType, Limits limits) {
+    public TableImport(String moduleName, String name, ValueType entryType, TableLimits limits) {
         super(moduleName, name);
         this.entryType = Objects.requireNonNull(entryType, "entryType");
         this.limits = Objects.requireNonNull(limits, "limits");
@@ -33,7 +33,7 @@ public final class TableImport extends Import {
     /**
      * @return the table size limits
      */
-    public Limits limits() {
+    public TableLimits limits() {
         return limits;
     }
 
