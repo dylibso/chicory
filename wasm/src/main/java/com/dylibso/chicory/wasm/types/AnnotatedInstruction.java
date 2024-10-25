@@ -1,10 +1,12 @@
 package com.dylibso.chicory.wasm.types;
 
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/*
+ * An instruction with additional metadata for control flow.
+ */
 public final class AnnotatedInstruction extends Instruction {
     public static final int UNDEFINED_LABEL = -1;
 
@@ -177,7 +179,7 @@ public final class AnnotatedInstruction extends Instruction {
                     depth,
                     labelTrue.orElse(UNDEFINED_LABEL),
                     labelFalse.orElse(UNDEFINED_LABEL),
-                    labelTable.orElse(new ArrayList<>()),
+                    labelTable.orElse(List.of()),
                     scope.orElse(null));
         }
     }

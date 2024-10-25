@@ -4,9 +4,9 @@ import java.util.Objects;
 
 public class Table {
     private final ValueType elementType;
-    private final Limits limits;
+    private final TableLimits limits;
 
-    public Table(ValueType elementType, Limits limits) {
+    public Table(ValueType elementType, TableLimits limits) {
         this.elementType = Objects.requireNonNull(elementType, "elementType");
         if (!elementType.isReference()) {
             throw new IllegalArgumentException("Table element type must be a reference type");
@@ -18,7 +18,7 @@ public class Table {
         return elementType;
     }
 
-    public Limits limits() {
+    public TableLimits limits() {
         return limits;
     }
 }

@@ -1,20 +1,22 @@
 package com.dylibso.chicory.wasm.types;
 
+import static com.dylibso.chicory.wasm.WasmLimits.MAX_TABLE_ENTRIES;
+
 import com.dylibso.chicory.wasm.exceptions.InvalidException;
 
-public class Limits {
-    public static final long LIMIT_MAX = 0x1_0000_0000L;
+public class TableLimits {
+    public static final long LIMIT_MAX = MAX_TABLE_ENTRIES;
 
-    private static final Limits UNBOUNDED = new Limits(0);
+    private static final TableLimits UNBOUNDED = new TableLimits(0);
 
     private final long min;
     private final long max;
 
-    public Limits(long min) {
+    public TableLimits(long min) {
         this(min, LIMIT_MAX);
     }
 
-    public Limits(long min, long max) {
+    public TableLimits(long min, long max) {
         if (min > max) {
             throw new InvalidException("size minimum must not be greater than maximum");
         }
@@ -32,10 +34,10 @@ public class Limits {
 
     @Override
     public boolean equals(Object obj) {
-        return obj instanceof Limits && equals((Limits) obj);
+        return obj instanceof TableLimits && equals((TableLimits) obj);
     }
 
-    public boolean equals(Limits other) {
+    public boolean equals(TableLimits other) {
         return this == other || other != null && min == other.min && max == other.max;
     }
 
@@ -59,7 +61,7 @@ public class Limits {
         return b.append(']');
     }
 
-    public static Limits unbounded() {
+    public static TableLimits unbounded() {
         return UNBOUNDED;
     }
 }

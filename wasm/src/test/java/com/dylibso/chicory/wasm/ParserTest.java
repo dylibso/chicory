@@ -73,8 +73,8 @@ public class ParserTest {
             // check memory section
             var memorySection = module.memorySection();
             assertEquals(1, memorySection.get().memoryCount());
-            assertEquals(1, memorySection.get().getMemory(0).memoryLimits().initialPages());
-            assertEquals(65536, memorySection.get().getMemory(0).memoryLimits().maximumPages());
+            assertEquals(1, memorySection.get().getMemory(0).limits().initialPages());
+            assertEquals(65536, memorySection.get().getMemory(0).limits().maximumPages());
 
             var codeSection = module.codeSection();
             assertEquals(1, codeSection.functionBodyCount());

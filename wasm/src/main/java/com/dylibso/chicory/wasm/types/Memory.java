@@ -9,21 +9,21 @@ import java.util.Objects;
  * reference.
  */
 public final class Memory {
-    private final MemoryLimits memoryLimits;
+    private final MemoryLimits limits;
 
     /**
      * Construct a new instance.
      *
-     * @param memoryLimits the memory limits (must not be {@code null})
+     * @param limits the memory limits (must not be {@code null})
      */
-    public Memory(MemoryLimits memoryLimits) {
-        this.memoryLimits = Objects.requireNonNull(memoryLimits, "memoryLimits");
+    public Memory(MemoryLimits limits) {
+        this.limits = Objects.requireNonNull(limits, "memoryLimits");
     }
 
     /**
      * @return the defined memory limits
      */
-    public MemoryLimits memoryLimits() {
-        return memoryLimits;
+    public MemoryLimits limits() {
+        return limits;
     }
 }

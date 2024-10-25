@@ -692,7 +692,7 @@ public class Instance {
             if (module.memorySection().isPresent()) {
                 var memories = module.memorySection().get();
                 if (memories.memoryCount() > 0) {
-                    memory = new Memory(memories.getMemory(0).memoryLimits());
+                    memory = new Memory(memories.getMemory(0).limits());
                 }
             } else {
                 if (mappedHostImports != null && mappedHostImports.memoryCount() > 0) {

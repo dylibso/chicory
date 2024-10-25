@@ -29,22 +29,6 @@ public enum ValueType {
     }
 
     /**
-     * @return {@code true} if the type can be stored in memory, and thus has a size, or {@code false} otherwise
-     */
-    public boolean hasSize() {
-        switch (this) {
-            case F64:
-            case F32:
-            case I64:
-            case I32:
-            case V128:
-                return true;
-            default:
-                return false;
-        }
-    }
-
-    /**
      * @return the size of this type in memory
      *
      * @throws IllegalStateException if the type cannot be stored in memory
