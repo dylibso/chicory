@@ -263,14 +263,14 @@ private final class FOO$AotMethods {
     ICONST_M1
     IF_ICMPNE L2
    L3
-    NEW com/dylibso/chicory/wasm/exceptions/ChicoryException
+    NEW com/dylibso/chicory/wasm/ChicoryException
     DUP
     ILOAD 1
     INVOKEDYNAMIC makeConcatWithConstants(I)Ljava/lang/String; [
       java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
       "uninitialized element \u0001"
     ]
-    INVOKESPECIAL com/dylibso/chicory/wasm/exceptions/ChicoryException.<init> (Ljava/lang/String;)V
+    INVOKESPECIAL com/dylibso/chicory/wasm/ChicoryException.<init> (Ljava/lang/String;)V
     ATHROW
    L2
     ILOAD 2
@@ -497,28 +497,28 @@ private final class FOO$AotMethods {
 
   public static throwCallStackExhausted(Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
    L0
-    NEW com/dylibso/chicory/wasm/exceptions/ChicoryException
+    NEW com/dylibso/chicory/wasm/ChicoryException
     DUP
     LDC "call stack exhausted"
     ALOAD 0
-    INVOKESPECIAL com/dylibso/chicory/wasm/exceptions/ChicoryException.<init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+    INVOKESPECIAL com/dylibso/chicory/wasm/ChicoryException.<init> (Ljava/lang/String;Ljava/lang/Throwable;)V
     ATHROW
    L1
 
   public static throwIndirectCallTypeMismatch()Ljava/lang/RuntimeException;
    L0
-    NEW com/dylibso/chicory/wasm/exceptions/ChicoryException
+    NEW com/dylibso/chicory/wasm/ChicoryException
     DUP
     LDC "indirect call type mismatch"
-    INVOKESPECIAL com/dylibso/chicory/wasm/exceptions/ChicoryException.<init> (Ljava/lang/String;)V
+    INVOKESPECIAL com/dylibso/chicory/wasm/ChicoryException.<init> (Ljava/lang/String;)V
     ARETURN
 
   public static throwOutOfBoundsMemoryAccess()Ljava/lang/RuntimeException;
    L0
-    NEW com/dylibso/chicory/runtime/exceptions/WASMRuntimeException
+    NEW com/dylibso/chicory/runtime/WasmRuntimeException
     DUP
     LDC "out of bounds memory access"
-    INVOKESPECIAL com/dylibso/chicory/runtime/exceptions/WASMRuntimeException.<init> (Ljava/lang/String;)V
+    INVOKESPECIAL com/dylibso/chicory/runtime/WasmRuntimeException.<init> (Ljava/lang/String;)V
     ATHROW
 
   public static throwTrapException()Ljava/lang/RuntimeException;
@@ -526,20 +526,19 @@ private final class FOO$AotMethods {
     NEW com/dylibso/chicory/runtime/TrapException
     DUP
     LDC "Trapped on unreachable instruction"
-    INVOKESTATIC java/util/List.of ()Ljava/util/List; (itf)
-    INVOKESPECIAL com/dylibso/chicory/runtime/TrapException.<init> (Ljava/lang/String;Ljava/util/Collection;)V
+    INVOKESPECIAL com/dylibso/chicory/runtime/TrapException.<init> (Ljava/lang/String;)V
     ATHROW
 
   public static throwUnknownFunction(I)Ljava/lang/RuntimeException;
    L0
-    NEW com/dylibso/chicory/wasm/exceptions/InvalidException
+    NEW com/dylibso/chicory/wasm/InvalidException
     DUP
     ILOAD 0
     INVOKEDYNAMIC makeConcatWithConstants(I)Ljava/lang/String; [
       java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
       "unknown function \u0001"
     ]
-    INVOKESPECIAL com/dylibso/chicory/wasm/exceptions/InvalidException.<init> (Ljava/lang/String;)V
+    INVOKESPECIAL com/dylibso/chicory/wasm/InvalidException.<init> (Ljava/lang/String;)V
     ATHROW
    L1
 
@@ -549,10 +548,10 @@ private final class FOO$AotMethods {
     INVOKEVIRTUAL java/lang/Thread.isInterrupted ()Z
     IFEQ L1
    L2
-    NEW com/dylibso/chicory/wasm/exceptions/ChicoryException
+    NEW com/dylibso/chicory/wasm/ChicoryException
     DUP
     LDC "Thread interrupted"
-    INVOKESPECIAL com/dylibso/chicory/wasm/exceptions/ChicoryException.<init> (Ljava/lang/String;)V
+    INVOKESPECIAL com/dylibso/chicory/wasm/ChicoryException.<init> (Ljava/lang/String;)V
     ATHROW
    L1
     RETURN

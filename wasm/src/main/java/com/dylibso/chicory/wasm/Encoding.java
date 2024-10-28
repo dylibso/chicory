@@ -1,6 +1,5 @@
 package com.dylibso.chicory.wasm;
 
-import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 

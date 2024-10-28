@@ -7,11 +7,11 @@ import static com.dylibso.chicory.wasm.types.ExternalType.FUNCTION;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.util.Objects.requireNonNullElseGet;
 
+import com.dylibso.chicory.wasm.ChicoryException;
+import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.Module;
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.exceptions.InvalidException;
-import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
-import com.dylibso.chicory.wasm.exceptions.UnlinkableException;
+import com.dylibso.chicory.wasm.UninstantiableException;
+import com.dylibso.chicory.wasm.UnlinkableException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.DataSegment;

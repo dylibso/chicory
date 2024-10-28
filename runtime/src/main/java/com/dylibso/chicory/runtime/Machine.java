@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.ChicoryException;
 
 public interface Machine {
 

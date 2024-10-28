@@ -3,7 +3,7 @@ package com.dylibso.chicory.aot;
 import static com.dylibso.chicory.aot.AotUtil.internalClassName;
 import static org.objectweb.asm.Type.getInternalName;
 
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.ChicoryException;
 import java.io.IOException;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;

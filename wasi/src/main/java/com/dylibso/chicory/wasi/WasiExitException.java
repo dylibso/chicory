@@ -1,6 +1,6 @@
 package com.dylibso.chicory.wasi;
 
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.ChicoryException;
 
 public class WasiExitException extends ChicoryException {
     private final int exitCode;

@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
+import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;

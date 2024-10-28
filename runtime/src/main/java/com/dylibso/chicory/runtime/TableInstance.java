@@ -2,8 +2,8 @@ package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
+import com.dylibso.chicory.wasm.ChicoryException;
+import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.ValueType;

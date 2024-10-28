@@ -3,9 +3,8 @@ package com.dylibso.chicory.runtime;
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static java.lang.Math.min;
 
-import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.exceptions.UninstantiableException;
+import com.dylibso.chicory.wasm.ChicoryException;
+import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
@@ -116,7 +115,7 @@ public final class Memory {
         if (!(segment instanceof PassiveDataSegment)) {
             // Wasm test suite expects this trap message, even though it would be
             // more informative to specifically identify the segment type mismatch
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
         write(dest, segment.data(), offset, size);
     }
@@ -187,7 +186,7 @@ public final class Memory {
         } catch (IllegalArgumentException
                 | BufferUnderflowException
                 | NegativeArraySizeException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -195,7 +194,7 @@ public final class Memory {
         try {
             buffer.putInt(addr, data);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -203,7 +202,7 @@ public final class Memory {
         try {
             return buffer.getInt(addr);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -219,7 +218,7 @@ public final class Memory {
         try {
             buffer.putLong(addr, data);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -227,7 +226,7 @@ public final class Memory {
         try {
             return buffer.getLong(addr);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -239,7 +238,7 @@ public final class Memory {
         try {
             buffer.putShort(addr, data);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -247,7 +246,7 @@ public final class Memory {
         try {
             return buffer.getShort(addr);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -259,7 +258,7 @@ public final class Memory {
         try {
             return buffer.getShort(addr) & 0xffff;
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -267,7 +266,7 @@ public final class Memory {
         try {
             buffer.put(addr, data);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -275,7 +274,7 @@ public final class Memory {
         try {
             return read(addr) & 0xFF;
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -283,7 +282,7 @@ public final class Memory {
         try {
             return read(addr);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -291,7 +290,7 @@ public final class Memory {
         try {
             buffer.putFloat(addr, data);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -299,7 +298,7 @@ public final class Memory {
         try {
             return buffer.getInt(addr);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -307,7 +306,7 @@ public final class Memory {
         try {
             return buffer.getFloat(addr);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -315,7 +314,7 @@ public final class Memory {
         try {
             buffer.putDouble(addr, data);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -323,7 +322,7 @@ public final class Memory {
         try {
             return buffer.getDouble(addr);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -331,7 +330,7 @@ public final class Memory {
         try {
             return buffer.getLong(addr);
         } catch (IndexOutOfBoundsException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 
@@ -350,7 +349,7 @@ public final class Memory {
             Arrays.fill(buffer.array(), fromIndex, toIndex, value);
             buffer.position(0);
         } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
     }
 

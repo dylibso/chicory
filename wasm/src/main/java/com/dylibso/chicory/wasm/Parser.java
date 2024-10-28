@@ -13,9 +13,6 @@ import static com.dylibso.chicory.wasm.WasmLimits.MAX_FUNCTION_LOCALS;
 import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
 import static java.util.Objects.requireNonNull;
 
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.exceptions.InvalidException;
-import com.dylibso.chicory.wasm.exceptions.MalformedException;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;

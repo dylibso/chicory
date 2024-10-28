@@ -1,6 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
-import com.dylibso.chicory.wasm.exceptions.InvalidException;
+import com.dylibso.chicory.wasm.InvalidException;
 import java.util.List;
 import java.util.Optional;
 

@@ -124,7 +124,7 @@ var wasi = WasiOptions.builder().withStdout(System.out).withStderr(System.err).w
 ## Supported Features
 
 
-If your module calls a wasi function that we don't support, or uses a feature that we don't support, we will throw a `WASMRuntimeException`.
+If your module calls a wasi function that we don't support, or uses a feature that we don't support, we will throw a `WasmRuntimeException`.
 
 For the most up-to-date info, and to see what specific functions we support, see the [WasiPreview1.java](https://github.com/dylibso/chicory/blob/main/wasi/src/main/java/com/dylibso/chicory/wasi/WasiPreview1.java) and the following table:
 

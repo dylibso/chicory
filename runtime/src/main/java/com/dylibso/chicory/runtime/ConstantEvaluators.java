@@ -2,7 +2,7 @@ package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.wasm.types.OpCode.GLOBAL_GET;
 
-import com.dylibso.chicory.wasm.exceptions.InvalidException;
+import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Value;
