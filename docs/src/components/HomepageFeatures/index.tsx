@@ -11,7 +11,7 @@ type FeatureItem = {
 const FeatureList: FeatureItem[] = [
   {
     title: 'Pure Java',
-    Svg: require('@site/static/img/pure-java.svg').default,
+    Svg: require('@site/static/img/zero-deps.svg').default,
     description: (
       <>
         Using Chicory you don't need to rely on any system resource.
@@ -21,11 +21,21 @@ const FeatureList: FeatureItem[] = [
   },
   {
     title: 'Easy integration',
-    Svg: require('@site/static/img/pure-java.svg').default,
+    Svg: require('@site/static/img/wrench.svg').default,
     description: (
       <>
         Integrating Chicory in your project is smooth and only requires a few steps.
         Give your application a twist with a plugin system.
+      </>
+    ),
+  },
+  {
+    title: 'Secure by design',
+    Svg: require('@site/static/img/helmet.svg').default,
+    description: (
+      <>
+        Web Assembly modules are running in a sandboxed environment.
+        You have full control over the used resources.
       </>
     ),
   }
