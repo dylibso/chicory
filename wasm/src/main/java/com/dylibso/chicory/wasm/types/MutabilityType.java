@@ -1,6 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
-import com.dylibso.chicory.wasm.exceptions.MalformedException;
+import com.dylibso.chicory.wasm.MalformedException;
 
 /**
  * The kind of mutability for a global variable.

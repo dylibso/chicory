@@ -1,4 +1,4 @@
-package com.dylibso.chicory.wasm.exceptions;
+package com.dylibso.chicory.wasm;
 
 public class MalformedException extends ChicoryException {
     public MalformedException(String msg) {

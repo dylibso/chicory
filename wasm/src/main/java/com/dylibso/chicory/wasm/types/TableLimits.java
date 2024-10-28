@@ -2,7 +2,7 @@ package com.dylibso.chicory.wasm.types;
 
 import static com.dylibso.chicory.wasm.WasmLimits.MAX_TABLE_ENTRIES;
 
-import com.dylibso.chicory.wasm.exceptions.InvalidException;
+import com.dylibso.chicory.wasm.InvalidException;
 
 public class TableLimits {
     public static final long LIMIT_MAX = MAX_TABLE_ENTRIES;

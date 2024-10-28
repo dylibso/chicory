@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import com.dylibso.chicory.wasm.exceptions.InvalidException;
+import com.dylibso.chicory.wasm.InvalidException;
 import org.junit.jupiter.api.Test;
 
 class MemoryLimitsTest {

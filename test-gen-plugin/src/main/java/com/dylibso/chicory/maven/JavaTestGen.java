@@ -92,15 +92,15 @@ public class JavaTestGen {
         cu.addImport("com.dylibso.chicory.testing.TestModule");
 
         // runtime imports
-        cu.addImport("com.dylibso.chicory.wasm.exceptions.ChicoryException");
+        cu.addImport("com.dylibso.chicory.wasm.ChicoryException");
         cu.addImport("com.dylibso.chicory.runtime.ExportFunction");
         cu.addImport("com.dylibso.chicory.runtime.Instance");
 
         // base imports
-        cu.addImport("com.dylibso.chicory.wasm.exceptions.InvalidException");
-        cu.addImport("com.dylibso.chicory.wasm.exceptions.MalformedException");
-        cu.addImport("com.dylibso.chicory.wasm.exceptions.UninstantiableException");
-        cu.addImport("com.dylibso.chicory.wasm.exceptions.UnlinkableException");
+        cu.addImport("com.dylibso.chicory.wasm.InvalidException");
+        cu.addImport("com.dylibso.chicory.wasm.MalformedException");
+        cu.addImport("com.dylibso.chicory.wasm.UninstantiableException");
+        cu.addImport("com.dylibso.chicory.wasm.UnlinkableException");
         cu.addImport("com.dylibso.chicory.wasm.types.Value");
 
         // import for Store instance

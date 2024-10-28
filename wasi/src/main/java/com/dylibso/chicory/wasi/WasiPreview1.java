@@ -19,12 +19,12 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Memory;
-import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
+import com.dylibso.chicory.runtime.WasmRuntimeException;
 import com.dylibso.chicory.wasi.Descriptors.Directory;
 import com.dylibso.chicory.wasi.Descriptors.InStream;
 import com.dylibso.chicory.wasi.Descriptors.OutStream;
 import com.dylibso.chicory.wasi.Descriptors.PreopenedDirectory;
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.ChicoryException;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -140,13 +140,13 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int adapterCloseBadfd(int fd) {
         logger.tracef("adapter_close_badfd: [%s]", fd);
-        throw new WASMRuntimeException("We don't yet support this WASI call: adapter_close_badfd");
+        throw new WasmRuntimeException("We don't yet support this WASI call: adapter_close_badfd");
     }
 
     @WasmExport
     public int adapterOpenBadfd(int fd) {
         logger.tracef("adapter_open_badfd: [%s]", fd);
-        throw new WASMRuntimeException("We don't yet support this WASI call: adapter_open_badfd");
+        throw new WasmRuntimeException("We don't yet support this WASI call: adapter_open_badfd");
     }
 
     @WasmExport
@@ -404,7 +404,7 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int fdFdstatSetRights(int fd, long rightsBase, long rightsInheriting) {
         logger.tracef("fd_fdstat_set_rights: [%s, %s, %s]", fd, rightsBase, rightsInheriting);
-        throw new WASMRuntimeException("We don't yet support this WASI call: fd_fdstat_set_rights");
+        throw new WasmRuntimeException("We don't yet support this WASI call: fd_fdstat_set_rights");
     }
 
     @WasmExport
@@ -1046,7 +1046,7 @@ public final class WasiPreview1 implements Closeable {
         logger.tracef(
                 "path_link: [%s, %s, \"%s\", %s, \"%s\"]",
                 oldFd, oldFlags, rawOldPath, newFd, rawNewPath);
-        throw new WASMRuntimeException("We don't yet support this WASI call: path_link");
+        throw new WasmRuntimeException("We don't yet support this WASI call: path_link");
     }
 
     @WasmExport
@@ -1164,7 +1164,7 @@ public final class WasiPreview1 implements Closeable {
     public int pathReadlink(int dirFd, @Buffer String rawPath, int buf, int bufLen, int bufUsed) {
         logger.tracef(
                 "path_readlink: [%s, \"%s\", %s, %s, %s]", dirFd, rawPath, buf, bufLen, bufUsed);
-        throw new WASMRuntimeException("We don't yet support this WASI call: path_readlink");
+        throw new WasmRuntimeException("We don't yet support this WASI call: path_readlink");
     }
 
     @WasmExport
@@ -1265,7 +1265,7 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int pathSymlink(@Buffer String oldRawPath, int dirFd, @Buffer String newRawPath) {
         logger.tracef("path_symlink: [\"%s\", %s, \"%s\"]", oldRawPath, dirFd, newRawPath);
-        throw new WASMRuntimeException("We don't yet support this WASI call: path_symlink");
+        throw new WasmRuntimeException("We don't yet support this WASI call: path_symlink");
     }
 
     @WasmExport
@@ -1308,7 +1308,7 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int pollOneoff(int inPtr, int outPtr, int nsubscriptions, int neventsPtr) {
         logger.tracef("poll_oneoff: [%s, %s, %s, %s]", inPtr, outPtr, nsubscriptions, neventsPtr);
-        throw new WASMRuntimeException("We don't yet support this WASI call: poll_oneoff");
+        throw new WasmRuntimeException("We don't yet support this WASI call: poll_oneoff");
     }
 
     @WasmExport
@@ -1320,7 +1320,7 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int procRaise(int sig) {
         logger.tracef("proc_raise: [%s]", sig);
-        throw new WASMRuntimeException("We don't yet support this WASI call: proc_raise");
+        throw new WasmRuntimeException("We don't yet support this WASI call: proc_raise");
     }
 
     @WasmExport
@@ -1357,7 +1357,7 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int sockAccept(int sock, int fdFlags, int roFdPtr) {
         logger.tracef("sock_accept: [%s, %s, %s]", sock, fdFlags, roFdPtr);
-        throw new WASMRuntimeException("We don't yet support this WASI call: sock_accept");
+        throw new WasmRuntimeException("We don't yet support this WASI call: sock_accept");
     }
 
     @WasmExport
@@ -1366,7 +1366,7 @@ public final class WasiPreview1 implements Closeable {
         logger.tracef(
                 "sock_recv: [%s, %s, %s, %s, %s, %s]",
                 sock, riDataPtr, riDataLen, riFlags, roDataLenPtr, roFlagsPtr);
-        throw new WASMRuntimeException("We don't yet support this WASI call: sock_recv");
+        throw new WasmRuntimeException("We don't yet support this WASI call: sock_recv");
     }
 
     @WasmExport
@@ -1374,7 +1374,7 @@ public final class WasiPreview1 implements Closeable {
         logger.tracef(
                 "sock_send: [%s, %s, %s, %s, %s]",
                 sock, siDataPtr, siDataLen, siFlags, retDataLenPtr);
-        throw new WASMRuntimeException("We don't yet support this WASI call: sock_send");
+        throw new WasmRuntimeException("We don't yet support this WASI call: sock_send");
     }
 
     @WasmExport
@@ -1520,6 +1520,6 @@ public final class WasiPreview1 implements Closeable {
     }
 
     private static RuntimeException unhandledDescriptor(Descriptor descriptor) {
-        return new WASMRuntimeException("Unhandled descriptor: " + descriptor.getClass().getName());
+        return new WasmRuntimeException("Unhandled descriptor: " + descriptor.getClass().getName());
     }
 }

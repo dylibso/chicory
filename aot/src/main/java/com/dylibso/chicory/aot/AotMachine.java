@@ -2,7 +2,7 @@ package com.dylibso.chicory.aot;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.ChicoryException;
 
 /**
  * Machine implementation that AOT compiles function bodies.

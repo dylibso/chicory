@@ -2,8 +2,7 @@ package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
-import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.OpCode;
@@ -130,7 +129,7 @@ class InterpreterMachine implements Machine {
             instance.onExecution(instruction, stack);
             switch (opcode) {
                 case UNREACHABLE:
-                    throw new TrapException("Trapped on unreachable instruction", callStack);
+                    throw new TrapException("Trapped on unreachable instruction");
                 case NOP:
                     break;
                 case LOOP:
@@ -1638,7 +1637,7 @@ class InterpreterMachine implements Machine {
     private static int readMemPtr(MStack stack, Operands operands) {
         int offset = (int) stack.pop();
         if (operands.get(1) < 0 || operands.get(1) >= Integer.MAX_VALUE || offset < 0) {
-            throw new WASMRuntimeException("out of bounds memory access");
+            throw new WasmRuntimeException("out of bounds memory access");
         }
         return (int) (operands.get(1) + offset);
     }

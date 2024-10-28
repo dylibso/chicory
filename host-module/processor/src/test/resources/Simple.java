@@ -8,7 +8,7 @@ import com.dylibso.chicory.hostmodule.annotations.HostModule;
 import com.dylibso.chicory.hostmodule.annotations.WasmExport;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Memory;
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
+import com.dylibso.chicory.wasm.ChicoryException;
 import java.util.Random;
 
 @HostModule("simple")

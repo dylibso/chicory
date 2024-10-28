@@ -4,7 +4,6 @@ import static com.dylibso.chicory.runtime.BitOps.FALSE;
 import static com.dylibso.chicory.runtime.BitOps.TRUE;
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 
-import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -42,10 +41,10 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I32_DIV_S)
     public static int I32_DIV_S(int a, int b) {
         if (a == Integer.MIN_VALUE && b == -1) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
         if (b == 0) {
-            throw new WASMRuntimeException("integer divide by zero");
+            throw new WasmRuntimeException("integer divide by zero");
         }
         return a / b;
     }
@@ -53,7 +52,7 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I32_DIV_U)
     public static int I32_DIV_U(int a, int b) {
         if (b == 0) {
-            throw new WASMRuntimeException("integer divide by zero");
+            throw new WasmRuntimeException("integer divide by zero");
         }
         return Integer.divideUnsigned(a, b);
     }
@@ -136,7 +135,7 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I32_REM_S)
     public static int I32_REM_S(int a, int b) {
         if (b == 0) {
-            throw new WASMRuntimeException("integer divide by zero");
+            throw new WasmRuntimeException("integer divide by zero");
         }
         return a % b;
     }
@@ -144,7 +143,7 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I32_REM_U)
     public static int I32_REM_U(int a, int b) {
         if (b == 0) {
-            throw new WASMRuntimeException("integer divide by zero");
+            throw new WasmRuntimeException("integer divide by zero");
         }
         return Integer.remainderUnsigned(a, b);
     }
@@ -162,10 +161,10 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I32_TRUNC_F32_S)
     public static int I32_TRUNC_F32_S(float x) {
         if (Float.isNaN(x)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
+            throw new WasmRuntimeException("invalid conversion to integer");
         }
         if (x < Integer.MIN_VALUE || x >= Integer.MAX_VALUE) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
         return (int) x;
     }
@@ -173,11 +172,11 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I32_TRUNC_F32_U)
     public static int I32_TRUNC_F32_U(float x) {
         if (Float.isNaN(x)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
+            throw new WasmRuntimeException("invalid conversion to integer");
         }
         long v = (long) x;
         if (v < 0 || v >= 0xFFFFFFFFL) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
         return (int) v;
     }
@@ -185,11 +184,11 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I32_TRUNC_F64_S)
     public static int I32_TRUNC_F64_S(double tos) {
         if (Double.isNaN(tos)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
+            throw new WasmRuntimeException("invalid conversion to integer");
         }
         var v = (long) tos;
         if (v < Integer.MIN_VALUE || v > Integer.MAX_VALUE) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
         return (int) v;
     }
@@ -197,11 +196,11 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I32_TRUNC_F64_U)
     public static int I32_TRUNC_F64_U(double tos) {
         if (Double.isNaN(tos)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
+            throw new WasmRuntimeException("invalid conversion to integer");
         }
         var v = (long) tos;
         if (v < 0 || v > 0xFFFFFFFFL) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
         return (int) v;
     }
@@ -271,10 +270,10 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I64_DIV_S)
     public static long I64_DIV_S(long a, long b) {
         if (a == Long.MIN_VALUE && b == -1) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
         if (b == 0L) {
-            throw new WASMRuntimeException("integer divide by zero");
+            throw new WasmRuntimeException("integer divide by zero");
         }
         return a / b;
     }
@@ -282,7 +281,7 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I64_DIV_U)
     public static long I64_DIV_U(long a, long b) {
         if (b == 0L) {
-            throw new WASMRuntimeException("integer divide by zero");
+            throw new WasmRuntimeException("integer divide by zero");
         }
         return Long.divideUnsigned(a, b);
     }
@@ -375,7 +374,7 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I64_REM_S)
     public static long I64_REM_S(long a, long b) {
         if (b == 0L) {
-            throw new WASMRuntimeException("integer divide by zero");
+            throw new WasmRuntimeException("integer divide by zero");
         }
         return a % b;
     }
@@ -383,7 +382,7 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I64_REM_U)
     public static long I64_REM_U(long a, long b) {
         if (b == 0L) {
-            throw new WASMRuntimeException("integer divide by zero");
+            throw new WasmRuntimeException("integer divide by zero");
         }
         return Long.remainderUnsigned(a, b);
     }
@@ -401,10 +400,10 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I64_TRUNC_F32_S)
     public static long I64_TRUNC_F32_S(float x) {
         if (Float.isNaN(x)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
+            throw new WasmRuntimeException("invalid conversion to integer");
         }
         if (x < Long.MIN_VALUE || x >= Long.MAX_VALUE) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
         return (long) x;
     }
@@ -412,16 +411,16 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I64_TRUNC_F32_U)
     public static long I64_TRUNC_F32_U(float x) {
         if (Float.isNaN(x)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
+            throw new WasmRuntimeException("invalid conversion to integer");
         }
         if (x >= 2 * (float) Long.MAX_VALUE) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
 
         if (x < Long.MAX_VALUE) {
             long v = (long) x;
             if (v < 0) {
-                throw new WASMRuntimeException("integer overflow");
+                throw new WasmRuntimeException("integer overflow");
             }
             return v;
         }
@@ -436,7 +435,7 @@ public final class OpcodeImpl {
         // is set, Java considers these values to be negative, so we have
         // to check for >= 0 to detect overflow.
         if (v >= 0) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
         return v;
     }
@@ -444,14 +443,14 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I64_TRUNC_F64_S)
     public static long I64_TRUNC_F64_S(double x) {
         if (Double.isNaN(x)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
+            throw new WasmRuntimeException("invalid conversion to integer");
         }
         if (x == (double) Long.MIN_VALUE) {
             return Long.MIN_VALUE;
         }
         long v = (long) x;
         if (v == Long.MIN_VALUE || v == Long.MAX_VALUE) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
         return v;
     }
@@ -459,16 +458,16 @@ public final class OpcodeImpl {
     @OpCodeIdentifier(OpCode.I64_TRUNC_F64_U)
     public static long I64_TRUNC_F64_U(double x) {
         if (Double.isNaN(x)) {
-            throw new WASMRuntimeException("invalid conversion to integer");
+            throw new WasmRuntimeException("invalid conversion to integer");
         }
         if (x >= 2 * (double) Long.MAX_VALUE) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
 
         if (x < Long.MAX_VALUE) {
             long v = (long) x;
             if (v < 0) {
-                throw new WASMRuntimeException("integer overflow");
+                throw new WasmRuntimeException("integer overflow");
             }
             return v;
         }
@@ -477,7 +476,7 @@ public final class OpcodeImpl {
         // This is the double-based equivalent of that.
         long v = Long.MAX_VALUE + (long) (x - (double) Long.MAX_VALUE) + 1;
         if (v >= 0) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
         return v;
     }
@@ -512,7 +511,7 @@ public final class OpcodeImpl {
         // This is the double-based equivalent of that.
         long v = Long.MAX_VALUE + (long) (x - (double) Long.MAX_VALUE) + 1;
         if (v >= 0) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
         return v;
     }
@@ -548,7 +547,7 @@ public final class OpcodeImpl {
         // This is the double-based equivalent of that.
         v = Long.MAX_VALUE + (long) (x - (double) Long.MAX_VALUE) + 1;
         if (v >= 0) {
-            throw new WASMRuntimeException("integer overflow");
+            throw new WasmRuntimeException("integer overflow");
         }
         return v;
     }
@@ -790,7 +789,7 @@ public final class OpcodeImpl {
     public static int TABLE_GET(Instance instance, int tableIndex, int index) {
         TableInstance table = instance.table(tableIndex);
         if (index < 0 || index >= table.limits().max() || index >= table.size()) {
-            throw new WASMRuntimeException("out of bounds table access");
+            throw new WasmRuntimeException("out of bounds table access");
         }
         return table.ref(index);
     }
@@ -801,7 +800,7 @@ public final class OpcodeImpl {
         var table = instance.table(tableIndex);
 
         if (size < 0 || end > table.size()) {
-            throw new WASMRuntimeException("out of bounds table access");
+            throw new WasmRuntimeException("out of bounds table access");
         }
 
         for (int i = offset; i < end; i++) {
@@ -815,7 +814,7 @@ public final class OpcodeImpl {
         var dest = instance.table(dstTableIndex);
 
         if (size < 0 || (s < 0 || (size + s) > src.size()) || (d < 0 || (size + d) > dest.size())) {
-            throw new WASMRuntimeException("out of bounds table access");
+            throw new WasmRuntimeException("out of bounds table access");
         }
 
         for (int i = size - 1; i >= 0; i--) {
@@ -848,7 +847,7 @@ public final class OpcodeImpl {
                         || end > table.size());
 
         if (isOutOfBounds) {
-            throw new WASMRuntimeException("out of bounds table access");
+            throw new WasmRuntimeException("out of bounds table access");
         }
         if (size == 0) {
             return;
@@ -859,7 +858,7 @@ public final class OpcodeImpl {
             var val = (int) computeConstantValue(instance, elem.initializers().get(elemidx++));
             if (table.elementType() == ValueType.FuncRef) {
                 if (val > instance.functionCount()) {
-                    throw new WASMRuntimeException("out of bounds table access");
+                    throw new WasmRuntimeException("out of bounds table access");
                 }
                 table.setRef(i, val, instance);
             } else {

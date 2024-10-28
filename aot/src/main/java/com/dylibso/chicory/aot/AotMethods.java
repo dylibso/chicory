@@ -7,11 +7,10 @@ import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.TableInstance;
 import com.dylibso.chicory.runtime.TrapException;
-import com.dylibso.chicory.runtime.exceptions.WASMRuntimeException;
-import com.dylibso.chicory.wasm.exceptions.ChicoryException;
-import com.dylibso.chicory.wasm.exceptions.InvalidException;
+import com.dylibso.chicory.runtime.WasmRuntimeException;
+import com.dylibso.chicory.wasm.ChicoryException;
+import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import java.util.List;
 
 public final class AotMethods {
 
@@ -163,11 +162,11 @@ public final class AotMethods {
     }
 
     public static RuntimeException throwOutOfBoundsMemoryAccess() {
-        throw new WASMRuntimeException("out of bounds memory access");
+        throw new WasmRuntimeException("out of bounds memory access");
     }
 
     public static RuntimeException throwTrapException() {
-        throw new TrapException("Trapped on unreachable instruction", List.of());
+        throw new TrapException("Trapped on unreachable instruction");
     }
 
     public static RuntimeException throwUnknownFunction(int index) {
