@@ -116,7 +116,7 @@ public final class WasiPreview1 implements Closeable {
             return this;
         }
 
-        public Builder withOpts(WasiOptions opts) {
+        public Builder withOptions(WasiOptions opts) {
             this.opts = opts;
             return this;
         }

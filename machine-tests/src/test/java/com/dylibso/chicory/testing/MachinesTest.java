@@ -182,8 +182,7 @@ public final class MachinesTest {
                             .withDirectory(target.toString(), target)
                             .withArguments(List.of("wat2wasm", path.toString(), "--output=-"))
                             .build();
-            var logger = new SystemLogger();
-            try (var wasi = WasiPreview1.builder().withLogger(logger).withOpts(wasiOpts).build()) {
+            try (var wasi = WasiPreview1.builder().withOptions(wasiOpts).build()) {
                 ImportValues imports = new ImportValues(wasi.toHostFunctions());
                 var wat2WasmModule = Parser.parse(new File("../wabt/src/main/resources/wat2wasm"));
                 var startFunctionIndex = new AtomicInteger();

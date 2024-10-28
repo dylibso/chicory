@@ -247,7 +247,7 @@ public class WasiPreview1Test {
 
             var options = WasiOptions.builder().withDirectory(target.toString(), target).build();
 
-            try (var wasi = WasiPreview1.builder().withOpts(options).build()) {
+            try (var wasi = WasiPreview1.builder().withOptions(options).build()) {
                 var memory = new Memory(new MemoryLimits(1));
 
                 int fdPtr = 0;

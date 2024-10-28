@@ -84,7 +84,7 @@ public final class Wast2Json {
                 try (var wasi =
                         WasiPreview1.builder()
                                 .withLogger(logger)
-                                .withOpts(wasiOpts.build())
+                                .withOptions(wasiOpts.build())
                                 .build()) {
                     ImportValues imports = new ImportValues(wasi.toHostFunctions());
 
