@@ -99,7 +99,7 @@
     <checkstyle.version>10.18.2</checkstyle.version>
     <error-prone.version>2.34.0</error-prone.version>
     <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
-    <maven-checkstyle-plugin.version>3.5.0</maven-checkstyle-plugin.version>
+    <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.4.0</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
     <maven-dependency-plugin.version>3.8.0</maven-dependency-plugin.version>
