@@ -41,7 +41,9 @@
     <module>cli</module>
     <module>docs-lib</module>
     <module>fuzz</module>
-    <module>host-module</module>
+    <module>host-module/annotations</module>
+    <module>host-module/it</module>
+    <module>host-module/processor</module>
     <module>jmh</module>
     <module>log</module>
     <module>machine-tests</module>
