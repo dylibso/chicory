@@ -320,14 +320,6 @@ public class Instance {
         return machine;
     }
 
-    public long[] callHostFunction(int funcId, long[] args) {
-        var imprt = imports.function(funcId);
-        if (imprt == null) {
-            throw new ChicoryException("Missing host import, number: " + funcId);
-        }
-        return imprt.handle().apply(this, args);
-    }
-
     void onExecution(Instruction instruction, MStack stack) {
         if (listener != null) {
             listener.onExecution(instruction, stack);

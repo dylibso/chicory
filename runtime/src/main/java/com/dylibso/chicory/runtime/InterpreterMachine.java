@@ -70,7 +70,8 @@ class InterpreterMachine implements Machine {
             stackFrame.pushCtrl(OpCode.CALL, 0, type.returns().size(), stack.size());
             callStack.push(stackFrame);
 
-            var results = instance.callHostFunction(funcId, args);
+            var imprt = instance.imports().function(funcId);
+            var results = imprt.handle().apply(instance, args);
             // a host function can return null or an array of ints
             // which we will push onto the stack
             if (results != null) {
