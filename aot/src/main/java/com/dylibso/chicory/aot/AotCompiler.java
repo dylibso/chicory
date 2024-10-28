@@ -3,9 +3,9 @@ package com.dylibso.chicory.aot;
 import static com.dylibso.chicory.aot.AotEmitterMap.EMITTERS;
 import static com.dylibso.chicory.aot.AotMethodInliner.aotMethodsRemapper;
 import static com.dylibso.chicory.aot.AotMethodInliner.createAotMethodsClass;
+import static com.dylibso.chicory.aot.AotMethodRefs.CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.aot.AotMethodRefs.CALL_INDIRECT;
 import static com.dylibso.chicory.aot.AotMethodRefs.CHECK_INTERRUPTION;
-import static com.dylibso.chicory.aot.AotMethodRefs.INSTANCE_CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.aot.AotMethodRefs.INSTANCE_MEMORY;
 import static com.dylibso.chicory.aot.AotMethodRefs.INSTANCE_TABLE;
 import static com.dylibso.chicory.aot.AotMethodRefs.TABLE_INSTANCE;
@@ -387,7 +387,7 @@ public final class AotCompiler {
             asm.visitInsn(Opcodes.POP);
             asm.visitVarInsn(Opcodes.ILOAD, 1);
             asm.visitVarInsn(Opcodes.ALOAD, 2);
-            emitInvokeVirtual(asm, INSTANCE_CALL_HOST_FUNCTION);
+            emitInvokeStatic(asm, CALL_HOST_FUNCTION);
             asm.visitInsn(Opcodes.ARETURN);
         }
 
@@ -533,7 +533,7 @@ public final class AotCompiler {
         asm.visitLdcInsn(funcId);
         emitBoxArguments(asm, type.params());
 
-        emitInvokeVirtual(asm, INSTANCE_CALL_HOST_FUNCTION);
+        emitInvokeStatic(asm, CALL_HOST_FUNCTION);
 
         emitUnboxResult(type, asm);
     }

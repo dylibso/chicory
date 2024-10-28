@@ -158,6 +158,22 @@ private final class FOO$AotMethods {
     ARETURN
    L5
 
+  public static callHostFunction(Lcom/dylibso/chicory/runtime/Instance;I[J)[J
+   L0
+    ALOAD 0
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.imports ()Lcom/dylibso/chicory/runtime/ImportValues;
+    ILOAD 1
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/ImportValues.function (I)Lcom/dylibso/chicory/runtime/ImportFunction;
+    ASTORE 3
+   L1
+    ALOAD 3
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/ImportFunction.handle ()Lcom/dylibso/chicory/runtime/WasmFunctionHandle;
+    ALOAD 0
+    ALOAD 2
+    INVOKEINTERFACE com/dylibso/chicory/runtime/WasmFunctionHandle.apply (Lcom/dylibso/chicory/runtime/Instance;[J)[J (itf)
+    ARETURN
+   L2
+
   public static isRefNull(I)Z
    L0
     ILOAD 0

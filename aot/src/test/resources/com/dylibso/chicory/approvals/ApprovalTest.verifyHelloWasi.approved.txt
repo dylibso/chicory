@@ -33,7 +33,7 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     POP
     ILOAD 1
     ALOAD 2
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.callHostFunction (I[J)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.callHostFunction (Lcom/dylibso/chicory/runtime/Instance;I[J)[J
     ARETURN
    L4
     ILOAD 1
@@ -76,7 +76,7 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ILOAD 3
     I2L
     LASTORE
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.callHostFunction (I[J)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.callHostFunction (Lcom/dylibso/chicory/runtime/Instance;I[J)[J
     ICONST_0
     LALOAD
     L2I
