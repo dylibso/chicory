@@ -155,7 +155,7 @@ To use the host module, you need to instantiate the host module and fetch the ho
 
 ```java
 var demo = new Demo();
-var imports = new HostImports(demo.toHostFunctions());
+var imports = new ImportValues(demo.toHostFunctions());
 ```
 
 ### Type conversions
