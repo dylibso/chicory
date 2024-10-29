@@ -184,7 +184,7 @@ system you are using. This is how to do it with Maven:
       <path>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>function-processor</artifactId>
-        <version>0.0.12</version>
+        <version>DOCS_PLACEHOLDER_VERSION</version>
       </path>
     </annotationProcessorPaths>
   </configuration>

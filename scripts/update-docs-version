@@ -1,0 +1,25 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use File::Find;
+use English;
+
+my $version = $ARGV[0];
+die "usage: $PROGRAM_NAME 1.0rc1\n" if !$version;
+die "error: $PROGRAM_NAME must be run in chicory project root\n" if !-d 'docs/docs';
+
+find(sub {
+    my $file = $_;
+    return if !-f $file;
+    return if $file !~ /\.md$/;
+
+    open my $fh, '<', $file or die "can't open '$file' for reading: $!";
+    my $contents = do { local $/; <$fh> };
+    close $fh;
+
+    $contents =~ s/DOCS_PLACEHOLDER_VERSION/$version/g;
+    open $fh, '>', $file or die "can't open '$file' for writing: $!";
+    print $fh $contents;
+
+}, 'docs/docs');
