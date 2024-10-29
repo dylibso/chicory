@@ -60,9 +60,8 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ISTORE 3
     ILOAD 0
     INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.I32_EQZ (I)I
-    IFEQ L0
-    GOTO L1
-   L0
+    IFNE L0
+   L1
     ILOAD 3
     ILOAD 0
     IMUL
@@ -73,12 +72,10 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     DUP
     ISTORE 0
     INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.I32_EQZ (I)I
-    IFEQ L2
-    GOTO L1
-   L2
+    IFNE L0
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
-    GOTO L0
-   L1
+    GOTO L1
+   L0
     ILOAD 3
     IRETURN
 
