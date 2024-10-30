@@ -85,7 +85,8 @@ public final class WasiTestRunner {
     private static int execute(File test, WasiOptions wasiOptions) {
         try (var wasi = new WasiPreview1(LOGGER, wasiOptions)) {
             Instance.builder(Parser.parse(test))
-                    .withImportValues(new ImportValues(wasi.toHostFunctions()))
+                    .withImportValues(
+                            ImportValues.builder().addFunction(wasi.toHostFunctions()).build())
                     .build();
         } catch (WasiExitException e) {
             return e.exitCode();

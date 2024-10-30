@@ -542,7 +542,12 @@ public class Instance {
                 }
             }
 
-            return new ImportValues(hostFuncs, hostGlobals, hostMems, hostTables);
+            return ImportValues.builder()
+                    .addFunction(hostFuncs)
+                    .addGlobal(hostGlobals)
+                    .addMemory(hostMems)
+                    .addTable(hostTables)
+                    .build();
         }
 
         private Map<String, Export> genExports(ExportSection export) {
@@ -592,7 +597,7 @@ public class Instance {
             var mappedHostImports =
                     mapHostImports(
                             imports,
-                            requireNonNullElseGet(importValues, ImportValues::new),
+                            requireNonNullElseGet(importValues, ImportValues::empty),
                             module.memorySection().map(MemorySection::memoryCount).orElse(0));
 
             if (module.startSection().isPresent()) {

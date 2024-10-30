@@ -86,7 +86,8 @@ public final class Wast2Json {
                                 .withLogger(logger)
                                 .withOptions(wasiOpts.build())
                                 .build()) {
-                    ImportValues imports = new ImportValues(wasi.toHostFunctions());
+                    ImportValues imports =
+                            ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
 
                     Instance.builder(MODULE)
                             .withImportValues(imports)

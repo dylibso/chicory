@@ -40,7 +40,7 @@ public class WasiPreview1Test {
         var fakeStdout = new MockPrintStream();
         var wasi =
                 new WasiPreview1(this.logger, WasiOptions.builder().withStdout(fakeStdout).build());
-        var imports = new ImportValues(wasi.toHostFunctions());
+        var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
         Instance.builder(loadModule("compiled/hello-wasi.wat.wasm"))
                 .withImportValues(imports)
                 .build();
@@ -53,7 +53,7 @@ public class WasiPreview1Test {
         var expected = "Hello, World!";
         var stdout = new MockPrintStream();
         var wasi = new WasiPreview1(this.logger, WasiOptions.builder().withStdout(stdout).build());
-        var imports = new ImportValues(wasi.toHostFunctions());
+        var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
         Instance.builder(loadModule("compiled/hello-wasi.rs.wasm"))
                 .withImportValues(imports)
                 .build(); // run _start and prints Hello, World!
@@ -67,7 +67,7 @@ public class WasiPreview1Test {
         var fakeStdout = new MockPrintStream();
         var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStdin(fakeStdin).build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
-        var imports = new ImportValues(wasi.toHostFunctions());
+        var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
         Instance.builder(loadModule("compiled/greet-wasi.rs.wasm"))
                 .withImportValues(imports)
                 .build();
@@ -82,7 +82,7 @@ public class WasiPreview1Test {
         var fakeStdout = new MockPrintStream();
         var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStdin(fakeStdin).build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
-        var imports = new ImportValues(wasi.toHostFunctions());
+        var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
         Instance.builder(loadModule("compiled/javy-demo.js.javy.wasm"))
                 .withImportValues(imports)
                 .build();
@@ -107,7 +107,8 @@ public class WasiPreview1Test {
         var wasi = new WasiPreview1(logger, wasiOpts);
         var quickjs =
                 Instance.builder(loadModule("compiled/quickjs-provider.javy-dynamic.wasm"))
-                        .withImportValues(new ImportValues(wasi.toHostFunctions()))
+                        .withImportValues(
+                                ImportValues.builder().addFunction(wasi.toHostFunctions()).build())
                         .build();
 
         var greetingMsg = "Hello QuickJS!";
@@ -151,7 +152,8 @@ public class WasiPreview1Test {
         var wasi = new WasiPreview1(logger, wasiOpts);
         var quickjs =
                 Instance.builder(loadModule("compiled/quickjs-provider.javy-dynamic.wasm"))
-                        .withImportValues(new ImportValues(wasi.toHostFunctions()))
+                        .withImportValues(
+                                ImportValues.builder().addFunction(wasi.toHostFunctions()).build())
                         .build();
 
         var store = new Store();
@@ -169,7 +171,7 @@ public class WasiPreview1Test {
     public void shouldRunTinyGoModule() {
         var wasiOpts = WasiOptions.builder().build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
-        var imports = new ImportValues(wasi.toHostFunctions());
+        var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
         var module = loadModule("compiled/sum.go.tiny.wasm");
         var instance = Instance.builder(module).withImportValues(imports).build();
         var sum = instance.export("add");
@@ -183,7 +185,7 @@ public class WasiPreview1Test {
         var fakeStdout = new MockPrintStream();
         var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
-        var imports = new ImportValues(wasi.toHostFunctions());
+        var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
         var module = loadModule("compiled/main.go.wasm");
         var exit =
                 assertThrows(
@@ -205,7 +207,7 @@ public class WasiPreview1Test {
                         .withArguments(List.of(""))
                         .build();
         var wasi = new WasiPreview1(this.logger, wasiOpts);
-        var imports = new ImportValues(wasi.toHostFunctions());
+        var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
 
         var module = loadModule("compiled/basic.dotnet.wasm");
         Instance.builder(module).withImportValues(imports).build();
