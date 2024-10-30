@@ -25,8 +25,10 @@ class WithImportsTest {
                                             WithImportsTest.class.getResourceAsStream(
                                                     "/compiled/host-function.wat.wasm")))
                             .withImportValues(
-                                    new ImportValues(
-                                            TestModule_ModuleFactory.toHostFunctions(this)))
+                                    ImportValues.builder()
+                                            .addFunction(
+                                                    TestModule_ModuleFactory.toHostFunctions(this))
+                                            .build())
                             .build();
         }
 

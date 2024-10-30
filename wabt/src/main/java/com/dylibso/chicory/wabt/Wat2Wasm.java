@@ -71,7 +71,8 @@ public final class Wat2Wasm {
 
                 try (var wasi =
                         WasiPreview1.builder().withLogger(logger).withOptions(wasiOpts).build()) {
-                    ImportValues imports = new ImportValues(wasi.toHostFunctions());
+                    ImportValues imports =
+                            ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
                     Instance.builder(MODULE)
                             .withMachineFactory(Wat2WasmModuleMachineFactory::create)
                             .withImportValues(imports)

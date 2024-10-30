@@ -1,10 +1,10 @@
 package com.dylibso.chicory.runtime;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
-public class ImportValues {
+public final class ImportValues {
     private static final ImportFunction[] NO_EXTERNAL_FUNCTIONS = new ImportFunction[0];
     private static final ImportGlobal[] NO_EXTERNAL_GLOBALS = new ImportGlobal[0];
     private static final ImportMemory[] NO_EXTERNAL_MEMORIES = new ImportMemory[0];
@@ -15,60 +15,7 @@ public class ImportValues {
     private final ImportMemory[] memories;
     private final ImportTable[] tables;
 
-    public ImportValues() {
-        this.functions = NO_EXTERNAL_FUNCTIONS;
-        this.globals = NO_EXTERNAL_GLOBALS;
-        this.memories = NO_EXTERNAL_MEMORIES;
-        this.tables = NO_EXTERNAL_TABLES;
-    }
-
-    public ImportValues(HostFunction[] functions) {
-        this.functions = functions.clone();
-        this.globals = NO_EXTERNAL_GLOBALS;
-        this.memories = NO_EXTERNAL_MEMORIES;
-        this.tables = NO_EXTERNAL_TABLES;
-    }
-
-    public ImportValues(ImportGlobal[] globals) {
-        this.functions = NO_EXTERNAL_FUNCTIONS;
-        this.globals = globals.clone();
-        this.memories = NO_EXTERNAL_MEMORIES;
-        this.tables = NO_EXTERNAL_TABLES;
-    }
-
-    public ImportValues(ImportMemory[] memories) {
-        this.functions = NO_EXTERNAL_FUNCTIONS;
-        this.globals = NO_EXTERNAL_GLOBALS;
-        this.memories = memories.clone();
-        this.tables = NO_EXTERNAL_TABLES;
-    }
-
-    public ImportValues(ImportMemory memory) {
-        this.functions = NO_EXTERNAL_FUNCTIONS;
-        this.globals = NO_EXTERNAL_GLOBALS;
-        this.memories = new ImportMemory[] {memory};
-        this.tables = NO_EXTERNAL_TABLES;
-    }
-
-    public ImportValues(ImportTable[] tables) {
-        this.functions = NO_EXTERNAL_FUNCTIONS;
-        this.globals = NO_EXTERNAL_GLOBALS;
-        this.memories = NO_EXTERNAL_MEMORIES;
-        this.tables = tables.clone();
-    }
-
-    public ImportValues(
-            ImportFunction[] functions,
-            ImportGlobal[] globals,
-            ImportMemory memory,
-            ImportTable[] tables) {
-        this.functions = functions.clone();
-        this.globals = globals.clone();
-        this.memories = new ImportMemory[] {memory};
-        this.tables = tables.clone();
-    }
-
-    public ImportValues(
+    private ImportValues(
             ImportFunction[] functions,
             ImportGlobal[] globals,
             ImportMemory[] memories,
@@ -136,14 +83,14 @@ public class ImportValues {
     }
 
     public static final class Builder {
-        private List<ImportFunction> functions;
-        private List<ImportGlobal> globals;
-        private List<ImportMemory> memories;
-        private List<ImportTable> tables;
+        private Collection<ImportFunction> functions;
+        private Collection<ImportGlobal> globals;
+        private Collection<ImportMemory> memories;
+        private Collection<ImportTable> tables;
 
         Builder() {}
 
-        public Builder withFunctions(List<ImportFunction> functions) {
+        public Builder withFunctions(Collection<ImportFunction> functions) {
             this.functions = functions;
             return this;
         }
@@ -156,7 +103,7 @@ public class ImportValues {
             return this;
         }
 
-        public Builder withGlobals(List<ImportGlobal> globals) {
+        public Builder withGlobals(Collection<ImportGlobal> globals) {
             this.globals = globals;
             return this;
         }
@@ -169,7 +116,7 @@ public class ImportValues {
             return this;
         }
 
-        public Builder withMemories(List<ImportMemory> memories) {
+        public Builder withMemories(Collection<ImportMemory> memories) {
             this.memories = memories;
             return this;
         }
@@ -182,7 +129,7 @@ public class ImportValues {
             return this;
         }
 
-        public Builder withTables(List<ImportTable> tables) {
+        public Builder withTables(Collection<ImportTable> tables) {
             this.tables = tables;
             return this;
         }
@@ -199,17 +146,17 @@ public class ImportValues {
             final ImportValues importValues =
                     new ImportValues(
                             functions == null
-                                    ? new HostFunction[0]
-                                    : functions.toArray(new HostFunction[0]),
+                                    ? NO_EXTERNAL_FUNCTIONS
+                                    : functions.toArray(NO_EXTERNAL_FUNCTIONS),
                             globals == null
-                                    ? new ImportGlobal[0]
-                                    : globals.toArray(new ImportGlobal[0]),
+                                    ? NO_EXTERNAL_GLOBALS
+                                    : globals.toArray(NO_EXTERNAL_GLOBALS),
                             memories == null
-                                    ? new ImportMemory[0]
-                                    : memories.toArray(new ImportMemory[0]),
+                                    ? NO_EXTERNAL_MEMORIES
+                                    : memories.toArray(NO_EXTERNAL_MEMORIES),
                             tables == null
-                                    ? new ImportTable[0]
-                                    : tables.toArray(new ImportTable[0]));
+                                    ? NO_EXTERNAL_TABLES
+                                    : tables.toArray(NO_EXTERNAL_TABLES));
             return importValues;
         }
     }

@@ -59,12 +59,16 @@ public class Cli implements Runnable {
         var module = Parser.parse(file);
         var imports =
                 wasi
-                        ? new ImportValues(
-                                new WasiPreview1(
-                                                logger,
-                                                WasiOptions.builder().inheritSystem().build())
-                                        .toHostFunctions())
-                        : new ImportValues();
+                        ? ImportValues.builder()
+                                .addFunction(
+                                        new WasiPreview1(
+                                                        logger,
+                                                        WasiOptions.builder()
+                                                                .inheritSystem()
+                                                                .build())
+                                                .toHostFunctions())
+                                .build()
+                        : ImportValues.empty();
         var instance =
                 Instance.builder(module)
                         .withInitialize(true)

@@ -44,6 +44,8 @@ curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/main
 ```java
 //DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
 //DEPS com.dylibso.chicory:runtime:999-SNAPSHOT
+//DEPS com.dylibso.chicory:host-module-annotations:999-SNAPSHOT
+//DEPS com.dylibso.chicory:host-module-processor:999-SNAPSHOT
 ```
 -->
 <!--
@@ -123,6 +125,9 @@ useful when you have many host functions.
 ```java
 @HostModule("demo")
 public final class Demo {
+    
+    public Demo() {};
+    
     @WasmExport
     public long add(int a, int b) {
         return a + b;
@@ -153,9 +158,21 @@ This is because host functions will typically interact with instance state in th
 
 To use the host module, you need to instantiate the host module and fetch the host functions:
 
+<!--
+```java
+// bug in JShell: https://github.com/jbangdev/jbang/issues/1854
+public class Demo {
+    public Demo() {};
+
+    public HostFunction[] toHostFunctions() {
+        return new HostFunction[0];
+    }
+}
+```
+-->
 ```java
 var demo = new Demo();
-var imports = new ImportValues(demo.toHostFunctions());
+var imports = ImportValues.builder().addFunction(demo.toHostFunctions()).build();
 ```
 
 ### Type conversions

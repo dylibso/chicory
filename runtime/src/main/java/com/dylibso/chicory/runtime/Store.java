@@ -72,11 +72,12 @@ public class Store {
      * Convert the contents of a store to a {@link ImportValues} instance.
      */
     public ImportValues toImportValues() {
-        return new ImportValues(
-                functions.values().toArray(new ImportFunction[0]),
-                globals.values().toArray(new ImportGlobal[0]),
-                memories.values().toArray(new ImportMemory[0]),
-                tables.values().toArray(new ImportTable[0]));
+        return ImportValues.builder()
+                .withFunctions(functions.values())
+                .withGlobals(globals.values())
+                .withMemories(memories.values())
+                .withTables(tables.values())
+                .build();
     }
 
     /**

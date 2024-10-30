@@ -76,7 +76,8 @@ public final class MachinesTest {
         var quickjs =
                 quickJsInstanceBuilder()
                         .withMachineFactory(QuickJSMachineFactory::create)
-                        .withImportValues(new ImportValues(wasi.toHostFunctions()))
+                        .withImportValues(
+                                ImportValues.builder().addFunction(wasi.toHostFunctions()).build())
                         .build();
 
         var store = new Store().register("javy_quickjs_provider_v1", quickjs);
@@ -106,7 +107,8 @@ public final class MachinesTest {
         // using the pre-compiled version of QuickJS
         var quickjs =
                 quickJsInstanceBuilder()
-                        .withImportValues(new ImportValues(wasi.toHostFunctions()))
+                        .withImportValues(
+                                ImportValues.builder().addFunction(wasi.toHostFunctions()).build())
                         .build();
 
         var store = new Store().register("javy_quickjs_provider_v1", quickjs);
@@ -140,7 +142,8 @@ public final class MachinesTest {
         var quickjs =
                 quickJsInstanceBuilder()
                         .withMachineFactory(AotMachine::new)
-                        .withImportValues(new ImportValues(wasi.toHostFunctions()))
+                        .withImportValues(
+                                ImportValues.builder().addFunction(wasi.toHostFunctions()).build())
                         .build();
 
         var store = new Store().register("javy_quickjs_provider_v1", quickjs);
@@ -183,7 +186,8 @@ public final class MachinesTest {
                             .withArguments(List.of("wat2wasm", path.toString(), "--output=-"))
                             .build();
             try (var wasi = WasiPreview1.builder().withOptions(wasiOpts).build()) {
-                ImportValues imports = new ImportValues(wasi.toHostFunctions());
+                ImportValues imports =
+                        ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
                 var wat2WasmModule = Parser.parse(new File("../wabt/src/main/resources/wat2wasm"));
                 var startFunctionIndex = new AtomicInteger();
                 for (int i = 0; i < wat2WasmModule.exportSection().exportCount(); i++) {
