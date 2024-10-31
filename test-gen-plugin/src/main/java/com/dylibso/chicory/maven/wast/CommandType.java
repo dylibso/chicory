@@ -20,6 +20,8 @@ public enum CommandType {
     ASSERT_EXHAUSTION("assert_exhaustion"),
     @JsonProperty("assert_unlinkable")
     ASSERT_UNLINKABLE("assert_unlinkable"),
+    @JsonProperty("assert_excption")
+    ASSERT_EXCEPTION("assert_exception"),
     @JsonProperty("action")
     ACTION("action"),
     @JsonProperty("register")

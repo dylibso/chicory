@@ -113,6 +113,15 @@
             <wast>memory_trap.wast</wast>
             <wast>names.wast</wast>
             <wast>nop.wast</wast>
+            <wast>proposals/exception-handling/binary.wast</wast>
+            <wast>proposals/exception-handling/exports.wast</wast>
+            <wast>proposals/exception-handling/imports.wast</wast>
+            <wast>proposals/exception-handling/rethrow.wast</wast>
+            <wast>proposals/exception-handling/tag.wast</wast>
+            <wast>proposals/exception-handling/throw.wast</wast>
+            <!-- those two specs require the tail call proposal -->
+            <wast>proposals/exception-handling/try_catch.wast</wast>
+            <wast>proposals/exception-handling/try_delegate.wast</wast>
             <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
             <wast>ref_null.wast</wast>
@@ -147,7 +156,7 @@
           </includedWasts>
           <excludedTests/>
           <excludedMalformedWasts/>
-          <excludedInvalidWasts/>
+          <excludedInvalidWasts>SpecV1TagTest.test3</excludedInvalidWasts>
           <excludedUnlinkableWasts/>
           <excludedUninstantiableWasts/>
           <excludedWasts>

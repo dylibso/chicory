@@ -135,6 +135,7 @@ public final class Wast2Json {
     public static final class Builder {
         private File input;
         private File output;
+        private String[] options = new String[0];
 
         private Builder() {}
 
@@ -148,8 +149,13 @@ public final class Wast2Json {
             return this;
         }
 
+        public Builder withOptions(String... s) {
+            this.options = s;
+            return this;
+        }
+
         public Wast2Json build() {
-            return new Wast2Json(input, output, new String[0]);
+            return new Wast2Json(input, output, options);
         }
     }
 }

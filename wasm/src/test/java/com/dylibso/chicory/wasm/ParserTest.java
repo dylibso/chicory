@@ -228,4 +228,11 @@ public class ParserTest {
             Parser.parse(is);
         }
     }
+
+    @Test
+    public void shouldParseTagSection() throws IOException {
+        try (InputStream is = getClass().getResourceAsStream("/wasm/tag.0.wasm")) {
+            Parser.parse(is);
+        }
+    }
 }

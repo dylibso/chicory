@@ -233,14 +233,21 @@ public class TestGenMojo extends AbstractMojo {
                         "Wast file " + wastFile.getAbsolutePath() + " not found");
             }
 
-            var plainName = wastFile.getName().replace(".wast", "");
+            // TODO: use a more generic approach
+            var prefix = (spec.startsWith("proposals")) ? "eh-" : "";
+            var plainName = prefix + wastFile.getName().replace(".wast", "");
             File wasmFilesFolder = compiledWastTargetFolder.toPath().resolve(plainName).toFile();
             File specFile = wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile();
             if (!wasmFilesFolder.mkdirs()) {
                 log.warn("Could not create folder: " + wasmFilesFolder);
             }
 
-            Wast2Json.builder().withFile(wastFile).withOutput(specFile).build().process();
+            Wast2Json.builder()
+                    .withFile(wastFile)
+                    .withOutput(specFile)
+                    .withOptions("--enable-exceptions", "--enable-tail-call")
+                    .build()
+                    .process();
 
             var name = specFile.toPath().getParent().toFile().getName();
             var cu = testGen.generate(name, readWast(specFile), wasmFilesFolder);

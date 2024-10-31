@@ -9,17 +9,20 @@ public class ImportValues {
     private static final ImportGlobal[] NO_EXTERNAL_GLOBALS = new ImportGlobal[0];
     private static final ImportMemory[] NO_EXTERNAL_MEMORIES = new ImportMemory[0];
     private static final ImportTable[] NO_EXTERNAL_TABLES = new ImportTable[0];
+    private static final ImportTag[] NO_EXTERNAL_TAGS = new ImportTag[0];
 
     private final ImportFunction[] functions;
     private final ImportGlobal[] globals;
     private final ImportMemory[] memories;
     private final ImportTable[] tables;
+    private final ImportTag[] tags;
 
     public ImportValues() {
         this.functions = NO_EXTERNAL_FUNCTIONS;
         this.globals = NO_EXTERNAL_GLOBALS;
         this.memories = NO_EXTERNAL_MEMORIES;
         this.tables = NO_EXTERNAL_TABLES;
+        this.tags = NO_EXTERNAL_TAGS;
     }
 
     public ImportValues(HostFunction[] functions) {
@@ -27,6 +30,7 @@ public class ImportValues {
         this.globals = NO_EXTERNAL_GLOBALS;
         this.memories = NO_EXTERNAL_MEMORIES;
         this.tables = NO_EXTERNAL_TABLES;
+        this.tags = NO_EXTERNAL_TAGS;
     }
 
     public ImportValues(ImportGlobal[] globals) {
@@ -34,6 +38,7 @@ public class ImportValues {
         this.globals = globals.clone();
         this.memories = NO_EXTERNAL_MEMORIES;
         this.tables = NO_EXTERNAL_TABLES;
+        this.tags = NO_EXTERNAL_TAGS;
     }
 
     public ImportValues(ImportMemory[] memories) {
@@ -41,6 +46,7 @@ public class ImportValues {
         this.globals = NO_EXTERNAL_GLOBALS;
         this.memories = memories.clone();
         this.tables = NO_EXTERNAL_TABLES;
+        this.tags = NO_EXTERNAL_TAGS;
     }
 
     public ImportValues(ImportMemory memory) {
@@ -48,6 +54,7 @@ public class ImportValues {
         this.globals = NO_EXTERNAL_GLOBALS;
         this.memories = new ImportMemory[] {memory};
         this.tables = NO_EXTERNAL_TABLES;
+        this.tags = NO_EXTERNAL_TAGS;
     }
 
     public ImportValues(ImportTable[] tables) {
@@ -55,28 +62,41 @@ public class ImportValues {
         this.globals = NO_EXTERNAL_GLOBALS;
         this.memories = NO_EXTERNAL_MEMORIES;
         this.tables = tables.clone();
+        this.tags = NO_EXTERNAL_TAGS;
+    }
+
+    public ImportValues(ImportTag[] tags) {
+        this.functions = NO_EXTERNAL_FUNCTIONS;
+        this.globals = NO_EXTERNAL_GLOBALS;
+        this.memories = NO_EXTERNAL_MEMORIES;
+        this.tables = NO_EXTERNAL_TABLES;
+        this.tags = tags.clone();
     }
 
     public ImportValues(
             ImportFunction[] functions,
             ImportGlobal[] globals,
             ImportMemory memory,
-            ImportTable[] tables) {
+            ImportTable[] tables,
+            ImportTag[] tags) {
         this.functions = functions.clone();
         this.globals = globals.clone();
         this.memories = new ImportMemory[] {memory};
         this.tables = tables.clone();
+        this.tags = tags.clone();
     }
 
     public ImportValues(
             ImportFunction[] functions,
             ImportGlobal[] globals,
             ImportMemory[] memories,
-            ImportTable[] tables) {
+            ImportTable[] tables,
+            ImportTag[] tags) {
         this.functions = functions.clone();
         this.globals = globals.clone();
         this.memories = memories.clone();
         this.tables = tables.clone();
+        this.tags = tags.clone();
     }
 
     public ImportFunction[] functions() {
@@ -127,6 +147,18 @@ public class ImportValues {
         return tables[idx];
     }
 
+    public ImportTag[] tags() {
+        return tags;
+    }
+
+    public int tagCount() {
+        return tags.length;
+    }
+
+    public ImportTag tag(int idx) {
+        return tags[idx];
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -140,6 +172,7 @@ public class ImportValues {
         private List<ImportGlobal> globals;
         private List<ImportMemory> memories;
         private List<ImportTable> tables;
+        private List<ImportTag> tags;
 
         Builder() {}
 
@@ -195,6 +228,19 @@ public class ImportValues {
             return this;
         }
 
+        public Builder withTags(List<ImportTag> tags) {
+            this.tags = tags;
+            return this;
+        }
+
+        public Builder addTag(ImportTag... tag) {
+            if (this.tags == null) {
+                this.tags = new ArrayList<>();
+            }
+            Collections.addAll(this.tags, tag);
+            return this;
+        }
+
         public ImportValues build() {
             final ImportValues importValues =
                     new ImportValues(
@@ -209,7 +255,8 @@ public class ImportValues {
                                     : memories.toArray(new ImportMemory[0]),
                             tables == null
                                     ? new ImportTable[0]
-                                    : tables.toArray(new ImportTable[0]));
+                                    : tables.toArray(new ImportTable[0]),
+                            tags == null ? new ImportTag[0] : tags.toArray(new ImportTag[0]));
             return importValues;
         }
     }

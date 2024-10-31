@@ -5,6 +5,7 @@ import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.ImportGlobal;
 import com.dylibso.chicory.runtime.ImportMemory;
 import com.dylibso.chicory.runtime.ImportTable;
+import com.dylibso.chicory.runtime.ImportTag;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
@@ -73,6 +74,7 @@ public final class Spectest {
                             "table",
                             new TableInstance(
                                     new Table(ValueType.FuncRef, new TableLimits(10, 20))))
-                });
+                },
+                new ImportTag[] {});
     }
 }

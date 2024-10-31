@@ -15,6 +15,7 @@ import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.TableSection;
+import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,6 +31,7 @@ public final class Module {
     private final FunctionSection functionSection;
     private final TableSection tableSection;
     private final Optional<MemorySection> memorySection;
+    private final Optional<TagSection> tagSection;
     private final GlobalSection globalSection;
     private final ExportSection exportSection;
     private final Optional<StartSection> startSection;
@@ -45,6 +47,7 @@ public final class Module {
             FunctionSection functionSection,
             TableSection tableSection,
             Optional<MemorySection> memorySection,
+            Optional<TagSection> tagSection,
             GlobalSection globalSection,
             ExportSection exportSection,
             Optional<StartSection> startSection,
@@ -59,6 +62,7 @@ public final class Module {
         this.functionSection = requireNonNull(functionSection);
         this.tableSection = requireNonNull(tableSection);
         this.memorySection = memorySection;
+        this.tagSection = tagSection;
         this.globalSection = requireNonNull(globalSection);
         this.exportSection = requireNonNull(exportSection);
         this.startSection = startSection;
@@ -110,6 +114,10 @@ public final class Module {
         return globalSection;
     }
 
+    public Optional<TagSection> tagSection() {
+        return tagSection;
+    }
+
     public TableSection tableSection() {
         return tableSection;
     }
@@ -144,6 +152,7 @@ public final class Module {
         private FunctionSection functionSection = FunctionSection.builder().build();
         private TableSection tableSection = TableSection.builder().build();
         private Optional<MemorySection> memorySection = Optional.empty();
+        private Optional<TagSection> tagSection = Optional.empty();
         private GlobalSection globalSection = GlobalSection.builder().build();
         private ExportSection exportSection = ExportSection.builder().build();
         private Optional<StartSection> startSection = Optional.empty();
@@ -179,6 +188,11 @@ public final class Module {
 
         public Builder setMemorySection(MemorySection ms) {
             this.memorySection = Optional.ofNullable(ms);
+            return this;
+        }
+
+        public Builder setTagSection(TagSection ts) {
+            this.tagSection = Optional.ofNullable(ts);
             return this;
         }
 
@@ -242,6 +256,7 @@ public final class Module {
                             functionSection,
                             tableSection,
                             memorySection,
+                            tagSection,
                             globalSection,
                             exportSection,
                             startSection,

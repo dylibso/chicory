@@ -34,6 +34,8 @@ import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
+import com.dylibso.chicory.wasm.types.TagSection;
+import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
@@ -51,11 +53,13 @@ public class Instance {
     private final FunctionBody[] functions;
     private final Memory memory;
     private final DataSegment[] dataSegments;
+    private final TagType[] tags;
     private final Global[] globalInitializers;
     private final GlobalInstance[] globals;
     private final int importedGlobalsOffset;
     private final int importedFunctionsOffset;
     private final int importedTablesOffset;
+    private final int importedTagsOffset;
     private final FunctionType[] types;
     private final int[] functionTypes;
     private final ImportValues imports;
@@ -71,8 +75,10 @@ public class Instance {
             int importedGlobalsOffset,
             int importedFunctionsOffset,
             int importedTablesOffset,
+            int importedTagsOffset,
             Memory memory,
             DataSegment[] dataSegments,
+            TagType[] tags,
             FunctionBody[] functions,
             FunctionType[] types,
             int[] functionTypes,
@@ -90,8 +96,10 @@ public class Instance {
         this.importedGlobalsOffset = importedGlobalsOffset;
         this.importedFunctionsOffset = importedFunctionsOffset;
         this.importedTablesOffset = importedTablesOffset;
+        this.importedTagsOffset = importedTagsOffset;
         this.memory = memory;
         this.dataSegments = dataSegments;
+        this.tags = (tags == null) ? new TagType[0] : tags.clone();
         this.functions = functions.clone();
         this.types = types.clone();
         this.functionTypes = functionTypes.clone();
@@ -281,6 +289,13 @@ public class Instance {
             throw new InvalidException("unknown function " + idx);
         }
         return functionTypes[idx];
+    }
+
+    public TagType tag(int idx) {
+        if (idx < importedTagsOffset) {
+            return imports.tag(idx).tag();
+        }
+        return tags[idx - importedTagsOffset];
     }
 
     public ImportValues imports() {
@@ -504,6 +519,7 @@ public class Instance {
             int hostGlobalNum = 0;
             int hostMemNum = 0;
             int hostTableNum = 0;
+            int hostTagNum = 0;
             for (var imprt : imports) {
                 switch (imprt.importType()) {
                     case FUNCTION:
@@ -517,6 +533,9 @@ public class Instance {
                         break;
                     case TABLE:
                         hostTableNum++;
+                        break;
+                    case TAG:
+                        hostTagNum++;
                         break;
                 }
             }
@@ -534,6 +553,8 @@ public class Instance {
             var hostMemIdx = 0;
             var hostTables = new ImportTable[hostTableNum];
             var hostTableIdx = 0;
+            var hostTags = new ImportTag[hostTagNum];
+            var hostTagIdx = 0;
             int cnt;
             for (var impIdx = 0; impIdx < imports.length; impIdx++) {
                 var i = imports[impIdx];
@@ -596,6 +617,18 @@ public class Instance {
                         }
                         hostTableIdx++;
                         break;
+                    case TAG:
+                        cnt = importValues.tagCount();
+                        for (int j = 0; j < cnt; j++) {
+                            ImportTag t = importValues.tag(j);
+                            if (checkName.apply(t)) {
+                                hostTags[hostTagIdx] = t;
+                                found = true;
+                                break;
+                            }
+                        }
+                        hostTagIdx++;
+                        break;
                 }
                 if (!found) {
                     throw new UnlinkableException(
@@ -606,7 +639,7 @@ public class Instance {
                 }
             }
 
-            return new ImportValues(hostFuncs, hostGlobals, hostMems, hostTables);
+            return new ImportValues(hostFuncs, hostGlobals, hostMems, hostTables, hostTags);
         }
 
         private Map<String, Export> genExports(ExportSection export) {
@@ -704,6 +737,7 @@ public class Instance {
             var globalImportsOffset = 0;
             var functionImportsOffset = 0;
             var tablesImportsOffset = 0;
+            var tagsImportsOffset = 0;
             var memoryImportsOffset = 0;
             for (Import imp : imports) {
                 switch (imp.importType()) {
@@ -718,6 +752,9 @@ public class Instance {
                         break;
                     case MEMORY:
                         memoryImportsOffset++;
+                        break;
+                    case TAG:
+                        tagsImportsOffset++;
                         break;
                     default:
                         break;
@@ -762,6 +799,11 @@ public class Instance {
                             }
                             break;
                         }
+                    case TAG:
+                        {
+                            // TODO: validate Tags
+                            break;
+                        }
                 }
             }
 
@@ -775,8 +817,10 @@ public class Instance {
                     globalImportsOffset,
                     functionImportsOffset,
                     tablesImportsOffset,
+                    tagsImportsOffset,
                     memory,
                     dataSegments,
+                    module.tagSection().map(TagSection::types).orElse(null),
                     functions,
                     types,
                     functionTypes,

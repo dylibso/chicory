@@ -10,10 +10,13 @@ import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.ValueType;
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class ModuleTest {
@@ -292,7 +295,8 @@ public class ModuleTest {
                         new HostFunction[] {cbrtFunc, logFunc},
                         new ImportGlobal[0],
                         memory,
-                        new ImportTable[0]);
+                        new ImportTable[0],
+                        new ImportTag[0]);
         var instance =
                 Instance.builder(loadModule("compiled/mixed-imports.wat.wasm"))
                         .withImportValues(hostImports)
@@ -360,5 +364,12 @@ public class ModuleTest {
 
         // IIUC: 3 values returning from last CALL + 1 result
         assertTrue(finalStackSize.get() == 4L);
+    }
+
+    @Test
+    @Disabled
+    public void testJava() {
+        Instance.builder(Parser.parse(new File("hello.js.wasm")))
+                .build();
     }
 }

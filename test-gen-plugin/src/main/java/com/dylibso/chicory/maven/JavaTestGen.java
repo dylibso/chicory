@@ -186,6 +186,7 @@ public class JavaTestGen {
                 case ASSERT_RETURN:
                 case ASSERT_TRAP:
                 case ASSERT_EXHAUSTION:
+                case ASSERT_EXCEPTION:
                     {
                         method =
                                 createTestMethod(
@@ -287,6 +288,7 @@ public class JavaTestGen {
                 return excludedUnlinkableWasts.contains(name + ".wast");
             case ASSERT_EXHAUSTION:
             case ASSERT_TRAP:
+            case ASSERT_EXCEPTION:
                 return false;
             default:
                 throw new IllegalArgumentException(typ + "not implemented");
@@ -305,6 +307,7 @@ public class JavaTestGen {
                 return "UnlinkableException";
             case ASSERT_TRAP:
             case ASSERT_EXHAUSTION:
+            case ASSERT_EXCEPTION:
                 return "ChicoryException";
             default:
                 throw new IllegalArgumentException(typ + "not implemented");
@@ -372,7 +375,9 @@ public class JavaTestGen {
                         : "";
 
         var invocationMethod = ".apply(" + args + ")";
-        if (cmd.type() == CommandType.ASSERT_TRAP || cmd.type() == CommandType.ASSERT_EXHAUSTION) {
+        if (cmd.type() == CommandType.ASSERT_TRAP
+                || cmd.type() == CommandType.ASSERT_EXHAUSTION
+                || cmd.type() == CommandType.ASSERT_EXCEPTION) {
             var assertDecl =
                     new NameExpr(
                             "var exception ="
