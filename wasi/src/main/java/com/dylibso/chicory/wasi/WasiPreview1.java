@@ -41,6 +41,7 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.LinkOption;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.NotDirectoryException;
+import java.nio.file.NotLinkException;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -1158,10 +1159,45 @@ public final class WasiPreview1 implements Closeable {
     }
 
     @WasmExport
-    public int pathReadlink(int dirFd, @Buffer String rawPath, int buf, int bufLen, int bufUsed) {
+    public int pathReadlink(
+            Memory memory, int dirFd, @Buffer String rawPath, int buf, int bufLen, int bufUsedPtr) {
         logger.tracef(
-                "path_readlink: [%s, \"%s\", %s, %s, %s]", dirFd, rawPath, buf, bufLen, bufUsed);
-        throw new WasmRuntimeException("We don't yet support this WASI call: path_readlink");
+                "path_readlink: [%s, \"%s\", %s, %s, %s]", dirFd, rawPath, buf, bufLen, bufUsedPtr);
+
+        var descriptor = descriptors.get(dirFd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+
+        if (!(descriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path directory = ((Directory) descriptor).path();
+
+        Path path = resolvePath(directory, rawPath);
+        if (path == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        Path link;
+        try {
+            link = Files.readSymbolicLink(path);
+        } catch (UnsupportedOperationException e) {
+            return wasiResult(WasiErrno.ENOTSUP);
+        } catch (NotLinkException e) {
+            return wasiResult(WasiErrno.EINVAL);
+        } catch (NoSuchFileException e) {
+            return wasiResult(WasiErrno.ENOENT);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+
+        byte[] name = link.toString().getBytes(UTF_8);
+        int used = min(name.length, bufLen);
+        memory.write(buf, name, 0, used);
+        memory.writeI32(bufUsedPtr, used);
+
+        return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport
