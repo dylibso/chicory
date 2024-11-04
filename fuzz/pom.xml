@@ -45,7 +45,7 @@
     <!-- make sure that the executable is available -->
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>cli</artifactId>
+      <artifactId>cli-experimental</artifactId>
       <scope>runtime</scope>
     </dependency>
 

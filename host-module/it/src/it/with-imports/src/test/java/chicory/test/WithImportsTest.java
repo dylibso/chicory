@@ -2,8 +2,8 @@ package chicory.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.dylibso.chicory.hostmodule.annotations.HostModule;
-import com.dylibso.chicory.hostmodule.annotations.WasmExport;
+import com.dylibso.chicory.experimental.hostmodule.annotations.HostModule;
+import com.dylibso.chicory.experimental.hostmodule.annotations.WasmExport;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;

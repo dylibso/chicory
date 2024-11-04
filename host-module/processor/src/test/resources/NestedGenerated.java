@@ -8,7 +8,7 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 import javax.annotation.processing.Generated;
 
-@Generated("com.dylibso.chicory.hostmodule.processor.HostModuleProcessor")
+@Generated("com.dylibso.chicory.experimental.hostmodule.processor.HostModuleProcessor")
 public final class Nested_ModuleFactory {
 
     private Nested_ModuleFactory() {

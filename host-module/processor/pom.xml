@@ -8,15 +8,15 @@
     <version>999-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <artifactId>host-module-processor</artifactId>
+  <artifactId>host-module-processor-experimental</artifactId>
   <packaging>jar</packaging>
-  <name>Chicory - Host Module annotation processor</name>
+  <name>Chicory - Host Module Annotation Processor - Experimental</name>
   <description>Experimental annotation processor for host modules</description>
 
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>host-module-annotations</artifactId>
+      <artifactId>host-module-annotations-experimental</artifactId>
     </dependency>
     <dependency>
       <groupId>com.github.javaparser</groupId>

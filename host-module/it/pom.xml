@@ -16,7 +16,7 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>host-module-processor</artifactId>
+      <artifactId>host-module-processor-experimental</artifactId>
     </dependency>
   </dependencies>
 
@@ -28,7 +28,7 @@
         <artifactId>maven-dependency-plugin</artifactId>
         <configuration>
           <ignoredUnusedDeclaredDependencies combine.children="append">
-            <dependency>com.dylibso.chicory:host-module-processor</dependency>
+            <dependency>com.dylibso.chicory:host-module-processor-experimental</dependency>
           </ignoredUnusedDeclaredDependencies>
         </configuration>
       </plugin>

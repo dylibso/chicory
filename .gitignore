@@ -14,4 +14,4 @@ scripts/jmh-tmp
 /main/
 
 /*.wasm
-readmes/*/current
+.approval_tests_temp/

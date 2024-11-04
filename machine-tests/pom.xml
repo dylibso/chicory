@@ -23,7 +23,7 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>aot</artifactId>
+      <artifactId>aot-experimental</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -57,7 +57,7 @@
     <plugins>
       <plugin>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>aot-maven-plugin</artifactId>
+        <artifactId>aot-maven-plugin-experimental</artifactId>
         <executions>
           <execution>
             <id>compile-quickjs</id>

@@ -14,29 +14,30 @@
 
   <dependencyManagement>
     <dependencies>
+      <!-- Experimental -->
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>aot</artifactId>
+        <artifactId>aot-experimental</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>aot-maven-plugin</artifactId>
+        <artifactId>aot-maven-plugin-experimental</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>cli</artifactId>
+        <artifactId>cli-experimental</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>host-module-annotations</artifactId>
+        <artifactId>host-module-annotations-experimental</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>host-module-processor</artifactId>
+        <artifactId>host-module-processor-experimental</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -59,6 +60,7 @@
         <artifactId>wasi</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <!-- Stable -->
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>wasm</artifactId>

@@ -8,15 +8,15 @@
     <version>999-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>aot-maven-plugin</artifactId>
+  <artifactId>aot-maven-plugin-experimental</artifactId>
   <packaging>maven-plugin</packaging>
-  <name>Chicory - AOT Maven Plugin</name>
+  <name>Chicory - AOT Maven Plugin - Experimental</name>
   <description>A Maven Plugin to generate a package for running WASM</description>
 
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>aot</artifactId>
+      <artifactId>aot-experimental</artifactId>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
