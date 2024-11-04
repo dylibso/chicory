@@ -5,7 +5,7 @@ import static java.nio.file.Files.copy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.dylibso.chicory.aot.AotMachine;
+import com.dylibso.chicory.experimental.aot.AotMachine;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;

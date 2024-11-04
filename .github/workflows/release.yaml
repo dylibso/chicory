@@ -62,7 +62,9 @@ jobs:
 
       - name: Release to Maven Central
         run: |
-          mvn --batch-mode clean deploy -Prelease -DskipTests=true -X
+          # -Dquickly is needed to locally publish wasm-corpus
+          mvn --batch-mode -Dquickly
+          mvn --batch-mode clean deploy -Drelease -DskipTests=true -X
         env:
           MAVEN_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           MAVEN_CENTRAL_TOKEN: ${{ secrets.SONATYPE_PASSWORD }}

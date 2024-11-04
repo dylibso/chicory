@@ -17,7 +17,7 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>aot</artifactId>
+      <artifactId>aot-experimental</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

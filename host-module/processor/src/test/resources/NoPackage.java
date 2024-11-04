@@ -1,5 +1,5 @@
-import com.dylibso.chicory.hostmodule.annotations.HostModule;
-import com.dylibso.chicory.hostmodule.annotations.WasmExport;
+import com.dylibso.chicory.experimental.hostmodule.annotations.HostModule;
+import com.dylibso.chicory.experimental.hostmodule.annotations.WasmExport;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.ChicoryException;

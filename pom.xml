@@ -33,30 +33,6 @@
     </developer>
   </developers>
 
-  <modules>
-    <module>aot</module>
-    <module>aot-maven-plugin</module>
-    <module>aot-tests</module>
-    <module>bom</module>
-    <module>cli</module>
-    <module>docs-lib</module>
-    <module>fuzz</module>
-    <module>host-module/annotations</module>
-    <module>host-module/it</module>
-    <module>host-module/processor</module>
-    <module>jmh</module>
-    <module>log</module>
-    <module>machine-tests</module>
-    <module>runtime</module>
-    <module>runtime-tests</module>
-    <module>test-gen-plugin</module>
-    <module>wabt</module>
-    <module>wasi</module>
-    <module>wasi-test-gen-plugin</module>
-    <module>wasm</module>
-    <module>wasm-corpus</module>
-  </modules>
-
   <scm>
     <connection>scm:git:git://github.com/dylibso/chicory.git</connection>
     <developerConnection>scm:git:ssh://github.com:dylibso/chicory.git</developerConnection>
@@ -143,22 +119,22 @@
       <!-- Chicory project modules -->
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>aot</artifactId>
+        <artifactId>aot-experimental</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>cli</artifactId>
+        <artifactId>cli-experimental</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>host-module-annotations</artifactId>
+        <artifactId>host-module-annotations-experimental</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>host-module-processor</artifactId>
+        <artifactId>host-module-processor-experimental</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -811,7 +787,58 @@
     </profile>
 
     <profile>
+      <id>default-all-modules</id>
+      <activation>
+        <property>
+          <name>!release</name>
+        </property>
+      </activation>
+      <modules>
+        <module>aot</module>
+        <module>aot-maven-plugin</module>
+        <module>aot-tests</module>
+        <module>bom</module>
+        <module>cli</module>
+        <module>docs-lib</module>
+        <module>fuzz</module>
+        <module>host-module/annotations</module>
+        <module>host-module/it</module>
+        <module>host-module/processor</module>
+        <module>jmh</module>
+        <module>log</module>
+        <module>machine-tests</module>
+        <module>runtime</module>
+        <module>runtime-tests</module>
+        <module>test-gen-plugin</module>
+        <module>wabt</module>
+        <module>wasi</module>
+        <module>wasi-test-gen-plugin</module>
+        <module>wasi-tests</module>
+        <module>wasm</module>
+        <module>wasm-corpus</module>
+      </modules>
+    </profile>
+
+    <profile>
       <id>release</id>
+      <activation>
+        <property>
+          <name>release</name>
+        </property>
+      </activation>
+      <modules>
+        <module>aot</module>
+        <module>aot-maven-plugin</module>
+        <module>bom</module>
+        <module>cli</module>
+        <module>host-module/annotations</module>
+        <module>host-module/processor</module>
+        <module>log</module>
+        <module>runtime</module>
+        <module>wabt</module>
+        <module>wasi</module>
+        <module>wasm</module>
+      </modules>
       <distributionManagement>
         <snapshotRepository>
           <id>ossrh</id>

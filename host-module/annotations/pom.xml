@@ -8,9 +8,9 @@
     <version>999-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <artifactId>host-module-annotations</artifactId>
+  <artifactId>host-module-annotations-experimental</artifactId>
   <packaging>jar</packaging>
-  <name>Chicory - Host Module annotations</name>
+  <name>Chicory - Host Module Annotations - Experimental</name>
   <description>Experimental annotations for host modules</description>
 
 </project>

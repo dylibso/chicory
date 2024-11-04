@@ -44,8 +44,8 @@ curl https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/main
 ```java
 //DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
 //DEPS com.dylibso.chicory:runtime:999-SNAPSHOT
-//DEPS com.dylibso.chicory:host-module-annotations:999-SNAPSHOT
-//DEPS com.dylibso.chicory:host-module-processor:999-SNAPSHOT
+//DEPS com.dylibso.chicory:host-module-annotations-experimental:999-SNAPSHOT
+//DEPS com.dylibso.chicory:host-module-processor-experimental:999-SNAPSHOT
 ```
 -->
 <!--

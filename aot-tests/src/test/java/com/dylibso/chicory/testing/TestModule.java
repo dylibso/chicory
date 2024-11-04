@@ -1,6 +1,6 @@
 package com.dylibso.chicory.testing;
 
-import com.dylibso.chicory.aot.AotMachine;
+import com.dylibso.chicory.experimental.aot.AotMachine;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;

@@ -8,10 +8,10 @@
     <version>999-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>aot</artifactId>
+  <artifactId>aot-experimental</artifactId>
   <packaging>jar</packaging>
 
-  <name>Chicory - AOT</name>
+  <name>Chicory - AOT - Experimental</name>
   <description>Experimental AOT for Chicory</description>
 
   <dependencies>

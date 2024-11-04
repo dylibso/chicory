@@ -16,7 +16,7 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermissions;
 
-final class Files {
+public final class Files {
     private Files() {}
 
     public static void copyDirectory(Path source, Path target) throws IOException {
