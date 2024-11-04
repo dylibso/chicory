@@ -17,14 +17,14 @@ to your dependency management system.
 <dependency>
   <groupId>com.dylibso.chicory</groupId>
   <artifactId>runtime</artifactId>
-  <version>1.0.0-M1</version>
+  <version>DOCS_PLACEHOLDER_VERSION</version>
 </dependency>
 ```
 
 #### Gradle
 
 ```groovy
-implementation 'com.dylibso.chicory:runtime:1.0.0-M1'
+implementation 'com.dylibso.chicory:runtime:DOCS_PLACEHOLDER_VERSION'
 ```
 
 ### Install the CLI (experimental)
