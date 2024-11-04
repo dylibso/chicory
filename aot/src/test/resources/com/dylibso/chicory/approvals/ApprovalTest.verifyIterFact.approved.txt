@@ -1,6 +1,7 @@
 public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylibso/chicory/runtime/Machine {
 
   NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$AotMethods
+  NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$MachineCall
 
   private final Lcom/dylibso/chicory/runtime/Instance; instance
 
@@ -19,39 +20,13 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     GETFIELD com/dylibso/chicory/$gen/CompiledMachine.instance : Lcom/dylibso/chicory/runtime/Instance;
     DUP
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.memory ()Lcom/dylibso/chicory/runtime/Memory;
+    ILOAD 1
     ALOAD 2
-    ILOAD 1
-    TABLESWITCH
-      0: L2
-      default: L3
-   L2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.call_0 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;I[J)[J
     ARETURN
-   L3
-    ILOAD 1
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwUnknownFunction (I)Ljava/lang/RuntimeException;
-    ATHROW
    L1
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwCallStackExhausted (Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
     ATHROW
-
-  public static call_0(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
-    ALOAD 2
-    ICONST_0
-    LALOAD
-    L2I
-    ALOAD 1
-    ALOAD 0
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    I2L
-    LSTORE 3
-    ICONST_1
-    NEWARRAY T_LONG
-    DUP
-    ICONST_0
-    LLOAD 3
-    LASTORE
-    ARETURN
 
   public static func_0(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     ICONST_0
@@ -128,4 +103,48 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     LALOAD
     L2I
     IRETURN
+}
+
+final class com/dylibso/chicory/$gen/CompiledMachine$MachineCall {
+
+  NESTHOST com/dylibso/chicory/$gen/CompiledMachine
+
+  public <init>()V
+    ALOAD 0
+    INVOKESPECIAL java/lang/Object.<init> ()V
+    RETURN
+
+  public static call(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;I[J)[J
+    ALOAD 0
+    ALOAD 1
+    ALOAD 3
+    ILOAD 2
+    TABLESWITCH
+      0: L0
+      default: L1
+   L0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call_0 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ARETURN
+   L1
+    ILOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwUnknownFunction (I)Ljava/lang/RuntimeException;
+    ATHROW
+
+  public static call_0(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ALOAD 2
+    ICONST_0
+    LALOAD
+    L2I
+    ALOAD 1
+    ALOAD 0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    I2L
+    LSTORE 3
+    ICONST_1
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    LLOAD 3
+    LASTORE
+    ARETURN
 }
