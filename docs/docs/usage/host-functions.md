@@ -201,7 +201,7 @@ system you are using. This is how to do it with Maven:
       <path>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>function-processor</artifactId>
-        <version>DOCS_PLACEHOLDER_VERSION</version>
+        <version>1.0.0-M1</version>
       </path>
     </annotationProcessorPaths>
   </configuration>
