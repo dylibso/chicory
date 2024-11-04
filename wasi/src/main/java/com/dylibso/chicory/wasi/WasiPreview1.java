@@ -728,17 +728,14 @@ public final class WasiPreview1 implements Closeable {
             return wasiResult(WasiErrno.EBADF);
         }
 
-        Path directoryPath;
-        if (descriptor instanceof Directory) {
-            directoryPath = ((Directory) descriptor).path();
-        } else {
+        if (!(descriptor instanceof Directory)) {
             return wasiResult(WasiErrno.ENOTDIR);
         }
+        Path directory = ((Directory) descriptor).path();
 
         int used = 0;
-        try (Stream<Path> stream = Files.list(directoryPath)) {
-            Stream<Path> special =
-                    Stream.of(directoryPath.resolve("."), directoryPath.resolve(".."));
+        try (Stream<Path> stream = Files.list(directory)) {
+            Stream<Path> special = Stream.of(directory.resolve("."), directory.resolve(".."));
             Iterator<Path> iterator = Stream.concat(special, stream).skip(cookie).iterator();
             while (iterator.hasNext()) {
                 Path entryPath = iterator.next();
