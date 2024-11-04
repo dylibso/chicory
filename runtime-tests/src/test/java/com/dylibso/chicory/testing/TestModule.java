@@ -5,13 +5,13 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasm.MalformedException;
-import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
 import java.io.File;
 
 public class TestModule {
 
-    private Module module;
+    private WasmModule module;
 
     private static final String HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT =
             "Matching keywords to get the WebAssembly testsuite to pass: "
@@ -52,11 +52,11 @@ public class TestModule {
         return of(Parser.parse(file));
     }
 
-    public static TestModule of(Module module) {
+    public static TestModule of(WasmModule module) {
         return new TestModule(module);
     }
 
-    public TestModule(Module module) {
+    public TestModule(WasmModule module) {
         this.module = module;
     }
 

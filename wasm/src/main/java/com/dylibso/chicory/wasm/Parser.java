@@ -106,7 +106,7 @@ public final class Parser {
         }
     }
 
-    private static void onSection(Module.Builder module, Section s) {
+    private static void onSection(WasmModule.Builder module, Section s) {
         switch (s.sectionId()) {
             case SectionId.CUSTOM:
                 var customSection = (CustomSection) s;
@@ -154,19 +154,19 @@ public final class Parser {
         }
     }
 
-    public static Module parse(InputStream input) {
+    public static WasmModule parse(InputStream input) {
         return new Parser().parse(() -> input);
     }
 
-    public static Module parse(byte[] buffer) {
+    public static WasmModule parse(byte[] buffer) {
         return new Parser().parse(() -> new ByteArrayInputStream(buffer));
     }
 
-    public static Module parse(File file) {
+    public static WasmModule parse(File file) {
         return parse(file.toPath());
     }
 
-    public static Module parse(Path path) {
+    public static WasmModule parse(Path path) {
         return new Parser()
                 .parse(
                         () -> {
@@ -179,8 +179,8 @@ public final class Parser {
                         });
     }
 
-    public Module parse(Supplier<InputStream> inputStreamSupplier) {
-        Module.Builder moduleBuilder = Module.builder();
+    public WasmModule parse(Supplier<InputStream> inputStreamSupplier) {
+        WasmModule.Builder moduleBuilder = WasmModule.builder();
         try (InputStream is = inputStreamSupplier.get()) {
             parse(is, (s) -> onSection(moduleBuilder, s));
         } catch (IOException e) {

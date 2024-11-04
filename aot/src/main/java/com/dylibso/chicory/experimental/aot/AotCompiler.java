@@ -46,7 +46,7 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.ChicoryException;
-import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionSection;
@@ -83,13 +83,13 @@ public final class AotCompiler {
 
     private final AotClassLoader classLoader = new AotClassLoader();
     private final String className;
-    private final Module module;
+    private final WasmModule module;
     private final AotAnalyzer analyzer;
     private final int functionImports;
     private final List<FunctionType> functionTypes;
     private final Map<String, byte[]> extraClasses;
 
-    private AotCompiler(Module module, String className) {
+    private AotCompiler(WasmModule module, String className) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.analyzer = new AotAnalyzer(module);
@@ -98,11 +98,11 @@ public final class AotCompiler {
         this.extraClasses = compileExtraClasses();
     }
 
-    public static CompilerResult compileModule(Module module) {
+    public static CompilerResult compileModule(WasmModule module) {
         return compileModule(module, DEFAULT_CLASS_NAME);
     }
 
-    public static CompilerResult compileModule(Module module, String className) {
+    public static CompilerResult compileModule(WasmModule module, String className) {
         var compiler = new AotCompiler(module, className);
 
         var bytes = compiler.compileClass(module.functionSection());

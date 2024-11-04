@@ -8,8 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.ChicoryException;
-import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +35,7 @@ public class InterruptionTest {
         assertInterruption(() -> function.apply(100), functionIdx(module, "run"));
     }
 
-    private static int functionIdx(Module module, String name) {
+    private static int functionIdx(WasmModule module, String name) {
         for (int i = 0; i < module.exportSection().exportCount(); i++) {
             var export = module.exportSection().getExport(i);
             if (export.name().equals(name)) {

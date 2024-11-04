@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public final class Module {
+public final class WasmModule {
     private final Map<String, CustomSection> customSections;
 
     private final TypeSection typeSection;
@@ -39,7 +39,7 @@ public final class Module {
     private final Optional<DataCountSection> dataCountSection;
     private final List<Integer> ignoredSections;
 
-    private Module(
+    private WasmModule(
             TypeSection typeSection,
             ImportSection importSection,
             FunctionSection functionSection,
@@ -234,9 +234,9 @@ public final class Module {
             return this;
         }
 
-        public Module build() {
+        public WasmModule build() {
             var module =
-                    new Module(
+                    new WasmModule(
                             typeSection,
                             importSection,
                             functionSection,

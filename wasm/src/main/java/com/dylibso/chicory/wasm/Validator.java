@@ -78,14 +78,14 @@ final class Validator {
 
     private final List<InvalidException> errors = new ArrayList<>();
 
-    private final Module module;
+    private final WasmModule module;
     private final List<Global> globalImports;
     private final List<Integer> functionImports;
     private final List<ValueType> tableImports;
     private final int memoryImports;
     private final Set<Integer> declaredFunctions;
 
-    Validator(Module module) {
+    Validator(WasmModule module) {
         this.module = requireNonNull(module);
 
         this.globalImports =

@@ -8,8 +8,8 @@ import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
-import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayInputStream;
@@ -27,7 +27,7 @@ import java.util.List;
 
 public final class Wat2Wasm {
     private static final Logger logger = new SystemLogger();
-    private static final Module MODULE =
+    private static final WasmModule MODULE =
             Parser.parse(Wat2Wasm.class.getResourceAsStream("/wat2wasm"));
 
     private Wat2Wasm() {}
