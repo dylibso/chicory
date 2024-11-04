@@ -131,7 +131,6 @@ public class TestGenMojo extends AbstractMojo {
         var testGen =
                 new JavaTestGen(
                         project.getBasedir(),
-                        sourceDestinationFolder,
                         excludedTests,
                         excludedMalformedWasts,
                         excludedInvalidWasts,
@@ -244,7 +243,10 @@ public class TestGenMojo extends AbstractMojo {
 
             var name = specFile.toPath().getParent().toFile().getName();
             var cu = testGen.generate(name, readWast(specFile), wasmFilesFolder);
-            dest.add(cu);
+            dest.add(
+                    cu.getPackageDeclaration().orElseThrow().getName().toString(),
+                    cu.getType(0).getNameAsString() + ".java",
+                    cu);
         }
 
         private Wast readWast(File file) {
