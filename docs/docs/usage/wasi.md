@@ -163,7 +163,7 @@ For the most up-to-date info, and to see what specific functions we support, see
 | path_filestat_set_times | ✅         |                                                                           |
 | path_link               | ❌         |                                                                           |
 | path_open               | ✅         |                                                                           |
-| path_readlink           | ❌         |                                                                           |
+| path_readlink           | ✅         |                                                                           |
 | path_remove_directory   | ✅         |                                                                           |
 | path_rename             | ✅         |                                                                           |
 | path_symlink            | ❌         |                                                                           |

@@ -2,6 +2,8 @@ package com.dylibso.chicory.wasi;
 
 import static com.dylibso.chicory.wasi.Files.copyDirectory;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.Files.createDirectory;
+import static java.nio.file.Files.createSymbolicLink;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -238,18 +240,13 @@ public class WasiPreview1Test {
 
     @Test
     public void wasiPositionedWriteWithAppendShouldFail() throws IOException {
-        try (FileSystem fs =
-                Jimfs.newFileSystem(
-                        Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
-
+        try (var fs = newJimfs()) {
             var dir = "fs-tests.dir";
             Path source = new File("../wasi-testsuite/tests/c/testsuite").toPath().resolve(dir);
             Path target = fs.getPath(dir);
             copyDirectory(source, target);
 
-            var options = WasiOptions.builder().withDirectory(target.toString(), target).build();
-
-            try (var wasi = WasiPreview1.builder().withOptions(options).build()) {
+            try (var wasi = wasiWithDirectory(target.toString(), target)) {
                 var memory = new Memory(new MemoryLimits(1));
 
                 int fdPtr = 0;
@@ -273,5 +270,37 @@ public class WasiPreview1Test {
                 assertEquals(WasiErrno.ENOTSUP.value(), result);
             }
         }
+    }
+
+    @Test
+    public void wasiReadLink() throws IOException {
+        try (var fs = newJimfs()) {
+            Path root = fs.getPath("test");
+            createDirectory(root);
+            createSymbolicLink(root.resolve("abc"), fs.getPath("xyz"));
+            try (var wasi = wasiWithDirectory(root.toString(), root)) {
+                var memory = new Memory(new MemoryLimits(1));
+                int bufPtr = 0;
+                int bufUsedPtr = 16;
+
+                int result = wasi.pathReadlink(memory, 3, "abc", bufPtr, 16, bufUsedPtr);
+                assertEquals(WasiErrno.ESUCCESS.value(), result);
+
+                int length = memory.readInt(bufUsedPtr);
+                assertEquals(3, length);
+                String name = memory.readString(bufPtr, length);
+                assertEquals("xyz", name);
+            }
+        }
+    }
+
+    private static FileSystem newJimfs() {
+        return Jimfs.newFileSystem(
+                Configuration.unix().toBuilder().setAttributeViews("unix").build());
+    }
+
+    private static WasiPreview1 wasiWithDirectory(String guest, Path host) {
+        var options = WasiOptions.builder().withDirectory(guest, host).build();
+        return WasiPreview1.builder().withOptions(options).build();
     }
 }
