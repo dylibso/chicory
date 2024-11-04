@@ -3,11 +3,10 @@
 use strict;
 use warnings;
 use File::Find;
-use English;
 
 my $version = $ARGV[0];
-die "usage: $PROGRAM_NAME 1.0rc1\n" if !$version;
-die "error: $PROGRAM_NAME must be run in chicory project root\n" if !-d 'docs/docs';
+die "usage: update-docs-version 1.0rc1\n" if !$version;
+die "error: update-docs-version must be run in chicory project root\n" if !-d 'docs/docs';
 
 find(sub {
     my $file = $_;
