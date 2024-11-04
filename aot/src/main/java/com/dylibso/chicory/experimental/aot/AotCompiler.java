@@ -49,7 +49,6 @@ import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
-import com.dylibso.chicory.wasm.types.FunctionSection;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.PrintWriter;
@@ -81,6 +80,9 @@ public final class AotCompiler {
     private static final MethodType CALL_METHOD_TYPE =
             methodType(long[].class, Instance.class, Memory.class, long[].class);
 
+    private static final MethodType MACHINE_CALL_METHOD_TYPE =
+            methodType(long[].class, Instance.class, Memory.class, int.class, long[].class);
+
     private final AotClassLoader classLoader = new AotClassLoader();
     private final String className;
     private final WasmModule module;
@@ -105,7 +107,7 @@ public final class AotCompiler {
     public static CompilerResult compileModule(WasmModule module, String className) {
         var compiler = new AotCompiler(module, className);
 
-        var bytes = compiler.compileClass(module.functionSection());
+        var bytes = compiler.compileClass();
         var factory = compiler.createMachineFactory(bytes);
 
         Map<String, byte[]> classBytes = new LinkedHashMap<>();
@@ -157,10 +159,13 @@ public final class AotCompiler {
     private Map<String, byte[]> compileExtraClasses() {
         Map<String, byte[]> classes = new LinkedHashMap<>();
         loadExtraClass(classes, createAotMethodsClass(className));
+        if (!functionTypes.isEmpty()) {
+            loadExtraClass(classes, compileMachineCallClass());
+        }
         return classes;
     }
 
-    private byte[] compileClass(FunctionSection functions) {
+    private byte[] compileClass() {
         var internalClassName = internalClassName(className);
 
         ClassWriter binaryWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
@@ -187,7 +192,13 @@ public final class AotCompiler {
                 null,
                 null);
 
-        emitConstructor(classWriter, internalClassName);
+        // constructor
+        emitFunction(
+                classWriter,
+                "<init>",
+                methodType(void.class, Instance.class),
+                false,
+                asm -> compileConstructor(asm, internalClassName));
 
         // Machine.call() implementation
         emitFunction(
@@ -196,18 +207,6 @@ public final class AotCompiler {
                 methodType(long[].class, int.class, long[].class),
                 false,
                 asm -> compileMachineCall(internalClassName, asm));
-
-        // call_xxx() bridges for boxed to native
-        for (int i = 0; i < functions.functionCount(); i++) {
-            var funcId = functionImports + i;
-            var type = functionTypes.get(funcId);
-            emitFunction(
-                    classWriter,
-                    callMethodName(funcId),
-                    CALL_METHOD_TYPE,
-                    true,
-                    asm -> compileCallFunction(internalClassName, funcId, type, asm));
-        }
 
         // func_xxx() bridges for native to host functions
         for (int i = 0; i < functionImports; i++) {
@@ -222,7 +221,7 @@ public final class AotCompiler {
         }
 
         // func_xxx() native function implementations
-        for (int i = 0; i < functions.functionCount(); i++) {
+        for (int i = 0; i < module.functionSection().functionCount(); i++) {
             var funcId = functionImports + i;
             var type = functionTypes.get(funcId);
             var body = module.codeSection().getFunctionBody(i);
@@ -303,34 +302,26 @@ public final class AotCompiler {
         methodWriter.visitEnd();
     }
 
-    private static void emitConstructor(ClassVisitor writer, String internalClassName) {
-        var cons =
-                writer.visitMethod(
-                        Opcodes.ACC_PUBLIC,
-                        "<init>",
-                        methodType(void.class, Instance.class).toMethodDescriptorString(),
-                        null,
-                        null);
-        cons.visitCode();
-
-        // super();
-        cons.visitVarInsn(Opcodes.ALOAD, 0);
-        cons.visitMethodInsn(
+    private static void emitCallSuper(MethodVisitor asm) {
+        asm.visitVarInsn(Opcodes.ALOAD, 0);
+        asm.visitMethodInsn(
                 Opcodes.INVOKESPECIAL,
                 getInternalName(Object.class),
                 "<init>",
                 getMethodDescriptor(VOID_TYPE),
                 false);
+    }
+
+    private static void compileConstructor(MethodVisitor asm, String internalClassName) {
+        emitCallSuper(asm);
 
         // this.instance = instance;
-        cons.visitVarInsn(Opcodes.ALOAD, 0);
-        cons.visitVarInsn(Opcodes.ALOAD, 1);
-        cons.visitFieldInsn(
+        asm.visitVarInsn(Opcodes.ALOAD, 0);
+        asm.visitVarInsn(Opcodes.ALOAD, 1);
+        asm.visitFieldInsn(
                 Opcodes.PUTFIELD, internalClassName, "instance", getDescriptor(Instance.class));
 
-        cons.visitInsn(Opcodes.RETURN);
-        cons.visitMaxs(0, 0);
-        cons.visitEnd();
+        asm.visitInsn(Opcodes.RETURN);
     }
 
     private void compileMachineCall(String internalClassName, MethodVisitor asm) {
@@ -354,7 +345,77 @@ public final class AotCompiler {
                 Opcodes.GETFIELD, internalClassName, "instance", getDescriptor(Instance.class));
         asm.visitInsn(Opcodes.DUP);
         emitInvokeVirtual(asm, INSTANCE_MEMORY);
+        asm.visitVarInsn(Opcodes.ILOAD, 1);
         asm.visitVarInsn(Opcodes.ALOAD, 2);
+
+        // return $MachineCall.call(instance, memory, funcId, args);
+        asm.visitMethodInsn(
+                Opcodes.INVOKESTATIC,
+                internalClassName + "$MachineCall",
+                "call",
+                MACHINE_CALL_METHOD_TYPE.toMethodDescriptorString(),
+                false);
+        asm.visitInsn(Opcodes.ARETURN);
+
+        // catch StackOverflow
+        asm.visitLabel(end);
+        emitInvokeStatic(asm, THROW_CALL_STACK_EXHAUSTED);
+        asm.visitInsn(Opcodes.ATHROW);
+    }
+
+    private byte[] compileMachineCallClass() {
+        ClassWriter binaryWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        ClassVisitor classWriter = aotMethodsRemapper(binaryWriter, className);
+
+        classWriter.visit(
+                Opcodes.V11,
+                Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
+                internalClassName(className + "$MachineCall"),
+                null,
+                getInternalName(Object.class),
+                null);
+
+        classWriter.visitNestHost(internalClassName(className));
+
+        // constructor
+        emitFunction(
+                classWriter,
+                "<init>",
+                methodType(void.class),
+                false,
+                asm -> {
+                    emitCallSuper(asm);
+                    asm.visitInsn(Opcodes.RETURN);
+                });
+
+        // static implementation for Machine.call()
+        emitFunction(
+                classWriter,
+                "call",
+                MACHINE_CALL_METHOD_TYPE,
+                true,
+                this::compileMachineCallInvoke);
+
+        // call_xxx() bridges for boxed to native
+        for (int i = 0; i < module.functionSection().functionCount(); i++) {
+            var funcId = functionImports + i;
+            var type = functionTypes.get(funcId);
+            emitFunction(
+                    classWriter,
+                    callMethodName(funcId),
+                    CALL_METHOD_TYPE,
+                    true,
+                    asm -> compileCallFunction(funcId, type, asm));
+        }
+
+        return binaryWriter.toByteArray();
+    }
+
+    private void compileMachineCallInvoke(MethodVisitor asm) {
+        // load arguments
+        asm.visitVarInsn(Opcodes.ALOAD, 0);
+        asm.visitVarInsn(Opcodes.ALOAD, 1);
+        asm.visitVarInsn(Opcodes.ALOAD, 3);
 
         // switch (funcId)
         Label defaultLabel = new Label();
@@ -365,7 +426,7 @@ public final class AotCompiler {
             labels[i] = (i < functionImports) ? hostLabel : new Label();
         }
 
-        asm.visitVarInsn(Opcodes.ILOAD, 1);
+        asm.visitVarInsn(Opcodes.ILOAD, 2);
         asm.visitTableSwitchInsn(0, labels.length - 1, defaultLabel, labels);
 
         // return call_xxx(instance, memory, args);
@@ -373,7 +434,7 @@ public final class AotCompiler {
             asm.visitLabel(labels[i]);
             asm.visitMethodInsn(
                     Opcodes.INVOKESTATIC,
-                    internalClassName,
+                    internalClassName(className + "$MachineCall"),
                     callMethodName(i),
                     CALL_METHOD_TYPE.toMethodDescriptorString(),
                     false);
@@ -385,26 +446,20 @@ public final class AotCompiler {
             asm.visitLabel(hostLabel);
             asm.visitInsn(Opcodes.POP);
             asm.visitInsn(Opcodes.POP);
-            asm.visitVarInsn(Opcodes.ILOAD, 1);
-            asm.visitVarInsn(Opcodes.ALOAD, 2);
+            asm.visitVarInsn(Opcodes.ILOAD, 2);
+            asm.visitVarInsn(Opcodes.ALOAD, 3);
             emitInvokeStatic(asm, CALL_HOST_FUNCTION);
             asm.visitInsn(Opcodes.ARETURN);
         }
 
         // throw new InvalidException("unknown function " + funcId);
         asm.visitLabel(defaultLabel);
-        asm.visitVarInsn(Opcodes.ILOAD, 1);
+        asm.visitVarInsn(Opcodes.ILOAD, 2);
         emitInvokeStatic(asm, THROW_UNKNOWN_FUNCTION);
-        asm.visitInsn(Opcodes.ATHROW);
-
-        // catch StackOverflow
-        asm.visitLabel(end);
-        emitInvokeStatic(asm, THROW_CALL_STACK_EXHAUSTED);
         asm.visitInsn(Opcodes.ATHROW);
     }
 
-    private static void compileCallFunction(
-            String internalClassName, int funcId, FunctionType type, MethodVisitor asm) {
+    private void compileCallFunction(int funcId, FunctionType type, MethodVisitor asm) {
         // unbox the arguments from long[]
         for (int i = 0; i < type.params().size(); i++) {
             var param = type.params().get(i);
@@ -417,7 +472,7 @@ public final class AotCompiler {
         asm.visitVarInsn(Opcodes.ALOAD, 1);
         asm.visitVarInsn(Opcodes.ALOAD, 0);
 
-        emitInvokeFunction(asm, internalClassName, funcId, type);
+        emitInvokeFunction(asm, internalClassName(className), funcId, type);
 
         // box the result into long[]
         Class<?> returnType = jvmReturnType(type);

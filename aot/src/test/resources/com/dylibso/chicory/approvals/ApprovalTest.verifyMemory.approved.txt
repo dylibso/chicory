@@ -1,6 +1,7 @@
 public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylibso/chicory/runtime/Machine {
 
   NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$AotMethods
+  NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$MachineCall
 
   private final Lcom/dylibso/chicory/runtime/Instance; instance
 
@@ -19,59 +20,13 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     GETFIELD com/dylibso/chicory/$gen/CompiledMachine.instance : Lcom/dylibso/chicory/runtime/Instance;
     DUP
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.memory ()Lcom/dylibso/chicory/runtime/Memory;
+    ILOAD 1
     ALOAD 2
-    ILOAD 1
-    TABLESWITCH
-      0: L2
-      1: L3
-      default: L4
-   L2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.call_0 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;I[J)[J
     ARETURN
-   L3
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.call_1 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
-    ARETURN
-   L4
-    ILOAD 1
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwUnknownFunction (I)Ljava/lang/RuntimeException;
-    ATHROW
    L1
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwCallStackExhausted (Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
     ATHROW
-
-  public static call_0(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
-    ALOAD 2
-    ICONST_0
-    LALOAD
-    L2I
-    ALOAD 1
-    ALOAD 0
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    I2L
-    LSTORE 3
-    ICONST_1
-    NEWARRAY T_LONG
-    DUP
-    ICONST_0
-    LLOAD 3
-    LASTORE
-    ARETURN
-
-  public static call_1(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
-    ALOAD 2
-    ICONST_0
-    LALOAD
-    ALOAD 1
-    ALOAD 0
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_1 (JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)J
-    LSTORE 3
-    ICONST_1
-    NEWARRAY T_LONG
-    DUP
-    ICONST_0
-    LLOAD 3
-    LASTORE
-    ARETURN
 
   public static func_0(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     ICONST_0
@@ -198,4 +153,68 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ICONST_0
     LALOAD
     LRETURN
+}
+
+final class com/dylibso/chicory/$gen/CompiledMachine$MachineCall {
+
+  NESTHOST com/dylibso/chicory/$gen/CompiledMachine
+
+  public <init>()V
+    ALOAD 0
+    INVOKESPECIAL java/lang/Object.<init> ()V
+    RETURN
+
+  public static call(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;I[J)[J
+    ALOAD 0
+    ALOAD 1
+    ALOAD 3
+    ILOAD 2
+    TABLESWITCH
+      0: L0
+      1: L1
+      default: L2
+   L0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call_0 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ARETURN
+   L1
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call_1 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ARETURN
+   L2
+    ILOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwUnknownFunction (I)Ljava/lang/RuntimeException;
+    ATHROW
+
+  public static call_0(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ALOAD 2
+    ICONST_0
+    LALOAD
+    L2I
+    ALOAD 1
+    ALOAD 0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    I2L
+    LSTORE 3
+    ICONST_1
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    LLOAD 3
+    LASTORE
+    ARETURN
+
+  public static call_1(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ALOAD 2
+    ICONST_0
+    LALOAD
+    ALOAD 1
+    ALOAD 0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_1 (JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)J
+    LSTORE 3
+    ICONST_1
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    LLOAD 3
+    LASTORE
+    ARETURN
 }
