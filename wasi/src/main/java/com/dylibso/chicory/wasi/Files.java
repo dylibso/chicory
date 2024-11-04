@@ -19,6 +19,9 @@ import java.nio.file.attribute.PosixFilePermissions;
 public final class Files {
     private Files() {}
 
+    /**
+     * Copy directory recursively, including POSIX file permissions.
+     */
     public static void copyDirectory(Path source, Path target) throws IOException {
         walkFileTree(
                 source,
