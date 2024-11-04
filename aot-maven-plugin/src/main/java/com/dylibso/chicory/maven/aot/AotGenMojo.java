@@ -86,8 +86,6 @@ public class AotGenMojo extends AbstractMojo {
         var machineName = split[split.length - 1] + "MachineFactory";
 
         var cu = new CompilationUnit(packageName);
-        cu.setPackageDeclaration(packageName);
-        cu.setStorage(finalSourceFolder.resolve(machineName + ".java"));
 
         cu.addImport("com.dylibso.chicory.runtime.Instance");
         cu.addImport("com.dylibso.chicory.runtime.Machine");
@@ -109,7 +107,10 @@ public class AotGenMojo extends AbstractMojo {
                         NodeList.nodeList(new NameExpr("instance")));
         methodBody.addStatement(new ReturnStmt(constructorInvocation));
 
-        dest.add(cu);
+        dest.add(
+                cu.getPackageDeclaration().orElseThrow().getName().toString(),
+                cu.getType(0).getNameAsString() + ".java",
+                cu);
         dest.saveAll();
 
         for (Map.Entry<String, byte[]> entry : result.classBytes().entrySet()) {

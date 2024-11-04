@@ -39,8 +39,6 @@ public class JavaTestGen {
 
     private final File baseDir;
 
-    private final File sourceTargetFolder;
-
     private final List<String> excludedTests;
 
     private final List<String> excludedMalformedWasts;
@@ -53,14 +51,12 @@ public class JavaTestGen {
 
     public JavaTestGen(
             File baseDir,
-            File sourceTargetFolder,
             List<String> excludedTests,
             List<String> excludedMalformedWasts,
             List<String> excludedInvalidWasts,
             List<String> excludedUninstantiableWasts,
             List<String> excludedUnlinkableWasts) {
         this.baseDir = baseDir;
-        this.sourceTargetFolder = sourceTargetFolder;
         this.excludedTests = excludedTests;
         this.excludedMalformedWasts = excludedMalformedWasts;
         this.excludedInvalidWasts = excludedInvalidWasts;
@@ -71,7 +67,6 @@ public class JavaTestGen {
     public CompilationUnit generate(String name, Wast wast, File wasmFilesFolder) {
         var cu = new CompilationUnit("com.dylibso.chicory.test.gen");
         var testName = "SpecV1" + capitalize(escapedCamelCase(name)) + "Test";
-        cu.setStorage(sourceTargetFolder.toPath().resolve(testName + ".java"));
 
         // all the imports
         // junit imports

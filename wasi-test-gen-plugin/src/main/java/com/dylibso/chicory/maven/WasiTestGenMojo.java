@@ -151,11 +151,6 @@ public class WasiTestGenMojo extends AbstractMojo {
             String packageName = "com.dylibso.chicory.wasi.test";
             var cu = new CompilationUnit(packageName);
 
-            var destFile =
-                    Path.of(sourceDestinationFolder.getAbsolutePath(), packageName.split("\\."))
-                            .resolve("Suite" + capitalize(testSuite) + "Test.java");
-            cu.setStorage(destFile);
-
             cu.addImport(WASI_TEST_RUNNER);
             cu.addImport("java.io.File");
             cu.addImport("java.util.List");
@@ -220,7 +215,10 @@ public class WasiTestGenMojo extends AbstractMojo {
                                                 + " stderr, stdout)"));
             }
 
-            dest.add(cu);
+            dest.add(
+                    cu.getPackageDeclaration().orElseThrow().getName().toString(),
+                    cu.getType(0).getNameAsString() + ".java",
+                    cu);
         }
         // write the test classes
         dest.saveAll();
