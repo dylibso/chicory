@@ -11,7 +11,7 @@
   <artifactId>wasi</artifactId>
   <packaging>jar</packaging>
   <name>Chicory - WASI</name>
-  <description>WASI Preview 1 impolementation for Chicory</description>
+  <description>WASI Preview 1 implementation for Chicory</description>
 
   <dependencies>
     <dependency>
