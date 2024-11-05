@@ -1,5 +1,7 @@
 package com.dylibso.chicory.experimental.aot;
 
+import static com.dylibso.chicory.experimental.aot.AotUtil.slotCount;
+
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -46,7 +48,7 @@ final class AotContext {
         // WASM arguments
         for (ValueType param : type.params()) {
             slots.add(slot);
-            slot += AotUtil.slotCount(param);
+            slot += slotCount(param);
         }
 
         // extra arguments
@@ -58,7 +60,7 @@ final class AotContext {
         // WASM locals
         for (ValueType local : body.localTypes()) {
             slots.add(slot);
-            slot += AotUtil.slotCount(local);
+            slot += slotCount(local);
         }
 
         this.slots = List.copyOf(slots);

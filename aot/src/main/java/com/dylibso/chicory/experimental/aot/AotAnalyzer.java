@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.aot;
 
+import static com.dylibso.chicory.experimental.aot.AotUtil.localType;
 import static com.dylibso.chicory.experimental.aot.TypeStack.FUNCTION_SCOPE;
 import static java.util.Collections.reverse;
 import static java.util.stream.Collectors.toCollection;
@@ -580,7 +581,7 @@ final class AotAnalyzer {
                 break;
             case LOCAL_GET:
                 // [] -> [t]
-                stack.push(AotUtil.localType(functionType, body, (int) ins.operand(0)));
+                stack.push(localType(functionType, body, (int) ins.operand(0)));
                 break;
             case GLOBAL_GET:
                 // [] -> [t]
