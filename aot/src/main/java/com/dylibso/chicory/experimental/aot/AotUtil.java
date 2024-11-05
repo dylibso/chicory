@@ -3,12 +3,15 @@ package com.dylibso.chicory.experimental.aot;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.lang.invoke.MethodType.methodType;
 import static java.util.stream.Collectors.joining;
+import static org.objectweb.asm.Type.DOUBLE_TYPE;
+import static org.objectweb.asm.Type.FLOAT_TYPE;
+import static org.objectweb.asm.Type.INT_TYPE;
+import static org.objectweb.asm.Type.LONG_TYPE;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
-import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Value;
@@ -20,6 +23,7 @@ import java.util.List;
 import java.util.Locale;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 final class AotUtil {
 
@@ -58,61 +62,21 @@ final class AotUtil {
         }
     }
 
-    public static int loadTypeOpcode(ValueType type) {
+    public static Type asmType(ValueType type) {
         switch (type) {
             case I32:
             case ExternRef:
             case FuncRef:
-                return Opcodes.ILOAD;
+                return INT_TYPE;
             case I64:
-                return Opcodes.LLOAD;
+                return LONG_TYPE;
             case F32:
-                return Opcodes.FLOAD;
+                return FLOAT_TYPE;
             case F64:
-                return Opcodes.DLOAD;
+                return DOUBLE_TYPE;
             default:
                 throw new IllegalArgumentException("Unsupported type: " + type);
         }
-    }
-
-    public static int storeTypeOpcode(ValueType type) {
-        switch (type) {
-            case I32:
-            case ExternRef:
-            case FuncRef:
-                return Opcodes.ISTORE;
-            case I64:
-                return Opcodes.LSTORE;
-            case F32:
-                return Opcodes.FSTORE;
-            case F64:
-                return Opcodes.DSTORE;
-            default:
-                throw new IllegalArgumentException("Unsupported type: " + type);
-        }
-    }
-
-    public static int returnTypeOpcode(FunctionType type) {
-        Class<?> returnType = jvmReturnType(type);
-        if (returnType == long[].class) {
-            return Opcodes.ARETURN;
-        }
-        if (returnType == int.class) {
-            return Opcodes.IRETURN;
-        }
-        if (returnType == long.class) {
-            return Opcodes.LRETURN;
-        }
-        if (returnType == float.class) {
-            return Opcodes.FRETURN;
-        }
-        if (returnType == double.class) {
-            return Opcodes.DRETURN;
-        }
-        if (returnType == void.class) {
-            return Opcodes.RETURN;
-        }
-        throw new ChicoryException("Unsupported return type: " + returnType.getName());
     }
 
     public static ValueType localType(FunctionType type, FunctionBody body, int localIndex) {

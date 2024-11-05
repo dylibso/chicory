@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.aot;
 
+import static com.dylibso.chicory.experimental.aot.AotUtil.asmType;
 import static com.dylibso.chicory.experimental.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.experimental.aot.AotUtil.callIndirectMethodType;
 import static com.dylibso.chicory.experimental.aot.AotUtil.emitInvokeFunction;
@@ -8,14 +9,17 @@ import static com.dylibso.chicory.experimental.aot.AotUtil.emitInvokeVirtual;
 import static com.dylibso.chicory.experimental.aot.AotUtil.emitJvmToLong;
 import static com.dylibso.chicory.experimental.aot.AotUtil.emitLongToJvm;
 import static com.dylibso.chicory.experimental.aot.AotUtil.emitPop;
-import static com.dylibso.chicory.experimental.aot.AotUtil.loadTypeOpcode;
+import static com.dylibso.chicory.experimental.aot.AotUtil.jvmReturnType;
 import static com.dylibso.chicory.experimental.aot.AotUtil.localType;
-import static com.dylibso.chicory.experimental.aot.AotUtil.returnTypeOpcode;
 import static com.dylibso.chicory.experimental.aot.AotUtil.slotCount;
-import static com.dylibso.chicory.experimental.aot.AotUtil.storeTypeOpcode;
 import static com.dylibso.chicory.experimental.aot.AotUtil.valueMethodName;
 import static com.dylibso.chicory.experimental.aot.AotUtil.valueMethodType;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+import static java.lang.Double.longBitsToDouble;
+import static java.lang.Float.intBitsToFloat;
+import static org.objectweb.asm.Type.LONG_TYPE;
+import static org.objectweb.asm.Type.getType;
+import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
 import com.dylibso.chicory.runtime.OpCodeIdentifier;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -28,6 +32,7 @@ import java.util.Map;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.commons.InstructionAdapter;
 
 final class AotEmitters {
 
@@ -35,7 +40,7 @@ final class AotEmitters {
 
     @FunctionalInterface
     interface BytecodeEmitter {
-        void emit(AotContext context, AotInstruction ins, MethodVisitor asm);
+        void emit(AotContext context, AotInstruction ins, InstructionAdapter asm);
     }
 
     static class Builder {
@@ -61,19 +66,19 @@ final class AotEmitters {
         return new Builder();
     }
 
-    public static void TRAP(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void TRAP(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         emitInvokeStatic(asm, AotMethodRefs.THROW_TRAP_EXCEPTION);
-        asm.visitInsn(Opcodes.ATHROW);
+        asm.athrow();
     }
 
-    public static void DROP_KEEP(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void DROP_KEEP(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         int keepStart = (int) ins.operand(0) + 1;
 
         // save result values
         int slot = ctx.tempSlot();
         for (int i = ins.operandCount() - 1; i >= keepStart; i--) {
             var type = ValueType.forId((int) ins.operand(i));
-            asm.visitVarInsn(storeTypeOpcode(type), slot);
+            asm.store(slot, asmType(type));
             slot += slotCount(type);
         }
 
@@ -86,56 +91,55 @@ final class AotEmitters {
         for (int i = keepStart; i < ins.operandCount(); i++) {
             var type = ValueType.forId((int) ins.operand(i));
             slot -= slotCount(type);
-            asm.visitVarInsn(loadTypeOpcode(type), slot);
+            asm.load(slot, asmType(type));
         }
     }
 
-    public static void RETURN(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void RETURN(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         if (ctx.getType().returns().size() > 1) {
-            asm.visitMethodInsn(
-                    Opcodes.INVOKESTATIC,
+            asm.invokestatic(
                     ctx.internalClassName(),
                     valueMethodName(ctx.getType().returns()),
                     valueMethodType(ctx.getType().returns()).toMethodDescriptorString(),
                     false);
         }
-        asm.visitInsn(returnTypeOpcode(ctx.getType()));
+        asm.areturn(getType(jvmReturnType(ctx.getType())));
     }
 
-    public static void DROP(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void DROP(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         emitPop(asm, ValueType.forId((int) ins.operand(0)));
     }
 
-    public static void ELEM_DROP(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void ELEM_DROP(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         int index = (int) ins.operand(0);
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
-        asm.visitLdcInsn(index);
-        asm.visitInsn(Opcodes.ACONST_NULL);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        asm.iconst(index);
+        asm.aconst(null);
         emitInvokeVirtual(asm, AotMethodRefs.INSTANCE_SET_ELEMENT);
     }
 
-    public static void SELECT(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void SELECT(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         var type = ValueType.forId((int) ins.operand(0));
         var endLabel = new Label();
-        asm.visitJumpInsn(Opcodes.IFNE, endLabel);
+        asm.ifne(endLabel);
         if (slotCount(type) == 1) {
-            asm.visitInsn(Opcodes.SWAP);
+            asm.swap();
         } else {
-            asm.visitInsn(Opcodes.DUP2_X2);
-            asm.visitInsn(Opcodes.POP2);
+            asm.dup2X2();
+            asm.pop2();
         }
-        asm.visitLabel(endLabel);
+        asm.mark(endLabel);
         emitPop(asm, type);
     }
 
-    public static void CALL(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void CALL(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         int funcId = (int) ins.operand(0);
         FunctionType functionType = ctx.functionTypes().get(funcId);
 
         emitInvokeStatic(asm, AotMethodRefs.CHECK_INTERRUPTION);
 
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeFunction(asm, ctx.internalClassName(), funcId, functionType);
 
         if (functionType.returns().size() > 1) {
@@ -143,18 +147,17 @@ final class AotEmitters {
         }
     }
 
-    public static void CALL_INDIRECT(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void CALL_INDIRECT(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         int typeId = (int) ins.operand(0);
         int tableIdx = (int) ins.operand(1);
         FunctionType functionType = ctx.types()[typeId];
 
-        asm.visitLdcInsn(tableIdx);
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        asm.iconst(tableIdx);
+        asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         // stack: arguments, funcTableIdx, tableIdx, memory, instance
 
-        asm.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
+        asm.invokestatic(
                 ctx.internalClassName(),
                 callIndirectMethodName(typeId),
                 callIndirectMethodType(functionType).toMethodDescriptorString(),
@@ -165,135 +168,133 @@ final class AotEmitters {
         }
     }
 
-    public static void REF_FUNC(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operand(0));
+    public static void REF_FUNC(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.iconst((int) ins.operand(0));
     }
 
-    public static void REF_NULL(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn(REF_NULL_VALUE);
+    public static void REF_NULL(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.iconst(REF_NULL_VALUE);
     }
 
-    public static void REF_IS_NULL(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void REF_IS_NULL(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         emitInvokeStatic(asm, AotMethodRefs.REF_IS_NULL);
     }
 
-    public static void LOCAL_GET(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void LOCAL_GET(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         var loadIndex = (int) ins.operand(0);
         var localType = localType(ctx.getType(), ctx.getBody(), loadIndex);
-        asm.visitVarInsn(loadTypeOpcode(localType), ctx.localSlotIndex(loadIndex));
+        asm.load(ctx.localSlotIndex(loadIndex), asmType(localType));
     }
 
-    public static void LOCAL_SET(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void LOCAL_SET(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         int index = (int) ins.operand(0);
         var localType = localType(ctx.getType(), ctx.getBody(), index);
-        asm.visitVarInsn(storeTypeOpcode(localType), ctx.localSlotIndex(index));
+        asm.store(ctx.localSlotIndex(index), asmType(localType));
     }
 
-    public static void LOCAL_TEE(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void LOCAL_TEE(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         if (slotCount(ValueType.forId((int) ins.operand(1))) == 1) {
-            asm.visitInsn(Opcodes.DUP);
+            asm.dup();
         } else {
-            asm.visitInsn(Opcodes.DUP2);
+            asm.dup2();
         }
 
         LOCAL_SET(ctx, ins, asm);
     }
 
-    public static void GLOBAL_GET(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void GLOBAL_GET(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         int globalIndex = (int) ins.operand(0);
 
-        asm.visitLdcInsn(globalIndex);
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        asm.iconst(globalIndex);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, AotMethodRefs.READ_GLOBAL);
 
         emitLongToJvm(asm, ctx.globalTypes().get(globalIndex));
     }
 
-    public static void GLOBAL_SET(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void GLOBAL_SET(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         int globalIndex = (int) ins.operand(0);
 
         emitJvmToLong(asm, ctx.globalTypes().get(globalIndex));
-        asm.visitLdcInsn(globalIndex);
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+        asm.iconst(globalIndex);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, AotMethodRefs.WRITE_GLOBAL);
     }
 
-    public static void TABLE_GET(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operand(0));
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+    public static void TABLE_GET(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.iconst((int) ins.operand(0));
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, AotMethodRefs.TABLE_GET);
     }
 
-    public static void TABLE_SET(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operand(0));
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+    public static void TABLE_SET(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.iconst((int) ins.operand(0));
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, AotMethodRefs.TABLE_SET);
     }
 
-    public static void TABLE_SIZE(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operand(0));
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+    public static void TABLE_SIZE(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.iconst((int) ins.operand(0));
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, AotMethodRefs.TABLE_SIZE);
     }
 
-    public static void TABLE_GROW(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operand(0));
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+    public static void TABLE_GROW(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.iconst((int) ins.operand(0));
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, AotMethodRefs.TABLE_GROW);
     }
 
-    public static void TABLE_FILL(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operand(0));
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+    public static void TABLE_FILL(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.iconst((int) ins.operand(0));
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, AotMethodRefs.TABLE_FILL);
     }
 
-    public static void TABLE_COPY(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operand(0));
-        asm.visitLdcInsn((int) ins.operand(1));
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+    public static void TABLE_COPY(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.iconst((int) ins.operand(0));
+        asm.iconst((int) ins.operand(1));
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, AotMethodRefs.TABLE_COPY);
     }
 
-    public static void TABLE_INIT(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operand(0));
-        asm.visitLdcInsn((int) ins.operand(1));
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.instanceSlot());
+    public static void TABLE_INIT(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.iconst((int) ins.operand(0));
+        asm.iconst((int) ins.operand(1));
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, AotMethodRefs.TABLE_INIT);
     }
 
-    public static void MEMORY_INIT(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        int segmentId = (int) ins.operand(0);
-        asm.visitLdcInsn(segmentId);
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
+    public static void MEMORY_INIT(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.iconst((int) ins.operand(0));
+        asm.load(ctx.memorySlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, AotMethodRefs.MEMORY_INIT);
     }
 
-    public static void MEMORY_COPY(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
+    public static void MEMORY_COPY(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.load(ctx.memorySlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, AotMethodRefs.MEMORY_COPY);
     }
 
-    public static void MEMORY_FILL(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
+    public static void MEMORY_FILL(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.load(ctx.memorySlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, AotMethodRefs.MEMORY_FILL);
     }
 
-    public static void MEMORY_GROW(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
-        asm.visitInsn(Opcodes.SWAP);
+    public static void MEMORY_GROW(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        asm.swap();
         emitInvokeVirtual(asm, AotMethodRefs.MEMORY_GROW);
     }
 
-    public static void MEMORY_SIZE(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
+    public static void MEMORY_SIZE(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.load(ctx.memorySlot(), OBJECT_TYPE);
         emitInvokeVirtual(asm, AotMethodRefs.MEMORY_PAGES);
     }
 
-    public static void DATA_DROP(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        int segmentId = (int) ins.operand(0);
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
-        asm.visitLdcInsn(segmentId);
+    public static void DATA_DROP(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        asm.iconst((int) ins.operand(0));
         emitInvokeVirtual(asm, AotMethodRefs.MEMORY_DROP);
     }
 
@@ -305,8 +306,8 @@ final class AotEmitters {
         asm.visitInsn(Opcodes.IAND);
     }
 
-    public static void I32_CONST(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn((int) ins.operand(0));
+    public static void I32_CONST(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.iconst((int) ins.operand(0));
     }
 
     public static void I32_MUL(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
@@ -349,8 +350,8 @@ final class AotEmitters {
         asm.visitInsn(Opcodes.LAND);
     }
 
-    public static void I64_CONST(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn(ins.operand(0));
+    public static void I64_CONST(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.lconst(ins.operand(0));
     }
 
     public static void I64_EXTEND_I32_S(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
@@ -392,8 +393,8 @@ final class AotEmitters {
         asm.visitInsn(Opcodes.FADD);
     }
 
-    public static void F32_CONST(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn(Float.intBitsToFloat((int) ins.operand(0)));
+    public static void F32_CONST(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.fconst(intBitsToFloat((int) ins.operand(0)));
     }
 
     public static void F32_DEMOTE_F64(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
@@ -420,8 +421,8 @@ final class AotEmitters {
         asm.visitInsn(Opcodes.DADD);
     }
 
-    public static void F64_CONST(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
-        asm.visitLdcInsn(Double.longBitsToDouble(ins.operand(0)));
+    public static void F64_CONST(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
+        asm.dconst(longBitsToDouble(ins.operand(0)));
     }
 
     public static void F64_DIV(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
@@ -444,127 +445,138 @@ final class AotEmitters {
         asm.visitInsn(Opcodes.DSUB);
     }
 
-    public static void I32_LOAD(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I32_LOAD(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_READ_INT);
     }
 
-    public static void I32_LOAD8_S(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I32_LOAD8_S(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_READ_BYTE);
     }
 
-    public static void I32_LOAD8_U(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I32_LOAD8_U(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         I32_LOAD8_S(ctx, ins, asm);
-        asm.visitLdcInsn(0xFF);
+        asm.iconst(0xFF);
         asm.visitInsn(Opcodes.IAND);
     }
 
-    public static void I32_LOAD16_S(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I32_LOAD16_S(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_READ_SHORT);
     }
 
-    public static void I32_LOAD16_U(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I32_LOAD16_U(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         I32_LOAD16_S(ctx, ins, asm);
-        asm.visitLdcInsn(0xFFFF);
+        asm.iconst(0xFFFF);
         asm.visitInsn(Opcodes.IAND);
     }
 
-    public static void F32_LOAD(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void F32_LOAD(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_READ_FLOAT);
     }
 
-    public static void I64_LOAD(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I64_LOAD(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_READ_LONG);
     }
 
-    public static void I64_LOAD8_S(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I64_LOAD8_S(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         I32_LOAD8_S(ctx, ins, asm);
         asm.visitInsn(Opcodes.I2L);
     }
 
-    public static void I64_LOAD8_U(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I64_LOAD8_U(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         I32_LOAD8_U(ctx, ins, asm);
         asm.visitInsn(Opcodes.I2L);
     }
 
-    public static void I64_LOAD16_S(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I64_LOAD16_S(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         I32_LOAD16_S(ctx, ins, asm);
         asm.visitInsn(Opcodes.I2L);
     }
 
-    public static void I64_LOAD16_U(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I64_LOAD16_U(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         I32_LOAD16_U(ctx, ins, asm);
         asm.visitInsn(Opcodes.I2L);
     }
 
-    public static void I64_LOAD32_S(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I64_LOAD32_S(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         I32_LOAD(ctx, ins, asm);
         asm.visitInsn(Opcodes.I2L);
     }
 
-    public static void I64_LOAD32_U(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I64_LOAD32_U(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         I32_LOAD(ctx, ins, asm);
         asm.visitInsn(Opcodes.I2L);
-        asm.visitLdcInsn(0xFFFF_FFFFL);
+        asm.lconst(0xFFFF_FFFFL);
         asm.visitInsn(Opcodes.LAND);
     }
 
-    public static void F64_LOAD(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void F64_LOAD(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_READ_DOUBLE);
     }
 
-    public static void I32_STORE(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I32_STORE(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_WRITE_INT);
     }
 
-    public static void I32_STORE8(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I32_STORE8(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         asm.visitInsn(Opcodes.I2B);
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_WRITE_BYTE);
     }
 
-    public static void I32_STORE16(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I32_STORE16(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         asm.visitInsn(Opcodes.I2S);
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_WRITE_SHORT);
     }
 
-    public static void F32_STORE(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void F32_STORE(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_WRITE_FLOAT);
     }
 
-    public static void I64_STORE8(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I64_STORE8(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         asm.visitInsn(Opcodes.L2I);
         I32_STORE8(ctx, ins, asm);
     }
 
-    public static void I64_STORE16(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I64_STORE16(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         asm.visitInsn(Opcodes.L2I);
         I32_STORE16(ctx, ins, asm);
     }
 
-    public static void I64_STORE32(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I64_STORE32(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         asm.visitInsn(Opcodes.L2I);
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_WRITE_INT);
     }
 
-    public static void I64_STORE(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void I64_STORE(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_WRITE_LONG);
     }
 
-    public static void F64_STORE(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
+    public static void F64_STORE(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_WRITE_DOUBLE);
     }
 
     private static void emitLoadOrStore(
-            AotContext ctx, AotInstruction ins, MethodVisitor asm, Method method) {
+            AotContext ctx, AotInstruction ins, InstructionAdapter asm, Method method) {
         long offset = ins.operand(1);
 
         if (offset < 0 || offset >= Integer.MAX_VALUE) {
             emitInvokeStatic(asm, AotMethodRefs.THROW_OUT_OF_BOUNDS_MEMORY_ACCESS);
-            asm.visitInsn(Opcodes.ATHROW);
+            asm.athrow();
         }
 
-        asm.visitLdcInsn((int) offset);
-        asm.visitVarInsn(Opcodes.ALOAD, ctx.memorySlot());
+        asm.iconst((int) offset);
+        asm.load(ctx.memorySlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, method);
+    }
+
+    private static void emitUnboxResult(
+            InstructionAdapter asm, AotContext ctx, List<ValueType> types) {
+        asm.store(ctx.tempSlot(), OBJECT_TYPE);
+        for (int i = 0; i < types.size(); i++) {
+            asm.load(ctx.tempSlot(), OBJECT_TYPE);
+            asm.iconst(i);
+            asm.aload(LONG_TYPE);
+            emitLongToJvm(asm, types.get(i));
+        }
     }
 
     /**
@@ -601,16 +613,5 @@ final class AotEmitters {
                         + staticHelpers.getName()
                         + " does not provide an implementation of opcode "
                         + opcode.name());
-    }
-
-    private static void emitUnboxResult(MethodVisitor asm, AotContext ctx, List<ValueType> types) {
-        asm.visitVarInsn(Opcodes.ASTORE, ctx.tempSlot());
-        for (int i = 0; i < types.size(); i++) {
-            ValueType type = types.get(i);
-            asm.visitVarInsn(Opcodes.ALOAD, ctx.tempSlot());
-            asm.visitLdcInsn(i);
-            asm.visitInsn(Opcodes.LALOAD);
-            emitLongToJvm(asm, type);
-        }
     }
 }
