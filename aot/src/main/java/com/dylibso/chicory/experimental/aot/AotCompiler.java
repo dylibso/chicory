@@ -13,6 +13,7 @@ import static com.dylibso.chicory.experimental.aot.AotMethodRefs.TABLE_REF;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.THROW_CALL_STACK_EXHAUSTED;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.THROW_INDIRECT_CALL_TYPE_MISMATCH;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.THROW_UNKNOWN_FUNCTION;
+import static com.dylibso.chicory.experimental.aot.AotUtil.asmType;
 import static com.dylibso.chicory.experimental.aot.AotUtil.callIndirectMethodName;
 import static com.dylibso.chicory.experimental.aot.AotUtil.callIndirectMethodType;
 import static com.dylibso.chicory.experimental.aot.AotUtil.defaultValue;
@@ -23,13 +24,10 @@ import static com.dylibso.chicory.experimental.aot.AotUtil.emitJvmToLong;
 import static com.dylibso.chicory.experimental.aot.AotUtil.emitLongToJvm;
 import static com.dylibso.chicory.experimental.aot.AotUtil.internalClassName;
 import static com.dylibso.chicory.experimental.aot.AotUtil.jvmReturnType;
-import static com.dylibso.chicory.experimental.aot.AotUtil.loadTypeOpcode;
 import static com.dylibso.chicory.experimental.aot.AotUtil.localType;
 import static com.dylibso.chicory.experimental.aot.AotUtil.methodNameFor;
 import static com.dylibso.chicory.experimental.aot.AotUtil.methodTypeFor;
-import static com.dylibso.chicory.experimental.aot.AotUtil.returnTypeOpcode;
 import static com.dylibso.chicory.experimental.aot.AotUtil.slotCount;
-import static com.dylibso.chicory.experimental.aot.AotUtil.storeTypeOpcode;
 import static com.dylibso.chicory.experimental.aot.AotUtil.valueMethodName;
 import static com.dylibso.chicory.experimental.aot.AotUtil.valueMethodType;
 import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
@@ -37,10 +35,14 @@ import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toSet;
+import static org.objectweb.asm.Type.INT_TYPE;
+import static org.objectweb.asm.Type.LONG_TYPE;
 import static org.objectweb.asm.Type.VOID_TYPE;
 import static org.objectweb.asm.Type.getDescriptor;
 import static org.objectweb.asm.Type.getInternalName;
 import static org.objectweb.asm.Type.getMethodDescriptor;
+import static org.objectweb.asm.Type.getType;
+import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
@@ -68,7 +70,6 @@ import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodTooLargeException;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.InstructionAdapter;
 import org.objectweb.asm.util.CheckClassAdapter;
@@ -261,7 +262,7 @@ public final class AotCompiler {
                     true,
                     asm -> {
                         emitBoxArguments(asm, types);
-                        asm.visitInsn(Opcodes.ARETURN);
+                        asm.areturn(OBJECT_TYPE);
                     });
         }
 
@@ -283,7 +284,7 @@ public final class AotCompiler {
             String methodName,
             MethodType methodType,
             boolean isStatic,
-            Consumer<MethodVisitor> consumer) {
+            Consumer<InstructionAdapter> consumer) {
 
         var methodWriter =
                 classWriter.visitMethod(
@@ -293,43 +294,35 @@ public final class AotCompiler {
                         null,
                         null);
 
-        // optimize instruction size to avoid method size limits
-        methodWriter = new InstructionAdapter(methodWriter);
-
         methodWriter.visitCode();
-        consumer.accept(methodWriter);
+        consumer.accept(new InstructionAdapter(methodWriter));
         methodWriter.visitMaxs(0, 0);
         methodWriter.visitEnd();
     }
 
-    private static void emitCallSuper(MethodVisitor asm) {
-        asm.visitVarInsn(Opcodes.ALOAD, 0);
-        asm.visitMethodInsn(
-                Opcodes.INVOKESPECIAL,
-                getInternalName(Object.class),
-                "<init>",
-                getMethodDescriptor(VOID_TYPE),
-                false);
+    private static void emitCallSuper(InstructionAdapter asm) {
+        asm.load(0, OBJECT_TYPE);
+        asm.invokespecial(
+                OBJECT_TYPE.getInternalName(), "<init>", getMethodDescriptor(VOID_TYPE), false);
     }
 
-    private static void compileConstructor(MethodVisitor asm, String internalClassName) {
+    private static void compileConstructor(InstructionAdapter asm, String internalClassName) {
         emitCallSuper(asm);
 
         // this.instance = instance;
-        asm.visitVarInsn(Opcodes.ALOAD, 0);
-        asm.visitVarInsn(Opcodes.ALOAD, 1);
-        asm.visitFieldInsn(
-                Opcodes.PUTFIELD, internalClassName, "instance", getDescriptor(Instance.class));
+        asm.load(0, OBJECT_TYPE);
+        asm.load(1, OBJECT_TYPE);
+        asm.putfield(internalClassName, "instance", getDescriptor(Instance.class));
 
-        asm.visitInsn(Opcodes.RETURN);
+        asm.areturn(VOID_TYPE);
     }
 
-    private void compileMachineCall(String internalClassName, MethodVisitor asm) {
+    private void compileMachineCall(String internalClassName, InstructionAdapter asm) {
         // handle modules with no functions
         if (functionTypes.isEmpty()) {
-            asm.visitVarInsn(Opcodes.ILOAD, 1);
+            asm.load(1, INT_TYPE);
             emitInvokeStatic(asm, THROW_UNKNOWN_FUNCTION);
-            asm.visitInsn(Opcodes.ATHROW);
+            asm.athrow();
             return;
         }
 
@@ -337,30 +330,28 @@ public final class AotCompiler {
         Label start = new Label();
         Label end = new Label();
         asm.visitTryCatchBlock(start, end, end, getInternalName(StackOverflowError.class));
-        asm.visitLabel(start);
+        asm.mark(start);
 
         // prepare arguments
-        asm.visitVarInsn(Opcodes.ALOAD, 0);
-        asm.visitFieldInsn(
-                Opcodes.GETFIELD, internalClassName, "instance", getDescriptor(Instance.class));
-        asm.visitInsn(Opcodes.DUP);
+        asm.load(0, OBJECT_TYPE);
+        asm.getfield(internalClassName, "instance", getDescriptor(Instance.class));
+        asm.dup();
         emitInvokeVirtual(asm, INSTANCE_MEMORY);
-        asm.visitVarInsn(Opcodes.ILOAD, 1);
-        asm.visitVarInsn(Opcodes.ALOAD, 2);
+        asm.load(1, INT_TYPE);
+        asm.load(2, OBJECT_TYPE);
 
         // return $MachineCall.call(instance, memory, funcId, args);
-        asm.visitMethodInsn(
-                Opcodes.INVOKESTATIC,
+        asm.invokestatic(
                 internalClassName + "$MachineCall",
                 "call",
                 MACHINE_CALL_METHOD_TYPE.toMethodDescriptorString(),
                 false);
-        asm.visitInsn(Opcodes.ARETURN);
+        asm.areturn(OBJECT_TYPE);
 
         // catch StackOverflow
-        asm.visitLabel(end);
+        asm.mark(end);
         emitInvokeStatic(asm, THROW_CALL_STACK_EXHAUSTED);
-        asm.visitInsn(Opcodes.ATHROW);
+        asm.athrow();
     }
 
     private byte[] compileMachineCallClass() {
@@ -385,7 +376,7 @@ public final class AotCompiler {
                 false,
                 asm -> {
                     emitCallSuper(asm);
-                    asm.visitInsn(Opcodes.RETURN);
+                    asm.areturn(VOID_TYPE);
                 });
 
         // static implementation for Machine.call()
@@ -411,11 +402,11 @@ public final class AotCompiler {
         return binaryWriter.toByteArray();
     }
 
-    private void compileMachineCallInvoke(MethodVisitor asm) {
+    private void compileMachineCallInvoke(InstructionAdapter asm) {
         // load arguments
-        asm.visitVarInsn(Opcodes.ALOAD, 0);
-        asm.visitVarInsn(Opcodes.ALOAD, 1);
-        asm.visitVarInsn(Opcodes.ALOAD, 3);
+        asm.load(0, OBJECT_TYPE);
+        asm.load(1, OBJECT_TYPE);
+        asm.load(3, OBJECT_TYPE);
 
         // switch (funcId)
         Label defaultLabel = new Label();
@@ -426,74 +417,73 @@ public final class AotCompiler {
             labels[i] = (i < functionImports) ? hostLabel : new Label();
         }
 
-        asm.visitVarInsn(Opcodes.ILOAD, 2);
-        asm.visitTableSwitchInsn(0, labels.length - 1, defaultLabel, labels);
+        asm.load(2, INT_TYPE);
+        asm.tableswitch(0, labels.length - 1, defaultLabel, labels);
 
         // return call_xxx(instance, memory, args);
         for (int i = functionImports; i < labels.length; i++) {
-            asm.visitLabel(labels[i]);
-            asm.visitMethodInsn(
-                    Opcodes.INVOKESTATIC,
+            asm.mark(labels[i]);
+            asm.invokestatic(
                     internalClassName(className + "$MachineCall"),
                     callMethodName(i),
                     CALL_METHOD_TYPE.toMethodDescriptorString(),
                     false);
-            asm.visitInsn(Opcodes.ARETURN);
+            asm.areturn(OBJECT_TYPE);
         }
 
         // return instance.callHostFunction(funcId, args);
         if (functionImports > 0) {
-            asm.visitLabel(hostLabel);
-            asm.visitInsn(Opcodes.POP);
-            asm.visitInsn(Opcodes.POP);
-            asm.visitVarInsn(Opcodes.ILOAD, 2);
-            asm.visitVarInsn(Opcodes.ALOAD, 3);
+            asm.mark(hostLabel);
+            asm.pop();
+            asm.pop();
+            asm.load(2, INT_TYPE);
+            asm.load(3, OBJECT_TYPE);
             emitInvokeStatic(asm, CALL_HOST_FUNCTION);
-            asm.visitInsn(Opcodes.ARETURN);
+            asm.areturn(OBJECT_TYPE);
         }
 
         // throw new InvalidException("unknown function " + funcId);
-        asm.visitLabel(defaultLabel);
-        asm.visitVarInsn(Opcodes.ILOAD, 2);
+        asm.mark(defaultLabel);
+        asm.load(2, INT_TYPE);
         emitInvokeStatic(asm, THROW_UNKNOWN_FUNCTION);
-        asm.visitInsn(Opcodes.ATHROW);
+        asm.athrow();
     }
 
-    private void compileCallFunction(int funcId, FunctionType type, MethodVisitor asm) {
+    private void compileCallFunction(int funcId, FunctionType type, InstructionAdapter asm) {
         // unbox the arguments from long[]
         for (int i = 0; i < type.params().size(); i++) {
             var param = type.params().get(i);
-            asm.visitVarInsn(Opcodes.ALOAD, 2);
-            asm.visitLdcInsn(i);
-            asm.visitInsn(Opcodes.LALOAD);
+            asm.load(2, OBJECT_TYPE);
+            asm.iconst(i);
+            asm.aload(LONG_TYPE);
             emitLongToJvm(asm, param);
         }
 
-        asm.visitVarInsn(Opcodes.ALOAD, 1);
-        asm.visitVarInsn(Opcodes.ALOAD, 0);
+        asm.load(1, OBJECT_TYPE);
+        asm.load(0, OBJECT_TYPE);
 
         emitInvokeFunction(asm, internalClassName(className), funcId, type);
 
         // box the result into long[]
         Class<?> returnType = jvmReturnType(type);
         if (returnType == void.class) {
-            asm.visitLdcInsn(0);
-            asm.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_LONG);
+            asm.iconst(0);
+            asm.newarray(LONG_TYPE);
         } else if (returnType != long[].class) {
             emitJvmToLong(asm, type.returns().get(0));
-            asm.visitVarInsn(Opcodes.LSTORE, 3);
-            asm.visitLdcInsn(1);
-            asm.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_LONG);
-            asm.visitInsn(Opcodes.DUP);
-            asm.visitLdcInsn(0);
-            asm.visitVarInsn(Opcodes.LLOAD, 3);
-            asm.visitInsn(Opcodes.LASTORE);
+            asm.store(3, LONG_TYPE);
+            asm.iconst(1);
+            asm.newarray(LONG_TYPE);
+            asm.dup();
+            asm.iconst(0);
+            asm.load(3, LONG_TYPE);
+            asm.astore(LONG_TYPE);
         }
-        asm.visitInsn(Opcodes.ARETURN);
+        asm.areturn(OBJECT_TYPE);
     }
 
     private void compileCallIndirect(
-            String internalClassName, int typeId, FunctionType type, MethodVisitor asm) {
+            String internalClassName, int typeId, FunctionType type, InstructionAdapter asm) {
         int slots = type.params().stream().mapToInt(AotUtil::slotCount).sum();
         int funcTableIdx = slots;
         int tableIdx = slots + 1;
@@ -506,43 +496,43 @@ public final class AotCompiler {
         emitInvokeStatic(asm, CHECK_INTERRUPTION);
 
         // TableInstance table = instance.table(tableIdx);
-        asm.visitVarInsn(Opcodes.ALOAD, instance);
-        asm.visitVarInsn(Opcodes.ILOAD, tableIdx);
+        asm.load(instance, OBJECT_TYPE);
+        asm.load(tableIdx, INT_TYPE);
         emitInvokeVirtual(asm, INSTANCE_TABLE);
-        asm.visitVarInsn(Opcodes.ASTORE, table);
+        asm.store(table, OBJECT_TYPE);
 
         // int funcId = tableRef(table, funcTableIdx);
-        asm.visitVarInsn(Opcodes.ALOAD, table);
-        asm.visitVarInsn(Opcodes.ILOAD, funcTableIdx);
+        asm.load(table, OBJECT_TYPE);
+        asm.load(funcTableIdx, INT_TYPE);
         emitInvokeStatic(asm, TABLE_REF);
-        asm.visitVarInsn(Opcodes.ISTORE, funcId);
+        asm.store(funcId, INT_TYPE);
 
         // Instance refInstance = table.instance(funcTableIdx);
-        asm.visitVarInsn(Opcodes.ALOAD, table);
-        asm.visitVarInsn(Opcodes.ILOAD, funcTableIdx);
+        asm.load(table, OBJECT_TYPE);
+        asm.load(funcTableIdx, INT_TYPE);
         emitInvokeVirtual(asm, TABLE_INSTANCE);
-        asm.visitVarInsn(Opcodes.ASTORE, refInstance);
+        asm.store(refInstance, OBJECT_TYPE);
 
         Label local = new Label();
         Label other = new Label();
 
         // if (refInstance == null || refInstance == instance)
-        asm.visitVarInsn(Opcodes.ALOAD, refInstance);
-        asm.visitJumpInsn(Opcodes.IFNULL, local);
-        asm.visitVarInsn(Opcodes.ALOAD, refInstance);
-        asm.visitVarInsn(Opcodes.ALOAD, instance);
-        asm.visitJumpInsn(Opcodes.IF_ACMPNE, other);
+        asm.load(refInstance, OBJECT_TYPE);
+        asm.ifnull(local);
+        asm.load(refInstance, OBJECT_TYPE);
+        asm.load(instance, OBJECT_TYPE);
+        asm.ifacmpne(other);
 
         // local: call function in this module
-        asm.visitLabel(local);
+        asm.mark(local);
 
         int slot = 0;
         for (ValueType param : type.params()) {
-            asm.visitVarInsn(loadTypeOpcode(param), slot);
+            asm.load(slot, asmType(param));
             slot += slotCount(param);
         }
-        asm.visitVarInsn(Opcodes.ALOAD, memory);
-        asm.visitVarInsn(Opcodes.ALOAD, instance);
+        asm.load(memory, OBJECT_TYPE);
+        asm.load(instance, OBJECT_TYPE);
 
         List<Integer> validIds = new ArrayList<>();
         for (int i = 0; i < functionTypes.size(); i++) {
@@ -555,37 +545,37 @@ public final class AotCompiler {
         int[] keys = validIds.stream().mapToInt(x -> x).toArray();
         Label[] labels = validIds.stream().map(x -> new Label()).toArray(Label[]::new);
 
-        asm.visitVarInsn(Opcodes.ILOAD, funcId);
-        asm.visitLookupSwitchInsn(invalid, keys, labels);
+        asm.load(funcId, INT_TYPE);
+        asm.lookupswitch(invalid, keys, labels);
 
         for (int i = 0; i < validIds.size(); i++) {
-            asm.visitLabel(labels[i]);
+            asm.mark(labels[i]);
             emitInvokeFunction(asm, internalClassName, keys[i], type);
-            asm.visitInsn(returnTypeOpcode(type));
+            asm.areturn(getType(jvmReturnType(type)));
         }
 
-        asm.visitLabel(invalid);
+        asm.mark(invalid);
         emitInvokeStatic(asm, THROW_INDIRECT_CALL_TYPE_MISMATCH);
-        asm.visitInsn(Opcodes.ATHROW);
+        asm.athrow();
 
         // other: call function in another module
-        asm.visitLabel(other);
+        asm.mark(other);
 
         emitBoxArguments(asm, type.params());
-        asm.visitLdcInsn(typeId);
-        asm.visitVarInsn(Opcodes.ILOAD, funcId);
-        asm.visitVarInsn(Opcodes.ALOAD, refInstance);
+        asm.iconst(typeId);
+        asm.load(funcId, INT_TYPE);
+        asm.load(refInstance, OBJECT_TYPE);
 
         emitInvokeStatic(asm, CALL_INDIRECT);
 
         emitUnboxResult(type, asm);
     }
 
-    private static void compileHostFunction(int funcId, FunctionType type, MethodVisitor asm) {
+    private static void compileHostFunction(int funcId, FunctionType type, InstructionAdapter asm) {
         int slot = type.params().stream().mapToInt(AotUtil::slotCount).sum();
 
-        asm.visitVarInsn(Opcodes.ALOAD, slot + 1); // instance
-        asm.visitLdcInsn(funcId);
+        asm.load(slot + 1, OBJECT_TYPE); // instance
+        asm.iconst(funcId);
         emitBoxArguments(asm, type.params());
 
         emitInvokeStatic(asm, CALL_HOST_FUNCTION);
@@ -593,34 +583,34 @@ public final class AotCompiler {
         emitUnboxResult(type, asm);
     }
 
-    private static void emitBoxArguments(MethodVisitor asm, List<ValueType> types) {
+    private static void emitBoxArguments(InstructionAdapter asm, List<ValueType> types) {
         int slot = 0;
         // box the arguments into long[]
-        asm.visitLdcInsn(types.size());
-        asm.visitIntInsn(Opcodes.NEWARRAY, Opcodes.T_LONG); // long
+        asm.iconst(types.size());
+        asm.newarray(LONG_TYPE);
         for (int i = 0; i < types.size(); i++) {
-            asm.visitInsn(Opcodes.DUP);
-            asm.visitLdcInsn(i);
+            asm.dup();
+            asm.iconst(i);
             ValueType valueType = types.get(i);
-            asm.visitVarInsn(loadTypeOpcode(valueType), slot);
+            asm.load(slot, asmType(valueType));
             emitJvmToLong(asm, valueType);
-            asm.visitInsn(Opcodes.LASTORE);
+            asm.astore(LONG_TYPE);
             slot += slotCount(valueType);
         }
     }
 
-    private static void emitUnboxResult(FunctionType type, MethodVisitor asm) {
+    private static void emitUnboxResult(FunctionType type, InstructionAdapter asm) {
         Class<?> returnType = jvmReturnType(type);
         if (returnType == void.class) {
-            asm.visitInsn(Opcodes.RETURN);
+            asm.areturn(VOID_TYPE);
         } else if (returnType == long[].class) {
-            asm.visitInsn(Opcodes.ARETURN);
+            asm.areturn(OBJECT_TYPE);
         } else {
             // unbox the result from long[0]
-            asm.visitLdcInsn(0);
-            asm.visitInsn(Opcodes.LALOAD);
+            asm.iconst(0);
+            asm.aload(LONG_TYPE);
             emitLongToJvm(asm, type.returns().get(0));
-            asm.visitInsn(returnTypeOpcode(type));
+            asm.areturn(getType(returnType));
         }
     }
 
@@ -629,7 +619,7 @@ public final class AotCompiler {
             int funcId,
             FunctionType type,
             FunctionBody body,
-            MethodVisitor asm) {
+            InstructionAdapter asm) {
 
         var ctx =
                 new AotContext(
@@ -648,7 +638,7 @@ public final class AotCompiler {
         for (int i = type.params().size(); i < localsCount; i++) {
             var localType = localType(type, body, i);
             asm.visitLdcInsn(defaultValue(localType));
-            asm.visitVarInsn(storeTypeOpcode(localType), ctx.localSlotIndex(i));
+            asm.store(ctx.localSlotIndex(i), asmType(localType));
         }
 
         // allocate labels for all label targets
@@ -668,7 +658,7 @@ public final class AotCompiler {
                 case LABEL:
                     Label label = labels.get(ins.operand(0));
                     if (label != null) {
-                        asm.visitLabel(label);
+                        asm.mark(label);
                         visitedTargets.add(ins.operand(0));
                     }
                     break;
@@ -676,24 +666,24 @@ public final class AotCompiler {
                     if (visitedTargets.contains(ins.operand(0))) {
                         emitInvokeStatic(asm, CHECK_INTERRUPTION);
                     }
-                    asm.visitJumpInsn(Opcodes.GOTO, labels.get(ins.operand(0)));
+                    asm.goTo(labels.get(ins.operand(0)));
                     break;
                 case IFEQ:
                     if (visitedTargets.contains(ins.operand(0))) {
                         throw new ChicoryException("Unexpected backward jump");
                     }
-                    asm.visitJumpInsn(Opcodes.IFEQ, labels.get(ins.operand(0)));
+                    asm.ifeq(labels.get(ins.operand(0)));
                     break;
                 case IFNE:
                     if (visitedTargets.contains(ins.operand(0))) {
                         Label skip = new Label();
-                        asm.visitJumpInsn(Opcodes.IFEQ, skip);
+                        asm.ifeq(skip);
                         emitInvokeStatic(asm, CHECK_INTERRUPTION);
-                        asm.visitJumpInsn(Opcodes.GOTO, labels.get(ins.operand(0)));
-                        asm.visitLabel(skip);
+                        asm.goTo(labels.get(ins.operand(0)));
+                        asm.mark(skip);
 
                     } else {
-                        asm.visitJumpInsn(Opcodes.IFNE, labels.get(ins.operand(0)));
+                        asm.ifne(labels.get(ins.operand(0)));
                     }
                     break;
                 case SWITCH:
@@ -706,7 +696,7 @@ public final class AotCompiler {
                         table[i] = labels.get(ins.operand(i));
                     }
                     Label defaultLabel = labels.get(ins.operand(table.length));
-                    asm.visitTableSwitchInsn(0, table.length - 1, defaultLabel, table);
+                    asm.tableswitch(0, table.length - 1, defaultLabel, table);
                     break;
                 default:
                     var emitter = EMITTERS.get(ins.opcode());
