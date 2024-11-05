@@ -327,7 +327,7 @@
         </plugin>
         <plugin>
           <groupId>com.dylibso.chicory</groupId>
-          <artifactId>aot-maven-plugin</artifactId>
+          <artifactId>aot-maven-plugin-experimental</artifactId>
           <version>${project.version}</version>
         </plugin>
         <plugin>
