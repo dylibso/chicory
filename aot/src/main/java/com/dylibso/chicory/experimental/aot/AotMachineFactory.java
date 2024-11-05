@@ -1,5 +1,7 @@
 package com.dylibso.chicory.experimental.aot;
 
+import static com.dylibso.chicory.experimental.aot.AotCompiler.compileModule;
+
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.WasmModule;
@@ -17,7 +19,7 @@ public final class AotMachineFactory implements Function<Instance, Machine> {
 
     public AotMachineFactory(WasmModule module) {
         this.module = module;
-        this.factory = AotCompiler.compileModule(module).machineFactory();
+        this.factory = compileModule(module).machineFactory();
     }
 
     @Override

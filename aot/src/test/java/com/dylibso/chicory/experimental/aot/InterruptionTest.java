@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.aot;
 
+import static com.dylibso.chicory.experimental.aot.AotUtil.methodNameFor;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -78,7 +79,7 @@ public class InterruptionTest {
                 var className = element.getClassName();
                 var methodName = element.getMethodName();
                 if (className.equals(AotCompiler.DEFAULT_CLASS_NAME)
-                        && methodName.equals(AotUtil.methodNameFor(funcIdx))) {
+                        && methodName.equals(methodNameFor(funcIdx))) {
                     return;
                 }
             }

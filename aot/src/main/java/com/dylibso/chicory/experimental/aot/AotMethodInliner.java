@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.aot;
 
+import static com.dylibso.chicory.experimental.aot.AotUtil.internalClassName;
 import static org.objectweb.asm.Type.getInternalName;
 
 import com.dylibso.chicory.wasm.ChicoryException;
@@ -32,7 +33,7 @@ final class AotMethodInliner {
                         super.visit(
                                 version,
                                 Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
-                                AotUtil.internalClassName(className + "$AotMethods"),
+                                internalClassName(className + "$AotMethods"),
                                 null,
                                 superName,
                                 null);
@@ -40,7 +41,7 @@ final class AotMethodInliner {
 
                     @Override
                     public void visitEnd() {
-                        visitNestHost(AotUtil.internalClassName(className));
+                        visitNestHost(internalClassName(className));
                         super.visitEnd();
                     }
                 };
@@ -52,8 +53,8 @@ final class AotMethodInliner {
     }
 
     public static ClassRemapper aotMethodsRemapper(ClassVisitor visitor, String className) {
-        String targetInternalName = AotUtil.internalClassName(className + "$AotMethods");
-        String originalInternalName = AotUtil.internalClassName(AotMethods.class.getName());
+        String targetInternalName = internalClassName(className + "$AotMethods");
+        String originalInternalName = internalClassName(AotMethods.class.getName());
         return new ClassRemapper(
                 visitor,
                 new Remapper() {
