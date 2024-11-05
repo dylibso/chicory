@@ -4,15 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class StoreTest {
 
-    private static Module loadModule(String fileName) {
-        return Parser.parse(ModuleTest.class.getResourceAsStream("/" + fileName));
+    private static WasmModule loadModule(String fileName) {
+        return Parser.parse(WasmModuleTest.class.getResourceAsStream("/" + fileName));
     }
 
     @Test

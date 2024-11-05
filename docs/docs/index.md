@@ -73,13 +73,13 @@ Now let's load this module and instantiate it:
 ```java
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.Instance;
 import java.io.File;
 
 // point this to your path on disk
-Module module = Parser.parse(new File("./factorial.wasm"));
+WasmModule module = Parser.parse(new File("./factorial.wasm"));
 Instance instance = Instance.builder(module).build();
 ```
 

@@ -6,7 +6,7 @@ import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import com.dylibso.chicory.wasm.ChicoryException;
-import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
@@ -32,13 +32,13 @@ import java.util.stream.Stream;
 
 final class AotAnalyzer {
 
-    private final Module module;
+    private final WasmModule module;
     private final List<ValueType> globalTypes;
     private final List<FunctionType> functionTypes;
     private final List<ValueType> tableTypes;
     private final int functionImports;
 
-    public AotAnalyzer(Module module) {
+    public AotAnalyzer(WasmModule module) {
         this.module = module;
         this.globalTypes = getGlobalTypes(module);
         this.functionTypes = getFunctionTypes(module);
@@ -668,7 +668,7 @@ final class AotAnalyzer {
         return module.typeSection().getType(typeId);
     }
 
-    private static List<ValueType> getGlobalTypes(Module module) {
+    private static List<ValueType> getGlobalTypes(WasmModule module) {
         var importedGlobals =
                 module.importSection().stream()
                         .filter(GlobalImport.class::isInstance)
@@ -684,7 +684,7 @@ final class AotAnalyzer {
         return Stream.concat(importedGlobals, moduleGlobals).collect(toUnmodifiableList());
     }
 
-    private static List<FunctionType> getFunctionTypes(Module module) {
+    private static List<FunctionType> getFunctionTypes(WasmModule module) {
         var importedFunctions =
                 module.importSection().stream()
                         .filter(FunctionImport.class::isInstance)
@@ -699,7 +699,7 @@ final class AotAnalyzer {
         return Stream.concat(importedFunctions, moduleFunctions).collect(toUnmodifiableList());
     }
 
-    private static List<ValueType> getTableTypes(Module module) {
+    private static List<ValueType> getTableTypes(WasmModule module) {
         var importedTables =
                 module.importSection().stream()
                         .filter(TableImport.class::isInstance)

@@ -11,9 +11,9 @@ import static java.util.Objects.requireNonNullElseGet;
 
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
-import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.UnlinkableException;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.DataSegment;
@@ -45,7 +45,7 @@ import java.util.function.Function;
 public class Instance {
     public static final String START_FUNCTION_NAME = "_start";
 
-    private final Module module;
+    private final WasmModule module;
     private final Machine machine;
     private final FunctionBody[] functions;
     private final Memory memory;
@@ -61,7 +61,7 @@ public class Instance {
     private final ExecutionListener listener;
 
     Instance(
-            Module module,
+            WasmModule module,
             Global[] globalInitializers,
             Memory memory,
             DataSegment[] dataSegments,
@@ -242,7 +242,7 @@ public class Instance {
         return imports;
     }
 
-    public Module module() {
+    public WasmModule module() {
         return module;
     }
 
@@ -281,12 +281,12 @@ public class Instance {
         }
     }
 
-    public static Builder builder(Module module) {
+    public static Builder builder(WasmModule module) {
         return new Builder(module);
     }
 
     public static final class Builder {
-        private final Module module;
+        private final WasmModule module;
 
         private boolean initialize = true;
         private boolean start = true;
@@ -294,7 +294,7 @@ public class Instance {
         private ImportValues importValues;
         private Function<Instance, Machine> machineFactory;
 
-        private Builder(Module module) {
+        private Builder(WasmModule module) {
             this.module = Objects.requireNonNull(module);
         }
 

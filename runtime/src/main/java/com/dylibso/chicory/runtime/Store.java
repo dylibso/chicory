@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -128,7 +128,7 @@ public class Store {
     /**
      * A shorthand for instantiating a module and registering it in the store.
      */
-    public Instance instantiate(String name, Module m) {
+    public Instance instantiate(String name, WasmModule m) {
         ImportValues importValues = this.toImportValues();
         Instance instance = Instance.builder(m).withImportValues(importValues).build();
         register(name, instance);

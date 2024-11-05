@@ -2,7 +2,7 @@ package com.dylibso.chicory.experimental.aot;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
-import com.dylibso.chicory.wasm.Module;
+import com.dylibso.chicory.wasm.WasmModule;
 import java.util.function.Function;
 
 /**
@@ -12,10 +12,10 @@ import java.util.function.Function;
  */
 public final class AotMachineFactory implements Function<Instance, Machine> {
 
-    private final Module module;
+    private final WasmModule module;
     private final Function<Instance, Machine> factory;
 
-    public AotMachineFactory(Module module) {
+    public AotMachineFactory(WasmModule module) {
         this.module = module;
         this.factory = AotCompiler.compileModule(module).machineFactory();
     }

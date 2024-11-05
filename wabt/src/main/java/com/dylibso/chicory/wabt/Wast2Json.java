@@ -9,8 +9,8 @@ import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
-import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayOutputStream;
@@ -32,7 +32,7 @@ public final class Wast2Json {
                     return false;
                 }
             };
-    private static final Module MODULE =
+    private static final WasmModule MODULE =
             Parser.parse(Wast2Json.class.getResourceAsStream("/wast2json"));
 
     private final File input;

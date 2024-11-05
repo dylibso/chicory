@@ -12,8 +12,8 @@ import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.Store;
-import com.dylibso.chicory.wasm.Module;
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 public class WasiPreview1Test {
     private final Logger logger = new SystemLogger();
 
-    private static Module loadModule(String fileName) {
+    private static WasmModule loadModule(String fileName) {
         return Parser.parse(WasiPreview1Test.class.getResourceAsStream("/" + fileName));
     }
 
