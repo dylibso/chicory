@@ -116,7 +116,7 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
     RETURN
 }
 
-private final class FOO$AotMethods {
+final class FOO$AotMethods {
 
   NESTHOST FOO
   public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup

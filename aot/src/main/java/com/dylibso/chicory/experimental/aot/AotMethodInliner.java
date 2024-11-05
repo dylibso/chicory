@@ -32,7 +32,7 @@ final class AotMethodInliner {
                             String[] interfaces) {
                         super.visit(
                                 version,
-                                Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
+                                Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
                                 internalClassName(className + "$AotMethods"),
                                 null,
                                 superName,
