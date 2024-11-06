@@ -1,4 +1,4 @@
-# Chicory Runtime
+# Chicory
 
 <p align="center">
   <picture>
