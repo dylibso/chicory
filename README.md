@@ -7,8 +7,8 @@
   <br>
   <a href="https://chicory.dev/">Website</a> |
   <a href="https://chicory.dev/docs/#getting-started">Getting started</a> |
-  <a href="https://chicory.dev/blog">Blog</a> 
-  <a href="/CONTRIBUTING.md">Blog</a> 
+  <a href="https://chicory.dev/blog">Blog</a>
+  <a href="/CONTRIBUTING.md">Blog</a>
 </p>
 
 
@@ -70,7 +70,7 @@ If you have an interest in working on any of these please reach out in Zulip!
 
 ### 2023
 
-* [x] Wasm binary parser 
+* [x] Wasm binary parser
 * [x] Simple bytecode interpreter
 * [x] Establish basic coding and testing patterns
 * [x] Generate JUnit tests from wasm test suite
