@@ -24,17 +24,10 @@ public class InterpreterMachine implements Machine {
 
     private final Instance instance;
 
-    protected final EvalDefault evalDefault;
-
     public InterpreterMachine(Instance instance) {
-        this(instance, InterpreterMachine::evalDefault);
-    }
-
-    protected InterpreterMachine(Instance instance, EvalDefault evalDefault) {
         this.instance = instance;
         stack = new MStack();
         this.callStack = new ArrayDeque<>();
-        this.evalDefault = evalDefault;
     }
 
     @FunctionalInterface
@@ -42,19 +35,8 @@ public class InterpreterMachine implements Machine {
         long get(int index);
     }
 
-    @FunctionalInterface
-    protected interface EvalDefault {
-        void apply(
-                MStack stack,
-                Instance instance,
-                Deque<StackFrame> callStack,
-                Instruction instruction,
-                Operands operands)
-                throws ChicoryException;
-    }
-
     @SuppressWarnings("DoNotCallSuggester")
-    protected static void evalDefault(
+    protected void evalDefault(
             MStack stack,
             Instance instance,
             Deque<StackFrame> callStack,
@@ -66,18 +48,17 @@ public class InterpreterMachine implements Machine {
 
     @Override
     public long[] call(int funcId, long[] args) throws ChicoryException {
-        return call(stack, instance, callStack, funcId, args, null, true, evalDefault);
+        return call(stack, instance, callStack, funcId, args, null, true);
     }
 
-    private static long[] call(
+    private long[] call(
             MStack stack,
             Instance instance,
             Deque<StackFrame> callStack,
             int funcId,
             long[] args,
             FunctionType callType,
-            boolean popResults,
-            EvalDefault evalDefault)
+            boolean popResults)
             throws ChicoryException {
 
         checkInterruption();
@@ -96,7 +77,7 @@ public class InterpreterMachine implements Machine {
             callStack.push(stackFrame);
 
             try {
-                eval(stack, instance, callStack, evalDefault);
+                eval(stack, instance, callStack);
             } catch (StackOverflowError e) {
                 throw new ChicoryException("call stack exhausted", e);
             }
@@ -139,8 +120,7 @@ public class InterpreterMachine implements Machine {
         return results;
     }
 
-    static void eval(
-            MStack stack, Instance instance, Deque<StackFrame> callStack, EvalDefault evalDefault)
+    protected void eval(MStack stack, Instance instance, Deque<StackFrame> callStack)
             throws ChicoryException {
         var frame = callStack.peek();
         boolean shouldReturn = false;
@@ -218,7 +198,7 @@ public class InterpreterMachine implements Machine {
                     frame = RETURN_CALL_INDIRECT(stack, instance, callStack, operands, frame);
                     break;
                 case CALL_INDIRECT:
-                    CALL_INDIRECT(stack, instance, callStack, operands, evalDefault);
+                    CALL_INDIRECT(stack, instance, callStack, operands);
                     break;
                 case DROP:
                     stack.pop();
@@ -502,7 +482,7 @@ public class InterpreterMachine implements Machine {
                     F64_NEG(stack);
                     break;
                 case CALL:
-                    CALL(stack, instance, callStack, operands, evalDefault);
+                    CALL(operands);
                     break;
                 case I32_AND:
                     I32_AND(stack);
@@ -791,7 +771,7 @@ public class InterpreterMachine implements Machine {
                     break;
                 default:
                     {
-                        evalDefault.apply(stack, instance, callStack, instruction, operands);
+                        evalDefault(stack, instance, callStack, instruction, operands);
                         break;
                     }
             }
@@ -1646,19 +1626,14 @@ public class InterpreterMachine implements Machine {
         stack.push(Value.floatToLong(OpcodeImpl.F32_TRUNC(val)));
     }
 
-    private static void CALL(
-            MStack stack,
-            Instance instance,
-            Deque<StackFrame> callStack,
-            Operands operands,
-            EvalDefault evalDefault) {
+    private void CALL(Operands operands) {
         var funcId = (int) operands.get(0);
         var typeId = instance.functionType(funcId);
         var type = instance.type(typeId);
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.params());
-        call(stack, instance, callStack, funcId, args, type, false, evalDefault);
+        call(stack, instance, callStack, funcId, args, type, false);
     }
 
     private static void F64_NEG(MStack stack) {
@@ -1932,12 +1907,8 @@ public class InterpreterMachine implements Machine {
         }
     }
 
-    private static void CALL_INDIRECT(
-            MStack stack,
-            Instance instance,
-            Deque<StackFrame> callStack,
-            Operands operands,
-            EvalDefault evalDefault) {
+    private void CALL_INDIRECT(
+            MStack stack, Instance instance, Deque<StackFrame> callStack, Operands operands) {
         var tableIdx = (int) operands.get(1);
         var table = instance.table(tableIdx);
 
@@ -1956,7 +1927,7 @@ public class InterpreterMachine implements Machine {
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.params());
-        call(stack, instance, callStack, funcId, args, type, false, evalDefault);
+        call(stack, instance, callStack, funcId, args, type, false);
     }
 
     private static int numberOfParams(Instance instance, AnnotatedInstruction scope) {
