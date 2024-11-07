@@ -105,6 +105,7 @@ If you have an interest in working on any of these please reach out in Zulip!
 - [Meet Chicory, exploit the power of WebAssembly on the server side! by Andrea Peruffo](https://www.youtube.com/watch?v=7a1yrDSh9rA) (Devoxx BE 2024)
 - [WebAssembly, the Safer Alternative to Integrating Native Code in Java](https://www.infoq.com/articles/sqlite-java-integration-webassembly/) on [InfoQ](https://www.infoq.com)
 - [Chicory: Creating a Language-Native Wasm Runtime by Benjamin Eckel / Andrea Peruffo](https://www.youtube.com/watch?v=00LYdZS0YlI) (Wasm I/O 2024)
+- [Chicory, a JVM Native WebAssembly Runtime by Benjamin Eckel](https://youtu.be/acF_cJ70n04?si=jpMAfAmjl5UaEWWa) (Dylibso Insiders)
 
 ## Prior Art
 
