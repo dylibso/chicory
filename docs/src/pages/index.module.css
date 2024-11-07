@@ -22,7 +22,8 @@
   justify-content: center;
 }
 
-.underConstruction {
+.bigLogo {
   height: 30%;
   max-height: 500px;
+  padding: 4em;
 }
