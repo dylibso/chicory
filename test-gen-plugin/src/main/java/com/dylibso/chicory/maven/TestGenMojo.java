@@ -16,6 +16,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.maven.plugin.AbstractMojo;
@@ -214,6 +216,19 @@ public class TestGenMojo extends AbstractMojo {
         }
     }
 
+    private static final class Proposal {
+        final String remapping;
+        final String[] wabtOpts;
+
+        private Proposal(String remapping, String[] wabtOpts) {
+            this.remapping = remapping;
+            this.wabtOpts = wabtOpts;
+        }
+    }
+
+    private static Map<String, Proposal> proposals =
+            Map.of("tail-call", new Proposal("tc", new String[] {"--enable-tail-call"}));
+
     private final class TestGenerator {
 
         private final JavaTestGen testGen;
@@ -233,13 +248,27 @@ public class TestGenMojo extends AbstractMojo {
             }
 
             var plainName = wastFile.getName().replace(".wast", "");
+            String[] wabtOptions = new String[0];
+            if (wastFile.getParentFile().getParentFile().getName().equalsIgnoreCase("proposals")) {
+                var proposal = proposals.get(wastFile.getParentFile().getName());
+                plainName =
+                        proposal.remapping
+                                + plainName.substring(0, 1).toUpperCase(Locale.ROOT)
+                                + plainName.substring(1);
+                wabtOptions = proposal.wabtOpts;
+            }
             File wasmFilesFolder = compiledWastTargetFolder.toPath().resolve(plainName).toFile();
             File specFile = wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile();
             if (!wasmFilesFolder.mkdirs()) {
                 log.warn("Could not create folder: " + wasmFilesFolder);
             }
 
-            Wast2Json.builder().withFile(wastFile).withOutput(specFile).build().process();
+            Wast2Json.builder()
+                    .withFile(wastFile)
+                    .withOutput(specFile)
+                    .withOptions(wabtOptions)
+                    .build()
+                    .process();
 
             var name = specFile.toPath().getParent().toFile().getName();
             var cu = testGen.generate(name, readWast(specFile), wasmFilesFolder);

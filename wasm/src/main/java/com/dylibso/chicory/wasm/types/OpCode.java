@@ -23,6 +23,8 @@ public enum OpCode {
     RETURN(0x0F),
     CALL(0x10, List.of(VARUINT)),
     CALL_INDIRECT(0x11, List.of(VARUINT, VARUINT)),
+    RETURN_CALL(0x12, List.of(VARUINT)),
+    RETURN_CALL_INDIRECT(0x13, List.of(VARUINT, VARUINT)),
     CALL_REF(0x14, List.of(VARUINT)),
     DROP(0x1A),
     SELECT(0x1B),
