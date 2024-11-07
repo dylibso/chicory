@@ -209,6 +209,12 @@ public class InterpreterMachine implements Machine {
                         shouldReturn = true;
                         break;
                     }
+                case RETURN_CALL:
+                    frame = RETURN_CALL(stack, instance, callStack, operands);
+                    break;
+                case RETURN_CALL_INDIRECT:
+                    frame = RETURN_CALL_INDIRECT(stack, instance, callStack, operands);
+                    break;
                 case CALL_INDIRECT:
                     CALL_INDIRECT(stack, instance, callStack, operands, evalDefault);
                     break;
@@ -1848,6 +1854,58 @@ public class InterpreterMachine implements Machine {
         } else {
             stack.push(a);
         }
+    }
+
+    private static StackFrame RETURN_CALL(
+            MStack stack, Instance instance, Deque<StackFrame> callStack, Operands operands) {
+        var ctrlFrame = callStack.pop();
+
+        var funcId = (int) operands.get(0);
+        var typeId = instance.functionType(funcId);
+        var type = instance.type(typeId);
+        var func = instance.function(funcId);
+        var args = extractArgsForParams(stack, type.params());
+        StackFrame.doControlTransfer(ctrlFrame.popCtrlTillCall(), stack);
+
+        var stackFrame =
+                new StackFrame(instance, funcId, args, func.localTypes(), func.instructions());
+        stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
+
+        callStack.push(stackFrame);
+        return stackFrame;
+    }
+
+    private static StackFrame RETURN_CALL_INDIRECT(
+            MStack stack, Instance instance, Deque<StackFrame> callStack, Operands operands) {
+        var ctrlFrame = callStack.pop();
+
+        var tableIdx = (int) operands.get(1);
+        var table = instance.table(tableIdx);
+
+        var typeId = (int) operands.get(0);
+        int funcTableIdx = (int) stack.pop();
+        int funcId = table.ref(funcTableIdx);
+        var tableInstance = table.instance(funcTableIdx);
+        if (tableInstance != null) {
+            instance = tableInstance;
+        }
+        if (funcId == REF_NULL_VALUE) {
+            throw new ChicoryException("uninitialized element " + funcTableIdx);
+        }
+        var type = instance.type(typeId);
+        var func = instance.function(funcId);
+
+        verifyIndirectCall(type, instance.type(instance.functionType(funcId)));
+
+        var args = extractArgsForParams(stack, type.params());
+        StackFrame.doControlTransfer(ctrlFrame.popCtrlTillCall(), stack);
+
+        var stackFrame =
+                new StackFrame(instance, funcId, args, func.localTypes(), func.instructions());
+        stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
+
+        callStack.push(stackFrame);
+        return stackFrame;
     }
 
     private static void CALL_INDIRECT(

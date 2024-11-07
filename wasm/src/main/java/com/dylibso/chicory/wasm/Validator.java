@@ -593,11 +593,16 @@ final class Validator {
                         break;
                     }
                 case RETURN:
-                    {
-                        popVals(labelTypes(ctrlFrameStack.get(0)));
-                        unreachable();
-                        break;
-                    }
+                    VALIDATE_RETURN();
+                    break;
+                case RETURN_CALL:
+                    VALIDATE_CALL((int) op.operand(0));
+                    VALIDATE_RETURN();
+                    break;
+                case RETURN_CALL_INDIRECT:
+                    VALIDATE_CALL_INDIRECT((int) op.operand(0), (int) op.operand(1));
+                    VALIDATE_RETURN();
+                    break;
                 default:
                     break;
             }
@@ -653,6 +658,8 @@ final class Validator {
                 case IF:
                 case ELSE:
                 case RETURN:
+                case RETURN_CALL:
+                case RETURN_CALL_INDIRECT:
                 case BR_IF:
                 case BR_TABLE:
                 case BR:
@@ -1039,27 +1046,11 @@ final class Validator {
                         break;
                     }
                 case CALL:
-                    {
-                        int typeId = getFunctionType((int) op.operand(0));
-                        var types = getType(typeId);
-                        for (int j = types.params().size() - 1; j >= 0; j--) {
-                            popVal(types.params().get(j));
-                        }
-                        pushVals(types.returns());
-                        break;
-                    }
+                    VALIDATE_CALL((int) op.operand(0));
+                    break;
                 case CALL_INDIRECT:
-                    {
-                        var typeId = (int) op.operand(0);
-                        popVal(ValueType.I32);
-                        getTableType((int) op.operand(1));
-                        var types = getType(typeId);
-                        for (int j = types.params().size() - 1; j >= 0; j--) {
-                            popVal(types.params().get(j));
-                        }
-                        pushVals(types.returns());
-                        break;
-                    }
+                    VALIDATE_CALL_INDIRECT((int) op.operand(0), (int) op.operand(1));
+                    break;
                 case REF_NULL:
                     {
                         pushVal(ValueType.forId((int) op.operand(0)));
@@ -1262,5 +1253,29 @@ final class Validator {
         if (module.codeSection().isRequiresDataCount() && module.dataCountSection().isEmpty()) {
             throw new MalformedException("data count section required");
         }
+    }
+
+    private void VALIDATE_CALL(int funcId) {
+        int typeId = getFunctionType(funcId);
+        var types = getType(typeId);
+        for (int j = types.params().size() - 1; j >= 0; j--) {
+            popVal(types.params().get(j));
+        }
+        pushVals(types.returns());
+    }
+
+    private void VALIDATE_CALL_INDIRECT(int typeId, int tableId) {
+        popVal(ValueType.I32);
+        getTableType(tableId);
+        var types = getType(typeId);
+        for (int j = types.params().size() - 1; j >= 0; j--) {
+            popVal(types.params().get(j));
+        }
+        pushVals(types.returns());
+    }
+
+    private void VALIDATE_RETURN() {
+        popVals(labelTypes(ctrlFrameStack.get(0)));
+        unreachable();
     }
 }
