@@ -54,6 +54,17 @@ public class StackFrame {
         }
     }
 
+    void reset(long[] args) {
+        for (int i = 0; i < locals.length; i++) {
+            setLocal(i, args[i]);
+        }
+        pc = 0;
+    }
+
+    int funcId() {
+        return funcId;
+    }
+
     void setLocal(int i, long v) {
         this.locals[i] = v;
     }
