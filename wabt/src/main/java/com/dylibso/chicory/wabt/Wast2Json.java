@@ -91,7 +91,7 @@ public final class Wast2Json {
 
                     Instance.builder(MODULE)
                             .withImportValues(imports)
-                            .withMachineFactory(Wast2JsonModuleMachineFactory::create)
+                            .withMachineFactory(Wast2JsonMachineFactory::create)
                             .build();
                 }
 

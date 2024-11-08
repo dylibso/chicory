@@ -7,7 +7,7 @@ import com.dylibso.chicory.experimental.aot.AotCompiler;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.Parser;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.Modifier.Keyword;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
@@ -40,7 +40,7 @@ public class AotGenMojo extends AbstractMojo {
     private File wasmFile;
 
     /**
-     * the name to be used by the generated class
+     * the base name to be used for the generated classes
      */
     @Parameter(required = true)
     private String name;
@@ -70,7 +70,8 @@ public class AotGenMojo extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException {
         var module = Parser.parse(wasmFile);
-        var result = AotCompiler.compileModule(module, name);
+        var machineName = name + "Machine";
+        var result = AotCompiler.compileModule(module, machineName);
         var split = name.split("\\.");
 
         var finalFolder = targetClassFolder.toPath();
@@ -81,21 +82,21 @@ public class AotGenMojo extends AbstractMojo {
         String packageName = getPackageName(split);
 
         // Generate static Machine implementation
-        final SourceRoot dest = new SourceRoot(finalSourceFolder);
+        SourceRoot dest = new SourceRoot(finalSourceFolder);
 
-        var machineName = split[split.length - 1] + "MachineFactory";
+        var machineFactoryName = split[split.length - 1] + "MachineFactory";
 
         var cu = new CompilationUnit(packageName);
 
         cu.addImport("com.dylibso.chicory.runtime.Instance");
         cu.addImport("com.dylibso.chicory.runtime.Machine");
 
-        var clazz = cu.addClass(machineName, Modifier.Keyword.PUBLIC, Modifier.Keyword.FINAL);
+        var clazz = cu.addClass(machineFactoryName, Keyword.PUBLIC, Keyword.FINAL);
 
-        var constr = clazz.addConstructor(Modifier.Keyword.PRIVATE);
+        var constr = clazz.addConstructor(Keyword.PRIVATE);
         constr.createBody();
 
-        var method = clazz.addMethod("create", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC);
+        var method = clazz.addMethod("create", Keyword.PUBLIC, Keyword.STATIC);
         method.addParameter(parseType("Instance"), "instance");
         method.setType(Machine.class);
         var methodBody = method.createBody();
@@ -103,7 +104,7 @@ public class AotGenMojo extends AbstractMojo {
         var constructorInvocation =
                 new ObjectCreationExpr(
                         null,
-                        parseClassOrInterfaceType(name),
+                        parseClassOrInterfaceType(machineName),
                         NodeList.nodeList(new NameExpr("instance")));
         methodBody.addStatement(new ReturnStmt(constructorInvocation));
 

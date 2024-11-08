@@ -74,7 +74,7 @@ public final class Wat2Wasm {
                     ImportValues imports =
                             ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
                     Instance.builder(MODULE)
-                            .withMachineFactory(Wat2WasmModuleMachineFactory::create)
+                            .withMachineFactory(Wat2WasmMachineFactory::create)
                             .withImportValues(imports)
                             .build();
                 }
