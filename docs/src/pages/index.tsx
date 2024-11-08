@@ -16,7 +16,7 @@ function HomepageHeader() {
           {siteConfig.title}
         </Heading>
         <p className="hero__subtitle">{siteConfig.tagline}</p>
-        <img className={styles.underConstruction} src="img/site_under_construction_no_bg.png"/>
+        <img className={styles.bigLogo} src="img/chicory1.png"/>
         <div className={styles.buttons}>
           <Link
             className="button button--secondary button--lg"
