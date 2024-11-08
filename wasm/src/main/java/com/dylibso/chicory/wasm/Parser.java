@@ -4,7 +4,6 @@ import static com.dylibso.chicory.wasm.Encoding.readByte;
 import static com.dylibso.chicory.wasm.Encoding.readBytes;
 import static com.dylibso.chicory.wasm.Encoding.readFloat32;
 import static com.dylibso.chicory.wasm.Encoding.readFloat64;
-import static com.dylibso.chicory.wasm.Encoding.readInt;
 import static com.dylibso.chicory.wasm.Encoding.readName;
 import static com.dylibso.chicory.wasm.Encoding.readVarSInt32;
 import static com.dylibso.chicory.wasm.Encoding.readVarSInt64;
@@ -44,6 +43,7 @@ import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.PassiveElement;
+import com.dylibso.chicory.wasm.types.RawSection;
 import com.dylibso.chicory.wasm.types.Section;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
@@ -64,6 +64,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
@@ -77,7 +78,8 @@ import java.util.stream.Collectors;
 @SuppressWarnings("UnnecessaryCodeBlock")
 public final class Parser {
 
-    private static final int MAGIC_BYTES = 1836278016; // Magic prefix \0asm
+    static final byte[] MAGIC_BYTES = {0x00, 0x61, 0x73, 0x6D}; // Magic prefix \0asm
+    static final byte[] VERSION_BYTES = {0x01, 0x00, 0x00, 0x00}; // Version 1
 
     private final Map<String, Function<byte[], CustomSection>> customParsers;
     private final BitSet includeSections;
@@ -195,24 +197,34 @@ public final class Parser {
     }
 
     public void parse(InputStream in, ParserListener listener) {
+        parse(in, listener, true);
+    }
+
+    private void parse(InputStream in, ParserListener listener, boolean decode) {
 
         requireNonNull(listener, "listener");
         var validator = new SectionsValidator();
 
         var buffer = readByteBuffer(in);
 
-        int magicNumber = readInt(buffer);
-        if (magicNumber != MAGIC_BYTES) {
+        byte[] magic = new byte[4];
+        readBytes(buffer, magic);
+        if (!Arrays.equals(magic, MAGIC_BYTES)) {
             throw new MalformedException(
                     "magic header not detected, found: "
-                            + magicNumber
+                            + Arrays.toString(magic)
                             + " expected: "
-                            + MAGIC_BYTES);
+                            + Arrays.toString(MAGIC_BYTES));
         }
-        int version = readInt(buffer);
-        if (version != 1) {
+
+        byte[] version = new byte[4];
+        readBytes(buffer, version);
+        if (!Arrays.equals(version, VERSION_BYTES)) {
             throw new MalformedException(
-                    "unknown binary version, found: " + version + " expected: " + 1);
+                    "unknown binary version, found: "
+                            + Arrays.toString(version)
+                            + " expected: "
+                            + Arrays.toString(VERSION_BYTES));
         }
 
         // check if the custom section has malformed names only the first time that is parsed
@@ -225,6 +237,11 @@ public final class Parser {
             validator.validateSectionType(sectionId);
 
             if (shouldParseSection(sectionId)) {
+                if (!decode) {
+                    listener.onSection(parseRawSection(buffer, sectionId, sectionSize));
+                    continue;
+                }
+
                 // Process different section types based on the sectionId
                 switch (sectionId) {
                     case SectionId.CUSTOM:
@@ -318,6 +335,14 @@ public final class Parser {
         }
     }
 
+    public static void parseWithoutDecoding(byte[] bytes, ParserListener listener) {
+        new Parser().parseWithoutDecoding(new ByteArrayInputStream(bytes), listener);
+    }
+
+    public void parseWithoutDecoding(InputStream in, ParserListener listener) {
+        parse(in, listener, false);
+    }
+
     // https://webassembly.github.io/spec/core/binary/modules.html#binary-module
     private static class SectionsValidator {
         private boolean hasStart;
@@ -359,6 +384,12 @@ public final class Parser {
         return parser == null
                 ? UnknownCustomSection.builder().withName(name).withBytes(bytes).build()
                 : parser.apply(bytes);
+    }
+
+    private static RawSection parseRawSection(ByteBuffer buffer, byte sectionId, long sectionSize) {
+        var bytes = new byte[Math.toIntExact(sectionSize)];
+        readBytes(buffer, bytes);
+        return new RawSection(sectionId, bytes);
     }
 
     private static TypeSection parseTypeSection(ByteBuffer buffer) {
