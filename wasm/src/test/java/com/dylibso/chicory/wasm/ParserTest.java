@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasm;
 
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -20,8 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -121,21 +120,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseAllFiles() throws IOException {
-        File compiledDir = new File("../wasm-corpus/src/main/resources/compiled/");
-
-        List<File> files;
-        try (Stream<Path> stream = Files.list(compiledDir.toPath())) {
-            files =
-                    stream.map(Path::toFile)
-                            .filter(f -> f.getName().toLowerCase(Locale.ROOT).endsWith(".wasm"))
-                            .collect(Collectors.toList());
-        }
-
-        if (files.isEmpty()) {
-            throw new RuntimeException("Could not find files");
-        }
-
-        for (var f : files) {
+        for (var f : wasmCorpusFiles()) {
             try (InputStream is = new FileInputStream(f)) {
                 Parser.parse(is);
             } catch (IOException | RuntimeException e) {
@@ -226,6 +211,20 @@ public class ParserTest {
     public void shouldParseSIMD() throws IOException {
         try (InputStream is = getClass().getResourceAsStream("/wasm/simd_load.0.wasm")) {
             Parser.parse(is);
+        }
+    }
+
+    static List<File> wasmCorpusFiles() throws IOException {
+        var compiledDir = new File("../wasm-corpus/src/main/resources/compiled/");
+        try (var stream = Files.list(compiledDir.toPath())) {
+            var files =
+                    stream.map(Path::toFile)
+                            .filter(f -> f.getName().toLowerCase(Locale.ROOT).endsWith(".wasm"))
+                            .collect(toList());
+            if (files.isEmpty()) {
+                throw new IOException("Could not find files");
+            }
+            return files;
         }
     }
 }
