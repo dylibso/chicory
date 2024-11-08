@@ -210,10 +210,12 @@ public class InterpreterMachine implements Machine {
                         break;
                     }
                 case RETURN_CALL:
-                    frame = RETURN_CALL(stack, instance, callStack, operands);
+                    // swap in place the current frame
+                    frame = RETURN_CALL(stack, instance, callStack, operands, frame);
                     break;
                 case RETURN_CALL_INDIRECT:
-                    frame = RETURN_CALL_INDIRECT(stack, instance, callStack, operands);
+                    // swap in place the current frame
+                    frame = RETURN_CALL_INDIRECT(stack, instance, callStack, operands, frame);
                     break;
                 case CALL_INDIRECT:
                     CALL_INDIRECT(stack, instance, callStack, operands, evalDefault);
@@ -1857,28 +1859,41 @@ public class InterpreterMachine implements Machine {
     }
 
     private static StackFrame RETURN_CALL(
-            MStack stack, Instance instance, Deque<StackFrame> callStack, Operands operands) {
-        var ctrlFrame = callStack.pop();
-
+            MStack stack,
+            Instance instance,
+            Deque<StackFrame> callStack,
+            Operands operands,
+            StackFrame currentStackFrame) {
         var funcId = (int) operands.get(0);
         var typeId = instance.functionType(funcId);
         var type = instance.type(typeId);
         var func = instance.function(funcId);
         var args = extractArgsForParams(stack, type.params());
-        StackFrame.doControlTransfer(ctrlFrame.popCtrlTillCall(), stack);
 
-        var stackFrame =
-                new StackFrame(instance, funcId, args, func.localTypes(), func.instructions());
-        stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
-
-        callStack.push(stackFrame);
-        return stackFrame;
+        // optimizing when the tail call happens in the same function
+        if (currentStackFrame.funcId() == funcId) {
+            var ctrlFrame = currentStackFrame.popCtrlTillCall();
+            StackFrame.doControlTransfer(ctrlFrame, stack);
+            currentStackFrame.reset(args);
+            currentStackFrame.pushCtrl(ctrlFrame);
+            return currentStackFrame;
+        } else {
+            var ctrlFrame = callStack.pop();
+            StackFrame.doControlTransfer(ctrlFrame.popCtrlTillCall(), stack);
+            var newFrame =
+                    new StackFrame(instance, funcId, args, func.localTypes(), func.instructions());
+            newFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
+            callStack.push(newFrame);
+            return newFrame;
+        }
     }
 
     private static StackFrame RETURN_CALL_INDIRECT(
-            MStack stack, Instance instance, Deque<StackFrame> callStack, Operands operands) {
-        var ctrlFrame = callStack.pop();
-
+            MStack stack,
+            Instance instance,
+            Deque<StackFrame> callStack,
+            Operands operands,
+            StackFrame currentStackFrame) {
         var tableIdx = (int) operands.get(1);
         var table = instance.table(tableIdx);
 
@@ -1898,14 +1913,23 @@ public class InterpreterMachine implements Machine {
         verifyIndirectCall(type, instance.type(instance.functionType(funcId)));
 
         var args = extractArgsForParams(stack, type.params());
-        StackFrame.doControlTransfer(ctrlFrame.popCtrlTillCall(), stack);
 
-        var stackFrame =
-                new StackFrame(instance, funcId, args, func.localTypes(), func.instructions());
-        stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
-
-        callStack.push(stackFrame);
-        return stackFrame;
+        // optimizing when the tail call happens in the same function
+        if (currentStackFrame.funcId() == funcId) {
+            var ctrlFrame = currentStackFrame.popCtrlTillCall();
+            StackFrame.doControlTransfer(ctrlFrame, stack);
+            currentStackFrame.reset(args);
+            currentStackFrame.pushCtrl(ctrlFrame);
+            return currentStackFrame;
+        } else {
+            var ctrlFrame = callStack.pop();
+            StackFrame.doControlTransfer(ctrlFrame.popCtrlTillCall(), stack);
+            var newFrame =
+                    new StackFrame(instance, funcId, args, func.localTypes(), func.instructions());
+            newFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
+            callStack.push(newFrame);
+            return newFrame;
+        }
     }
 
     private static void CALL_INDIRECT(
