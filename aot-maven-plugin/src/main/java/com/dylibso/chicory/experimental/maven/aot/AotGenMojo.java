@@ -1,20 +1,40 @@
 package com.dylibso.chicory.experimental.maven.aot;
 
+import static com.dylibso.chicory.wasm.WasmWriter.writeVarUInt32;
 import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import static com.github.javaparser.StaticJavaParser.parseType;
 
 import com.dylibso.chicory.experimental.aot.AotCompiler;
+import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.WasmWriter;
+import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.RawSection;
+import com.dylibso.chicory.wasm.types.SectionId;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier.Keyword;
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.expr.ClassExpr;
+import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
+import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.ReturnStmt;
+import com.github.javaparser.ast.stmt.ThrowStmt;
+import com.github.javaparser.ast.stmt.TryStmt;
+import com.github.javaparser.ast.type.VarType;
 import com.github.javaparser.utils.SourceRoot;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -69,6 +89,13 @@ public class AotGenMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        byte[] wasmBytes;
+        try {
+            wasmBytes = Files.readAllBytes(wasmFile.toPath());
+        } catch (IOException e) {
+            throw new MojoExecutionException("Failed to read WASM file: " + wasmFile, e);
+        }
+
         var module = Parser.parse(wasmFile);
         var machineName = name + "Machine";
         var result = AotCompiler.compileModule(module, machineName);
@@ -81,37 +108,22 @@ public class AotGenMojo extends AbstractMojo {
 
         String packageName = getPackageName(split);
 
-        // Generate static Machine implementation
         SourceRoot dest = new SourceRoot(finalSourceFolder);
 
-        var machineFactoryName = split[split.length - 1] + "MachineFactory";
+        var baseName = split[split.length - 1];
+        var moduleName = baseName + "Module";
+        var wasmName = baseName + ".meta";
 
         var cu = new CompilationUnit(packageName);
 
-        cu.addImport("com.dylibso.chicory.runtime.Instance");
-        cu.addImport("com.dylibso.chicory.runtime.Machine");
+        var type = cu.addClass(moduleName, Keyword.PUBLIC, Keyword.FINAL);
 
-        var clazz = cu.addClass(machineFactoryName, Keyword.PUBLIC, Keyword.FINAL);
+        type.addConstructor(Keyword.PRIVATE).createBody();
 
-        var constr = clazz.addConstructor(Keyword.PRIVATE);
-        constr.createBody();
+        generateCreateMethod(cu, type, machineName);
+        generateLoadMethod(cu, type, moduleName, wasmName);
 
-        var method = clazz.addMethod("create", Keyword.PUBLIC, Keyword.STATIC);
-        method.addParameter(parseType("Instance"), "instance");
-        method.setType(Machine.class);
-        var methodBody = method.createBody();
-
-        var constructorInvocation =
-                new ObjectCreationExpr(
-                        null,
-                        parseClassOrInterfaceType(machineName),
-                        NodeList.nodeList(new NameExpr("instance")));
-        methodBody.addStatement(new ReturnStmt(constructorInvocation));
-
-        dest.add(
-                cu.getPackageDeclaration().orElseThrow().getName().toString(),
-                cu.getType(0).getNameAsString() + ".java",
-                cu);
+        dest.add(packageName, moduleName + ".java", cu);
         dest.saveAll();
 
         for (Map.Entry<String, byte[]> entry : result.classBytes().entrySet()) {
@@ -124,10 +136,113 @@ public class AotGenMojo extends AbstractMojo {
             }
         }
 
+        var rewrittenWasm = rewriteWasm(wasmBytes, module);
+        var newWasmFile =
+                targetClassFolder.toPath().resolve(packageName.replace('.', '/')).resolve(wasmName);
+        try {
+            Files.write(newWasmFile, rewrittenWasm);
+        } catch (IOException e) {
+            throw new MojoExecutionException("Failed to write " + newWasmFile, e);
+        }
+
         Resource resource = new Resource();
         resource.setDirectory(targetClassFolder.getPath());
         project.addResource(resource);
         project.addCompileSourceRoot(targetSourceFolder.getPath());
+    }
+
+    private static void generateCreateMethod(
+            CompilationUnit cu, ClassOrInterfaceDeclaration type, String machineName) {
+
+        cu.addImport(Instance.class);
+        cu.addImport(Machine.class);
+
+        var method =
+                type.addMethod("create", Keyword.PUBLIC, Keyword.STATIC)
+                        .addParameter(parseType("Instance"), "instance")
+                        .setType(Machine.class)
+                        .createBody();
+
+        var constructorInvocation =
+                new ObjectCreationExpr(
+                        null,
+                        parseClassOrInterfaceType(machineName),
+                        NodeList.nodeList(new NameExpr("instance")));
+        method.addStatement(new ReturnStmt(constructorInvocation));
+    }
+
+    private static void generateLoadMethod(
+            CompilationUnit cu,
+            ClassOrInterfaceDeclaration type,
+            String moduleName,
+            String wasmName) {
+
+        cu.addImport(IOException.class);
+        cu.addImport(UncheckedIOException.class);
+        cu.addImport(Parser.class);
+        cu.addImport(WasmModule.class);
+
+        var method =
+                type.addMethod("load", Keyword.PUBLIC, Keyword.STATIC)
+                        .setType(WasmModule.class)
+                        .createBody();
+
+        var getResource =
+                new MethodCallExpr(
+                        new ClassExpr(parseType(moduleName)),
+                        "getResourceAsStream",
+                        new NodeList<>(new StringLiteralExpr(wasmName)));
+        var resourceVar =
+                new VariableDeclarationExpr(
+                        new VariableDeclarator(new VarType(), "in", getResource));
+
+        var returnStmt =
+                new ReturnStmt(
+                        new MethodCallExpr()
+                                .setScope(new NameExpr("Parser"))
+                                .setName("parse")
+                                .addArgument(new NameExpr("in")));
+
+        var newException =
+                new ObjectCreationExpr()
+                        .setType(parseClassOrInterfaceType("UncheckedIOException"))
+                        .addArgument(new StringLiteralExpr("Failed to load AOT WASM module"))
+                        .addArgument(new NameExpr("e"));
+        var catchIoException =
+                new CatchClause()
+                        .setParameter(
+                                new com.github.javaparser.ast.body.Parameter(
+                                        parseClassOrInterfaceType("IOException"), "e"))
+                        .setBody(new BlockStmt(new NodeList<>(new ThrowStmt(newException))));
+
+        method.addStatement(
+                new TryStmt()
+                        .setResources(new NodeList<>(resourceVar))
+                        .setTryBlock(new BlockStmt(new NodeList<>(returnStmt)))
+                        .setCatchClauses(new NodeList<>(catchIoException)));
+    }
+
+    private static byte[] rewriteWasm(byte[] wasmBytes, WasmModule module) {
+        var writer = new WasmWriter();
+        Parser.parseWithoutDecoding(
+                wasmBytes,
+                section -> {
+                    if (section.sectionId() == SectionId.CODE) {
+                        var out = new ByteArrayOutputStream();
+                        int count = module.codeSection().functionBodyCount();
+                        writeVarUInt32(out, count);
+                        for (int i = 0; i < count; i++) {
+                            writeVarUInt32(out, 3); // function size in bytes
+                            writeVarUInt32(out, 0); // locals count
+                            out.write(OpCode.UNREACHABLE.opcode());
+                            out.write(OpCode.END.opcode());
+                        }
+                        writer.writeSection(SectionId.CODE, out.toByteArray());
+                    } else if (section.sectionId() != SectionId.CUSTOM) {
+                        writer.writeSection((RawSection) section);
+                    }
+                });
+        return writer.bytes();
     }
 
     static void createFolders(
