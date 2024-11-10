@@ -4,9 +4,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -29,23 +29,23 @@ public class WasmSmithWrapper {
 
     WasmSmithWrapper() {}
 
-    public File run(String subfolder, String fileName, InstructionTypes instructionTypes)
+    public Path run(String subfolder, String fileName, InstructionTypes instructionTypes)
             throws IOException {
         return run(subfolder, fileName, instructionTypes, "/smith.default.properties");
     }
 
     @SuppressWarnings("StringSplitter")
-    public File run(
+    public Path run(
             String subfolder,
             String fileName,
             InstructionTypes instructionTypes,
             String smithProperties)
             throws IOException {
         var targetSubfolder = "target/fuzz/data/" + subfolder;
-        var targetFolder = new File(targetSubfolder);
-        targetFolder.mkdirs();
-        var targetFile = new File(targetSubfolder + "/" + fileName);
-        var seedFile = new File(targetSubfolder + "/seed.txt");
+        var targetFolder = Path.of(targetSubfolder);
+        Files.createDirectories(targetFolder);
+        var targetFile = Path.of(targetSubfolder).resolve(fileName);
+        var seedFile = Path.of(targetSubfolder).resolve("seed.txt");
 
         var command = new ArrayList<>(BINARY_NAME);
         // --ensure-termination true -> breaks the execution
@@ -66,27 +66,24 @@ public class WasmSmithWrapper {
                         "--allowed-instructions",
                         instructionTypes.toString(),
                         "--output",
-                        targetFile.getAbsolutePath()));
+                        targetFile.toAbsolutePath().toString()));
         logger.info(
                 "Going to execute command:\n"
                         + String.join(" ", command)
                         + " < "
-                        + seedFile.getAbsolutePath());
+                        + seedFile.toAbsolutePath().toString());
 
         var retry = 3;
         // Trying to use the smallest possible seed for speed reasons
         var seedSize = BASE_SEED_SIZE;
         while (retry > 0) {
             ProcessBuilder pb = new ProcessBuilder(command);
-            pb.directory(new File("."));
+            pb.directory(Path.of(".").toFile());
 
             // write the seed file
-            try (var outputStream = new FileOutputStream(seedFile)) {
-                outputStream.write((seed).getBytes(UTF_8));
-                outputStream.flush();
-            }
+            Files.writeString(seedFile, seed);
 
-            pb.redirectInput(seedFile);
+            pb.redirectInput(seedFile.toFile());
             Process ps;
             try {
                 ps = pb.start();

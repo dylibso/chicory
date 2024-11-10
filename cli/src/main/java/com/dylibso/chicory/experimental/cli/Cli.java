@@ -7,9 +7,9 @@ import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Parser;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.logging.LogManager;
 import picocli.CommandLine;
 
@@ -21,7 +21,7 @@ import picocli.CommandLine;
 public class Cli implements Runnable {
 
     @CommandLine.Parameters(arity = "1", description = "a wasm file to be executed")
-    File file;
+    Path path;
 
     @CommandLine.Parameters(
             arity = "0..*",
@@ -56,7 +56,7 @@ public class Cli implements Runnable {
             throw new RuntimeException(e);
         }
         var logger = new SystemLogger();
-        var module = Parser.parse(file);
+        var module = Parser.parse(path);
         var imports =
                 wasi
                         ? ImportValues.builder()
