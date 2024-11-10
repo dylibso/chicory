@@ -5,10 +5,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -25,23 +25,21 @@ public abstract class RuntimeCli {
         this.cmdName = cmdName;
     }
 
-    public String run(File file, String functionName, List<String> params) throws IOException {
+    public String run(Path path, String functionName, List<String> params) throws IOException {
         var command = new ArrayList<String>();
-        command.addAll(List.of(binaryName, file.getAbsolutePath(), "--invoke", functionName));
+        command.addAll(List.of(binaryName, path.toAbsolutePath().toString(), "--invoke", functionName));
         command.addAll(params);
         logger.info("Going to execute command:\n" + String.join(" ", command));
         // write the command to a file to make it reproducible
         // TODO: centralize the management of folders/files it's too scattered
-        try (var outputStream =
-                new FileOutputStream(file.getParentFile() + "/" + cmdName + "-command.txt")) {
-            outputStream.write(String.join(" ", command).getBytes(UTF_8));
-            outputStream.flush();
-        }
+        Files.writeString(
+                path.getParent().resolve(cmdName + "-command.txt"),
+                String.join(" ", command));
 
         ProcessBuilder pb = new ProcessBuilder(command);
 
         // execute
-        pb.directory(new File("."));
+        pb.directory(Path.of(".").toFile());
         Process ps;
         try {
             ps = pb.start();

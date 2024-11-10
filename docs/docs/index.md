@@ -57,14 +57,14 @@ import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.Instance;
-import java.io.File;
+import java.nio.file.Path;
 
 // point this to your path on disk
-var module = Parser.parse(new File("./factorial.wasm"));
+var module = Parser.parse(Path.of("./factorial.wasm"));
 Instance instance = Instance.builder(module).build();
 ```
 
-You can think of the `module` as of inert code, and the `instance` 
+You can think of the `module` as of inert code, and the `instance`
 is the run-time representation of that code: a virtual machine ready to execute.
 
 ### Invoking a Wasm Function

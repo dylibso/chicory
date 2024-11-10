@@ -13,8 +13,6 @@ import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -30,9 +28,9 @@ public final class Wat2Wasm {
 
     private Wat2Wasm() {}
 
-    public static byte[] parse(File file) {
-        try (InputStream is = new FileInputStream(file)) {
-            return parse(is, file.getName());
+    public static byte[] parse(Path path) {
+        try (InputStream is = Files.newInputStream(path)) {
+            return parse(is, path.getFileName());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -55,7 +53,7 @@ public final class Wat2Wasm {
                             Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
 
                 Path target = fs.getPath("tmp");
-                java.nio.file.Files.createDirectory(target);
+                Files.createDirectory(target);
                 Path path = target.resolve(fileName);
                 copy(is, path, StandardCopyOption.REPLACE_EXISTING);
 

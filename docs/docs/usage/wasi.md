@@ -67,7 +67,7 @@ import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.Store;
 
-import java.io.File;
+import java.nio.file.Path;
 
 var logger = new SystemLogger();
 // let's just use the default options for now
@@ -116,7 +116,7 @@ var wasi = new WasiPreview1(logger, wasiOpts);
 // greet-wasi is a rust program that greets the string passed in stdin
 var store = new Store().addFunction(wasi.toHostFunctions());
 // instantiating will execute the module if it's a WASI command-pattern module
-store.instantiate("hello-wasi", Parser.parse(new File("greet-wasi.wasm")));
+store.instantiate("hello-wasi", Parser.parse(Path.of("greet-wasi.wasm")));
 
 
 // check that we output the greeting

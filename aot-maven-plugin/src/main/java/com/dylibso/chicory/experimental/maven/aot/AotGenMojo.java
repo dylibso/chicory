@@ -32,7 +32,6 @@ import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.ast.type.VarType;
 import com.github.javaparser.utils.SourceRoot;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -57,7 +56,7 @@ public class AotGenMojo extends AbstractMojo {
      * the wasm module to be used
      */
     @Parameter(required = true)
-    private File wasmFile;
+    private Path wasmFile;
 
     /**
      * the base name to be used for the generated classes
@@ -71,7 +70,7 @@ public class AotGenMojo extends AbstractMojo {
     @Parameter(
             required = true,
             defaultValue = "${project.build.directory}/generated-resources/chicory-aot")
-    private File targetClassFolder;
+    private Path targetClassFolder;
 
     /**
      * the target source folder to generate the Machine implementation
@@ -79,7 +78,7 @@ public class AotGenMojo extends AbstractMojo {
     @Parameter(
             required = true,
             defaultValue = "${project.build.directory}/generated-sources/chicory-aot")
-    private File targetSourceFolder;
+    private Path targetSourceFolder;
 
     /**
      * The current Maven project.
@@ -93,7 +92,7 @@ public class AotGenMojo extends AbstractMojo {
 
         byte[] wasmBytes;
         try {
-            wasmBytes = Files.readAllBytes(wasmFile.toPath());
+            wasmBytes = Files.readAllBytes(wasmFile);
         } catch (IOException e) {
             throw new MojoExecutionException("Failed to read WASM file: " + wasmFile, e);
         }
@@ -103,10 +102,14 @@ public class AotGenMojo extends AbstractMojo {
         var result = AotCompiler.compileModule(module, machineName);
         var split = name.split("\\.");
 
-        var finalFolder = targetClassFolder.toPath();
-        var finalSourceFolder = targetSourceFolder.toPath();
+        var finalFolder = targetClassFolder;
+        var finalSourceFolder = targetSourceFolder;
 
-        createFolders(finalFolder, finalSourceFolder, split);
+        try {
+            createFolders(finalFolder, finalSourceFolder, split);
+        } catch (IOException e) {
+            throw new MojoExecutionException(e);
+        }
 
         String packageName = getPackageName(split);
 
@@ -130,7 +133,7 @@ public class AotGenMojo extends AbstractMojo {
 
         for (Map.Entry<String, byte[]> entry : result.classBytes().entrySet()) {
             var binaryName = entry.getKey().replace('.', '/') + ".class";
-            var targetFile = targetClassFolder.toPath().resolve(binaryName);
+            var targetFile = targetClassFolder.resolve(binaryName);
             try {
                 Files.write(targetFile, entry.getValue());
             } catch (IOException e) {
@@ -140,7 +143,7 @@ public class AotGenMojo extends AbstractMojo {
 
         var rewrittenWasm = rewriteWasm(wasmBytes, module);
         var newWasmFile =
-                targetClassFolder.toPath().resolve(packageName.replace('.', '/')).resolve(wasmName);
+                targetClassFolder.resolve(packageName.replace('.', '/')).resolve(wasmName);
         try {
             Files.write(newWasmFile, rewrittenWasm);
         } catch (IOException e) {
@@ -148,9 +151,9 @@ public class AotGenMojo extends AbstractMojo {
         }
 
         Resource resource = new Resource();
-        resource.setDirectory(targetClassFolder.getPath());
+        resource.setDirectory(targetClassFolder.toString());
         project.addResource(resource);
-        project.addCompileSourceRoot(targetSourceFolder.getPath());
+        project.addCompileSourceRoot(targetSourceFolder.toString());
     }
 
     private static void generateCreateMethod(
@@ -248,13 +251,13 @@ public class AotGenMojo extends AbstractMojo {
     }
 
     static void createFolders(
-            Path classFilesBaseFolder, Path generatedSourceBaseFolder, String[] split) {
+            Path classFilesBaseFolder, Path generatedSourceBaseFolder, String[] split) throws IOException {
         for (int i = 0; i < (split.length - 1); i++) {
             classFilesBaseFolder = classFilesBaseFolder.resolve(split[i]);
             generatedSourceBaseFolder = generatedSourceBaseFolder.resolve(split[i]);
         }
-        classFilesBaseFolder.toFile().mkdirs();
-        generatedSourceBaseFolder.toFile().mkdirs();
+        Files.createDirectories(classFilesBaseFolder);
+        Files.createDirectories(generatedSourceBaseFolder);
     }
 
     static String getPackageName(String[] split) {
