@@ -4,7 +4,7 @@ import com.dylibso.chicory.experimental.aot.AotMachine;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
-import java.io.File;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -26,8 +26,8 @@ import org.openjdk.jmh.infra.Blackhole;
 @Fork(1)
 public class BenchmarkFactorialExecution {
 
-    private static final File ITERFACT =
-            new File("wasm-corpus/src/main/resources/compiled/iterfact.wat.wasm");
+    private static final Path ITERFACT =
+            Path.of("wasm-corpus/src/main/resources/compiled/iterfact.wat.wasm");
 
     @Param({"5", "1000"})
     private int input;

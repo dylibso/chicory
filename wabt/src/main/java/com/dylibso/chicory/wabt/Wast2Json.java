@@ -14,10 +14,9 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -35,11 +34,11 @@ public final class Wast2Json {
     private static final WasmModule MODULE =
             Parser.parse(Wast2Json.class.getResourceAsStream("/wast2json"));
 
-    private final File input;
-    private final File output;
+    private final Path input;
+    private final Path output;
     private final String[] options;
 
-    private Wast2Json(File input, File output, String[] options) {
+    private Wast2Json(Path input, Path output, String[] options) {
         this.input = input;
         this.output = output;
         this.options = options;
@@ -51,7 +50,7 @@ public final class Wast2Json {
 
     public void process() {
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream()) {
-            try (FileInputStream fis = new FileInputStream(input);
+            try (InputStream fis = Files.newInputStream(input);
                     FileSystem fs =
                             Jimfs.newFileSystem(
                                     Configuration.unix().toBuilder()
@@ -64,13 +63,13 @@ public final class Wast2Json {
                 wasiOpts.withStderr(stdoutStream);
 
                 Path inputFolder = fs.getPath("input");
-                java.nio.file.Files.createDirectory(inputFolder);
+                Files.createDirectory(inputFolder);
                 Path inputPath = inputFolder.resolve(input.getName());
                 copy(fis, inputPath, StandardCopyOption.REPLACE_EXISTING);
                 wasiOpts.withDirectory(inputFolder.toString(), inputFolder);
 
                 Path outputFolder = fs.getPath("output");
-                java.nio.file.Files.createDirectory(outputFolder);
+                Files.createDirectory(outputFolder);
                 wasiOpts.withDirectory(outputFolder.toString(), outputFolder);
 
                 List<String> args = new ArrayList<>();
@@ -95,8 +94,8 @@ public final class Wast2Json {
                             .build();
                 }
 
-                createDirectories(output.toPath().getParent());
-                Files.copyDirectory(outputFolder, output.toPath().getParent());
+                createDirectories(output.getParent());
+                Files.copyDirectory(outputFolder, output.getParent());
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -134,18 +133,18 @@ public final class Wast2Json {
     //  --debug-names                            Write debug names to the generated binary file
     //  --no-check                               Don't check for invalid modules
     public static final class Builder {
-        private File input;
-        private File output;
+        private Path input;
+        private Path output;
 
         private Builder() {}
 
-        public Builder withFile(File f) {
-            this.input = f;
+        public Builder withFile(Path p) {
+            this.input = p;
             return this;
         }
 
-        public Builder withOutput(File f) {
-            this.output = f;
+        public Builder withOutput(Path p) {
+            this.output = p;
             return this;
         }
 

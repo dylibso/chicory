@@ -76,10 +76,10 @@ import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.Instance;
-import java.io.File;
+import java.nio.file.Path;
 
 // point this to your path on disk
-WasmModule module = Parser.parse(new File("./factorial.wasm"));
+WasmModule module = Parser.parse(Path.of("./factorial.wasm"));
 Instance instance = Instance.builder(module).build();
 ```
 
