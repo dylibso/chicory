@@ -6,7 +6,6 @@ import static com.dylibso.chicory.wasm.types.ExternalType.FUNCTION;
 import static com.dylibso.chicory.wasm.types.ExternalType.GLOBAL;
 import static com.dylibso.chicory.wasm.types.ExternalType.MEMORY;
 import static com.dylibso.chicory.wasm.types.ExternalType.TABLE;
-import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.util.Objects.requireNonNullElseGet;
 
 import com.dylibso.chicory.wasm.ChicoryException;
@@ -118,11 +117,6 @@ public class Instance {
                     var inst = computeConstantInstance(this, init);
 
                     if (ae.type() == ValueType.FuncRef) {
-                        if (value != REF_NULL_VALUE
-                                && (value < 0
-                                        || value >= (functions.length + imports.functionCount()))) {
-                            throw new InvalidException("unknown function " + value);
-                        }
                         table.setRef(index, (int) value, inst);
                     } else {
                         assert ae.type() == ValueType.ExternRef;

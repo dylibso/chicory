@@ -352,6 +352,11 @@ final class Validator {
 
     void validateElements() {
         // Validate offsets.
+        var totalFunctions =
+                module.functionSection().functionCount()
+                        + module.importSection().stream()
+                                .filter(i -> i.importType() == ExternalType.FUNCTION)
+                                .count();
         for (Element el : module.elementSection().elements()) {
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
@@ -362,6 +367,14 @@ final class Validator {
                         // TODO: this indicates that error messages should be concatenated
                         // space for further refactoring
                         throw new InvalidException("type mismatch, constant expression required");
+                    }
+                    for (var init : initializers) {
+                        if (init.opcode() == OpCode.REF_FUNC) {
+                            var idx = init.operands()[0];
+                            if (idx < 0 || idx >= totalFunctions) {
+                                throw new InvalidException("unknown function " + idx);
+                            }
+                        }
                     }
                     validateConstantExpression(
                             ae.initializers().get(i), getTableType(ae.tableIndex()));
