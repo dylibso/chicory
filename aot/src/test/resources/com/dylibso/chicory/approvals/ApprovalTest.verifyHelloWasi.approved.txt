@@ -205,21 +205,13 @@ final class com/dylibso/chicory/$gen/CompiledMachine$MachineCall {
     ALOAD 1
     ALOAD 3
     ILOAD 2
-    TABLESWITCH
-      0: L0
-      1: L1
-      default: L2
-   L1
+    LOOKUPSWITCH
+      1: L0
+      default: L1
+   L0
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call_1 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ARETURN
-   L0
-    POP
-    POP
-    ILOAD 2
-    ALOAD 3
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.callHostFunction (Lcom/dylibso/chicory/runtime/Instance;I[J)[J
-    ARETURN
-   L2
+   L1
     ILOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwUnknownFunction (I)Ljava/lang/RuntimeException;
     ATHROW

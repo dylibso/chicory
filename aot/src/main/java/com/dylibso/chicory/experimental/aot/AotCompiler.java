@@ -63,6 +63,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.objectweb.asm.ClassReader;
@@ -90,6 +91,7 @@ public final class AotCompiler {
     private final AotAnalyzer analyzer;
     private final int functionImports;
     private final List<FunctionType> functionTypes;
+    private final Set<Integer> exportedFunctions;
     private final Map<String, byte[]> extraClasses;
 
     private AotCompiler(WasmModule module, String className) {
@@ -98,6 +100,7 @@ public final class AotCompiler {
         this.analyzer = new AotAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
         this.functionTypes = analyzer.functionTypes();
+        this.exportedFunctions = exportedFunctionIds(module);
         this.extraClasses = compileExtraClasses();
     }
 
@@ -160,7 +163,7 @@ public final class AotCompiler {
     private Map<String, byte[]> compileExtraClasses() {
         Map<String, byte[]> classes = new LinkedHashMap<>();
         loadExtraClass(classes, createAotMethodsClass(className));
-        if (!functionTypes.isEmpty()) {
+        if (!exportedFunctions.isEmpty()) {
             loadExtraClass(classes, compileMachineCallClass());
         }
         return classes;
@@ -327,7 +330,7 @@ public final class AotCompiler {
 
     private void compileMachineCall(String internalClassName, InstructionAdapter asm) {
         // handle modules with no functions
-        if (functionTypes.isEmpty()) {
+        if (exportedFunctions.isEmpty()) {
             asm.load(1, INT_TYPE);
             emitInvokeStatic(asm, THROW_UNKNOWN_FUNCTION);
             asm.athrow();
@@ -396,8 +399,7 @@ public final class AotCompiler {
                 this::compileMachineCallInvoke);
 
         // call_xxx() bridges for boxed to native
-        for (int i = 0; i < module.functionSection().functionCount(); i++) {
-            var funcId = functionImports + i;
+        for (int funcId : exportedFunctions) {
             var type = functionTypes.get(funcId);
             emitFunction(
                     classWriter,
@@ -418,35 +420,26 @@ public final class AotCompiler {
 
         // switch (funcId)
         Label defaultLabel = new Label();
-        Label hostLabel = new Label();
-        Label[] labels = new Label[functionTypes.size()];
+        int[] keys = new int[exportedFunctions.size()];
+        Label[] labels = new Label[keys.length];
 
-        for (int i = 0; i < labels.length; i++) {
-            labels[i] = (i < functionImports) ? hostLabel : new Label();
+        var ids = exportedFunctions.iterator();
+        for (int i = 0; i < keys.length; i++) {
+            keys[i] = ids.next();
+            labels[i] = new Label();
         }
 
         asm.load(2, INT_TYPE);
-        asm.tableswitch(0, labels.length - 1, defaultLabel, labels);
+        asm.lookupswitch(defaultLabel, keys, labels);
 
         // return call_xxx(instance, memory, args);
-        for (int i = functionImports; i < labels.length; i++) {
+        for (int i = 0; i < keys.length; i++) {
             asm.mark(labels[i]);
             asm.invokestatic(
                     internalClassName(className + "$MachineCall"),
-                    callMethodName(i),
+                    callMethodName(keys[i]),
                     CALL_METHOD_TYPE.toMethodDescriptorString(),
                     false);
-            asm.areturn(OBJECT_TYPE);
-        }
-
-        // return instance.callHostFunction(funcId, args);
-        if (functionImports > 0) {
-            asm.mark(hostLabel);
-            asm.pop();
-            asm.pop();
-            asm.load(2, INT_TYPE);
-            asm.load(3, OBJECT_TYPE);
-            emitInvokeStatic(asm, CALL_HOST_FUNCTION);
             asm.areturn(OBJECT_TYPE);
         }
 
@@ -716,7 +709,19 @@ public final class AotCompiler {
         }
     }
 
-    private static String callMethodName(int functId) {
-        return "call_" + functId;
+    private static Set<Integer> exportedFunctionIds(WasmModule module) {
+        Set<Integer> ids = new TreeSet<>();
+        for (int i = 0; i < module.exportSection().exportCount(); i++) {
+            var export = module.exportSection().getExport(i);
+            if (export.exportType() == ExternalType.FUNCTION) {
+                ids.add(export.index());
+            }
+        }
+        module.startSection().ifPresent(start -> ids.add((int) start.startIndex()));
+        return ids;
+    }
+
+    private static String callMethodName(int funcId) {
+        return "call_" + funcId;
     }
 }

@@ -112,40 +112,16 @@ final class com/dylibso/chicory/$gen/CompiledMachine$MachineCall {
     ALOAD 1
     ALOAD 3
     ILOAD 2
-    TABLESWITCH
-      0: L0
-      1: L1
-      2: L2
-      default: L3
+    LOOKUPSWITCH
+      2: L0
+      default: L1
    L0
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call_0 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
-    ARETURN
-   L1
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call_1 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
-    ARETURN
-   L2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call_2 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ARETURN
-   L3
+   L1
     ILOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwUnknownFunction (I)Ljava/lang/RuntimeException;
     ATHROW
-
-  public static call_0(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
-    ALOAD 1
-    ALOAD 0
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_0 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    ICONST_0
-    NEWARRAY T_LONG
-    ARETURN
-
-  public static call_1(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
-    ALOAD 1
-    ALOAD 0
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_1 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    ICONST_0
-    NEWARRAY T_LONG
-    ARETURN
 
   public static call_2(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ALOAD 1

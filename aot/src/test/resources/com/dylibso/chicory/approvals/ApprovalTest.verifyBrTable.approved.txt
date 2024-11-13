@@ -115,7 +115,7 @@ final class com/dylibso/chicory/$gen/CompiledMachine$MachineCall {
     ALOAD 1
     ALOAD 3
     ILOAD 2
-    TABLESWITCH
+    LOOKUPSWITCH
       0: L0
       default: L1
    L0
