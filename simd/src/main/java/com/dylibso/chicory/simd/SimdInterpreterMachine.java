@@ -12,7 +12,7 @@ import com.dylibso.chicory.wasm.types.OpCode;
 import java.util.Deque;
 import jdk.incubator.vector.LongVector;
 
-public class SimdInterpreterMachine extends InterpreterMachine {
+public final class SimdInterpreterMachine extends InterpreterMachine {
 
     public SimdInterpreterMachine(Instance instance) {
         super(instance);
