@@ -12,13 +12,14 @@ import com.dylibso.chicory.wasm.types.OpCode;
 import java.util.Deque;
 import jdk.incubator.vector.LongVector;
 
-public class SimdInterpreterMachine extends InterpreterMachine {
+public final class SimdInterpreterMachine extends InterpreterMachine {
 
     public SimdInterpreterMachine(Instance instance) {
-        super(instance, SimdInterpreterMachine::evalDefault);
+        super(instance);
     }
 
-    protected static void evalDefault(
+    @Override
+    protected void evalDefault(
             MStack stack,
             Instance instance,
             Deque<StackFrame> callStack,
@@ -75,7 +76,7 @@ public class SimdInterpreterMachine extends InterpreterMachine {
                 F32x4_CONVERT_I32x4_U(stack);
                 break;
             default:
-                InterpreterMachine.evalDefault(stack, instance, callStack, instruction, operands);
+                super.evalDefault(stack, instance, callStack, instruction, operands);
                 break;
         }
     }
