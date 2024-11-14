@@ -106,7 +106,6 @@ final class com/dylibso/chicory/$gen/CompiledMachine$MachineCall {
     ALOAD 1
     ALOAD 0
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_0 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    ICONST_0
-    NEWARRAY T_LONG
+    ACONST_NULL
     ARETURN
 }
