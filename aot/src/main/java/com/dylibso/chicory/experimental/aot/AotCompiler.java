@@ -9,7 +9,7 @@ import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CHECK_INTERRUPT
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.INSTANCE_MEMORY;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.INSTANCE_TABLE;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.TABLE_INSTANCE;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.TABLE_REF;
+import static com.dylibso.chicory.experimental.aot.AotMethodRefs.TABLE_REQUIRED_REF;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.THROW_CALL_STACK_EXHAUSTED;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.THROW_INDIRECT_CALL_TYPE_MISMATCH;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.THROW_UNKNOWN_FUNCTION;
@@ -508,10 +508,10 @@ public final class AotCompiler {
         emitInvokeVirtual(asm, INSTANCE_TABLE);
         asm.store(table, OBJECT_TYPE);
 
-        // int funcId = tableRef(table, funcTableIdx);
+        // int funcId = table.requiredRef(funcTableIdx);
         asm.load(table, OBJECT_TYPE);
         asm.load(funcTableIdx, INT_TYPE);
-        emitInvokeStatic(asm, TABLE_REF);
+        emitInvokeVirtual(asm, TABLE_REQUIRED_REF);
         asm.store(funcId, INT_TYPE);
 
         // Instance refInstance = table.instance(funcTableIdx);

@@ -56,6 +56,14 @@ public class TableInstance {
         return this.refs[index];
     }
 
+    public int requiredRef(int index) {
+        int ref = ref(index);
+        if (ref == REF_NULL_VALUE) {
+            throw new ChicoryException("uninitialized element " + index);
+        }
+        return ref;
+    }
+
     public void setRef(int index, int value, Instance instance) {
         if (index < 0 || index >= this.refs.length || index >= this.instances.length) {
             throw new UninstantiableException("out of bounds table access");
