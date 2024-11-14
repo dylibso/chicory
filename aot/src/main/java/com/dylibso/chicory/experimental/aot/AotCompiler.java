@@ -475,8 +475,7 @@ public final class AotCompiler {
         // box the result into long[]
         Class<?> returnType = jvmReturnType(type);
         if (returnType == void.class) {
-            asm.iconst(0);
-            asm.newarray(LONG_TYPE);
+            asm.aconst(null);
         } else if (returnType != long[].class) {
             emitJvmToLong(asm, type.returns().get(0));
             asm.store(3, LONG_TYPE);
