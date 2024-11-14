@@ -67,7 +67,7 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
     ASTORE 4
     ALOAD 4
     ILOAD 0
-    INVOKESTATIC FOO$AotMethods.tableRef (Lcom/dylibso/chicory/runtime/TableInstance;I)I
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.requiredRef (I)I
     ISTORE 5
     ALOAD 4
     ILOAD 0
@@ -252,31 +252,6 @@ final class FOO$AotMethods {
    L1
     RETURN
    L2
-
-  public static tableRef(Lcom/dylibso/chicory/runtime/TableInstance;I)I
-   L0
-    ALOAD 0
-    ILOAD 1
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.ref (I)I
-    ISTORE 2
-   L1
-    ILOAD 2
-    ICONST_M1
-    IF_ICMPNE L2
-   L3
-    NEW com/dylibso/chicory/wasm/ChicoryException
-    DUP
-    ILOAD 1
-    INVOKEDYNAMIC makeConcatWithConstants(I)Ljava/lang/String; [
-      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
-      "uninitialized element \u0001"
-    ]
-    INVOKESPECIAL com/dylibso/chicory/wasm/ChicoryException.<init> (Ljava/lang/String;)V
-    ATHROW
-   L2
-    ILOAD 2
-    IRETURN
-   L4
 
   public static memoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
    L0

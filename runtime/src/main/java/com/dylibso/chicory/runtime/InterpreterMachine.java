@@ -1874,13 +1874,10 @@ public class InterpreterMachine implements Machine {
 
         var typeId = (int) operands.get(0);
         int funcTableIdx = (int) stack.pop();
-        int funcId = table.ref(funcTableIdx);
+        int funcId = table.requiredRef(funcTableIdx);
         var tableInstance = table.instance(funcTableIdx);
         if (tableInstance != null) {
             instance = tableInstance;
-        }
-        if (funcId == REF_NULL_VALUE) {
-            throw new ChicoryException("uninitialized element " + funcTableIdx);
         }
         var type = instance.type(typeId);
         var func = instance.function(funcId);
@@ -1914,13 +1911,10 @@ public class InterpreterMachine implements Machine {
 
         var typeId = (int) operands.get(0);
         int funcTableIdx = (int) stack.pop();
-        int funcId = table.ref(funcTableIdx);
+        int funcId = table.requiredRef(funcTableIdx);
         var tableInstance = table.instance(funcTableIdx);
         if (tableInstance != null) {
             instance = tableInstance;
-        }
-        if (funcId == REF_NULL_VALUE) {
-            throw new ChicoryException("uninitialized element " + funcTableIdx);
         }
         var type = instance.type(typeId);
 

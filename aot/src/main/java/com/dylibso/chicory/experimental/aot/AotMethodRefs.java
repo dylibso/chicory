@@ -42,7 +42,7 @@ public final class AotMethodRefs {
     static final Method TABLE_FILL;
     static final Method TABLE_COPY;
     static final Method TABLE_INIT;
-    static final Method TABLE_REF;
+    static final Method TABLE_REQUIRED_REF;
     static final Method TABLE_INSTANCE;
     static final Method VALIDATE_BASE;
     static final Method THROW_CALL_STACK_EXHAUSTED;
@@ -150,7 +150,7 @@ public final class AotMethodRefs {
                             int.class,
                             int.class,
                             Instance.class);
-            TABLE_REF = AotMethods.class.getMethod("tableRef", TableInstance.class, int.class);
+            TABLE_REQUIRED_REF = TableInstance.class.getMethod("requiredRef", int.class);
             TABLE_INSTANCE = TableInstance.class.getMethod("instance", int.class);
             VALIDATE_BASE = AotMethods.class.getMethod("validateBase", int.class);
             THROW_CALL_STACK_EXHAUSTED =

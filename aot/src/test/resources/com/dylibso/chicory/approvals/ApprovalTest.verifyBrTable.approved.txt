@@ -58,7 +58,7 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ASTORE 5
     ALOAD 5
     ILOAD 1
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.tableRef (Lcom/dylibso/chicory/runtime/TableInstance;I)I
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.requiredRef (I)I
     ISTORE 6
     ALOAD 5
     ILOAD 1

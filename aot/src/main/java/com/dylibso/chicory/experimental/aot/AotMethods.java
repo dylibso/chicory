@@ -5,7 +5,6 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpcodeImpl;
-import com.dylibso.chicory.runtime.TableInstance;
 import com.dylibso.chicory.runtime.TrapException;
 import com.dylibso.chicory.runtime.WasmRuntimeException;
 import com.dylibso.chicory.wasm.ChicoryException;
@@ -63,14 +62,6 @@ public final class AotMethods {
     public static void tableInit(
             int offset, int elemidx, int size, int elementidx, int tableidx, Instance instance) {
         OpcodeImpl.TABLE_INIT(instance, tableidx, elementidx, size, elemidx, offset);
-    }
-
-    public static int tableRef(TableInstance table, int index) {
-        int funcId = table.ref(index);
-        if (funcId == REF_NULL_VALUE) {
-            throw new ChicoryException("uninitialized element " + index);
-        }
-        return funcId;
     }
 
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
