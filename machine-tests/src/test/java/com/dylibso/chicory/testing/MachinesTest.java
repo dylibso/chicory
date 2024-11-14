@@ -3,20 +3,29 @@ package com.dylibso.chicory.testing;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.experimental.aot.AotMachine;
 import com.dylibso.chicory.log.SystemLogger;
+import com.dylibso.chicory.runtime.ImportTable;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.InterpreterMachine;
 import com.dylibso.chicory.runtime.Store;
+import com.dylibso.chicory.runtime.TableInstance;
+import com.dylibso.chicory.runtime.TrapException;
 import com.dylibso.chicory.testing.gen.DynamicHelloJSModule;
 import com.dylibso.chicory.testing.gen.QuickJSModule;
 import com.dylibso.chicory.wabt.Wat2WasmModule;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
+import com.dylibso.chicory.wasm.types.Table;
+import com.dylibso.chicory.wasm.types.TableLimits;
+import com.dylibso.chicory.wasm.types.ValueType;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayOutputStream;
@@ -32,20 +41,16 @@ import org.junit.jupiter.api.Test;
 
 public final class MachinesTest {
 
+    private WasmModule loadModule(String fileName) {
+        return Parser.parse(getClass().getResourceAsStream("/" + fileName));
+    }
+
     private Instance.Builder quickJsInstanceBuilder() {
-        return Instance.builder(
-                Parser.parse(
-                        this.getClass()
-                                .getResourceAsStream(
-                                        "/compiled/quickjs-provider.javy-dynamic.wasm")));
+        return Instance.builder(loadModule("compiled/quickjs-provider.javy-dynamic.wasm"));
     }
 
     private Instance.Builder moduleInstanceBuilder() {
-        return Instance.builder(
-                Parser.parse(
-                        this.getClass()
-                                .getResourceAsStream(
-                                        "/compiled/hello-world.js.javy-dynamic.wasm")));
+        return Instance.builder(loadModule("compiled/hello-world.js.javy-dynamic.wasm"));
     }
 
     private WasiPreview1 setupWasi(ByteArrayOutputStream stderr) {
@@ -218,5 +223,57 @@ public final class MachinesTest {
             assertTrue(result.length > 0);
             assertTrue(new String(result, UTF_8).contains("iterFact"));
         }
+    }
+
+    @Test
+    public void shouldCallIndirectInterpreterToAot() {
+        var store = new Store();
+        var table = new TableInstance(new Table(ValueType.FuncRef, new TableLimits(3, 3)));
+        store.addTable(new ImportTable("test", "table", table));
+
+        var instance =
+                Instance.builder(loadModule("compiled/call_indirect-export.wat.wasm"))
+                        .withImportValues(store.toImportValues())
+                        .withMachineFactory(InterpreterMachine::new)
+                        .build();
+        store.register("test", instance);
+
+        Instance.builder(loadModule("compiled/call_indirect-import.wat.wasm"))
+                .withImportValues(store.toImportValues())
+                .withMachineFactory(AotMachine::new)
+                .build();
+
+        assertEquals(42, instance.export("call-self").apply()[0]);
+        assertEquals(88, instance.export("call-other").apply()[0]);
+
+        var ex = assertThrows(TrapException.class, instance.export("call-other-fail")::apply);
+        var className = ex.getStackTrace()[0].getClassName();
+        assertTrue(className.contains("CompiledMachine"), className);
+    }
+
+    @Test
+    public void shouldCallIndirectAotToInterpreter() {
+        var store = new Store();
+        var table = new TableInstance(new Table(ValueType.FuncRef, new TableLimits(3, 3)));
+        store.addTable(new ImportTable("test", "table", table));
+
+        var instance =
+                Instance.builder(loadModule("compiled/call_indirect-export.wat.wasm"))
+                        .withImportValues(store.toImportValues())
+                        .withMachineFactory(AotMachine::new)
+                        .build();
+        store.register("test", instance);
+
+        Instance.builder(loadModule("compiled/call_indirect-import.wat.wasm"))
+                .withImportValues(store.toImportValues())
+                .withMachineFactory(InterpreterMachine::new)
+                .build();
+
+        assertEquals(42, instance.export("call-self").apply()[0]);
+        assertEquals(88, instance.export("call-other").apply()[0]);
+
+        var ex = assertThrows(TrapException.class, instance.export("call-other-fail")::apply);
+        var className = ex.getStackTrace()[0].getClassName();
+        assertTrue(className.contains("InterpreterMachine"), className);
     }
 }

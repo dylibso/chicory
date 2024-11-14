@@ -1,6 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
@@ -1874,15 +1875,20 @@ public class InterpreterMachine implements Machine {
 
         var typeId = (int) operands.get(0);
         int funcTableIdx = (int) stack.pop();
-        int funcId = table.requiredRef(funcTableIdx);
-        var tableInstance = table.instance(funcTableIdx);
-        if (tableInstance != null) {
-            instance = tableInstance;
-        }
-        var type = instance.type(typeId);
-        var func = instance.function(funcId);
 
-        verifyIndirectCall(type, instance.type(instance.functionType(funcId)));
+        int funcId = table.requiredRef(funcTableIdx);
+        var refInstance = requireNonNullElse(table.instance(funcTableIdx), instance);
+        var type = refInstance.type(typeId);
+
+        var callType = refInstance.type(refInstance.functionType(funcId));
+        verifyIndirectCall(callType, type);
+
+        var refMachine = refInstance.getMachine().getClass();
+        if (!refInstance.equals(instance) && !refMachine.equals(instance.getMachine().getClass())) {
+            throw new ChicoryException(
+                    "Indirect tail-call to a different Machine implementation is not supported: "
+                            + refMachine.getName());
+        }
 
         var args = extractArgsForParams(stack, type.params());
 
@@ -1894,6 +1900,7 @@ public class InterpreterMachine implements Machine {
             currentStackFrame.pushCtrl(ctrlFrame);
             return currentStackFrame;
         } else {
+            var func = instance.function(funcId);
             var ctrlFrame = callStack.pop();
             StackFrame.doControlTransfer(ctrlFrame.popCtrlTillCall(), stack);
             var newFrame =
@@ -1911,17 +1918,27 @@ public class InterpreterMachine implements Machine {
 
         var typeId = (int) operands.get(0);
         int funcTableIdx = (int) stack.pop();
+
         int funcId = table.requiredRef(funcTableIdx);
-        var tableInstance = table.instance(funcTableIdx);
-        if (tableInstance != null) {
-            instance = tableInstance;
-        }
-        var type = instance.type(typeId);
+        var refInstance = requireNonNullElse(table.instance(funcTableIdx), instance);
+        var type = refInstance.type(typeId);
 
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.params());
-        call(stack, instance, callStack, funcId, args, type, false);
+        if (refInstance.equals(instance)) {
+            call(stack, instance, callStack, funcId, args, type, false);
+        } else {
+            checkInterruption();
+            var callType = refInstance.type(refInstance.functionType(funcId));
+            verifyIndirectCall(callType, type);
+            var results = refInstance.getMachine().call(funcId, args);
+            if (results != null) {
+                for (var result : results) {
+                    stack.push(result);
+                }
+            }
+        }
     }
 
     private static int numberOfParams(Instance instance, AnnotatedInstruction scope) {
