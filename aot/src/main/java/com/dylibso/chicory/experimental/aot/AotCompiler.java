@@ -30,6 +30,8 @@ import static com.dylibso.chicory.experimental.aot.AotUtil.methodTypeFor;
 import static com.dylibso.chicory.experimental.aot.AotUtil.slotCount;
 import static com.dylibso.chicory.experimental.aot.AotUtil.valueMethodName;
 import static com.dylibso.chicory.experimental.aot.AotUtil.valueMethodType;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
 import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
@@ -83,6 +85,8 @@ public final class AotCompiler {
 
     private static final MethodType MACHINE_CALL_METHOD_TYPE =
             methodType(long[].class, Instance.class, Memory.class, int.class, long[].class);
+
+    private static final int MAX_MACHINE_CALL_METHODS = 1024; // must be power of two
 
     private final AotClassLoader classLoader = new AotClassLoader();
     private final String className;
@@ -388,12 +392,23 @@ public final class AotCompiler {
                 });
 
         // static implementation for Machine.call()
-        emitFunction(
-                classWriter,
-                "call",
-                MACHINE_CALL_METHOD_TYPE,
-                true,
-                this::compileMachineCallInvoke);
+        Consumer<InstructionAdapter> callMethod;
+        if (functionTypes.size() < MAX_MACHINE_CALL_METHODS) {
+            callMethod = asm -> compileMachineCallInvoke(asm, 0, functionTypes.size());
+        } else {
+            callMethod = this::compileMachineCallDispatch;
+            for (int i = 0; i < functionTypes.size(); i += MAX_MACHINE_CALL_METHODS) {
+                int start = i;
+                int end = min(start + MAX_MACHINE_CALL_METHODS, functionTypes.size());
+                emitFunction(
+                        classWriter,
+                        callDispatchMethodName(start),
+                        MACHINE_CALL_METHOD_TYPE,
+                        true,
+                        asm -> compileMachineCallInvoke(asm, start, end));
+            }
+        }
+        emitFunction(classWriter, "call", MACHINE_CALL_METHOD_TYPE, true, callMethod);
 
         // call_xxx() bridges for boxed to native
         for (int i = 0; i < module.functionSection().functionCount(); i++) {
@@ -410,7 +425,40 @@ public final class AotCompiler {
         return binaryWriter.toByteArray();
     }
 
-    private void compileMachineCallInvoke(InstructionAdapter asm) {
+    private void compileMachineCallDispatch(InstructionAdapter asm) {
+        // load arguments
+        asm.load(0, OBJECT_TYPE);
+        asm.load(1, OBJECT_TYPE);
+        asm.load(2, INT_TYPE);
+        asm.load(3, OBJECT_TYPE);
+
+        assert Integer.bitCount(MAX_MACHINE_CALL_METHODS) == 1; // power of two
+        int shift = Integer.numberOfTrailingZeros(MAX_MACHINE_CALL_METHODS);
+
+        // switch (funcId >> shift)
+        Label[] labels = new Label[((functionTypes.size() - 1) >> shift) + 1];
+        for (int i = 0; i < labels.length; i++) {
+            labels[i] = new Label();
+        }
+
+        asm.load(2, INT_TYPE);
+        asm.iconst(shift);
+        asm.shr(INT_TYPE);
+        asm.tableswitch(0, labels.length - 1, labels[0], labels);
+
+        // return call_dispatch_xxx(instance, memory, funcId, args);
+        for (int i = 0; i < labels.length; i++) {
+            asm.mark(labels[i]);
+            asm.invokestatic(
+                    internalClassName(className + "$MachineCall"),
+                    callDispatchMethodName(i << shift),
+                    MACHINE_CALL_METHOD_TYPE.toMethodDescriptorString(),
+                    false);
+            asm.areturn(OBJECT_TYPE);
+        }
+    }
+
+    private void compileMachineCallInvoke(InstructionAdapter asm, int start, int end) {
         // load arguments
         asm.load(0, OBJECT_TYPE);
         asm.load(1, OBJECT_TYPE);
@@ -419,28 +467,28 @@ public final class AotCompiler {
         // switch (funcId)
         Label defaultLabel = new Label();
         Label hostLabel = new Label();
-        Label[] labels = new Label[functionTypes.size()];
+        Label[] labels = new Label[end - start];
 
-        for (int i = 0; i < labels.length; i++) {
-            labels[i] = (i < functionImports) ? hostLabel : new Label();
+        for (int id = start; id < end; id++) {
+            labels[id - start] = (id < functionImports) ? hostLabel : new Label();
         }
 
         asm.load(2, INT_TYPE);
-        asm.tableswitch(0, labels.length - 1, defaultLabel, labels);
+        asm.tableswitch(start, end - 1, defaultLabel, labels);
 
         // return call_xxx(instance, memory, args);
-        for (int i = functionImports; i < labels.length; i++) {
-            asm.mark(labels[i]);
+        for (int id = max(start, functionImports); id < end; id++) {
+            asm.mark(labels[id - start]);
             asm.invokestatic(
                     internalClassName(className + "$MachineCall"),
-                    callMethodName(i),
+                    callMethodName(id),
                     CALL_METHOD_TYPE.toMethodDescriptorString(),
                     false);
             asm.areturn(OBJECT_TYPE);
         }
 
         // return instance.callHostFunction(funcId, args);
-        if (functionImports > 0) {
+        if (functionImports > start) {
             asm.mark(hostLabel);
             asm.pop();
             asm.pop();
@@ -715,7 +763,11 @@ public final class AotCompiler {
         }
     }
 
-    private static String callMethodName(int functId) {
-        return "call_" + functId;
+    private static String callMethodName(int funcId) {
+        return "call_" + funcId;
+    }
+
+    private static String callDispatchMethodName(int start) {
+        return "call_dispatch_" + start;
     }
 }
