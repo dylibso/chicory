@@ -1,6 +1,11 @@
-# Instantiating Modules
+---
+sidebar_position: 3
+sidebar_label: Linking
+title: Linking
+---
+# Linking
 
-In the [Host Functions section](host-functions.md) we met the `Store` for the first-time.
+In the [Host Functions section](2-host-functions.md) we met the `Store` for the first-time.
 
 A [Store][spec] is an intermediate-level abstraction that collects Wasm function, global, memory, and table instances
 as named entities. It simplifies creating instances, especially when there are a lot of interdependencies.
@@ -8,21 +13,14 @@ as named entities. It simplifies creating instances, especially when there are a
 In the simplest case, it allows to register single host functions, globals, memories and tables. For instance, we already saw how to register a `console.log()` host function to the `Store`:
 
 <!--
-TODO: should we make this more explicit?
 ```java
 //DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
 //DEPS com.dylibso.chicory:runtime:999-SNAPSHOT
-
-import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.ImportValues;
-import com.dylibso.chicory.wasm.types.ValueType;
-
 ```
 -->
 
 ```java
+import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Store;
@@ -47,14 +45,15 @@ var store = new Store();
 store.addFunction(func);
 ```
 
-However, the store also automatically exposes the exports of a module to the other instances that are registered. In fact, in the [Host Functions section](host-functions.md), when we created our instance from the `logger.wasm` module, we also passed a string `"logger"`. This is the name of the instance:
+However, the store also automatically exposes the exports of a module to the other instances that are registered. In fact, in the [Host Functions section](2-host-functions.md), when we created our instance from the `logger.wasm` module, we also passed a string `"logger"`. This is the name of the instance:
 
 ```java
 // create a named `instance` with name `logger`
 var instance = store.instantiate("logger", Parser.parse(new File("./logger.wasm")));
 ```
 
-Because this instance is now named, now any exports in the `logger` module will be automatically qualified. For instance, the exported function `logIt` will be visible by other modules as `logger.logIt`.
+Because this instance is now named, now any exports in the `logger` module will be automatically qualified.
+For instance, the exported function `logIt` will be visible by other modules as `logger.logIt`.
 
 ## Notes
 
@@ -82,6 +81,6 @@ have interdependencies, you will have to instantiate and register them in the ri
 
 <!--
 ```java
-docs.FileOps.writeResult("docs/usage", "linking.md.result", "empty");
+docs.FileOps.writeResult("docs/usage", "3-linking.md.result", "empty");
 ```
 -->

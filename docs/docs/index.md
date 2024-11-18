@@ -1,12 +1,10 @@
 ---
 sidebar_position: 1
-sidebar_label: Docs
-title: Docs
+sidebar_label: Quick Start
+title: Quick start
 ---
 
-## Getting Started
-
-### Install Dependency
+### Install the dependency
 
 To use the runtime, you need to add the `com.dylibso.chicory:runtime` dependency
 to your dependency management system.
@@ -17,32 +15,16 @@ to your dependency management system.
 <dependency>
   <groupId>com.dylibso.chicory</groupId>
   <artifactId>runtime</artifactId>
-  <version>DOCS_PLACEHOLDER_VERSION</version>
+  <version>latest-release</version>
 </dependency>
 ```
 
 #### Gradle
 
 ```groovy
-implementation 'com.dylibso.chicory:runtime:DOCS_PLACEHOLDER_VERSION'
+implementation 'com.dylibso.chicory:runtime:latest-release'
 ```
 
-### Install the CLI (experimental)
-
-The Chicory CLI is available for download on Maven at the link:
-
-```
-https://repo1.maven.org/maven2/com/dylibso/chicory/cli/<version>/cli-<version>.sh
-```
-
-you can download the latest version and use it locally by typing:
-
-```bash
-export VERSION=$(wget -q -O - https://api.github.com/repos/dylibso/chicory/tags --header "Accept: application/json" | jq -r '.[0].name')
-wget -O chicory https://repo1.maven.org/maven2/com/dylibso/chicory/cli/${VERSION}/cli-${VERSION}.sh
-chmod a+x chicory
-./chicory
-```
 
 <!--
 ```java
@@ -51,9 +33,9 @@ chmod a+x chicory
 ```
 -->
 
-### Loading and Instantiating Code
+### Loading and Instantiating Wasm Modules
 
-First your Wasm module must be loaded from disk and then "instantiated". Let's [download a test module](https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/main/resources/compiled/iterfact.wat.wasm) .
+First your Wasm module must be loaded from disk and then instantiated. Let's [download a test module](https://raw.githubusercontent.com/dylibso/chicory/main/wasm-corpus/src/main/resources/compiled/iterfact.wat.wasm) .
 This module contains some code to compute factorial:
 
 Download from the link or with curl:
@@ -68,25 +50,24 @@ docs.FileOps.copyFromWasmCorpus("iterfact.wat.wasm", "factorial.wasm");
 ```
 -->
 
-Now let's load this module and instantiate it:
+Load this module and instantiate it:
 
 ```java
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.Instance;
 import java.io.File;
 
 // point this to your path on disk
-WasmModule module = Parser.parse(new File("./factorial.wasm"));
+var module = Parser.parse(new File("./factorial.wasm"));
 Instance instance = Instance.builder(module).build();
 ```
 
 You can think of the `module` as of inert code, and the `instance` 
 is the run-time representation of that code: a virtual machine ready to execute.
 
-### Invoking an Export Function
+### Invoking a Wasm Function
 
 Wasm modules, like all code modules, can export functions to the outside
 world. This module exports a function called `"iterFact"`. 
@@ -96,12 +77,11 @@ We can get a handle to this function using `Instance#export(String)`:
 ExportFunction iterFact = instance.export("iterFact");
 ```
 
-iterFact can be invoked with the `apply()` method. We must map any Java types to a Wasm type and do the reverse
-when we want to go back to Java. This export function takes an `i32` argument. We can use a method like `Value#asInt()`
-on the return value to get back the Java integer:
+`iterFact` can be invoked with the `apply()` method. We must map any Java types to raw `long`s and do the reverse
+when we want to go back to Java.
 
 ```java
-long result = iterFact.apply(5)[0];
+var result = iterFact.apply(5)[0];
 System.out.println("Result: " + result); // should print 120 (5!)
 ```
 
@@ -111,4 +91,4 @@ docs.FileOps.writeResult("docs", "index.md.result", "" + result);
 ```
 -->
 
-> *Note*: Functions in Wasm can have multiple returns but here we're just taking the first returned value.
+> *Note*: Functions in Wasm can have multiple returns, hence an array, here we're just taking the first returned value.
