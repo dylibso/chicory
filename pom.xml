@@ -600,6 +600,7 @@
           <showWarnings>true</showWarnings>
           <compilerArgs>
             <arg>-XDcompilePolicy=simple</arg>
+            <arg>--should-stop=ifError=FLOW</arg>
             <arg>-Xplugin:ErrorProne \
               -Xep:MissingCasesInEnumSwitch:OFF \
               -Xep:MissingOverride:ERROR \
