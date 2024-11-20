@@ -79,10 +79,10 @@ Example configuration of the Maven plug-in:
             <goal>wasm-aot-gen</goal>
           </goals>
           <configuration>
-            <!-- Translate the Wasm binary `wat2wasm` into bytecode -->
+            <!-- Translate the Wasm binary `add` into bytecode -->
             <wasmFile>src/main/resources/add.wasm</wasmFile>
-            <!-- Generate the following class file as a result -->
-            <name>org.acme.wasm.AddModule</name>
+            <!-- Generate classes under the following prefix -->
+            <name>org.acme.wasm.Add</name>
           </configuration>
         </execution>
       </executions>
