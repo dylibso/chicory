@@ -55,7 +55,7 @@ This is usually fine when running on a standard JVM, but it involve some additio
 
 ## Pre-compiled AOT
 
-You can use the AOT compiler at build-time, by leveraging a [Maven plug-in][aot-maven-plugin] to overcome the usage of reflection and external dependencies of the "Runtime AOT".
+You can use the AOT compiler at build-time, by leveraging a Maven plug-in to overcome the usage of reflection and external dependencies of the "Runtime AOT".
 
 This mode of execution reduces startup time and will remove the need for distributing
 the original Wasm binary.

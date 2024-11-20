@@ -116,3 +116,5 @@ var logIt = instance.export("logIt");
 logIt.apply();
 // should print "Hello, World!" 10 times
 ```
+
+> **_NOTE:_** For an easier way to write host function, see [Host Modules Annotations](../experimental/host-modules.md).
