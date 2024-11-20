@@ -4,13 +4,12 @@ title: A zero dependency Wasm runtime for the JVM
 authors: [andreaTP, bhelx]
 tags: [wasm, chicory]
 ---
-
+<!-- truncate -->
 # A zero dependency Wasm runtime for the JVM
 
 ## All I want for Xmas is Chicory
 
 <img src="/img/blog-2023-12-25/main.png"/>
-<!-- truncate -->
 
 ## A zero dependency Wasm runtime for the JVM
 
