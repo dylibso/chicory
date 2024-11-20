@@ -13,7 +13,7 @@ Please note that if "something works" for you, its very unlikely that it will be
 
 The goal of having `experimental` modules is because they are not stabilized, we are not 100% confident in the design and we want to be able to perform breaking changes without respecting SemVer.
 
-This includes renaming artifactIDs, classes, methods and rework their usage according to the feedback and development progress.
+This includes renaming artifactIDs, classes, methods, and reworking their usage according to user feedback and development progress.
 
 <!--
 ```java
