@@ -6,7 +6,7 @@ title: Host Functions
 # Host and guests
 
 In Wasm, the instance of a module is generally regarded as the **guest**,
-and the surrounding runtime environment is usually called the **host**.
+and the surrounding runtime environment is called the **host**.
 
 For example, an **application** using Chicory as a **library** would be the **host**
 to a Wasm module you have instantiated.
