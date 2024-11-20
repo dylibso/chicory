@@ -16,6 +16,8 @@ Import it in the `dependencyManagement` section of your `pom.xml`:
             <groupId>com.dylibso.chicory</groupId>
             <artifactId>bom</artifactId>
             <version>${chicory.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
         </dependency>
     </dependencies>
 </dependencyManagement>
