@@ -104,7 +104,10 @@ class AddModule {
 -->
 
 ```java
-var module = Parser.parse(new File("your.wasm"));
+// load the bundled module
+var module = AddModule.load();
+
+// instantiate the module with the pre-compiled code
 var instance = Instance.builder(module).withMachineFactory(AddModule::create).build();
 ```
 
