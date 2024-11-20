@@ -24,6 +24,6 @@ chmod a+x chicory
 ```java
 //DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
 
-docs.FileOps.writeResult("docs/experimental", "4-cli.md.result", "empty");
+docs.FileOps.writeResult("docs/experimental", "cli.md.result", "empty");
 ```
 -->

@@ -11,8 +11,10 @@ title: AOT compilation
 //DEPS com.dylibso.chicory:aot-experimental:999-SNAPSHOT
 
 import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
+import com.dylibso.chicory.runtime.InterpreterMachine;
 
 docs.FileOps.copyFromWasmCorpus("count_vowels.rs.wasm", "your.wasm");
 ```
@@ -95,9 +97,15 @@ In the codebase you can use the generated module by configuring appropriately th
 
 <!--
 ```java
+// mocking up the generated code
 class AddModule {
+
+    public static WasmModule load() {
+      return Parser.parse(new File("your.wasm"));
+    }
+
     public static Machine create(Instance instance) {
-        return null;
+        return new InterpreterMachine(instance);
     }
 }
 ```
@@ -139,6 +147,6 @@ To overcome this limitation you can use an additional Maven Plugin for a smoothe
 
 <!--
 ```java
-docs.FileOps.writeResult("docs/experimental", "3-aot.md.result", "empty");
+docs.FileOps.writeResult("docs/experimental", "aot.md.result", "empty");
 ```
 -->

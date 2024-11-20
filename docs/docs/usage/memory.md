@@ -69,6 +69,6 @@ assert(3L == result); // 3 vowels in Hello, World!
 
 <!--
 ```java
-docs.FileOps.writeResult("docs/usage", "1-memory.md.result", "" + result);
+docs.FileOps.writeResult("docs/usage", "memory.md.result", "" + result);
 ```
 -->

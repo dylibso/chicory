@@ -27,7 +27,7 @@ import com.dylibso.chicory.runtime.Instance;
 
 System.setOut(new PrintStream(
   new BufferedOutputStream(
-    new FileOutputStream("docs/usage/5-wabt.md.result"))));
+    new FileOutputStream("docs/usage/wabt.md.result"))));
 ```
 -->
 

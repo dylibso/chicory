@@ -127,7 +127,7 @@ assert(fakeStderr.toString().equals(""));
 
 <!--
 ```java
-docs.FileOps.writeResult("docs/usage", "4-wasi.md.result", fakeStdout.toString() + fakeStderr.toString());
+docs.FileOps.writeResult("docs/usage", "wasi.md.result", fakeStdout.toString() + fakeStderr.toString());
 ```
 -->
 

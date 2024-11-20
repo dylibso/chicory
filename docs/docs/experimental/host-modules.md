@@ -118,6 +118,6 @@ Exactly how this is done depends on the build system you are using, for instance
 
 <!--
 ```java
-docs.FileOps.writeResult("docs/experimental", "2-host-module-annot.md.result", "empty");
+docs.FileOps.writeResult("docs/experimental", "host-modules.md.result", "empty");
 ```
 -->

@@ -28,7 +28,7 @@ docs.FileOps.copyFromWasmCorpus("count_vowels.rs.wasm", "count_vowels.rs.wasm");
 
 System.setOut(new PrintStream(
   new BufferedOutputStream(
-    new FileOutputStream("docs/examples/1-rust.md.result"))));
+    new FileOutputStream("docs/examples/rust.md.result"))));
 ```
 -->
 

@@ -62,7 +62,7 @@ We could write it as the host function:
 ```java
 System.setOut(new PrintStream(
   new BufferedOutputStream(
-    new FileOutputStream("docs/usage/2-host-functions.md.result"))));
+    new FileOutputStream("docs/usage/host-functions.md.result"))));
 ```
 -->
 

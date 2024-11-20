@@ -19,6 +19,6 @@ It's also possible to provide a custom `com.dylibso.chicory.log.Logger` implemen
 ```java
 //DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
 
-docs.FileOps.writeResult("docs/usage", "7-logging.md.result", "empty");
+docs.FileOps.writeResult("docs/usage", "logging.md.result", "empty");
 ```
 -->

@@ -37,6 +37,6 @@ and you can use any Chicory dependency without declaring the version number agai
 ```java
 //DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
 
-docs.FileOps.writeResult("docs/usage", "6-bom.md.result", "empty");
+docs.FileOps.writeResult("docs/usage", "bom.md.result", "empty");
 ```
 -->

@@ -5,7 +5,7 @@ title: Linking
 ---
 # Linking
 
-In the [Host Functions section](2-host-functions.md) we met the `Store` for the first-time.
+In the [Host Functions section](host-functions.md) we met the `Store` for the first-time.
 
 A [Store][spec] is an intermediate-level abstraction that collects Wasm function, global, memory, and table instances
 as named entities. It simplifies creating instances, especially when there are a lot of interdependencies.
@@ -45,7 +45,7 @@ var store = new Store();
 store.addFunction(func);
 ```
 
-However, the store also automatically exposes the exports of a module to the other instances that are registered. In fact, in the [Host Functions section](2-host-functions.md), when we created our instance from the `logger.wasm` module, we also passed a string `"logger"`. This is the name of the instance:
+However, the store also automatically exposes the exports of a module to the other instances that are registered. In fact, in the [Host Functions section](host-functions.md), when we created our instance from the `logger.wasm` module, we also passed a string `"logger"`. This is the name of the instance:
 
 ```java
 // create a named `instance` with name `logger`
@@ -81,6 +81,6 @@ have interdependencies, you will have to instantiate and register them in the ri
 
 <!--
 ```java
-docs.FileOps.writeResult("docs/usage", "3-linking.md.result", "empty");
+docs.FileOps.writeResult("docs/usage", "linking.md.result", "empty");
 ```
 -->
