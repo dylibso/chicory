@@ -7,7 +7,7 @@
   <br>
   <a href="https://chicory.dev/">Website</a> |
   <a href="https://chicory.dev/docs/#getting-started">Getting started</a> |
-  <a href="https://chicory.dev/blog">Blog</a>
+  <a href="https://chicory.dev/blog">Blog</a> |
   <a href="/CONTRIBUTING.md">Contributing</a>
 </p>
 
