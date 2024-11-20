@@ -5,7 +5,8 @@ title: BOM
 ---
 # Bill of Materials
 
-To keep the versions of different Chicory's artifact aligned in your project you can use the provided [Maven BOM file](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#bill-of-materials-bom-poms).
+To keep the versions of different Chicory artifacts aligned in your project you can use the provided
+[Maven BOM file](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#bill-of-materials-bom-poms).
 
 Import it in the `dependencyManagement` section of your `pom.xml`:
 
