@@ -126,7 +126,7 @@ To overcome this limitation you can use an additional Maven Plugin for a smoothe
         </goals>
         <configuration>
             <sources>
-            <source>${project.basedir}/target/generated-sources/chicory-aot</source>
+                <source>${project.build.directory}/generated-sources/chicory-aot</source>
             </sources>
         </configuration>
         </execution>
