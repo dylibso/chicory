@@ -59,7 +59,7 @@ memory.writeString(ptr, message);
 
 Now we can call `countVowels` with this pointer to the string.
 It will do its job and return the count.
-We will call `dealloc` to free that memory in the module. Though the module could do this itself if you want:
+We will call `dealloc` to free that memory in the module:
 
 ```java
 var result = countVowels.apply(ptr, len)[0];
