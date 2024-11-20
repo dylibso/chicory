@@ -25,7 +25,7 @@ modules.
 ## Host Functions
 
 One way to fulfill imports is providing a **host function** written in Java. 
-Regardless of the source language that originated your Wasm module, 
+No matter what source language that your Wasm module was written in, 
 it will be able to call this Java function when needed.
 
 It is called a **host** function, because it is written in the language of the
