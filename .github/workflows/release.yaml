@@ -51,7 +51,6 @@ jobs:
       - name: Set the version
         run: |
           mvn versions:set -DgenerateBackupPoms=false -DnewVersion=${{ github.event.inputs.release-version }}
-          ./scripts/update-docs-version ${{ github.event.inputs.release-version }}
           git add .
           git commit -m "Release version update ${{ github.event.inputs.release-version }}"
           git push
