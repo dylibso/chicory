@@ -31,7 +31,9 @@ it will be able to call this Java function when needed.
 It is called a **host** function because it is executed in the environment of the
 **host** (in this case, a JVM). As opposed to any other Wasm function, 
 a **host function** is _unrestricted_ and it may interact with the surrounding
-environment in any arbitrary way. This let you effectively escape the sandbox.
+environment in any arbitrary way. This lets you effectively escape the sandbox.
+As a consequence, host functions are a security boundary and
+need to be implemented carefully if the Wasm code is not trusted.
 
 You can think of host functions as similar to system calls or the standard library in your favorite programming language.
 The key difference is that, instead of relying on a default implementation, you use Java to define their behavior 
