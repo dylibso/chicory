@@ -95,7 +95,7 @@ to read a buffer into a `String`; we can then print that to stdout on behalf of 
 Note that the `HostFunction` needs 3 things:
 
 1. The namespace and function name of the import (in our case it's `console` and `log` respectively)
-2. The Wasm type signature (this function takes 2 `i32`s as arguments and returns nothing)
+2. The Wasm type signature (this function takes two `i32`s as arguments and returns nothing)
 3. A lambda to call when the Wasm module invokes the import
 
 
