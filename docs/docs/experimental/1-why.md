@@ -9,7 +9,7 @@ Chicory is a young project and we acknowledge that we are exploring and spearhea
 
 Since there is(always) some degree of experimentation going on, and we want to have feedback by the community and early users, we decide to publish also `experimental` modules; everyone is welcome to try things out and report back the experience.
 
-Please note that if "something works" for you, its very unlekely that it will be removed completely, in most cases, expect slight public API changes or modules rename to happen.
+Please note that if "something works" for you, its very unlikely that it will be removed completely, in most cases, expect slight public API changes or module renames to happen.
 
 The goal of having `experimental` modules is because they are not stabilized, we are not 100% confident in the design and we want to be able to perform breaking changes without respecting SemVer.
 
