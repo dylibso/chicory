@@ -14,8 +14,8 @@ https://repo1.maven.org/maven2/com/dylibso/chicory/cli/<version>/cli-<version>.s
 you can download the latest version and use it locally by typing:
 
 ```bash
-export VERSION=$(wget -q -O - https://api.github.com/repos/dylibso/chicory/tags --header "Accept: application/json" | jq -r '.[0].name')
-wget -O chicory https://repo1.maven.org/maven2/com/dylibso/chicory/cli/${VERSION}/cli-${VERSION}.sh
+export VERSION=$(curl -sS https://api.github.com/repos/dylibso/chicory/tags --header "Accept: application/json" | jq -r '.[0].name')
+curl -L -o chicory https://repo1.maven.org/maven2/com/dylibso/chicory/cli-experimental/${VERSION}/cli-experimental-${VERSION}.sh
 chmod a+x chicory
 ./chicory
 ```
