@@ -28,7 +28,7 @@ One way to fulfill imports is providing a **host function** written in Java.
 No matter what source language that your Wasm module was written in, 
 it will be able to call this Java function when needed.
 
-It is called a **host** function, because it is written in the language of the
+It is called a **host** function because it is executed in the environment of the
 **host** (in this case, a JVM). As opposed to any other Wasm function, 
 a **host function** is _unrestricted_ and it may interact with the surrounding
 environment in any arbitrary way. This let you effectively escape the sandbox.
