@@ -1,3 +1,8 @@
+---
+sidebar_position: 7
+sidebar_label: Logging
+title: Logging
+---
 # Logging
 
 For maximum compatibility and to avoid external dependencies we use, by default, the JDK Platform Logging (JEP 264).
@@ -13,6 +18,7 @@ It's also possible to provide a custom `com.dylibso.chicory.log.Logger` implemen
 <!--
 ```java
 //DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
+
 docs.FileOps.writeResult("docs/usage", "logging.md.result", "empty");
 ```
 -->

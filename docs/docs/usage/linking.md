@@ -1,4 +1,9 @@
-# Instantiating Modules
+---
+sidebar_position: 3
+sidebar_label: Linking
+title: Linking
+---
+# Linking
 
 In the [Host Functions section](host-functions.md) we met the `Store` for the first-time.
 
@@ -8,21 +13,14 @@ as named entities. It simplifies creating instances, especially when there are a
 In the simplest case, it allows to register single host functions, globals, memories and tables. For instance, we already saw how to register a `console.log()` host function to the `Store`:
 
 <!--
-TODO: should we make this more explicit?
 ```java
 //DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
 //DEPS com.dylibso.chicory:runtime:999-SNAPSHOT
-
-import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.ImportValues;
-import com.dylibso.chicory.wasm.types.ValueType;
-
 ```
 -->
 
 ```java
+import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Store;
@@ -54,7 +52,8 @@ However, the store also automatically exposes the exports of a module to the oth
 var instance = store.instantiate("logger", Parser.parse(new File("./logger.wasm")));
 ```
 
-Because this instance is now named, now any exports in the `logger` module will be automatically qualified. For instance, the exported function `logIt` will be visible by other modules as `logger.logIt`.
+Because this instance is now named, now any exports in the `logger` module will be automatically qualified.
+For instance, the exported function `logIt` will be visible by other modules as `logger.logIt`.
 
 ## Notes
 

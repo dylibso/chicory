@@ -1,13 +1,19 @@
-# WebAssembly System Interface
+---
+sidebar_position: 4
+sidebar_label: WASI P1
+title: Wasi Preview 1
+---
+# WASI Preview 1
 
 <!--
 ```java
 //DEPS com.dylibso.chicory:wasi:999-SNAPSHOT
+//DEPS com.google.jimfs:jimfs:1.3.0
 //DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
 ```
 -->
 
-The WebAssembly System Interface is a suite of host functions that a Wasm module can import
+The **W**eb**A**ssembly **S**ystem **I**nterface is a suite of host functions that a Wasm module can import
 to provide system-level capabilities, such as:
 
 * stdin / stdout / stderr
@@ -20,6 +26,15 @@ to provide system-level capabilities, such as:
 All such capabilities are virtualized; i.e., the _guest_ will not have direct
 access to the corresponding _host_ resources, but they will be mediated by the WASI layer,
 which can be configured to limit their surface.
+Add the dependency to your build:
+
+```xml
+<dependency>
+  <groupId>com.dylibso.chicory</groupId>
+  <artifactId>wasi</artifactId>
+  <version>latest-release</version>
+</dependency>
+```
 
 ## How to use
 
@@ -27,7 +42,9 @@ As a host who is running Wasm modules, WASI is just a collection of imports that
 to a wasi-compiled module when instantiating it. You'll also need to configure some options for how
 these functions behave and what the module can and cannot do.
 
-### Bare-Bones Instantiation
+Remember that you have full control over those functions, you can use just part of provided implementation or swap in specific implementations to better control what is being executed.
+
+### WasiPreview1 Instantiation
 
 In order to instantiate a WASI module you need an instance of `WasiPreview1`. 
 
@@ -68,7 +85,7 @@ store.instantiate("hello-wasi", Parser.parse(new File("hello-wasi.wasm")));
 
 ### stdin, stdout, and stderr
 
-At the very least, you probably want to orchestrate stdin, stdout, and stderr of the module.
+To start with, you want to orchestrate stdin, stdout, and stderr of the module.
 Often, this is the way you communicate with basic WASI-enabled modules by way of the [command pattern](https://dylibso.com/blog/wasi-command-reactor/).
 In order to make it easy to manipulate these streams, we expose stdin as an [InputStream](https://docs.oracle.com/javase/8/docs/api/java/io/InputStream.html)
 and stdout/stderr as an [OutputStream](https://docs.oracle.com/javase/8/docs/api/java/io/OutputStream.html).
@@ -86,8 +103,8 @@ docs.FileOps.copyFromWasmCorpus("greet-wasi.rs.wasm", "greet-wasi.wasm");
 -->
 
 ```java
-// Let's create a fake stdin stream with the bytes "Andrea"
-var fakeStdin = new ByteArrayInputStream("Andrea".getBytes());
+// Let's create a fake stdin stream with the bytes "Chicory"
+var fakeStdin = new ByteArrayInputStream("Chicory".getBytes());
 // We will create two output streams to capture stdout and stderr
 var fakeStdout = new ByteArrayOutputStream();
 var fakeStderr = new ByteArrayOutputStream();
@@ -103,7 +120,7 @@ store.instantiate("hello-wasi", Parser.parse(new File("greet-wasi.wasm")));
 
 
 // check that we output the greeting
-assert(fakeStdout.toString().equals("Hello, Andrea!"));
+assert(fakeStdout.toString().equals("Hello, Chicory!"));
 // there should be no bytes in stderr!
 assert(fakeStderr.toString().equals(""));
 ```
@@ -119,6 +136,57 @@ For instance, in the case of stdout, you would write:
 
 ```java
 var wasi = WasiOptions.builder().withStdout(System.out).withStderr(System.err).withStdin(System.in).build();
+```
+
+a convenient shorthand for doing the same is:
+
+```java
+var wasi = WasiOptions.builder().inheritSystem().build()
+```
+
+## arguments
+
+Especially when using CLIs, it's useful to provide command line arguments to the Wasm Module.
+
+You can do that by using:
+
+```java
+var wasi = WasiOptions.builder().withArguments(List.of("executable-name", "--more", "--options")).build();
+```
+
+## environment variables
+
+To expose environment variables to your WASI module you can list them in the options:
+
+```java
+var wasi = WasiOptions.builder().withEnvironment("ENV_ONE_KEY", "my-one-key-value").withEnvironment("ENV_TWO_KEY", "my-two-key-value").build();
+```
+
+## disk
+
+We provide limited support for operations on the disk, we only test on a Virtual FileSystem and we encourage you to use the same. We use [Google's Jimfs](https://github.com/google/jimfs).
+
+Example code to use the disk looks like:
+
+<!--
+```java
+new File("my-source").mkdirs();
+```
+-->
+
+```java
+import com.google.common.jimfs.Configuration;
+import com.google.common.jimfs.Jimfs;
+
+try (FileSystem fs = Jimfs.newFileSystem(Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
+    Path source = Path.of("my-source");
+    Path target = fs.getPath("my-source");
+    com.dylibso.chicory.wasi.Files.copyDirectory(source, target);
+
+    var wasi = WasiOptions.builder().withDirectory(target.toString(), target).build();
+
+    // ...
+}
 ```
 
 ## Supported Features
