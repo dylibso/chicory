@@ -24,7 +24,7 @@ Import it in the `dependencyManagement` section of your `pom.xml`:
 </dependencyManagement>
 ```
 
-and you can use any Chicory dependency without setting the version number again in the build:
+and you can use any Chicory dependency without declaring the version number again in the build:
 
 ```xml
 <dependency>
