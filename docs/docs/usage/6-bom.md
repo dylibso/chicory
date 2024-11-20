@@ -3,7 +3,7 @@ sidebar_position: 6
 sidebar_label: BOM
 title: BOM
 ---
-# Bill Of Material
+# Bill of Materials
 
 To keep the versions of different Chicory's artifact aligned in your project you can use the provided [Maven BOM file](https://maven.apache.org/guides/introduction/introduction-to-dependency-mechanism.html#bill-of-materials-bom-poms).
 
