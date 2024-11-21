@@ -89,6 +89,8 @@ public class AotGenMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        getLog().info("Generating AOT classes for " + name + " from " + wasmFile);
+
         byte[] wasmBytes;
         try {
             wasmBytes = Files.readAllBytes(wasmFile.toPath());
