@@ -25,3 +25,12 @@ evacchi:
   socials:
     x: evacchi
     github: evacchi
+
+electrum:
+  name: David Phillips
+  title: Creator of Trino (formerly PrestoSQL) @Starburstdata
+  url: https://github.com/electrum
+  image_url: https://avatars.githubusercontent.com/u/9230?v=4
+  socials:
+    x: electrum32
+    github: electrum
