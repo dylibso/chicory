@@ -70,7 +70,7 @@ public class AotGenMojo extends AbstractMojo {
      */
     @Parameter(
             required = true,
-            defaultValue = "${project.basedir}/target/generated-resources/chicory-aot")
+            defaultValue = "${project.build.directory}/generated-resources/chicory-aot")
     private File targetClassFolder;
 
     /**
@@ -78,7 +78,7 @@ public class AotGenMojo extends AbstractMojo {
      */
     @Parameter(
             required = true,
-            defaultValue = "${project.basedir}/target/generated-sources/chicory-aot")
+            defaultValue = "${project.build.directory}/generated-sources/chicory-aot")
     private File targetSourceFolder;
 
     /**
