@@ -1,5 +1,7 @@
 package com.dylibso.chicory.runtime;
 
+import java.util.Arrays;
+
 public class MStack {
     public static final int MIN_CAPACITY = 8;
 
@@ -24,12 +26,22 @@ public class MStack {
         return elements;
     }
 
+    public long[] slice(int start, int len) {
+        return Arrays.copyOfRange(elements, start, len);
+    }
+
     public void push(long v) {
         elements[count] = v;
         count++;
 
         if (count == elements.length) {
             increaseCapacity();
+        }
+    }
+
+    public void pushAll(long... vv) {
+        for (long v : vv) {
+            push(v);
         }
     }
 

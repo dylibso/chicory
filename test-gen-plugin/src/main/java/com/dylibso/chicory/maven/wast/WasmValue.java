@@ -52,8 +52,14 @@ public class WasmValue {
                         case I32:
                             sb.append("new long[] {");
                             break;
+                        case I64:
+                            sb.append("new long[] {");
+                            break;
                         case F32:
                             sb.append("new float[] {");
+                            break;
+                        case F64:
+                            sb.append("new double[] {");
                             break;
                     }
                     var first = true;
@@ -74,9 +80,18 @@ public class WasmValue {
                             case I32:
                                 sb.append("Long.parseUnsignedLong(\"" + v + "\")");
                                 break;
+                            case I64:
+                                sb.append("Long.parseUnsignedLong(\"" + v + "\")");
+                                break;
                             case F32:
                                 sb.append(
                                         "Float.intBitsToFloat(Integer.parseUnsignedInt(\""
+                                                + v
+                                                + "\"))");
+                                break;
+                            case F64:
+                                sb.append(
+                                        "Double.longBitsToDouble(Long.parseUnsignedLong(\""
                                                 + v
                                                 + "\"))");
                                 break;
@@ -143,8 +158,14 @@ public class WasmValue {
                         case I32:
                             sb.append("new long[] {");
                             break;
+                        case I64:
+                            sb.append("new long[] {");
+                            break;
                         case F32:
                             sb.append("new float[] {");
+                            break;
+                        case F64:
+                            sb.append("new double[] {");
                             break;
                     }
                     var first = true;
@@ -165,11 +186,14 @@ public class WasmValue {
                             case I32:
                                 sb.append("Long.parseUnsignedLong(\"" + v + "\")");
                                 break;
+                            case I64:
+                                sb.append("Long.parseUnsignedLong(\"" + v + "\")");
+                                break;
                             case F32:
-                                sb.append(
-                                        "Float.intBitsToFloat(Integer.parseUnsignedInt(\""
-                                                + v
-                                                + "\"))");
+                                sb.append("Integer.parseUnsignedInt(\"" + v + "\")");
+                                break;
+                            case F64:
+                                sb.append("Long.parseUnsignedLong(\"" + v + "\")");
                                 break;
                         }
                     }
@@ -217,6 +241,27 @@ public class WasmValue {
                 return value[0];
             case V128:
                 var sb = new StringBuilder();
+
+                switch (laneType) {
+                    case I8:
+                        sb.append("i8ToVec( ");
+                        break;
+                    case I16:
+                        sb.append("i16ToVec( ");
+                        break;
+                    case I32:
+                        sb.append("i32ToVec( ");
+                        break;
+                    case I64:
+                        sb.append("i64ToVec( ");
+                        break;
+                    case F32:
+                        sb.append("f32ToVec( ");
+                        break;
+                    case F64:
+                        sb.append("f64ToVec( ");
+                }
+
                 sb.append("new long[] { ");
                 var first = true;
                 for (var v : value) {
@@ -225,9 +270,29 @@ public class WasmValue {
                     } else {
                         sb.append(", ");
                     }
-                    sb.append(v);
+
+                    switch (laneType) {
+                        case I8:
+                            sb.append("Byte.parseByte(\"" + v + "\")");
+                            break;
+                        case I16:
+                            sb.append("Integer.parseUnsignedInt(\"" + v + "\")");
+                            break;
+                        case I32:
+                            sb.append("Long.parseUnsignedLong(\"" + v + "\")");
+                            break;
+                        case I64:
+                            sb.append("Long.parseUnsignedLong(\"" + v + "\")");
+                            break;
+                        case F32:
+                            sb.append("Integer.parseUnsignedInt(\"" + v + "\")");
+                            break;
+                        case F64:
+                            sb.append("Long.parseUnsignedLong(\"" + v + "\")");
+                            break;
+                    }
                 }
-                sb.append(" }");
+                sb.append(" })");
                 return sb.toString();
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);

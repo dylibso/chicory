@@ -124,4 +124,15 @@ public class ValueTest {
         assertEquals(xLo, result[0]);
         assertEquals(xHi, result[1]);
     }
+
+    @Test
+    public void i32ToVec() {
+        var vs = new long[] {0xAAAA_AAAAL, 0xBBBB_BBBBL, 0xCCCC_CCCCL, 0xDDDD_DDDDL};
+        long[] result = Value.i32ToVec(vs);
+        var xLo = 0xBBBB_BBBB_AAAA_AAAAL;
+        var xHi = 0xDDDD_DDDD_CCCC_CCCCL;
+
+        assertEquals(xLo, result[0]);
+        assertEquals(xHi, result[1]);
+    }
 }

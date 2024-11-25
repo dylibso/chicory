@@ -161,6 +161,10 @@ public class Value {
         return result;
     }
 
+    public static float[] vecTo64(long[] values) {
+        throw new UnsupportedOperationException("not yet implemented");
+    }
+
     @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public static float[] vecToF32(long[] values) {
         var result = new float[values.length * 2];
@@ -171,6 +175,41 @@ public class Value {
             result[++i] = Float.intBitsToFloat((int) ((v >> 32) & 0xFFFFFFFFL));
         }
         return result;
+    }
+
+    public static float[] vecToF64(long[] values) {
+        throw new UnsupportedOperationException("not yet implemented");
+    }
+
+    public static long[] i8ToVec(long[]... vec) {
+        throw new UnsupportedOperationException("not yet implemented");
+    }
+
+    public static long[] i16ToVec(long[]... vec) {
+        throw new UnsupportedOperationException("not yet implemented");
+    }
+
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
+    public static long[] i32ToVec(long[]... vec) {
+        var result = new long[vec.length * 2];
+        for (int i = 0; i < result.length; i += 4) {
+            long[] v = vec[i];
+            result[i] = (v[1] & 0xFFFF_FFFFL) << 32 | (v[0] & 0xFFFF_FFFFL);
+            result[i + 1] = (v[3] & 0xFFFF_FFFFL) << 32 | (v[2] & 0xFFFF_FFFFL);
+        }
+        return result;
+    }
+
+    public static long[] i64ToVec(long[]... vec) {
+        throw new UnsupportedOperationException("not yet implemented");
+    }
+
+    public static long[] f32ToVec(long[]... vec) {
+        throw new UnsupportedOperationException("not yet implemented");
+    }
+
+    public static long[] f64ToVec(long[]... vec) {
+        throw new UnsupportedOperationException("not yet implemented");
     }
 
     /**
