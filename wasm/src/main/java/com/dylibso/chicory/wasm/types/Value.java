@@ -161,10 +161,6 @@ public class Value {
         return result;
     }
 
-    public static float[] vecTo64(long[] values) {
-        throw new UnsupportedOperationException("not yet implemented");
-    }
-
     @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public static float[] vecToF32(long[] values) {
         var result = new float[values.length * 2];
@@ -177,39 +173,92 @@ public class Value {
         return result;
     }
 
-    public static float[] vecToF64(long[] values) {
-        throw new UnsupportedOperationException("not yet implemented");
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
+    public static double[] vecToF64(long[] values) {
+        var result = new double[values.length];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = Double.longBitsToDouble(values[i]);
+        }
+        return result;
     }
 
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public static long[] i8ToVec(long[]... vec) {
-        throw new UnsupportedOperationException("not yet implemented");
+        var result = new long[vec.length * 2];
+        for (int i = 0; i < result.length; ) {
+            long[] v = vec[i];
+            result[i++] =
+                    (v[0] & 0xFF)
+                            | ((v[1] & 0xFF) << 8)
+                            | ((v[2] & 0xFF) << 16)
+                            | ((v[3] & 0xFF) << 24)
+                            | ((v[4] & 0xFF) << 32)
+                            | ((v[5] & 0xFF) << 40)
+                            | ((v[6] & 0xFF) << 48)
+                            | ((v[7] & 0xFF) << 56);
+            result[i++] =
+                    (v[8] & 0xFF)
+                            | ((v[9] & 0xFF) << 8)
+                            | ((v[10] & 0xFF) << 16)
+                            | ((v[11] & 0xFF) << 24)
+                            | ((v[12] & 0xFF) << 32)
+                            | ((v[13] & 0xFF) << 40)
+                            | ((v[14] & 0xFF) << 48)
+                            | ((v[15] & 0xFF) << 56);
+        }
+        return result;
     }
 
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public static long[] i16ToVec(long[]... vec) {
-        throw new UnsupportedOperationException("not yet implemented");
+        var result = new long[vec.length * 2];
+        for (int i = 0; i < result.length; ) {
+            long[] v = vec[i];
+            result[i++] =
+                    (v[0] & 0xFFFF)
+                            | ((v[1] & 0xFFFF) << 16)
+                            | ((v[2] & 0xFFFF) << 32)
+                            | ((v[3] & 0xFFFF) << 48);
+            result[i++] =
+                    (v[4] & 0xFFFF)
+                            | ((v[5] & 0xFFFF) << 16)
+                            | ((v[6] & 0xFFFF) << 32)
+                            | ((v[7] & 0xFFFF) << 48);
+        }
+        return result;
     }
 
     @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public static long[] i32ToVec(long[]... vec) {
         var result = new long[vec.length * 2];
-        for (int i = 0; i < result.length; i += 4) {
+        for (int i = 0; i < result.length; ) {
             long[] v = vec[i];
-            result[i] = (v[1] & 0xFFFF_FFFFL) << 32 | (v[0] & 0xFFFF_FFFFL);
-            result[i + 1] = (v[3] & 0xFFFF_FFFFL) << 32 | (v[2] & 0xFFFF_FFFFL);
+            result[i++] = (v[1] & 0xFFFF_FFFFL) << 32 | (v[0] & 0xFFFF_FFFFL);
+            result[i++] = (v[3] & 0xFFFF_FFFFL) << 32 | (v[2] & 0xFFFF_FFFFL);
         }
         return result;
     }
 
+    // This is really only a convenience method to concat the vectors.
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public static long[] i64ToVec(long[]... vec) {
-        throw new UnsupportedOperationException("not yet implemented");
+        var result = new long[vec.length * 2];
+        for (int i = 0; i < result.length; ) {
+            long[] v = vec[i];
+            result[i++] = v[0];
+            result[i++] = v[1];
+        }
+        return result;
     }
 
+    // Since the longs are already converted, this is just a wrapper for i32ToVec
     public static long[] f32ToVec(long[]... vec) {
-        throw new UnsupportedOperationException("not yet implemented");
+        return i32ToVec(vec);
     }
 
+    // Since the longs are already converted, this is just a wrapper for i64ToVec
     public static long[] f64ToVec(long[]... vec) {
-        throw new UnsupportedOperationException("not yet implemented");
+        return i64ToVec(vec);
     }
 
     /**

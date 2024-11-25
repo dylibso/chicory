@@ -211,9 +211,7 @@ public class InterpreterMachine implements Machine {
                     SELECT_T(stack);
                     break;
                 case LOCAL_GET:
-                    int i = (int) operands.get(0);
-                    long local = frame.local(i);
-                    stack.push(local);
+                    stack.push(frame.local((int) operands.get(0)));
                     break;
                 case LOCAL_SET:
                     frame.setLocal((int) operands.get(0), stack.pop());

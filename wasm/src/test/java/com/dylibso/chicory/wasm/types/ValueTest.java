@@ -126,6 +126,30 @@ public class ValueTest {
     }
 
     @Test
+    public void i8ToVec() {
+        var value = new long[][] {{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}};
+        var result = Value.i8ToVec(value);
+        long xLo = 0x0706_0504_0302_0100L;
+        long xHi = 0x0F0E_0D0C_0B0A_0908L;
+
+        assertEquals(2, result.length);
+        assertEquals(xLo, result[0]);
+        assertEquals(xHi, result[1]);
+    }
+
+    @Test
+    public void i16ToVec() {
+        var value = new long[][] {{0, 1, 2, 3, 4, 5, 6, 7, 8}};
+        var result = Value.i16ToVec(value);
+        long xLo = 0x0003_0002_0001_0000L;
+        long xHi = 0x0007_0006_0005_0004L;
+
+        assertEquals(2, result.length);
+        assertEquals(xLo, result[0]);
+        assertEquals(xHi, result[1]);
+    }
+
+    @Test
     public void i32ToVec() {
         var vs = new long[] {0xAAAA_AAAAL, 0xBBBB_BBBBL, 0xCCCC_CCCCL, 0xDDDD_DDDDL};
         long[] result = Value.i32ToVec(vs);

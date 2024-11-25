@@ -102,7 +102,6 @@ public class JavaTestGen {
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo8", true, false);
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo16", true, false);
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo32", true, false);
-        cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo64", true, false);
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecToF32", true, false);
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecToF64", true, false);
 
