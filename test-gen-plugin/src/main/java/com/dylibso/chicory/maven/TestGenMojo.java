@@ -174,15 +174,14 @@ public class TestGenMojo extends AbstractMojo {
                         "Some wast files are not included or excluded: " + allWastFiles);
             }
             List<String> includedExcludedWasts = new ArrayList<>();
-            // TODO: this mechanism fails when there are no excluded wast in one profile only
             for (String includedWast : includedWasts) {
                 if (excludedWasts.contains(includedWast)) {
                     includedExcludedWasts.add(includedWast);
                 }
             }
+            // TODO: this mechanism fails when there are no excluded wast in one profile only
             if (!includedExcludedWasts.isEmpty()) {
-                throw new MojoExecutionException(
-                        "Some wast files are both included and excluded: " + includedExcludedWasts);
+                log.warn("Excluded tests will be ignored: " + includedExcludedWasts);
             }
 
             // generate the tests

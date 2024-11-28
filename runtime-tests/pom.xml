@@ -383,6 +383,7 @@
                 <wast>simd_store16_lane.wast</wast>
                 <wast>simd_store32_lane.wast</wast>
                 <wast>simd_store64_lane.wast</wast>
+                <wast>simd_store8_lane.wast</wast>
                 <wast>skip-stack-guard-page.wast</wast>
                 <wast>stack.wast</wast>
                 <wast>start.wast</wast>
@@ -415,9 +416,7 @@
               <excludedInvalidWasts/>
               <excludedUnlinkableWasts/>
               <excludedUninstantiableWasts/>
-              <excludedWasts>
-                <wast>simd_store8_lane.wast</wast>
-              </excludedWasts>
+              <excludedWasts/>
             </configuration>
             <executions>
               <execution>
