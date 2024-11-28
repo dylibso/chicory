@@ -174,6 +174,7 @@ public class TestGenMojo extends AbstractMojo {
                         "Some wast files are not included or excluded: " + allWastFiles);
             }
             List<String> includedExcludedWasts = new ArrayList<>();
+            // TODO: this mechanism fails when there are no excluded wast in one profile only
             for (String includedWast : includedWasts) {
                 if (excludedWasts.contains(includedWast)) {
                     includedExcludedWasts.add(includedWast);

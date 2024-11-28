@@ -276,17 +276,11 @@ public class WasmValue {
                             sb.append("Byte.parseByte(\"" + v + "\")");
                             break;
                         case I16:
-                            sb.append("Integer.parseUnsignedInt(\"" + v + "\")");
-                            break;
-                        case I32:
-                            sb.append("Long.parseUnsignedLong(\"" + v + "\")");
-                            break;
-                        case I64:
-                            sb.append("Long.parseUnsignedLong(\"" + v + "\")");
-                            break;
                         case F32:
                             sb.append("Integer.parseUnsignedInt(\"" + v + "\")");
                             break;
+                        case I32:
+                        case I64:
                         case F64:
                             sb.append("Long.parseUnsignedLong(\"" + v + "\")");
                             break;
