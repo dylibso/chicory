@@ -1,7 +1,6 @@
 package com.dylibso.chicory.experimental.hostmodule.processor;
 
 import static com.github.javaparser.StaticJavaParser.parseType;
-import static com.github.javaparser.printer.configuration.DefaultPrinterConfiguration.ConfigOption.COLUMN_ALIGN_PARAMETERS;
 import static java.lang.String.format;
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.Diagnostic.Kind.NOTE;
@@ -32,36 +31,20 @@ import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
-import com.github.javaparser.printer.DefaultPrettyPrinter;
-import com.github.javaparser.printer.configuration.DefaultConfigurationOption;
-import com.github.javaparser.printer.configuration.DefaultPrinterConfiguration;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
-import java.util.Locale;
 import java.util.Set;
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.Filer;
 import javax.annotation.processing.Generated;
 import javax.annotation.processing.RoundEnvironment;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Elements;
-import javax.tools.Diagnostic;
 
-public final class HostModuleProcessor extends AbstractProcessor {
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latestSupported();
-    }
+public final class HostModuleProcessor extends AbstractModuleProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
@@ -287,26 +270,6 @@ public final class HostModuleProcessor extends AbstractProcessor {
         return function;
     }
 
-    private Elements elements() {
-        return processingEnv.getElementUtils();
-    }
-
-    private Filer filer() {
-        return processingEnv.getFiler();
-    }
-
-    private void log(Diagnostic.Kind kind, String message, Element element) {
-        processingEnv.getMessager().printMessage(kind, message, element);
-    }
-
-    private static PackageElement getPackageName(Element element) {
-        Element enclosing = element;
-        while (enclosing.getKind() != ElementKind.PACKAGE) {
-            enclosing = enclosing.getEnclosingElement();
-        }
-        return (PackageElement) enclosing;
-    }
-
     private static boolean annotatedWith(Element element, Class<? extends Annotation> annotation) {
         var annotationName = annotation.getName();
         return element.getAnnotationMirrors().stream()
@@ -322,16 +285,4 @@ public final class HostModuleProcessor extends AbstractProcessor {
     private static Expression valueType(String type) {
         return new FieldAccessExpr(new NameExpr("ValueType"), type);
     }
-
-    private static String camelCaseToSnakeCase(String name) {
-        return name.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase(Locale.ROOT);
-    }
-
-    private static DefaultPrettyPrinter printer() {
-        return new DefaultPrettyPrinter(
-                new DefaultPrinterConfiguration()
-                        .addOption(new DefaultConfigurationOption(COLUMN_ALIGN_PARAMETERS, true)));
-    }
-
-    private static final class AbortProcessingException extends RuntimeException {}
 }

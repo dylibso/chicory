@@ -19,17 +19,16 @@
       <artifactId>host-module-annotations-experimental</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.github.javaparser</groupId>
       <artifactId>javaparser-core</artifactId>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>runtime</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wasm</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
