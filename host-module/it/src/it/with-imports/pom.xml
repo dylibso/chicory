@@ -52,6 +52,7 @@
 
   <build>
     <plugins>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -66,6 +67,30 @@
             </path>
           </annotationProcessorPaths>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>@maven-resources-plugin.version@</version>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <phase>validate</phase>
+            <configuration>
+              <outputDirectory>${basedir}/src/test/resources</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${basedir}/../../../../../wasm-corpus/src/main/resources/compiled</directory>
+                  <includes>
+                    <include>host-function.wat.wasm</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
