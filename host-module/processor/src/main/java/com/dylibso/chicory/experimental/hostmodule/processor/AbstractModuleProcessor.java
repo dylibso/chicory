@@ -49,7 +49,8 @@ public abstract class AbstractModuleProcessor extends AbstractProcessor {
     static String snakeCaseToCamelCase(String name, boolean className) {
         var sb = new StringBuilder();
         var toUppercase = className;
-        for (var c : name.toCharArray()) {
+        for (int i = 0; i < name.length(); i++) {
+            var c = name.charAt(i);
             if (c == '_') {
                 toUppercase = true;
             } else if (toUppercase) {

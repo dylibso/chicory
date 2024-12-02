@@ -173,8 +173,24 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
         // generate module exports
         for (int i = 0; i < module.exportSection().exportCount(); i++) {
             var export = module.exportSection().getExport(i);
-            if (export.exportType() != ExternalType.FUNCTION) {
-                // TODO: implement support for Memories, Tables, Globals!
+
+            if (export.exportType() == ExternalType.MEMORY) {
+                var exportMethod =
+                        exportsInterface.addMethod(
+                                snakeCaseToCamelCase(export.name(), false),
+                                Modifier.Keyword.DEFAULT);
+
+                exportsCu.addImport("com.dylibso.chicory.runtime.Memory");
+                exportMethod.setType("Memory");
+                exportMethod
+                        .createBody()
+                        .addStatement(
+                                new ReturnStmt(
+                                        new MethodCallExpr(
+                                                new MethodCallExpr("instance"), "memory")));
+                continue;
+            } else if (export.exportType() != ExternalType.FUNCTION) {
+                // TODO: implement support for Tables, Globals!
                 continue;
             }
             var funcType =
@@ -246,7 +262,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                 methodBody.addStatement(
                         new AssignExpr(
                                 new VariableDeclarationExpr(parseType("long"), "result"),
-                                new ArrayAccessExpr(exportCallHandle, new IntegerLiteralExpr(0)),
+                                new ArrayAccessExpr(exportCallHandle, new IntegerLiteralExpr("0")),
                                 AssignExpr.Operator.ASSIGN));
                 methodBody.addStatement(
                         new ReturnStmt(
@@ -279,7 +295,9 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             Map<String, List<Import>> importedModules = new HashMap<>();
             for (int i = 0; i < module.importSection().importCount(); i++) {
                 var imprt = module.importSection().getImport(i);
-                if (imprt.importType() == ExternalType.FUNCTION) {
+
+                if (imprt.importType() == ExternalType.FUNCTION
+                        || imprt.importType() == ExternalType.MEMORY) {
                     importedModules.computeIfAbsent(imprt.module(), ignored -> new ArrayList<>());
                     importedModules.computeIfPresent(
                             imprt.module(),
@@ -307,6 +325,16 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                 writableClasses.put(prefix + importClassName, cu);
 
                 for (var importedFun : imprt.getValue()) {
+                    if (importedFun.importType() == ExternalType.MEMORY) {
+                        var importMemoryMethod =
+                                importInterface.addMethod(
+                                        snakeCaseToCamelCase(importedFun.name(), false));
+                        cu.addImport("com.dylibso.chicory.runtime.Memory");
+                        importMemoryMethod.setType("Memory");
+                        importMemoryMethod.removeBody();
+                        continue;
+                    }
+
                     var importType =
                             module.typeSection()
                                     .getType((((FunctionImport) importedFun).typeIndex()));
