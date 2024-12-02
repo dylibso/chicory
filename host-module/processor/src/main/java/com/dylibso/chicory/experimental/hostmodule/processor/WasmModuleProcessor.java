@@ -164,27 +164,23 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
         instanceMethod.setType("Instance");
         instanceMethod.removeBody();
 
+        int importedFunctionCount =
+                (int)
+                        module.importSection().stream()
+                                .filter(i -> i.importType() == ExternalType.FUNCTION)
+                                .count();
+
         // generate module exports
         for (int i = 0; i < module.exportSection().exportCount(); i++) {
             var export = module.exportSection().getExport(i);
-            var exportType =
-                    module.typeSection()
-                            .getType(
-                                    module.functionSection()
-                                            .getFunctionType(
-                                                    // TODO: go on from here....an error in the index
-                                                    (int)
-                                                            (export.index()
-                                                                    - module
-                                                                            .importSection()
-                                                                            .stream()
-                                                                            .filter(
-                                                                                    x ->
-                                                                                            x
-                                                                                                            .importType()
-                                                                                                    == ExternalType
-                                                                                                            .FUNCTION)
-                                                                            .count())));
+            if (export.exportType() != ExternalType.FUNCTION) {
+                // TODO: implement support for Memories, Tables, Globals!
+                continue;
+            }
+            var funcType =
+                    module.functionSection()
+                            .getFunctionType(export.index() - importedFunctionCount);
+            var exportType = module.typeSection().getType(funcType);
 
             var exportMethod =
                     exportsInterface.addMethod(
