@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 20
 sidebar_label: Host Functions
 title: Host Functions
 ---

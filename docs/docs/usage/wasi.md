@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 50
 sidebar_label: WASI P1
 title: Wasi Preview 1
 ---
