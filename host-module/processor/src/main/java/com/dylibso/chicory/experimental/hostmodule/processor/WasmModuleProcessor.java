@@ -218,10 +218,10 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                                 NodeList.nodeList(
                                                         new StringLiteralExpr(export.name())))));
                 continue;
-            } else if (export.exportType() != ExternalType.FUNCTION) {
-                // TODO: implement support for Tables, Globals!
-                continue;
             }
+            // it should be a function here
+            assert (export.exportType() == ExternalType.FUNCTION);
+
             var funcType =
                     module.functionSection()
                             .getFunctionType(export.index() - importedFunctionCount);
@@ -321,17 +321,13 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             for (int i = 0; i < module.importSection().importCount(); i++) {
                 var imprt = module.importSection().getImport(i);
 
-                if (imprt.importType() == ExternalType.FUNCTION
-                        || imprt.importType() == ExternalType.MEMORY) {
-                    importedModules.computeIfAbsent(imprt.module(), ignored -> new ArrayList<>());
-                    importedModules.computeIfPresent(
-                            imprt.module(),
-                            (k, v) -> {
-                                v.add(imprt);
-                                return v;
-                            });
-                }
-                // TODO: memory/global/table handling
+                importedModules.computeIfAbsent(imprt.module(), ignored -> new ArrayList<>());
+                importedModules.computeIfPresent(
+                        imprt.module(),
+                        (k, v) -> {
+                            v.add(imprt);
+                            return v;
+                        });
             }
 
             for (var imprt : importedModules.entrySet()) {
@@ -350,23 +346,31 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                 writableClasses.put(prefix + importClassName, cu);
 
                 for (var importedFun : imprt.getValue()) {
+                    var importMethod =
+                            importInterface.addMethod(
+                                    snakeCaseToCamelCase(importedFun.name(), false));
                     if (importedFun.importType() == ExternalType.MEMORY) {
-                        var importMemoryMethod =
-                                importInterface.addMethod(
-                                        snakeCaseToCamelCase(importedFun.name(), false));
                         cu.addImport("com.dylibso.chicory.runtime.Memory");
-                        importMemoryMethod.setType("Memory");
-                        importMemoryMethod.removeBody();
+                        importMethod.setType("Memory");
+                        importMethod.removeBody();
+                        continue;
+                    } else if (importedFun.importType() == ExternalType.GLOBAL) {
+                        cu.addImport("com.dylibso.chicory.runtime.GlobalInstance");
+                        importMethod.setType("GlobalInstance");
+                        importMethod.removeBody();
+                        continue;
+                    } else if (importedFun.importType() == ExternalType.TABLE) {
+                        cu.addImport("com.dylibso.chicory.runtime.TableInstance");
+                        importMethod.setType("TableInstance");
+                        importMethod.removeBody();
                         continue;
                     }
+                    // we now know it's a function
+                    assert (importedFun.importType() == ExternalType.FUNCTION);
 
                     var importType =
                             module.typeSection()
                                     .getType((((FunctionImport) importedFun).typeIndex()));
-
-                    var importMethod =
-                            importInterface.addMethod(
-                                    snakeCaseToCamelCase(importedFun.name(), false));
                     importMethod.removeBody();
 
                     if (importType.returns().size() == 0) {
