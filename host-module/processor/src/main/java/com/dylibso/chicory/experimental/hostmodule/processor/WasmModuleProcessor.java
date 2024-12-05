@@ -171,15 +171,15 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                 .count();
 
         // generate module exports
+        var exportCallHandle =
+                new MethodCallExpr(new MethodCallExpr("instance"), "exports", NodeList.nodeList());
         for (int i = 0; i < module.exportSection().exportCount(); i++) {
             var export = module.exportSection().getExport(i);
 
+            var exportMethod =
+                    exportsInterface.addMethod(
+                            snakeCaseToCamelCase(export.name(), false), Modifier.Keyword.DEFAULT);
             if (export.exportType() == ExternalType.MEMORY) {
-                var exportMethod =
-                        exportsInterface.addMethod(
-                                snakeCaseToCamelCase(export.name(), false),
-                                Modifier.Keyword.DEFAULT);
-
                 exportsCu.addImport("com.dylibso.chicory.runtime.Memory");
                 exportMethod.setType("Memory");
                 exportMethod
@@ -187,7 +187,36 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                         .addStatement(
                                 new ReturnStmt(
                                         new MethodCallExpr(
-                                                new MethodCallExpr("instance"), "memory")));
+                                                exportCallHandle,
+                                                "memory",
+                                                NodeList.nodeList(
+                                                        new StringLiteralExpr(export.name())))));
+                continue;
+            } else if (export.exportType() == ExternalType.GLOBAL) {
+                exportsCu.addImport("com.dylibso.chicory.runtime.GlobalInstance");
+                exportMethod.setType("GlobalInstance");
+                exportMethod
+                        .createBody()
+                        .addStatement(
+                                new ReturnStmt(
+                                        new MethodCallExpr(
+                                                exportCallHandle,
+                                                "global",
+                                                NodeList.nodeList(
+                                                        new StringLiteralExpr(export.name())))));
+                continue;
+            } else if (export.exportType() == ExternalType.TABLE) {
+                exportsCu.addImport("com.dylibso.chicory.runtime.TableInstance");
+                exportMethod.setType("TableInstance");
+                exportMethod
+                        .createBody()
+                        .addStatement(
+                                new ReturnStmt(
+                                        new MethodCallExpr(
+                                                exportCallHandle,
+                                                "table",
+                                                NodeList.nodeList(
+                                                        new StringLiteralExpr(export.name())))));
                 continue;
             } else if (export.exportType() != ExternalType.FUNCTION) {
                 // TODO: implement support for Tables, Globals!
@@ -197,10 +226,6 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                     module.functionSection()
                             .getFunctionType(export.index() - importedFunctionCount);
             var exportType = module.typeSection().getType(funcType);
-
-            var exportMethod =
-                    exportsInterface.addMethod(
-                            snakeCaseToCamelCase(export.name(), false), Modifier.Keyword.DEFAULT);
 
             if (exportType.returns().size() == 0) {
                 exportMethod.setType(void.class);
@@ -247,22 +272,22 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             var methodBody = exportMethod.createBody();
             var exportCall =
                     new MethodCallExpr(
-                            new MethodCallExpr("instance"),
-                            "export",
+                            exportCallHandle,
+                            "function",
                             NodeList.nodeList(new StringLiteralExpr(export.name())));
-            var exportCallHandle =
+            var exportApplyHandle =
                     new MethodCallExpr(exportCall, "apply", NodeList.nodeList(handleCallArguments));
 
             if (exportType.returns().size() == 0) {
-                methodBody.addStatement(exportCallHandle).addStatement(new ReturnStmt());
+                methodBody.addStatement(exportApplyHandle).addStatement(new ReturnStmt());
             } else if (exportType.returns().size() > 1) {
                 // TODO: not tested now
-                methodBody.addStatement(new ReturnStmt(exportCallHandle));
+                methodBody.addStatement(new ReturnStmt(exportApplyHandle));
             } else {
                 methodBody.addStatement(
                         new AssignExpr(
                                 new VariableDeclarationExpr(parseType("long"), "result"),
-                                new ArrayAccessExpr(exportCallHandle, new IntegerLiteralExpr("0")),
+                                new ArrayAccessExpr(exportApplyHandle, new IntegerLiteralExpr("0")),
                                 AssignExpr.Operator.ASSIGN));
                 methodBody.addStatement(
                         new ReturnStmt(
