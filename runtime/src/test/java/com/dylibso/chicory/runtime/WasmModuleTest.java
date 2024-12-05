@@ -2,6 +2,7 @@ package com.dylibso.chicory.runtime;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -356,5 +357,15 @@ public class WasmModuleTest {
 
         // IIUC: 3 values returning from last CALL + 1 result
         assertTrue(finalStackSize.get() == 4L);
+    }
+
+    @Test
+    public void shouldEasilyObtainExportedEntities() {
+        var instance = Instance.builder(loadModule("compiled/exports.wat.wasm")).build();
+
+        assertNotNull(instance.exports().memory("mem").pages());
+        assertNotNull(instance.exports().table("tab").size());
+        assertNotNull(instance.exports().global("glob1").getValue());
+        assertNotNull(instance.exports().function("get-1").apply());
     }
 }

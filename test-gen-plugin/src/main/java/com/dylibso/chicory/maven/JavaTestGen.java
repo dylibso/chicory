@@ -3,7 +3,6 @@ package com.dylibso.chicory.maven;
 import static com.dylibso.chicory.maven.StringUtils.capitalize;
 import static com.dylibso.chicory.maven.StringUtils.escapedCamelCase;
 import static com.dylibso.chicory.maven.wast.ActionType.INVOKE;
-import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 
 import com.dylibso.chicory.maven.wast.Command;
 import com.dylibso.chicory.maven.wast.CommandType;
@@ -340,14 +339,17 @@ public class JavaTestGen {
     private Optional<Expression> generateFieldExport(
             String varName, Command cmd, String moduleName) {
         if (cmd.action() != null && cmd.action().field() != null) {
+            var accessor = (cmd.action().type() == INVOKE) ? "function" : "global";
             var declarator =
                     new VariableDeclarator()
                             .setName(varName)
-                            .setType(parseClassOrInterfaceType("ExportFunction"))
+                            .setType("var")
                             .setInitializer(
                                     new NameExpr(
                                             moduleName
-                                                    + "Instance.export(\""
+                                                    + "Instance.exports()."
+                                                    + accessor
+                                                    + "(\""
                                                     + StringEscapeUtils.escapeJava(
                                                             cmd.action().field())
                                                     + "\")"));
@@ -372,8 +374,9 @@ public class JavaTestGen {
                                 .map(WasmValue::toArgsValue)
                                 .collect(Collectors.joining(", "))
                         : "";
-
-        var invocationMethod = ".apply(" + args + ")";
+        // Function or Global
+        var invocationMethod =
+                (cmd.action().type() == INVOKE) ? ".apply(" + args + ")" : ".getValue()";
         if (cmd.type() == CommandType.ASSERT_TRAP || cmd.type() == CommandType.ASSERT_EXHAUSTION) {
             var assertDecl =
                     new NameExpr(
@@ -391,12 +394,16 @@ public class JavaTestGen {
             }
         } else if (cmd.type() == CommandType.ASSERT_RETURN) {
             List<Expression> exprs = new ArrayList<>();
-            exprs.add(new NameExpr("var results = " + varName + ".apply(" + args + ")"));
+            var resVarName = (cmd.action().type() == INVOKE) ? "results" : "result";
+            exprs.add(new NameExpr("var " + resVarName + " = " + varName + invocationMethod));
 
             for (int i = 0; i < cmd.expected().length; i++) {
                 var expected = cmd.expected()[i];
                 var expectedVar = expected.toExpectedValue();
-                var resultVar = expected.toResultValue("results[" + i + "]");
+                var resultVar =
+                        (cmd.action().type() == INVOKE)
+                                ? expected.toResultValue(resVarName + "[" + i + "]")
+                                : expected.toResultValue(resVarName);
 
                 if (expected.type() == WasmValueType.V128) {
                     exprs.add(new NameExpr("var expected = " + resultVar));
