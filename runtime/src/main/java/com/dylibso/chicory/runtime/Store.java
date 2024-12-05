@@ -6,6 +6,7 @@ import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import java.util.LinkedHashMap;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * The runtime storage for all function, global, memory, table instances.
@@ -129,8 +130,16 @@ public class Store {
      * A shorthand for instantiating a module and registering it in the store.
      */
     public Instance instantiate(String name, WasmModule m) {
+        return this.instantiate(
+                name, imports -> Instance.builder(m).withImportValues(imports).build());
+    }
+
+    /**
+     * A shorthand for instantiating a module and registering it in the store.
+     */
+    public Instance instantiate(String name, Function<ImportValues, Instance> instanceBuilder) {
         ImportValues importValues = this.toImportValues();
-        Instance instance = Instance.builder(m).withImportValues(importValues).build();
+        Instance instance = instanceBuilder.apply(importValues);
         register(name, instance);
         return instance;
     }

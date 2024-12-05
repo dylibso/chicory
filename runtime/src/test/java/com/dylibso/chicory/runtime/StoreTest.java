@@ -130,4 +130,28 @@ public class StoreTest {
             assertTrue(store.functions.containsKey(new Store.QualifiedName(name, "get-4")));
         }
     }
+
+    @Test
+    public void moduleInstantiationShouldBeConfigurable() {
+        var store = new Store();
+
+        String name1 = "exports-module-1";
+        store.instantiate(
+                name1,
+                imports ->
+                        Instance.builder(loadModule("compiled/exports.wat.wasm"))
+                                .withImportValues(imports)
+                                .withStart(false)
+                                .build());
+
+        String name2 = "exports-module-2";
+        store.instantiate(
+                name2,
+                imports ->
+                        Instance.builder(loadModule("compiled/exports.wat.wasm"))
+                                .withImportValues(imports)
+                                .build());
+
+        assertEquals(2, store.memories.size());
+    }
 }
