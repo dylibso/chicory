@@ -137,9 +137,9 @@ public class Store {
     /**
      * A shorthand for instantiating a module and registering it in the store.
      */
-    public Instance instantiate(String name, Function<ImportValues, Instance> instanceBuilder) {
+    public Instance instantiate(String name, Function<ImportValues, Instance> instanceFactory) {
         ImportValues importValues = this.toImportValues();
-        Instance instance = instanceBuilder.apply(importValues);
+        Instance instance = instanceFactory.apply(importValues);
         register(name, instance);
         return instance;
     }
