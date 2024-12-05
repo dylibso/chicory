@@ -58,6 +58,7 @@ public class Instance {
     private final Element[] elements;
     private final Map<String, Export> exports;
     private final ExecutionListener listener;
+    private final Exports fluentExports;
 
     Instance(
             WasmModule module,
@@ -92,6 +93,7 @@ public class Instance {
         this.elements = elements.clone();
         this.exports = exports;
         this.listener = listener;
+        this.fluentExports = new Exports(this);
 
         if (initialize) {
             initialize(start);
@@ -164,30 +166,57 @@ public class Instance {
         return type(functionType(exports.get(name).index()));
     }
 
-    public ExportFunction export(String name) {
-        var export = this.exports.get(name);
-        if (export == null) {
-            throw new ChicoryException("Unknown export with name " + name);
+    public static final class Exports {
+        private final Instance instance;
+
+        private Exports(Instance instance) {
+            this.instance = instance;
         }
 
-        switch (export.exportType()) {
-            case FUNCTION:
-                {
-                    return args -> machine.call(export.index(), args);
-                }
-            case GLOBAL:
-                {
-                    return args -> {
-                        assert (args.length == 0);
-                        var v = global(export.index()).getValue();
-                        return new long[] {v};
-                    };
-                }
-            default:
-                {
-                    throw new ChicoryException("not implemented");
-                }
+        private void checkType(Export export, ExternalType type) {
+            if (export.exportType() != type) {
+                throw new ChicoryException(
+                        "The export "
+                                + export.name()
+                                + " is of type "
+                                + export.exportType()
+                                + " and cannot be converted to "
+                                + type);
+            }
         }
+
+        public ExportFunction function(String name) {
+            var export = instance.exports.get(name);
+            checkType(export, FUNCTION);
+            return args -> instance.machine.call(export.index(), args);
+        }
+
+        public GlobalInstance global(String name) {
+            var export = instance.exports.get(name);
+            checkType(export, GLOBAL);
+            return instance.global(export.index());
+        }
+
+        public TableInstance table(String name) {
+            var export = instance.exports.get(name);
+            checkType(export, TABLE);
+            return instance.table(export.index());
+        }
+
+        public Memory memory(String name) {
+            var export = instance.exports.get(name);
+            checkType(export, MEMORY);
+            assert (export.index() == 0);
+            return instance.memory();
+        }
+    }
+
+    public Exports exports() {
+        return fluentExports;
+    }
+
+    public ExportFunction export(String name) {
+        return this.fluentExports.function(name);
     }
 
     public FunctionBody function(long idx) {
