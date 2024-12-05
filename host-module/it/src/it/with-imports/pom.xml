@@ -82,7 +82,7 @@
               <outputDirectory>${basedir}/src/test/resources</outputDirectory>
               <resources>
                 <resource>
-                  <directory>${basedir}/../../../../../wasm-corpus/src/main/resources/compiled</directory>
+                  <directory>@basedir@/../../wasm-corpus/src/main/resources/compiled</directory>
                   <includes>
                     <include>host-function.wat.wasm</include>
                   </includes>
