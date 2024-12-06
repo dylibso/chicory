@@ -17,17 +17,23 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.ArrayAccessExpr;
+import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import java.io.IOException;
 import java.io.Writer;
@@ -442,11 +448,41 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                     //                            List.of(ValueType.F64, ValueType.F64),
                     //                            List.of(),
                     //                            noop)
+
+                    GO ON FROM HERE
+                    // build lambda return
+                    var functionBodyStatement = new BlockStmt();
+                    if (importType.returns().size() == 0) {
+                        functionBodyStatement.addStatement(
+                                new MethodCallExpr(
+                                    accessExportedEntity(imprt.getKey(), "function", importedFun.name())
+                                        "apply",
+                                NodeList.nodeList(
+                                        // adapt the parameters here
+                                ))
+                                // new long[] { toLong($(accessExportedEntity)) }
+                                // new ArrayCreationExpr()
+                        );
+                        functionBodyStatement.addStatement(new ReturnStmt());
+                    } else if (importType.returns().size() == 1) {
+
+                    } else {
+
+                    }
+
                     new ObjectCreationExpr(null, parseClassOrInterfaceType("HostFunction"), NodeList.nodeList(
                             new StringLiteralExpr(imprt.getKey()),
                             new StringLiteralExpr(importedFun.name()),
                             listOfValueTypes(importType.params()),
                             listOfValueTypes(importType.returns()),
+                            // (Instance instance, long... args) -> null;
+                            new LambdaExpr(
+                                    NodeList.nodeList(
+                                        new Parameter(parseType("Instance"), new SimpleName("instance")),
+                                        new Parameter(parseType("long"), "args")),
+
+                                    )
+                            )
                     ));
 
                     importedFunctions.add(
