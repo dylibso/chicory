@@ -25,10 +25,6 @@ public enum WasmValueType {
         this.value = value;
     }
 
-    public int size() {
-        return this == V128 ? 2 : 1;
-    }
-
     @JsonValue
     public String value() {
         return value;
