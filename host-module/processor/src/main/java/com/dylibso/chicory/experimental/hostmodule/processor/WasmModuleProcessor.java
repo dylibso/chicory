@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.hostmodule.processor;
 
+import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import static com.github.javaparser.StaticJavaParser.parseType;
 import static java.lang.String.format;
 import static javax.tools.Diagnostic.Kind.ERROR;
@@ -11,6 +12,7 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.Import;
+import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.ValueType;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
@@ -19,9 +21,11 @@ import com.github.javaparser.ast.expr.ArrayAccessExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.ReturnStmt;
@@ -127,6 +131,39 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             cu.setPackageDeclaration(packageName);
         }
         return cu;
+    }
+
+    private Expression listOfValueTypes(List<ValueType> valueTypes) {
+        valueTypes.stream().map(vt -> {
+            switch (vt) {
+                case I32:
+                    return new FieldAccessExpr(new NameExpr("ValueType"), "I32");
+                case I64:
+                    return new FieldAccessExpr(new NameExpr("ValueType"), "I64");
+                case F32:
+                    return new FieldAccessExpr(new NameExpr("ValueType"), "F32");
+                case F64:
+                    return new FieldAccessExpr(new NameExpr("ValueType"), "F64");
+                default:
+                    log(
+                            ERROR,
+                            "Unsupported WASM type: "
+                                    + param
+                                    + " in export: "
+                                    + export.name(),
+                            type)
+                    throw new AbortProcessingException();
+            }
+        });
+        new MethodCallExpr(new NameExpr("List"), "of", NodeList.nodeList());
+    }
+
+    private static Expression accessExportedEntity(
+            String moduleName, String accessMethodName, String name) {
+        return new MethodCallExpr(
+                new MethodCallExpr(new MethodCallExpr(moduleName), "exports", NodeList.nodeList()),
+                accessMethodName,
+                NodeList.nodeList(new StringLiteralExpr(name)));
     }
 
     private void processModule(TypeElement type) throws URISyntaxException, IOException {
@@ -363,34 +400,57 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                         importMethod.setType("Memory");
                         importMethod.removeBody();
 
+                        importsCu.addImport("com.dylibso.chicory.runtime.ImportMemory");
                         importedMemories.add(
-                                new MethodCallExpr(
-                                    new MethodCallExpr(imprt.getKey()),
-                                    new MethodCallExpr(importedFun.name()), NodeList.nodeList()));
+                            new ObjectCreationExpr(null, parseClassOrInterfaceType("ImportMemory"), NodeList.nodeList(
+                                    new StringLiteralExpr(imprt.getKey()),
+                                    new StringLiteralExpr(importedFun.name()),
+                                    accessExportedEntity(imprt.getKey(), "memory", importedFun.name())
+                            ))
+                        );
                         continue;
                     } else if (importedFun.importType() == ExternalType.GLOBAL) {
                         cu.addImport("com.dylibso.chicory.runtime.GlobalInstance");
                         importMethod.setType("GlobalInstance");
                         importMethod.removeBody();
 
-                        importedGlobals.add(new MethodCallExpr(importedFun.name()));
+                        // TODO: should be similar to Memory
+                        // importedGlobals.add(
+                        //        accessExportedEntity(imprt.getKey(), "global", importedFun.name()));
                         continue;
                     } else if (importedFun.importType() == ExternalType.TABLE) {
                         cu.addImport("com.dylibso.chicory.runtime.TableInstance");
                         importMethod.setType("TableInstance");
                         importMethod.removeBody();
 
-                        importedTables.add(new MethodCallExpr(importedFun.name()));
+                        // TODO: should be similar to Memory
+                        // importedTables.add(
+                        //        accessExportedEntity(imprt.getKey(), "table", importedFun.name()));
                         continue;
                     }
                     // we now know it's a function
                     assert (importedFun.importType() == ExternalType.FUNCTION);
 
-                    importedFunctions.add(new MethodCallExpr(importedFun.name()));
                     var importType =
                             module.typeSection()
                                     .getType((((FunctionImport) importedFun).typeIndex()));
                     importMethod.removeBody();
+
+                    //                    new HostFunction(
+                    //                            "spectest",
+                    //                            "print_f64_f64",
+                    //                            List.of(ValueType.F64, ValueType.F64),
+                    //                            List.of(),
+                    //                            noop)
+                    new ObjectCreationExpr(null, parseClassOrInterfaceType("HostFunction"), NodeList.nodeList(
+                            new StringLiteralExpr(imprt.getKey()),
+                            new StringLiteralExpr(importedFun.name()),
+                            listOfValueTypes(importType.params()),
+                            listOfValueTypes(importType.returns()),
+                    ));
+
+                    importedFunctions.add(
+                            accessExportedEntity(imprt.getKey(), "function", importedFun.name()));
 
                     if (importType.returns().size() == 0) {
                         importMethod.setType(void.class);

@@ -2,10 +2,8 @@ package chicory.test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.dylibso.chicory.experimental.hostmodule.annotations.HostModule;
 import com.dylibso.chicory.experimental.hostmodule.annotations.WasmExport;
 import com.dylibso.chicory.experimental.hostmodule.annotations.WasmModuleInterface;
-import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,7 +12,6 @@ import org.junit.jupiter.api.Test;
 class WithImportsTest {
     public final AtomicInteger count = new AtomicInteger();
 
-    @HostModule("console")
     @WasmModuleInterface("host-function.wat.wasm")
     class TestModule
             implements TestModule_ModuleExports, TestModule_ModuleImports, TestModule_Console {
@@ -26,11 +23,8 @@ class WithImportsTest {
                     Parser.parse(
                             WithImportsTest.class.getResourceAsStream(
                                     "/compiled/host-function.wat.wasm"));
-            var imports =
-                    ImportValues.builder()
-                            .addFunction(TestModule_ModuleFactory.toHostFunctions(this))
-                            .build();
-            instance = Instance.builder(module).withImportValues(imports).build();
+
+            instance = Instance.builder(module).withImportValues(toImportValues()).build();
         }
 
         @Override
