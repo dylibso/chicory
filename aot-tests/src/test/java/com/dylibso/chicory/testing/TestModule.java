@@ -9,7 +9,6 @@ import com.dylibso.chicory.wasm.MalformedException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import java.io.File;
-import java.util.Arrays;
 
 public class TestModule {
 

@@ -327,6 +327,40 @@
                 <wast>ref_null.wast</wast>
                 <wast>return.wast</wast>
                 <wast>select.wast</wast>
+                <wast>simd_load.wast</wast>
+                <wast>skip-stack-guard-page.wast</wast>
+                <wast>stack.wast</wast>
+                <wast>start.wast</wast>
+                <wast>store.wast</wast>
+                <wast>switch.wast</wast>
+                <wast>table-sub.wast</wast>
+                <wast>table.wast</wast>
+                <wast>table_copy.wast</wast>
+                <wast>table_fill.wast</wast>
+                <wast>table_get.wast</wast>
+                <wast>table_grow.wast</wast>
+                <wast>table_init.wast</wast>
+                <wast>table_set.wast</wast>
+                <wast>table_size.wast</wast>
+                <wast>token.wast</wast>
+                <wast>tokens.wast</wast>
+                <wast>traps.wast</wast>
+                <wast>type.wast</wast>
+                <wast>unreachable.wast</wast>
+                <wast>unreached-invalid.wast</wast>
+                <wast>unreached-valid.wast</wast>
+                <wast>unwind.wast</wast>
+                <wast>utf8-custom-section-id.wast</wast>
+                <wast>utf8-import-field.wast</wast>
+                <wast>utf8-import-module.wast</wast>
+                <wast>utf8-invalid-encoding.wast</wast>
+              </includedWasts>
+              <excludedTests/>
+              <excludedMalformedWasts/>
+              <excludedInvalidWasts/>
+              <excludedUnlinkableWasts/>
+              <excludedUninstantiableWasts/>
+              <excludedWasts>
                 <wast>simd_address.wast</wast>
                 <wast>simd_align.wast</wast>
                 <wast>simd_bit_shift.wast</wast>
@@ -370,7 +404,6 @@
                 <wast>simd_int_to_int_extend.wast</wast>
                 <wast>simd_lane.wast</wast>
                 <wast>simd_linking.wast</wast>
-                <wast>simd_load.wast</wast>
                 <wast>simd_load16_lane.wast</wast>
                 <wast>simd_load32_lane.wast</wast>
                 <wast>simd_load64_lane.wast</wast>
@@ -384,39 +417,7 @@
                 <wast>simd_store32_lane.wast</wast>
                 <wast>simd_store64_lane.wast</wast>
                 <wast>simd_store8_lane.wast</wast>
-                <wast>skip-stack-guard-page.wast</wast>
-                <wast>stack.wast</wast>
-                <wast>start.wast</wast>
-                <wast>store.wast</wast>
-                <wast>switch.wast</wast>
-                <wast>table-sub.wast</wast>
-                <wast>table.wast</wast>
-                <wast>table_copy.wast</wast>
-                <wast>table_fill.wast</wast>
-                <wast>table_get.wast</wast>
-                <wast>table_grow.wast</wast>
-                <wast>table_init.wast</wast>
-                <wast>table_set.wast</wast>
-                <wast>table_size.wast</wast>
-                <wast>token.wast</wast>
-                <wast>tokens.wast</wast>
-                <wast>traps.wast</wast>
-                <wast>type.wast</wast>
-                <wast>unreachable.wast</wast>
-                <wast>unreached-invalid.wast</wast>
-                <wast>unreached-valid.wast</wast>
-                <wast>unwind.wast</wast>
-                <wast>utf8-custom-section-id.wast</wast>
-                <wast>utf8-import-field.wast</wast>
-                <wast>utf8-import-module.wast</wast>
-                <wast>utf8-invalid-encoding.wast</wast>
-              </includedWasts>
-              <excludedTests/>
-              <excludedMalformedWasts/>
-              <excludedInvalidWasts/>
-              <excludedUnlinkableWasts/>
-              <excludedUninstantiableWasts/>
-              <excludedWasts/>
+              </excludedWasts>
             </configuration>
             <executions>
               <execution>
