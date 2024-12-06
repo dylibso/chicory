@@ -381,7 +381,7 @@ public class JavaTestGen {
                 (cmd.action().args() != null)
                         ? Arrays.stream(cmd.action().args())
                                 .map(WasmValue::toArgsValue)
-                        .collect(Collectors.toList())
+                                .collect(Collectors.toList())
                         : List.<String>of();
 
         var adaptedArgs =
@@ -391,9 +391,9 @@ public class JavaTestGen {
 
         // Function or Global
         var invocationMethod =
-                (cmd.action().type() == INVOKE) ?
-                        ".apply(ArgsAdapter.builder()" + adaptedArgs + ".build()" + ")" :
-                        ".getValue()";
+                (cmd.action().type() == INVOKE)
+                        ? ".apply(ArgsAdapter.builder()" + adaptedArgs + ".build()" + ")"
+                        : ".getValue()";
 
         if (cmd.type() == CommandType.ASSERT_TRAP || cmd.type() == CommandType.ASSERT_EXHAUSTION) {
             var assertDecl =
