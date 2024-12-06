@@ -107,76 +107,57 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         stack.push(result);
     }
 
+    /**
+     * Compares two 128-bit vectors as if they were two vectors of 16 eight-bit integers.
+     * Returns a new vector where each lane is all ones if the corresponding input elements were equal,
+     * or all zeros otherwise.
+     */
     private static void I8x16_EQ(MStack stack) {
-        var val1High = stack.pop();
-        var val1Low = stack.pop();
-        var val2High = stack.pop();
-        var val2Low = stack.pop();
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), 0).reinterpretAsBytes();
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), 2).reinterpretAsBytes();
 
-        long resultLow = 0L;
-        long resultHigh = 0L;
+        var result = v1.eq(v2).toVector().reinterpretAsLongs().toArray();
 
-        // TODO: refactor in a more generic operation?
-        for (int i = 0; i < 8; i++) {
-            var shift = i * 8L;
-            resultHigh |=
-                    (((val1High >> shift) & 0xFFL) == ((val2High >> shift) & 0xFFL))
-                            ? (0xFFL << shift)
-                            : 0;
-            resultLow |=
-                    (((val1Low >> shift) & 0xFFL) == ((val2Low >> shift) & 0xFFL))
-                            ? (0xFFL << shift)
-                            : 0;
-        }
+        stack.pop();
+        stack.pop();
 
-        stack.push(resultLow);
-        stack.push(resultHigh);
+        System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
 
+    /**
+     * Adds two 128-bit vectors as if they were two packed sixteen 8-bit signed integers
+     */
     private static void I8x16_ADD(MStack stack) {
-        var val1High = stack.pop();
-        var val1Low = stack.pop();
-        var val2High = stack.pop();
-        var val2Low = stack.pop();
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), 0).reinterpretAsBytes();
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), 2).reinterpretAsBytes();
 
-        long resultLow = 0L;
-        long resultHigh = 0L;
+        var result = v1.add(v2).reinterpretAsLongs().toArray();
 
-        for (int i = 0; i < 8; i++) {
-            var shift = i * 8L;
-            resultHigh |=
-                    ((((val2High >> shift) & 0xFFL) + ((val1High >> shift) & 0xFFL)) & 0xFFL)
-                            << shift;
-            resultLow |=
-                    ((((val2Low >> shift) & 0xFFL) + ((val1Low >> shift) & 0xFFL)) & 0xFFL)
-                            << shift;
-        }
+        stack.pop();
+        stack.pop();
 
-        stack.push(resultLow);
-        stack.push(resultHigh);
+        System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
 
+    /**
+     * Subtracts two 128-bit vectors as if they were two packed sixteen 8-bit signed integers
+     */
     private static void I8x16_SUB(MStack stack) {
-        var val1High = stack.pop();
-        var val1Low = stack.pop();
-        var val2High = stack.pop();
-        var val2Low = stack.pop();
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), 0).reinterpretAsBytes();
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), 2).reinterpretAsBytes();
 
-        long resultLow = 0L;
-        long resultHigh = 0L;
+        var result = v1.sub(v2).reinterpretAsLongs().toArray();
 
-        for (int i = 0; i < 8; i++) {
-            var shift = i * 8L;
-            resultHigh |=
-                    ((((val2High >> shift) & 0xFFL) - ((val1High >> shift) & 0xFFL)) & 0xFFL)
-                            << shift;
-            resultLow |=
-                    ((((val2Low >> shift) & 0xFFL) - ((val1Low >> shift) & 0xFFL)) & 0xFFL)
-                            << shift;
-        }
+        stack.pop();
+        stack.pop();
 
-        stack.push(resultLow);
-        stack.push(resultHigh);
+        System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
 
     private static void I8x16_SHL(MStack stack) {
