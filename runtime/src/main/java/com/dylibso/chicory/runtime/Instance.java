@@ -6,6 +6,7 @@ import static com.dylibso.chicory.wasm.types.ExternalType.FUNCTION;
 import static com.dylibso.chicory.wasm.types.ExternalType.GLOBAL;
 import static com.dylibso.chicory.wasm.types.ExternalType.MEMORY;
 import static com.dylibso.chicory.wasm.types.ExternalType.TABLE;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
 import com.dylibso.chicory.wasm.ChicoryException;
@@ -313,6 +314,7 @@ public class Instance {
 
         private boolean initialize = true;
         private boolean start = true;
+        private MemoryLimits memoryLimits;
         private ExecutionListener listener;
         private ImportValues importValues;
         private Function<Instance, Machine> machineFactory;
@@ -328,6 +330,11 @@ public class Instance {
 
         public Builder withStart(boolean s) {
             this.start = s;
+            return this;
+        }
+
+        public Builder withMemoryLimits(MemoryLimits limits) {
+            this.memoryLimits = limits;
             return this;
         }
 
@@ -648,7 +655,8 @@ public class Instance {
             if (module.memorySection().isPresent()) {
                 var memories = module.memorySection().get();
                 if (memories.memoryCount() > 0) {
-                    memory = new Memory(memories.getMemory(0).limits());
+                    var defaultLimits = memories.getMemory(0).limits();
+                    memory = new Memory(requireNonNullElse(memoryLimits, defaultLimits));
                 }
             } else {
                 if (mappedHostImports != null && mappedHostImports.memoryCount() > 0) {
