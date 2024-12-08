@@ -114,14 +114,15 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
      */
     private static void I8x16_EQ(MStack stack) {
         var v1 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), 0).reinterpretAsBytes();
+                LongVector.fromArray(
+                                LongVector.SPECIES_128, new long[] {stack.pop(), stack.pop()}, 0)
+                        .reinterpretAsBytes();
+
         var v2 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), 2).reinterpretAsBytes();
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
+                        .reinterpretAsBytes();
 
         var result = v1.eq(v2).toVector().reinterpretAsLongs().toArray();
-
-        stack.pop();
-        stack.pop();
 
         System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
