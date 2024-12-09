@@ -132,15 +132,18 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
      * Adds two 128-bit vectors as if they were two packed sixteen 8-bit signed integers
      */
     private static void I8x16_ADD(MStack stack) {
+        var high = stack.pop();
+        var low = stack.pop();
+
         var v1 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), 0).reinterpretAsBytes();
+                LongVector.fromArray(
+                                LongVector.SPECIES_128, new long[] {low, high}, stack.size() - 2)
+                        .reinterpretAsBytes();
         var v2 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), 2).reinterpretAsBytes();
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
+                        .reinterpretAsBytes();
 
         var result = v1.add(v2).reinterpretAsLongs().toArray();
-
-        stack.pop();
-        stack.pop();
 
         System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
@@ -149,15 +152,18 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
      * Subtracts two 128-bit vectors as if they were two packed sixteen 8-bit signed integers
      */
     private static void I8x16_SUB(MStack stack) {
+        var high = stack.pop();
+        var low = stack.pop();
+
         var v1 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), 0).reinterpretAsBytes();
+                LongVector.fromArray(
+                                LongVector.SPECIES_128, new long[] {low, high}, stack.size() - 2)
+                        .reinterpretAsBytes();
         var v2 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), 2).reinterpretAsBytes();
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
+                        .reinterpretAsBytes();
 
-        var result = v1.sub(v2).reinterpretAsLongs().toArray();
-
-        stack.pop();
-        stack.pop();
+        var result = v2.sub(v1).reinterpretAsLongs().toArray();
 
         System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
