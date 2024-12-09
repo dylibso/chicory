@@ -85,6 +85,10 @@ Basic steps:
 
 note: if you're working using a *corporate proxy* (or anything like this), you might need to pass the usual `-Dhttps.proxyHost=...` and `-Dhttps.proxyPort=...` in order to properly instruct Maven about this (this can be required for example for `test-gen-plugin` since it downloads the testsuite).
 
+### Proposals implementation
+
+Our priority is to focus on implementing [proposals](https://github.com/WebAssembly/proposals) that are in the most advanced stages of development. While we wholeheartedly encourage and support explorations, we’ll be dedicating less time to early-stage proposals until we have more comprehensive support for those that are stabilized.
+
 ### Continuous Integration
 
 Because we are all humans, and to ensure Chicory evolves in the right direction, all changes must pass continuous integration before being merged. The CI is based on GitHub Actions, which means that pull requests will receive automatic feedback.  Please watch out for the results of these workflows to see if your PR passes all tests.
