@@ -315,6 +315,7 @@ public class Instance {
         private boolean initialize = true;
         private boolean start = true;
         private MemoryLimits memoryLimits;
+        private Function<MemoryLimits, Memory> memoryFactory;
         private ExecutionListener listener;
         private ImportValues importValues;
         private Function<Instance, Machine> machineFactory;
@@ -335,6 +336,11 @@ public class Instance {
 
         public Builder withMemoryLimits(MemoryLimits limits) {
             this.memoryLimits = limits;
+            return this;
+        }
+
+        public Builder withMemoryFactory(Function<MemoryLimits, Memory> memoryFactory) {
+            this.memoryFactory = memoryFactory;
             return this;
         }
 
@@ -656,7 +662,9 @@ public class Instance {
                 var memories = module.memorySection().get();
                 if (memories.memoryCount() > 0) {
                     var defaultLimits = memories.getMemory(0).limits();
-                    memory = new Memory(requireNonNullElse(memoryLimits, defaultLimits));
+                    memory =
+                            requireNonNullElse(memoryFactory, Memory::new)
+                                    .apply(requireNonNullElse(memoryLimits, defaultLimits));
                 }
             } else {
                 if (mappedHostImports != null && mappedHostImports.memoryCount() > 0) {
