@@ -12,6 +12,7 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -195,6 +196,20 @@ public class WasmModuleTest {
                         .withMemoryLimits(new MemoryLimits(17, 17))
                         .build();
         assertThrows(TrapException.class, () -> instance.export("alloc").apply(Memory.PAGE_SIZE));
+    }
+
+    @Test
+    public void shouldSupportMemoryFactoryOverride() {
+        AtomicBoolean memoryCreated = new AtomicBoolean();
+        memoryCreated.set(false);
+        Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
+                .withMemoryFactory(
+                        limits -> {
+                            memoryCreated.set(true);
+                            return new Memory(limits);
+                        })
+                .build();
+        assertEquals(true, memoryCreated.get());
     }
 
     @Test
