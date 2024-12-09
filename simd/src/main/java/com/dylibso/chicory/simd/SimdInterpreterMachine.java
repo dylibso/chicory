@@ -113,9 +113,11 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
      * or all zeros otherwise.
      */
     private static void I8x16_EQ(MStack stack) {
+        var last = stack.pop();
+        var secondLast = stack.pop();
         var v1 =
                 LongVector.fromArray(
-                                LongVector.SPECIES_128, new long[] {stack.pop(), stack.pop()}, 0)
+                                LongVector.SPECIES_128, new long[] {secondLast, last}, 0)
                         .reinterpretAsBytes();
 
         var v2 =
