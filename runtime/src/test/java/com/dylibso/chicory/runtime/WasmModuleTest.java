@@ -189,6 +189,15 @@ public class WasmModuleTest {
     }
 
     @Test
+    public void shouldSupportMemoryLimitsOverride() {
+        var instance =
+                Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
+                        .withMemoryLimits(new MemoryLimits(17, 17))
+                        .build();
+        assertThrows(TrapException.class, () -> instance.export("alloc").apply(Memory.PAGE_SIZE));
+    }
+
+    @Test
     public void shouldRunBasicCProgram() {
         // check with: wasmtime basic.c.wasm --invoke run
         var instance = Instance.builder(loadModule("compiled/basic.c.wasm")).build();
