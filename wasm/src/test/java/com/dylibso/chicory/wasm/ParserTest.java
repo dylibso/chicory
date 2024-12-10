@@ -131,10 +131,9 @@ public class ParserTest {
 
     @Test
     public void shouldSupportCustomListener() throws IOException {
-        var parser = new Parser();
+        var parser = Parser.builder().includeSectionId(SectionId.CUSTOM).build();
 
         try (InputStream is = getClass().getResourceAsStream("/compiled/count_vowels.rs.wasm")) {
-            parser.includeSection(SectionId.CUSTOM);
             parser.parse(
                     is,
                     s -> {
