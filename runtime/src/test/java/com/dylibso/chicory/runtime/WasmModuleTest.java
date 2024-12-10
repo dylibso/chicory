@@ -206,7 +206,13 @@ public class WasmModuleTest {
                 .withMemoryFactory(
                         limits -> {
                             memoryCreated.set(true);
-                            return new Memory(limits);
+                            return new ByteBufferMemory(limits) {
+                                // example override
+                                @Override
+                                public int pages() {
+                                    return 0;
+                                }
+                            };
                         })
                 .build();
         assertEquals(true, memoryCreated.get());
@@ -310,7 +316,7 @@ public class WasmModuleTest {
                             logResult.set(logLevel + ": " + value);
                             return null;
                         });
-        var memory = new ImportMemory("env", "memory", new Memory(new MemoryLimits(1)));
+        var memory = new ImportMemory("env", "memory", new ByteBufferMemory(new MemoryLimits(1)));
 
         var hostImports =
                 ImportValues.builder().addFunction(cbrtFunc, logFunc).addMemory(memory).build();

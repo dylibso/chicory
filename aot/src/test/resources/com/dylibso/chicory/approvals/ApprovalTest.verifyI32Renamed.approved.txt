@@ -259,7 +259,7 @@ final class FOO$AotMethods {
     ILOAD 0
     ILOAD 1
     ILOAD 2
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.copy (III)V
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.copy (III)V (itf)
    L1
     RETURN
    L2
@@ -275,7 +275,7 @@ final class FOO$AotMethods {
     ILOAD 1
     ILOAD 0
     ILOAD 4
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.fill (BII)V
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.fill (BII)V (itf)
    L2
     RETURN
    L3
@@ -287,10 +287,34 @@ final class FOO$AotMethods {
     ILOAD 0
     ILOAD 1
     ILOAD 2
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.initPassiveSegment (IIII)V
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.initPassiveSegment (IIII)V (itf)
    L1
     RETURN
    L2
+
+  public static memoryGrow(ILcom/dylibso/chicory/runtime/Memory;)I
+   L0
+    ALOAD 1
+    ILOAD 0
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.grow (I)I (itf)
+    IRETURN
+   L1
+
+  public static memoryDrop(ILcom/dylibso/chicory/runtime/Memory;)V
+   L0
+    ALOAD 1
+    ILOAD 0
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.drop (I)V (itf)
+   L1
+    RETURN
+   L2
+
+  public static memoryPages(Lcom/dylibso/chicory/runtime/Memory;)I
+   L0
+    ALOAD 0
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.pages ()I (itf)
+    IRETURN
+   L1
 
   public static memoryReadByte(IILcom/dylibso/chicory/runtime/Memory;)B
    L0
@@ -301,7 +325,7 @@ final class FOO$AotMethods {
     ILOAD 0
     ILOAD 1
     IADD
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.read (I)B
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.read (I)B (itf)
     IRETURN
    L2
 
@@ -314,7 +338,7 @@ final class FOO$AotMethods {
     ILOAD 0
     ILOAD 1
     IADD
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.readShort (I)S
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readShort (I)S (itf)
     IRETURN
    L2
 
@@ -327,7 +351,7 @@ final class FOO$AotMethods {
     ILOAD 0
     ILOAD 1
     IADD
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.readInt (I)I
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readInt (I)I (itf)
     IRETURN
    L2
 
@@ -340,7 +364,7 @@ final class FOO$AotMethods {
     ILOAD 0
     ILOAD 1
     IADD
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.readLong (I)J
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readLong (I)J (itf)
     LRETURN
    L2
 
@@ -353,7 +377,7 @@ final class FOO$AotMethods {
     ILOAD 0
     ILOAD 1
     IADD
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.readFloat (I)F
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readFloat (I)F (itf)
     FRETURN
    L2
 
@@ -366,7 +390,7 @@ final class FOO$AotMethods {
     ILOAD 0
     ILOAD 1
     IADD
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.readDouble (I)D
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readDouble (I)D (itf)
     DRETURN
    L2
 
@@ -380,7 +404,7 @@ final class FOO$AotMethods {
     ILOAD 2
     IADD
     ILOAD 1
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.writeByte (IB)V
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeByte (IB)V (itf)
    L2
     RETURN
    L3
@@ -395,7 +419,7 @@ final class FOO$AotMethods {
     ILOAD 2
     IADD
     ILOAD 1
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.writeShort (IS)V
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeShort (IS)V (itf)
    L2
     RETURN
    L3
@@ -410,7 +434,7 @@ final class FOO$AotMethods {
     ILOAD 2
     IADD
     ILOAD 1
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.writeI32 (II)V
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeI32 (II)V (itf)
    L2
     RETURN
    L3
@@ -425,7 +449,7 @@ final class FOO$AotMethods {
     ILOAD 3
     IADD
     LLOAD 1
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.writeLong (IJ)V
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeLong (IJ)V (itf)
    L2
     RETURN
    L3
@@ -440,7 +464,7 @@ final class FOO$AotMethods {
     ILOAD 2
     IADD
     FLOAD 1
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.writeF32 (IF)V
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeF32 (IF)V (itf)
    L2
     RETURN
    L3
@@ -455,7 +479,7 @@ final class FOO$AotMethods {
     ILOAD 3
     IADD
     DLOAD 1
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Memory.writeF64 (ID)V
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeF64 (ID)V (itf)
    L2
     RETURN
    L3
