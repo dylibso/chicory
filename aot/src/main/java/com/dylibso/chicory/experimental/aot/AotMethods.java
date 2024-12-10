@@ -78,6 +78,18 @@ public final class AotMethods {
         memory.initPassiveSegment(segmentId, destination, offset, size);
     }
 
+    public static int memoryGrow(int size, Memory memory) {
+        return memory.grow(size);
+    }
+
+    public static void memoryDrop(int segment, Memory memory) {
+        memory.drop(segment);
+    }
+
+    public static int memoryPages(Memory memory) {
+        return memory.pages();
+    }
+
     public static byte memoryReadByte(int base, int offset, Memory memory) {
         validateBase(base);
         return memory.read(base + offset);
