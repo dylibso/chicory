@@ -1,5 +1,6 @@
 package com.dylibso.chicory.testing;
 
+import com.dylibso.chicory.runtime.ByteBufferMemory;
 import com.dylibso.chicory.runtime.GlobalInstance;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.ImportGlobal;
@@ -7,7 +8,6 @@ import com.dylibso.chicory.runtime.ImportMemory;
 import com.dylibso.chicory.runtime.ImportTable;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.TableInstance;
 import com.dylibso.chicory.runtime.WasmFunctionHandle;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
@@ -81,7 +81,8 @@ public final class Spectest {
                                 "global_f64",
                                 new GlobalInstance(Value.fromDouble(666.6))))
                 .addMemory(
-                        new ImportMemory("spectest", "memory", new Memory(new MemoryLimits(1, 2))))
+                        new ImportMemory(
+                                "spectest", "memory", new ByteBufferMemory(new MemoryLimits(1, 2))))
                 .addTable(
                         new ImportTable(
                                 "spectest",
