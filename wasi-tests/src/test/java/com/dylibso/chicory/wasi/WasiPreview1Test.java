@@ -10,9 +10,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
+import com.dylibso.chicory.runtime.ByteBufferMemory;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
@@ -231,7 +231,7 @@ public class WasiPreview1Test {
                         .withOptions(WasiOptions.builder().withRandom(new Random(seed)).build())
                         .build();
 
-        var memory = new Memory(new MemoryLimits(8, 8));
+        var memory = new ByteBufferMemory(new MemoryLimits(8, 8));
         assertEquals(0, wasi.randomGet(memory, 0, 123_456));
         assertEquals(0, wasi.randomGet(memory, 222_222, 87_654));
 
@@ -254,7 +254,7 @@ public class WasiPreview1Test {
             copyDirectory(source, target);
 
             try (var wasi = wasiWithDirectory(target.toString(), target)) {
-                var memory = new Memory(new MemoryLimits(1));
+                var memory = new ByteBufferMemory(new MemoryLimits(1));
 
                 int fdPtr = 0;
                 int result =
@@ -286,7 +286,7 @@ public class WasiPreview1Test {
             createDirectory(root);
             createSymbolicLink(root.resolve("abc"), fs.getPath("xyz"));
             try (var wasi = wasiWithDirectory(root.toString(), root)) {
-                var memory = new Memory(new MemoryLimits(1));
+                var memory = new ByteBufferMemory(new MemoryLimits(1));
                 int bufPtr = 0;
                 int bufUsedPtr = 16;
 

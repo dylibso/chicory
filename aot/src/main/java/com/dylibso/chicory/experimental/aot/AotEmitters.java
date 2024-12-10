@@ -283,19 +283,18 @@ final class AotEmitters {
 
     public static void MEMORY_GROW(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
-        asm.swap();
-        emitInvokeVirtual(asm, AotMethodRefs.MEMORY_GROW);
+        emitInvokeStatic(asm, AotMethodRefs.MEMORY_GROW);
     }
 
     public static void MEMORY_SIZE(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
-        emitInvokeVirtual(asm, AotMethodRefs.MEMORY_PAGES);
+        emitInvokeStatic(asm, AotMethodRefs.MEMORY_PAGES);
     }
 
     public static void DATA_DROP(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
-        asm.load(ctx.memorySlot(), OBJECT_TYPE);
         asm.iconst((int) ins.operand(0));
-        emitInvokeVirtual(asm, AotMethodRefs.MEMORY_DROP);
+        asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, AotMethodRefs.MEMORY_DROP);
     }
 
     public static void I32_ADD(AotContext ctx, AotInstruction ins, MethodVisitor asm) {
