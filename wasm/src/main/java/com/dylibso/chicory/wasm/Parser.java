@@ -84,17 +84,16 @@ public final class Parser {
     private final Map<String, Function<byte[], CustomSection>> customParsers;
     private final BitSet includeSections;
 
-    public Parser() {
-        this(new BitSet());
+    private static final Map<String, Function<byte[], CustomSection>> DEFAULT_CUSTOM_PARSERS =
+            Map.of("name", NameCustomSection::parse);
+
+    private Parser() {
+        this(null, DEFAULT_CUSTOM_PARSERS);
     }
 
-    public Parser(BitSet includeSections) {
-        this(includeSections, Map.of("name", NameCustomSection::parse));
-    }
-
-    public Parser(
+    private Parser(
             BitSet includeSections, Map<String, Function<byte[], CustomSection>> customParsers) {
-        this.includeSections = requireNonNull(includeSections, "includeSections");
+        this.includeSections = includeSections;
         this.customParsers = Map.copyOf(customParsers);
     }
 
@@ -153,6 +152,41 @@ public final class Parser {
             default:
                 module.addIgnoredSection(s.sectionId());
                 break;
+        }
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private Map<String, Function<byte[], CustomSection>> customParsers;
+        private BitSet includeSections;
+
+        private Builder() {}
+
+        /*
+         * @param sectionId : the sectionId to be included while parsing, e.g. SectionId.MEMORY
+         */
+        public Builder includeSectionId(int sectionId) {
+            if (includeSections == null) {
+                includeSections = new BitSet();
+            }
+            includeSections.set(sectionId);
+            return this;
+        }
+
+        public Builder withCustomParsers(
+                Map<String, Function<byte[], CustomSection>> customParsers) {
+            this.customParsers = customParsers;
+            return this;
+        }
+
+        public Parser build() {
+            if (customParsers == null) {
+                customParsers = DEFAULT_CUSTOM_PARSERS;
+            }
+            return new Parser(includeSections, customParsers);
         }
     }
 
@@ -359,15 +393,8 @@ public final class Parser {
         }
     }
 
-    public void includeSection(int sectionId) {
-        includeSections.set(sectionId);
-    }
-
     private boolean shouldParseSection(int sectionId) {
-        if (this.includeSections.isEmpty()) {
-            return true;
-        }
-        return this.includeSections.get(sectionId);
+        return (this.includeSections == null) || (this.includeSections.get(sectionId));
     }
 
     private CustomSection parseCustomSection(
