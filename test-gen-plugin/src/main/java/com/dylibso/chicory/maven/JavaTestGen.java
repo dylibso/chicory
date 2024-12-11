@@ -86,6 +86,7 @@ public class JavaTestGen {
 
         // testing imports
         cu.addImport("com.dylibso.chicory.testing.TestModule");
+        cu.addImport("com.dylibso.chicory.testing.ArgsAdapter");
 
         // runtime imports
         cu.addImport("com.dylibso.chicory.wasm.ChicoryException");
@@ -103,6 +104,14 @@ public class JavaTestGen {
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo16", true, false);
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo32", true, false);
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecToF32", true, false);
+        cu.addImport("com.dylibso.chicory.wasm.types.Value.vecToF64", true, false);
+
+        cu.addImport("com.dylibso.chicory.wasm.types.Value.i8ToVec", true, false);
+        cu.addImport("com.dylibso.chicory.wasm.types.Value.i16ToVec", true, false);
+        cu.addImport("com.dylibso.chicory.wasm.types.Value.i32ToVec", true, false);
+        cu.addImport("com.dylibso.chicory.wasm.types.Value.i64ToVec", true, false);
+        cu.addImport("com.dylibso.chicory.wasm.types.Value.f64ToVec", true, false);
+        cu.addImport("com.dylibso.chicory.wasm.types.Value.f32ToVec", true, false);
 
         // import for Store instance
         cu.addImport("com.dylibso.chicory.runtime.Store");
@@ -372,11 +381,20 @@ public class JavaTestGen {
                 (cmd.action().args() != null)
                         ? Arrays.stream(cmd.action().args())
                                 .map(WasmValue::toArgsValue)
-                                .collect(Collectors.joining(", "))
-                        : "";
+                                .collect(Collectors.toList())
+                        : List.<String>of();
+
+        var adaptedArgs =
+                (args == null || args.size() == 0)
+                        ? ""
+                        : args.stream().collect(Collectors.joining(").add(", ".add(", ")"));
+
         // Function or Global
         var invocationMethod =
-                (cmd.action().type() == INVOKE) ? ".apply(" + args + ")" : ".getValue()";
+                (cmd.action().type() == INVOKE)
+                        ? ".apply(ArgsAdapter.builder()" + adaptedArgs + ".build()" + ")"
+                        : ".getValue()";
+
         if (cmd.type() == CommandType.ASSERT_TRAP || cmd.type() == CommandType.ASSERT_EXHAUSTION) {
             var assertDecl =
                     new NameExpr(

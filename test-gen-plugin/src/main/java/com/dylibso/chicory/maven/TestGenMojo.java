@@ -179,9 +179,9 @@ public class TestGenMojo extends AbstractMojo {
                     includedExcludedWasts.add(includedWast);
                 }
             }
+            // TODO: this mechanism fails when there are no excluded wast in one profile only
             if (!includedExcludedWasts.isEmpty()) {
-                throw new MojoExecutionException(
-                        "Some wast files are both included and excluded: " + includedExcludedWasts);
+                log.warn("Excluded tests will be ignored: " + includedExcludedWasts);
             }
 
             // generate the tests
