@@ -11,6 +11,7 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import java.util.Deque;
 import jdk.incubator.vector.LongVector;
+import jdk.incubator.vector.VectorOperators;
 
 public final class SimdInterpreterMachine extends InterpreterMachine {
 
@@ -94,17 +95,20 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         stack.push(valLow);
     }
 
+    /**
+     * Extracts a lane from a 128-bit vector interpreted as 16 packed i8 numbers.
+     * Extracts the scalar value of lane specified in the immediate mode operand N from a.
+     * If N is out of bounds then it is a compile time error.
+     */
     private static void I8x16_EXTRACT_LANE_S(MStack stack, Operands operands) {
-        var valHigh = stack.pop();
-        var valLow = stack.pop();
-        long result;
         var laneIdx = operands.get(0);
-        if (laneIdx < 8) {
-            result = (int) (valLow >> (laneIdx * 8) & 0xFF);
-        } else {
-            result = (int) (valHigh >> (laneIdx * 8) & 0xFF);
-        }
-        stack.push(result);
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
+                        .reinterpretAsBytes();
+
+        var result = v1.lane((int) laneIdx);
+
+        System.arraycopy(new long[] {result}, 0, stack.array(), stack.size() - 1, 1);
     }
 
     /**
@@ -168,28 +172,31 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
 
+    /**
+     * Shifts each lane to the left by the specified number of bits.
+     * Only the low bits of the shift amount are used if the shift amount is greater than the lane width.
+     */
     private static void I8x16_SHL(MStack stack) {
         var s = stack.pop();
-        var valHigh = stack.pop();
-        var valLow = stack.pop();
 
-        long resultLow = 0L;
-        long resultHigh = 0L;
-        for (int i = 0; i < 8; i++) {
-            var shift = i * 8L;
-            resultHigh |= (((valHigh >> shift) << s) & 0xFFL) << shift;
-            resultLow |= (((valLow >> shift) << s) & 0xFFL) << shift;
-        }
+        var v =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
+                        .reinterpretAsBytes();
 
-        stack.push(resultLow);
-        stack.push(resultHigh);
+        var result = v.lanewise(VectorOperators.LSHL, s).reinterpretAsLongs().toArray();
+        System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
 
+    /**
+     * Returns true if all lanes are non-zero, false otherwise.
+     */
     private static void I8x16_ALL_TRUE(MStack stack) {
-        var valHigh = stack.pop();
-        var valLow = stack.pop();
+        var v =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
+                        .reinterpretAsBytes();
 
-        if (valHigh == 0L && valLow == 0L) {
+        // Compare the vector against zero to create a mask of non-zero elements
+        if (v.compare(VectorOperators.NE, 0).allTrue()) {
             stack.push(BitOps.TRUE);
         } else {
             stack.push(BitOps.FALSE);
