@@ -11,6 +11,7 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import java.util.Deque;
 import jdk.incubator.vector.LongVector;
+import jdk.incubator.vector.VectorOperators;
 
 public final class SimdInterpreterMachine extends InterpreterMachine {
 
@@ -168,21 +169,19 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
 
+    /**
+     * Shifts each lane to the left by the specified number of bits.
+     * Only the low bits of the shift amount are used if the shift amount is greater than the lane width.
+     */
     private static void I8x16_SHL(MStack stack) {
         var s = stack.pop();
-        var valHigh = stack.pop();
-        var valLow = stack.pop();
 
-        long resultLow = 0L;
-        long resultHigh = 0L;
-        for (int i = 0; i < 8; i++) {
-            var shift = i * 8L;
-            resultHigh |= (((valHigh >> shift) << s) & 0xFFL) << shift;
-            resultLow |= (((valLow >> shift) << s) & 0xFFL) << shift;
-        }
+        var v =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
+                        .reinterpretAsBytes();
 
-        stack.push(resultLow);
-        stack.push(resultHigh);
+        var result = v.lanewise(VectorOperators.LSHL, s).reinterpretAsLongs().toArray();
+        System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
 
     private static void I8x16_ALL_TRUE(MStack stack) {
