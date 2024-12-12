@@ -11,6 +11,7 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import java.util.Deque;
 import jdk.incubator.vector.LongVector;
+import jdk.incubator.vector.VectorOperators;
 
 public final class SimdInterpreterMachine extends InterpreterMachine {
 
@@ -95,112 +96,91 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
     }
 
     private static void I8x16_EXTRACT_LANE_S(MStack stack, Operands operands) {
-        var valHigh = stack.pop();
-        var valLow = stack.pop();
-        long result;
         var laneIdx = operands.get(0);
-        if (laneIdx < 8) {
-            result = (int) (valLow >> (laneIdx * 8) & 0xFF);
-        } else {
-            result = (int) (valHigh >> (laneIdx * 8) & 0xFF);
-        }
-        stack.push(result);
+        var offset = stack.size() - 2;
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsBytes();
+
+        var result = v1.lane((int) laneIdx);
+        stack.array()[stack.size() - 1] = result;
     }
 
     private static void I8x16_EQ(MStack stack) {
-        var val1High = stack.pop();
-        var val1Low = stack.pop();
-        var val2High = stack.pop();
-        var val2Low = stack.pop();
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
 
-        long resultLow = 0L;
-        long resultHigh = 0L;
+        int offset = stack.size() - 2;
 
-        // TODO: refactor in a more generic operation?
-        for (int i = 0; i < 8; i++) {
-            var shift = i * 8L;
-            resultHigh |=
-                    (((val1High >> shift) & 0xFFL) == ((val2High >> shift) & 0xFFL))
-                            ? (0xFFL << shift)
-                            : 0;
-            resultLow |=
-                    (((val1Low >> shift) & 0xFFL) == ((val2Low >> shift) & 0xFFL))
-                            ? (0xFFL << shift)
-                            : 0;
-        }
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
+                        .reinterpretAsBytes();
 
-        stack.push(resultLow);
-        stack.push(resultHigh);
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsBytes();
+
+        var result = v1.eq(v2).toVector().reinterpretAsLongs().toArray();
+
+        System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
     private static void I8x16_ADD(MStack stack) {
-        var val1High = stack.pop();
-        var val1Low = stack.pop();
-        var val2High = stack.pop();
-        var val2Low = stack.pop();
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
 
-        long resultLow = 0L;
-        long resultHigh = 0L;
+        var offset = stack.size() - 2;
 
-        for (int i = 0; i < 8; i++) {
-            var shift = i * 8L;
-            resultHigh |=
-                    ((((val2High >> shift) & 0xFFL) + ((val1High >> shift) & 0xFFL)) & 0xFFL)
-                            << shift;
-            resultLow |=
-                    ((((val2Low >> shift) & 0xFFL) + ((val1Low >> shift) & 0xFFL)) & 0xFFL)
-                            << shift;
-        }
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, offset)
+                        .reinterpretAsBytes();
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsBytes();
 
-        stack.push(resultLow);
-        stack.push(resultHigh);
+        var result = v1.add(v2).reinterpretAsLongs().toArray();
+
+        System.arraycopy(result, 0, stack.array(), 0, 2);
     }
 
     private static void I8x16_SUB(MStack stack) {
-        var val1High = stack.pop();
-        var val1Low = stack.pop();
-        var val2High = stack.pop();
-        var val2Low = stack.pop();
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
 
-        long resultLow = 0L;
-        long resultHigh = 0L;
+        var offset = stack.size() - 2;
 
-        for (int i = 0; i < 8; i++) {
-            var shift = i * 8L;
-            resultHigh |=
-                    ((((val2High >> shift) & 0xFFL) - ((val1High >> shift) & 0xFFL)) & 0xFFL)
-                            << shift;
-            resultLow |=
-                    ((((val2Low >> shift) & 0xFFL) - ((val1Low >> shift) & 0xFFL)) & 0xFFL)
-                            << shift;
-        }
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, offset)
+                        .reinterpretAsBytes();
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsBytes();
 
-        stack.push(resultLow);
-        stack.push(resultHigh);
+        var result = v2.sub(v1).reinterpretAsLongs().toArray();
+
+        System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
     private static void I8x16_SHL(MStack stack) {
         var s = stack.pop();
-        var valHigh = stack.pop();
-        var valLow = stack.pop();
 
-        long resultLow = 0L;
-        long resultHigh = 0L;
-        for (int i = 0; i < 8; i++) {
-            var shift = i * 8L;
-            resultHigh |= (((valHigh >> shift) << s) & 0xFFL) << shift;
-            resultLow |= (((valLow >> shift) << s) & 0xFFL) << shift;
-        }
+        var offset = stack.size() - 2;
 
-        stack.push(resultLow);
-        stack.push(resultHigh);
+        var v =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsBytes();
+
+        var result = v.lanewise(VectorOperators.LSHL, s).reinterpretAsLongs().toArray();
+        System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
     private static void I8x16_ALL_TRUE(MStack stack) {
-        var valHigh = stack.pop();
-        var valLow = stack.pop();
+        var v =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
+                        .reinterpretAsBytes();
 
-        if (valHigh == 0L && valLow == 0L) {
+        // Compare the vector against zero to create a mask of non-zero elements
+        if (v.compare(VectorOperators.NE, 0).allTrue()) {
             stack.push(BitOps.TRUE);
         } else {
             stack.push(BitOps.FALSE);
@@ -208,10 +188,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
     }
 
     private static void V128_NOT(MStack stack) {
-        // TODO: this is the only operation really implemented with the Vector API
-        // this should be almost an in-place replace on the stack, should we measure performance
-        // against push and pop?
-
         var offset = stack.size() - 2;
         var not = LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset).not();
         var res = not.toArray();
