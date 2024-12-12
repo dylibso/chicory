@@ -1,6 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * The definition of a global variable in the model of a module.
@@ -26,5 +27,24 @@ public final class Global {
 
     public List<Instruction> initInstructions() {
         return init;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof Global)) {
+            return false;
+        }
+        Global global = (Global) o;
+        return valueType == global.valueType
+                && mutabilityType == global.mutabilityType
+                && Objects.equals(init, global.init);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(valueType, mutabilityType, init);
     }
 }

@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 public final class WasmModule {
@@ -263,5 +264,47 @@ public final class WasmModule {
 
             return module;
         }
+    }
+
+    // Comparison uses everything but the custom section
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof WasmModule)) {
+            return false;
+        }
+        WasmModule that = (WasmModule) o;
+        return Objects.equals(typeSection, that.typeSection)
+                && Objects.equals(importSection, that.importSection)
+                && Objects.equals(functionSection, that.functionSection)
+                && Objects.equals(tableSection, that.tableSection)
+                && Objects.equals(memorySection, that.memorySection)
+                && Objects.equals(globalSection, that.globalSection)
+                && Objects.equals(exportSection, that.exportSection)
+                && Objects.equals(startSection, that.startSection)
+                && Objects.equals(elementSection, that.elementSection)
+                && Objects.equals(codeSection, that.codeSection)
+                && Objects.equals(dataSection, that.dataSection)
+                && Objects.equals(dataCountSection, that.dataCountSection)
+                && Objects.equals(ignoredSections, that.ignoredSections);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                typeSection,
+                importSection,
+                functionSection,
+                tableSection,
+                memorySection,
+                globalSection,
+                exportSection,
+                startSection,
+                elementSection,
+                codeSection,
+                dataSection,
+                dataCountSection);
     }
 }

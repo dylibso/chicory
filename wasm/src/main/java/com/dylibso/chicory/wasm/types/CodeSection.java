@@ -61,4 +61,22 @@ public final class CodeSection extends Section {
             return new CodeSection(functionBodies, requiresDataCount);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof CodeSection)) {
+            return false;
+        }
+        CodeSection that = (CodeSection) o;
+        return requiresDataCount == that.requiresDataCount
+                && Objects.equals(functionBodies, that.functionBodies);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(functionBodies, requiresDataCount);
+    }
 }

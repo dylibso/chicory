@@ -28,4 +28,21 @@ public final class DataCountSection extends Section {
             return new DataCountSection(dataCount);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof DataCountSection)) {
+            return false;
+        }
+        DataCountSection that = (DataCountSection) o;
+        return dataCount == that.dataCount;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(dataCount);
+    }
 }

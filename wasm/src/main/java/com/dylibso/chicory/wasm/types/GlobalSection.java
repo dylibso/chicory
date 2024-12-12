@@ -49,4 +49,21 @@ public final class GlobalSection extends Section {
             return new GlobalSection(globals);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof GlobalSection)) {
+            return false;
+        }
+        GlobalSection that = (GlobalSection) o;
+        return Objects.equals(globals, that.globals);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(globals);
+    }
 }
