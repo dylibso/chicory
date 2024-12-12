@@ -129,12 +129,14 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var v1High = stack.pop();
         var v1Low = stack.pop();
 
+        var offset = stack.size() - 2;
+
         var v1 =
                 LongVector.fromArray(
-                                LongVector.SPECIES_128, new long[] {v1Low, v1High}, stack.size() - 2)
+                                LongVector.SPECIES_128, new long[] {v1Low, v1High}, offset)
                         .reinterpretAsBytes();
         var v2 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
                         .reinterpretAsBytes();
 
         var result = v1.add(v2).reinterpretAsLongs().toArray();
@@ -146,28 +148,32 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var v1High = stack.pop();
         var v1Low = stack.pop();
 
+        var offset = stack.size() - 2;
+
         var v1 =
                 LongVector.fromArray(
-                                LongVector.SPECIES_128, new long[] {v1Low, v1High}, stack.size() - 2)
+                                LongVector.SPECIES_128, new long[] {v1Low, v1High}, offset)
                         .reinterpretAsBytes();
         var v2 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
                         .reinterpretAsBytes();
 
         var result = v2.sub(v1).reinterpretAsLongs().toArray();
 
-        System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
+        System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
     private static void I8x16_SHL(MStack stack) {
         var s = stack.pop();
 
+        var offset = stack.size() - 2;
+
         var v =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
                         .reinterpretAsBytes();
 
         var result = v.lanewise(VectorOperators.LSHL, s).reinterpretAsLongs().toArray();
-        System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
+        System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
     private static void I8x16_ALL_TRUE(MStack stack) {
@@ -184,10 +190,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
     }
 
     private static void V128_NOT(MStack stack) {
-        // TODO: this is the only operation really implemented with the Vector API
-        // this should be almost an in-place replace on the stack, should we measure performance
-        // against push and pop?
-
         var offset = stack.size() - 2;
         var not = LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset).not();
         var res = not.toArray();
