@@ -251,7 +251,8 @@ public class AotGenMojo extends AbstractMojo {
     }
 
     static void createFolders(
-            Path classFilesBaseFolder, Path generatedSourceBaseFolder, String[] split) throws IOException {
+            Path classFilesBaseFolder, Path generatedSourceBaseFolder, String[] split)
+            throws IOException {
         for (int i = 0; i < (split.length - 1); i++) {
             classFilesBaseFolder = classFilesBaseFolder.resolve(split[i]);
             generatedSourceBaseFolder = generatedSourceBaseFolder.resolve(split[i]);

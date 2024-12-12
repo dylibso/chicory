@@ -27,14 +27,14 @@ public abstract class RuntimeCli {
 
     public String run(Path path, String functionName, List<String> params) throws IOException {
         var command = new ArrayList<String>();
-        command.addAll(List.of(binaryName, path.toAbsolutePath().toString(), "--invoke", functionName));
+        command.addAll(
+                List.of(binaryName, path.toAbsolutePath().toString(), "--invoke", functionName));
         command.addAll(params);
         logger.info("Going to execute command:\n" + String.join(" ", command));
         // write the command to a file to make it reproducible
         // TODO: centralize the management of folders/files it's too scattered
         Files.writeString(
-                path.getParent().resolve(cmdName + "-command.txt"),
-                String.join(" ", command));
+                path.getParent().resolve(cmdName + "-command.txt"), String.join(" ", command));
 
         ProcessBuilder pb = new ProcessBuilder(command);
 
