@@ -45,4 +45,21 @@ public final class ExportSection extends Section {
             return new ExportSection(exports);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof ExportSection)) {
+            return false;
+        }
+        ExportSection that = (ExportSection) o;
+        return Objects.equals(exports, that.exports);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(exports);
+    }
 }

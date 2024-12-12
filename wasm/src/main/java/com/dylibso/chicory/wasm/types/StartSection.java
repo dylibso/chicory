@@ -30,4 +30,21 @@ public final class StartSection extends Section {
             return new StartSection(startIndex);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof StartSection)) {
+            return false;
+        }
+        StartSection that = (StartSection) o;
+        return startIndex == that.startIndex;
+    }
+
+    @Override
+    public int hashCode() {
+        return Long.hashCode(startIndex);
+    }
 }

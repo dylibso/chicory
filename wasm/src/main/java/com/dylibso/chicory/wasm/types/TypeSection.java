@@ -49,4 +49,21 @@ public final class TypeSection extends Section {
             return new TypeSection(types);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof TypeSection)) {
+            return false;
+        }
+        TypeSection that = (TypeSection) o;
+        return Objects.equals(types, that.types);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(types);
+    }
 }

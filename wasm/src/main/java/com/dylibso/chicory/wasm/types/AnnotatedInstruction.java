@@ -2,6 +2,7 @@ package com.dylibso.chicory.wasm.types;
 
 import com.dylibso.chicory.wasm.InvalidException;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /*
@@ -182,5 +183,26 @@ public final class AnnotatedInstruction extends Instruction {
                     labelTable.orElse(List.of()),
                     scope.orElse(null));
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof AnnotatedInstruction)) {
+            return false;
+        }
+        AnnotatedInstruction that = (AnnotatedInstruction) o;
+        return depth == that.depth
+                && labelTrue == that.labelTrue
+                && labelFalse == that.labelFalse
+                && Objects.equals(labelTable, that.labelTable)
+                && Objects.equals(scope, that.scope);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(depth, labelTrue, labelFalse, labelTable, scope);
     }
 }

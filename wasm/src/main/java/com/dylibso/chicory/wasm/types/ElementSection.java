@@ -52,4 +52,21 @@ public final class ElementSection extends Section {
             return new ElementSection(elements);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof ElementSection)) {
+            return false;
+        }
+        ElementSection that = (ElementSection) o;
+        return Objects.equals(elements, that.elements);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(elements);
+    }
 }
