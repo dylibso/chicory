@@ -97,38 +97,41 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
 
     private static void I8x16_EXTRACT_LANE_S(MStack stack, Operands operands) {
         var laneIdx = operands.get(0);
+        var offset = stack.size() - 2;
         var v1 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
                         .reinterpretAsBytes();
 
         var result = v1.lane((int) laneIdx);
-
-        System.arraycopy(new long[] {result}, 0, stack.array(), stack.size() - 1, 1);
+        stack.array()[stack.size() - 1] = result;
     }
 
     private static void I8x16_EQ(MStack stack) {
-        var high = stack.pop();
-        var low = stack.pop();
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
+
+        int offset = stack.size() - 2;
+
         var v1 =
-                LongVector.fromArray(LongVector.SPECIES_128, new long[] {low, high}, 0)
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
                         .reinterpretAsBytes();
 
         var v2 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
                         .reinterpretAsBytes();
 
         var result = v1.eq(v2).toVector().reinterpretAsLongs().toArray();
 
-        System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
+        System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
     private static void I8x16_ADD(MStack stack) {
-        var high = stack.pop();
-        var low = stack.pop();
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
 
         var v1 =
                 LongVector.fromArray(
-                                LongVector.SPECIES_128, new long[] {low, high}, stack.size() - 2)
+                                LongVector.SPECIES_128, new long[] {v1Low, v1High}, stack.size() - 2)
                         .reinterpretAsBytes();
         var v2 =
                 LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
@@ -136,16 +139,16 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
 
         var result = v1.add(v2).reinterpretAsLongs().toArray();
 
-        System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
+        System.arraycopy(result, 0, stack.array(), 0, 2);
     }
 
     private static void I8x16_SUB(MStack stack) {
-        var high = stack.pop();
-        var low = stack.pop();
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
 
         var v1 =
                 LongVector.fromArray(
-                                LongVector.SPECIES_128, new long[] {low, high}, stack.size() - 2)
+                                LongVector.SPECIES_128, new long[] {v1Low, v1High}, stack.size() - 2)
                         .reinterpretAsBytes();
         var v2 =
                 LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
