@@ -2,6 +2,7 @@ package com.dylibso.chicory.wasm.types;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public final class FunctionSection extends Section {
     private final List<Integer> typeIndices;
@@ -46,5 +47,22 @@ public final class FunctionSection extends Section {
         public FunctionSection build() {
             return new FunctionSection(typeIndices);
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof FunctionSection)) {
+            return false;
+        }
+        FunctionSection that = (FunctionSection) o;
+        return Objects.equals(typeIndices, that.typeIndices);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(typeIndices);
     }
 }

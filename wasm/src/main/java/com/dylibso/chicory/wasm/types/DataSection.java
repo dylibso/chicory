@@ -49,4 +49,21 @@ public final class DataSection extends Section {
             return new DataSection(dataSegments);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof DataSection)) {
+            return false;
+        }
+        DataSection that = (DataSection) o;
+        return Objects.equals(dataSegments, that.dataSegments);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(dataSegments);
+    }
 }

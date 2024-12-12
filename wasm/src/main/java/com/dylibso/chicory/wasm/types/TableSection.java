@@ -45,4 +45,21 @@ public final class TableSection extends Section {
             return new TableSection(tables);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof TableSection)) {
+            return false;
+        }
+        TableSection that = (TableSection) o;
+        return Objects.equals(tables, that.tables);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(tables);
+    }
 }

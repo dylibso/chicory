@@ -3,6 +3,7 @@ package com.dylibso.chicory.wasm.types;
 import static java.util.Objects.requireNonNull;
 
 import java.util.List;
+import java.util.Objects;
 
 /**
  * An element, used to initialize table ranges.
@@ -43,5 +44,22 @@ public abstract class Element {
      */
     public int elementCount() {
         return initializers().size();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof Element)) {
+            return false;
+        }
+        Element element = (Element) o;
+        return type == element.type && Objects.equals(initializers, element.initializers);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, initializers);
     }
 }

@@ -26,4 +26,21 @@ public final class Memory {
     public MemoryLimits limits() {
         return limits;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof Memory)) {
+            return false;
+        }
+        Memory memory = (Memory) o;
+        return Objects.equals(limits, memory.limits);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(limits);
+    }
 }

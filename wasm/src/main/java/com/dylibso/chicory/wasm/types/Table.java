@@ -21,4 +21,21 @@ public class Table {
     public TableLimits limits() {
         return limits;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof Table)) {
+            return false;
+        }
+        Table table = (Table) o;
+        return elementType == table.elementType && Objects.equals(limits, table.limits);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(elementType, limits);
+    }
 }

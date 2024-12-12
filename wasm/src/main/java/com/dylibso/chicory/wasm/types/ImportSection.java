@@ -54,4 +54,21 @@ public final class ImportSection extends Section {
             return new ImportSection(imports);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof ImportSection)) {
+            return false;
+        }
+        ImportSection that = (ImportSection) o;
+        return Objects.equals(imports, that.imports);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(imports);
+    }
 }

@@ -45,4 +45,21 @@ public final class MemorySection extends Section {
             return new MemorySection(memories);
         }
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || !(o instanceof MemorySection)) {
+            return false;
+        }
+        MemorySection that = (MemorySection) o;
+        return Objects.equals(memories, that.memories);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(memories);
+    }
 }
