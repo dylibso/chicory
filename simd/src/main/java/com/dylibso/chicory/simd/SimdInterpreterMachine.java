@@ -132,8 +132,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var offset = stack.size() - 2;
 
         var v1 =
-                LongVector.fromArray(
-                                LongVector.SPECIES_128, new long[] {v1Low, v1High}, offset)
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, offset)
                         .reinterpretAsBytes();
         var v2 =
                 LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
@@ -151,8 +150,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var offset = stack.size() - 2;
 
         var v1 =
-                LongVector.fromArray(
-                                LongVector.SPECIES_128, new long[] {v1Low, v1High}, offset)
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, offset)
                         .reinterpretAsBytes();
         var v2 =
                 LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
