@@ -49,7 +49,7 @@ public class TestModule {
             }
             return of(Parser.parse(parsed));
         }
-        return of(Parser.parse(file));
+        return of(Parser.parse(file.toPath()));
     }
 
     public static TestModule of(WasmModule module) {

@@ -55,7 +55,6 @@ import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.UnknownCustomSection;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
@@ -196,10 +195,6 @@ public final class Parser {
 
     public static WasmModule parse(byte[] buffer) {
         return new Parser().parse(() -> new ByteArrayInputStream(buffer));
-    }
-
-    public static WasmModule parse(File file) {
-        return parse(file.toPath());
     }
 
     public static WasmModule parse(Path path) {
