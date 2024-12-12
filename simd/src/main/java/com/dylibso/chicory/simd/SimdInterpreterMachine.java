@@ -95,11 +95,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         stack.push(valLow);
     }
 
-    /**
-     * Extracts a lane from a 128-bit vector interpreted as 16 packed i8 numbers.
-     * Extracts the scalar value of lane specified in the immediate mode operand N from a.
-     * If N is out of bounds then it is a compile time error.
-     */
     private static void I8x16_EXTRACT_LANE_S(MStack stack, Operands operands) {
         var laneIdx = operands.get(0);
         var v1 =
@@ -111,11 +106,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         System.arraycopy(new long[] {result}, 0, stack.array(), stack.size() - 1, 1);
     }
 
-    /**
-     * Compares two 128-bit vectors as if they were two vectors of 16 eight-bit integers.
-     * Returns a new vector where each lane is all ones if the corresponding input elements were equal,
-     * or all zeros otherwise.
-     */
     private static void I8x16_EQ(MStack stack) {
         var high = stack.pop();
         var low = stack.pop();
@@ -132,9 +122,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
 
-    /**
-     * Adds two 128-bit vectors as if they were two packed sixteen 8-bit signed integers
-     */
     private static void I8x16_ADD(MStack stack) {
         var high = stack.pop();
         var low = stack.pop();
@@ -152,9 +139,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
 
-    /**
-     * Subtracts two 128-bit vectors as if they were two packed sixteen 8-bit signed integers
-     */
     private static void I8x16_SUB(MStack stack) {
         var high = stack.pop();
         var low = stack.pop();
@@ -172,10 +156,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
 
-    /**
-     * Shifts each lane to the left by the specified number of bits.
-     * Only the low bits of the shift amount are used if the shift amount is greater than the lane width.
-     */
     private static void I8x16_SHL(MStack stack) {
         var s = stack.pop();
 
@@ -187,9 +167,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
 
-    /**
-     * Returns true if all lanes are non-zero, false otherwise.
-     */
     private static void I8x16_ALL_TRUE(MStack stack) {
         var v =
                 LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
