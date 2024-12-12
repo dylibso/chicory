@@ -2,6 +2,7 @@ package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.DataSegment;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 public interface Memory {
 
@@ -29,23 +30,45 @@ public interface Memory {
 
     void initPassiveSegment(int segmentId, int dest, int offset, int size);
 
-    void writeString(int offset, String data, Charset charSet);
+    default void writeString(int offset, String data, Charset charSet) {
+        write(offset, data.getBytes(charSet));
+    }
 
-    void writeString(int offset, String data);
+    default void writeString(int offset, String data) {
+        writeString(offset, data, StandardCharsets.UTF_8);
+    }
 
-    String readString(int addr, int len);
+    default String readString(int addr, int len) {
+        return readString(addr, len, StandardCharsets.UTF_8);
+    }
 
-    String readString(int addr, int len, Charset charSet);
+    default String readString(int addr, int len, Charset charSet) {
+        return new String(readBytes(addr, len), charSet);
+    }
 
-    void writeCString(int offset, String str);
+    default void writeCString(int offset, String str) {
+        writeCString(offset, str, StandardCharsets.UTF_8);
+    }
 
-    void writeCString(int offset, String str, Charset charSet);
+    default void writeCString(int offset, String str, Charset charSet) {
+        writeString(offset, str + '\0', charSet);
+    }
 
-    String readCString(int addr, Charset charSet);
+    default String readCString(int addr, Charset charSet) {
+        int c = addr;
+        while (read(c) != '\0') {
+            c++;
+        }
+        return new String(readBytes(addr, c - addr), charSet);
+    }
 
-    String readCString(int addr);
+    default String readCString(int addr) {
+        return readCString(addr, StandardCharsets.UTF_8);
+    }
 
-    void write(int addr, byte[] data);
+    default void write(int addr, byte[] data) {
+        write(addr, data, 0, data.length);
+    }
 
     void write(int addr, byte[] data, int offset, int size);
 
@@ -57,29 +80,41 @@ public interface Memory {
 
     int readInt(int addr);
 
-    long readI32(int addr);
+    default long readI32(int addr) {
+        return readInt(addr);
+    }
 
-    long readU32(int addr);
+    default long readU32(int addr) {
+        return Integer.toUnsignedLong(readInt(addr));
+    }
 
     void writeLong(int addr, long data);
 
     long readLong(int addr);
 
-    long readI64(int addr);
+    default long readI64(int addr) {
+        return readLong(addr);
+    }
 
     void writeShort(int addr, short data);
 
     short readShort(int addr);
 
-    long readI16(int addr);
+    default long readI16(int addr) {
+        return readShort(addr);
+    }
 
     long readU16(int addr);
 
     void writeByte(int addr, byte data);
 
-    long readU8(int addr);
+    default long readU8(int addr) {
+        return read(addr) & 0xFF;
+    }
 
-    long readI8(int addr);
+    default long readI8(int addr) {
+        return read(addr);
+    }
 
     void writeF32(int addr, float data);
 
@@ -95,12 +130,12 @@ public interface Memory {
 
     void zero();
 
-    void fill(byte value);
-
     @SuppressWarnings("ByteBufferBackingArray")
     void fill(byte value, int fromIndex, int toIndex);
 
-    void copy(int dest, int src, int size);
+    default void copy(int dest, int src, int size) {
+        write(dest, readBytes(src, size));
+    }
 
     void drop(int segment);
 }

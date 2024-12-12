@@ -9,13 +9,10 @@ import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
-import java.nio.BufferOverflowException;
-import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.function.Function;
 
 /**
  * Represents the linear memory in the Wasm program. Can be shared
@@ -93,8 +90,14 @@ public class ByteBufferMemory implements Memory {
                 var segment = (ActiveDataSegment) s;
                 var offsetExpr = segment.offsetInstructions();
                 var data = segment.data();
-                var offset = computeConstantValue(instance, offsetExpr);
-                write((int) offset, data);
+                var offset = (int) computeConstantValue(instance, offsetExpr);
+                checkBounds(
+                        offset,
+                        data.length,
+                        buffer.limit(),
+                        (msg) -> new UninstantiableException(msg));
+                buffer.position(offset);
+                buffer.put(data, 0, data.length);
             } else if (s instanceof PassiveDataSegment) {
                 // Passive segment should be skipped
             } else {
@@ -103,288 +106,153 @@ public class ByteBufferMemory implements Memory {
         }
     }
 
+    private static void checkBounds(
+            int addr, int size, int limit, Function<String, ChicoryException> exceptionFactory) {
+        if (addr < 0 || size < 0 || addr > limit || (size > 0 && ((addr + size) > limit))) {
+            var errorMsg =
+                    "out of bounds memory access: attempted to access address: "
+                            + addr
+                            + " but limit is: "
+                            + limit;
+            throw exceptionFactory.apply(errorMsg);
+        }
+    }
+
+    private static void checkBounds(int addr, int size, int limit) {
+        checkBounds(addr, size, limit, (msg) -> new WasmRuntimeException(msg));
+    }
+
     @Override
     public void initPassiveSegment(int segmentId, int dest, int offset, int size) {
         var segment = dataSegments[segmentId];
-        if (!(segment instanceof PassiveDataSegment)) {
-            // Wasm test suite expects this trap message, even though it would be
-            // more informative to specifically identify the segment type mismatch
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
         write(dest, segment.data(), offset, size);
     }
 
     @Override
-    public void writeString(int offset, String data, Charset charSet) {
-        write(offset, data.getBytes(charSet));
-    }
-
-    @Override
-    public void writeString(int offset, String data) {
-        writeString(offset, data, StandardCharsets.UTF_8);
-    }
-
-    @Override
-    public String readString(int addr, int len) {
-        return readString(addr, len, StandardCharsets.UTF_8);
-    }
-
-    @Override
-    public String readString(int addr, int len, Charset charSet) {
-        return new String(readBytes(addr, len), charSet);
-    }
-
-    @Override
-    public void writeCString(int offset, String str) {
-        writeCString(offset, str, StandardCharsets.UTF_8);
-    }
-
-    @Override
-    public void writeCString(int offset, String str, Charset charSet) {
-        writeString(offset, str + '\0', charSet);
-    }
-
-    @Override
-    public String readCString(int addr, Charset charSet) {
-        int c = addr;
-        while (read(c) != '\0') {
-            c++;
-        }
-        return new String(readBytes(addr, c - addr), charSet);
-    }
-
-    @Override
-    public String readCString(int addr) {
-        return readCString(addr, StandardCharsets.UTF_8);
-    }
-
-    @Override
-    public void write(int addr, byte[] data) {
-        write(addr, data, 0, data.length);
-    }
-
-    @Override
     public void write(int addr, byte[] data, int offset, int size) {
-        try {
-            buffer.position(addr);
-            buffer.put(data, offset, size);
-        } catch (IllegalArgumentException | IndexOutOfBoundsException | BufferOverflowException e) {
-            throw new UninstantiableException("out of bounds memory access");
+        checkBounds(addr, size, buffer.limit());
+        if (!(data.length >= (offset + size))) {
+            throw new WasmRuntimeException(
+                    "out of bounds memory access: attempted to access data with length: "
+                            + data.length
+                            + " at address: "
+                            + (offset + size));
         }
+        buffer.position(addr);
+        buffer.put(data, offset, size);
     }
 
     @Override
     public byte read(int addr) {
-        try {
-            return buffer.get(addr);
-        } catch (IndexOutOfBoundsException e) {
-            throw new UninstantiableException("out of bounds memory access");
-        }
+        checkBounds(addr, 1, buffer.limit());
+        return buffer.get(addr);
     }
 
     @Override
     public byte[] readBytes(int addr, int len) {
-        try {
-            var bytes = new byte[len];
-            buffer.position(addr);
-            buffer.get(bytes);
-            return bytes;
-        } catch (IllegalArgumentException
-                | BufferUnderflowException
-                | NegativeArraySizeException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
+        checkBounds(addr, len, buffer.limit());
+        var bytes = new byte[len];
+        buffer.position(addr);
+        buffer.get(bytes);
+        return bytes;
     }
 
     @Override
     public void writeI32(int addr, int data) {
-        try {
-            buffer.putInt(addr, data);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
+        checkBounds(addr, 4, buffer.limit());
+        buffer.putInt(addr, data);
     }
 
     @Override
     public int readInt(int addr) {
-        try {
-            return buffer.getInt(addr);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
-    }
-
-    @Override
-    public long readI32(int addr) {
-        return readInt(addr);
-    }
-
-    @Override
-    public long readU32(int addr) {
-        return Integer.toUnsignedLong(readInt(addr));
+        checkBounds(addr, 4, buffer.limit());
+        return buffer.getInt(addr);
     }
 
     @Override
     public void writeLong(int addr, long data) {
-        try {
-            buffer.putLong(addr, data);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
+        checkBounds(addr, 8, buffer.limit());
+        buffer.putLong(addr, data);
     }
 
     @Override
     public long readLong(int addr) {
-        try {
-            return buffer.getLong(addr);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
-    }
-
-    @Override
-    public long readI64(int addr) {
-        return readLong(addr);
+        checkBounds(addr, 8, buffer.limit());
+        return buffer.getLong(addr);
     }
 
     @Override
     public void writeShort(int addr, short data) {
-        try {
-            buffer.putShort(addr, data);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
+        checkBounds(addr, 2, buffer.limit());
+        buffer.putShort(addr, data);
     }
 
     @Override
     public short readShort(int addr) {
-        try {
-            return buffer.getShort(addr);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
-    }
-
-    @Override
-    public long readI16(int addr) {
-        return readShort(addr);
+        checkBounds(addr, 2, buffer.limit());
+        return buffer.getShort(addr);
     }
 
     @Override
     public long readU16(int addr) {
-        try {
-            return buffer.getShort(addr) & 0xffff;
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
+        checkBounds(addr, 2, buffer.limit());
+        return buffer.getShort(addr) & 0xffff;
     }
 
     @Override
     public void writeByte(int addr, byte data) {
-        try {
-            buffer.put(addr, data);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
-    }
-
-    @Override
-    public long readU8(int addr) {
-        try {
-            return read(addr) & 0xFF;
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
-    }
-
-    @Override
-    public long readI8(int addr) {
-        try {
-            return read(addr);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
+        checkBounds(addr, 1, buffer.limit());
+        buffer.put(addr, data);
     }
 
     @Override
     public void writeF32(int addr, float data) {
-        try {
-            buffer.putFloat(addr, data);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
+        checkBounds(addr, 4, buffer.limit());
+        buffer.putFloat(addr, data);
     }
 
     @Override
     public long readF32(int addr) {
-        try {
-            return buffer.getInt(addr);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
+        checkBounds(addr, 4, buffer.limit());
+        return buffer.getInt(addr);
     }
 
     @Override
     public float readFloat(int addr) {
-        try {
-            return buffer.getFloat(addr);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
+        checkBounds(addr, 4, buffer.limit());
+        return buffer.getFloat(addr);
     }
 
     @Override
     public void writeF64(int addr, double data) {
-        try {
-            buffer.putDouble(addr, data);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
+        checkBounds(addr, 8, buffer.limit());
+        buffer.putDouble(addr, data);
     }
 
     @Override
     public double readDouble(int addr) {
-        try {
-            return buffer.getDouble(addr);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
+        checkBounds(addr, 8, buffer.limit());
+        return buffer.getDouble(addr);
     }
 
     @Override
     public long readF64(int addr) {
-        try {
-            return buffer.getLong(addr);
-        } catch (IndexOutOfBoundsException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
+        checkBounds(addr, 8, buffer.limit());
+        return buffer.getLong(addr);
     }
 
     @Override
     public void zero() {
-        this.fill((byte) 0);
-    }
-
-    @Override
-    public void fill(byte value) {
-        fill(value, 0, buffer.capacity());
+        fill((byte) 0, 0, buffer.capacity());
     }
 
     @Override
     @SuppressWarnings("ByteBufferBackingArray")
     public void fill(byte value, int fromIndex, int toIndex) {
-        try {
-            // see https://appsintheopen.com/posts/53-resetting-bytebuffers-to-zero-in-java
-            Arrays.fill(buffer.array(), fromIndex, toIndex, value);
-            buffer.position(0);
-        } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
-            throw new WasmRuntimeException("out of bounds memory access");
-        }
-    }
-
-    @Override
-    public void copy(int dest, int src, int size) {
-        write(dest, readBytes(src, size));
+        checkBounds(fromIndex, toIndex - fromIndex, buffer.limit());
+        // see https://appsintheopen.com/posts/53-resetting-bytebuffers-to-zero-in-java
+        Arrays.fill(buffer.array(), fromIndex, toIndex, value);
+        buffer.position(0);
     }
 
     @Override
