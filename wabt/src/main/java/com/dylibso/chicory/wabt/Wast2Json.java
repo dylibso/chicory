@@ -63,7 +63,7 @@ public final class Wast2Json {
 
                 Path inputFolder = fs.getPath("input");
                 Files.createDirectory(inputFolder);
-                Path inputPath = inputFolder.resolve(input.getFileName());
+                Path inputPath = inputFolder.resolve(input.getFileName().toString());
                 copy(fis, inputPath, StandardCopyOption.REPLACE_EXISTING);
                 wasiOpts.withDirectory(inputFolder.toString(), inputFolder);
 
@@ -75,7 +75,7 @@ public final class Wast2Json {
                 args.add("wast2json");
                 args.add(inputPath.toString());
                 args.add("-o");
-                args.add(outputFolder.resolve(output.getFileName()).toString());
+                args.add(outputFolder.resolve(output.getFileName().toString()).toString());
                 args.addAll(List.of(options));
                 wasiOpts.withArguments(args);
 
