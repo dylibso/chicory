@@ -152,9 +152,9 @@ public class AotGenMojo extends AbstractMojo {
         }
 
         Resource resource = new Resource();
-        resource.setDirectory(targetClassFolder.toString());
+        resource.setDirectory(targetClassFolder);
         project.addResource(resource);
-        project.addCompileSourceRoot(targetSourceFolder.toString());
+        project.addCompileSourceRoot(targetSourceFolder);
     }
 
     private static void generateCreateMethod(
