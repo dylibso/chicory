@@ -56,7 +56,7 @@ public class AotGenMojo extends AbstractMojo {
      * the wasm module to be used
      */
     @Parameter(required = true)
-    private Path wasmFile;
+    private String wasmFile;
 
     /**
      * the base name to be used for the generated classes
@@ -70,7 +70,7 @@ public class AotGenMojo extends AbstractMojo {
     @Parameter(
             required = true,
             defaultValue = "${project.build.directory}/generated-resources/chicory-aot")
-    private Path targetClassFolder;
+    private String targetClassFolder;
 
     /**
      * the target source folder to generate the Machine implementation
@@ -78,7 +78,7 @@ public class AotGenMojo extends AbstractMojo {
     @Parameter(
             required = true,
             defaultValue = "${project.build.directory}/generated-sources/chicory-aot")
-    private Path targetSourceFolder;
+    private String targetSourceFolder;
 
     /**
      * The current Maven project.
@@ -90,20 +90,22 @@ public class AotGenMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException {
         getLog().info("Generating AOT classes for " + name + " from " + wasmFile);
 
+        var wasmPath = Path.of(wasmFile);
+
         byte[] wasmBytes;
         try {
-            wasmBytes = Files.readAllBytes(wasmFile);
+            wasmBytes = Files.readAllBytes(wasmPath);
         } catch (IOException e) {
             throw new MojoExecutionException("Failed to read WASM file: " + wasmFile, e);
         }
 
-        var module = Parser.parse(wasmFile);
+        var module = Parser.parse(wasmPath);
         var machineName = name + "Machine";
         var result = AotCompiler.compileModule(module, machineName);
         var split = name.split("\\.");
 
-        var finalFolder = targetClassFolder;
-        var finalSourceFolder = targetSourceFolder;
+        var finalFolder = Path.of(targetClassFolder);
+        var finalSourceFolder = Path.of(targetSourceFolder);
 
         try {
             createFolders(finalFolder, finalSourceFolder, split);
@@ -133,7 +135,7 @@ public class AotGenMojo extends AbstractMojo {
 
         for (Map.Entry<String, byte[]> entry : result.classBytes().entrySet()) {
             var binaryName = entry.getKey().replace('.', '/') + ".class";
-            var targetFile = targetClassFolder.resolve(binaryName);
+            var targetFile = finalFolder.resolve(binaryName);
             try {
                 Files.write(targetFile, entry.getValue());
             } catch (IOException e) {
@@ -142,8 +144,7 @@ public class AotGenMojo extends AbstractMojo {
         }
 
         var rewrittenWasm = rewriteWasm(wasmBytes, module);
-        var newWasmFile =
-                targetClassFolder.resolve(packageName.replace('.', '/')).resolve(wasmName);
+        var newWasmFile = finalFolder.resolve(packageName.replace('.', '/')).resolve(wasmName);
         try {
             Files.write(newWasmFile, rewrittenWasm);
         } catch (IOException e) {
