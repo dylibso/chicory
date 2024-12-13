@@ -8,14 +8,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiExitException;
 import com.dylibso.chicory.wasm.Parser;
-import java.io.File;
+import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 
 public class Wat2WasmTest {
 
     @Test
     public void shouldRunWat2Wasm() throws Exception {
-        var result = Wat2Wasm.parse(new File("../wasm-corpus/src/main/resources/wat/iterfact.wat"));
+        var result = Wat2Wasm.parse(Path.of("../wasm-corpus/src/main/resources/wat/iterfact.wat"));
 
         assertTrue(result.length > 0);
         assertTrue(new String(result, UTF_8).contains("iterFact"));
@@ -46,7 +46,7 @@ public class Wat2WasmTest {
                         WasiExitException.class,
                         () ->
                                 Wat2Wasm.parse(
-                                        new File(
+                                        Path.of(
                                                 "src/test/resources/utf8-invalid-encoding-spec.0.wat")));
 
         assertEquals(1, exitException.exitCode());

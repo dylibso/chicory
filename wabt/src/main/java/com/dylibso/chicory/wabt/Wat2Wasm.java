@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
@@ -30,7 +31,7 @@ public final class Wat2Wasm {
 
     public static byte[] parse(Path path) {
         try (InputStream is = Files.newInputStream(path)) {
-            return parse(is, path.getFileName());
+            return parse(is, path.getFileName().toString());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

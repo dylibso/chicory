@@ -14,6 +14,7 @@ import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
@@ -62,7 +63,7 @@ public final class Wast2Json {
 
                 Path inputFolder = fs.getPath("input");
                 Files.createDirectory(inputFolder);
-                Path inputPath = inputFolder.resolve(input.getName());
+                Path inputPath = inputFolder.resolve(input.getFileName());
                 copy(fis, inputPath, StandardCopyOption.REPLACE_EXISTING);
                 wasiOpts.withDirectory(inputFolder.toString(), inputFolder);
 
@@ -74,7 +75,7 @@ public final class Wast2Json {
                 args.add("wast2json");
                 args.add(inputPath.toString());
                 args.add("-o");
-                args.add(outputFolder.resolve(output.getName()).toString());
+                args.add(outputFolder.resolve(output.getFileName()).toString());
                 args.addAll(List.of(options));
                 wasiOpts.withArguments(args);
 
@@ -93,7 +94,7 @@ public final class Wast2Json {
                 }
 
                 createDirectories(output.getParent());
-                Files.copyDirectory(outputFolder, output.getParent());
+                com.dylibso.chicory.wabt.Files.copyDirectory(outputFolder, output.getParent());
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
