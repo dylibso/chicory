@@ -140,7 +140,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
 
         var result = v1.add(v2).reinterpretAsLongs().toArray();
 
-        System.arraycopy(result, 0, stack.array(), 0, 2);
+        System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
     private static void I8x16_SUB(MStack stack) {
@@ -234,42 +234,33 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
     }
 
     private static void F32x4_ABS(MStack stack) {
-        var valHigh = stack.pop();
-        var valLow = stack.pop();
+        var offset = stack.size() - 2;
 
-        // https://github.com/tetratelabs/wazero/blob/58488880a334e8bda5be0d715a24d8ddeb34c725/internal/engine/interpreter/interpreter.go#L3168-L3169
-        long resultLow = valLow & (1L << 31 | 1L << 63) ^ 0xFFFFFFFFFFFFFFFFL;
-        long resultHigh = valHigh & (1L << 31 | 1L << 63) ^ 0xFFFFFFFFFFFFFFFFL;
+        var v =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsFloats();
 
-        stack.push(resultLow);
-        stack.push(resultHigh);
+        var result = v.abs().reinterpretAsLongs().toArray();
+
+        System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
     private static void F32x4_MIN(MStack stack) {
-        var val1High = stack.pop();
-        var val1Low = stack.pop();
-        var val2High = stack.pop();
-        var val2Low = stack.pop();
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
 
-        long resultLow = 0L;
-        long resultHigh = 0L;
+        int offset = stack.size() - 2;
 
-        for (int i = 0; i < 2; i++) {
-            var shift = i * 32L;
-            resultHigh |=
-                    (((val1High >> shift) & 0xFFFFFFFFL) < ((val2High >> shift) & 0xFFFFFFFFL)
-                                    ? ((val2High >> shift) & 0xFFFFFFFFL)
-                                    : ((val1High >> shift) & 0xFFFFFFFFL))
-                            << shift;
-            resultLow |=
-                    (((val1Low >> shift) & 0xFFFFFFFFL) < ((val2Low >> shift) & 0xFFFFFFFFL)
-                                    ? ((val2Low >> shift) & 0xFFFFFFFFL)
-                                    : ((val1Low >> shift) & 0xFFFFFFFFL))
-                            << shift;
-        }
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
+                        .reinterpretAsFloats();
 
-        stack.push(resultLow);
-        stack.push(resultHigh);
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsFloats();
+
+        var result = v1.min(v2).reinterpretAsLongs().toArray();
+        System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
     private static void I32x4_TRUNC_SAT_F32x4_S(MStack stack) {
