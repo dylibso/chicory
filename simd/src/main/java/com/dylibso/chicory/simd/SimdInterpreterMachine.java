@@ -234,15 +234,15 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
     }
 
     private static void F32x4_ABS(MStack stack) {
-        var valHigh = stack.pop();
-        var valLow = stack.pop();
+        var offset = stack.size() - 2;
 
-        // https://github.com/tetratelabs/wazero/blob/58488880a334e8bda5be0d715a24d8ddeb34c725/internal/engine/interpreter/interpreter.go#L3168-L3169
-        long resultLow = valLow & (1L << 31 | 1L << 63) ^ 0xFFFFFFFFFFFFFFFFL;
-        long resultHigh = valHigh & (1L << 31 | 1L << 63) ^ 0xFFFFFFFFFFFFFFFFL;
+        var v =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsFloats();
 
-        stack.push(resultLow);
-        stack.push(resultHigh);
+        var result = v.abs().reinterpretAsLongs().toArray();
+
+        System.arraycopy(result, 0, stack.array(), 0, 2);
     }
 
     private static void F32x4_MIN(MStack stack) {
