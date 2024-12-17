@@ -449,7 +449,6 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                     //                            List.of(),
                     //                            noop)
 
-                    GO ON FROM HERE
                     // build lambda return
                     var functionBodyStatement = new BlockStmt();
                     if (importType.returns().size() == 0) {
@@ -463,7 +462,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                 // new long[] { toLong($(accessExportedEntity)) }
                                 // new ArrayCreationExpr()
                         );
-                        functionBodyStatement.addStatement(new ReturnStmt());
+                        functionBodyStatement.addStatement(new ReturnStmt())
                     } else if (importType.returns().size() == 1) {
 
                     } else {
