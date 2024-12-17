@@ -76,9 +76,9 @@ public final class AotMethodRefs {
             MEMORY_INIT =
                     AotMethods.class.getMethod(
                             "memoryInit", int.class, int.class, int.class, int.class, Memory.class);
-            MEMORY_GROW = Memory.class.getMethod("grow", int.class);
-            MEMORY_DROP = Memory.class.getMethod("drop", int.class);
-            MEMORY_PAGES = Memory.class.getMethod("pages");
+            MEMORY_GROW = AotMethods.class.getMethod("memoryGrow", int.class, Memory.class);
+            MEMORY_DROP = AotMethods.class.getMethod("memoryDrop", int.class, Memory.class);
+            MEMORY_PAGES = AotMethods.class.getMethod("memoryPages", Memory.class);
             MEMORY_READ_BYTE =
                     AotMethods.class.getMethod(
                             "memoryReadByte", int.class, int.class, Memory.class);
