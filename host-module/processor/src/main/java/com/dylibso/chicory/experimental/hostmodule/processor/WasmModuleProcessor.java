@@ -12,15 +12,16 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.Import;
-import com.dylibso.chicory.wasm.types.MemoryLimits;
+import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+import com.github.javaparser.ast.ArrayCreationLevel;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
-import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.ArrayAccessExpr;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
+import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.Expression;
@@ -29,6 +30,7 @@ import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.NullLiteralExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
@@ -45,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.processing.Generated;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.element.Element;
@@ -94,16 +97,19 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
         }
     }
 
-    private Expression toLong(ValueType type, NameExpr nameExpr, Runnable error) {
+    private Expression toLong(
+            ValueType type, Expression nameExpr, Runnable error, CompilationUnit cu) {
         switch (type) {
             case I32:
                 return new CastExpr(parseType("long"), nameExpr);
             case I64:
                 return nameExpr;
             case F32:
+                cu.addImport(Value.class);
                 return new MethodCallExpr(
                         new NameExpr("Value"), "floatToLong", new NodeList<>(nameExpr));
             case F64:
+                cu.addImport(Value.class);
                 return new MethodCallExpr(
                         new NameExpr("Value"), "doubleToLong", new NodeList<>(nameExpr));
             default:
@@ -112,16 +118,19 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
         }
     }
 
-    private Expression fromLong(ValueType type, NameExpr nameExpr, Runnable error) {
+    private Expression fromLong(
+            ValueType type, Expression nameExpr, Runnable error, CompilationUnit cu) {
         switch (type) {
             case I32:
                 return new CastExpr(parseType("int"), nameExpr);
             case I64:
                 return nameExpr;
             case F32:
+                cu.addImport(Value.class);
                 return new MethodCallExpr(
                         new NameExpr("Value"), "longToFloat", new NodeList<>(nameExpr));
             case F64:
+                cu.addImport(Value.class);
                 return new MethodCallExpr(
                         new NameExpr("Value"), "longToDouble", new NodeList<>(nameExpr));
             default:
@@ -140,36 +149,31 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
     }
 
     private Expression listOfValueTypes(List<ValueType> valueTypes) {
-        valueTypes.stream().map(vt -> {
-            switch (vt) {
-                case I32:
-                    return new FieldAccessExpr(new NameExpr("ValueType"), "I32");
-                case I64:
-                    return new FieldAccessExpr(new NameExpr("ValueType"), "I64");
-                case F32:
-                    return new FieldAccessExpr(new NameExpr("ValueType"), "F32");
-                case F64:
-                    return new FieldAccessExpr(new NameExpr("ValueType"), "F64");
-                default:
-                    log(
-                            ERROR,
-                            "Unsupported WASM type: "
-                                    + param
-                                    + " in export: "
-                                    + export.name(),
-                            type)
-                    throw new AbortProcessingException();
-            }
-        });
-        new MethodCallExpr(new NameExpr("List"), "of", NodeList.nodeList());
-    }
-
-    private static Expression accessExportedEntity(
-            String moduleName, String accessMethodName, String name) {
-        return new MethodCallExpr(
-                new MethodCallExpr(new MethodCallExpr(moduleName), "exports", NodeList.nodeList()),
-                accessMethodName,
-                NodeList.nodeList(new StringLiteralExpr(name)));
+        List<Expression> values =
+                valueTypes.stream()
+                        .map(
+                                vt -> {
+                                    switch (vt) {
+                                        case I32:
+                                            return new FieldAccessExpr(
+                                                    new NameExpr("ValueType"), "I32");
+                                        case I64:
+                                            return new FieldAccessExpr(
+                                                    new NameExpr("ValueType"), "I64");
+                                        case F32:
+                                            return new FieldAccessExpr(
+                                                    new NameExpr("ValueType"), "F32");
+                                        case F64:
+                                            return new FieldAccessExpr(
+                                                    new NameExpr("ValueType"), "F64");
+                                        default:
+                                            // TODO: use the logger
+                                            System.err.println("Unsupported WASM type: " + vt);
+                                            throw new AbortProcessingException();
+                                    }
+                                })
+                        .collect(Collectors.toList());
+        return new MethodCallExpr(new NameExpr("List"), "of", NodeList.nodeList(values));
     }
 
     private void processModule(TypeElement type) throws URISyntaxException, IOException {
@@ -309,7 +313,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                 exportMethod.addParameter(javaType, argName);
                 // body invocation call arguments
                 var argExpr = new NameExpr(argName);
-                handleCallArguments.add(toLong(param, argExpr, error));
+                handleCallArguments.add(toLong(param, argExpr, error, exportsCu));
             }
 
             var methodBody = exportMethod.createBody();
@@ -345,7 +349,8 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                                             + " in export: "
                                                             + export.name(),
                                                     type);
-                                        })));
+                                        },
+                                        exportsCu)));
             }
         }
 
@@ -388,7 +393,8 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                 .addSingleMemberAnnotation(Generated.class, processorName);
                 writableClasses.put(prefix + importClassName, cu);
 
-                var toImportValuesMethod = importsInterface.addMethod("toImportValues");
+                var toImportValuesMethod =
+                        importsInterface.addMethod("toImportValues", Modifier.Keyword.DEFAULT);
                 importsCu.addImport("com.dylibso.chicory.runtime.ImportValues");
                 toImportValuesMethod.setType("ImportValues");
                 var toImportValuesBody = toImportValuesMethod.createBody();
@@ -401,6 +407,11 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                     var importMethod =
                             importInterface.addMethod(
                                     snakeCaseToCamelCase(importedFun.name(), false));
+
+                    var importFunctionCall =
+                            new MethodCallExpr(
+                                    new MethodCallExpr(imprt.getKey()), importedFun.name());
+
                     if (importedFun.importType() == ExternalType.MEMORY) {
                         cu.addImport("com.dylibso.chicory.runtime.Memory");
                         importMethod.setType("Memory");
@@ -408,12 +419,13 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
 
                         importsCu.addImport("com.dylibso.chicory.runtime.ImportMemory");
                         importedMemories.add(
-                            new ObjectCreationExpr(null, parseClassOrInterfaceType("ImportMemory"), NodeList.nodeList(
-                                    new StringLiteralExpr(imprt.getKey()),
-                                    new StringLiteralExpr(importedFun.name()),
-                                    accessExportedEntity(imprt.getKey(), "memory", importedFun.name())
-                            ))
-                        );
+                                new ObjectCreationExpr(
+                                        null,
+                                        parseClassOrInterfaceType("ImportMemory"),
+                                        NodeList.nodeList(
+                                                new StringLiteralExpr(imprt.getKey()),
+                                                new StringLiteralExpr(importedFun.name()),
+                                                importFunctionCall)));
                         continue;
                     } else if (importedFun.importType() == ExternalType.GLOBAL) {
                         cu.addImport("com.dylibso.chicory.runtime.GlobalInstance");
@@ -422,7 +434,8 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
 
                         // TODO: should be similar to Memory
                         // importedGlobals.add(
-                        //        accessExportedEntity(imprt.getKey(), "global", importedFun.name()));
+                        //        accessExportedEntity(imprt.getKey(), "global",
+                        // importedFun.name()));
                         continue;
                     } else if (importedFun.importType() == ExternalType.TABLE) {
                         cu.addImport("com.dylibso.chicory.runtime.TableInstance");
@@ -431,11 +444,17 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
 
                         // TODO: should be similar to Memory
                         // importedTables.add(
-                        //        accessExportedEntity(imprt.getKey(), "table", importedFun.name()));
+                        //        accessExportedEntity(imprt.getKey(), "table",
+                        // importedFun.name()));
                         continue;
                     }
                     // we now know it's a function
                     assert (importedFun.importType() == ExternalType.FUNCTION);
+                    // needed to generate the functions signatures
+                    importsCu.addImport(List.class);
+                    importsCu.addImport(ValueType.class);
+                    importsCu.addImport("com.dylibso.chicory.runtime.Instance");
+                    importsCu.addImport("com.dylibso.chicory.runtime.HostFunction");
 
                     var importType =
                             module.typeSection()
@@ -451,41 +470,86 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
 
                     // build lambda return
                     var functionBodyStatement = new BlockStmt();
-                    if (importType.returns().size() == 0) {
-                        functionBodyStatement.addStatement(
-                                new MethodCallExpr(
-                                    accessExportedEntity(imprt.getKey(), "function", importedFun.name())
-                                        "apply",
-                                NodeList.nodeList(
-                                        // adapt the parameters here
-                                ))
-                                // new long[] { toLong($(accessExportedEntity)) }
-                                // new ArrayCreationExpr()
-                        );
-                        functionBodyStatement.addStatement(new ReturnStmt())
-                    } else if (importType.returns().size() == 1) {
 
-                    } else {
+                    List<Expression> parameters = new ArrayList<>();
+                    for (int i = 0; i < importType.params().size(); i++) {
+                        var p = importType.params().get(i);
+                        Runnable error =
+                                () ->
+                                        log(
+                                                ERROR,
+                                                "Unsupported WASM type: "
+                                                        + p
+                                                        + " in import: "
+                                                        + importedFun.name(),
+                                                type);
 
+                        parameters.add(
+                                fromLong(
+                                        p,
+                                        new ArrayAccessExpr(
+                                                new NameExpr("args"),
+                                                new IntegerLiteralExpr(Integer.toString(i))),
+                                        error,
+                                        importsCu));
                     }
 
-                    new ObjectCreationExpr(null, parseClassOrInterfaceType("HostFunction"), NodeList.nodeList(
-                            new StringLiteralExpr(imprt.getKey()),
-                            new StringLiteralExpr(importedFun.name()),
-                            listOfValueTypes(importType.params()),
-                            listOfValueTypes(importType.returns()),
-                            // (Instance instance, long... args) -> null;
-                            new LambdaExpr(
+                    var importApplyHandle =
+                            new MethodCallExpr(
+                                    new MethodCallExpr(imprt.getKey()),
+                                    importedFun.name(),
+                                    NodeList.nodeList(parameters));
+
+                    if (importType.returns().size() == 0) {
+                        functionBodyStatement.addStatement(importApplyHandle);
+                        functionBodyStatement.addStatement(new ReturnStmt(new NullLiteralExpr()));
+                    } else if (importType.returns().size() == 1) {
+                        Runnable error =
+                                () ->
+                                        log(
+                                                ERROR,
+                                                "Unsupported WASM type: "
+                                                        + importType.returns().get(0)
+                                                        + " in import: "
+                                                        + importedFun.name(),
+                                                type);
+
+                        functionBodyStatement.addStatement(
+                                new ReturnStmt(
+                                        new ArrayCreationExpr(
+                                                parseType("long"),
+                                                NodeList.nodeList(new ArrayCreationLevel()),
+                                                new ArrayInitializerExpr(
+                                                        NodeList.nodeList(
+                                                                toLong(
+                                                                        importType.returns().get(0),
+                                                                        importApplyHandle,
+                                                                        error,
+                                                                        importsCu))))));
+                    } else {
+                        functionBodyStatement.addStatement(new ReturnStmt(importApplyHandle));
+                    }
+
+                    var importedHostFunctionBinding =
+                            new ObjectCreationExpr(
+                                    null,
+                                    parseClassOrInterfaceType("HostFunction"),
                                     NodeList.nodeList(
-                                        new Parameter(parseType("Instance"), new SimpleName("instance")),
-                                        new Parameter(parseType("long"), "args")),
+                                            new StringLiteralExpr(imprt.getKey()),
+                                            new StringLiteralExpr(importedFun.name()),
+                                            listOfValueTypes(importType.params()),
+                                            listOfValueTypes(importType.returns()),
+                                            // (Instance instance, long... args) -> null;
+                                            new LambdaExpr(
+                                                    NodeList.nodeList(
+                                                            new Parameter(
+                                                                    parseType("Instance"),
+                                                                    new SimpleName("instance")),
+                                                            new Parameter(parseType("long"), "args")
+                                                                    .setVarArgs(true)),
+                                                    functionBodyStatement)));
 
-                                    )
-                            )
-                    ));
-
-                    importedFunctions.add(
-                            accessExportedEntity(imprt.getKey(), "function", importedFun.name()));
+                    importedFunctions.add(importedHostFunctionBinding);
 
                     if (importType.returns().size() == 0) {
                         importMethod.setType(void.class);
@@ -526,32 +590,43 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                 }
 
                 // now let's write the import values body
-                var toImportsBuilder = new MethodCallExpr(new NameExpr("ImportValues"), "builder");
+                toImportValuesBody.addStatement(
+                        new AssignExpr(
+                                new VariableDeclarationExpr(
+                                        parseType("ImportValues.Builder"), "imports"),
+                                new MethodCallExpr(new NameExpr("ImportValues"), "builder"),
+                                AssignExpr.Operator.ASSIGN));
                 // TODO: the import is not enough, I should complete it with the module name etc.
                 // etc.
                 for (var importTable : importedTables) {
-                    toImportsBuilder =
+                    toImportValuesBody.addStatement(
                             new MethodCallExpr(
-                                    toImportsBuilder, "addTable", NodeList.nodeList(importTable));
+                                    new NameExpr("imports"),
+                                    "addTable",
+                                    NodeList.nodeList(importTable)));
                 }
                 for (var importGlobal : importedGlobals) {
-                    toImportsBuilder =
+                    toImportValuesBody.addStatement(
                             new MethodCallExpr(
-                                    toImportsBuilder, "addGlobal", NodeList.nodeList(importGlobal));
+                                    new NameExpr("imports"),
+                                    "addGlobal",
+                                    NodeList.nodeList(importGlobal)));
                 }
                 for (var importMemory : importedMemories) {
-                    toImportsBuilder =
+                    toImportValuesBody.addStatement(
                             new MethodCallExpr(
-                                    toImportsBuilder, "addMemory", NodeList.nodeList(importMemory));
+                                    new NameExpr("imports"),
+                                    "addMemory",
+                                    NodeList.nodeList(importMemory)));
                 }
                 for (var importFunction : importedFunctions) {
-                    toImportsBuilder =
+                    toImportValuesBody.addStatement(
                             new MethodCallExpr(
-                                    toImportsBuilder,
+                                    new NameExpr("imports"),
                                     "addFunction",
-                                    NodeList.nodeList(importFunction));
+                                    NodeList.nodeList(importFunction)));
                 }
-                toImportsBuilder = new MethodCallExpr(toImportsBuilder, "build");
+                var toImportsBuilder = new MethodCallExpr(new NameExpr("imports"), "build");
                 toImportValuesBody.addStatement(new ReturnStmt(toImportsBuilder));
             }
         }
