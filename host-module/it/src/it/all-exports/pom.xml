@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.dylibso.chicory</groupId>
 
-  <artifactId>exports-chicory-it</artifactId>
+  <artifactId>all-exports-chicory-it</artifactId>
   <version>0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
@@ -84,7 +84,7 @@
                 <resource>
                   <directory>@basedir@/../../wasm-corpus/src/main/resources/compiled</directory>
                   <includes>
-                    <include>exports.wat.wasm</include>
+                    <include>all-exports.wat.wasm</include>
                   </includes>
                 </resource>
               </resources>
