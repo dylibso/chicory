@@ -270,8 +270,11 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             assert (export.exportType() == ExternalType.FUNCTION);
 
             var funcType =
-                    module.functionSection()
-                            .getFunctionType(export.index() - importedFunctionCount);
+                    ((export.index() - importedFunctionCount) >= 0)
+                            ? module.functionSection()
+                                    .getFunctionType(export.index() - importedFunctionCount)
+                            : ((FunctionImport) module.importSection().getImport(export.index()))
+                                    .typeIndex(); // TODO: verify
             var exportType = module.typeSection().getType(funcType);
 
             if (exportType.returns().size() == 0) {

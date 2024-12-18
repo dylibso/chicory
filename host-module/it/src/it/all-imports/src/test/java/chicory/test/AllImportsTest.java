@@ -10,9 +10,9 @@ import com.dylibso.chicory.wasm.types.MemoryLimits;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 
-class ImportsTest {
+class AllImportsTest {
 
-    @WasmModuleInterface("mixed-imports.wat.wasm")
+    @WasmModuleInterface("all-imports.wat.wasm")
     class TestModule implements TestModule_ModuleImports, TestModule_ModuleExports, TestModule_Env {
         public final AtomicReference logResult = new AtomicReference<String>(null);
         private final Instance instance;
@@ -22,8 +22,8 @@ class ImportsTest {
             memory = new Memory(new MemoryLimits(1, 2));
             var module =
                     Parser.parse(
-                            ImportsTest.class.getResourceAsStream(
-                                    "/compiled/mixed-imports.wat.wasm"));
+                            AllImportsTest.class.getResourceAsStream(
+                                    "/compiled/all-imports.wat.wasm"));
 
             instance = Instance.builder(module).withImportValues(toImportValues()).build();
         }
