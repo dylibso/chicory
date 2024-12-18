@@ -75,8 +75,6 @@
               <exclude>tests/rust/testsuite/fd_flags_set.wasm</exclude>
               <!-- Linux and Jimfs always append with APPEND -->
               <exclude>tests/c/testsuite/pwrite-with-append.wasm</exclude>
-              <!-- poll_oneoff is not implemented -->
-              <exclude>tests/rust/testsuite/poll_oneoff_stdio.wasm</exclude>
               <!-- path_symlink is not implemented -->
               <exclude>tests/rust/testsuite/dangling_symlink.wasm</exclude>
               <exclude>tests/rust/testsuite/nofollow_errors.wasm</exclude>
