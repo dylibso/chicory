@@ -432,20 +432,30 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                         importMethod.setType("GlobalInstance");
                         importMethod.removeBody();
 
-                        // TODO: should be similar to Memory
-                        // importedGlobals.add(
-                        //        accessExportedEntity(imprt.getKey(), "global",
-                        // importedFun.name()));
+                        importsCu.addImport("com.dylibso.chicory.runtime.ImportGlobal");
+                        importedGlobals.add(
+                                new ObjectCreationExpr(
+                                        null,
+                                        parseClassOrInterfaceType("ImportGlobal"),
+                                        NodeList.nodeList(
+                                                new StringLiteralExpr(imprt.getKey()),
+                                                new StringLiteralExpr(importedFun.name()),
+                                                importFunctionCall)));
                         continue;
                     } else if (importedFun.importType() == ExternalType.TABLE) {
                         cu.addImport("com.dylibso.chicory.runtime.TableInstance");
                         importMethod.setType("TableInstance");
                         importMethod.removeBody();
 
-                        // TODO: should be similar to Memory
-                        // importedTables.add(
-                        //        accessExportedEntity(imprt.getKey(), "table",
-                        // importedFun.name()));
+                        importsCu.addImport("com.dylibso.chicory.runtime.ImportTable");
+                        importedGlobals.add(
+                                new ObjectCreationExpr(
+                                        null,
+                                        parseClassOrInterfaceType("ImportTable"),
+                                        NodeList.nodeList(
+                                                new StringLiteralExpr(imprt.getKey()),
+                                                new StringLiteralExpr(importedFun.name()),
+                                                importFunctionCall)));
                         continue;
                     }
                     // we now know it's a function
@@ -467,7 +477,6 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                     //                            List.of(ValueType.F64, ValueType.F64),
                     //                            List.of(),
                     //                            noop)
-
                     // build lambda return
                     var functionBodyStatement = new BlockStmt();
 
