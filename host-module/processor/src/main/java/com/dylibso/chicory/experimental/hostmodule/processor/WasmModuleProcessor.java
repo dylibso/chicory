@@ -47,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import javax.annotation.processing.Generated;
 import javax.annotation.processing.RoundEnvironment;
@@ -229,44 +230,35 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             var exportMethod =
                     exportsInterface.addMethod(
                             snakeCaseToCamelCase(export.name(), false), Modifier.Keyword.DEFAULT);
+
+            Consumer<String> exportMethodBodyGen =
+                    accessor -> {
+                        exportMethod
+                                .createBody()
+                                .addStatement(
+                                        new ReturnStmt(
+                                                new MethodCallExpr(
+                                                        exportCallHandle,
+                                                        accessor,
+                                                        NodeList.nodeList(
+                                                                new StringLiteralExpr(
+                                                                        export.name())))));
+                    };
+
             if (export.exportType() == ExternalType.MEMORY) {
                 exportsCu.addImport("com.dylibso.chicory.runtime.Memory");
                 exportMethod.setType("Memory");
-                exportMethod
-                        .createBody()
-                        .addStatement(
-                                new ReturnStmt(
-                                        new MethodCallExpr(
-                                                exportCallHandle,
-                                                "memory",
-                                                NodeList.nodeList(
-                                                        new StringLiteralExpr(export.name())))));
+                exportMethodBodyGen.accept("memory");
                 continue;
             } else if (export.exportType() == ExternalType.GLOBAL) {
                 exportsCu.addImport("com.dylibso.chicory.runtime.GlobalInstance");
                 exportMethod.setType("GlobalInstance");
-                exportMethod
-                        .createBody()
-                        .addStatement(
-                                new ReturnStmt(
-                                        new MethodCallExpr(
-                                                exportCallHandle,
-                                                "global",
-                                                NodeList.nodeList(
-                                                        new StringLiteralExpr(export.name())))));
+                exportMethodBodyGen.accept("global");
                 continue;
             } else if (export.exportType() == ExternalType.TABLE) {
                 exportsCu.addImport("com.dylibso.chicory.runtime.TableInstance");
                 exportMethod.setType("TableInstance");
-                exportMethod
-                        .createBody()
-                        .addStatement(
-                                new ReturnStmt(
-                                        new MethodCallExpr(
-                                                exportCallHandle,
-                                                "table",
-                                                NodeList.nodeList(
-                                                        new StringLiteralExpr(export.name())))));
+                exportMethodBodyGen.accept("table");
                 continue;
             }
             // it should be a function here
@@ -278,14 +270,6 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                     .getFunctionType(export.index() - functionImports.length)
                             : functionImports[export.index()].typeIndex();
             var exportType = module.typeSection().getType(funcType);
-
-            if (exportType.returns().size() == 0) {
-                exportMethod.setType(void.class);
-            } else if (exportType.returns().size() > 1) {
-                exportMethod.setType(long[].class);
-            } else {
-                exportMethod.setType(javaClassFromValueType(exportType.returns().get(0)));
-            }
 
             var argPrefix = "arg";
             var handleCallArguments = new ArrayList<Expression>();
@@ -310,10 +294,13 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                     new MethodCallExpr(exportCall, "apply", NodeList.nodeList(handleCallArguments));
 
             if (exportType.returns().size() == 0) {
+                exportMethod.setType(void.class);
                 methodBody.addStatement(exportApplyHandle).addStatement(new ReturnStmt());
             } else if (exportType.returns().size() > 1) {
+                exportMethod.setType(long[].class);
                 methodBody.addStatement(new ReturnStmt(exportApplyHandle));
             } else {
+                exportMethod.setType(javaClassFromValueType(exportType.returns().get(0)));
                 methodBody.addStatement(
                         new AssignExpr(
                                 new VariableDeclarationExpr(parseType("long"), "result"),
