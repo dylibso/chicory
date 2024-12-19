@@ -22,8 +22,7 @@ class MixedImportsTest {
             memory = new Memory(new MemoryLimits(1, 2));
             var module =
                     Parser.parse(
-                            MixedImportsTest.class.getResourceAsStream(
-                                    "/compiled/mixed-imports.wat.wasm"));
+                            MixedImportsTest.class.getResourceAsStream("/mixed-imports.wat.wasm"));
 
             instance = Instance.builder(module).withImportValues(toImportValues()).build();
         }

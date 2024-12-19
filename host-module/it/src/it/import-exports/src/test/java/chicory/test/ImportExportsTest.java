@@ -20,8 +20,7 @@ class ImportExportsTest {
         public TestModule() {
             var module =
                     Parser.parse(
-                            ImportExportsTest.class.getResourceAsStream(
-                                    "/compiled/host-function.wat.wasm"));
+                            ImportExportsTest.class.getResourceAsStream("/host-function.wat.wasm"));
 
             instance = Instance.builder(module).withImportValues(toImportValues()).build();
         }

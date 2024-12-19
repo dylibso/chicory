@@ -17,9 +17,7 @@ class AllExportsTest {
 
         public TestModule() {
             var module =
-                    Parser.parse(
-                            AllExportsTest.class.getResourceAsStream(
-                                    "/compiled/all-exports.wat.wasm"));
+                    Parser.parse(AllExportsTest.class.getResourceAsStream("/all-exports.wat.wasm"));
 
             instance = Instance.builder(module).build();
         }

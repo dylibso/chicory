@@ -211,11 +211,11 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
         instanceMethod.setType("Instance");
         instanceMethod.removeBody();
 
-        int importedFunctionCount =
-                (int)
-                        module.importSection().stream()
-                                .filter(i -> i.importType() == ExternalType.FUNCTION)
-                                .count();
+        var functionImports =
+                module.importSection().stream()
+                        .filter(i -> i.importType() == ExternalType.FUNCTION)
+                        .map(i -> (FunctionImport) i)
+                        .toArray(x -> new FunctionImport[x]);
 
         // generate module exports
         var exportCallHandle =
@@ -270,11 +270,10 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             assert (export.exportType() == ExternalType.FUNCTION);
 
             var funcType =
-                    ((export.index() - importedFunctionCount) >= 0)
+                    (export.index() >= functionImports.length)
                             ? module.functionSection()
-                                    .getFunctionType(export.index() - importedFunctionCount)
-                            : ((FunctionImport) module.importSection().getImport(export.index()))
-                                    .typeIndex(); // TODO: verify
+                                    .getFunctionType(export.index() - functionImports.length)
+                            : functionImports[export.index()].typeIndex();
             var exportType = module.typeSection().getType(funcType);
 
             if (exportType.returns().size() == 0) {
@@ -381,262 +380,270 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                         });
             }
 
-            for (var imprt : importedModules.entrySet()) {
-                var importClassName =
-                        type.getSimpleName() + "_" + snakeCaseToCamelCase(imprt.getKey(), true);
-                var importClassMethod =
-                        importsInterface.addMethod(snakeCaseToCamelCase(imprt.getKey(), false));
-                importClassMethod.removeBody();
-                importClassMethod.setType(importClassName);
-
-                var cu = newCu(pkg);
-                var importInterface =
-                        cu.addInterface(importClassName)
-                                .setPublic(true)
-                                .addSingleMemberAnnotation(Generated.class, processorName);
-                writableClasses.put(prefix + importClassName, cu);
-
+            if (importedModules.size() > 0) {
                 var toImportValuesMethod =
                         importsInterface.addMethod("toImportValues", Modifier.Keyword.DEFAULT);
                 importsCu.addImport("com.dylibso.chicory.runtime.ImportValues");
                 toImportValuesMethod.setType("ImportValues");
                 var toImportValuesBody = toImportValuesMethod.createBody();
-                ArrayList<Expression> importedMemories = new ArrayList<>();
-                ArrayList<Expression> importedGlobals = new ArrayList<>();
-                ArrayList<Expression> importedTables = new ArrayList<>();
-                ArrayList<Expression> importedFunctions = new ArrayList<>();
 
-                for (var importedFun : imprt.getValue()) {
-                    var importMethod =
-                            importInterface.addMethod(
-                                    snakeCaseToCamelCase(importedFun.name(), false));
-
-                    var importFunctionCall =
-                            new MethodCallExpr(
-                                    new MethodCallExpr(imprt.getKey()), importedFun.name());
-
-                    if (importedFun.importType() == ExternalType.MEMORY) {
-                        cu.addImport("com.dylibso.chicory.runtime.Memory");
-                        importMethod.setType("Memory");
-                        importMethod.removeBody();
-
-                        importsCu.addImport("com.dylibso.chicory.runtime.ImportMemory");
-                        importedMemories.add(
-                                new ObjectCreationExpr(
-                                        null,
-                                        parseClassOrInterfaceType("ImportMemory"),
-                                        NodeList.nodeList(
-                                                new StringLiteralExpr(imprt.getKey()),
-                                                new StringLiteralExpr(importedFun.name()),
-                                                importFunctionCall)));
-                        continue;
-                    } else if (importedFun.importType() == ExternalType.GLOBAL) {
-                        cu.addImport("com.dylibso.chicory.runtime.GlobalInstance");
-                        importMethod.setType("GlobalInstance");
-                        importMethod.removeBody();
-
-                        importsCu.addImport("com.dylibso.chicory.runtime.ImportGlobal");
-                        importedGlobals.add(
-                                new ObjectCreationExpr(
-                                        null,
-                                        parseClassOrInterfaceType("ImportGlobal"),
-                                        NodeList.nodeList(
-                                                new StringLiteralExpr(imprt.getKey()),
-                                                new StringLiteralExpr(importedFun.name()),
-                                                importFunctionCall)));
-                        continue;
-                    } else if (importedFun.importType() == ExternalType.TABLE) {
-                        cu.addImport("com.dylibso.chicory.runtime.TableInstance");
-                        importMethod.setType("TableInstance");
-                        importMethod.removeBody();
-
-                        importsCu.addImport("com.dylibso.chicory.runtime.ImportTable");
-                        importedGlobals.add(
-                                new ObjectCreationExpr(
-                                        null,
-                                        parseClassOrInterfaceType("ImportTable"),
-                                        NodeList.nodeList(
-                                                new StringLiteralExpr(imprt.getKey()),
-                                                new StringLiteralExpr(importedFun.name()),
-                                                importFunctionCall)));
-                        continue;
-                    }
-                    // we now know it's a function
-                    assert (importedFun.importType() == ExternalType.FUNCTION);
-                    // needed to generate the functions signatures
-                    importsCu.addImport(List.class);
-                    importsCu.addImport(ValueType.class);
-                    importsCu.addImport("com.dylibso.chicory.runtime.Instance");
-                    importsCu.addImport("com.dylibso.chicory.runtime.HostFunction");
-
-                    var importType =
-                            module.typeSection()
-                                    .getType((((FunctionImport) importedFun).typeIndex()));
-                    importMethod.removeBody();
-
-                    //                    new HostFunction(
-                    //                            "spectest",
-                    //                            "print_f64_f64",
-                    //                            List.of(ValueType.F64, ValueType.F64),
-                    //                            List.of(),
-                    //                            noop)
-                    // build lambda return
-                    var functionBodyStatement = new BlockStmt();
-
-                    List<Expression> parameters = new ArrayList<>();
-                    for (int i = 0; i < importType.params().size(); i++) {
-                        var p = importType.params().get(i);
-                        Runnable error =
-                                () ->
-                                        log(
-                                                ERROR,
-                                                "Unsupported WASM type: "
-                                                        + p
-                                                        + " in import: "
-                                                        + importedFun.name(),
-                                                type);
-
-                        parameters.add(
-                                fromLong(
-                                        p,
-                                        new ArrayAccessExpr(
-                                                new NameExpr("args"),
-                                                new IntegerLiteralExpr(Integer.toString(i))),
-                                        error,
-                                        importsCu));
-                    }
-
-                    var importApplyHandle =
-                            new MethodCallExpr(
-                                    new MethodCallExpr(imprt.getKey()),
-                                    importedFun.name(),
-                                    NodeList.nodeList(parameters));
-
-                    if (importType.returns().size() == 0) {
-                        functionBodyStatement.addStatement(importApplyHandle);
-                        functionBodyStatement.addStatement(new ReturnStmt(new NullLiteralExpr()));
-                    } else if (importType.returns().size() == 1) {
-                        Runnable error =
-                                () ->
-                                        log(
-                                                ERROR,
-                                                "Unsupported WASM type: "
-                                                        + importType.returns().get(0)
-                                                        + " in import: "
-                                                        + importedFun.name(),
-                                                type);
-
-                        functionBodyStatement.addStatement(
-                                new ReturnStmt(
-                                        new ArrayCreationExpr(
-                                                parseType("long"),
-                                                NodeList.nodeList(new ArrayCreationLevel()),
-                                                new ArrayInitializerExpr(
-                                                        NodeList.nodeList(
-                                                                toLong(
-                                                                        importType.returns().get(0),
-                                                                        importApplyHandle,
-                                                                        error,
-                                                                        importsCu))))));
-                    } else {
-                        functionBodyStatement.addStatement(new ReturnStmt(importApplyHandle));
-                    }
-
-                    var importedHostFunctionBinding =
-                            new ObjectCreationExpr(
-                                    null,
-                                    parseClassOrInterfaceType("HostFunction"),
-                                    NodeList.nodeList(
-                                            new StringLiteralExpr(imprt.getKey()),
-                                            new StringLiteralExpr(importedFun.name()),
-                                            listOfValueTypes(importType.params()),
-                                            listOfValueTypes(importType.returns()),
-                                            // (Instance instance, long... args) -> null;
-                                            new LambdaExpr(
-                                                    NodeList.nodeList(
-                                                            new Parameter(
-                                                                    parseType("Instance"),
-                                                                    new SimpleName("instance")),
-                                                            new Parameter(parseType("long"), "args")
-                                                                    .setVarArgs(true)),
-                                                    functionBodyStatement)));
-
-                    importedFunctions.add(importedHostFunctionBinding);
-
-                    if (importType.returns().size() == 0) {
-                        importMethod.setType(void.class);
-                    } else if (importType.returns().size() > 1) {
-                        importMethod.setType(long[].class);
-                    } else {
-                        var javaType =
-                                javaClassFromValueType(
-                                        importType.returns().get(0),
-                                        () -> {
-                                            log(
-                                                    ERROR,
-                                                    "Unsupported WASM type: "
-                                                            + importType.returns().get(0)
-                                                            + " in export: "
-                                                            + importedFun.name(),
-                                                    type);
-                                        });
-                        importMethod.setType(javaType);
-                    }
-
-                    var argPrefix = "arg";
-                    for (var pIdx = 0; pIdx < importType.params().size(); pIdx++) {
-                        var param = importType.params().get(pIdx);
-                        var argName = argPrefix + pIdx;
-                        Runnable error =
-                                () ->
-                                        log(
-                                                ERROR,
-                                                "Unsupported WASM type: "
-                                                        + param
-                                                        + " in export: "
-                                                        + importedFun.name(),
-                                                type);
-                        // signature
-                        importMethod.addParameter(javaClassFromValueType(param, error), argName);
-                    }
-                }
-
-                // now let's write the import values body
                 toImportValuesBody.addStatement(
                         new AssignExpr(
                                 new VariableDeclarationExpr(
                                         parseType("ImportValues.Builder"), "imports"),
                                 new MethodCallExpr(new NameExpr("ImportValues"), "builder"),
                                 AssignExpr.Operator.ASSIGN));
-                // TODO: the import is not enough, I should complete it with the module name etc.
-                // etc.
-                for (var importTable : importedTables) {
-                    toImportValuesBody.addStatement(
-                            new MethodCallExpr(
-                                    new NameExpr("imports"),
-                                    "addTable",
-                                    NodeList.nodeList(importTable)));
-                }
-                for (var importGlobal : importedGlobals) {
-                    toImportValuesBody.addStatement(
-                            new MethodCallExpr(
-                                    new NameExpr("imports"),
-                                    "addGlobal",
-                                    NodeList.nodeList(importGlobal)));
-                }
-                for (var importMemory : importedMemories) {
-                    toImportValuesBody.addStatement(
-                            new MethodCallExpr(
-                                    new NameExpr("imports"),
-                                    "addMemory",
-                                    NodeList.nodeList(importMemory)));
-                }
-                for (var importFunction : importedFunctions) {
-                    toImportValuesBody.addStatement(
-                            new MethodCallExpr(
-                                    new NameExpr("imports"),
-                                    "addFunction",
-                                    NodeList.nodeList(importFunction)));
+
+                for (var imprt : importedModules.entrySet()) {
+                    var importClassName =
+                            type.getSimpleName() + "_" + snakeCaseToCamelCase(imprt.getKey(), true);
+                    var importClassMethod =
+                            importsInterface.addMethod(snakeCaseToCamelCase(imprt.getKey(), false));
+                    importClassMethod.removeBody();
+                    importClassMethod.setType(importClassName);
+
+                    var cu = newCu(pkg);
+                    var importInterface =
+                            cu.addInterface(importClassName)
+                                    .setPublic(true)
+                                    .addSingleMemberAnnotation(Generated.class, processorName);
+                    writableClasses.put(prefix + importClassName, cu);
+
+                    ArrayList<Expression> importedMemories = new ArrayList<>();
+                    ArrayList<Expression> importedGlobals = new ArrayList<>();
+                    ArrayList<Expression> importedTables = new ArrayList<>();
+                    ArrayList<Expression> importedFunctions = new ArrayList<>();
+
+                    for (var importedFun : imprt.getValue()) {
+                        var importMethod =
+                                importInterface.addMethod(
+                                        snakeCaseToCamelCase(importedFun.name(), false));
+
+                        var importFunctionCall =
+                                new MethodCallExpr(
+                                        new MethodCallExpr(imprt.getKey()), importedFun.name());
+
+                        if (importedFun.importType() == ExternalType.MEMORY) {
+                            cu.addImport("com.dylibso.chicory.runtime.Memory");
+                            importMethod.setType("Memory");
+                            importMethod.removeBody();
+
+                            importsCu.addImport("com.dylibso.chicory.runtime.ImportMemory");
+                            importedMemories.add(
+                                    new ObjectCreationExpr(
+                                            null,
+                                            parseClassOrInterfaceType("ImportMemory"),
+                                            NodeList.nodeList(
+                                                    new StringLiteralExpr(imprt.getKey()),
+                                                    new StringLiteralExpr(importedFun.name()),
+                                                    importFunctionCall)));
+                            continue;
+                        } else if (importedFun.importType() == ExternalType.GLOBAL) {
+                            cu.addImport("com.dylibso.chicory.runtime.GlobalInstance");
+                            importMethod.setType("GlobalInstance");
+                            importMethod.removeBody();
+
+                            importsCu.addImport("com.dylibso.chicory.runtime.ImportGlobal");
+                            importedGlobals.add(
+                                    new ObjectCreationExpr(
+                                            null,
+                                            parseClassOrInterfaceType("ImportGlobal"),
+                                            NodeList.nodeList(
+                                                    new StringLiteralExpr(imprt.getKey()),
+                                                    new StringLiteralExpr(importedFun.name()),
+                                                    importFunctionCall)));
+                            continue;
+                        } else if (importedFun.importType() == ExternalType.TABLE) {
+                            cu.addImport("com.dylibso.chicory.runtime.TableInstance");
+                            importMethod.setType("TableInstance");
+                            importMethod.removeBody();
+
+                            importsCu.addImport("com.dylibso.chicory.runtime.ImportTable");
+                            importedTables.add(
+                                    new ObjectCreationExpr(
+                                            null,
+                                            parseClassOrInterfaceType("ImportTable"),
+                                            NodeList.nodeList(
+                                                    new StringLiteralExpr(imprt.getKey()),
+                                                    new StringLiteralExpr(importedFun.name()),
+                                                    importFunctionCall)));
+                            continue;
+                        }
+                        // we now know it's a function
+                        assert (importedFun.importType() == ExternalType.FUNCTION);
+                        // needed to generate the functions signatures
+                        importsCu.addImport(List.class);
+                        importsCu.addImport(ValueType.class);
+                        importsCu.addImport("com.dylibso.chicory.runtime.Instance");
+                        importsCu.addImport("com.dylibso.chicory.runtime.HostFunction");
+
+                        var importType =
+                                module.typeSection()
+                                        .getType((((FunctionImport) importedFun).typeIndex()));
+                        importMethod.removeBody();
+
+                        //                    new HostFunction(
+                        //                            "spectest",
+                        //                            "print_f64_f64",
+                        //                            List.of(ValueType.F64, ValueType.F64),
+                        //                            List.of(),
+                        //                            noop)
+                        // build lambda return
+                        var functionBodyStatement = new BlockStmt();
+
+                        List<Expression> parameters = new ArrayList<>();
+                        for (int i = 0; i < importType.params().size(); i++) {
+                            var p = importType.params().get(i);
+                            Runnable error =
+                                    () ->
+                                            log(
+                                                    ERROR,
+                                                    "Unsupported WASM type: "
+                                                            + p
+                                                            + " in import: "
+                                                            + importedFun.name(),
+                                                    type);
+
+                            parameters.add(
+                                    fromLong(
+                                            p,
+                                            new ArrayAccessExpr(
+                                                    new NameExpr("args"),
+                                                    new IntegerLiteralExpr(Integer.toString(i))),
+                                            error,
+                                            importsCu));
+                        }
+
+                        var importApplyHandle =
+                                new MethodCallExpr(
+                                        new MethodCallExpr(
+                                                snakeCaseToCamelCase(imprt.getKey(), false)),
+                                        snakeCaseToCamelCase(importedFun.name(), false),
+                                        NodeList.nodeList(parameters));
+
+                        if (importType.returns().size() == 0) {
+                            functionBodyStatement.addStatement(importApplyHandle);
+                            functionBodyStatement.addStatement(
+                                    new ReturnStmt(new NullLiteralExpr()));
+                        } else if (importType.returns().size() == 1) {
+                            Runnable error =
+                                    () ->
+                                            log(
+                                                    ERROR,
+                                                    "Unsupported WASM type: "
+                                                            + importType.returns().get(0)
+                                                            + " in import: "
+                                                            + importedFun.name(),
+                                                    type);
+
+                            functionBodyStatement.addStatement(
+                                    new ReturnStmt(
+                                            new ArrayCreationExpr(
+                                                    parseType("long"),
+                                                    NodeList.nodeList(new ArrayCreationLevel()),
+                                                    new ArrayInitializerExpr(
+                                                            NodeList.nodeList(
+                                                                    toLong(
+                                                                            importType
+                                                                                    .returns()
+                                                                                    .get(0),
+                                                                            importApplyHandle,
+                                                                            error,
+                                                                            importsCu))))));
+                        } else {
+                            functionBodyStatement.addStatement(new ReturnStmt(importApplyHandle));
+                        }
+
+                        var importedHostFunctionBinding =
+                                new ObjectCreationExpr(
+                                        null,
+                                        parseClassOrInterfaceType("HostFunction"),
+                                        NodeList.nodeList(
+                                                new StringLiteralExpr(imprt.getKey()),
+                                                new StringLiteralExpr(importedFun.name()),
+                                                listOfValueTypes(importType.params()),
+                                                listOfValueTypes(importType.returns()),
+                                                // (Instance instance, long... args) -> null;
+                                                new LambdaExpr(
+                                                        NodeList.nodeList(
+                                                                new Parameter(
+                                                                        parseType("Instance"),
+                                                                        new SimpleName("instance")),
+                                                                new Parameter(
+                                                                                parseType("long"),
+                                                                                "args")
+                                                                        .setVarArgs(true)),
+                                                        functionBodyStatement)));
+
+                        importedFunctions.add(importedHostFunctionBinding);
+
+                        if (importType.returns().size() == 0) {
+                            importMethod.setType(void.class);
+                        } else if (importType.returns().size() > 1) {
+                            importMethod.setType(long[].class);
+                        } else {
+                            var javaType =
+                                    javaClassFromValueType(
+                                            importType.returns().get(0),
+                                            () -> {
+                                                log(
+                                                        ERROR,
+                                                        "Unsupported WASM type: "
+                                                                + importType.returns().get(0)
+                                                                + " in export: "
+                                                                + importedFun.name(),
+                                                        type);
+                                            });
+                            importMethod.setType(javaType);
+                        }
+
+                        var argPrefix = "arg";
+                        for (var pIdx = 0; pIdx < importType.params().size(); pIdx++) {
+                            var param = importType.params().get(pIdx);
+                            var argName = argPrefix + pIdx;
+                            Runnable error =
+                                    () ->
+                                            log(
+                                                    ERROR,
+                                                    "Unsupported WASM type: "
+                                                            + param
+                                                            + " in export: "
+                                                            + importedFun.name(),
+                                                    type);
+                            // signature
+                            importMethod.addParameter(
+                                    javaClassFromValueType(param, error), argName);
+                        }
+                    }
+
+                    for (var importTable : importedTables) {
+                        toImportValuesBody.addStatement(
+                                new MethodCallExpr(
+                                        new NameExpr("imports"),
+                                        "addTable",
+                                        NodeList.nodeList(importTable)));
+                    }
+                    for (var importGlobal : importedGlobals) {
+                        toImportValuesBody.addStatement(
+                                new MethodCallExpr(
+                                        new NameExpr("imports"),
+                                        "addGlobal",
+                                        NodeList.nodeList(importGlobal)));
+                    }
+                    for (var importMemory : importedMemories) {
+                        toImportValuesBody.addStatement(
+                                new MethodCallExpr(
+                                        new NameExpr("imports"),
+                                        "addMemory",
+                                        NodeList.nodeList(importMemory)));
+                    }
+                    for (var importFunction : importedFunctions) {
+                        toImportValuesBody.addStatement(
+                                new MethodCallExpr(
+                                        new NameExpr("imports"),
+                                        "addFunction",
+                                        NodeList.nodeList(importFunction)));
+                    }
                 }
                 var toImportsBuilder = new MethodCallExpr(new NameExpr("imports"), "build");
                 toImportValuesBody.addStatement(new ReturnStmt(toImportsBuilder));
