@@ -189,13 +189,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
 
     private static void V128_NOT(MStack stack) {
         var offset = stack.size() - 2;
-        var not =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
-                        .reinterpretAsBytes()
-                        .eq(1)
-                        .toVector()
-                        .toArray()
-                        .not();
+        var not = LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset).not();
         var res = not.toArray();
 
         System.arraycopy(res, 0, stack.array(), offset, 2);

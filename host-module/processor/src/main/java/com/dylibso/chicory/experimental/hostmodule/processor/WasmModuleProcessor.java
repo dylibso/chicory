@@ -58,6 +58,8 @@ import javax.tools.StandardLocation;
 
 public final class WasmModuleProcessor extends AbstractModuleProcessor {
 
+    private Element currentElement;
+
     @Override
     public Set<String> getSupportedAnnotationTypes() {
         return Set.of(WasmModuleInterface.class.getName());
@@ -66,6 +68,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment round) {
         for (Element element : round.getElementsAnnotatedWith(WasmModuleInterface.class)) {
+            currentElement = element;
             log(NOTE, "Generating wasm module helpers for " + element, null);
             try {
                 processModule((TypeElement) element);
@@ -81,7 +84,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
         return false;
     }
 
-    private Class javaClassFromValueType(ValueType type, Runnable error) {
+    private Class javaClassFromValueType(ValueType type) {
         switch (type) {
             case I32:
                 return int.class;
@@ -92,13 +95,12 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             case F64:
                 return double.class;
             default:
-                error.run();
+                log(ERROR, "Unsupported WASM type: " + type, currentElement);
                 throw new AbortProcessingException();
         }
     }
 
-    private Expression toLong(
-            ValueType type, Expression nameExpr, Runnable error, CompilationUnit cu) {
+    private Expression toLong(ValueType type, Expression nameExpr, CompilationUnit cu) {
         switch (type) {
             case I32:
                 return new CastExpr(parseType("long"), nameExpr);
@@ -113,13 +115,12 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                 return new MethodCallExpr(
                         new NameExpr("Value"), "doubleToLong", new NodeList<>(nameExpr));
             default:
-                error.run();
+                log(ERROR, "Unsupported WASM type: " + type, currentElement);
                 throw new AbortProcessingException();
         }
     }
 
-    private Expression fromLong(
-            ValueType type, Expression nameExpr, Runnable error, CompilationUnit cu) {
+    private Expression fromLong(ValueType type, Expression nameExpr, CompilationUnit cu) {
         switch (type) {
             case I32:
                 return new CastExpr(parseType("int"), nameExpr);
@@ -134,7 +135,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                 return new MethodCallExpr(
                         new NameExpr("Value"), "longToDouble", new NodeList<>(nameExpr));
             default:
-                error.run();
+                log(ERROR, "Unsupported WASM type: " + type, currentElement);
                 throw new AbortProcessingException();
         }
     }
@@ -167,8 +168,10 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                             return new FieldAccessExpr(
                                                     new NameExpr("ValueType"), "F64");
                                         default:
-                                            // TODO: use the logger
-                                            System.err.println("Unsupported WASM type: " + vt);
+                                            log(
+                                                    ERROR,
+                                                    "Unsupported WASM type: " + vt,
+                                                    currentElement);
                                             throw new AbortProcessingException();
                                     }
                                 })
@@ -215,7 +218,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                 module.importSection().stream()
                         .filter(i -> i.importType() == ExternalType.FUNCTION)
                         .map(i -> (FunctionImport) i)
-                        .toArray(x -> new FunctionImport[x]);
+                        .toArray(FunctionImport[]::new);
 
         // generate module exports
         var exportCallHandle =
@@ -281,19 +284,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             } else if (exportType.returns().size() > 1) {
                 exportMethod.setType(long[].class);
             } else {
-                var javaType =
-                        javaClassFromValueType(
-                                exportType.returns().get(0),
-                                () -> {
-                                    log(
-                                            ERROR,
-                                            "Unsupported WASM type: "
-                                                    + exportType.returns().get(0)
-                                                    + " in export: "
-                                                    + export.name(),
-                                            type);
-                                });
-                exportMethod.setType(javaType);
+                exportMethod.setType(javaClassFromValueType(exportType.returns().get(0)));
             }
 
             var argPrefix = "arg";
@@ -301,21 +292,12 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             for (var pIdx = 0; pIdx < exportType.params().size(); pIdx++) {
                 var param = exportType.params().get(pIdx);
                 var argName = argPrefix + pIdx;
-                Runnable error =
-                        () ->
-                                log(
-                                        ERROR,
-                                        "Unsupported WASM type: "
-                                                + param
-                                                + " in export: "
-                                                + export.name(),
-                                        type);
-                var javaType = javaClassFromValueType(param, error);
+                var javaType = javaClassFromValueType(param);
                 // signature
                 exportMethod.addParameter(javaType, argName);
                 // body invocation call arguments
                 var argExpr = new NameExpr(argName);
-                handleCallArguments.add(toLong(param, argExpr, error, exportsCu));
+                handleCallArguments.add(toLong(param, argExpr, exportsCu));
             }
 
             var methodBody = exportMethod.createBody();
@@ -330,7 +312,6 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             if (exportType.returns().size() == 0) {
                 methodBody.addStatement(exportApplyHandle).addStatement(new ReturnStmt());
             } else if (exportType.returns().size() > 1) {
-                // TODO: not tested now
                 methodBody.addStatement(new ReturnStmt(exportApplyHandle));
             } else {
                 methodBody.addStatement(
@@ -343,15 +324,6 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                 fromLong(
                                         exportType.returns().get(0),
                                         new NameExpr("result"),
-                                        () -> {
-                                            log(
-                                                    ERROR,
-                                                    "Unsupported WASM type: "
-                                                            + exportType.returns().get(0)
-                                                            + " in export: "
-                                                            + export.name(),
-                                                    type);
-                                        },
                                         exportsCu)));
             }
         }
@@ -482,27 +454,12 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                         .getType((((FunctionImport) importedFun).typeIndex()));
                         importMethod.removeBody();
 
-                        //                    new HostFunction(
-                        //                            "spectest",
-                        //                            "print_f64_f64",
-                        //                            List.of(ValueType.F64, ValueType.F64),
-                        //                            List.of(),
-                        //                            noop)
                         // build lambda return
                         var functionBodyStatement = new BlockStmt();
 
                         List<Expression> parameters = new ArrayList<>();
                         for (int i = 0; i < importType.params().size(); i++) {
                             var p = importType.params().get(i);
-                            Runnable error =
-                                    () ->
-                                            log(
-                                                    ERROR,
-                                                    "Unsupported WASM type: "
-                                                            + p
-                                                            + " in import: "
-                                                            + importedFun.name(),
-                                                    type);
 
                             parameters.add(
                                     fromLong(
@@ -510,7 +467,6 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                             new ArrayAccessExpr(
                                                     new NameExpr("args"),
                                                     new IntegerLiteralExpr(Integer.toString(i))),
-                                            error,
                                             importsCu));
                         }
 
@@ -526,16 +482,6 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                             functionBodyStatement.addStatement(
                                     new ReturnStmt(new NullLiteralExpr()));
                         } else if (importType.returns().size() == 1) {
-                            Runnable error =
-                                    () ->
-                                            log(
-                                                    ERROR,
-                                                    "Unsupported WASM type: "
-                                                            + importType.returns().get(0)
-                                                            + " in import: "
-                                                            + importedFun.name(),
-                                                    type);
-
                             functionBodyStatement.addStatement(
                                     new ReturnStmt(
                                             new ArrayCreationExpr(
@@ -548,7 +494,6 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                                                                     .returns()
                                                                                     .get(0),
                                                                             importApplyHandle,
-                                                                            error,
                                                                             importsCu))))));
                         } else {
                             functionBodyStatement.addStatement(new ReturnStmt(importApplyHandle));
@@ -582,37 +527,16 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                         } else if (importType.returns().size() > 1) {
                             importMethod.setType(long[].class);
                         } else {
-                            var javaType =
-                                    javaClassFromValueType(
-                                            importType.returns().get(0),
-                                            () -> {
-                                                log(
-                                                        ERROR,
-                                                        "Unsupported WASM type: "
-                                                                + importType.returns().get(0)
-                                                                + " in export: "
-                                                                + importedFun.name(),
-                                                        type);
-                                            });
-                            importMethod.setType(javaType);
+                            importMethod.setType(
+                                    javaClassFromValueType(importType.returns().get(0)));
                         }
 
                         var argPrefix = "arg";
                         for (var pIdx = 0; pIdx < importType.params().size(); pIdx++) {
                             var param = importType.params().get(pIdx);
                             var argName = argPrefix + pIdx;
-                            Runnable error =
-                                    () ->
-                                            log(
-                                                    ERROR,
-                                                    "Unsupported WASM type: "
-                                                            + param
-                                                            + " in export: "
-                                                            + importedFun.name(),
-                                                    type);
                             // signature
-                            importMethod.addParameter(
-                                    javaClassFromValueType(param, error), argName);
+                            importMethod.addParameter(javaClassFromValueType(param), argName);
                         }
                     }
 
