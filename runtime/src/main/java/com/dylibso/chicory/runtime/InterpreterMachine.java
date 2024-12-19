@@ -1,6 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+import static com.dylibso.chicory.wasm.types.ValueType.sizeOf;
 import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.wasm.ChicoryException;
@@ -73,7 +74,13 @@ public class InterpreterMachine implements Machine {
         var func = instance.function(funcId);
         if (func != null) {
             var stackFrame =
-                    new StackFrame(instance, funcId, args, func.localTypes(), func.instructions());
+                    new StackFrame(
+                            instance,
+                            funcId,
+                            args,
+                            type.params(),
+                            func.localTypes(),
+                            func.instructions());
             stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
             callStack.push(stackFrame);
 
@@ -83,7 +90,7 @@ public class InterpreterMachine implements Machine {
                 throw new ChicoryException("call stack exhausted", e);
             }
         } else {
-            var stackFrame = new StackFrame(instance, funcId, args, List.of());
+            var stackFrame = new StackFrame(instance, funcId, args);
             stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
             callStack.push(stackFrame);
 
@@ -211,14 +218,13 @@ public class InterpreterMachine implements Machine {
                     SELECT_T(stack);
                     break;
                 case LOCAL_GET:
-                    stack.push(frame.local((int) operands.get(0)));
+                    LOCAL_GET(stack, operands, frame);
                     break;
                 case LOCAL_SET:
-                    frame.setLocal((int) operands.get(0), stack.pop());
+                    LOCAL_SET(stack, operands, frame);
                     break;
                 case LOCAL_TEE:
-                    // here we peek instead of pop, leaving it on the stack
-                    frame.setLocal((int) operands.get(0), stack.peek());
+                    LOCAL_TEE(stack, operands, frame);
                     break;
                 case GLOBAL_GET:
                     GLOBAL_GET(stack, instance, operands);
@@ -1834,6 +1840,42 @@ public class InterpreterMachine implements Machine {
         }
     }
 
+    private static void LOCAL_GET(MStack stack, Operands operands, StackFrame currentStackFrame) {
+        var idx = (int) operands.get(0);
+        var i = currentStackFrame.localIndexOf(idx);
+        if (currentStackFrame.localType(idx) == ValueType.V128) {
+            stack.push(currentStackFrame.local(i));
+            stack.push(currentStackFrame.local(i + 1));
+        } else {
+            stack.push(currentStackFrame.local(i));
+        }
+    }
+
+    private static void LOCAL_SET(MStack stack, Operands operands, StackFrame currentStackFrame) {
+        var idx = (int) operands.get(0);
+        var i = currentStackFrame.localIndexOf(idx);
+        if (currentStackFrame.localType(idx) == ValueType.V128) {
+            currentStackFrame.setLocal(i, stack.pop());
+            currentStackFrame.setLocal(i + 1, stack.pop());
+        } else {
+            currentStackFrame.setLocal(i, stack.pop());
+        }
+    }
+
+    private static void LOCAL_TEE(MStack stack, Operands operands, StackFrame currentStackFrame) {
+        // here we peek instead of pop, leaving it on the stack
+        var idx = (int) operands.get(0);
+        var i = currentStackFrame.localIndexOf(idx);
+        if (currentStackFrame.localType(idx) == ValueType.V128) {
+            var tmp = stack.pop();
+            currentStackFrame.setLocal(i, tmp);
+            currentStackFrame.setLocal(i + 1, stack.peek());
+            stack.push(tmp);
+        } else {
+            currentStackFrame.setLocal(i, stack.peek());
+        }
+    }
+
     private static StackFrame RETURN_CALL(
             MStack stack,
             Instance instance,
@@ -1857,7 +1899,13 @@ public class InterpreterMachine implements Machine {
             var ctrlFrame = callStack.pop();
             StackFrame.doControlTransfer(ctrlFrame.popCtrlTillCall(), stack);
             var newFrame =
-                    new StackFrame(instance, funcId, args, func.localTypes(), func.instructions());
+                    new StackFrame(
+                            instance,
+                            funcId,
+                            args,
+                            type.params(),
+                            func.localTypes(),
+                            func.instructions());
             newFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
             callStack.push(newFrame);
             return newFrame;
@@ -1904,7 +1952,13 @@ public class InterpreterMachine implements Machine {
             var ctrlFrame = callStack.pop();
             StackFrame.doControlTransfer(ctrlFrame.popCtrlTillCall(), stack);
             var newFrame =
-                    new StackFrame(instance, funcId, args, func.localTypes(), func.instructions());
+                    new StackFrame(
+                            instance,
+                            funcId,
+                            args,
+                            type.params(),
+                            func.localTypes(),
+                            func.instructions());
             newFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
             callStack.push(newFrame);
             return newFrame;
@@ -1968,18 +2022,6 @@ public class InterpreterMachine implements Machine {
             }
         }
         return sizeOf(instance.type(typeId).returns());
-    }
-
-    private static int sizeOf(List<ValueType> args) {
-        int total = 0;
-        for (var a : args) {
-            if (a == ValueType.V128) {
-                total += 2;
-            } else {
-                total += 1;
-            }
-        }
-        return total;
     }
 
     private static void BLOCK(

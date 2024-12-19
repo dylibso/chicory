@@ -1,5 +1,7 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.wasm.types.ValueType.sizeOf;
+
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
@@ -25,31 +27,61 @@ public class StackFrame {
     private final int funcId;
     private int pc;
     private final long[] locals;
+    private final List<ValueType> localTypes;
+    private final int[] localIdx;
     private final Instance instance;
 
     private final List<CtrlFrame> ctrlStack = new ArrayList<>();
 
-    StackFrame(Instance instance, int funcId, long[] args, List<ValueType> localTypes) {
-        this(instance, funcId, args, localTypes, Collections.emptyList());
+    StackFrame(Instance instance, int funcId, long[] args) {
+        this(
+                instance,
+                funcId,
+                args,
+                Collections.emptyList(),
+                Collections.emptyList(),
+                Collections.emptyList());
     }
 
     StackFrame(
             Instance instance,
             int funcId,
             long[] args,
+            List<ValueType> argsTypes,
             List<ValueType> localTypes,
             List<AnnotatedInstruction> code) {
         this.code = code;
         this.instance = instance;
         this.funcId = funcId;
-        this.locals = Arrays.copyOf(args, args.length + localTypes.size());
+        this.locals = Arrays.copyOf(args, sizeOf(argsTypes) + sizeOf(localTypes));
+        this.localTypes = new ArrayList<>();
+        this.localTypes.addAll(argsTypes);
+        this.localTypes.addAll(localTypes);
+        this.localIdx = new int[this.localTypes.size()];
 
         // initialize codesegment locals.
+        int j = 0;
         for (var i = 0; i < localTypes.size(); i++) {
             ValueType type = localTypes.get(i);
-            // TODO: How do we initialize non-numeric V128
+            var idx = j + sizeOf(argsTypes);
             if (type != ValueType.V128) {
-                locals[i + args.length] = Value.zero(type);
+                locals[idx] = Value.zero(type);
+                j += 1;
+            } else {
+                locals[idx] = Value.zero(ValueType.I64);
+                locals[idx + 1] = Value.zero(ValueType.I64);
+                j += 2;
+            }
+        }
+
+        // initialize local indexes
+        j = 0;
+        for (int i = 0; i < this.localTypes.size(); i++) {
+            this.localIdx[i] = j;
+            if (localType(i) != ValueType.V128) {
+                j += 1;
+            } else {
+                j += 2;
             }
         }
     }
@@ -63,6 +95,14 @@ public class StackFrame {
 
     int funcId() {
         return funcId;
+    }
+
+    ValueType localType(int i) {
+        return this.localTypes.get(i);
+    }
+
+    public int localIndexOf(int idx) {
+        return this.localIdx[idx];
     }
 
     void setLocal(int i, long v) {
