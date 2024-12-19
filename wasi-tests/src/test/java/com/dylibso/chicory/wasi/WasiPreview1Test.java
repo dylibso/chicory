@@ -41,7 +41,10 @@ public class WasiPreview1Test {
         // check with: wasmtime src/test/resources/compiled/hello-wasi.wat.wasm
         var fakeStdout = new MockPrintStream();
         var wasi =
-                new WasiPreview1(this.logger, WasiOptions.builder().withStdout(fakeStdout).build());
+                WasiPreview1.builder()
+                        .withLogger(this.logger)
+                        .withOptions(WasiOptions.builder().withStdout(fakeStdout).build())
+                        .build();
         var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
         Instance.builder(loadModule("compiled/hello-wasi.wat.wasm"))
                 .withImportValues(imports)
@@ -54,7 +57,11 @@ public class WasiPreview1Test {
         // check with: wasmtime src/test/resources/compiled/hello-wasi.rs.wasm
         var expected = "Hello, World!";
         var stdout = new MockPrintStream();
-        var wasi = new WasiPreview1(this.logger, WasiOptions.builder().withStdout(stdout).build());
+        var wasi =
+                WasiPreview1.builder()
+                        .withLogger(this.logger)
+                        .withOptions(WasiOptions.builder().withStdout(stdout).build())
+                        .build();
         var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
         Instance.builder(loadModule("compiled/hello-wasi.rs.wasm"))
                 .withImportValues(imports)
@@ -68,7 +75,7 @@ public class WasiPreview1Test {
         var fakeStdin = new ByteArrayInputStream("Benjamin".getBytes(UTF_8));
         var fakeStdout = new MockPrintStream();
         var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStdin(fakeStdin).build();
-        var wasi = new WasiPreview1(this.logger, wasiOpts);
+        var wasi = WasiPreview1.builder().withLogger(this.logger).withOptions(wasiOpts).build();
         var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
         Instance.builder(loadModule("compiled/greet-wasi.rs.wasm"))
                 .withImportValues(imports)
@@ -83,7 +90,7 @@ public class WasiPreview1Test {
         var fakeStdin = new ByteArrayInputStream("{ \"n\": 2, \"bar\": \"baz\" }".getBytes(UTF_8));
         var fakeStdout = new MockPrintStream();
         var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStdin(fakeStdin).build();
-        var wasi = new WasiPreview1(this.logger, wasiOpts);
+        var wasi = WasiPreview1.builder().withLogger(this.logger).withOptions(wasiOpts).build();
         var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
         Instance.builder(loadModule("compiled/javy-demo.js.javy.wasm"))
                 .withImportValues(imports)
@@ -104,9 +111,8 @@ public class WasiPreview1Test {
                         .withStderr(stderr)
                         .withStdin(stdin)
                         .build();
-        var logger = new SystemLogger();
 
-        var wasi = new WasiPreview1(logger, wasiOpts);
+        var wasi = WasiPreview1.builder().withOptions(wasiOpts).build();
         var quickjs =
                 Instance.builder(loadModule("compiled/quickjs-provider.javy-dynamic.wasm"))
                         .withImportValues(
@@ -149,9 +155,8 @@ public class WasiPreview1Test {
                         .withStderr(stderr)
                         .withStdin(stdin)
                         .build();
-        var logger = new SystemLogger();
 
-        var wasi = new WasiPreview1(logger, wasiOpts);
+        var wasi = WasiPreview1.builder().withOptions(wasiOpts).build();
         var quickjs =
                 Instance.builder(loadModule("compiled/quickjs-provider.javy-dynamic.wasm"))
                         .withImportValues(
@@ -172,7 +177,7 @@ public class WasiPreview1Test {
     @Test
     public void shouldRunTinyGoModule() {
         var wasiOpts = WasiOptions.builder().build();
-        var wasi = new WasiPreview1(this.logger, wasiOpts);
+        var wasi = WasiPreview1.builder().withLogger(this.logger).withOptions(wasiOpts).build();
         var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
         var module = loadModule("compiled/sum.go.tiny.wasm");
         var instance = Instance.builder(module).withImportValues(imports).build();
@@ -186,7 +191,7 @@ public class WasiPreview1Test {
     public void shouldRunWasiGoModule() {
         var fakeStdout = new MockPrintStream();
         var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).build();
-        var wasi = new WasiPreview1(this.logger, wasiOpts);
+        var wasi = WasiPreview1.builder().withLogger(this.logger).withOptions(wasiOpts).build();
         var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
         var module = loadModule("compiled/main.go.wasm");
         var exit =
@@ -208,7 +213,7 @@ public class WasiPreview1Test {
                         // https://jflower.co.uk/running-net-8-on-cloudflare-workers/
                         .withArguments(List.of(""))
                         .build();
-        var wasi = new WasiPreview1(this.logger, wasiOpts);
+        var wasi = WasiPreview1.builder().withLogger(this.logger).withOptions(wasiOpts).build();
         var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
 
         var module = loadModule("compiled/basic.dotnet.wasm");
@@ -221,8 +226,10 @@ public class WasiPreview1Test {
     public void wasiRandom() {
         var seed = 0x12345678;
         var wasi =
-                new WasiPreview1(
-                        this.logger, WasiOptions.builder().withRandom(new Random(seed)).build());
+                WasiPreview1.builder()
+                        .withLogger(this.logger)
+                        .withOptions(WasiOptions.builder().withRandom(new Random(seed)).build())
+                        .build();
 
         var memory = new Memory(new MemoryLimits(8, 8));
         assertEquals(0, wasi.randomGet(memory, 0, 123_456));
