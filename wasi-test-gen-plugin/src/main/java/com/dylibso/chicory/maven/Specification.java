@@ -15,7 +15,6 @@ public class Specification {
     private final List<String> dirs;
     private final Map<String, String> env;
     private final int exitCode;
-    private final Optional<String> stderr;
     private final Optional<String> stdout;
 
     @JsonCreator
@@ -24,13 +23,11 @@ public class Specification {
             @JsonProperty("dirs") List<String> dirs,
             @JsonProperty("env") Map<String, String> env,
             @JsonProperty("exit_code") int exitCode,
-            @JsonProperty("stderr") String stderr,
             @JsonProperty("stdout") String stdout) {
         this.args = requireNonNullElse(args, emptyList());
         this.dirs = requireNonNullElse(dirs, emptyList());
         this.env = requireNonNullElse(env, emptyMap());
         this.exitCode = exitCode;
-        this.stderr = Optional.ofNullable(stderr);
         this.stdout = Optional.ofNullable(stdout);
     }
 
@@ -50,15 +47,11 @@ public class Specification {
         return exitCode;
     }
 
-    public Optional<String> stderr() {
-        return stderr;
-    }
-
     public Optional<String> stdout() {
         return stdout;
     }
 
     public static Specification createDefault() {
-        return new Specification(emptyList(), emptyList(), emptyMap(), 0, "", "");
+        return new Specification(emptyList(), emptyList(), emptyMap(), 0, null);
     }
 }

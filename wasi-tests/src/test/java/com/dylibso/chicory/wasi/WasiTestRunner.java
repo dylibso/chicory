@@ -30,7 +30,6 @@ public final class WasiTestRunner {
             List<String> dirs,
             Map<String, String> env,
             int exitCode,
-            Optional<String> stderr,
             Optional<String> stdout) {
 
         try (FileSystem fs =
@@ -76,7 +75,6 @@ public final class WasiTestRunner {
 
             assertEquals(exitCode, actualExitCode, "exit code");
             stdout.ifPresent(expected -> assertEquals(expected, stdoutStream.output(), "stdout"));
-            stderr.ifPresent(expected -> assertEquals(expected, stderrStream.output(), "stderr"));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

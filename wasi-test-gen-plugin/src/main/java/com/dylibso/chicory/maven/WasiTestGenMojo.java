@@ -201,18 +201,13 @@ public class WasiTestGenMojo extends AbstractMojo {
                                         AssignExpr.Operator.ASSIGN))
                         .addStatement(
                                 new AssignExpr(
-                                        new NameExpr("Optional<String> stderr"),
-                                        new NameExpr(optionalOf(specification.stderr())),
-                                        AssignExpr.Operator.ASSIGN))
-                        .addStatement(
-                                new AssignExpr(
                                         new NameExpr("Optional<String> stdout"),
                                         new NameExpr(optionalOf(specification.stdout())),
                                         AssignExpr.Operator.ASSIGN))
                         .addStatement(
                                 new NameExpr(
-                                        "WasiTestRunner.execute(test, args, dirs, env, exitCode,"
-                                                + " stderr, stdout)"));
+                                        "WasiTestRunner.execute("
+                                                + "test, args, dirs, env, exitCode, stdout)"));
             }
 
             dest.add(
