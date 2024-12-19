@@ -83,7 +83,8 @@ public final class WasiTestRunner {
     }
 
     private static int execute(File test, WasiOptions wasiOptions) {
-        try (var wasi = new WasiPreview1(LOGGER, wasiOptions)) {
+        try (var wasi =
+                WasiPreview1.builder().withLogger(LOGGER).withOptions(wasiOptions).build()) {
             Instance.builder(Parser.parse(test))
                     .withImportValues(
                             ImportValues.builder().addFunction(wasi.toHostFunctions()).build())

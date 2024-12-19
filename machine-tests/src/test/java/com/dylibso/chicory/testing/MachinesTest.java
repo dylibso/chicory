@@ -7,7 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.experimental.aot.AotMachine;
-import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ImportTable;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
@@ -63,9 +62,8 @@ public final class MachinesTest {
                         .withStderr(stderr)
                         .withStdin(stdin)
                         .build();
-        var logger = new SystemLogger();
 
-        return new WasiPreview1(logger, wasiOpts);
+        return WasiPreview1.builder().withOptions(wasiOpts).build();
     }
 
     private static final String expectedOutput = "Hello world dynamic Javy!\n";

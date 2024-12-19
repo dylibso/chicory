@@ -1,6 +1,5 @@
 package com.dylibso.chicory.experimental.cli;
 
-import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
@@ -55,17 +54,17 @@ public class Cli implements Runnable {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        var logger = new SystemLogger();
         var module = Parser.parse(file);
         var imports =
                 wasi
                         ? ImportValues.builder()
                                 .addFunction(
-                                        new WasiPreview1(
-                                                        logger,
+                                        WasiPreview1.builder()
+                                                .withOptions(
                                                         WasiOptions.builder()
                                                                 .inheritSystem()
                                                                 .build())
+                                                .build()
                                                 .toHostFunctions())
                                 .build()
                         : ImportValues.empty();
