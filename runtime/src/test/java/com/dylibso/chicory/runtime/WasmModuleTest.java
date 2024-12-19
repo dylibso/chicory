@@ -12,6 +12,7 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -198,6 +199,26 @@ public class WasmModuleTest {
     }
 
     @Test
+    public void shouldSupportMemoryFactoryOverride() {
+        AtomicBoolean memoryCreated = new AtomicBoolean();
+        memoryCreated.set(false);
+        Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
+                .withMemoryFactory(
+                        limits -> {
+                            memoryCreated.set(true);
+                            return new ByteBufferMemory(limits) {
+                                // example override
+                                @Override
+                                public int pages() {
+                                    return 0;
+                                }
+                            };
+                        })
+                .build();
+        assertEquals(true, memoryCreated.get());
+    }
+
+    @Test
     public void shouldRunBasicCProgram() {
         // check with: wasmtime basic.c.wasm --invoke run
         var instance = Instance.builder(loadModule("compiled/basic.c.wasm")).build();
@@ -295,7 +316,7 @@ public class WasmModuleTest {
                             logResult.set(logLevel + ": " + value);
                             return null;
                         });
-        var memory = new ImportMemory("env", "memory", new Memory(new MemoryLimits(1)));
+        var memory = new ImportMemory("env", "memory", new ByteBufferMemory(new MemoryLimits(1)));
 
         var hostImports =
                 ImportValues.builder().addFunction(cbrtFunc, logFunc).addMemory(memory).build();
