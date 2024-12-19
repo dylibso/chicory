@@ -209,28 +209,21 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
     }
 
     private static void F32x4_MUL(MStack stack) {
-        var val1High = stack.pop();
-        var val1Low = stack.pop();
-        var val2High = stack.pop();
-        var val2Low = stack.pop();
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
 
-        long resultLow = 0L;
-        long resultHigh = 0L;
+        int offset = stack.size() - 2;
 
-        for (int i = 0; i < 2; i++) {
-            var shift = i * 32L;
-            var floatHigh =
-                    Float.intBitsToFloat((int) ((val1High >> shift) & 0xFFFFFFFFL))
-                            * Float.intBitsToFloat((int) ((val2High >> shift) & 0xFFFFFFFFL));
-            resultHigh |= (Float.floatToIntBits(floatHigh) & 0xFFFFFFFFL) << shift;
-            var floatLow =
-                    Float.intBitsToFloat((int) ((val1Low >> shift) & 0xFFFFFFFFL))
-                            * Float.intBitsToFloat((int) ((val2Low >> shift) & 0xFFFFFFFFL));
-            resultLow |= (Float.floatToIntBits(floatLow) & 0xFFFFFFFFL) << shift;
-        }
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
+                        .reinterpretAsFloats();
 
-        stack.push(resultLow);
-        stack.push(resultHigh);
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsFloats();
+
+        var result = v1.mul(v2).reinterpretAsLongs().toArray();
+        System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
     private static void F32x4_ABS(MStack stack) {
