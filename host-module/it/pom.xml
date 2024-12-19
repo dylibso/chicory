@@ -14,6 +14,7 @@
   <description>Integration tests for the Chicory annotations</description>
 
   <dependencies>
+    <!-- Dummy dependency to force the order -->
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>host-module-processor-experimental</artifactId>
