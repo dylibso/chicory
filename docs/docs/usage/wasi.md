@@ -73,7 +73,7 @@ var logger = new SystemLogger();
 // let's just use the default options for now
 var options = WasiOptions.builder().build();
 // create our instance of wasip1
-var wasi = new WasiPreview1(logger, WasiOptions.builder().build());
+var wasi = WasiPreview1.builder().withOptions(WasiOptions.builder().build()).build();
 // create the module and connect the host functions
 var store = new Store().addFunction(wasi.toHostFunctions());
 // instantiate and execute the main entry point
@@ -111,7 +111,7 @@ var fakeStderr = new ByteArrayOutputStream();
 // now pass those to our wasi options builder
 var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).withStderr(fakeStderr).withStdin(fakeStdin).build();
 
-var wasi = new WasiPreview1(logger, wasiOpts);
+var wasi = WasiPreview1.builder().withOptions(wasiOpts).build();
 
 // greet-wasi is a rust program that greets the string passed in stdin
 var store = new Store().addFunction(wasi.toHostFunctions());

@@ -70,14 +70,10 @@ public final class WasiPreview1 implements Closeable {
     private final List<Entry<byte[], byte[]>> environment;
     private final Descriptors descriptors = new Descriptors();
 
-    public WasiPreview1(Logger logger) {
+    private WasiPreview1(Logger logger, WasiOptions opts) {
         // TODO by default everything should by blocked
         // this works now because streams are null.
         // maybe we want a more explicit way of doing this though
-        this(logger, WasiOptions.builder().build());
-    }
-
-    public WasiPreview1(Logger logger, WasiOptions opts) {
         this.logger = requireNonNull(logger);
         this.random = opts.random();
         this.clock = opts.clock();
