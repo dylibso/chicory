@@ -353,11 +353,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             }
 
             if (importedModules.size() > 0) {
-                var toImportValuesMethod =
-                        importsInterface.addMethod("toImportValues", Modifier.Keyword.DEFAULT);
-                importsCu.addImport("com.dylibso.chicory.runtime.ImportValues");
-                toImportValuesMethod.setType("ImportValues");
-                var toImportValuesBody = toImportValuesMethod.createBody();
+                var toImportValuesBody = new BlockStmt();
 
                 toImportValuesBody.addStatement(
                         new AssignExpr(
@@ -381,11 +377,6 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                     .addSingleMemberAnnotation(Generated.class, processorName);
                     writableClasses.put(prefix + importClassName, cu);
 
-                    ArrayList<Expression> importedMemories = new ArrayList<>();
-                    ArrayList<Expression> importedGlobals = new ArrayList<>();
-                    ArrayList<Expression> importedTables = new ArrayList<>();
-                    ArrayList<Expression> importedFunctions = new ArrayList<>();
-
                     for (var importedFun : imprt.getValue()) {
                         var importMethod =
                                 importInterface.addMethod(
@@ -401,14 +392,19 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                             importMethod.removeBody();
 
                             importsCu.addImport("com.dylibso.chicory.runtime.ImportMemory");
-                            importedMemories.add(
+                            var importMemory =
                                     new ObjectCreationExpr(
                                             null,
                                             parseClassOrInterfaceType("ImportMemory"),
                                             NodeList.nodeList(
                                                     new StringLiteralExpr(imprt.getKey()),
                                                     new StringLiteralExpr(importedFun.name()),
-                                                    importFunctionCall)));
+                                                    importFunctionCall));
+                            toImportValuesBody.addStatement(
+                                    new MethodCallExpr(
+                                            new NameExpr("imports"),
+                                            "addMemory",
+                                            NodeList.nodeList(importMemory)));
                             continue;
                         } else if (importedFun.importType() == ExternalType.GLOBAL) {
                             cu.addImport("com.dylibso.chicory.runtime.GlobalInstance");
@@ -416,14 +412,19 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                             importMethod.removeBody();
 
                             importsCu.addImport("com.dylibso.chicory.runtime.ImportGlobal");
-                            importedGlobals.add(
+                            var importGlobal =
                                     new ObjectCreationExpr(
                                             null,
                                             parseClassOrInterfaceType("ImportGlobal"),
                                             NodeList.nodeList(
                                                     new StringLiteralExpr(imprt.getKey()),
                                                     new StringLiteralExpr(importedFun.name()),
-                                                    importFunctionCall)));
+                                                    importFunctionCall));
+                            toImportValuesBody.addStatement(
+                                    new MethodCallExpr(
+                                            new NameExpr("imports"),
+                                            "addGlobal",
+                                            NodeList.nodeList(importGlobal)));
                             continue;
                         } else if (importedFun.importType() == ExternalType.TABLE) {
                             cu.addImport("com.dylibso.chicory.runtime.TableInstance");
@@ -431,14 +432,19 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                             importMethod.removeBody();
 
                             importsCu.addImport("com.dylibso.chicory.runtime.ImportTable");
-                            importedTables.add(
+                            var importTable =
                                     new ObjectCreationExpr(
                                             null,
                                             parseClassOrInterfaceType("ImportTable"),
                                             NodeList.nodeList(
                                                     new StringLiteralExpr(imprt.getKey()),
                                                     new StringLiteralExpr(importedFun.name()),
-                                                    importFunctionCall)));
+                                                    importFunctionCall));
+                            toImportValuesBody.addStatement(
+                                    new MethodCallExpr(
+                                            new NameExpr("imports"),
+                                            "addTable",
+                                            NodeList.nodeList(importTable)));
                             continue;
                         }
                         // we now know it's a function
@@ -520,7 +526,11 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                                                         .setVarArgs(true)),
                                                         functionBodyStatement)));
 
-                        importedFunctions.add(importedHostFunctionBinding);
+                        toImportValuesBody.addStatement(
+                                new MethodCallExpr(
+                                        new NameExpr("imports"),
+                                        "addFunction",
+                                        NodeList.nodeList(importedHostFunctionBinding)));
 
                         if (importType.returns().size() == 0) {
                             importMethod.setType(void.class);
@@ -539,38 +549,15 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                             importMethod.addParameter(javaClassFromValueType(param), argName);
                         }
                     }
-
-                    for (var importTable : importedTables) {
-                        toImportValuesBody.addStatement(
-                                new MethodCallExpr(
-                                        new NameExpr("imports"),
-                                        "addTable",
-                                        NodeList.nodeList(importTable)));
-                    }
-                    for (var importGlobal : importedGlobals) {
-                        toImportValuesBody.addStatement(
-                                new MethodCallExpr(
-                                        new NameExpr("imports"),
-                                        "addGlobal",
-                                        NodeList.nodeList(importGlobal)));
-                    }
-                    for (var importMemory : importedMemories) {
-                        toImportValuesBody.addStatement(
-                                new MethodCallExpr(
-                                        new NameExpr("imports"),
-                                        "addMemory",
-                                        NodeList.nodeList(importMemory)));
-                    }
-                    for (var importFunction : importedFunctions) {
-                        toImportValuesBody.addStatement(
-                                new MethodCallExpr(
-                                        new NameExpr("imports"),
-                                        "addFunction",
-                                        NodeList.nodeList(importFunction)));
-                    }
                 }
                 var toImportsBuilder = new MethodCallExpr(new NameExpr("imports"), "build");
                 toImportValuesBody.addStatement(new ReturnStmt(toImportsBuilder));
+
+                var toImportValuesMethod =
+                        importsInterface.addMethod("toImportValues", Modifier.Keyword.DEFAULT);
+                importsCu.addImport("com.dylibso.chicory.runtime.ImportValues");
+                toImportValuesMethod.setType("ImportValues");
+                toImportValuesMethod.setBody(toImportValuesBody);
             }
         }
 
