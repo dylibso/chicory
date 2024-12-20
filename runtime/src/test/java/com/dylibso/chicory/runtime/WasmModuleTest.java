@@ -206,13 +206,7 @@ public class WasmModuleTest {
                 .withMemoryFactory(
                         limits -> {
                             memoryCreated.set(true);
-                            return new ByteBufferMemory(limits) {
-                                // example override
-                                @Override
-                                public int pages() {
-                                    return 0;
-                                }
-                            };
+                            return new ByteBufferMemory(limits);
                         })
                 .build();
         assertEquals(true, memoryCreated.get());
