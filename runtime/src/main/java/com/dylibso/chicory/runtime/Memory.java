@@ -9,14 +9,14 @@ public interface Memory {
     /**
      * A WebAssembly page size is 64KiB = 65,536 bytes.
      */
-    int PAGE_SIZE = 65536;
+    public static final int PAGE_SIZE = 65536;
 
     /**
      * Maximum number of pages allowed by the runtime.
      * WASM supports 2^16 pages, but we must limit based on the maximum JVM array size.
      * This limit is {@code Integer.MAX_VALUE / PAGE_SIZE}.
      */
-    int RUNTIME_MAX_PAGES = 32767;
+    public static final int RUNTIME_MAX_PAGES = 32767;
 
     int pages();
 
@@ -130,7 +130,6 @@ public interface Memory {
 
     void zero();
 
-    @SuppressWarnings("ByteBufferBackingArray")
     void fill(byte value, int fromIndex, int toIndex);
 
     default void copy(int dest, int src, int size) {

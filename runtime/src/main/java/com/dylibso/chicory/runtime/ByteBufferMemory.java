@@ -18,7 +18,7 @@ import java.util.function.Function;
  * Represents the linear memory in the Wasm program. Can be shared
  * reference b/w the host and the guest.
  */
-public class ByteBufferMemory implements Memory {
+public final class ByteBufferMemory implements Memory {
 
     private final MemoryLimits limits;
 
