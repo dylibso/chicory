@@ -3,6 +3,7 @@ package chicory.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.experimental.hostmodule.annotations.WasmModuleInterface;
+import com.dylibso.chicory.runtime.ByteBufferMemory;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.Parser;
@@ -19,7 +20,7 @@ class MixedImportsTest {
         private final Memory memory;
 
         public TestModule() {
-            memory = new Memory(new MemoryLimits(1, 2));
+            memory = new ByteBufferMemory(new MemoryLimits(1, 2));
             var module =
                     Parser.parse(
                             MixedImportsTest.class.getResourceAsStream("/mixed-imports.wat.wasm"));

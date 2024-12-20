@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.experimental.hostmodule.annotations.WasmModuleInterface;
+import com.dylibso.chicory.runtime.ByteBufferMemory;
 import com.dylibso.chicory.runtime.GlobalInstance;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
@@ -29,7 +30,7 @@ class AllImportsTest {
         public boolean func6Invoked;
 
         public TestModule() {
-            memory = new Memory(new MemoryLimits(1, 2));
+            memory = new ByteBufferMemory(new MemoryLimits(1, 2));
             table = new Table(ValueType.FuncRef, new TableLimits(10, 20));
             var module =
                     Parser.parse(AllImportsTest.class.getResourceAsStream("/all-imports.wat.wasm"));
