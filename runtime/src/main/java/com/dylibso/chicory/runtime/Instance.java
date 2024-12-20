@@ -6,6 +6,7 @@ import static com.dylibso.chicory.wasm.types.ExternalType.FUNCTION;
 import static com.dylibso.chicory.wasm.types.ExternalType.GLOBAL;
 import static com.dylibso.chicory.wasm.types.ExternalType.MEMORY;
 import static com.dylibso.chicory.wasm.types.ExternalType.TABLE;
+import static com.dylibso.chicory.wasm.types.ExternalType.TAG;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -33,6 +34,8 @@ import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
+import com.dylibso.chicory.wasm.types.TagSection;
+import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
@@ -57,6 +60,7 @@ public class Instance {
     private final ImportValues imports;
     private final TableInstance[] tables;
     private final Element[] elements;
+    private final TagType[] tags;
     private final Map<String, Export> exports;
     private final ExecutionListener listener;
     private final Exports fluentExports;
@@ -72,6 +76,7 @@ public class Instance {
             ImportValues imports,
             Table[] tables,
             Element[] elements,
+            TagType[] tags,
             Map<String, Export> exports,
             Function<Instance, Machine> machineFactory,
             boolean initialize,
@@ -92,6 +97,7 @@ public class Instance {
             this.tables[i] = new TableInstance(tables[i]);
         }
         this.elements = elements.clone();
+        this.tags = (tags == null) ? new TagType[0] : tags.clone();
         this.exports = exports;
         this.listener = listener;
         this.fluentExports = new Exports(this);
@@ -293,6 +299,13 @@ public class Instance {
 
     public void setElement(int idx, Element val) {
         elements[idx] = val;
+    }
+
+    public TagType tag(int idx) {
+        if (idx < imports.tagCount()) {
+            return imports.tag(idx).tag();
+        }
+        return tags[idx - imports.tagCount()];
     }
 
     public Machine getMachine() {
@@ -501,6 +514,8 @@ public class Instance {
             var hostGlobalIdx = 0;
             var hostMems = new ImportMemory[count.apply(MEMORY)];
             var hostMemIdx = 0;
+            var hostTags = new ImportTag[count.apply(TAG)];
+            var hostTagIdx = 0;
             if (hostMems.length + memoryCount > 1) {
                 throw new InvalidException("multiple memories");
             }
@@ -568,6 +583,18 @@ public class Instance {
                         }
                         hostTableIdx++;
                         break;
+                    case TAG:
+                        cnt = importValues.tagCount();
+                        for (int j = 0; j < cnt; j++) {
+                            ImportTag t = importValues.tag(j);
+                            if (checkName.apply(t)) {
+                                hostTags[hostTagIdx] = t;
+                                found = true;
+                                break;
+                            }
+                        }
+                        hostTagIdx++;
+                        break;
                 }
                 if (!found) {
                     throw new UnlinkableException(
@@ -583,6 +610,7 @@ public class Instance {
                     .addGlobal(hostGlobals)
                     .addMemory(hostMems)
                     .addTable(hostTables)
+                    .addTag(hostTags)
                     .build();
         }
 
@@ -738,6 +766,7 @@ public class Instance {
                     mappedHostImports,
                     tables,
                     elements,
+                    module.tagSection().map(TagSection::types).orElse(null),
                     exports,
                     machineFactory,
                     initialize,

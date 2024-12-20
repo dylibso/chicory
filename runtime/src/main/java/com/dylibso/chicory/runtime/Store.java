@@ -16,6 +16,7 @@ public class Store {
     final LinkedHashMap<QualifiedName, ImportGlobal> globals = new LinkedHashMap<>();
     final LinkedHashMap<QualifiedName, ImportMemory> memories = new LinkedHashMap<>();
     final LinkedHashMap<QualifiedName, ImportTable> tables = new LinkedHashMap<>();
+    final LinkedHashMap<QualifiedName, ImportTag> tags = new LinkedHashMap<>();
 
     public Store() {}
 
@@ -60,13 +61,24 @@ public class Store {
     }
 
     /**
+     * Add a tag to the store.
+     */
+    public Store addTag(ImportTag... tag) {
+        for (var t : tag) {
+            tags.put(new QualifiedName(t.module(), t.name()), t);
+        }
+        return this;
+    }
+
+    /**
      * Add the contents of a {@link ImportValues} instance to the store.
      */
     public Store addImportValues(ImportValues importValues) {
         return this.addGlobal(importValues.globals())
                 .addFunction(importValues.functions())
                 .addMemory(importValues.memories())
-                .addTable(importValues.tables());
+                .addTable(importValues.tables())
+                .addTag(importValues.tags());
     }
 
     /**
@@ -78,6 +90,7 @@ public class Store {
                 .withGlobals(globals.values())
                 .withMemories(memories.values())
                 .withTables(tables.values())
+                .withTags(tags.values())
                 .build();
     }
 
@@ -120,6 +133,10 @@ public class Store {
                 case GLOBAL:
                     GlobalInstance g = instance.global(export.index());
                     this.addGlobal(new ImportGlobal(name, exportName, g));
+                    break;
+
+                case TAG:
+                    this.addTag(new ImportTag(name, exportName, instance.tag(export.index())));
                     break;
             }
         }

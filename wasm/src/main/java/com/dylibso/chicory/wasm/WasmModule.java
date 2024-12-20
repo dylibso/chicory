@@ -15,6 +15,7 @@ import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.StartSection;
 import com.dylibso.chicory.wasm.types.TableSection;
+import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ public final class WasmModule {
     private final CodeSection codeSection;
     private final DataSection dataSection;
     private final Optional<DataCountSection> dataCountSection;
+    private final Optional<TagSection> tagSection;
     private final List<Integer> ignoredSections;
 
     private WasmModule(
@@ -53,6 +55,7 @@ public final class WasmModule {
             CodeSection codeSection,
             DataSection dataSection,
             Optional<DataCountSection> dataCountSection,
+            Optional<TagSection> tagSection,
             Map<String, CustomSection> customSections,
             List<Integer> ignoredSections) {
         this.typeSection = requireNonNull(typeSection);
@@ -67,6 +70,7 @@ public final class WasmModule {
         this.codeSection = requireNonNull(codeSection);
         this.dataSection = requireNonNull(dataSection);
         this.dataCountSection = dataCountSection;
+        this.tagSection = tagSection;
         this.customSections = Map.copyOf(customSections);
         this.ignoredSections = List.copyOf(ignoredSections);
     }
@@ -131,6 +135,10 @@ public final class WasmModule {
         return elementSection;
     }
 
+    public Optional<TagSection> tagSection() {
+        return tagSection;
+    }
+
     public List<Integer> ignoredSections() {
         return ignoredSections;
     }
@@ -152,6 +160,7 @@ public final class WasmModule {
         private CodeSection codeSection = CodeSection.builder().build();
         private DataSection dataSection = DataSection.builder().build();
         private Optional<DataCountSection> dataCountSection = Optional.empty();
+        private Optional<TagSection> tagSection = Optional.empty();
         private final Map<String, CustomSection> customSections = new HashMap<>();
         private final List<Integer> ignoredSections = new ArrayList<>();
         private boolean validate = true;
@@ -218,6 +227,11 @@ public final class WasmModule {
             return this;
         }
 
+        public Builder setTagSection(TagSection ts) {
+            this.tagSection = Optional.ofNullable(ts);
+            return this;
+        }
+
         public Builder addCustomSection(String name, CustomSection cs) {
             requireNonNull(name);
             requireNonNull(cs);
@@ -250,6 +264,7 @@ public final class WasmModule {
                             codeSection,
                             dataSection,
                             dataCountSection,
+                            tagSection,
                             customSections,
                             ignoredSections);
 
@@ -260,6 +275,7 @@ public final class WasmModule {
                 validator.validateGlobals();
                 validator.validateElements();
                 validator.validateData();
+                validator.validateTags();
             }
 
             return module;
@@ -288,6 +304,7 @@ public final class WasmModule {
                 && Objects.equals(codeSection, that.codeSection)
                 && Objects.equals(dataSection, that.dataSection)
                 && Objects.equals(dataCountSection, that.dataCountSection)
+                && Objects.equals(tagSection, that.tagSection)
                 && Objects.equals(ignoredSections, that.ignoredSections);
     }
 
@@ -305,6 +322,7 @@ public final class WasmModule {
                 elementSection,
                 codeSection,
                 dataSection,
-                dataCountSection);
+                dataCountSection,
+                tagSection);
     }
 }
