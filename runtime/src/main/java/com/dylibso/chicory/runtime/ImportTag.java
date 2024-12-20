@@ -1,13 +1,11 @@
 package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.wasm.types.TagType;
-
 public class ImportTag implements ImportValue {
     private final String module;
     private final String name;
-    private final TagType tag;
+    private final TagInstance tag;
 
-    public ImportTag(String module, String name, TagType tag) {
+    public ImportTag(String module, String name, TagInstance tag) {
         this.module = module;
         this.name = name;
         this.tag = tag;
@@ -28,7 +26,7 @@ public class ImportTag implements ImportValue {
         return Type.TAG;
     }
 
-    public TagType tag() {
+    public TagInstance tag() {
         return tag;
     }
 }

@@ -34,6 +34,7 @@ import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
+import com.dylibso.chicory.wasm.types.TagImport;
 import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.Value;
@@ -60,7 +61,7 @@ public class Instance {
     private final ImportValues imports;
     private final TableInstance[] tables;
     private final Element[] elements;
-    private final TagType[] tags;
+    private final TagInstance[] tags;
     private final Map<String, Export> exports;
     private final ExecutionListener listener;
     private final Exports fluentExports;
@@ -97,7 +98,10 @@ public class Instance {
             this.tables[i] = new TableInstance(tables[i]);
         }
         this.elements = elements.clone();
-        this.tags = (tags == null) ? new TagType[0] : tags.clone();
+        this.tags = (tags == null) ? new TagInstance[0] : new TagInstance[tags.length];
+        for (int i = 0; i < this.tags.length; i++) {
+            this.tags[i] = new TagInstance(tags[i], this);
+        }
         this.exports = exports;
         this.listener = listener;
         this.fluentExports = new Exports(this);
@@ -301,7 +305,7 @@ public class Instance {
         elements[idx] = val;
     }
 
-    public TagType tag(int idx) {
+    public TagInstance tag(int idx) {
         if (idx < imports.tagCount()) {
             return imports.tag(idx).tag();
         }
@@ -416,6 +420,32 @@ public class Instance {
             }
         }
 
+        private void validateHostTagType(TagImport i, ImportTag t) {
+            var expectedType = module.typeSection().getType(i.tagType().typeIdx());
+            var gotType = t.tag().instance().type(t.tag().tagType().typeIdx());
+            if (expectedType.params().size() != gotType.params().size()
+                    || expectedType.returns().size() != gotType.returns().size()) {
+                throw new UnlinkableException(
+                        "incompatible import type for tag " + t.module() + "." + t.name());
+            }
+            for (int j = 0; j < expectedType.params().size(); j++) {
+                var expected = expectedType.params().get(j);
+                var got = gotType.params().get(j);
+                if (expected != got) {
+                    throw new UnlinkableException(
+                            "incompatible import type for tag " + t.module() + "." + t.name());
+                }
+            }
+            for (int j = 0; j < expectedType.returns().size(); j++) {
+                var expected = expectedType.returns().get(j);
+                var got = gotType.returns().get(j);
+                if (expected != got) {
+                    throw new UnlinkableException(
+                            "incompatible import type for tag " + t.module() + "." + t.name());
+                }
+            }
+        }
+
         private void validateHostTableType(TableImport i, ImportTable t) {
             var minExpected = t.table().limits().min();
             var maxExpected = t.table().limits().max();
@@ -483,21 +513,31 @@ public class Instance {
                     validateNegativeImportType(moduleName, name, importValues.globals());
                     validateNegativeImportType(moduleName, name, importValues.memories());
                     validateNegativeImportType(moduleName, name, importValues.tables());
+                    validateNegativeImportType(moduleName, name, importValues.tags());
                     break;
                 case GLOBAL:
                     validateNegativeImportType(moduleName, name, importValues.functions());
                     validateNegativeImportType(moduleName, name, importValues.memories());
                     validateNegativeImportType(moduleName, name, importValues.tables());
+                    validateNegativeImportType(moduleName, name, importValues.tags());
                     break;
                 case MEMORY:
                     validateNegativeImportType(moduleName, name, importValues.functions());
                     validateNegativeImportType(moduleName, name, importValues.globals());
                     validateNegativeImportType(moduleName, name, importValues.tables());
+                    validateNegativeImportType(moduleName, name, importValues.tags());
                     break;
                 case TABLE:
                     validateNegativeImportType(moduleName, name, importValues.functions());
                     validateNegativeImportType(moduleName, name, importValues.globals());
                     validateNegativeImportType(moduleName, name, importValues.memories());
+                    validateNegativeImportType(moduleName, name, importValues.tags());
+                    break;
+                case TAG:
+                    validateNegativeImportType(moduleName, name, importValues.functions());
+                    validateNegativeImportType(moduleName, name, importValues.globals());
+                    validateNegativeImportType(moduleName, name, importValues.memories());
+                    validateNegativeImportType(moduleName, name, importValues.tables());
                     break;
             }
         }
@@ -588,6 +628,7 @@ public class Instance {
                         for (int j = 0; j < cnt; j++) {
                             ImportTag t = importValues.tag(j);
                             if (checkName.apply(t)) {
+                                validateHostTagType((TagImport) i, t);
                                 hostTags[hostTagIdx] = t;
                                 found = true;
                                 break;
