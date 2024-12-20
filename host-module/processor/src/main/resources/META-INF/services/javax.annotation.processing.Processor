@@ -1,1 +1,2 @@
 com.dylibso.chicory.experimental.hostmodule.processor.HostModuleProcessor
+com.dylibso.chicory.experimental.hostmodule.processor.WasmModuleProcessor
