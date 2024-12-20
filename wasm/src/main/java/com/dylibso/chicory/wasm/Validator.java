@@ -20,6 +20,7 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.TableImport;
+import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -352,6 +353,15 @@ final class Validator {
                     throw new InvalidException("unknown memory " + ads.index());
                 }
                 validateConstantExpression(ads.offsetInstructions(), ValueType.I32);
+            }
+        }
+    }
+
+    void validateTags() {
+        for (var tagType : module.tagSection().map(ts -> ts.types()).orElse(new TagType[0])) {
+            var type = module.typeSection().getType(tagType.typeIdx());
+            if (type.returns().size() > 0) {
+                throw new InvalidException("non-empty tag result type index: " + tagType.typeIdx());
             }
         }
     }

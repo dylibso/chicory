@@ -52,6 +52,9 @@ import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.TableSection;
+import com.dylibso.chicory.wasm.types.TagImport;
+import com.dylibso.chicory.wasm.types.TagSection;
+import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.UnknownCustomSection;
 import com.dylibso.chicory.wasm.types.Value;
@@ -150,6 +153,9 @@ public final class Parser {
                 break;
             case SectionId.DATA_COUNT:
                 module.setDataCountSection((DataCountSection) s);
+                break;
+            case SectionId.TAG:
+                module.setTagSection((TagSection) s);
                 break;
             default:
                 module.addIgnoredSection(s.sectionId());
@@ -315,6 +321,12 @@ public final class Parser {
                         {
                             var memorySection = parseMemorySection(buffer);
                             listener.onSection(memorySection);
+                            break;
+                        }
+                    case SectionId.TAG:
+                        {
+                            var tagSection = parseTagSection(buffer);
+                            listener.onSection(tagSection);
                             break;
                         }
                     case SectionId.GLOBAL:
@@ -546,6 +558,16 @@ public final class Parser {
                     var globalMut = MutabilityType.forId(readByte(buffer));
                     importSection.addImport(
                             new GlobalImport(moduleName, importName, globalMut, globalValType));
+                    break;
+                case TAG:
+                    try {
+                        var attribute = readByte(buffer);
+                        var tagTypeIdx = (int) readVarUInt32(buffer);
+                        importSection.addImport(
+                                new TagImport(moduleName, importName, attribute, tagTypeIdx));
+                    } catch (MalformedException e) {
+                        throw new MalformedException("malformed import kind", e);
+                    }
                     break;
                 default:
                     throw new MalformedException("malformed import kind");
@@ -975,6 +997,17 @@ public final class Parser {
     private static DataCountSection parseDataCountSection(ByteBuffer buffer) {
         var dataCount = readVarUInt32(buffer);
         return DataCountSection.builder().withDataCount((int) dataCount).build();
+    }
+
+    private static TagSection parseTagSection(ByteBuffer buffer) {
+        var tagsCount = readVarUInt32(buffer);
+        var tagSection = TagSection.builder();
+        for (int i = 0; i < tagsCount; i++) {
+            var attribute = readByte(buffer);
+            var typeIdx = (int) readVarUInt32(buffer);
+            tagSection.addTagType(new TagType(attribute, typeIdx));
+        }
+        return tagSection.build();
     }
 
     private static Instruction parseInstruction(ByteBuffer buffer) {
