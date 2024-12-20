@@ -14,6 +14,7 @@ public final class SectionId {
     public static final int CODE = 10;
     public static final int DATA = 11;
     public static final int DATA_COUNT = 12;
+    public static final int TAG = 13;
 
     private SectionId() {}
 }

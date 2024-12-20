@@ -9,21 +9,25 @@ public final class ImportValues {
     private static final ImportGlobal[] NO_EXTERNAL_GLOBALS = new ImportGlobal[0];
     private static final ImportMemory[] NO_EXTERNAL_MEMORIES = new ImportMemory[0];
     private static final ImportTable[] NO_EXTERNAL_TABLES = new ImportTable[0];
+    private static final ImportTag[] NO_EXTERNAL_TAGS = new ImportTag[0];
 
     private final ImportFunction[] functions;
     private final ImportGlobal[] globals;
     private final ImportMemory[] memories;
     private final ImportTable[] tables;
+    private final ImportTag[] tags;
 
     private ImportValues(
             ImportFunction[] functions,
             ImportGlobal[] globals,
             ImportMemory[] memories,
-            ImportTable[] tables) {
+            ImportTable[] tables,
+            ImportTag[] tags) {
         this.functions = functions.clone();
         this.globals = globals.clone();
         this.memories = memories.clone();
         this.tables = tables.clone();
+        this.tags = tags.clone();
     }
 
     public ImportFunction[] functions() {
@@ -74,6 +78,18 @@ public final class ImportValues {
         return tables[idx];
     }
 
+    public ImportTag[] tags() {
+        return tags;
+    }
+
+    public int tagCount() {
+        return tags.length;
+    }
+
+    public ImportTag tag(int idx) {
+        return tags[idx];
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -87,6 +103,7 @@ public final class ImportValues {
         private Collection<ImportGlobal> globals;
         private Collection<ImportMemory> memories;
         private Collection<ImportTable> tables;
+        private Collection<ImportTag> tags;
 
         Builder() {}
 
@@ -142,6 +159,19 @@ public final class ImportValues {
             return this;
         }
 
+        public Builder withTags(Collection<ImportTag> tags) {
+            this.tags = tags;
+            return this;
+        }
+
+        public Builder addTag(ImportTag... tag) {
+            if (this.tags == null) {
+                this.tags = new ArrayList<>();
+            }
+            Collections.addAll(this.tags, tag);
+            return this;
+        }
+
         public ImportValues build() {
             final ImportValues importValues =
                     new ImportValues(
@@ -156,7 +186,8 @@ public final class ImportValues {
                                     : memories.toArray(NO_EXTERNAL_MEMORIES),
                             tables == null
                                     ? NO_EXTERNAL_TABLES
-                                    : tables.toArray(NO_EXTERNAL_TABLES));
+                                    : tables.toArray(NO_EXTERNAL_TABLES),
+                            tags == null ? NO_EXTERNAL_TAGS : tags.toArray(NO_EXTERNAL_TAGS));
             return importValues;
         }
     }
