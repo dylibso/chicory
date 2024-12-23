@@ -139,7 +139,6 @@
             <wast>table_set.wast</wast>
             <wast>table_size.wast</wast>
             <wast>token.wast</wast>
-            <wast>tokens.wast</wast>
             <wast>traps.wast</wast>
             <wast>type.wast</wast>
             <wast>unreachable.wast</wast>
@@ -157,6 +156,8 @@
           <excludedUnlinkableWasts/>
           <excludedUninstantiableWasts/>
           <excludedWasts>
+            <!-- obsolete-keywords is only stressing the wat parser -->
+            <wast>obsolete-keywords.wast</wast>
             <wast>simd_address.wast</wast>
             <wast>simd_align.wast</wast>
             <wast>simd_bit_shift.wast</wast>
