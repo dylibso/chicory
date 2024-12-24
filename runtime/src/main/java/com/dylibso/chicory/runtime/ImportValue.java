@@ -14,7 +14,8 @@ public interface ImportValue {
         FUNCTION,
         GLOBAL,
         MEMORY,
-        TABLE
+        TABLE,
+        TAG
     }
 
     String module();
