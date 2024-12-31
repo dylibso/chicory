@@ -45,10 +45,7 @@ public class TestGenMojo extends AbstractMojo {
     /**
      * Repository of the testsuite.
      */
-    // TODO: wabt doesn't handle correctly the syntax of if.wast here:
-    // https://github.com/WebAssembly/testsuite/blame/dc27dad3e34e466bdbfea32fe3c73f5e31f88560/if.wast#L528
-    // restore 'main'
-    @Parameter(required = true, defaultValue = "c2a67a575ddc815ff2212f68301d333e5e30a923")
+    @Parameter(required = true, defaultValue = "main")
     private String testSuiteRepoRef;
 
     /**

@@ -46,6 +46,7 @@ public class TableInstance {
         Arrays.fill(newInstances, oldSize, targetSize, instance);
         refs = newRefs;
         instances = newInstances;
+        table.limits().grow(size);
         return oldSize;
     }
 
