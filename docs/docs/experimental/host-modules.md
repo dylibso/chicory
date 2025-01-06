@@ -85,7 +85,28 @@ The following conversions are supported:
 | `float`           | `f32`      |
 | `double`          | `f64`      |
 
-### Enabling the Annotation Processor
+# WasmModuleInterface
+
+If you already have a Wasm module and want to generate scaffolded Java code to interact with it, you can use the `@WasmModuleInterface` annotation.
+
+```java
+@WasmModuleInterface("demo.wasm")
+public final class Demo {}
+```
+
+The annotation accepts a single argument, which can be either:
+
+- The location of the Wasm module on the current classpath (transitive references are not supported).
+- An absolute URI pointing to the Wasm module, in the form of file://....
+
+This annotation generates several Java interfaces, depending on the provided module:
+
+- `ModuleExports`: Represents the Wasm module's exported functions, mapped to typed Java parameters and return values.
+- `ModuleImports`: Represents the module's imported host functions and includes a convenient `toImportValues()` method to obtain ImportValues after implementing the interfaces.
+
+You can find examples of how to use the generated code in the host-module/it folder of the repository.
+
+## Enabling the Annotation Processor
 
 In order to use host modules, you need to import the relevant annotations, e.g. in Maven:
 
