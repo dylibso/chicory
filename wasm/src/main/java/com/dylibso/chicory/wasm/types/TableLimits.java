@@ -9,7 +9,7 @@ public class TableLimits {
 
     private static final TableLimits UNBOUNDED = new TableLimits(0);
 
-    private final long min;
+    private long min;
     private final long max;
 
     public TableLimits(long min) {
@@ -22,6 +22,10 @@ public class TableLimits {
         }
         this.min = Math.min(Math.max(0, min), LIMIT_MAX);
         this.max = Math.min(max, LIMIT_MAX);
+    }
+
+    public void grow(int size) {
+        min += size;
     }
 
     public long min() {

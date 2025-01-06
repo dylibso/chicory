@@ -1279,7 +1279,11 @@ final class Validator {
 
     private void VALIDATE_CALL_INDIRECT(int typeId, int tableId) {
         popVal(ValueType.I32);
-        getTableType(tableId);
+        var tableType = getTableType(tableId);
+        if (tableType != ValueType.FuncRef) {
+            throw new InvalidException(
+                    "type mismatch expected a table of FuncRefs buf found " + tableType);
+        }
         var types = getType(typeId);
         for (int j = types.params().size() - 1; j >= 0; j--) {
             popVal(types.params().get(j));

@@ -379,16 +379,31 @@ public final class Parser {
 
     // https://webassembly.github.io/spec/core/binary/modules.html#binary-module
     private static class SectionsValidator {
-        private boolean hasStart;
+        private List<Integer> sectionsOrder = new ArrayList<>();
+        private int maxSection = -1;
 
-        SectionsValidator() {}
+        SectionsValidator() {
+            sectionsOrder.add(SectionId.TYPE);
+            sectionsOrder.add(SectionId.IMPORT);
+            sectionsOrder.add(SectionId.FUNCTION);
+            sectionsOrder.add(SectionId.TABLE);
+            sectionsOrder.add(SectionId.MEMORY);
+            sectionsOrder.add(SectionId.GLOBAL);
+            sectionsOrder.add(SectionId.EXPORT);
+            sectionsOrder.add(SectionId.START);
+            sectionsOrder.add(SectionId.ELEMENT);
+            sectionsOrder.add(SectionId.DATA_COUNT);
+            sectionsOrder.add(SectionId.CODE);
+            sectionsOrder.add(SectionId.DATA);
+        }
 
         public void validateSectionType(byte sectionId) {
-            if (sectionId == SectionId.START) {
-                if (hasStart) {
+            if (sectionsOrder.contains((int) sectionId)) {
+                if (maxSection < 0 || sectionsOrder.indexOf((int) sectionId) > maxSection) {
+                    maxSection = sectionsOrder.indexOf((int) sectionId);
+                } else {
                     throw new MalformedException("unexpected content after last section");
                 }
-                hasStart = true;
             }
         }
     }
@@ -908,6 +923,11 @@ public final class Parser {
                 instructions.add(instruction);
             } while (!lastInstruction);
 
+            // unbalanced END opcodes
+            if (depth > 0) {
+                throw new MalformedException("unexpected end");
+            }
+
             var functionBody =
                     new FunctionBody(
                             locals,
@@ -1057,9 +1077,17 @@ public final class Parser {
                 align = 64;
                 break;
         }
-        if ((align > 0) && ((1 << operands[0]) > (align >> 3))) {
-            throw new InvalidException(
-                    "alignment must not be larger than natural alignment (" + operands[0] + ")");
+
+        if (align > 0) {
+            var operand0 = ((int) operands[0]);
+            var offset = 1 << operand0;
+
+            if (operand0 >= align) {
+                throw new MalformedException("malformed memop flags");
+            } else if (offset < 0 || offset > (align >> 3)) {
+                throw new InvalidException(
+                        "alignment must not be larger than natural alignment (" + operand0 + ")");
+            }
         }
     }
 
