@@ -5,7 +5,7 @@ import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 
 public class GlobalInstance {
-    private long value;
+    private long[] values;
     private final ValueType valueType;
     private Instance instance;
     private final MutabilityType mutabilityType;
@@ -15,13 +15,23 @@ public class GlobalInstance {
     }
 
     public GlobalInstance(Value value, MutabilityType mutabilityType) {
-        this.value = value.raw();
+        this.values = new long[] {value.raw()};
         this.valueType = value.type();
         this.mutabilityType = mutabilityType;
     }
 
+    public GlobalInstance(long[] values, ValueType valueType, MutabilityType mutabilityType) {
+        this.values = values.clone();
+        this.valueType = valueType;
+        this.mutabilityType = mutabilityType;
+    }
+
+    public long[] getValues() {
+        return values;
+    }
+
     public long getValue() {
-        return value;
+        return values[0];
     }
 
     public ValueType getType() {
@@ -31,11 +41,15 @@ public class GlobalInstance {
     public void setValue(Value value) {
         // globals can not be type polimorphic
         assert (value.type() == valueType);
-        this.value = value.raw();
+        this.values[0] = value.raw();
     }
 
     public void setValue(long value) {
-        this.value = value;
+        this.values[0] = value;
+    }
+
+    public void setValues(long[] values) {
+        this.values = values;
     }
 
     public Instance getInstance() {

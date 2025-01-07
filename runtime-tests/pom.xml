@@ -328,7 +328,17 @@
                 <wast>ref_null.wast</wast>
                 <wast>return.wast</wast>
                 <wast>select.wast</wast>
+                <wast>simd_address.wast</wast>
+                <wast>simd_align.wast</wast>
+                <wast>simd_const.wast</wast>
+                <wast>simd_linking.wast</wast>
                 <wast>simd_load.wast</wast>
+                <wast>simd_load_zero.wast</wast>
+                <wast>simd_store.wast</wast>
+                <wast>simd_store16_lane.wast</wast>
+                <wast>simd_store32_lane.wast</wast>
+                <wast>simd_store64_lane.wast</wast>
+                <wast>simd_store8_lane.wast</wast>
                 <wast>skip-stack-guard-page.wast</wast>
                 <wast>stack.wast</wast>
                 <wast>start.wast</wast>
@@ -363,12 +373,9 @@
               <excludedWasts>
                 <!-- obsolete-keywords is only stressing the wat parser -->
                 <wast>obsolete-keywords.wast</wast>
-                <wast>simd_address.wast</wast>
-                <wast>simd_align.wast</wast>
                 <wast>simd_bit_shift.wast</wast>
                 <wast>simd_bitwise.wast</wast>
                 <wast>simd_boolean.wast</wast>
-                <wast>simd_const.wast</wast>
                 <wast>simd_conversions.wast</wast>
                 <wast>simd_f32x4.wast</wast>
                 <wast>simd_f32x4_arith.wast</wast>
@@ -405,20 +412,13 @@
                 <wast>simd_i8x16_sat_arith.wast</wast>
                 <wast>simd_int_to_int_extend.wast</wast>
                 <wast>simd_lane.wast</wast>
-                <wast>simd_linking.wast</wast>
                 <wast>simd_load16_lane.wast</wast>
                 <wast>simd_load32_lane.wast</wast>
                 <wast>simd_load64_lane.wast</wast>
                 <wast>simd_load8_lane.wast</wast>
                 <wast>simd_load_extend.wast</wast>
                 <wast>simd_load_splat.wast</wast>
-                <wast>simd_load_zero.wast</wast>
                 <wast>simd_splat.wast</wast>
-                <wast>simd_store.wast</wast>
-                <wast>simd_store16_lane.wast</wast>
-                <wast>simd_store32_lane.wast</wast>
-                <wast>simd_store64_lane.wast</wast>
-                <wast>simd_store8_lane.wast</wast>
               </excludedWasts>
             </configuration>
             <executions>

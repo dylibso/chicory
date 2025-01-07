@@ -10,6 +10,7 @@ import static com.dylibso.chicory.wasm.Encoding.readVarSInt64;
 import static com.dylibso.chicory.wasm.Encoding.readVarUInt32;
 import static com.dylibso.chicory.wasm.WasmLimits.MAX_FUNCTION_LOCALS;
 import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
+import static com.dylibso.chicory.wasm.types.WasmEncoding.VARUINT;
 import static java.util.Objects.requireNonNull;
 
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
@@ -53,6 +54,7 @@ import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.TableSection;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.UnknownCustomSection;
+import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -1032,6 +1034,17 @@ public final class Parser {
                         }
                         break;
                     }
+                case V128:
+                    {
+                        byte[] bytes = new byte[16];
+                        for (var j = 0; j < 16; j++) {
+                            bytes[j] = readByte(buffer);
+                        }
+                        for (var val : Value.bytesToVec(bytes)) {
+                            operands.add(val);
+                        }
+                        break;
+                    }
             }
         }
         var operandsArray = new long[operands.size()];
@@ -1051,6 +1064,9 @@ public final class Parser {
             case I64_LOAD8_S:
             case I32_STORE8:
             case I64_STORE8:
+            case V128_LOAD8_SPLAT:
+            case V128_STORE8_LANE:
+            case V128_LOAD8_LANE:
                 align = 8;
                 break;
             case I32_LOAD16_U:
@@ -1059,6 +1075,9 @@ public final class Parser {
             case I64_LOAD16_S:
             case I32_STORE16:
             case I64_STORE16:
+            case V128_LOAD16_SPLAT:
+            case V128_STORE16_LANE:
+            case V128_LOAD16_LANE:
                 align = 16;
                 break;
             case I32_LOAD:
@@ -1068,13 +1087,29 @@ public final class Parser {
             case I64_STORE32:
             case I32_STORE:
             case F32_STORE:
+            case V128_LOAD32_SPLAT:
+            case V128_STORE32_LANE:
+            case V128_LOAD32_LANE:
                 align = 32;
                 break;
             case I64_LOAD:
             case F64_LOAD:
             case I64_STORE:
             case F64_STORE:
+            case V128_LOAD8x8_S:
+            case V128_LOAD8x8_U:
+            case V128_LOAD16x4_S:
+            case V128_LOAD16x4_U:
+            case V128_LOAD32x2_S:
+            case V128_LOAD32x2_U:
+            case V128_LOAD64_SPLAT:
+            case V128_STORE64_LANE:
+            case V128_LOAD64_LANE:
                 align = 64;
+                break;
+            case V128_LOAD:
+            case V128_STORE:
+                align = 128;
                 break;
         }
 

@@ -10,14 +10,16 @@ import java.util.List;
 final class ConstantEvaluators {
     private ConstantEvaluators() {}
 
-    public static long computeConstantValue(Instance instance, Instruction[] expr) {
+    public static long[] computeConstantValue(Instance instance, Instruction[] expr) {
         return computeConstantValue(instance, Arrays.asList(expr));
     }
 
-    public static long computeConstantValue(Instance instance, List<Instruction> expr) {
+    public static long[] computeConstantValue(Instance instance, List<Instruction> expr) {
         long tos = -1L;
         for (var instruction : expr) {
             switch (instruction.opcode()) {
+                case V128_CONST:
+                    return new long[] {instruction.operand(0), instruction.operand(1)};
                 case F32_CONST:
                 case F64_CONST:
                 case I32_CONST:
@@ -35,8 +37,7 @@ final class ConstantEvaluators {
                 case GLOBAL_GET:
                     {
                         var idx = (int) instruction.operand(0);
-                        tos = instance.global(idx).getValue();
-                        break;
+                        return instance.global(idx).getValues();
                     }
                 case END:
                     {
@@ -44,7 +45,7 @@ final class ConstantEvaluators {
                     }
             }
         }
-        return tos;
+        return new long[] {tos};
     }
 
     public static Instance computeConstantInstance(Instance instance, List<Instruction> expr) {

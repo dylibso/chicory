@@ -1,6 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+import static com.dylibso.chicory.wasm.types.ValueType.V128;
 import static com.dylibso.chicory.wasm.types.ValueType.sizeOf;
 import static java.util.Objects.requireNonNullElse;
 
@@ -1807,15 +1808,22 @@ public class InterpreterMachine implements Machine {
 
     private static void GLOBAL_SET(MStack stack, Instance instance, Operands operands) {
         var id = (int) operands.get(0);
-        var val = stack.pop();
-        instance.global(id).setValue(val);
+        if (instance.global(id).getType() != V128) {
+            var val = stack.pop();
+            instance.global(id).setValue(val);
+        } else {
+            var hi = stack.pop();
+            var low = stack.pop();
+            instance.global(id).setValues(new long[] {hi, low});
+        }
     }
 
     private static void GLOBAL_GET(MStack stack, Instance instance, Operands operands) {
         int idx = (int) operands.get(0);
-        var val = instance.global(idx).getValue();
 
-        stack.push(val);
+        for (var val : instance.global(idx).getValues()) {
+            stack.push(val);
+        }
     }
 
     private static void SELECT(MStack stack) {
@@ -2086,9 +2094,8 @@ public class InterpreterMachine implements Machine {
             return Value.EMPTY_VALUES;
         }
         var args = new long[sizeOf(params)];
-        for (var i = params.size(); i > 0; i--) {
-            var p = stack.pop();
-            args[i - 1] = p;
+        for (var i = 0; i < args.length; i++) {
+            args[args.length - i - 1] = stack.pop();
         }
         return args;
     }

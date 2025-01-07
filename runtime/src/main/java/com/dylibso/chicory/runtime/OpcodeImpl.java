@@ -855,7 +855,7 @@ public final class OpcodeImpl {
 
         for (int i = offset; i < end; i++) {
             var elem = instance.element(elementidx);
-            var val = (int) computeConstantValue(instance, elem.initializers().get(elemidx++));
+            var val = (int) computeConstantValue(instance, elem.initializers().get(elemidx++))[0];
             if (table.elementType() == ValueType.FuncRef) {
                 if (val > instance.functionCount()) {
                     throw new WasmRuntimeException("out of bounds table access");

@@ -72,7 +72,7 @@ public class WasmValue {
 
                         switch (laneType) {
                             case I8:
-                                sb.append("Byte.parseByte(\"" + v + "\")");
+                                sb.append("(byte) Integer.parseInt(\"" + v + "\")");
                                 break;
                             case I16:
                                 sb.append("Integer.parseUnsignedInt(\"" + v + "\")");

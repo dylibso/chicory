@@ -36,7 +36,9 @@ public class TestModule {
                     + "i32 constant out of range "
                     + "unknown label "
                     + "alignment "
-                    + "multiple start sections";
+                    + "multiple start sections"
+                    + "wrong number of lane literals"
+                    + "alignment must be a power of two";
 
     public static TestModule of(File file) {
         if (file.getName().endsWith(".wat")) {
