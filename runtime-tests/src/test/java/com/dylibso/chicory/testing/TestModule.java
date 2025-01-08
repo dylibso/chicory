@@ -38,7 +38,9 @@ public class TestModule {
                     + "alignment "
                     + "multiple start sections"
                     + "wrong number of lane literals"
-                    + "alignment must be a power of two";
+                    + "alignment must be a power of two"
+                    + "invalid lane length"
+                    + "malformed lane index";
 
     public static TestModule of(File file) {
         if (file.getName().endsWith(".wat")) {
