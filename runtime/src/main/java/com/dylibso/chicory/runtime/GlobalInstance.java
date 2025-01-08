@@ -5,7 +5,8 @@ import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 
 public class GlobalInstance {
-    private long[] values;
+    private long valueLow;
+    private long valueHigh;
     private final ValueType valueType;
     private Instance instance;
     private final MutabilityType mutabilityType;
@@ -15,23 +16,30 @@ public class GlobalInstance {
     }
 
     public GlobalInstance(Value value, MutabilityType mutabilityType) {
-        this.values = new long[] {value.raw()};
+        this.valueLow = value.raw();
+        this.valueHigh = 0;
         this.valueType = value.type();
         this.mutabilityType = mutabilityType;
     }
 
-    public GlobalInstance(long[] values, ValueType valueType, MutabilityType mutabilityType) {
-        this.values = values.clone();
+    public GlobalInstance(
+            long valueLow, long valueHigh, ValueType valueType, MutabilityType mutabilityType) {
+        this.valueLow = valueLow;
+        this.valueHigh = valueHigh;
         this.valueType = valueType;
         this.mutabilityType = mutabilityType;
     }
 
-    public long[] getValues() {
-        return values;
+    public long getValueLow() {
+        return valueLow;
+    }
+
+    public long getValueHigh() {
+        return valueHigh;
     }
 
     public long getValue() {
-        return values[0];
+        return valueLow;
     }
 
     public ValueType getType() {
@@ -41,15 +49,19 @@ public class GlobalInstance {
     public void setValue(Value value) {
         // globals can not be type polimorphic
         assert (value.type() == valueType);
-        this.values[0] = value.raw();
+        this.valueLow = value.raw();
     }
 
     public void setValue(long value) {
-        this.values[0] = value;
+        this.valueLow = value;
     }
 
-    public void setValues(long[] values) {
-        this.values = values;
+    public void setValueLow(long value) {
+        this.valueLow = value;
+    }
+
+    public void setValueHigh(long value) {
+        this.valueHigh = value;
     }
 
     public Instance getInstance() {

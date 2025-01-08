@@ -1812,17 +1812,19 @@ public class InterpreterMachine implements Machine {
             var val = stack.pop();
             instance.global(id).setValue(val);
         } else {
-            var hi = stack.pop();
             var low = stack.pop();
-            instance.global(id).setValues(new long[] {hi, low});
+            var high = stack.pop();
+            instance.global(id).setValueLow(low);
+            instance.global(id).setValueHigh(high);
         }
     }
 
     private static void GLOBAL_GET(MStack stack, Instance instance, Operands operands) {
         int idx = (int) operands.get(0);
 
-        for (var val : instance.global(idx).getValues()) {
-            stack.push(val);
+        stack.push(instance.global(idx).getValueLow());
+        if (instance.global(idx).getType() == V128) {
+            stack.push(instance.global(idx).getValueHigh());
         }
     }
 

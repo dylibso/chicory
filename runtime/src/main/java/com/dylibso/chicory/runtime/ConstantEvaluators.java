@@ -4,6 +4,7 @@ import static com.dylibso.chicory.wasm.types.OpCode.GLOBAL_GET;
 
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 import java.util.List;
 
@@ -37,7 +38,14 @@ final class ConstantEvaluators {
                 case GLOBAL_GET:
                     {
                         var idx = (int) instruction.operand(0);
-                        return instance.global(idx).getValues();
+                        if (instance.global(idx).getType() == ValueType.V128) {
+                            return new long[] {
+                                instance.global(idx).getValueLow(),
+                                instance.global(idx).getValueHigh()
+                            };
+                        } else {
+                            return new long[] {instance.global(idx).getValueLow()};
+                        }
                     }
                 case END:
                     {

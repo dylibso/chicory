@@ -131,7 +131,12 @@ public class Instance {
         for (var i = 0; i < globalInitializers.length; i++) {
             var g = globalInitializers[i];
             var values = computeConstantValue(this, g.initInstructions());
-            globals[i] = new GlobalInstance(values, g.valueType(), g.mutabilityType());
+            globals[i] =
+                    new GlobalInstance(
+                            values[0],
+                            (values.length > 1) ? values[1] : 0,
+                            g.valueType(),
+                            g.mutabilityType());
             globals[i].setInstance(this);
         }
 
