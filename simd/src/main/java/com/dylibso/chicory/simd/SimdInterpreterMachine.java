@@ -9,8 +9,12 @@ import com.dylibso.chicory.runtime.StackFrame;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.Value;
 import java.util.Deque;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import jdk.incubator.vector.LongVector;
+import jdk.incubator.vector.Vector;
 import jdk.incubator.vector.VectorOperators;
 
 public final class SimdInterpreterMachine extends InterpreterMachine {
@@ -34,8 +38,73 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             case OpCode.V128_LOAD:
                 V128_LOAD(stack, instance, operands);
                 break;
+            case OpCode.V128_LOAD32_ZERO:
+                V128_LOAD32_ZERO(stack, instance, operands);
+                break;
+            case OpCode.V128_LOAD64_ZERO:
+                V128_LOAD64_ZERO(stack, instance, operands);
+                break;
+            case OpCode.V128_STORE:
+                V128_STORE(stack, instance, operands);
+                break;
+            case OpCode.V128_STORE8_LANE:
+                STORE_LANE(
+                        stack,
+                        operands,
+                        (v, ptr) ->
+                                instance.memory()
+                                        .writeByte(
+                                                ptr,
+                                                v.reinterpretAsBytes()
+                                                        .lane((int) operands.get(2))));
+                break;
+            case OpCode.V128_STORE16_LANE:
+                STORE_LANE(
+                        stack,
+                        operands,
+                        (v, ptr) ->
+                                instance.memory()
+                                        .writeShort(
+                                                ptr,
+                                                v.reinterpretAsShorts()
+                                                        .lane((int) operands.get(2))));
+                break;
+            case OpCode.V128_STORE32_LANE:
+                STORE_LANE(
+                        stack,
+                        operands,
+                        (v, ptr) ->
+                                instance.memory()
+                                        .writeI32(
+                                                ptr,
+                                                v.reinterpretAsInts().lane((int) operands.get(2))));
+                break;
+            case OpCode.V128_STORE64_LANE:
+                STORE_LANE(
+                        stack,
+                        operands,
+                        (v, ptr) ->
+                                instance.memory()
+                                        .writeLong(
+                                                ptr,
+                                                v.reinterpretAsLongs()
+                                                        .lane((int) operands.get(2))));
+                break;
             case OpCode.I8x16_EXTRACT_LANE_S:
-                I8x16_EXTRACT_LANE_S(stack, operands);
+                EXTRACT_LANE(
+                        stack,
+                        operands,
+                        v -> (long) v.reinterpretAsBytes().lane((int) operands.get(0)));
+                break;
+            case OpCode.I32x4_EXTRACT_LANE:
+                EXTRACT_LANE(
+                        stack,
+                        operands,
+                        v -> (long) v.reinterpretAsInts().lane((int) operands.get(0)));
+                break;
+            case OpCode.I64x2_EXTRACT_LANE:
+                EXTRACT_LANE(
+                        stack, operands, v -> v.reinterpretAsLongs().lane((int) operands.get(0)));
                 break;
             case OpCode.V128_NOT:
                 V128_NOT(stack);
@@ -49,9 +118,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             case OpCode.I8x16_SUB:
                 I8x16_SUB(stack);
                 break;
-            case OpCode.I8x16_ADD:
-                I8x16_ADD(stack);
-                break;
             case OpCode.I8x16_SWIZZLE:
                 I8x16_SWIZZLE(stack);
                 break;
@@ -60,6 +126,15 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                 break;
             case OpCode.I8x16_SHL:
                 I8x16_SHL(stack);
+                break;
+            case OpCode.I8x16_ADD:
+                ADD(stack, LongVector::reinterpretAsBytes);
+                break;
+            case OpCode.I32x4_ADD:
+                ADD(stack, LongVector::reinterpretAsInts);
+                break;
+            case OpCode.I64x2_ADD:
+                ADD(stack, LongVector::reinterpretAsLongs);
                 break;
             case OpCode.F32x4_MUL:
                 F32x4_MUL(stack);
@@ -95,14 +170,59 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         stack.push(valLow);
     }
 
-    private static void I8x16_EXTRACT_LANE_S(MStack stack, Operands operands) {
-        var laneIdx = operands.get(0);
-        var offset = stack.size() - 2;
-        var v1 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
-                        .reinterpretAsBytes();
+    private static void V128_LOAD32_ZERO(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        var val = instance.memory().readInt(ptr);
+        var vals = Value.i32ToVec(new long[] {val, 0, 0, 0});
+        for (var v : vals) {
+            stack.push(v);
+        }
+    }
 
-        var result = v1.lane((int) laneIdx);
+    private static void V128_LOAD64_ZERO(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        var val = instance.memory().readLong(ptr);
+        var vals = Value.i64ToVec(new long[] {val, 0});
+        for (var v : vals) {
+            stack.push(v);
+        }
+    }
+
+    private static void V128_STORE(MStack stack, Instance instance, Operands operands) {
+        var valHigh = stack.pop();
+        var valLow = stack.pop();
+        var offset = operands.get(1);
+        var i = stack.pop();
+        // to let the bounds check kick in appropriately
+        var ptr = (i >= 0) ? (int) (offset + i) : (int) i;
+
+        instance.memory().writeLong(ptr, valLow);
+        instance.memory().writeLong(ptr + 8, valHigh);
+    }
+
+    private static void STORE_LANE(
+            MStack stack, Operands operands, BiConsumer<LongVector, Integer> store) {
+        var valHigh = stack.pop();
+        var valLow = stack.pop();
+
+        var offset = operands.get(1);
+        var i = stack.pop();
+        // to let the bounds check kick in appropriately
+        var ptr = (i >= 0) ? (int) (offset + i) : (int) i;
+
+        var result = LongVector.fromArray(LongVector.SPECIES_128, new long[] {valLow, valHigh}, 0);
+
+        store.accept(result, ptr);
+    }
+
+    private static void EXTRACT_LANE(
+            MStack stack, Operands operands, Function<LongVector, Long> extract) {
+        var offset = stack.size() - 2;
+        var result =
+                extract.apply(LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset));
+
+        // consume one element
+        stack.pop();
         stack.array()[stack.size() - 1] = result;
     }
 
@@ -125,18 +245,19 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
-    private static void I8x16_ADD(MStack stack) {
+    private static void ADD(MStack stack, Function<LongVector, Vector> reinterpret) {
         var v1High = stack.pop();
         var v1Low = stack.pop();
 
         var offset = stack.size() - 2;
 
         var v1 =
-                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, offset)
-                        .reinterpretAsBytes();
+                reinterpret.apply(
+                        LongVector.fromArray(
+                                LongVector.SPECIES_128, new long[] {v1Low, v1High}, offset));
         var v2 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
-                        .reinterpretAsBytes();
+                reinterpret.apply(
+                        LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset));
 
         var result = v1.add(v2).reinterpretAsLongs().toArray();
 

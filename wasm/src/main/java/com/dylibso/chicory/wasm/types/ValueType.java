@@ -1,6 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
 import com.dylibso.chicory.wasm.MalformedException;
+import java.util.List;
 
 /**
  * The possible WASM value types.
@@ -160,6 +161,18 @@ public enum ValueType {
             default:
                 throw new MalformedException("malformed reference type " + id);
         }
+    }
+
+    public static int sizeOf(List<ValueType> args) {
+        int total = 0;
+        for (var a : args) {
+            if (a == ValueType.V128) {
+                total += 2;
+            } else {
+                total += 1;
+            }
+        }
+        return total;
     }
 
     /**

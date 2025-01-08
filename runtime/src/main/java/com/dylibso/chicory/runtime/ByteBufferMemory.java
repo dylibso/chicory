@@ -90,7 +90,7 @@ public final class ByteBufferMemory implements Memory {
                 var segment = (ActiveDataSegment) s;
                 var offsetExpr = segment.offsetInstructions();
                 var data = segment.data();
-                var offset = (int) computeConstantValue(instance, offsetExpr);
+                var offset = (int) computeConstantValue(instance, offsetExpr)[0];
                 checkBounds(
                         offset,
                         data.length,

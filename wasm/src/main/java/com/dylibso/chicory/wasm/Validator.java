@@ -231,6 +231,12 @@ final class Validator {
         }
     }
 
+    private void validateLane(int id, int max) {
+        if (id < 0 || id >= max) {
+            throw new InvalidException("invalid lane index " + id + " max is " + max);
+        }
+    }
+
     private void validateDataSegment(int idx) {
         if (idx < 0 || idx >= module.dataSection().dataSegmentCount()) {
             throw new InvalidException("unknown data segment " + idx);
@@ -420,6 +426,10 @@ final class Validator {
                     break;
                 case F64_CONST:
                     exprType = ValueType.F64;
+                    constInstrCount++;
+                    break;
+                case V128_CONST:
+                    exprType = ValueType.V128;
                     constInstrCount++;
                     break;
                 case REF_NULL:
@@ -657,7 +667,29 @@ final class Validator {
                 case I64_STORE32:
                 case F32_STORE:
                 case F64_STORE:
+                case V128_STORE:
                     validateMemory(0);
+                    break;
+                default:
+                    break;
+            }
+
+            switch (op.opcode()) {
+                case V128_LOAD8_LANE:
+                case V128_STORE8_LANE:
+                    validateLane((int) op.operand(2), 16);
+                    break;
+                case V128_LOAD16_LANE:
+                case V128_STORE16_LANE:
+                    validateLane((int) op.operand(2), 8);
+                    break;
+                case V128_LOAD32_LANE:
+                case V128_STORE32_LANE:
+                    validateLane((int) op.operand(2), 4);
+                    break;
+                case V128_LOAD64_LANE:
+                case V128_STORE64_LANE:
+                    validateLane((int) op.operand(2), 2);
                     break;
                 default:
                     break;
@@ -1197,6 +1229,18 @@ final class Validator {
                         break;
                     }
                 case V128_LOAD:
+                case V128_LOAD8x8_S:
+                case V128_LOAD8x8_U:
+                case V128_LOAD16x4_S:
+                case V128_LOAD16x4_U:
+                case V128_LOAD32x2_S:
+                case V128_LOAD32x2_U:
+                case V128_LOAD8_SPLAT:
+                case V128_LOAD16_SPLAT:
+                case V128_LOAD32_SPLAT:
+                case V128_LOAD64_SPLAT:
+                case V128_LOAD32_ZERO:
+                case V128_LOAD64_ZERO:
                     {
                         popVal(ValueType.I32);
                         pushVal(ValueType.V128);
@@ -1209,9 +1253,16 @@ final class Validator {
                     }
                 case I8x16_ALL_TRUE:
                 case I8x16_EXTRACT_LANE_S:
+                case I32x4_EXTRACT_LANE:
                     {
                         popVal(ValueType.V128);
                         pushVal(ValueType.I32);
+                        break;
+                    }
+                case I64x2_EXTRACT_LANE:
+                    {
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.I64);
                         break;
                     }
                 case I8x16_EQ:
@@ -1220,6 +1271,8 @@ final class Validator {
                 case I8x16_SWIZZLE:
                 case F32x4_MUL:
                 case F32x4_MIN:
+                case I32x4_ADD:
+                case I64x2_ADD:
                     {
                         popVal(ValueType.V128);
                         popVal(ValueType.V128);
@@ -1247,6 +1300,26 @@ final class Validator {
                     {
                         popVal(ValueType.I32);
                         popVal(ValueType.V128);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
+                case V128_STORE:
+                case V128_STORE8_LANE:
+                case V128_STORE16_LANE:
+                case V128_STORE32_LANE:
+                case V128_STORE64_LANE:
+                    {
+                        popVal(ValueType.V128);
+                        popVal(ValueType.I32);
+                        break;
+                    }
+                case V128_LOAD8_LANE:
+                case V128_LOAD16_LANE:
+                case V128_LOAD32_LANE:
+                case V128_LOAD64_LANE:
+                    {
+                        popVal(ValueType.V128);
+                        popVal(ValueType.I32);
                         pushVal(ValueType.V128);
                         break;
                     }

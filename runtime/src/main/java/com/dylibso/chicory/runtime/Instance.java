@@ -33,7 +33,6 @@ import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -106,7 +105,7 @@ public class Instance {
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
                 var table = table(ae.tableIndex());
-                int offset = (int) computeConstantValue(this, ae.offset());
+                int offset = (int) computeConstantValue(this, ae.offset())[0];
 
                 List<List<Instruction>> initializers = ae.initializers();
                 if (offset > table.limits().min()
@@ -120,10 +119,10 @@ public class Instance {
                     var inst = computeConstantInstance(this, init);
 
                     if (ae.type() == ValueType.FuncRef) {
-                        table.setRef(index, (int) value, inst);
+                        table.setRef(index, (int) value[0], inst);
                     } else {
                         assert ae.type() == ValueType.ExternRef;
-                        table.setRef(index, (int) value, inst);
+                        table.setRef(index, (int) value[0], inst);
                     }
                 }
             }
@@ -131,8 +130,13 @@ public class Instance {
 
         for (var i = 0; i < globalInitializers.length; i++) {
             var g = globalInitializers[i];
-            var value = computeConstantValue(this, g.initInstructions());
-            globals[i] = new GlobalInstance(new Value(g.valueType(), value), g.mutabilityType());
+            var values = computeConstantValue(this, g.initInstructions());
+            globals[i] =
+                    new GlobalInstance(
+                            values[0],
+                            (values.length > 1) ? values[1] : 0,
+                            g.valueType(),
+                            g.mutabilityType());
             globals[i].setInstance(this);
         }
 
