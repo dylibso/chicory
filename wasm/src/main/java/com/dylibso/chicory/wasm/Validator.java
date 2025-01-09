@@ -1315,6 +1315,17 @@ final class Validator {
                 case I16x8_REPLACE_LANE:
                 case I32x4_REPLACE_LANE:
                 case I8x16_SHL:
+                case I8x16_SHR_S:
+                case I8x16_SHR_U:
+                case I16x8_SHL:
+                case I16x8_SHR_S:
+                case I16x8_SHR_U:
+                case I32x4_SHL:
+                case I32x4_SHR_S:
+                case I32x4_SHR_U:
+                case I64x2_SHL:
+                case I64x2_SHR_S:
+                case I64x2_SHR_U:
                     {
                         popVal(ValueType.I32);
                         popVal(ValueType.V128);
