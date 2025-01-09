@@ -17,9 +17,8 @@ public class InterruptionTest {
         var instance =
                 Instance.builder(
                                 Parser.parse(
-                                        ClassLoader.getSystemClassLoader()
-                                                .getResourceAsStream(
-                                                        "compiled/infinite-loop.c.wasm")))
+                                        InterruptionTest.class.getResourceAsStream(
+                                                "/compiled/infinite-loop.c.wasm")))
                         .build();
         var function = instance.export("run");
         assertInterruption(function::apply);
@@ -30,8 +29,8 @@ public class InterruptionTest {
         var instance =
                 Instance.builder(
                                 Parser.parse(
-                                        ClassLoader.getSystemClassLoader()
-                                                .getResourceAsStream("compiled/power.c.wasm")))
+                                        InterruptionTest.class.getResourceAsStream(
+                                                "/compiled/power.c.wasm")))
                         .build();
         var function = instance.export("run");
         assertInterruption(() -> function.apply(100));
