@@ -317,16 +317,18 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
     }
 
     private static void V128_BITSELECT(MStack stack) {
-        // https://github.com/tetratelabs/wazero/blob/58488880a334e8bda5be0d715a24d8ddeb34c725/internal/engine/interpreter/interpreter.go#L2378C7-L2384
         var cHi = stack.pop();
         var cLo = stack.pop();
-        var x2Hi = stack.pop();
-        var x2Lo = stack.pop();
         var x1Hi = stack.pop();
         var x1Lo = stack.pop();
-        // v128.or(v128.and(v1, c), v128.and(v2, v128.not(c)))
-        stack.push((x1Lo & cLo) | (x2Lo & (cLo ^ 0xFFFFFFFFFFFFFFFFL)));
-        stack.push((x1Hi & cHi) | (x2Hi & (cHi ^ 0xFFFFFFFFFFFFFFFFL)));
+
+        var m = LongVector.fromArray(LongVector.SPECIES_128, new long[] {cLo, cHi}, 0);
+        var v1 = LongVector.fromArray(LongVector.SPECIES_128, new long[] {x1Lo, x1Hi}, 0);
+        var v2 = LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2);
+
+        var result = v1.bitwiseBlend(v2, m).toArray();
+
+        System.arraycopy(result, 0, stack.array(), stack.size() - 2, 2);
     }
 
     private static void F32x4_MUL(MStack stack) {
