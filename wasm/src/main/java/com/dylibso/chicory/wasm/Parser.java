@@ -1044,6 +1044,9 @@ public final class Parser {
         var operands = new ArrayList<Long>();
         for (var sig : signature) {
             switch (sig) {
+                case BYTE:
+                    operands.add(Byte.toUnsignedLong(readByte(buffer)));
+                    break;
                 case VARUINT:
                     operands.add(readVarUInt32(buffer));
                     break;

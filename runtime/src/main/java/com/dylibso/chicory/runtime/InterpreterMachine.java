@@ -1812,8 +1812,8 @@ public class InterpreterMachine implements Machine {
             var val = stack.pop();
             instance.global(id).setValue(val);
         } else {
-            var low = stack.pop();
             var high = stack.pop();
+            var low = stack.pop();
             instance.global(id).setValueLow(low);
             instance.global(id).setValueHigh(high);
         }

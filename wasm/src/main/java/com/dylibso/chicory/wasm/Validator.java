@@ -21,6 +21,7 @@ import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TagType;
+import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -701,6 +702,34 @@ final class Validator {
                 case V128_STORE64_LANE:
                     validateLane((int) op.operand(2), 2);
                     break;
+                case I8x16_REPLACE_LANE:
+                case I8x16_EXTRACT_LANE_S:
+                case I8x16_EXTRACT_LANE_U:
+                    validateLane((int) op.operand(0), 16);
+                    break;
+                case I16x8_REPLACE_LANE:
+                case I16x8_EXTRACT_LANE_S:
+                case I16x8_EXTRACT_LANE_U:
+                    validateLane((int) op.operand(0), 8);
+                    break;
+                case I32x4_REPLACE_LANE:
+                case F32x4_REPLACE_LANE:
+                case I32x4_EXTRACT_LANE:
+                case F32x4_EXTRACT_LANE:
+                    validateLane((int) op.operand(0), 4);
+                    break;
+                case I64x2_REPLACE_LANE:
+                case F64x2_REPLACE_LANE:
+                case I64x2_EXTRACT_LANE:
+                case F64x2_EXTRACT_LANE:
+                    validateLane((int) op.operand(0), 2);
+                    break;
+                case I8x16_SHUFFLE:
+                    var operands = Value.vecTo8(new long[] {op.operand(0), op.operand(1)});
+                    for (int j = 0; j < 16; j++) {
+                        validateLane(operands[j], 32);
+                    }
+                    break;
                 default:
                     break;
             }
@@ -1251,8 +1280,29 @@ final class Validator {
                 case V128_LOAD64_SPLAT:
                 case V128_LOAD32_ZERO:
                 case V128_LOAD64_ZERO:
+                case I8x16_SPLAT:
+                case I16x8_SPLAT:
+                case I32x4_SPLAT:
                     {
                         popVal(ValueType.I32);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
+                case F32x4_SPLAT:
+                    {
+                        popVal(ValueType.F32);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
+                case I64x2_SPLAT:
+                    {
+                        popVal(ValueType.I64);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
+                case F64x2_SPLAT:
+                    {
+                        popVal(ValueType.F64);
                         pushVal(ValueType.V128);
                         break;
                     }
@@ -1261,12 +1311,52 @@ final class Validator {
                         pushVal(ValueType.V128);
                         break;
                     }
+                case I8x16_REPLACE_LANE:
+                case I16x8_REPLACE_LANE:
+                case I32x4_REPLACE_LANE:
+                case I8x16_SHL:
+                    {
+                        popVal(ValueType.I32);
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
+                case I64x2_REPLACE_LANE:
+                    {
+                        popVal(ValueType.I64);
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
+                case F32x4_REPLACE_LANE:
+                    {
+                        popVal(ValueType.F32);
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
+                case F64x2_REPLACE_LANE:
+                    {
+                        popVal(ValueType.F64);
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.V128);
+                        break;
+                    }
                 case I8x16_ALL_TRUE:
                 case I8x16_EXTRACT_LANE_S:
+                case I8x16_EXTRACT_LANE_U:
+                case I16x8_EXTRACT_LANE_S:
+                case I16x8_EXTRACT_LANE_U:
                 case I32x4_EXTRACT_LANE:
                     {
                         popVal(ValueType.V128);
                         pushVal(ValueType.I32);
+                        break;
+                    }
+                case F32x4_EXTRACT_LANE:
+                    {
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.F32);
                         break;
                     }
                 case I64x2_EXTRACT_LANE:
@@ -1275,9 +1365,17 @@ final class Validator {
                         pushVal(ValueType.I64);
                         break;
                     }
+                case F64x2_EXTRACT_LANE:
+                    {
+                        popVal(ValueType.V128);
+                        pushVal(ValueType.F64);
+                        break;
+                    }
+                case I8x16_SHUFFLE:
                 case I8x16_EQ:
                 case I8x16_SUB:
                 case I8x16_ADD:
+                case I16x8_ADD:
                 case I8x16_SWIZZLE:
                 case F32x4_MUL:
                 case F32x4_MIN:
@@ -1306,11 +1404,10 @@ final class Validator {
                         pushVal(ValueType.V128);
                         break;
                     }
-                case I8x16_SHL:
+                case V128_ANY_TRUE:
                     {
-                        popVal(ValueType.I32);
                         popVal(ValueType.V128);
-                        pushVal(ValueType.V128);
+                        pushVal(ValueType.I32);
                         break;
                     }
                 case V128_STORE:
