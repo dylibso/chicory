@@ -84,16 +84,32 @@ public class WasmValue {
                                 sb.append("Long.parseUnsignedLong(\"" + v + "\")");
                                 break;
                             case F32:
-                                sb.append(
-                                        "Float.intBitsToFloat(Integer.parseUnsignedInt(\""
-                                                + v
-                                                + "\"))");
+                                switch (v) {
+                                    case "nan:canonical":
+                                    case "nan:arithmetic":
+                                        sb.append("Float.NaN");
+                                        break;
+                                    default:
+                                        sb.append(
+                                                "Float.intBitsToFloat(Integer.parseUnsignedInt(\""
+                                                        + v
+                                                        + "\"))");
+                                        break;
+                                }
                                 break;
                             case F64:
-                                sb.append(
-                                        "Double.longBitsToDouble(Long.parseUnsignedLong(\""
-                                                + v
-                                                + "\"))");
+                                switch (v) {
+                                    case "nan:canonical":
+                                    case "nan:arithmetic":
+                                        sb.append("Double.NaN");
+                                        break;
+                                    default:
+                                        sb.append(
+                                                "Double.longBitsToDouble(Long.parseUnsignedLong(\""
+                                                        + v
+                                                        + "\"))");
+                                        break;
+                                }
                                 break;
                         }
                     }
