@@ -1354,6 +1354,13 @@ final class Validator {
                         break;
                     }
                 case I8x16_ALL_TRUE:
+                case I8x16_BITMASK:
+                case I16x8_ALL_TRUE:
+                case I16x8_BITMASK:
+                case I32x4_ALL_TRUE:
+                case I32x4_BITMASK:
+                case I64x2_ALL_TRUE:
+                case I64x2_BITMASK:
                 case I8x16_EXTRACT_LANE_S:
                 case I8x16_EXTRACT_LANE_U:
                 case I16x8_EXTRACT_LANE_S:

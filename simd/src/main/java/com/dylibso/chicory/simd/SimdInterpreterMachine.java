@@ -269,7 +269,32 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                 I8x16_SWIZZLE(stack);
                 break;
             case OpCode.I8x16_ALL_TRUE:
-                I8x16_ALL_TRUE(stack);
+                BOOL_OP(
+                        stack,
+                        v -> v.reinterpretAsBytes().compare(VectorOperators.NE, 0).allTrue());
+                break;
+            case OpCode.I16x8_ALL_TRUE:
+                BOOL_OP(
+                        stack,
+                        v -> v.reinterpretAsShorts().compare(VectorOperators.NE, 0).allTrue());
+                break;
+            case OpCode.I32x4_ALL_TRUE:
+                BOOL_OP(stack, v -> v.reinterpretAsInts().compare(VectorOperators.NE, 0).allTrue());
+                break;
+            case OpCode.I64x2_ALL_TRUE:
+                BOOL_OP(stack, v -> v.compare(VectorOperators.NE, 0).allTrue());
+                break;
+            case OpCode.I8x16_BITMASK:
+                BITMASK(stack, v -> v.reinterpretAsBytes().toLongArray());
+                break;
+            case OpCode.I16x8_BITMASK:
+                BITMASK(stack, v -> v.reinterpretAsShorts().toLongArray());
+                break;
+            case OpCode.I32x4_BITMASK:
+                BITMASK(stack, v -> v.reinterpretAsInts().toLongArray());
+                break;
+            case OpCode.I64x2_BITMASK:
+                BITMASK(stack, v -> v.toLongArray());
                 break;
             case OpCode.I8x16_SHL:
                 SH(
@@ -671,17 +696,37 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
-    private static void I8x16_ALL_TRUE(MStack stack) {
-        var v =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
-                        .reinterpretAsBytes();
+    private static void BOOL_OP(MStack stack, Function<LongVector, Boolean> condition) {
+        var vHigh = stack.pop();
+        var vLow = stack.pop();
 
-        // Compare the vector against zero to create a mask of non-zero elements
-        if (v.compare(VectorOperators.NE, 0).allTrue()) {
+        var result =
+                condition.apply(
+                        LongVector.fromArray(LongVector.SPECIES_128, new long[] {vLow, vHigh}, 0));
+
+        if (result) {
             stack.push(BitOps.TRUE);
         } else {
             stack.push(BitOps.FALSE);
         }
+    }
+
+    private static void BITMASK(MStack stack, Function<LongVector, long[]> reduce) {
+        var vHigh = stack.pop();
+        var vLow = stack.pop();
+
+        var vals =
+                reduce.apply(
+                        LongVector.fromArray(LongVector.SPECIES_128, new long[] {vLow, vHigh}, 0));
+
+        var result = 0L;
+        for (int i = 0; i < vals.length; i++) {
+            if (vals[i] < 0) {
+                result |= 1 << i;
+            }
+        }
+
+        stack.push(result);
     }
 
     private static void V128_NOT(MStack stack) {
