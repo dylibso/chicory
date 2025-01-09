@@ -1390,14 +1390,20 @@ final class Validator {
                         break;
                     }
                 case I8x16_SHUFFLE:
+                case I8x16_SWIZZLE:
                 case I8x16_EQ:
                 case I8x16_SUB:
                 case I8x16_ADD:
+                case I8x16_NARROW_I16x8_S:
+                case I8x16_NARROW_I16x8_U:
                 case I16x8_ADD:
-                case I8x16_SWIZZLE:
+                case I16x8_NARROW_I32x4_S:
+                case I16x8_NARROW_I32x4_U:
                 case F32x4_MUL:
                 case F32x4_MIN:
                 case I32x4_ADD:
+                case I32x4_SUB:
+                case I32x4_MUL:
                 case I64x2_ADD:
                 case V128_AND:
                 case V128_ANDNOT:
@@ -1409,9 +1415,18 @@ final class Validator {
                         pushVal(ValueType.V128);
                         break;
                     }
+                case I16x8_EXTEND_LOW_I8x16_S:
+                case I16x8_EXTEND_LOW_I8x16_U:
+                case I32x4_EXTEND_LOW_I16x8_S:
+                case I32x4_EXTEND_LOW_I16x8_U:
                 case F32x4_ABS:
                 case I32x4_TRUNC_SAT_F32X4_S:
+                case F32x4_CONVERT_I32x4_S:
                 case F32x4_CONVERT_I32x4_U:
+                case F64x2_CONVERT_LOW_I32x4_S:
+                case F64x2_CONVERT_LOW_I32x4_U:
+                case F64x2_PROMOTE_LOW_F32x4:
+                case F32x4_DEMOTE_LOW_F64x2_ZERO:
                 case V128_NOT:
                     {
                         popVal(ValueType.V128);
