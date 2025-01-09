@@ -224,7 +224,11 @@ public class TestGenMojo extends AbstractMojo {
     }
 
     private static Map<String, Proposal> proposals =
-            Map.of("tail-call", new Proposal("tc", new String[] {"--enable-tail-call"}));
+            Map.of(
+                    "tail-call",
+                    new Proposal("tc", new String[] {"--enable-tail-call"}),
+                    "exception-handling",
+                    new Proposal("eh", new String[] {"--enable-tail-call", "--enable-exceptions"}));
 
     private final class TestGenerator {
 
