@@ -241,6 +241,18 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             case OpCode.V128_NOT:
                 V128_NOT(stack);
                 break;
+            case OpCode.V128_AND:
+                V128_BINOP(stack, (v1, v2) -> v1.and(v2));
+                break;
+            case OpCode.V128_ANDNOT:
+                V128_BINOP(stack, (v1, v2) -> v1.not().and(v2));
+                break;
+            case OpCode.V128_OR:
+                V128_BINOP(stack, (v1, v2) -> v1.or(v2));
+                break;
+            case OpCode.V128_XOR:
+                V128_BINOP(stack, (v1, v2) -> v1.and(v2.not()).or(v1.not().and(v2)));
+                break;
             case OpCode.V128_BITSELECT:
                 V128_BITSELECT(stack);
                 break;
@@ -676,6 +688,18 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var offset = stack.size() - 2;
         var not = LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset).not();
         var res = not.toArray();
+
+        System.arraycopy(res, 0, stack.array(), offset, 2);
+    }
+
+    private static void V128_BINOP(
+            MStack stack, BiFunction<LongVector, LongVector, LongVector> binop) {
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
+        var offset = stack.size() - 2;
+        var v1 = LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0);
+        var v2 = LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset);
+        var res = binop.apply(v1, v2).toArray();
 
         System.arraycopy(res, 0, stack.array(), offset, 2);
     }

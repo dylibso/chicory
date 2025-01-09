@@ -335,6 +335,7 @@
                 <wast>simd_address.wast</wast>
                 <wast>simd_align.wast</wast>
                 <wast>simd_bit_shift.wast</wast>
+                <wast>simd_bitwise.wast</wast>
                 <wast>simd_const.wast</wast>
                 <wast>simd_lane.wast</wast>
                 <wast>simd_linking.wast</wast>
@@ -383,7 +384,6 @@
               <excludedWasts>
                 <!-- obsolete-keywords is only stressing the wat parser -->
                 <wast>obsolete-keywords.wast</wast>
-                <wast>simd_bitwise.wast</wast>
                 <wast>simd_boolean.wast</wast>
                 <wast>simd_conversions.wast</wast>
                 <wast>simd_f32x4.wast</wast>

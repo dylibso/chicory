@@ -1392,6 +1392,10 @@ final class Validator {
                 case F32x4_MIN:
                 case I32x4_ADD:
                 case I64x2_ADD:
+                case V128_AND:
+                case V128_ANDNOT:
+                case V128_OR:
+                case V128_XOR:
                     {
                         popVal(ValueType.V128);
                         popVal(ValueType.V128);
