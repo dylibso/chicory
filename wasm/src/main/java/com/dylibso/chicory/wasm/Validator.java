@@ -1393,18 +1393,34 @@ final class Validator {
                 case I8x16_SWIZZLE:
                 case I8x16_EQ:
                 case I8x16_SUB:
+                case I8x16_SUB_SAT_U:
                 case I8x16_ADD:
+                case I8x16_ADD_SAT_S:
                 case I8x16_NARROW_I16x8_S:
                 case I8x16_NARROW_I16x8_U:
+                case I16x8_EQ:
                 case I16x8_ADD:
+                case I16x8_ADD_SAT_S:
+                case I16x8_SUB:
+                case I16x8_SUB_SAT_U:
+                case I16x8_MUL:
                 case I16x8_NARROW_I32x4_S:
                 case I16x8_NARROW_I32x4_U:
+                case F32x4_EQ:
                 case F32x4_MUL:
                 case F32x4_MIN:
+                case F32x4_DIV:
+                case I32x4_EQ:
                 case I32x4_ADD:
                 case I32x4_SUB:
                 case I32x4_MUL:
                 case I64x2_ADD:
+                case I64x2_SUB:
+                case I64x2_MUL:
+                case F64x2_EQ:
+                case F64x2_ADD:
+                case F64x2_SUB:
+                case F64x2_MUL:
                 case V128_AND:
                 case V128_ANDNOT:
                 case V128_OR:
