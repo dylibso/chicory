@@ -241,6 +241,18 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             case OpCode.V128_NOT:
                 V128_NOT(stack);
                 break;
+            case OpCode.V128_AND:
+                V128_BINOP(stack, (v1, v2) -> v1.and(v2));
+                break;
+            case OpCode.V128_ANDNOT:
+                V128_BINOP(stack, (v1, v2) -> v1.not().and(v2));
+                break;
+            case OpCode.V128_OR:
+                V128_BINOP(stack, (v1, v2) -> v1.or(v2));
+                break;
+            case OpCode.V128_XOR:
+                V128_BINOP(stack, (v1, v2) -> v1.and(v2.not()).or(v1.not().and(v2)));
+                break;
             case OpCode.V128_BITSELECT:
                 V128_BITSELECT(stack);
                 break;
@@ -257,10 +269,56 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                 I8x16_SWIZZLE(stack);
                 break;
             case OpCode.I8x16_ALL_TRUE:
-                I8x16_ALL_TRUE(stack);
+                BOOL_OP(
+                        stack,
+                        v -> v.reinterpretAsBytes().compare(VectorOperators.NE, 0).allTrue());
+                break;
+            case OpCode.I16x8_ALL_TRUE:
+                BOOL_OP(
+                        stack,
+                        v -> v.reinterpretAsShorts().compare(VectorOperators.NE, 0).allTrue());
+                break;
+            case OpCode.I32x4_ALL_TRUE:
+                BOOL_OP(stack, v -> v.reinterpretAsInts().compare(VectorOperators.NE, 0).allTrue());
+                break;
+            case OpCode.I64x2_ALL_TRUE:
+                BOOL_OP(stack, v -> v.compare(VectorOperators.NE, 0).allTrue());
+                break;
+            case OpCode.I8x16_BITMASK:
+                BITMASK(stack, v -> v.reinterpretAsBytes().toLongArray());
+                break;
+            case OpCode.I16x8_BITMASK:
+                BITMASK(stack, v -> v.reinterpretAsShorts().toLongArray());
+                break;
+            case OpCode.I32x4_BITMASK:
+                BITMASK(stack, v -> v.reinterpretAsInts().toLongArray());
+                break;
+            case OpCode.I64x2_BITMASK:
+                BITMASK(stack, v -> v.toLongArray());
                 break;
             case OpCode.I8x16_SHL:
-                I8x16_SHL(stack);
+                SH(
+                        stack,
+                        (v, s) ->
+                                v.reinterpretAsBytes()
+                                        .lanewise(VectorOperators.LSHL, s.byteValue())
+                                        .reinterpretAsLongs());
+                break;
+            case OpCode.I8x16_SHR_U:
+                SH(
+                        stack,
+                        (v, s) ->
+                                v.reinterpretAsBytes()
+                                        .lanewise(VectorOperators.LSHR, s.byteValue())
+                                        .reinterpretAsLongs());
+                break;
+            case OpCode.I8x16_SHR_S:
+                SH(
+                        stack,
+                        (v, s) ->
+                                v.reinterpretAsBytes()
+                                        .lanewise(VectorOperators.ASHR, s.byteValue())
+                                        .reinterpretAsLongs());
                 break;
             case OpCode.I8x16_ADD:
                 ADD(stack, LongVector::reinterpretAsBytes);
@@ -268,8 +326,65 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             case OpCode.I16x8_ADD:
                 ADD(stack, LongVector::reinterpretAsShorts);
                 break;
+            case OpCode.I16x8_SHL:
+                SH(
+                        stack,
+                        (v, s) ->
+                                v.reinterpretAsShorts()
+                                        .lanewise(VectorOperators.LSHL, s.shortValue())
+                                        .reinterpretAsLongs());
+                break;
+            case OpCode.I16x8_SHR_U:
+                SH(
+                        stack,
+                        (v, s) ->
+                                v.reinterpretAsShorts()
+                                        .lanewise(VectorOperators.LSHR, s.shortValue())
+                                        .reinterpretAsLongs());
+                break;
+            case OpCode.I16x8_SHR_S:
+                SH(
+                        stack,
+                        (v, s) ->
+                                v.reinterpretAsShorts()
+                                        .lanewise(VectorOperators.ASHR, s.shortValue())
+                                        .reinterpretAsLongs());
+                break;
+            case OpCode.I32x4_SHL:
+                SH(
+                        stack,
+                        (v, s) ->
+                                v.reinterpretAsInts()
+                                        .lanewise(VectorOperators.LSHL, s.intValue())
+                                        .reinterpretAsLongs());
+                break;
+            case OpCode.I32x4_SHR_U:
+                SH(
+                        stack,
+                        (v, s) ->
+                                v.reinterpretAsInts()
+                                        .lanewise(VectorOperators.LSHR, s.intValue())
+                                        .reinterpretAsLongs());
+                break;
+            case OpCode.I32x4_SHR_S:
+                SH(
+                        stack,
+                        (v, s) ->
+                                v.reinterpretAsInts()
+                                        .lanewise(VectorOperators.ASHR, s.intValue())
+                                        .reinterpretAsLongs());
+                break;
             case OpCode.I32x4_ADD:
                 ADD(stack, LongVector::reinterpretAsInts);
+                break;
+            case OpCode.I64x2_SHL:
+                SH(stack, (v, s) -> v.lanewise(VectorOperators.LSHL, s));
+                break;
+            case OpCode.I64x2_SHR_U:
+                SH(stack, (v, s) -> v.lanewise(VectorOperators.LSHR, s));
+                break;
+            case OpCode.I64x2_SHR_S:
+                SH(stack, (v, s) -> v.lanewise(VectorOperators.ASHR, s));
                 break;
             case OpCode.I64x2_ADD:
                 ADD(stack, LongVector::reinterpretAsLongs);
@@ -488,51 +603,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
-    private static void I8x16_REPLACE_LANE(MStack stack, Operands operands) {
-        var val = stack.pop();
-        var offset = stack.size() - 2;
-        var laneIdx = (int) operands.get(0);
-
-        var result =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
-                        .reinterpretAsBytes()
-                        .withLane(laneIdx, (byte) val)
-                        .reinterpretAsLongs()
-                        .toArray();
-
-        System.arraycopy(result, 0, stack.array(), offset, 2);
-    }
-
-    private static void I16x8_REPLACE_LANE(MStack stack, Operands operands) {
-        var val = stack.pop();
-        var offset = stack.size() - 2;
-        var laneIdx = (int) operands.get(0);
-
-        var result =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
-                        .reinterpretAsShorts()
-                        .withLane(laneIdx, (short) val)
-                        .reinterpretAsLongs()
-                        .toArray();
-
-        System.arraycopy(result, 0, stack.array(), offset, 2);
-    }
-
-    private static void I32x4_REPLACE_LANE(MStack stack, Operands operands) {
-        var val = stack.pop();
-        var offset = stack.size() - 2;
-        var laneIdx = (int) operands.get(0);
-
-        var result =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
-                        .reinterpretAsInts()
-                        .withLane(laneIdx, (int) val)
-                        .reinterpretAsLongs()
-                        .toArray();
-
-        System.arraycopy(result, 0, stack.array(), offset, 2);
-    }
-
     private static void I8x16_EXTRACT_LANE_U(MStack stack, Operands operands) {
         var offset = stack.size() - 2;
         var result =
@@ -615,36 +685,66 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
-    private static void I8x16_SHL(MStack stack) {
+    private static void SH(MStack stack, BiFunction<LongVector, Long, LongVector> shl) {
         var s = stack.pop();
-
         var offset = stack.size() - 2;
 
-        var v =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
-                        .reinterpretAsBytes();
+        var result =
+                shl.apply(LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset), s)
+                        .toArray();
 
-        var result = v.lanewise(VectorOperators.LSHL, s).reinterpretAsLongs().toArray();
         System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
-    private static void I8x16_ALL_TRUE(MStack stack) {
-        var v =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), stack.size() - 2)
-                        .reinterpretAsBytes();
+    private static void BOOL_OP(MStack stack, Function<LongVector, Boolean> condition) {
+        var vHigh = stack.pop();
+        var vLow = stack.pop();
 
-        // Compare the vector against zero to create a mask of non-zero elements
-        if (v.compare(VectorOperators.NE, 0).allTrue()) {
+        var result =
+                condition.apply(
+                        LongVector.fromArray(LongVector.SPECIES_128, new long[] {vLow, vHigh}, 0));
+
+        if (result) {
             stack.push(BitOps.TRUE);
         } else {
             stack.push(BitOps.FALSE);
         }
     }
 
+    private static void BITMASK(MStack stack, Function<LongVector, long[]> reduce) {
+        var vHigh = stack.pop();
+        var vLow = stack.pop();
+
+        var vals =
+                reduce.apply(
+                        LongVector.fromArray(LongVector.SPECIES_128, new long[] {vLow, vHigh}, 0));
+
+        var result = 0L;
+        for (int i = 0; i < vals.length; i++) {
+            if (vals[i] < 0) {
+                result |= 1 << i;
+            }
+        }
+
+        stack.push(result);
+    }
+
     private static void V128_NOT(MStack stack) {
         var offset = stack.size() - 2;
         var not = LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset).not();
         var res = not.toArray();
+
+        System.arraycopy(res, 0, stack.array(), offset, 2);
+    }
+
+    private static void V128_BINOP(
+            MStack stack, BiFunction<LongVector, LongVector, LongVector> binop) {
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
+        var offset = stack.size() - 2;
+        var v1 = LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0);
+        var v2 = LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset);
+        var res = binop.apply(v1, v2).toArray();
 
         System.arraycopy(res, 0, stack.array(), offset, 2);
     }
