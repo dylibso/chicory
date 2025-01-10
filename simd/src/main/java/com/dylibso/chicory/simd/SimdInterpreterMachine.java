@@ -260,7 +260,19 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                 V128_ANY_TRUE(stack);
                 break;
             case OpCode.I8x16_EQ:
-                I8x16_EQ(stack);
+                BINOP(stack, LongVector::reinterpretAsBytes, (v1, v2) -> v1.eq(v2).toVector());
+                break;
+            case OpCode.I16x8_EQ:
+                BINOP(stack, LongVector::reinterpretAsShorts, (v1, v2) -> v1.eq(v2).toVector());
+                break;
+            case OpCode.I32x4_EQ:
+                BINOP(stack, LongVector::reinterpretAsInts, (v1, v2) -> v1.eq(v2).toVector());
+                break;
+            case OpCode.F32x4_EQ:
+                F32x4_EQ(stack);
+                break;
+            case OpCode.F64x2_EQ:
+                BINOP(stack, LongVector::reinterpretAsDoubles, (v1, v2) -> v1.eq(v2).toVector());
                 break;
             case OpCode.I8x16_SUB:
                 I8x16_SUB(stack);
@@ -323,8 +335,41 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             case OpCode.I8x16_ADD:
                 BINOP(stack, LongVector::reinterpretAsBytes, (v1, v2) -> v1.add(v2));
                 break;
+            case OpCode.I8x16_ADD_SAT_S:
+                I8x16_ADD_SAT_S(stack);
+                break;
+            case OpCode.I8x16_SUB_SAT_U:
+                I8x16_SUB_SAT_U(stack);
+                break;
             case OpCode.I16x8_ADD:
                 BINOP(stack, LongVector::reinterpretAsShorts, (v1, v2) -> v1.add(v2));
+                break;
+            case OpCode.I16x8_ADD_SAT_S:
+                I16x8_ADD_SAT_S(stack);
+                break;
+            case OpCode.I16x8_SUB_SAT_U:
+                I16x8_SUB_SAT_U(stack);
+                break;
+            case OpCode.I16x8_SUB:
+                BINOP(stack, LongVector::reinterpretAsShorts, (v1, v2) -> v2.sub(v1));
+                break;
+            case OpCode.F32x4_DIV:
+                BINOP(stack, LongVector::reinterpretAsFloats, (v1, v2) -> v2.div(v1));
+                break;
+            case OpCode.I64x2_MUL:
+                BINOP(stack, LongVector::reinterpretAsLongs, (v1, v2) -> v1.mul(v2));
+                break;
+            case OpCode.I64x2_SUB:
+                BINOP(stack, LongVector::reinterpretAsLongs, (v1, v2) -> v2.sub(v1));
+                break;
+            case OpCode.F64x2_ADD:
+                BINOP(stack, LongVector::reinterpretAsLongs, (v1, v2) -> v1.add(v2));
+                break;
+            case OpCode.F64x2_MUL:
+                BINOP(stack, LongVector::reinterpretAsDoubles, (v1, v2) -> v1.mul(v2));
+                break;
+            case OpCode.F64x2_SUB:
+                BINOP(stack, LongVector::reinterpretAsDoubles, (v1, v2) -> v2.sub(v1));
                 break;
             case OpCode.I16x8_SHL:
                 SH(
@@ -373,6 +418,9 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                                 v.reinterpretAsInts()
                                         .lanewise(VectorOperators.ASHR, s.intValue())
                                         .reinterpretAsLongs());
+                break;
+            case OpCode.I16x8_MUL:
+                BINOP(stack, LongVector::reinterpretAsShorts, (v1, v2) -> v2.mul(v1));
                 break;
             case OpCode.I32x4_ADD:
                 BINOP(stack, LongVector::reinterpretAsInts, (v1, v2) -> v2.add(v1));
@@ -670,21 +718,187 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         stack.array()[stack.size() - 1] = result;
     }
 
-    private static void I8x16_EQ(MStack stack) {
+    public static byte subSatU(byte a, byte b) {
+        int result = Byte.toUnsignedInt(a) - Byte.toUnsignedInt(b);
+        if (result < 0) {
+            return 0;
+        } else {
+            return (byte) result;
+        }
+    }
+
+    public static short subSatU(short a, short b) {
+        int result = Short.toUnsignedInt(a) - Short.toUnsignedInt(b);
+        if (result < 0) {
+            return 0;
+        } else {
+            return (short) result;
+        }
+    }
+
+    private static void I16x8_SUB_SAT_U(MStack stack) {
         var v1High = stack.pop();
         var v1Low = stack.pop();
 
-        int offset = stack.size() - 2;
+        var offset = stack.size() - 2;
 
         var v1 =
                 LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
-                        .reinterpretAsBytes();
-
+                        .reinterpretAsShorts()
+                        .toArray();
         var v2 =
                 LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
-                        .reinterpretAsBytes();
+                        .reinterpretAsShorts()
+                        .toArray();
 
-        var result = v1.eq(v2).toVector().reinterpretAsLongs().toArray();
+        var result =
+                Value.i16ToVec(
+                        new long[] {
+                            subSatU(v2[0], v1[0]),
+                            subSatU(v2[1], v1[1]),
+                            subSatU(v2[2], v1[2]),
+                            subSatU(v2[3], v1[3]),
+                            subSatU(v2[4], v1[4]),
+                            subSatU(v2[5], v1[5]),
+                            subSatU(v2[6], v1[6]),
+                            subSatU(v2[7], v1[7])
+                        });
+
+        System.arraycopy(result, 0, stack.array(), offset, 2);
+    }
+
+    private static void I8x16_SUB_SAT_U(MStack stack) {
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
+
+        var offset = stack.size() - 2;
+
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
+                        .reinterpretAsBytes()
+                        .toArray();
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsBytes()
+                        .toArray();
+
+        var result =
+                Value.i8ToVec(
+                        new long[] {
+                            subSatU(v2[0], v1[0]),
+                            subSatU(v2[1], v1[1]),
+                            subSatU(v2[2], v1[2]),
+                            subSatU(v2[3], v1[3]),
+                            subSatU(v2[4], v1[4]),
+                            subSatU(v2[5], v1[5]),
+                            subSatU(v2[6], v1[6]),
+                            subSatU(v2[7], v1[7]),
+                            subSatU(v2[8], v1[8]),
+                            subSatU(v2[9], v1[9]),
+                            subSatU(v2[10], v1[10]),
+                            subSatU(v2[11], v1[11]),
+                            subSatU(v2[12], v1[12]),
+                            subSatU(v2[13], v1[13]),
+                            subSatU(v2[14], v1[14]),
+                            subSatU(v2[15], v1[15]),
+                        });
+
+        System.arraycopy(result, 0, stack.array(), offset, 2);
+    }
+
+    private static void I8x16_ADD_SAT_S(MStack stack) {
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
+
+        var offset = stack.size() - 2;
+
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
+                        .reinterpretAsBytes()
+                        .toArray();
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsBytes()
+                        .toArray();
+
+        var result =
+                Value.i8ToVec(
+                        new long[] {
+                            narrowS((short) (v1[0] + v2[0])),
+                            narrowS((short) (v1[1] + v2[1])),
+                            narrowS((short) (v1[2] + v2[2])),
+                            narrowS((short) (v1[3] + v2[3])),
+                            narrowS((short) (v1[4] + v2[4])),
+                            narrowS((short) (v1[5] + v2[5])),
+                            narrowS((short) (v1[6] + v2[6])),
+                            narrowS((short) (v1[7] + v2[7])),
+                            narrowS((short) (v1[8] + v2[8])),
+                            narrowS((short) (v1[9] + v2[9])),
+                            narrowS((short) (v1[10] + v2[10])),
+                            narrowS((short) (v1[11] + v2[11])),
+                            narrowS((short) (v1[12] + v2[12])),
+                            narrowS((short) (v1[13] + v2[13])),
+                            narrowS((short) (v1[14] + v2[14])),
+                            narrowS((short) (v1[15] + v2[15])),
+                        });
+
+        System.arraycopy(result, 0, stack.array(), offset, 2);
+    }
+
+    private static void I16x8_ADD_SAT_S(MStack stack) {
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
+
+        var offset = stack.size() - 2;
+
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
+                        .reinterpretAsShorts()
+                        .toArray();
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsShorts()
+                        .toArray();
+
+        var result =
+                Value.i16ToVec(
+                        new long[] {
+                            narrowS(v1[0] + v2[0]),
+                            narrowS(v1[1] + v2[1]),
+                            narrowS(v1[2] + v2[2]),
+                            narrowS(v1[3] + v2[3]),
+                            narrowS(v1[4] + v2[4]),
+                            narrowS(v1[5] + v2[5]),
+                            narrowS(v1[6] + v2[6]),
+                            narrowS(v1[7] + v2[7])
+                        });
+
+        System.arraycopy(result, 0, stack.array(), offset, 2);
+    }
+
+    private static void F32x4_EQ(MStack stack) {
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
+
+        var offset = stack.size() - 2;
+
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
+                        .reinterpretAsFloats()
+                        .toArray();
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsFloats()
+                        .toArray();
+
+        var result =
+                Value.f32ToVec(
+                        new long[] {
+                            (v1[0] == v2[0]) ? 0xFFFFFFFFL : 0x0L,
+                            (v1[1] == v2[1]) ? 0xFFFFFFFFL : 0x0L,
+                            (v1[2] == v2[2]) ? 0xFFFFFFFFL : 0x0L,
+                            (v1[3] == v2[3]) ? 0xFFFFFFFFL : 0x0L
+                        });
 
         System.arraycopy(result, 0, stack.array(), offset, 2);
     }
@@ -701,7 +915,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var v1 =
                 reinterpret.apply(
                         LongVector.fromArray(
-                                LongVector.SPECIES_128, new long[] {v1Low, v1High}, offset));
+                                LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0));
         var v2 =
                 reinterpret.apply(
                         LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset));
@@ -718,7 +932,7 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var offset = stack.size() - 2;
 
         var v1 =
-                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, offset)
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
                         .reinterpretAsBytes();
         var v2 =
                 LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
