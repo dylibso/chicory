@@ -454,6 +454,7 @@
             <format>
               <includes>
                 <include>*.md</include>
+                <include>android-tests/*.md</include>
                 <include>.gitignore</include>
               </includes>
               <trimTrailingWhitespace/>
@@ -498,6 +499,18 @@
               <sortPlugins>groupId,artifactId</sortPlugins>
             </sortPom>
           </pom>
+          <kotlin>
+            <includes>
+              <include>android-tests/**/*.gradle.kts</include>
+              <include>android-tests/**/*.kt</include>
+            </includes>
+            <ktfmt>
+              <!-- there is no AOSP style for ktfmt, hence using Kotlin style -->
+              <style>KOTLINLANG</style>
+              <removeUnusedImports>true</removeUnusedImports>
+              <manageTrailingCommas>true</manageTrailingCommas>
+            </ktfmt>
+          </kotlin>
         </configuration>
         <executions>
           <execution>
