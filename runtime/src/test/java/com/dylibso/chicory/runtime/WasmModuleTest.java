@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.WasmModule;
@@ -391,5 +392,20 @@ public class WasmModuleTest {
         assertNotNull(instance.exports().table("tab").size());
         assertNotNull(instance.exports().global("glob1").getValue());
         assertNotNull(instance.exports().function("get-1").apply());
+    }
+
+    @Test
+    public void shouldThrowOnInvalidExports() {
+        var instance = Instance.builder(loadModule("compiled/exports.wat.wasm")).build();
+
+        assertThrows(InvalidException.class, () -> instance.exports().memory("nonexistent"));
+        assertThrows(InvalidException.class, () -> instance.exports().table("nonexistent"));
+        assertThrows(InvalidException.class, () -> instance.exports().global("nonexistent"));
+        assertThrows(InvalidException.class, () -> instance.exports().function("nonexistent"));
+
+        assertThrows(InvalidException.class, () -> instance.exports().memory("tab"));
+        assertThrows(InvalidException.class, () -> instance.exports().table("mem"));
+        assertThrows(InvalidException.class, () -> instance.exports().global("get-1"));
+        assertThrows(InvalidException.class, () -> instance.exports().function("glob1"));
     }
 }
