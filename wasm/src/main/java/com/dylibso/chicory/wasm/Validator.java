@@ -1392,10 +1392,26 @@ final class Validator {
                 case I8x16_SHUFFLE:
                 case I8x16_SWIZZLE:
                 case I8x16_EQ:
+                case I8x16_NE:
+                case I8x16_LT_S:
+                case I8x16_LT_U:
+                case I8x16_GT_S:
+                case I8x16_GT_U:
+                case I8x16_LE_S:
+                case I8x16_LE_U:
+                case I8x16_GE_S:
+                case I8x16_GE_U:
+                case I8x16_MIN_S:
+                case I8x16_MIN_U:
+                case I8x16_MAX_S:
+                case I8x16_MAX_U:
+                case I8x16_AVGR_U:
                 case I8x16_SUB:
+                case I8x16_SUB_SAT_S:
                 case I8x16_SUB_SAT_U:
                 case I8x16_ADD:
                 case I8x16_ADD_SAT_S:
+                case I8x16_ADD_SAT_U:
                 case I8x16_NARROW_I16x8_S:
                 case I8x16_NARROW_I16x8_U:
                 case I16x8_EQ:
@@ -1431,6 +1447,9 @@ final class Validator {
                         pushVal(ValueType.V128);
                         break;
                     }
+                case I8x16_NEG:
+                case I8x16_ABS:
+                case I8x16_POPCNT:
                 case I16x8_EXTEND_LOW_I8x16_S:
                 case I16x8_EXTEND_HIGH_I8x16_S:
                 case I16x8_EXTEND_LOW_I8x16_U:

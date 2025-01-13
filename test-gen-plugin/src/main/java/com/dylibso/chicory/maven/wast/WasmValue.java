@@ -72,7 +72,7 @@ public class WasmValue {
 
                         switch (laneType) {
                             case I8:
-                                sb.append("(byte) Integer.parseInt(\"" + v + "\")");
+                                sb.append("(byte) (0xFF & Integer.parseInt(\"" + v + "\"))");
                                 break;
                             case I16:
                                 sb.append("Integer.parseUnsignedInt(\"" + v + "\")");
@@ -194,7 +194,7 @@ public class WasmValue {
 
                         switch (laneType) {
                             case I8:
-                                sb.append("(byte) Integer.parseInt(\"" + v + "\")");
+                                sb.append("(byte) (0xFF & Integer.parseInt(\"" + v + "\"))");
                                 break;
                             case I16:
                             case F32:
@@ -283,7 +283,7 @@ public class WasmValue {
 
                     switch (laneType) {
                         case I8:
-                            sb.append("(byte) Integer.parseInt(\"" + v + "\")");
+                            sb.append("(byte) (0xFF & Integer.parseInt(\"" + v + "\"))");
                             break;
                         case I16:
                         case F32:

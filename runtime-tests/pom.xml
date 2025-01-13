@@ -339,6 +339,10 @@
                 <wast>simd_boolean.wast</wast>
                 <wast>simd_const.wast</wast>
                 <wast>simd_conversions.wast</wast>
+                <wast>simd_i8x16_arith.wast</wast>
+                <wast>simd_i8x16_arith2.wast</wast>
+                <wast>simd_i8x16_cmp.wast</wast>
+                <wast>simd_i8x16_sat_arith.wast</wast>
                 <wast>simd_int_to_int_extend.wast</wast>
                 <wast>simd_lane.wast</wast>
                 <wast>simd_linking.wast</wast>
@@ -419,10 +423,6 @@
                 <wast>simd_i64x2_arith2.wast</wast>
                 <wast>simd_i64x2_cmp.wast</wast>
                 <wast>simd_i64x2_extmul_i32x4.wast</wast>
-                <wast>simd_i8x16_arith.wast</wast>
-                <wast>simd_i8x16_arith2.wast</wast>
-                <wast>simd_i8x16_cmp.wast</wast>
-                <wast>simd_i8x16_sat_arith.wast</wast>
               </excludedWasts>
             </configuration>
             <executions>
