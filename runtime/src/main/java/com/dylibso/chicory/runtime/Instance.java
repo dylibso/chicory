@@ -10,7 +10,6 @@ import static com.dylibso.chicory.wasm.types.ExternalType.TAG;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
-import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.UnlinkableException;
@@ -188,9 +187,12 @@ public class Instance {
             this.instance = instance;
         }
 
-        private void checkType(Export export, ExternalType type) {
-            if (export.exportType() != type) {
-                throw new ChicoryException(
+        private Export getExport(ExternalType type, String name) throws InvalidException {
+            var export = instance.exports.get(name);
+            if (export == null) {
+                throw new InvalidException("Unknown export with name " + name);
+            } else if (export.exportType() != type) {
+                throw new InvalidException(
                         "The export "
                                 + export.name()
                                 + " is of type "
@@ -198,29 +200,26 @@ public class Instance {
                                 + " and cannot be converted to "
                                 + type);
             }
+            return export;
         }
 
         public ExportFunction function(String name) {
-            var export = instance.exports.get(name);
-            checkType(export, FUNCTION);
+            var export = getExport(FUNCTION, name);
             return args -> instance.machine.call(export.index(), args);
         }
 
         public GlobalInstance global(String name) {
-            var export = instance.exports.get(name);
-            checkType(export, GLOBAL);
+            var export = getExport(GLOBAL, name);
             return instance.global(export.index());
         }
 
         public TableInstance table(String name) {
-            var export = instance.exports.get(name);
-            checkType(export, TABLE);
+            var export = getExport(TABLE, name);
             return instance.table(export.index());
         }
 
         public Memory memory(String name) {
-            var export = instance.exports.get(name);
-            checkType(export, MEMORY);
+            var export = getExport(MEMORY, name);
             assert (export.index() == 0);
             return instance.memory();
         }
