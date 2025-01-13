@@ -1432,9 +1432,17 @@ final class Validator {
                         break;
                     }
                 case I16x8_EXTEND_LOW_I8x16_S:
+                case I16x8_EXTEND_HIGH_I8x16_S:
                 case I16x8_EXTEND_LOW_I8x16_U:
+                case I16x8_EXTEND_HIGH_I8x16_U:
                 case I32x4_EXTEND_LOW_I16x8_S:
+                case I32x4_EXTEND_HIGH_I16x8_S:
                 case I32x4_EXTEND_LOW_I16x8_U:
+                case I32x4_EXTEND_HIGH_I16x8_U:
+                case I64x2_EXTEND_LOW_I32x4_S:
+                case I64x2_EXTEND_HIGH_I32x4_S:
+                case I64x2_EXTEND_LOW_I32x4_U:
+                case I64x2_EXTEND_HIGH_I32x4_U:
                 case F32x4_ABS:
                 case I32x4_TRUNC_SAT_F32X4_S:
                 case F32x4_CONVERT_I32x4_S:
