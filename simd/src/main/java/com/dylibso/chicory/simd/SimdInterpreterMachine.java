@@ -10,6 +10,7 @@ import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Value;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -84,8 +85,38 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                         (v, ptr) ->
                                 v.withLane((int) operands.get(2), instance.memory().readLong(ptr)));
                 break;
+            case OpCode.V128_LOAD8x8_S:
+                V128_LOAD8x8_S(stack, instance, operands);
+                break;
+            case OpCode.V128_LOAD8x8_U:
+                V128_LOAD8x8_U(stack, instance, operands);
+                break;
+            case OpCode.V128_LOAD16x4_S:
+                V128_LOAD16x4_S(stack, instance, operands);
+                break;
+            case OpCode.V128_LOAD16x4_U:
+                V128_LOAD16x4_U(stack, instance, operands);
+                break;
+            case OpCode.V128_LOAD32x2_S:
+                V128_LOAD32x2_S(stack, instance, operands);
+                break;
+            case OpCode.V128_LOAD32x2_U:
+                V128_LOAD32x2_U(stack, instance, operands);
+                break;
             case OpCode.V128_STORE:
                 V128_STORE(stack, instance, operands);
+                break;
+            case OpCode.V128_LOAD8_SPLAT:
+                V128_LOAD8_SPLAT(stack, instance, operands);
+                break;
+            case OpCode.V128_LOAD16_SPLAT:
+                V128_LOAD16_SPLAT(stack, instance, operands);
+                break;
+            case OpCode.V128_LOAD32_SPLAT:
+                V128_LOAD32_SPLAT(stack, instance, operands);
+                break;
+            case OpCode.V128_LOAD64_SPLAT:
+                V128_LOAD64_SPLAT(stack, instance, operands);
                 break;
             case OpCode.I8x16_SHUFFLE:
                 I8x16_SHUFFLE(stack, operands);
@@ -510,6 +541,118 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         var valLow = instance.memory().readLong(ptr + 8);
         stack.push(valHigh);
         stack.push(valLow);
+    }
+
+    private static void V128_LOAD8_SPLAT(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        var value = instance.memory().read(ptr);
+        var bytes = new long[16];
+        Arrays.fill(bytes, value);
+        var vals = Value.i8ToVec(bytes);
+        for (var v : vals) {
+            stack.push(v);
+        }
+    }
+
+    private static void V128_LOAD16_SPLAT(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        var value = instance.memory().readShort(ptr);
+        var shorts = new long[8];
+        Arrays.fill(shorts, value);
+        var vals = Value.i16ToVec(shorts);
+        for (var v : vals) {
+            stack.push(v);
+        }
+    }
+
+    private static void V128_LOAD32_SPLAT(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        var value = instance.memory().readInt(ptr);
+        var ints = new long[4];
+        Arrays.fill(ints, value);
+        var vals = Value.i32ToVec(ints);
+        for (var v : vals) {
+            stack.push(v);
+        }
+    }
+
+    private static void V128_LOAD64_SPLAT(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        var value = instance.memory().readLong(ptr);
+        stack.push(value);
+        stack.push(value);
+    }
+
+    private static void V128_LOAD8x8_S(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        var bytes = new long[8];
+        for (int i = 0; i < 8; i++) {
+            bytes[i] = instance.memory().read(ptr + i);
+        }
+        var vals = Value.i16ToVec(bytes);
+        for (var v : vals) {
+            stack.push(v);
+        }
+    }
+
+    private static void V128_LOAD8x8_U(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        var bytes = new long[8];
+        for (int i = 0; i < 8; i++) {
+            bytes[i] = Byte.toUnsignedLong(instance.memory().read(ptr + i));
+        }
+        var vals = Value.i16ToVec(bytes);
+        for (var v : vals) {
+            stack.push(v);
+        }
+    }
+
+    private static void V128_LOAD16x4_S(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        var bytes = new long[4];
+        for (int i = 0; i < 4; i++) {
+            bytes[i] = instance.memory().readShort(ptr + (i * 2));
+        }
+        var vals = Value.i32ToVec(bytes);
+        for (var v : vals) {
+            stack.push(v);
+        }
+    }
+
+    private static void V128_LOAD16x4_U(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        var bytes = new long[4];
+        for (int i = 0; i < 4; i++) {
+            bytes[i] = Short.toUnsignedLong(instance.memory().readShort(ptr + (i * 2)));
+        }
+        var vals = Value.i32ToVec(bytes);
+        for (var v : vals) {
+            stack.push(v);
+        }
+    }
+
+    private static void V128_LOAD32x2_S(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        var bytes = new long[8];
+        for (int i = 0; i < 2; i++) {
+            bytes[i] = instance.memory().readInt(ptr + (i * 4));
+        }
+        var vals = Value.i64ToVec(bytes);
+        for (var v : vals) {
+            stack.push(v);
+        }
+    }
+
+    private static void V128_LOAD32x2_U(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        var bytes = new long[8];
+        for (int i = 0; i < 2; i++) {
+            bytes[i] = Integer.toUnsignedLong(instance.memory().readInt(ptr + (i * 4)));
+        }
+        var vals = Value.i64ToVec(bytes);
+        for (var v : vals) {
+            stack.push(v);
+        }
     }
 
     private static void V128_LOAD32_ZERO(MStack stack, Instance instance, Operands operands) {

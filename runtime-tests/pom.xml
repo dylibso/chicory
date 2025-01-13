@@ -346,6 +346,8 @@
                 <wast>simd_load32_lane.wast</wast>
                 <wast>simd_load64_lane.wast</wast>
                 <wast>simd_load8_lane.wast</wast>
+                <wast>simd_load_extend.wast</wast>
+                <wast>simd_load_splat.wast</wast>
                 <wast>simd_load_zero.wast</wast>
                 <wast>simd_splat.wast</wast>
                 <wast>simd_store.wast</wast>
@@ -421,8 +423,6 @@
                 <wast>simd_i8x16_cmp.wast</wast>
                 <wast>simd_i8x16_sat_arith.wast</wast>
                 <wast>simd_int_to_int_extend.wast</wast>
-                <wast>simd_load_extend.wast</wast>
-                <wast>simd_load_splat.wast</wast>
               </excludedWasts>
             </configuration>
             <executions>
