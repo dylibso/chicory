@@ -93,6 +93,15 @@ Our priority is to focus on implementing [proposals](https://github.com/WebAssem
 
 Because we are all humans, and to ensure Chicory evolves in the right direction, all changes must pass continuous integration before being merged. The CI is based on GitHub Actions, which means that pull requests will receive automatic feedback.  Please watch out for the results of these workflows to see if your PR passes all tests.
 
+### IntelliJ default limits
+
+Some of the SIMD tests are exceeding the default limits of IntelliJ.
+To overcome this issue go to "Help menu" -> "Edit Custom Properties" and add the following line:
+
+```
+idea.max.intellisense.filesize=5000
+```
+
 ### Tests and documentation are not optional
 
 Don't forget to include tests in your pull requests.

@@ -339,6 +339,16 @@
                 <wast>simd_boolean.wast</wast>
                 <wast>simd_const.wast</wast>
                 <wast>simd_conversions.wast</wast>
+                <wast>simd_f32x4.wast</wast>
+                <wast>simd_f32x4_arith.wast</wast>
+                <wast>simd_f32x4_cmp.wast</wast>
+                <wast>simd_f32x4_pmin_pmax.wast</wast>
+                <wast>simd_f32x4_rounding.wast</wast>
+                <wast>simd_f64x2.wast</wast>
+                <wast>simd_f64x2_arith.wast</wast>
+                <wast>simd_f64x2_cmp.wast</wast>
+                <wast>simd_f64x2_pmin_pmax.wast</wast>
+                <wast>simd_f64x2_rounding.wast</wast>
                 <wast>simd_i16x8_arith.wast</wast>
                 <wast>simd_i16x8_arith2.wast</wast>
                 <wast>simd_i16x8_cmp.wast</wast>
@@ -413,16 +423,6 @@
               <excludedWasts>
                 <!-- obsolete-keywords is only stressing the wat parser -->
                 <wast>obsolete-keywords.wast</wast>
-                <wast>simd_f32x4.wast</wast>
-                <wast>simd_f32x4_arith.wast</wast>
-                <wast>simd_f32x4_cmp.wast</wast>
-                <wast>simd_f32x4_pmin_pmax.wast</wast>
-                <wast>simd_f32x4_rounding.wast</wast>
-                <wast>simd_f64x2.wast</wast>
-                <wast>simd_f64x2_arith.wast</wast>
-                <wast>simd_f64x2_cmp.wast</wast>
-                <wast>simd_f64x2_pmin_pmax.wast</wast>
-                <wast>simd_f64x2_rounding.wast</wast>
               </excludedWasts>
             </configuration>
             <executions>
