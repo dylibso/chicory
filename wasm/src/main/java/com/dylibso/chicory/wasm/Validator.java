@@ -1471,10 +1471,8 @@ final class Validator {
                 case I8x16_NEG:
                 case I8x16_ABS:
                 case I8x16_POPCNT:
-                case I8x16_EXTMUL_LOW_I8x16_S:
-                case I8x16_EXTMUL_HIGH_I8x16_S:
-                case I8x16_EXTMUL_LOW_I8x16_U:
-                case I8x16_EXTMUL_HIGH_I8x16_U:
+                case I16x8_EXTADD_PAIRWISE_I8x16_S:
+                case I16x8_EXTADD_PAIRWISE_I8x16_U:
                 case I16x8_NEG:
                 case I16x8_ABS:
                 case I16x8_EXTEND_LOW_I8x16_S:
