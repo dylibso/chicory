@@ -1447,10 +1447,28 @@ final class Validator {
                 case F32x4_MUL:
                 case F32x4_MIN:
                 case F32x4_DIV:
+                case I32x4_NE:
                 case I32x4_EQ:
                 case I32x4_ADD:
                 case I32x4_SUB:
                 case I32x4_MUL:
+                case I32x4_MIN_S:
+                case I32x4_MIN_U:
+                case I32x4_MAX_S:
+                case I32x4_MAX_U:
+                case I32x4_LT_S:
+                case I32x4_LT_U:
+                case I32x4_LE_S:
+                case I32x4_LE_U:
+                case I32x4_GE_S:
+                case I32x4_GE_U:
+                case I32x4_GT_S:
+                case I32x4_GT_U:
+                case I32x4_DOT_I16x8_S:
+                case I32x4_EXTMUL_LOW_I16x8_S:
+                case I32x4_EXTMUL_HIGH_I16x8_S:
+                case I32x4_EXTMUL_LOW_I16x8_U:
+                case I32x4_EXTMUL_HIGH_I16x8_U:
                 case I64x2_ADD:
                 case I64x2_SUB:
                 case I64x2_MUL:
@@ -1479,16 +1497,23 @@ final class Validator {
                 case I16x8_EXTEND_HIGH_I8x16_S:
                 case I16x8_EXTEND_LOW_I8x16_U:
                 case I16x8_EXTEND_HIGH_I8x16_U:
+                case I32x4_NEG:
+                case I32x4_ABS:
                 case I32x4_EXTEND_LOW_I16x8_S:
                 case I32x4_EXTEND_HIGH_I16x8_S:
                 case I32x4_EXTEND_LOW_I16x8_U:
                 case I32x4_EXTEND_HIGH_I16x8_U:
+                case I32x4_EXTADD_PAIRWISE_I16x8_S:
+                case I32x4_EXTADD_PAIRWISE_I16x8_U:
                 case I64x2_EXTEND_LOW_I32x4_S:
                 case I64x2_EXTEND_HIGH_I32x4_S:
                 case I64x2_EXTEND_LOW_I32x4_U:
                 case I64x2_EXTEND_HIGH_I32x4_U:
                 case F32x4_ABS:
                 case I32x4_TRUNC_SAT_F32X4_S:
+                case I32x4_TRUNC_SAT_F32X4_U:
+                case I32x4_TRUNC_SAT_F64x2_S_ZERO:
+                case I32x4_TRUNC_SAT_F64x2_U_ZERO:
                 case F32x4_CONVERT_I32x4_S:
                 case F32x4_CONVERT_I32x4_U:
                 case F64x2_CONVERT_LOW_I32x4_S:
