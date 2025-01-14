@@ -1414,14 +1414,35 @@ final class Validator {
                 case I8x16_ADD_SAT_U:
                 case I8x16_NARROW_I16x8_S:
                 case I8x16_NARROW_I16x8_U:
+                case I16x8_NE:
                 case I16x8_EQ:
                 case I16x8_ADD:
                 case I16x8_ADD_SAT_S:
+                case I16x8_ADD_SAT_U:
                 case I16x8_SUB:
+                case I16x8_SUB_SAT_S:
                 case I16x8_SUB_SAT_U:
                 case I16x8_MUL:
+                case I16x8_LT_S:
+                case I16x8_LT_U:
+                case I16x8_GT_S:
+                case I16x8_GT_U:
+                case I16x8_LE_S:
+                case I16x8_LE_U:
+                case I16x8_GE_S:
+                case I16x8_GE_U:
+                case I16x8_MIN_S:
+                case I16x8_MIN_U:
+                case I16x8_MAX_S:
+                case I16x8_MAX_U:
+                case I16x8_AVGR_U:
                 case I16x8_NARROW_I32x4_S:
                 case I16x8_NARROW_I32x4_U:
+                case I16x8_Q15MULR_SAT_S:
+                case I16x8_EXTMUL_LOW_I8x16_S:
+                case I16x8_EXTMUL_HIGH_I8x16_S:
+                case I16x8_EXTMUL_LOW_I8x16_U:
+                case I16x8_EXTMUL_HIGH_I8x16_U:
                 case F32x4_EQ:
                 case F32x4_MUL:
                 case F32x4_MIN:
@@ -1450,6 +1471,12 @@ final class Validator {
                 case I8x16_NEG:
                 case I8x16_ABS:
                 case I8x16_POPCNT:
+                case I8x16_EXTMUL_LOW_I8x16_S:
+                case I8x16_EXTMUL_HIGH_I8x16_S:
+                case I8x16_EXTMUL_LOW_I8x16_U:
+                case I8x16_EXTMUL_HIGH_I8x16_U:
+                case I16x8_NEG:
+                case I16x8_ABS:
                 case I16x8_EXTEND_LOW_I8x16_S:
                 case I16x8_EXTEND_HIGH_I8x16_S:
                 case I16x8_EXTEND_LOW_I8x16_U:
