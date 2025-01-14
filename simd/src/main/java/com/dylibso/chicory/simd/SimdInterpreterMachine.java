@@ -647,11 +647,62 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             case OpCode.F32x4_DIV:
                 BINOP(stack, LongVector::reinterpretAsFloats, (v1, v2) -> v2.div(v1));
                 break;
+            case OpCode.I64x2_ABS:
+                UNARY(stack, LongVector::reinterpretAsLongs, Vector::abs);
+                break;
+            case OpCode.I64x2_NEG:
+                UNARY(stack, LongVector::reinterpretAsLongs, Vector::neg);
+                break;
             case OpCode.I64x2_MUL:
                 BINOP(stack, LongVector::reinterpretAsLongs, (v1, v2) -> v1.mul(v2));
                 break;
+            case OpCode.I64x2_EQ:
+                BINOP(stack, LongVector::reinterpretAsLongs, (v1, v2) -> v1.eq(v2).toVector());
+                break;
+            case OpCode.I64x2_NE:
+                BINOP(
+                        stack,
+                        LongVector::reinterpretAsLongs,
+                        (v1, v2) -> v1.compare(VectorOperators.NE, v2).toVector());
+                break;
+            case OpCode.I64x2_LT_S:
+                BINOP(
+                        stack,
+                        LongVector::reinterpretAsLongs,
+                        (v1, v2) -> v1.compare(VectorOperators.LT, v2).toVector());
+                break;
+            case OpCode.I64x2_LE_S:
+                BINOP(
+                        stack,
+                        LongVector::reinterpretAsLongs,
+                        (v1, v2) -> v1.compare(VectorOperators.LE, v2).toVector());
+                break;
+            case OpCode.I64x2_GT_S:
+                BINOP(
+                        stack,
+                        LongVector::reinterpretAsLongs,
+                        (v1, v2) -> v1.compare(VectorOperators.GT, v2).toVector());
+                break;
+            case OpCode.I64x2_GE_S:
+                BINOP(
+                        stack,
+                        LongVector::reinterpretAsLongs,
+                        (v1, v2) -> v1.compare(VectorOperators.GE, v2).toVector());
+                break;
             case OpCode.I64x2_SUB:
                 BINOP(stack, LongVector::reinterpretAsLongs, (v1, v2) -> v2.sub(v1));
+                break;
+            case OpCode.I64x2_EXTMUL_LOW_I32x4_S:
+                I64x2_EXTMUL_LOW_I32x4_S(stack);
+                break;
+            case OpCode.I64x2_EXTMUL_HIGH_I32x4_S:
+                I64x2_EXTMUL_HIGH_I32x4_S(stack);
+                break;
+            case OpCode.I64x2_EXTMUL_LOW_I32x4_U:
+                I64x2_EXTMUL_LOW_I32x4_U(stack);
+                break;
+            case OpCode.I64x2_EXTMUL_HIGH_I32x4_U:
+                I64x2_EXTMUL_HIGH_I32x4_U(stack);
                 break;
             case OpCode.F64x2_ADD:
                 BINOP(stack, LongVector::reinterpretAsLongs, (v1, v2) -> v1.add(v2));
@@ -2304,6 +2355,101 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             res[i] = Short.toUnsignedLong(v1[4 + i]) * Short.toUnsignedLong(v2[4 + i]);
         }
         var result = Value.i32ToVec(res);
+        System.arraycopy(result, 0, stack.array(), offset, 2);
+    }
+
+    private static void I64x2_EXTMUL_LOW_I32x4_S(MStack stack) {
+        var val1High = stack.pop();
+        var val1Low = stack.pop();
+        var offset = stack.size() - 2;
+
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {val1Low, val1High}, 0)
+                        .reinterpretAsInts()
+                        .toArray();
+
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsInts()
+                        .toArray();
+
+        var res =
+                new long[] {
+                    v1[0] * v2[0], v1[1] * v2[1],
+                };
+        var result = Value.i64ToVec(res);
+        System.arraycopy(result, 0, stack.array(), offset, 2);
+    }
+
+    private static void I64x2_EXTMUL_HIGH_I32x4_S(MStack stack) {
+        var val1High = stack.pop();
+        var val1Low = stack.pop();
+        var offset = stack.size() - 2;
+
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {val1Low, val1High}, 0)
+                        .reinterpretAsInts()
+                        .toArray();
+
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsInts()
+                        .toArray();
+
+        var res =
+                new long[] {
+                    v1[2] * v2[2], v1[3] * v2[3],
+                };
+        var result = Value.i64ToVec(res);
+        System.arraycopy(result, 0, stack.array(), offset, 2);
+    }
+
+    private static void I64x2_EXTMUL_LOW_I32x4_U(MStack stack) {
+        var val1High = stack.pop();
+        var val1Low = stack.pop();
+        var offset = stack.size() - 2;
+
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {val1Low, val1High}, 0)
+                        .reinterpretAsInts()
+                        .toArray();
+
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsInts()
+                        .toArray();
+
+        var res =
+                new long[] {
+                    Integer.toUnsignedLong(v1[0]) * Integer.toUnsignedLong(v2[0]),
+                    Integer.toUnsignedLong(v1[1]) * Integer.toUnsignedLong(v2[1]),
+                };
+        var result = Value.i64ToVec(res);
+        System.arraycopy(result, 0, stack.array(), offset, 2);
+    }
+
+    private static void I64x2_EXTMUL_HIGH_I32x4_U(MStack stack) {
+        var val1High = stack.pop();
+        var val1Low = stack.pop();
+        var offset = stack.size() - 2;
+
+        var v1 =
+                LongVector.fromArray(LongVector.SPECIES_128, new long[] {val1Low, val1High}, 0)
+                        .reinterpretAsBytes()
+                        .toArray();
+
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsBytes()
+                        .toArray();
+
+        var res =
+                new long[] {
+                    Integer.toUnsignedLong(v1[2]) * Integer.toUnsignedLong(v2[2]),
+                    Integer.toUnsignedLong(v1[3]) * Integer.toUnsignedLong(v2[3]),
+                };
+
+        var result = Value.i64ToVec(res);
         System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
