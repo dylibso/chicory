@@ -89,9 +89,10 @@ If you have an interest in working on any of these please reach out in Zulip!
 
 * [x] WASIp1 Support (including test gen)
   * [Read more details in the documentation](https://chicory.dev/docs/usage/wasi/)
-* [ ] SIMD Support
-  * Started
-* [ ] Tail Call
+* [x] SIMD Support
+  * in the interpreter
+* [x] Tail Call
+  * in the interpreter
 * [ ] Exception Handling
 * [ ] Multi-Memory Support
 * [ ] GC Support
