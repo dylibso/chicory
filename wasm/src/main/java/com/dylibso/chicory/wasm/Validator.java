@@ -1492,6 +1492,16 @@ final class Validator {
                 case I64x2_EXTMUL_HIGH_I32x4_S:
                 case I64x2_EXTMUL_LOW_I32x4_U:
                 case I64x2_EXTMUL_HIGH_I32x4_U:
+                case F64x2_NE:
+                case F64x2_LT:
+                case F64x2_GT:
+                case F64x2_LE:
+                case F64x2_GE:
+                case F64x2_DIV:
+                case F64x2_MAX:
+                case F64x2_MIN:
+                case F64x2_PMAX:
+                case F64x2_PMIN:
                 case F64x2_EQ:
                 case F64x2_ADD:
                 case F64x2_SUB:
@@ -1542,6 +1552,13 @@ final class Validator {
                 case F32x4_FLOOR:
                 case F32x4_TRUNC:
                 case F32x4_NEAREST:
+                case F64x2_ABS:
+                case F64x2_NEG:
+                case F64x2_SQRT:
+                case F64x2_CEIL:
+                case F64x2_FLOOR:
+                case F64x2_NEAREST:
+                case F64x2_TRUNC:
                 case F64x2_CONVERT_LOW_I32x4_S:
                 case F64x2_CONVERT_LOW_I32x4_U:
                 case F64x2_PROMOTE_LOW_F32x4:
