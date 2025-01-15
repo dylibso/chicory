@@ -749,6 +749,18 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             case OpCode.F32x4_PMAX:
                 F32x4(stack, (a, b) -> Value.floatToLong((a > b) ? a : b));
                 break;
+            case OpCode.F32x4_CEIL:
+                F32x4(stack, v -> Value.floatToLong(OpcodeImpl.F32_CEIL(v)));
+                break;
+            case OpCode.F32x4_TRUNC:
+                F32x4(stack, v -> Value.floatToLong(OpcodeImpl.F32_TRUNC(v)));
+                break;
+            case OpCode.F32x4_FLOOR:
+                F32x4(stack, v -> Value.floatToLong(OpcodeImpl.F32_FLOOR(v)));
+                break;
+            case OpCode.F32x4_NEAREST:
+                F32x4(stack, v -> Value.floatToLong(OpcodeImpl.F32_NEAREST(v)));
+                break;
             case OpCode.F64x2_ADD:
                 BINOP(stack, LongVector::reinterpretAsLongs, (v1, v2) -> v1.add(v2));
                 break;
@@ -1723,6 +1735,24 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                 fn.apply(v1[1], v2[1]),
                 fn.apply(v1[2], v2[2]),
                 fn.apply(v1[3], v2[3]),
+        });
+
+        System.arraycopy(result, 0, stack.array(), offset, 2);
+    }
+
+    private static void F32x4(MStack stack, Function<Float, Long> fn) {
+        var offset = stack.size() - 2;
+
+        var v =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsFloats()
+                        .toArray();
+
+        var result = Value.i32ToVec(new long[] {
+                fn.apply(v[0]),
+                fn.apply(v[1]),
+                fn.apply(v[2]),
+                fn.apply(v[3]),
         });
 
         System.arraycopy(result, 0, stack.array(), offset, 2);
