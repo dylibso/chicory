@@ -1737,10 +1737,8 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             return false;
         } else if ((a == 0.0f && b == -0.0f) || (a == -0.0f && b == 0.0f)) {
             return false;
-        } else if (Float.compare(a, b) < 0) {
-            return true;
         } else {
-            return false;
+            return Float.compare(a, b) < 0;
         }
     }
 
@@ -1749,10 +1747,8 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             return false;
         } else if ((a == 0.0f && b == -0.0f) || (a == -0.0f && b == 0.0f)) {
             return true;
-        } else if (Float.compare(a, b) <= 0) {
-            return true;
         } else {
-            return false;
+            return Float.compare(a, b) <= 0;
         }
     }
 
@@ -1761,10 +1757,8 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             return false;
         } else if ((a == 0.0f && b == -0.0f) || (a == -0.0f && b == 0.0f)) {
             return false;
-        } else if (Float.compare(a, b) > 0) {
-            return true;
         } else {
-            return false;
+            return Float.compare(a, b) > 0;
         }
     }
 
@@ -1773,10 +1767,8 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             return false;
         } else if ((a == 0.0f && b == -0.0f) || (a == -0.0f && b == 0.0f)) {
             return true;
-        } else if (Float.compare(a, b) >= 0) {
-            return true;
         } else {
-            return false;
+            return Float.compare(a, b) >= 0;
         }
     }
 
@@ -1785,10 +1777,8 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             return false;
         } else if ((a == 0.0f && b == -0.0f) || (a == -0.0f && b == 0.0f)) {
             return true;
-        } else if (Float.compare(a, b) == 0) {
-            return true;
         } else {
-            return false;
+            return Float.compare(a, b) == 0;
         }
     }
 
@@ -1814,6 +1804,23 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                             fn.apply(v1[1], v2[1]),
                             fn.apply(v1[2], v2[2]),
                             fn.apply(v1[3], v2[3]),
+                        });
+
+        System.arraycopy(result, 0, stack.array(), offset, 2);
+    }
+
+    private static void F32x4(MStack stack, Function<Float, Long> fn) {
+        var offset = stack.size() - 2;
+
+        var v =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsFloats()
+                        .toArray();
+
+        var result =
+                Value.i32ToVec(
+                        new long[] {
+                            fn.apply(v[0]), fn.apply(v[1]), fn.apply(v[2]), fn.apply(v[3]),
                         });
 
         System.arraycopy(result, 0, stack.array(), offset, 2);
@@ -1855,23 +1862,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                 Value.i64ToVec(
                         new long[] {
                             fn.apply(v[0]), fn.apply(v[1]),
-                        });
-
-        System.arraycopy(result, 0, stack.array(), offset, 2);
-    }
-
-    private static void F32x4(MStack stack, Function<Float, Long> fn) {
-        var offset = stack.size() - 2;
-
-        var v =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
-                        .reinterpretAsFloats()
-                        .toArray();
-
-        var result =
-                Value.i32ToVec(
-                        new long[] {
-                            fn.apply(v[0]), fn.apply(v[1]), fn.apply(v[2]), fn.apply(v[3]),
                         });
 
         System.arraycopy(result, 0, stack.array(), offset, 2);
