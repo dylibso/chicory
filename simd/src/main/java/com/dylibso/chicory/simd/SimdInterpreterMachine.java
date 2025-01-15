@@ -299,9 +299,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             case OpCode.I32x4_EQ:
                 BINOP(stack, LongVector::reinterpretAsInts, (v1, v2) -> v1.eq(v2).toVector());
                 break;
-            case OpCode.F32x4_EQ:
-                F32x4_EQ(stack);
-                break;
             case OpCode.F64x2_EQ:
                 BINOP(stack, LongVector::reinterpretAsDoubles, (v1, v2) -> v1.eq(v2).toVector());
                 break;
@@ -644,9 +641,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             case OpCode.I32x4_EXTMUL_HIGH_I16x8_U:
                 I32x4_EXTMUL_HIGH_I16x8_U(stack);
                 break;
-            case OpCode.F32x4_DIV:
-                BINOP(stack, LongVector::reinterpretAsFloats, (v1, v2) -> v2.div(v1));
-                break;
             case OpCode.I64x2_ABS:
                 UNARY(stack, LongVector::reinterpretAsLongs, Vector::abs);
                 break;
@@ -703,6 +697,57 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                 break;
             case OpCode.I64x2_EXTMUL_HIGH_I32x4_U:
                 I64x2_EXTMUL_HIGH_I32x4_U(stack);
+                break;
+            case OpCode.F32x4_EQ:
+                F32x4(stack, (a, b) -> (OpcodeImpl.F32_EQ(a, b) > 0 ? 0xFFFFFFFFL : 0x0L));
+                break;
+            case OpCode.F32x4_ABS:
+                UNARY(stack, LongVector::reinterpretAsFloats, v -> v.abs());
+                break;
+            case OpCode.F32x4_MIN:
+                BINOP(stack, LongVector::reinterpretAsFloats, (v1, v2) -> v1.min(v2));
+                break;
+            case OpCode.F32x4_MAX:
+                BINOP(stack, LongVector::reinterpretAsFloats, (v1, v2) -> v1.max(v2));
+                break;
+            case OpCode.F32x4_ADD:
+                BINOP(stack, LongVector::reinterpretAsFloats, (v1, v2) -> v1.add(v2));
+                break;
+            case OpCode.F32x4_SUB:
+                BINOP(stack, LongVector::reinterpretAsFloats, (v1, v2) -> v2.sub(v1));
+                break;
+            case OpCode.F32x4_MUL:
+                BINOP(stack, LongVector::reinterpretAsFloats, (v1, v2) -> v1.mul(v2));
+                break;
+            case OpCode.F32x4_DIV:
+                BINOP(stack, LongVector::reinterpretAsFloats, (v1, v2) -> v2.div(v1));
+                break;
+            case OpCode.F32x4_NEG:
+                UNARY(stack, LongVector::reinterpretAsFloats, v -> v.neg());
+                break;
+            case OpCode.F32x4_SQRT:
+                UNARY(stack, LongVector::reinterpretAsFloats, v -> v.lanewise(VectorOperators.SQRT));
+                break;
+            case OpCode.F32x4_LE:
+                F32x4(stack, (a, b) -> (le(b, a) ? 0xFFFFFFFFL : 0x0L));
+                break;
+            case OpCode.F32x4_LT:
+                F32x4(stack, (a, b) -> (lt(b, a) ? 0xFFFFFFFFL : 0x0L));
+                break;
+            case OpCode.F32x4_GE:
+                F32x4(stack, (a, b) -> (ge(b, a) ? 0xFFFFFFFFL : 0x0L));
+                break;
+            case OpCode.F32x4_GT:
+                F32x4(stack, (a, b) -> (gt(b, a) ? 0xFFFFFFFFL : 0x0L));
+                break;
+            case OpCode.F32x4_NE:
+                F32x4(stack, (a, b) -> (!equals(a, b) ? 0xFFFFFFFFL : 0x0L));
+                break;
+            case OpCode.F32x4_PMIN:
+                F32x4(stack, (a, b) -> Value.floatToLong((a < b) ? a : b));
+                break;
+            case OpCode.F32x4_PMAX:
+                F32x4(stack, (a, b) -> Value.floatToLong((a > b) ? a : b));
                 break;
             case OpCode.F64x2_ADD:
                 BINOP(stack, LongVector::reinterpretAsLongs, (v1, v2) -> v1.add(v2));
@@ -784,15 +829,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                 break;
             case OpCode.I64x2_ADD:
                 BINOP(stack, LongVector::reinterpretAsLongs, (v1, v2) -> v2.add(v1));
-                break;
-            case OpCode.F32x4_MUL:
-                F32x4_MUL(stack);
-                break;
-            case OpCode.F32x4_ABS:
-                F32x4_ABS(stack);
-                break;
-            case OpCode.F32x4_MIN:
-                F32x4_MIN(stack);
                 break;
             case OpCode.I32x4_TRUNC_SAT_F32X4_S:
                 I32x4_TRUNC_SAT_F32x4_S(stack);
@@ -1572,33 +1608,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
-    private static void F32x4_EQ(MStack stack) {
-        var v1High = stack.pop();
-        var v1Low = stack.pop();
-
-        var offset = stack.size() - 2;
-
-        var v1 =
-                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
-                        .reinterpretAsFloats()
-                        .toArray();
-        var v2 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
-                        .reinterpretAsFloats()
-                        .toArray();
-
-        var result =
-                Value.f32ToVec(
-                        new long[] {
-                            (v1[0] == v2[0]) ? 0xFFFFFFFFL : 0x0L,
-                            (v1[1] == v2[1]) ? 0xFFFFFFFFL : 0x0L,
-                            (v1[2] == v2[2]) ? 0xFFFFFFFFL : 0x0L,
-                            (v1[3] == v2[3]) ? 0xFFFFFFFFL : 0x0L
-                        });
-
-        System.arraycopy(result, 0, stack.array(), offset, 2);
-    }
-
     private static void UNARY(
             MStack stack, Function<LongVector, Vector> reinterpret, Function<Vector, Vector> fun) {
         var offset = stack.size() - 2;
@@ -1629,6 +1638,92 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
                         LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset));
 
         var result = fun.apply(v1, v2).reinterpretAsLongs().toArray();
+
+        System.arraycopy(result, 0, stack.array(), offset, 2);
+    }
+
+    private static boolean lt(float a, float b) {
+        if (Float.isNaN(b)) {
+            return false;
+        } else if ((a == 0.0f && b == -0.0f) || (a == -0.0f && b == 0.0f)) {
+            return false;
+        } else if (Float.compare(a, b) < 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean le(float a, float b) {
+        if (Float.isNaN(b)) {
+            return false;
+        } else if ((a == 0.0f && b == -0.0f) || (a == -0.0f && b == 0.0f)) {
+            return true;
+        } else if (Float.compare(a, b) <= 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean gt(float a, float b) {
+        if (Float.isNaN(a)) {
+            return false;
+        } else if ((a == 0.0f && b == -0.0f) || (a == -0.0f && b == 0.0f)) {
+            return false;
+        } else if (Float.compare(a, b) > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean ge(float a, float b) {
+        if (Float.isNaN(a)) {
+            return false;
+        } else if ((a == 0.0f && b == -0.0f) || (a == -0.0f && b == 0.0f)) {
+            return true;
+        } else if (Float.compare(a, b) >= 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static boolean equals(float a, float b) {
+        if (Float.isNaN(a) || Float.isNaN(b)) {
+            return false;
+        } else if ((a == 0.0f && b == -0.0f) || (a == -0.0f && b == 0.0f)) {
+            return true;
+        } else if (Float.compare(a, b) == 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static void F32x4(MStack stack, BiFunction<Float, Float, Long> fn) {
+        var v1High = stack.pop();
+        var v1Low = stack.pop();
+
+        var offset = stack.size() - 2;
+
+        var v1 =
+                LongVector.fromArray(
+                                LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
+                        .reinterpretAsFloats()
+                        .toArray();
+        var v2 =
+                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
+                        .reinterpretAsFloats()
+                        .toArray();
+
+        var result = Value.i32ToVec(new long[] {
+                fn.apply(v1[0], v2[0]),
+                fn.apply(v1[1], v2[1]),
+                fn.apply(v1[2], v2[2]),
+                fn.apply(v1[3], v2[3]),
+        });
 
         System.arraycopy(result, 0, stack.array(), offset, 2);
     }
@@ -1769,36 +1864,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
         System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
-    private static void F32x4_MUL(MStack stack) {
-        var v1High = stack.pop();
-        var v1Low = stack.pop();
-
-        int offset = stack.size() - 2;
-
-        var v1 =
-                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
-                        .reinterpretAsFloats();
-
-        var v2 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
-                        .reinterpretAsFloats();
-
-        var result = v1.mul(v2).reinterpretAsLongs().toArray();
-        System.arraycopy(result, 0, stack.array(), offset, 2);
-    }
-
-    private static void F32x4_ABS(MStack stack) {
-        var offset = stack.size() - 2;
-
-        var v =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
-                        .reinterpretAsFloats();
-
-        var result = v.abs().reinterpretAsLongs().toArray();
-
-        System.arraycopy(result, 0, stack.array(), offset, 2);
-    }
-
     private static void I8x16(MStack stack, BiFunction<Byte, Byte, Long> op) {
         var v1High = stack.pop();
         var v1Low = stack.pop();
@@ -1866,24 +1931,6 @@ public final class SimdInterpreterMachine extends InterpreterMachine {
             result[i] = op.apply(v1[i], v2[i]);
         }
         System.arraycopy(Value.i32ToVec(result), 0, stack.array(), offset, 2);
-    }
-
-    private static void F32x4_MIN(MStack stack) {
-        var v1High = stack.pop();
-        var v1Low = stack.pop();
-
-        int offset = stack.size() - 2;
-
-        var v1 =
-                LongVector.fromArray(LongVector.SPECIES_128, new long[] {v1Low, v1High}, 0)
-                        .reinterpretAsFloats();
-
-        var v2 =
-                LongVector.fromArray(LongVector.SPECIES_128, stack.array(), offset)
-                        .reinterpretAsFloats();
-
-        var result = v1.min(v2).reinterpretAsLongs().toArray();
-        System.arraycopy(result, 0, stack.array(), offset, 2);
     }
 
     private static void I32x4_TRUNC_SAT_F32x4_S(MStack stack) {
