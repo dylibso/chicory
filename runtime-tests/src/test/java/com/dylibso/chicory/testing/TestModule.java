@@ -7,7 +7,7 @@ import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasm.MalformedException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
-import java.io.File;
+import java.io.IOException;
 
 public class TestModule {
 
@@ -42,18 +42,22 @@ public class TestModule {
                     + "invalid lane length"
                     + "malformed lane index";
 
-    public static TestModule of(File file) {
-        if (file.getName().endsWith(".wat")) {
-            byte[] parsed;
-            try {
-                parsed = Wat2Wasm.parse(file);
-            } catch (RuntimeException e) {
-                throw new MalformedException(
-                        e.getMessage() + HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT);
+    public static TestModule of(String classpath) {
+        try (var is = TestModule.class.getResourceAsStream(classpath)) {
+            if (classpath.endsWith(".wat")) {
+                byte[] parsed;
+                try {
+                    parsed = Wat2Wasm.parse(is);
+                } catch (RuntimeException e) {
+                    throw new MalformedException(
+                            e.getMessage() + HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT);
+                }
+                return of(Parser.parse(parsed));
             }
-            return of(Parser.parse(parsed));
+            return of(Parser.parse(is));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        return of(Parser.parse(file));
     }
 
     public static TestModule of(WasmModule module) {

@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
@@ -62,7 +63,9 @@ public class TestGenMojo extends AbstractMojo {
             defaultValue = "${project.build.directory}/generated-test-sources/test-gen")
     private File sourceDestinationFolder;
 
-    @Parameter(required = true, defaultValue = "${project.build.directory}/compiled-wast")
+    @Parameter(
+            required = true,
+            defaultValue = "${project.build.directory}/generated-resources/compiled-wast")
     private File compiledWastTargetFolder;
 
     /**
@@ -129,7 +132,6 @@ public class TestGenMojo extends AbstractMojo {
         var testSuiteDownloader = new TestSuiteDownloader(log);
         var testGen =
                 new JavaTestGen(
-                        project.getBasedir(),
                         excludedTests,
                         excludedMalformedWasts,
                         excludedInvalidWasts,
@@ -195,6 +197,10 @@ public class TestGenMojo extends AbstractMojo {
 
         // Add the generated tests to the source root
         project.addTestCompileSourceRoot(sourceDestinationFolder.getAbsolutePath());
+        // Add compiled-wast to the resources
+        Resource resource = new Resource();
+        resource.setDirectory(compiledWastTargetFolder.getPath());
+        project.addTestResource(resource);
     }
 
     private static void validate(List<String> items, String name, boolean requireSorted)
@@ -272,7 +278,7 @@ public class TestGenMojo extends AbstractMojo {
                     .process();
 
             var name = specFile.toPath().getParent().toFile().getName();
-            var cu = testGen.generate(name, readWast(specFile), wasmFilesFolder);
+            var cu = testGen.generate(name, readWast(specFile), "/" + plainName);
             dest.add(
                     cu.getPackageDeclaration().orElseThrow().getName().toString(),
                     cu.getType(0).getNameAsString() + ".java",

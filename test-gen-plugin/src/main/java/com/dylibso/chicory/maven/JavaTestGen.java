@@ -26,7 +26,6 @@ import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.utils.StringEscapeUtils;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,8 +35,6 @@ import java.util.stream.Collectors;
 public class JavaTestGen {
 
     private static final String TEST_MODULE_NAME = "testModule";
-
-    private final File baseDir;
 
     private final List<String> excludedTests;
 
@@ -50,13 +47,11 @@ public class JavaTestGen {
     private final List<String> excludedUnlinkableWasts;
 
     public JavaTestGen(
-            File baseDir,
             List<String> excludedTests,
             List<String> excludedMalformedWasts,
             List<String> excludedInvalidWasts,
             List<String> excludedUninstantiableWasts,
             List<String> excludedUnlinkableWasts) {
-        this.baseDir = baseDir;
         this.excludedTests = excludedTests;
         this.excludedMalformedWasts = excludedMalformedWasts;
         this.excludedInvalidWasts = excludedInvalidWasts;
@@ -64,7 +59,7 @@ public class JavaTestGen {
         this.excludedUnlinkableWasts = excludedUnlinkableWasts;
     }
 
-    public CompilationUnit generate(String name, Wast wast, File wasmFilesFolder) {
+    public CompilationUnit generate(String name, Wast wast, String wasmClasspath) {
         var cu = new CompilationUnit("com.dylibso.chicory.test.gen");
         var testName = "SpecV1" + capitalize(escapedCamelCase(name)) + "Test";
 
@@ -149,7 +144,7 @@ public class JavaTestGen {
             switch (cmd.type()) {
                 case MODULE:
                     {
-                        currentWasmFile = getWasmFile(cmd, wasmFilesFolder);
+                        currentWasmFile = getWasmFile(cmd, wasmClasspath);
                         lastModuleVarName = TEST_MODULE_NAME + moduleInstantiationNumber;
                         String lastInstanceVarName = lastModuleVarName + "Instance";
                         moduleInstantiationNumber++;
@@ -261,7 +256,7 @@ public class JavaTestGen {
                                         testNumber++,
                                         excludedMethods);
                         generateAssertThrows(
-                                wasmFilesFolder,
+                                wasmClasspath,
                                 cmd,
                                 method,
                                 getExcluded(cmd.type(), name),
@@ -486,12 +481,9 @@ public class JavaTestGen {
 
     private static NameExpr generateModuleInstantiation(String wasmFile, boolean excludeInvalid) {
         return new NameExpr(
-                "TestModule.of(\n"
-                        + INDENT
-                        + TAB
-                        + "new File(\""
+                "TestModule.of(\""
                         + wasmFile
-                        + "\"))\n"
+                        + "\")\n"
                         + ((excludeInvalid) ? INDENT + ".withTypeValidation(false)\n" : "")
                         + INDENT
                         + ".instantiate(store)");
@@ -501,23 +493,18 @@ public class JavaTestGen {
         return new NameExpr("store.register(\"" + name + "\", " + instance + ")");
     }
 
-    private String getWasmFile(Command cmd, File folder) {
-        return folder.toPath()
-                .resolve(cmd.filename())
-                .toFile()
-                .getAbsolutePath()
-                .replace(baseDir.getAbsolutePath() + File.separator, "")
-                .replace("\\", "\\\\"); // Win compat
+    private String getWasmFile(Command cmd, String wasmClasspath) {
+        return wasmClasspath + "/" + cmd.filename();
     }
 
     private void generateAssertThrows(
-            File wasmFilesFolder,
+            String wasmClasspath,
             Command cmd,
             MethodDeclaration method,
             boolean excluded,
             String exceptionType) {
 
-        String wasmFile = getWasmFile(cmd, wasmFilesFolder);
+        String wasmFile = getWasmFile(cmd, wasmClasspath);
 
         var assignementStmt = (cmd.text() != null) ? "var exception = " : "";
 

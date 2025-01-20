@@ -30,6 +30,10 @@ public final class Wat2Wasm {
 
     private Wat2Wasm() {}
 
+    public static byte[] parse(InputStream is) {
+        return parse(is, "temp.wast");
+    }
+
     public static byte[] parse(File file) {
         try (InputStream is = new FileInputStream(file)) {
             return parse(is, file.getName());
