@@ -28,7 +28,7 @@ will recompile the repository and run up-to-date tests.
 To avoid re-building the main project (e.g. in CI), you can also pass
 `CHICORY_REPO` environment variable, in which case, this Android project will
 re-use its output instead of recompiling the main project.
-(It won't make any attempt to compile their tests either)
+
 ```
 mvn deploy -DaltDeploymentRepository=local-repo::default::file:./local-repo -DskipTests
 cd android-tests && CHICORY_REPO=../local-repo ./gradlew device-tests:connectedCheck
@@ -74,7 +74,7 @@ When adding a new project to be tested, follow these steps:
 * Update `device-tests/build.gradle.kts`
   * Create a new product flavor in the `productFlavors` section.
   * Add its dependencies in the `dependencies` section, including its test via the
-    `addLibraryTests` helper method (see docs around them for details)
+    `addLibraryTests` helper method (see docs around them for details).
 * Update the project's pom file to include the `maven-jar-plugin` plugin for tests (you can check
   the `runtime` project for an example). This test jar goal will be used by the `addLibraryTests`
   method.
