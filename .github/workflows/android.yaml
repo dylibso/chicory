@@ -2,6 +2,8 @@ name: Android Device Tests
 
 on:
   push:
+    branches: [ main ]
+  pull_request:
 
 jobs:
   build:
