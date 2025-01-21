@@ -12,7 +12,14 @@ for each main chicory project and setting up its dependencies to run
 tests.
 
 Inside the root `build.gradle.kts` file, we setup a task that creates a
-maven repository from the outputs of the main project.
+maven repository from the outputs of the main project. It primarily runs the
+`mvn deploy` command for the list of projects we are interested in.
+```
+  mvn deploy -Ddev -pl runtime -am \
+     -DaltDeploymentRepository=local-repo::default::<somehwere in gradle build folder>
+     -Dmaven.test.skip=true # dont compile tests
+```
+This allows the android project to depend on the outputs of a local deployment.
 
 The dependencies between this project and the maven project are setup properly
 such that, if the code in the main maven project changes, this Android project
@@ -60,3 +67,14 @@ You can also complete the Android SDK setup using the
 [command line tools](https://developer.android.com/tools) but the steps to follow will depend on
 your operating system and might get fairly complicated
 (see [github action](https://github.com/ReactiveCircus/android-emulator-runner/blob/main/src/sdk-installer.ts#L7)).
+
+## Adding a New Test Project
+When adding a new project to be tested, follow these steps:
+* Update `build.gradle.kts` and add it to the `testedProjects` parameter of the build repo task.
+* Update `device-tests/build.gradle.kts`
+  * Create a new product flavor in the `productFlavors` section.
+  * Add its dependencies in the `dependencies` section, including its test via the
+    `addLibraryTests` helper method (see docs around them for details)
+* Update the project's pom file to include the `maven-jar-plugin` plugin for tests (you can check
+  the `runtime` project for an example). This test jar goal will be used by the `addLibraryTests`
+  method.

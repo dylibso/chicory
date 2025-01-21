@@ -22,6 +22,9 @@ constructor(private val execOps: ExecOperations, private val filesystemOps: File
     @get:Input @get:Optional abstract val prebuiltRepositoryArg: Property<String>
     @get:Internal abstract val mainProjectDirectory: DirectoryProperty
 
+    /** Comma separated list of projects to build. */
+    @get:Input abstract val testedProjects: Property<String>
+
     /**
      * Since our project is in the same directory as the main project, any changes would invalidate
      * the mvn publish task. To prevent this, we declare the [mainProjectDirectory] as an internal
@@ -69,6 +72,9 @@ constructor(private val execOps: ExecOperations, private val filesystemOps: File
                     "-Ddev",
                     "-DaltDeploymentRepository=local-repo::default::${repositoryLocation.get().asFile.toURI()}",
                     "-Dmaven.test.skip=true",
+                    "-pl",
+                    testedProjects.get(),
+                    "-am", // make dependencies as well
                 )
             }
         }
@@ -82,6 +88,9 @@ val buildRepoTask: TaskProvider<PrepareRepositoryTask> =
         prebuiltRepositoryArg.set(rootProject.providers.environmentVariable("CHICORY_REPO"))
         mainProjectDirectory.set(rootProject.layout.projectDirectory.dir("../."))
         repositoryLocation.set(localMavenRepoDir)
+        // comma separated list of projects that we want to test. Only these projects will
+        // be built.
+        testedProjects.set("runtime")
     }
 
 project.subprojects {
