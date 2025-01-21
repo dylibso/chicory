@@ -38,3 +38,25 @@ Or, to run just one flavor (1 module from the main repo), you can use its test t
 // connected<mainModuleNameCapitalized>DebugAndroidTest
 cd android-tests && ./gradlew device-tests:connectedRuntimeDebugAndroidTest
 ```
+
+## Environment Setup
+You'll need Android build tools and a running emulator (or connected device with developer
+mode) to build and run these tests.
+
+The easiest way to obtain a working local setup is to use
+[Android Studio](https://developer.android.com/studio).
+
+* Download Android Studio from [this link](https://developer.android.com/studio).
+  * Alternatively, you can use [Jetbrains Toolbox](https://www.jetbrains.com/toolbox-app/).
+* Start Android Studio. It will guide you through the SDK installation.
+* Next, open the project in Android Studio (`<checkout-root>/android-tests`). This will also
+  automatically add a `local.properties` file, specifying your Android SDK location.
+* Finally, go to `View > Tool Windows > Device Manager` and create an emulator. You can select
+  any device-version configuration as long as it is at least API 33. See
+  [documentation](https://developer.android.com/studio/run/managing-avds) for more details.
+
+
+You can also complete the Android SDK setup using the
+[command line tools](https://developer.android.com/tools) but the steps to follow will depend on
+your operating system and might get fairly complicated
+(see [github action](https://github.com/ReactiveCircus/android-emulator-runner/blob/main/src/sdk-installer.ts#L7)).

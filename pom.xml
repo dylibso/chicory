@@ -508,7 +508,6 @@
               <!-- there is no AOSP style for ktfmt, hence using Kotlin style -->
               <style>KOTLINLANG</style>
               <removeUnusedImports>true</removeUnusedImports>
-              <manageTrailingCommas>true</manageTrailingCommas>
             </ktfmt>
           </kotlin>
         </configuration>
