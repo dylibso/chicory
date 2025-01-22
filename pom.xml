@@ -909,5 +909,34 @@
         </plugins>
       </build>
     </profile>
+
+    <profile>
+      <id>android-prepare</id>
+      <activation>
+        <property>
+          <name>android-prepare</name>
+        </property>
+      </activation>
+      <properties>
+        <skipTests>true</skipTests>
+        <altDeploymentRepository>local-repo::default::file:${session.executionRootDirectory}/local-repo</altDeploymentRepository>
+      </properties>
+      <build>
+        <defaultGoal>clean deploy</defaultGoal>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>test-jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>

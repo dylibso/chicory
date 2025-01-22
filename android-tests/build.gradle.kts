@@ -54,29 +54,14 @@ constructor(private val execOps: ExecOperations, private val filesystemOps: File
             it.deleteRecursively()
             it.mkdirs()
         }
-        if (prebuiltRepositoryArg.isPresent) {
-            val inputRepo = File(prebuiltRepositoryArg.get())
-            check(inputRepo.exists()) {
-                "Cannot find input repository in ${inputRepo.absolutePath}"
-            }
-            filesystemOps.copy {
-                from(prebuiltRepositoryArg.get())
-                into(repositoryLocation.get().asFile)
-            }
-        } else {
-            execOps.exec {
-                executable = "mvn"
-                workingDir = mainProjectDirectory.get().asFile
-                args(
-                    "deploy",
-                    "-Ddev",
-                    "-DaltDeploymentRepository=local-repo::default::${repositoryLocation.get().asFile.toURI()}",
-                    "-Dmaven.test.skip=true",
-                    "-pl",
-                    testedProjects.get(),
-                    "-am", // make dependencies as well
-                )
-            }
+        check(prebuiltRepositoryArg.isPresent) {
+            "Please configure the envirnoment variable CHICORY_REPO"
+        }
+        val inputRepo = File(prebuiltRepositoryArg.get())
+        check(inputRepo.exists()) { "Cannot find input repository in ${inputRepo.absolutePath}" }
+        filesystemOps.copy {
+            from(prebuiltRepositoryArg.get())
+            into(repositoryLocation.get().asFile)
         }
     }
 }

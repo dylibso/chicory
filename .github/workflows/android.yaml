@@ -21,6 +21,8 @@ jobs:
         java-version: 17
         # Use maven cache. Gradle's caching is controlled by its own action.
         cache: maven
+    - name: Prepare local repo for the tests
+      run: mvn -B -Dandroid-prepare
     # Setup Gradle. Cache will be readonly except for the main branch.
     # see: https://github.com/gradle/actions/blob/main/docs/setup-gradle.md#using-the-cache-read-only
     - name: Setup Gradle
@@ -59,7 +61,8 @@ jobs:
         arch: x86_64
         force-avd-creation: false
         emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-        script: cd android-tests && ./gradlew connectedCheck
+        working-directory: android-tests
+        script: ls -al ../ && CHICORY_REPO=../local-repo ./gradlew device-tests:connectedCheck
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4

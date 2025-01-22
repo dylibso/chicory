@@ -1,3 +1,5 @@
+# Running Chicory tests on Android
+
 This is an Android project designed to run Chicory tests on device.
 
 Since Chicory uses maven and Android doesn't have official maven
@@ -11,42 +13,27 @@ setup. It doesn't have any code, except for declaring product flavors
 for each main chicory project and setting up its dependencies to run
 tests.
 
-Inside the root `build.gradle.kts` file, we setup a task that creates a
-maven repository from the outputs of the main project. It primarily runs the
-`mvn deploy` command for the list of projects we are interested in.
-```
-  mvn deploy -Ddev -pl runtime -am \
-     -DaltDeploymentRepository=local-repo::default::<somehwere in gradle build folder>
-     -Dmaven.test.skip=true # dont compile tests
-```
-This allows the android project to depend on the outputs of a local deployment.
+To run the tests on Android you need first to build a local `CHICORY_REPO`:
 
-The dependencies between this project and the maven project are setup properly
-such that, if the code in the main maven project changes, this Android project
-will recompile the repository and run up-to-date tests.
-
-To avoid re-building the main project (e.g. in CI), you can also pass
-`CHICORY_REPO` environment variable, in which case, this Android project will
-re-use its output instead of recompiling the main project.
-
-```
-mvn deploy -DaltDeploymentRepository=local-repo::default::file:./local-repo -DskipTests
-cd android-tests && CHICORY_REPO=../local-repo ./gradlew device-tests:connectedCheck
+```bash
+mvn -Dandroid-prepare
 ```
 
-Tests in this project can be run via:
-```
-// this will require a connected emulator
-cd android-tests && ./gradlew device-tests:connectedCheck
+The relevant artifacts will be produced in the `local-repo` directory.
+Setup this folder as the source for the subsequent steps:
+
+```bash
+export CHICORY_REPO=${PWD}/local-repo
 ```
 
-Or, to run just one flavor (1 module from the main repo), you can use its test task:
-```
-// connected<mainModuleNameCapitalized>DebugAndroidTest
-cd android-tests && ./gradlew device-tests:connectedRuntimeDebugAndroidTest
+and finally you can run the tests from the gradle project:
+
+```bash
+./android-tests/gradlew -p android-tests device-tests:connectedCheck
 ```
 
 ## Environment Setup
+
 You'll need Android build tools and a running emulator (or connected device with developer
 mode) to build and run these tests.
 
@@ -54,21 +41,15 @@ The easiest way to obtain a working local setup is to use
 [Android Studio](https://developer.android.com/studio).
 
 * Download Android Studio from [this link](https://developer.android.com/studio).
-  * Alternatively, you can use [Jetbrains Toolbox](https://www.jetbrains.com/toolbox-app/).
 * Start Android Studio. It will guide you through the SDK installation.
 * Next, open the project in Android Studio (`<checkout-root>/android-tests`). This will also
   automatically add a `local.properties` file, specifying your Android SDK location.
-* Finally, go to `View > Tool Windows > Device Manager` and create an emulator. You can select
+* Finally, go to `View > Tool Windows > Device Manager` create and run an emulator. You can select
   any device-version configuration as long as it is at least API 33. See
   [documentation](https://developer.android.com/studio/run/managing-avds) for more details.
 
-
-You can also complete the Android SDK setup using the
-[command line tools](https://developer.android.com/tools) but the steps to follow will depend on
-your operating system and might get fairly complicated
-(see [github action](https://github.com/ReactiveCircus/android-emulator-runner/blob/main/src/sdk-installer.ts#L7)).
-
 ## Adding a New Test Project
+
 When adding a new project to be tested, follow these steps:
 * Update `build.gradle.kts` and add it to the `testedProjects` parameter of the build repo task.
 * Update `device-tests/build.gradle.kts`

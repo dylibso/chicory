@@ -17,7 +17,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
-    val chicoryDimension = "ourDimension"
+    val chicoryDimension = "chicoryDimension"
     flavorDimensions += chicoryDimension
     productFlavors {
         create("runtime") { dimension = chicoryDimension }
@@ -95,13 +95,8 @@ constructor(private val execOps: ExecOperations, private val fileOps: FileSystem
     @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
 
     @TaskAction
-    fun createJar() {
+    fun copyJar() {
         val mainProjectDir = mainProjectDirectory.get().asFile
-        execOps.exec {
-            executable = "mvn"
-            workingDir = mainProjectDir
-            args("-Ddev", "test-compile", "jar:test-jar", "-pl", projectName.get())
-        }
         // copy the output into our output directory
         fileOps.copy {
             from(mainProjectDir.resolve(projectName.get()).resolve("target")) {

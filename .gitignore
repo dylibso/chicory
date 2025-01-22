@@ -18,3 +18,5 @@ scripts/jmh-tmp
 
 # mac-os files
 .DS_Store
+
+/local-repo
