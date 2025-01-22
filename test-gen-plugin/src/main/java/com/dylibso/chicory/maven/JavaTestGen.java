@@ -46,17 +46,21 @@ public class JavaTestGen {
 
     private final List<String> excludedUnlinkableWasts;
 
+    private final boolean disableWat;
+
     public JavaTestGen(
             List<String> excludedTests,
             List<String> excludedMalformedWasts,
             List<String> excludedInvalidWasts,
             List<String> excludedUninstantiableWasts,
-            List<String> excludedUnlinkableWasts) {
+            List<String> excludedUnlinkableWasts,
+            boolean disableWat) {
         this.excludedTests = excludedTests;
         this.excludedMalformedWasts = excludedMalformedWasts;
         this.excludedInvalidWasts = excludedInvalidWasts;
         this.excludedUninstantiableWasts = excludedUninstantiableWasts;
         this.excludedUnlinkableWasts = excludedUnlinkableWasts;
+        this.disableWat = disableWat;
     }
 
     public CompilationUnit generate(String name, Wast wast, String wasmClasspath) {
@@ -324,7 +328,8 @@ public class JavaTestGen {
             List<String> excludedTests) {
         var methodName = "test" + testNumber;
         var method = testClass.addMethod(methodName, Modifier.Keyword.PUBLIC);
-        if (excludedTests.contains(methodName)) {
+        if (excludedTests.contains(methodName)
+                || (disableWat && cmd.filename() != null && cmd.filename().endsWith(".wat"))) {
             method.addAnnotation(
                     new SingleMemberAnnotationExpr(
                             new Name("Disabled"), new StringLiteralExpr("Test excluded")));

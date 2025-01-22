@@ -919,6 +919,7 @@
       </activation>
       <properties>
         <skipTests>true</skipTests>
+        <wasm-test-gen.disable-wat>true</wasm-test-gen.disable-wat>
         <altDeploymentRepository>local-repo::default::file:${session.executionRootDirectory}/local-repo</altDeploymentRepository>
       </properties>
       <build>

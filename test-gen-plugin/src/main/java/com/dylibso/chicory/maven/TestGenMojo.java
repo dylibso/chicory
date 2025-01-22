@@ -102,6 +102,12 @@ public class TestGenMojo extends AbstractMojo {
     private List<String> excludedWasts;
 
     /**
+     * Disable the execution of tests on WAT files.
+     */
+    @Parameter(property = "wasm-test-gen.disable-wat", defaultValue = "false")
+    private boolean disableWat;
+
+    /**
      * Skip execution of this Mojo.
      */
     @Parameter(property = "wasm-test-gen.skip", defaultValue = "false")
@@ -136,7 +142,8 @@ public class TestGenMojo extends AbstractMojo {
                         excludedMalformedWasts,
                         excludedInvalidWasts,
                         excludedUninstantiableWasts,
-                        excludedUnlinkableWasts);
+                        excludedUnlinkableWasts,
+                        disableWat);
 
         JavaParserMavenUtils.makeJavaParserLogToMavenOutput(getLog());
 
