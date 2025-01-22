@@ -15,3 +15,8 @@ scripts/jmh-tmp
 
 /*.wasm
 .approval_tests_temp/
+
+# mac-os files
+.DS_Store
+
+/local-repo

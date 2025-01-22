@@ -454,6 +454,7 @@
             <format>
               <includes>
                 <include>*.md</include>
+                <include>android-tests/*.md</include>
                 <include>.gitignore</include>
               </includes>
               <trimTrailingWhitespace/>
@@ -498,6 +499,17 @@
               <sortPlugins>groupId,artifactId</sortPlugins>
             </sortPom>
           </pom>
+          <kotlin>
+            <includes>
+              <include>android-tests/**/*.gradle.kts</include>
+              <include>android-tests/**/*.kt</include>
+            </includes>
+            <ktfmt>
+              <!-- there is no AOSP style for ktfmt, hence using Kotlin style -->
+              <style>KOTLINLANG</style>
+              <removeUnusedImports>true</removeUnusedImports>
+            </ktfmt>
+          </kotlin>
         </configuration>
         <executions>
           <execution>
@@ -893,6 +905,35 @@
               <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
               <autoReleaseAfterClose>true</autoReleaseAfterClose>
             </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
+    <profile>
+      <id>android-prepare</id>
+      <activation>
+        <property>
+          <name>android-prepare</name>
+        </property>
+      </activation>
+      <properties>
+        <skipTests>true</skipTests>
+        <altDeploymentRepository>local-repo::default::file:${session.executionRootDirectory}/local-repo</altDeploymentRepository>
+      </properties>
+      <build>
+        <defaultGoal>clean deploy</defaultGoal>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-jar-plugin</artifactId>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>test-jar</goal>
+                </goals>
+              </execution>
+            </executions>
           </plugin>
         </plugins>
       </build>

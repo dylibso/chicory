@@ -1,0 +1,17 @@
+[versions]
+agp = "8.8.0"
+junitJupiterApi = "5.11.2"
+kotlin = "1.9.24"
+chicory = "999-SNAPSHOT"
+
+[libraries]
+junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junitJupiterApi" }
+chicory-runtime = { module = "com.dylibso.chicory:runtime", version.ref = "chicory"}
+chicory-wasm = { module = "com.dylibso.chicory:wasm", version.ref = "chicory"}
+chicory-wasmCorpus = { module = "com.dylibso.chicory:wasm-corpus", version.ref = "chicory"}
+android-gradle-plugin-api = { module = "com.android.tools.build:gradle-api", version.ref = "agp"}
+[plugins]
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+android-junit5 = { id = "de.mannodermaus.android-junit5", version = "1.11.2.0"}
