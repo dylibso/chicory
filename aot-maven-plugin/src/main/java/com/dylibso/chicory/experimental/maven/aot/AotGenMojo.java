@@ -29,11 +29,11 @@ import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.TryStmt;
-import com.github.javaparser.ast.type.VarType;
 import com.github.javaparser.utils.SourceRoot;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -183,6 +183,7 @@ public class AotGenMojo extends AbstractMojo {
         cu.addImport(UncheckedIOException.class);
         cu.addImport(Parser.class);
         cu.addImport(WasmModule.class);
+        cu.addImport(InputStream.class);
 
         var method =
                 type.addMethod("load", Keyword.PUBLIC, Keyword.STATIC)
@@ -196,7 +197,7 @@ public class AotGenMojo extends AbstractMojo {
                         new NodeList<>(new StringLiteralExpr(wasmName)));
         var resourceVar =
                 new VariableDeclarationExpr(
-                        new VariableDeclarator(new VarType(), "in", getResource));
+                        new VariableDeclarator(parseType("InputStream"), "in", getResource));
 
         var returnStmt =
                 new ReturnStmt(
