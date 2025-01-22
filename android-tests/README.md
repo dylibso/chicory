@@ -20,16 +20,22 @@ mvn -Dandroid-prepare
 ```
 
 The relevant artifacts will be produced in the `local-repo` directory.
-Setup this folder as the source for the subsequent steps:
+This repository is setup as a local repository in the gradle project.
+
+Finally you can run the tests from the gradle project:
 
 ```bash
-export CHICORY_REPO=${PWD}/local-repo
+./android-tests/gradlew -p android-tests connectedCheck
+# you can also abbreviate connectedCheck to `cC`
+./android-tests/gradlew -p android-tests cC
 ```
 
-and finally you can run the tests from the gradle project:
+You can override the repository location by setting the `CHICORY_REPO` environment variable.
+It can either be an absolute path, or relative to the Chicory checkout directory.
 
-```bash
-./android-tests/gradlew -p android-tests device-tests:connectedCheck
+```base
+# mv local-repo my-repo
+CHICORY_REPO=my-repo ./android-tests/gradlew -p android-tests cC
 ```
 
 ## Environment Setup
@@ -42,6 +48,7 @@ The easiest way to obtain a working local setup is to use
 
 * Download Android Studio from [this link](https://developer.android.com/studio).
 * Start Android Studio. It will guide you through the SDK installation.
+* Make sure to run `mvn -Dandroid-prepare` once to allow Android Studio to find dependencies.
 * Next, open the project in Android Studio (`<checkout-root>/android-tests`). This will also
   automatically add a `local.properties` file, specifying your Android SDK location.
 * Finally, go to `View > Tool Windows > Device Manager` create and run an emulator. You can select
@@ -51,11 +58,7 @@ The easiest way to obtain a working local setup is to use
 ## Adding a New Test Project
 
 When adding a new project to be tested, follow these steps:
-* Update `build.gradle.kts` and add it to the `testedProjects` parameter of the build repo task.
 * Update `device-tests/build.gradle.kts`
   * Create a new product flavor in the `productFlavors` section.
   * Add its dependencies in the `dependencies` section, including its test via the
     `addLibraryTests` helper method (see docs around them for details).
-* Update the project's pom file to include the `maven-jar-plugin` plugin for tests (you can check
-  the `runtime` project for an example). This test jar goal will be used by the `addLibraryTests`
-  method.

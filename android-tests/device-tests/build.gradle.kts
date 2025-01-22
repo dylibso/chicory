@@ -1,7 +1,3 @@
-import org.jetbrains.kotlin.util.capitalizeDecapitalize.capitalizeAsciiOnly
-
-val mainProjectDirectory = rootProject.projectDir.resolve("../.")
-
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
@@ -56,53 +52,15 @@ dependencies {
  * @param libraryPath Library path relative to the main chicory maven project
  */
 fun addLibraryTests(configurationName: String, libraryPath: String) {
-    val jarTask =
-        project.tasks.register<MavenTestJarTask>(
-            "jarTestClassesFor${libraryPath.capitalizeAsciiOnly()}"
-        ) {
-            projectName.set(libraryPath)
-            // always run this task because we don't track maven dependencies.
-            // Its output jar is reproducible so it won't invalidate gradle caches.
-            onlyIf { true }
-            mainProjectDirectory.set(project.rootProject.layout.projectDirectory.dir("../."))
-            outputDirectory.set(project.layout.buildDirectory.dir("testJars/$libraryPath"))
-        }
     // Add the jar task's output as a dependency.
     // Gradle will figure out that it needs to run the task before compiling the
     // project.
     project.dependencies.add(
         configurationName,
         project.dependencies.create(
-            project
-                .files({ jarTask.get().outputDirectory.asFileTree.matching { include("*.jar") } })
-                .builtBy(jarTask)
-        ),
-    )
-}
-
-/**
- * Compiles tests for a maven project and packages them into a jar.
- *
- * e.g. mvn -Ddev test-compile jar:test-jar -pl runtime
- */
-@DisableCachingByDefault(because = "Uses maven")
-abstract class MavenTestJarTask
-@Inject
-constructor(private val execOps: ExecOperations, private val fileOps: FileSystemOperations) :
-    DefaultTask() {
-    @get:Internal abstract val mainProjectDirectory: DirectoryProperty
-    @get:Input abstract val projectName: Property<String>
-    @get:OutputDirectory abstract val outputDirectory: DirectoryProperty
-
-    @TaskAction
-    fun copyJar() {
-        val mainProjectDir = mainProjectDirectory.get().asFile
-        // copy the output into our output directory
-        fileOps.copy {
-            from(mainProjectDir.resolve(projectName.get()).resolve("target")) {
+            project.rootProject.files("../$libraryPath/target").asFileTree.matching {
                 include("*tests.jar")
             }
-            into(outputDirectory)
-        }
-    }
+        ),
+    )
 }

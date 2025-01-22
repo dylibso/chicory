@@ -62,7 +62,7 @@ jobs:
         force-avd-creation: false
         emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
         working-directory: android-tests
-        script: ls -al ../ && CHICORY_REPO=../local-repo ./gradlew device-tests:connectedCheck
+        script: ./gradlew device-tests:connectedCheck
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4
