@@ -196,6 +196,12 @@ public class JavaTestGen {
                 case ASSERT_TRAP:
                 case ASSERT_EXHAUSTION:
                     {
+                        if (disableWat
+                                && cmd.filename() != null
+                                && cmd.filename().endsWith(".wat")) {
+                            continue;
+                        }
+
                         method =
                                 createTestMethod(
                                         wast.sourceFilename().getName(),
@@ -328,8 +334,7 @@ public class JavaTestGen {
             List<String> excludedTests) {
         var methodName = "test" + testNumber;
         var method = testClass.addMethod(methodName, Modifier.Keyword.PUBLIC);
-        if (excludedTests.contains(methodName)
-                || (disableWat && cmd.filename() != null && cmd.filename().endsWith(".wat"))) {
+        if (excludedTests.contains(methodName)) {
             method.addAnnotation(
                     new SingleMemberAnnotationExpr(
                             new Name("Disabled"), new StringLiteralExpr("Test excluded")));

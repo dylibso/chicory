@@ -88,7 +88,9 @@ public class InterpreterMachine implements Machine {
             try {
                 eval(stack, instance, callStack);
             } catch (StackOverflowError e) {
-                throw new ChicoryException("call stack exhausted", e);
+                // We avoid including the StackTrace as it's usually not useful and consumes a lot
+                // of resources
+                throw new ChicoryException("call stack exhausted: " + e.getMessage());
             }
         } else {
             var stackFrame = new StackFrame(instance, funcId, args);
