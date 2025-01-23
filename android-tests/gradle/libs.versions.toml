@@ -8,7 +8,6 @@ chicory = "999-SNAPSHOT"
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junitJupiterApi" }
 chicory-runtimeTests = { module = "com.dylibso.chicory:runtime-tests", version.ref = "chicory"}
 chicory-runtime = { module = "com.dylibso.chicory:runtime", version.ref = "chicory"}
-chicory-wabt = { module = "com.dylibso.chicory:wabt", version.ref = "chicory"}
 chicory-wasm = { module = "com.dylibso.chicory:wasm", version.ref = "chicory"}
 chicory-wasmCorpus = { module = "com.dylibso.chicory:wasm-corpus", version.ref = "chicory"}
 android-gradle-plugin-api = { module = "com.android.tools.build:gradle-api", version.ref = "agp"}

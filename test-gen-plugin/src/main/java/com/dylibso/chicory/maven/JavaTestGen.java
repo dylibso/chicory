@@ -196,12 +196,6 @@ public class JavaTestGen {
                 case ASSERT_TRAP:
                 case ASSERT_EXHAUSTION:
                     {
-                        if (disableWat
-                                && cmd.filename() != null
-                                && cmd.filename().endsWith(".wat")) {
-                            continue;
-                        }
-
                         method =
                                 createTestMethod(
                                         wast.sourceFilename().getName(),
@@ -258,6 +252,12 @@ public class JavaTestGen {
                 case ASSERT_UNINSTANTIABLE:
                 case ASSERT_UNLINKABLE:
                     {
+                        if (disableWat
+                                && cmd.filename() != null
+                                && cmd.filename().endsWith(".wat")) {
+                            break;
+                        }
+
                         method =
                                 createTestMethod(
                                         wast.sourceFilename().getName(),
