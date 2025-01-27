@@ -17,6 +17,7 @@ android {
     flavorDimensions += chicoryDimension
     productFlavors {
         create("runtime") { dimension = chicoryDimension }
+        create("runtimeTests") { dimension = chicoryDimension }
         // add future modules similar to the runtime configuration above.
     }
 
@@ -31,11 +32,16 @@ dependencies {
     // "androidTestRuntimeImplementation" name here comes from Android's product
     // flavor convention. androidTest<productFlavorName>Implementation
     addLibraryTests(configurationName = "androidTestRuntimeImplementation", libraryPath = "runtime")
+    addLibraryTests(
+        configurationName = "androidTestRuntimeTestsImplementation",
+        libraryPath = "runtime-tests",
+    )
     // common dependencies can be added here
     // if you need to add a dependency on a specific module, you can use
     // "androidTest<productFlavorName>Implementation"(<your dependency>)
     // e.g.
     // "androidTestRuntimeImplementation"(libs.chicory.runtime)
+    androidTestImplementation(libs.chicory.runtimeTests)
     androidTestImplementation(libs.chicory.runtime)
     androidTestImplementation(libs.chicory.wasm)
     androidTestImplementation(libs.chicory.wasmCorpus)
