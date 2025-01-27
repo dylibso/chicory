@@ -1,4 +1,4 @@
-package com.dylibso.chicory.maven;
+package com.dylibso.chicory.testgen;
 
 public final class StringUtils {
 

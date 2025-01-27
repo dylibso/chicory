@@ -1,14 +1,11 @@
-package com.dylibso.chicory.maven;
+package com.dylibso.chicory.testgen;
 
-import static com.dylibso.chicory.maven.StringUtils.capitalize;
-import static com.dylibso.chicory.maven.StringUtils.escapedCamelCase;
-import static com.dylibso.chicory.maven.wast.ActionType.INVOKE;
-
-import com.dylibso.chicory.maven.wast.Command;
-import com.dylibso.chicory.maven.wast.CommandType;
-import com.dylibso.chicory.maven.wast.WasmValue;
-import com.dylibso.chicory.maven.wast.WasmValueType;
-import com.dylibso.chicory.maven.wast.Wast;
+import com.dylibso.chicory.testgen.wast.ActionType;
+import com.dylibso.chicory.testgen.wast.Command;
+import com.dylibso.chicory.testgen.wast.CommandType;
+import com.dylibso.chicory.testgen.wast.WasmValue;
+import com.dylibso.chicory.testgen.wast.WasmValueType;
+import com.dylibso.chicory.testgen.wast.Wast;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -61,7 +58,8 @@ public class JavaTestGen {
 
     public CompilationUnit generate(String name, Wast wast, String wasmClasspath) {
         var cu = new CompilationUnit("com.dylibso.chicory.test.gen");
-        var testName = "SpecV1" + capitalize(escapedCamelCase(name)) + "Test";
+        var testName =
+                "SpecV1" + StringUtils.capitalize(StringUtils.escapedCamelCase(name)) + "Test";
 
         // all the imports
         // junit imports
@@ -200,7 +198,7 @@ public class JavaTestGen {
                                         testNumber++,
                                         excludedMethods);
 
-                        var baseVarName = escapedCamelCase(cmd.action().field());
+                        var baseVarName = StringUtils.escapedCamelCase(cmd.action().field());
                         var varNum = fallbackVarNumber++;
                         var varName = "var" + (baseVarName.isEmpty() ? varNum : baseVarName);
                         String moduleName = lastModuleVarName;
@@ -343,7 +341,7 @@ public class JavaTestGen {
     private Optional<Expression> generateFieldExport(
             String varName, Command cmd, String moduleName) {
         if (cmd.action() != null && cmd.action().field() != null) {
-            var accessor = (cmd.action().type() == INVOKE) ? "function" : "global";
+            var accessor = (cmd.action().type() == ActionType.INVOKE) ? "function" : "global";
             var declarator =
                     new VariableDeclarator()
                             .setName(varName)
@@ -370,7 +368,7 @@ public class JavaTestGen {
                 || cmd.type() == CommandType.ASSERT_EXHAUSTION);
         assert (cmd.expected() != null);
         assert (cmd.expected().length > 0);
-        assert (cmd.action().type() == INVOKE);
+        assert (cmd.action().type() == ActionType.INVOKE);
 
         var args =
                 (cmd.action().args() != null)
@@ -386,7 +384,7 @@ public class JavaTestGen {
 
         // Function or Global
         var invocationMethod =
-                (cmd.action().type() == INVOKE)
+                (cmd.action().type() == ActionType.INVOKE)
                         ? ".apply(ArgsAdapter.builder()" + adaptedArgs + ".build()" + ")"
                         : ".getValue()";
 
@@ -407,14 +405,14 @@ public class JavaTestGen {
             }
         } else if (cmd.type() == CommandType.ASSERT_RETURN) {
             List<Expression> exprs = new ArrayList<>();
-            var resVarName = (cmd.action().type() == INVOKE) ? "results" : "result";
+            var resVarName = (cmd.action().type() == ActionType.INVOKE) ? "results" : "result";
             exprs.add(new NameExpr("var " + resVarName + " = " + varName + invocationMethod));
 
             for (int i = 0; i < cmd.expected().length; i++) {
                 var expected = cmd.expected()[i];
                 var expectedVar = expected.toExpectedValue();
                 var resultVar =
-                        (cmd.action().type() == INVOKE)
+                        (cmd.action().type() == ActionType.INVOKE)
                                 ? expected.toResultValue(resVarName + "[" + i + "]")
                                 : expected.toResultValue(resVarName);
 
@@ -457,7 +455,7 @@ public class JavaTestGen {
         assert cmd.type() == CommandType.ACTION;
 
         String invocationMethod;
-        if (cmd.action().type() == INVOKE) {
+        if (cmd.action().type() == ActionType.INVOKE) {
             var args =
                     Arrays.stream(cmd.action().args())
                             .map(WasmValue::toArgsValue)

@@ -1,13 +1,9 @@
-package com.dylibso.chicory.maven.wast;
+package com.dylibso.chicory.testgen.wast;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
-public enum LaneType {
-    @JsonProperty("i8")
-    I8("i8"),
-    @JsonProperty("i16")
-    I16("i16"),
+public enum WasmValueType {
     @JsonProperty("i32")
     I32("i32"),
     @JsonProperty("i64")
@@ -15,11 +11,17 @@ public enum LaneType {
     @JsonProperty("f32")
     F32("f32"),
     @JsonProperty("f64")
-    F64("f64");
+    F64("f64"),
+    @JsonProperty("v128")
+    V128("v128"),
+    @JsonProperty("externref")
+    EXTERN_REF("externref"),
+    @JsonProperty("funcref")
+    FUNC_REF("funcref");
 
     private final String value;
 
-    LaneType(String value) {
+    WasmValueType(String value) {
         this.value = value;
     }
 

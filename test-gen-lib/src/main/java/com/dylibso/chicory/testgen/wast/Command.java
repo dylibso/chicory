@@ -1,4 +1,4 @@
-package com.dylibso.chicory.maven.wast;
+package com.dylibso.chicory.testgen.wast;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
