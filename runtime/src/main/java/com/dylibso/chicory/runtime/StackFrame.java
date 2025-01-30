@@ -27,7 +27,7 @@ public class StackFrame {
     private final int funcId;
     private int pc;
     private final long[] locals;
-    private final List<ValueType> localTypes;
+    private final ValueType[] localTypes;
     private final int[] localIdx;
     private final Instance instance;
 
@@ -54,10 +54,15 @@ public class StackFrame {
         this.instance = instance;
         this.funcId = funcId;
         this.locals = Arrays.copyOf(args, sizeOf(argsTypes) + sizeOf(localTypes));
-        this.localTypes = new ArrayList<>();
-        this.localTypes.addAll(argsTypes);
-        this.localTypes.addAll(localTypes);
-        this.localIdx = new int[this.localTypes.size()];
+        int localsSize = argsTypes.size() + localTypes.size();
+        this.localTypes = new ValueType[localsSize];
+        for (int i = 0; i < argsTypes.size(); i++) {
+            this.localTypes[i] = argsTypes.get(i);
+        }
+        for (int i = 0; i < localTypes.size(); i++) {
+            this.localTypes[argsTypes.size() + i] = localTypes.get(i);
+        }
+        this.localIdx = new int[localsSize];
 
         // initialize codesegment locals.
         int j = 0;
@@ -76,7 +81,7 @@ public class StackFrame {
 
         // initialize local indexes
         j = 0;
-        for (int i = 0; i < this.localTypes.size(); i++) {
+        for (int i = 0; i < this.localTypes.length; i++) {
             this.localIdx[i] = j;
             if (localType(i) != ValueType.V128) {
                 j += 1;
@@ -98,7 +103,7 @@ public class StackFrame {
     }
 
     ValueType localType(int i) {
-        return this.localTypes.get(i);
+        return this.localTypes[i];
     }
 
     public int localIndexOf(int idx) {
