@@ -18,6 +18,14 @@ public interface Memory {
      */
     public static final int RUNTIME_MAX_PAGES = 32767;
 
+    static int bytes(int pages) {
+        if (pages >= RUNTIME_MAX_PAGES) {
+            return PAGE_SIZE * RUNTIME_MAX_PAGES;
+        } else {
+            return PAGE_SIZE * pages;
+        }
+    }
+
     int pages();
 
     int grow(int size);
