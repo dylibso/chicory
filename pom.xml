@@ -328,6 +328,19 @@
   </dependencyManagement>
 
   <build>
+    <resources>
+      <resource>
+        <targetPath>META-INF</targetPath>
+        <directory>${session.executionRootDirectory}</directory>
+        <includes>
+          <include>LICENSE</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+      </resource>
+    </resources>
+
     <pluginManagement>
       <plugins>
         <plugin>
