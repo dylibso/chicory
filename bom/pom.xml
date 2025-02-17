@@ -52,7 +52,7 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>simd-experimental</artifactId>
+        <artifactId>simd</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

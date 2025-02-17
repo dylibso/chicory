@@ -255,7 +255,7 @@
       <dependencies>
         <dependency>
           <groupId>com.dylibso.chicory</groupId>
-          <artifactId>simd-experimental</artifactId>
+          <artifactId>simd</artifactId>
         </dependency>
       </dependencies>
       <build>
