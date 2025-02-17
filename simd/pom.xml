@@ -8,9 +8,9 @@
     <version>999-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>simd-experimental</artifactId>
+  <artifactId>simd</artifactId>
   <packaging>jar</packaging>
-  <name>Chicory - SIMD - Experimental</name>
+  <name>Chicory - SIMD</name>
   <description>SIMD instructions support for Chicory</description>
 
   <properties>
