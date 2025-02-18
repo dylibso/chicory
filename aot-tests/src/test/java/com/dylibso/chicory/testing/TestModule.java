@@ -1,6 +1,7 @@
 package com.dylibso.chicory.testing;
 
 import com.dylibso.chicory.experimental.aot.AotMachine;
+import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
@@ -69,6 +70,7 @@ public class TestModule {
         ImportValues importValues = s.toImportValues();
         return Instance.builder(module)
                 .withImportValues(importValues)
+                .withMemoryFactory(ByteArrayMemory::new)
                 .withMachineFactory(AotMachine::new)
                 .build();
     }

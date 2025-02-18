@@ -1,5 +1,8 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
+import static java.lang.Math.min;
+
 import com.dylibso.chicory.runtime.alloc.DefaultMemAllocStrategy;
 import com.dylibso.chicory.runtime.alloc.MemAllocStrategy;
 import com.dylibso.chicory.wasm.ChicoryException;
@@ -8,16 +11,13 @@ import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
-
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.function.Function;
-
-import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
-import static java.lang.Math.min;
 
 /**
  * Represents the linear memory in the Wasm program. Can be shared
@@ -71,6 +71,7 @@ public final class ByteArrayMemory implements Memory {
 
         var newBuffer = allocateByteBuffer(PAGE_SIZE * numPages);
         if (newBuffer != buffer) {
+            System.arraycopy(buffer, 0, newBuffer, 0, buffer.length);
             buffer = newBuffer;
         }
 
@@ -104,7 +105,7 @@ public final class ByteArrayMemory implements Memory {
                 checkBounds(
                         offset,
                         data.length,
-                        (PAGE_SIZE * nPages),
+                        sizeInBytes(),
                         (msg) -> new UninstantiableException(msg));
                 System.arraycopy(data, 0, buffer, offset, data.length);
             } else if (s instanceof PassiveDataSegment) {
@@ -169,7 +170,6 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public byte read(int addr) {
-        // checkBounds(addr, 1, (PAGE_SIZE * nPages));
         try {
             return buffer[addr];
         } catch (IndexOutOfBoundsException
@@ -183,7 +183,6 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public byte[] readBytes(int addr, int len) {
-        // checkBounds(addr, len, (PAGE_SIZE * nPages));
         try {
             var bytes = new byte[len];
             System.arraycopy(buffer, addr, bytes, 0, len);
@@ -193,15 +192,27 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 1, sizeInBytes());
+            throw throwOutOfBounds(addr, len, sizeInBytes());
         }
     }
 
+    // trick from:
+    // https://stackoverflow.com/questions/65276625/what-is-the-most-efficient-way-to-reinterpret-underlying-bit-patterns-and-write
+    private static final VarHandle SHORT_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(short[].class, ByteOrder.nativeOrder());
+    private static final VarHandle INT_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.nativeOrder());
+    private static final VarHandle FLOAT_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(float[].class, ByteOrder.nativeOrder());
+    private static final VarHandle LONG_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.nativeOrder());
+    private static final VarHandle DOUBLE_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(double[].class, ByteOrder.nativeOrder());
+
     @Override
     public void writeI32(int addr, int data) {
-        // checkBounds(addr, 4, (PAGE_SIZE * nPages));
         try {
-            buffer.putInt(addr, data);
+            INT_ARR_HANDLE.set(buffer, addr, data);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -213,9 +224,8 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public int readInt(int addr) {
-        // checkBounds(addr, 4, (PAGE_SIZE * nPages));
         try {
-            return buffer.getInt(addr);
+            return (int) INT_ARR_HANDLE.get(buffer, addr);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -227,9 +237,8 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public void writeLong(int addr, long data) {
-        // checkBounds(addr, 8, (PAGE_SIZE * nPages));
         try {
-            buffer.putLong(addr, data);
+            LONG_ARR_HANDLE.set(buffer, addr, data);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -241,9 +250,8 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public long readLong(int addr) {
-        // checkBounds(addr, 8, (PAGE_SIZE * nPages));
         try {
-            return buffer.getLong(addr);
+            return (long) LONG_ARR_HANDLE.get(buffer, addr);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -255,9 +263,8 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public void writeShort(int addr, short data) {
-        // checkBounds(addr, 2, (PAGE_SIZE * nPages));
         try {
-            buffer.putShort(addr, data);
+            SHORT_ARR_HANDLE.set(buffer, addr, data);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -269,9 +276,8 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public short readShort(int addr) {
-        // checkBounds(addr, 2, (PAGE_SIZE * nPages));
         try {
-            return buffer.getShort(addr);
+            return (short) SHORT_ARR_HANDLE.get(buffer, addr);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -283,9 +289,8 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public long readU16(int addr) {
-        // checkBounds(addr, 2, (PAGE_SIZE * nPages));
         try {
-            return buffer.getShort(addr) & 0xffff;
+            return (short) SHORT_ARR_HANDLE.get(buffer, addr) & 0xffff;
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -297,9 +302,8 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public void writeByte(int addr, byte data) {
-        // checkBounds(addr, 1, (PAGE_SIZE * nPages));
         try {
-            buffer.put(addr, data);
+            buffer[addr] = data;
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -311,9 +315,8 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public void writeF32(int addr, float data) {
-        // checkBounds(addr, 4, (PAGE_SIZE * nPages));
         try {
-            buffer.putFloat(addr, data);
+            FLOAT_ARR_HANDLE.set(buffer, addr, data);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -325,9 +328,8 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public long readF32(int addr) {
-        // checkBounds(addr, 4, (PAGE_SIZE * nPages));
         try {
-            return buffer.getInt(addr);
+             return (long) FLOAT_ARR_HANDLE.get(buffer, addr);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -339,9 +341,8 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public float readFloat(int addr) {
-        // checkBounds(addr, 4, (PAGE_SIZE * nPages));
         try {
-            return buffer.getFloat(addr);
+            return (float) FLOAT_ARR_HANDLE.get(buffer, addr);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -353,9 +354,8 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public void writeF64(int addr, double data) {
-        // checkBounds(addr, 8, (PAGE_SIZE * nPages));
         try {
-            buffer.putDouble(addr, data);
+            DOUBLE_ARR_HANDLE.set(buffer, addr, data);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -367,9 +367,8 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public double readDouble(int addr) {
-        // checkBounds(addr, 8, (PAGE_SIZE * nPages));
         try {
-            return buffer.getDouble(addr);
+            return (double) DOUBLE_ARR_HANDLE.get(buffer, addr);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -381,9 +380,8 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public long readF64(int addr) {
-        // checkBounds(addr, 8, (PAGE_SIZE * nPages));
         try {
-            return buffer.getLong(addr);
+            return (long) DOUBLE_ARR_HANDLE.get(buffer, addr);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -395,17 +393,15 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public void zero() {
-        fill((byte) 0, 0, (PAGE_SIZE * nPages));
+        fill((byte) 0, 0, sizeInBytes());
     }
 
     @Override
     @SuppressWarnings("ByteBufferBackingArray")
     public void fill(byte value, int fromIndex, int toIndex) {
-        // checkBounds(fromIndex, toIndex - fromIndex, (PAGE_SIZE * nPages));
         // see https://appsintheopen.com/posts/53-resetting-bytebuffers-to-zero-in-java
         try {
-            Arrays.fill(buffer.array(), fromIndex, toIndex, value);
-            buffer.position(0);
+            Arrays.fill(buffer, fromIndex, toIndex, value);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
