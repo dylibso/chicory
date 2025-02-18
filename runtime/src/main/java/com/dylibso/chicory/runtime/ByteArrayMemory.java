@@ -24,6 +24,18 @@ import java.util.function.Function;
  * reference b/w the host and the guest.
  */
 public final class ByteArrayMemory implements Memory {
+    // trick from:
+    // https://stackoverflow.com/a/65276765/7898052
+    private static final VarHandle SHORT_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(short[].class, ByteOrder.nativeOrder());
+    private static final VarHandle INT_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.nativeOrder());
+    private static final VarHandle FLOAT_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(float[].class, ByteOrder.nativeOrder());
+    private static final VarHandle LONG_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.nativeOrder());
+    private static final VarHandle DOUBLE_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(double[].class, ByteOrder.nativeOrder());
 
     private final MemoryLimits limits;
     private DataSegment[] dataSegments;
@@ -130,11 +142,7 @@ public final class ByteArrayMemory implements Memory {
         }
     }
 
-    //    private static void checkBounds(int addr, int size, int limit) {
-    //        checkBounds(addr, size, limit, (msg) -> new WasmRuntimeException(msg));
-    //    }
-
-    private static RuntimeException throwOutOfBounds(int addr, int size, int limit) {
+    private static RuntimeException outOfBoundsException(int addr, int size, int limit) {
         var errorMsg =
                 "out of bounds memory access: attempted to access address: "
                         + addr
@@ -158,13 +166,13 @@ public final class ByteArrayMemory implements Memory {
     @Override
     public void write(int addr, byte[] data, int offset, int size) {
         try {
-            System.arraycopy(data, 0, buffer, addr + offset, size);
+            System.arraycopy(data, offset, buffer, addr, size);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, size, sizeInBytes());
+            throw outOfBoundsException(addr, size, sizeInBytes());
         }
     }
 
@@ -177,7 +185,7 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 1, sizeInBytes());
+            throw outOfBoundsException(addr, 1, sizeInBytes());
         }
     }
 
@@ -192,22 +200,9 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, len, sizeInBytes());
+            throw outOfBoundsException(addr, len, sizeInBytes());
         }
     }
-
-    // trick from:
-    // https://stackoverflow.com/questions/65276625/what-is-the-most-efficient-way-to-reinterpret-underlying-bit-patterns-and-write
-    private static final VarHandle SHORT_ARR_HANDLE =
-            MethodHandles.byteArrayViewVarHandle(short[].class, ByteOrder.nativeOrder());
-    private static final VarHandle INT_ARR_HANDLE =
-            MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.nativeOrder());
-    private static final VarHandle FLOAT_ARR_HANDLE =
-            MethodHandles.byteArrayViewVarHandle(float[].class, ByteOrder.nativeOrder());
-    private static final VarHandle LONG_ARR_HANDLE =
-            MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.nativeOrder());
-    private static final VarHandle DOUBLE_ARR_HANDLE =
-            MethodHandles.byteArrayViewVarHandle(double[].class, ByteOrder.nativeOrder());
 
     @Override
     public void writeI32(int addr, int data) {
@@ -218,7 +213,7 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 4, sizeInBytes());
+            throw outOfBoundsException(addr, 4, sizeInBytes());
         }
     }
 
@@ -231,7 +226,7 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 4, sizeInBytes());
+            throw outOfBoundsException(addr, 4, sizeInBytes());
         }
     }
 
@@ -244,7 +239,7 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 8, sizeInBytes());
+            throw outOfBoundsException(addr, 8, sizeInBytes());
         }
     }
 
@@ -257,7 +252,7 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 8, sizeInBytes());
+            throw outOfBoundsException(addr, 8, sizeInBytes());
         }
     }
 
@@ -270,7 +265,7 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 2, sizeInBytes());
+            throw outOfBoundsException(addr, 2, sizeInBytes());
         }
     }
 
@@ -283,7 +278,7 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 2, sizeInBytes());
+            throw outOfBoundsException(addr, 2, sizeInBytes());
         }
     }
 
@@ -296,7 +291,7 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 2, sizeInBytes());
+            throw outOfBoundsException(addr, 2, sizeInBytes());
         }
     }
 
@@ -309,7 +304,7 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 1, sizeInBytes());
+            throw outOfBoundsException(addr, 1, sizeInBytes());
         }
     }
 
@@ -322,20 +317,20 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 4, sizeInBytes());
+            throw outOfBoundsException(addr, 4, sizeInBytes());
         }
     }
 
     @Override
     public long readF32(int addr) {
         try {
-             return (long) FLOAT_ARR_HANDLE.get(buffer, addr);
+            return (int) INT_ARR_HANDLE.get(buffer, addr);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 4, sizeInBytes());
+            throw outOfBoundsException(addr, 4, sizeInBytes());
         }
     }
 
@@ -348,7 +343,7 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 4, sizeInBytes());
+            throw outOfBoundsException(addr, 4, sizeInBytes());
         }
     }
 
@@ -361,7 +356,7 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 8, sizeInBytes());
+            throw outOfBoundsException(addr, 8, sizeInBytes());
         }
     }
 
@@ -374,20 +369,20 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 8, sizeInBytes());
+            throw outOfBoundsException(addr, 8, sizeInBytes());
         }
     }
 
     @Override
     public long readF64(int addr) {
         try {
-            return (long) DOUBLE_ARR_HANDLE.get(buffer, addr);
+            return (long) LONG_ARR_HANDLE.get(buffer, addr);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(addr, 8, sizeInBytes());
+            throw outOfBoundsException(addr, 8, sizeInBytes());
         }
     }
 
@@ -407,7 +402,7 @@ public final class ByteArrayMemory implements Memory {
                 | BufferUnderflowException
                 | IllegalArgumentException
                 | NegativeArraySizeException e) {
-            throw throwOutOfBounds(fromIndex, toIndex - fromIndex, sizeInBytes());
+            throw outOfBoundsException(fromIndex, toIndex - fromIndex, sizeInBytes());
         }
     }
 
