@@ -1,8 +1,5 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
-import static java.lang.Math.min;
-
 import com.dylibso.chicory.runtime.alloc.DefaultMemAllocStrategy;
 import com.dylibso.chicory.runtime.alloc.MemAllocStrategy;
 import com.dylibso.chicory.wasm.ChicoryException;
@@ -11,6 +8,7 @@ import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
+
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
@@ -18,36 +16,37 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.function.Function;
 
+import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
+import static java.lang.Math.min;
+
 /**
  * Represents the linear memory in the Wasm program. Can be shared
  * reference b/w the host and the guest.
  */
-public final class ByteBufferMemory implements Memory {
+public final class ByteArrayMemory implements Memory {
 
     private final MemoryLimits limits;
     private DataSegment[] dataSegments;
-    private ByteBuffer buffer;
+    private byte[] buffer;
     private int nPages;
 
     private final MemAllocStrategy allocStrategy;
 
-    public ByteBufferMemory(MemoryLimits limits) {
+    public ByteArrayMemory(MemoryLimits limits) {
         this(limits, new DefaultMemAllocStrategy(Memory.bytes(limits.maximumPages())));
     }
 
-    public ByteBufferMemory(MemoryLimits limits, MemAllocStrategy allocStrategy) {
+    public ByteArrayMemory(MemoryLimits limits, MemAllocStrategy allocStrategy) {
         this.allocStrategy = allocStrategy;
         this.limits = limits;
-        this.buffer =
-                ByteBuffer.allocate(allocStrategy.initial(PAGE_SIZE * limits.initialPages()))
-                        .order(ByteOrder.LITTLE_ENDIAN);
+        this.buffer = new byte[allocStrategy.initial(PAGE_SIZE * limits.initialPages())];
         this.nPages = limits.initialPages();
     }
 
-    private ByteBuffer allocateByteBuffer(int capacity) {
-        if (capacity > buffer.capacity()) {
-            int nextCapacity = allocStrategy.next(buffer.capacity(), capacity);
-            return ByteBuffer.allocate(nextCapacity).order(ByteOrder.LITTLE_ENDIAN);
+    private byte[] allocateByteBuffer(int capacity) {
+        if (capacity > buffer.length) {
+            int nextCapacity = allocStrategy.next(buffer.length, capacity);
+            return new byte[nextCapacity];
         } else {
             return buffer;
         }
@@ -72,11 +71,6 @@ public final class ByteBufferMemory implements Memory {
 
         var newBuffer = allocateByteBuffer(PAGE_SIZE * numPages);
         if (newBuffer != buffer) {
-            var oldBuffer = buffer;
-            var position = oldBuffer.position();
-            oldBuffer.rewind();
-            newBuffer.put(oldBuffer);
-            newBuffer.position(position);
             buffer = newBuffer;
         }
 
@@ -112,8 +106,7 @@ public final class ByteBufferMemory implements Memory {
                         data.length,
                         (PAGE_SIZE * nPages),
                         (msg) -> new UninstantiableException(msg));
-                buffer.position(offset);
-                buffer.put(data, 0, data.length);
+                System.arraycopy(data, 0, buffer, offset, data.length);
             } else if (s instanceof PassiveDataSegment) {
                 // Passive segment should be skipped
             } else {
@@ -164,8 +157,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public void write(int addr, byte[] data, int offset, int size) {
         try {
-            buffer.position(addr);
-            buffer.put(data, offset, size);
+            System.arraycopy(data, 0, buffer, addr + offset, size);
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -179,7 +171,7 @@ public final class ByteBufferMemory implements Memory {
     public byte read(int addr) {
         // checkBounds(addr, 1, (PAGE_SIZE * nPages));
         try {
-            return buffer.get(addr);
+            return buffer[addr];
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
                 | BufferUnderflowException
@@ -194,8 +186,7 @@ public final class ByteBufferMemory implements Memory {
         // checkBounds(addr, len, (PAGE_SIZE * nPages));
         try {
             var bytes = new byte[len];
-            buffer.position(addr);
-            buffer.get(bytes);
+            System.arraycopy(buffer, addr, bytes, 0, len);
             return bytes;
         } catch (IndexOutOfBoundsException
                 | BufferOverflowException
