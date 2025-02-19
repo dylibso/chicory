@@ -91,69 +91,55 @@ public final class AotMethods {
     }
 
     public static byte memoryReadByte(int base, int offset, Memory memory) {
-        validateBase(base);
-        return memory.read(base + offset);
+        return memory.read(getAddr(base, offset));
     }
 
     public static short memoryReadShort(int base, int offset, Memory memory) {
-        validateBase(base);
-        return memory.readShort(base + offset);
+        return memory.readShort(getAddr(base, offset));
     }
 
     public static int memoryReadInt(int base, int offset, Memory memory) {
-        validateBase(base);
-        return memory.readInt(base + offset);
+        return memory.readInt(getAddr(base, offset));
     }
 
     public static long memoryReadLong(int base, int offset, Memory memory) {
-        validateBase(base);
-        return memory.readLong(base + offset);
+        return memory.readLong(getAddr(base, offset));
     }
 
     public static float memoryReadFloat(int base, int offset, Memory memory) {
-        validateBase(base);
-        return memory.readFloat(base + offset);
+        return memory.readFloat(getAddr(base, offset));
     }
 
     public static double memoryReadDouble(int base, int offset, Memory memory) {
-        validateBase(base);
-        return memory.readDouble(base + offset);
+        return memory.readDouble(getAddr(base, offset));
     }
 
     public static void memoryWriteByte(int base, byte value, int offset, Memory memory) {
-        validateBase(base);
-        memory.writeByte(base + offset, value);
+        memory.writeByte(getAddr(base, offset), value);
     }
 
     public static void memoryWriteShort(int base, short value, int offset, Memory memory) {
-        validateBase(base);
-        memory.writeShort(base + offset, value);
+        memory.writeShort(getAddr(base, offset), value);
     }
 
     public static void memoryWriteInt(int base, int value, int offset, Memory memory) {
-        validateBase(base);
-        memory.writeI32(base + offset, value);
+        memory.writeI32(getAddr(base, offset), value);
     }
 
     public static void memoryWriteLong(int base, long value, int offset, Memory memory) {
-        validateBase(base);
-        memory.writeLong(base + offset, value);
+        memory.writeLong(getAddr(base, offset), value);
     }
 
     public static void memoryWriteFloat(int base, float value, int offset, Memory memory) {
-        validateBase(base);
-        memory.writeF32(base + offset, value);
+        memory.writeF32(getAddr(base, offset), value);
     }
 
     public static void memoryWriteDouble(int base, double value, int offset, Memory memory) {
-        validateBase(base);
-        memory.writeF64(base + offset, value);
+        memory.writeF64(getAddr(base, offset), value);
     }
 
-    public static void validateBase(int base) {
-        if (base < 0) {
-            throwOutOfBoundsMemoryAccess();
-        }
+    public static int getAddr(int base, int offset) {
+        return (base < 0) ? base : base + offset;
     }
 
     public static RuntimeException throwCallStackExhausted(StackOverflowError e) {

@@ -44,7 +44,6 @@ public final class AotMethodRefs {
     static final Method TABLE_INIT;
     static final Method TABLE_REQUIRED_REF;
     static final Method TABLE_INSTANCE;
-    static final Method VALIDATE_BASE;
     static final Method THROW_CALL_STACK_EXHAUSTED;
     static final Method THROW_INDIRECT_CALL_TYPE_MISMATCH;
     static final Method THROW_OUT_OF_BOUNDS_MEMORY_ACCESS;
@@ -152,7 +151,6 @@ public final class AotMethodRefs {
                             Instance.class);
             TABLE_REQUIRED_REF = TableInstance.class.getMethod("requiredRef", int.class);
             TABLE_INSTANCE = TableInstance.class.getMethod("instance", int.class);
-            VALIDATE_BASE = AotMethods.class.getMethod("validateBase", int.class);
             THROW_CALL_STACK_EXHAUSTED =
                     AotMethods.class.getMethod("throwCallStackExhausted", StackOverflowError.class);
             THROW_INDIRECT_CALL_TYPE_MISMATCH =

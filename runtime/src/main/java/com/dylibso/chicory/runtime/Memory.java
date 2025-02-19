@@ -18,6 +18,10 @@ public interface Memory {
      */
     public static final int RUNTIME_MAX_PAGES = 32767;
 
+    static int bytes(int pages) {
+        return PAGE_SIZE * Math.min(pages, RUNTIME_MAX_PAGES);
+    }
+
     int pages();
 
     int grow(int size);

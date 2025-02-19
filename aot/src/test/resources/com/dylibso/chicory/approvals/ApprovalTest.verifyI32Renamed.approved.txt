@@ -318,181 +318,148 @@ final class FOO$AotMethods {
 
   public static memoryReadByte(IILcom/dylibso/chicory/runtime/Memory;)B
    L0
-    ILOAD 0
-    INVOKESTATIC FOO$AotMethods.validateBase (I)V
-   L1
     ALOAD 2
     ILOAD 0
     ILOAD 1
-    IADD
+    INVOKESTATIC FOO$AotMethods.getAddr (II)I
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.read (I)B (itf)
     IRETURN
-   L2
+   L1
 
   public static memoryReadShort(IILcom/dylibso/chicory/runtime/Memory;)S
    L0
-    ILOAD 0
-    INVOKESTATIC FOO$AotMethods.validateBase (I)V
-   L1
     ALOAD 2
     ILOAD 0
     ILOAD 1
-    IADD
+    INVOKESTATIC FOO$AotMethods.getAddr (II)I
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readShort (I)S (itf)
     IRETURN
-   L2
+   L1
 
   public static memoryReadInt(IILcom/dylibso/chicory/runtime/Memory;)I
    L0
-    ILOAD 0
-    INVOKESTATIC FOO$AotMethods.validateBase (I)V
-   L1
     ALOAD 2
     ILOAD 0
     ILOAD 1
-    IADD
+    INVOKESTATIC FOO$AotMethods.getAddr (II)I
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readInt (I)I (itf)
     IRETURN
-   L2
+   L1
 
   public static memoryReadLong(IILcom/dylibso/chicory/runtime/Memory;)J
    L0
-    ILOAD 0
-    INVOKESTATIC FOO$AotMethods.validateBase (I)V
-   L1
     ALOAD 2
     ILOAD 0
     ILOAD 1
-    IADD
+    INVOKESTATIC FOO$AotMethods.getAddr (II)I
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readLong (I)J (itf)
     LRETURN
-   L2
+   L1
 
   public static memoryReadFloat(IILcom/dylibso/chicory/runtime/Memory;)F
    L0
-    ILOAD 0
-    INVOKESTATIC FOO$AotMethods.validateBase (I)V
-   L1
     ALOAD 2
     ILOAD 0
     ILOAD 1
-    IADD
+    INVOKESTATIC FOO$AotMethods.getAddr (II)I
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readFloat (I)F (itf)
     FRETURN
-   L2
+   L1
 
   public static memoryReadDouble(IILcom/dylibso/chicory/runtime/Memory;)D
    L0
-    ILOAD 0
-    INVOKESTATIC FOO$AotMethods.validateBase (I)V
-   L1
     ALOAD 2
     ILOAD 0
     ILOAD 1
-    IADD
+    INVOKESTATIC FOO$AotMethods.getAddr (II)I
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readDouble (I)D (itf)
     DRETURN
-   L2
+   L1
 
   public static memoryWriteByte(IBILcom/dylibso/chicory/runtime/Memory;)V
    L0
-    ILOAD 0
-    INVOKESTATIC FOO$AotMethods.validateBase (I)V
-   L1
     ALOAD 3
     ILOAD 0
     ILOAD 2
-    IADD
+    INVOKESTATIC FOO$AotMethods.getAddr (II)I
     ILOAD 1
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeByte (IB)V (itf)
-   L2
+   L1
     RETURN
-   L3
+   L2
 
   public static memoryWriteShort(ISILcom/dylibso/chicory/runtime/Memory;)V
    L0
-    ILOAD 0
-    INVOKESTATIC FOO$AotMethods.validateBase (I)V
-   L1
     ALOAD 3
     ILOAD 0
     ILOAD 2
-    IADD
+    INVOKESTATIC FOO$AotMethods.getAddr (II)I
     ILOAD 1
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeShort (IS)V (itf)
-   L2
+   L1
     RETURN
-   L3
+   L2
 
   public static memoryWriteInt(IIILcom/dylibso/chicory/runtime/Memory;)V
    L0
-    ILOAD 0
-    INVOKESTATIC FOO$AotMethods.validateBase (I)V
-   L1
     ALOAD 3
     ILOAD 0
     ILOAD 2
-    IADD
+    INVOKESTATIC FOO$AotMethods.getAddr (II)I
     ILOAD 1
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeI32 (II)V (itf)
-   L2
+   L1
     RETURN
-   L3
+   L2
 
   public static memoryWriteLong(IJILcom/dylibso/chicory/runtime/Memory;)V
    L0
-    ILOAD 0
-    INVOKESTATIC FOO$AotMethods.validateBase (I)V
-   L1
     ALOAD 4
     ILOAD 0
     ILOAD 3
-    IADD
+    INVOKESTATIC FOO$AotMethods.getAddr (II)I
     LLOAD 1
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeLong (IJ)V (itf)
-   L2
+   L1
     RETURN
-   L3
+   L2
 
   public static memoryWriteFloat(IFILcom/dylibso/chicory/runtime/Memory;)V
    L0
-    ILOAD 0
-    INVOKESTATIC FOO$AotMethods.validateBase (I)V
-   L1
     ALOAD 3
     ILOAD 0
     ILOAD 2
-    IADD
+    INVOKESTATIC FOO$AotMethods.getAddr (II)I
     FLOAD 1
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeF32 (IF)V (itf)
-   L2
+   L1
     RETURN
-   L3
+   L2
 
   public static memoryWriteDouble(IDILcom/dylibso/chicory/runtime/Memory;)V
    L0
-    ILOAD 0
-    INVOKESTATIC FOO$AotMethods.validateBase (I)V
-   L1
     ALOAD 4
     ILOAD 0
     ILOAD 3
-    IADD
+    INVOKESTATIC FOO$AotMethods.getAddr (II)I
     DLOAD 1
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeF64 (ID)V (itf)
-   L2
+   L1
     RETURN
-   L3
+   L2
 
-  public static validateBase(I)V
+  public static getAddr(II)I
    L0
     ILOAD 0
     IFGE L1
-   L2
-    INVOKESTATIC FOO$AotMethods.throwOutOfBoundsMemoryAccess ()Ljava/lang/RuntimeException;
-    POP
+    ILOAD 0
+    GOTO L2
    L1
-    RETURN
+    ILOAD 0
+    ILOAD 1
+    IADD
+   L2
+    IRETURN
    L3
 
   public static throwCallStackExhausted(Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
