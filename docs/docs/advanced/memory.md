@@ -37,10 +37,10 @@ var instance = Instance.builder(module).withMemoryFactory(limits -> {
 It's also possible to customize just the Memory allocation algorithm, for example, is easy to swap out from the default allocator and get the legacy behavior of mapping one to one the backing `ByteBuffer` to the actual request of the Wasm module:
 
 ```java
-import com.dylibso.chicory.runtime.alloc.OneToOneMemAllocStrategy;
+import com.dylibso.chicory.runtime.alloc.ExactMemAllocStrategy;
 
 var instance = Instance.builder(module).withMemoryFactory(limits -> {
-        var allocator = new OneToOneMemAllocStrategy();
+        var allocator = new ExactMemAllocStrategy();
         return new ByteBufferMemory(limits, allocator);
     }).build();
 ```

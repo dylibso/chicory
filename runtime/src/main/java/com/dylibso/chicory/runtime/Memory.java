@@ -19,11 +19,7 @@ public interface Memory {
     public static final int RUNTIME_MAX_PAGES = 32767;
 
     static int bytes(int pages) {
-        if (pages >= RUNTIME_MAX_PAGES) {
-            return PAGE_SIZE * RUNTIME_MAX_PAGES;
-        } else {
-            return PAGE_SIZE * pages;
-        }
+        return PAGE_SIZE * Math.min(pages, RUNTIME_MAX_PAGES);
     }
 
     int pages();

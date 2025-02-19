@@ -1,8 +1,8 @@
 package com.dylibso.chicory.runtime.alloc;
 
-public final class OneToOneMemAllocStrategy implements MemAllocStrategy {
+public final class ExactMemAllocStrategy implements MemAllocStrategy {
 
-    public OneToOneMemAllocStrategy() {}
+    public ExactMemAllocStrategy() {}
 
     @Override
     public int initial(int min) {
