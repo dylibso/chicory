@@ -151,7 +151,6 @@ public final class AotMethodRefs {
                             Instance.class);
             TABLE_REQUIRED_REF = TableInstance.class.getMethod("requiredRef", int.class);
             TABLE_INSTANCE = TableInstance.class.getMethod("instance", int.class);
-            // VALIDATE_BASE = AotMethods.class.getMethod("validateBase", int.class);
             THROW_CALL_STACK_EXHAUSTED =
                     AotMethods.class.getMethod("throwCallStackExhausted", StackOverflowError.class);
             THROW_INDIRECT_CALL_TYPE_MISMATCH =
