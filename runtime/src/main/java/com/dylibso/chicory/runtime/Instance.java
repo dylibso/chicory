@@ -734,9 +734,8 @@ public class Instance {
                 var memories = module.memorySection().get();
                 if (memories.memoryCount() > 0) {
                     var defaultLimits = memories.getMemory(0).limits();
-                    // ByteArrayMemory::new)
                     memory =
-                            requireNonNullElse(memoryFactory, ByteBufferMemory::new)
+                            requireNonNullElse(memoryFactory, ByteArrayMemory::new)
                                     .apply(requireNonNullElse(memoryLimits, defaultLimits));
                 }
             } else {

@@ -325,13 +325,12 @@ public final class ByteBufferMemory implements Memory {
 
     @Override
     public void zero() {
-        fill((byte) 0, 0, (PAGE_SIZE * nPages));
+        fill((byte) 0, 0, sizeInBytes());
     }
 
     @Override
     @SuppressWarnings("ByteBufferBackingArray")
     public void fill(byte value, int fromIndex, int toIndex) {
-        // checkBounds(fromIndex, toIndex - fromIndex, (PAGE_SIZE * nPages));
         // see https://appsintheopen.com/posts/53-resetting-bytebuffers-to-zero-in-java
         try {
             Arrays.fill(buffer.array(), fromIndex, toIndex, value);
