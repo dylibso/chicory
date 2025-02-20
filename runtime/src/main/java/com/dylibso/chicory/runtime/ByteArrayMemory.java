@@ -22,10 +22,15 @@ import java.util.function.Function;
 /**
  * Represents the linear memory in the Wasm program. Can be shared
  * reference b/w the host and the guest.
+ *
+ * try-catch is faster than explicit checks and can be optimized by the JVM.
+ * Catching generic RuntimeException to keep the method bodies short and easily inlinable.
  */
 public final class ByteArrayMemory implements Memory {
-    // trick from:
-    // https://stackoverflow.com/a/65276765/7898052
+    // get access to the byte array elements viewed as if it were
+    // a different primitive array type, such as int[], long[], etc.
+    // This is actually the fastest way to access and reinterpret the underlying bytes.
+    // see: https://stackoverflow.com/a/65276765/7898052
     private static final VarHandle SHORT_ARR_HANDLE =
             MethodHandles.byteArrayViewVarHandle(short[].class, ByteOrder.LITTLE_ENDIAN);
     private static final VarHandle INT_ARR_HANDLE =

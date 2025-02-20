@@ -138,6 +138,7 @@ public final class AotMethods {
         memory.writeF64(getAddr(base, offset), value);
     }
 
+    // let the following memory access throw if the base is negative
     public static int getAddr(int base, int offset) {
         return (base < 0) ? base : base + offset;
     }
