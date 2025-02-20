@@ -15,7 +15,7 @@ public final class CodeSection extends Section {
     }
 
     public FunctionBody[] functionBodies() {
-        return functionBodies.toArray(FunctionBody[]::new);
+        return functionBodies.toArray(new FunctionBody[0]);
     }
 
     public int functionBodyCount() {

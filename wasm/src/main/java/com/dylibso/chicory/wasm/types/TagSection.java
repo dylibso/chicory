@@ -13,7 +13,7 @@ public final class TagSection extends Section {
     }
 
     public TagType[] types() {
-        return tags.toArray(TagType[]::new);
+        return tags.toArray(new TagType[0]);
     }
 
     public int tagCount() {

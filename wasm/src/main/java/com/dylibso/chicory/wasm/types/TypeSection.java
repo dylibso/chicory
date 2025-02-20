@@ -13,7 +13,7 @@ public final class TypeSection extends Section {
     }
 
     public FunctionType[] types() {
-        return types.toArray(FunctionType[]::new);
+        return types.toArray(new FunctionType[0]);
     }
 
     public int typeCount() {

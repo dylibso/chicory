@@ -10,7 +10,6 @@ import static com.dylibso.chicory.wasm.Encoding.readVarSInt64;
 import static com.dylibso.chicory.wasm.Encoding.readVarUInt32;
 import static com.dylibso.chicory.wasm.WasmLimits.MAX_FUNCTION_LOCALS;
 import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
-import static com.dylibso.chicory.wasm.types.WasmEncoding.VARUINT;
 import static java.util.Objects.requireNonNull;
 
 import com.dylibso.chicory.wasm.io.InputStreams;
@@ -72,6 +71,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -956,9 +956,10 @@ public final class Parser {
             var functionBody =
                     new FunctionBody(
                             locals,
-                            instructions.stream()
-                                    .map(ins -> ins.build())
-                                    .collect(Collectors.toUnmodifiableList()));
+                            Collections.unmodifiableList(
+                                    instructions.stream()
+                                            .map(ins -> ins.build())
+                                            .collect(Collectors.toList())));
             codeSection.addFunctionBody(functionBody);
         }
 
