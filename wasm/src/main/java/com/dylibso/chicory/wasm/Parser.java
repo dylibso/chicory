@@ -13,6 +13,7 @@ import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VARUINT;
 import static java.util.Objects.requireNonNull;
 
+import com.dylibso.chicory.wasm.io.InputStreams;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
@@ -104,7 +105,7 @@ public final class Parser {
 
     private static ByteBuffer readByteBuffer(InputStream is) {
         try {
-            var buffer = ByteBuffer.wrap(is.readAllBytes());
+            var buffer = ByteBuffer.wrap(InputStreams.readAllBytes(is));
             buffer.order(ByteOrder.LITTLE_ENDIAN);
             return buffer;
         } catch (IOException e) {

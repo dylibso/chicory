@@ -4,6 +4,7 @@ import static com.dylibso.chicory.experimental.aot.AotUtil.internalClassName;
 import static org.objectweb.asm.Type.getInternalName;
 
 import com.dylibso.chicory.wasm.ChicoryException;
+import com.dylibso.chicory.wasm.io.InputStreams;
 import java.io.IOException;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
@@ -74,7 +75,7 @@ final class AotMethodInliner {
             if (in == null) {
                 throw new IOException("Resource not found: " + name);
             }
-            return in.readAllBytes();
+            return InputStreams.readAllBytes(in);
         } catch (IOException e) {
             throw new ChicoryException("Could not load bytecode for " + clazz, e);
         }
