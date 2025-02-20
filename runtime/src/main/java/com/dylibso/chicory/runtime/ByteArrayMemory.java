@@ -11,9 +11,10 @@ import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.function.Function;
@@ -21,33 +22,48 @@ import java.util.function.Function;
 /**
  * Represents the linear memory in the Wasm program. Can be shared
  * reference b/w the host and the guest.
+ *
+ * try-catch is faster than explicit checks and can be optimized by the JVM.
+ * Catching generic RuntimeException to keep the method bodies short and easily inlinable.
  */
-public final class ByteBufferMemory implements Memory {
+public final class ByteArrayMemory implements Memory {
+    // get access to the byte array elements viewed as if it were
+    // a different primitive array type, such as int[], long[], etc.
+    // This is actually the fastest way to access and reinterpret the underlying bytes.
+    // see: https://stackoverflow.com/a/65276765/7898052
+    private static final VarHandle SHORT_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(short[].class, ByteOrder.LITTLE_ENDIAN);
+    private static final VarHandle INT_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
+    private static final VarHandle FLOAT_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(float[].class, ByteOrder.LITTLE_ENDIAN);
+    private static final VarHandle LONG_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN);
+    private static final VarHandle DOUBLE_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(double[].class, ByteOrder.LITTLE_ENDIAN);
 
     private final MemoryLimits limits;
     private DataSegment[] dataSegments;
-    private ByteBuffer buffer;
+    private byte[] buffer;
     private int nPages;
 
     private final MemAllocStrategy allocStrategy;
 
-    public ByteBufferMemory(MemoryLimits limits) {
+    public ByteArrayMemory(MemoryLimits limits) {
         this(limits, new DefaultMemAllocStrategy(Memory.bytes(limits.maximumPages())));
     }
 
-    public ByteBufferMemory(MemoryLimits limits, MemAllocStrategy allocStrategy) {
+    public ByteArrayMemory(MemoryLimits limits, MemAllocStrategy allocStrategy) {
         this.allocStrategy = allocStrategy;
         this.limits = limits;
-        this.buffer =
-                ByteBuffer.allocate(allocStrategy.initial(PAGE_SIZE * limits.initialPages()))
-                        .order(ByteOrder.LITTLE_ENDIAN);
+        this.buffer = new byte[allocStrategy.initial(PAGE_SIZE * limits.initialPages())];
         this.nPages = limits.initialPages();
     }
 
-    private ByteBuffer allocateByteBuffer(int capacity) {
-        if (capacity > buffer.capacity()) {
-            int nextCapacity = allocStrategy.next(buffer.capacity(), capacity);
-            return ByteBuffer.allocate(nextCapacity).order(ByteOrder.LITTLE_ENDIAN);
+    private byte[] allocateByteBuffer(int capacity) {
+        if (capacity > buffer.length) {
+            int nextCapacity = allocStrategy.next(buffer.length, capacity);
+            return new byte[nextCapacity];
         } else {
             return buffer;
         }
@@ -72,11 +88,7 @@ public final class ByteBufferMemory implements Memory {
 
         var newBuffer = allocateByteBuffer(PAGE_SIZE * numPages);
         if (newBuffer != buffer) {
-            var oldBuffer = buffer;
-            var position = oldBuffer.position();
-            oldBuffer.rewind();
-            newBuffer.put(oldBuffer);
-            newBuffer.position(position);
+            System.arraycopy(buffer, 0, newBuffer, 0, buffer.length);
             buffer = newBuffer;
         }
 
@@ -110,10 +122,9 @@ public final class ByteBufferMemory implements Memory {
                 checkBounds(
                         offset,
                         data.length,
-                        (PAGE_SIZE * nPages),
+                        sizeInBytes(),
                         (msg) -> new UninstantiableException(msg));
-                buffer.position(offset);
-                buffer.put(data, 0, data.length);
+                System.arraycopy(data, 0, buffer, offset, data.length);
             } else if (s instanceof PassiveDataSegment) {
                 // Passive segment should be skipped
             } else {
@@ -169,8 +180,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public void write(int addr, byte[] data, int offset, int size) {
         try {
-            buffer.position(addr);
-            buffer.put(data, offset, size);
+            System.arraycopy(data, offset, buffer, addr, size);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, size, sizeInBytes());
         }
@@ -179,7 +189,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public byte read(int addr) {
         try {
-            return buffer.get(addr);
+            return buffer[addr];
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 1, sizeInBytes());
         }
@@ -189,8 +199,7 @@ public final class ByteBufferMemory implements Memory {
     public byte[] readBytes(int addr, int len) {
         try {
             var bytes = new byte[len];
-            buffer.position(addr);
-            buffer.get(bytes);
+            System.arraycopy(buffer, addr, bytes, 0, len);
             return bytes;
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, len, sizeInBytes());
@@ -200,7 +209,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public void writeI32(int addr, int data) {
         try {
-            buffer.putInt(addr, data);
+            INT_ARR_HANDLE.set(buffer, addr, data);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 4, sizeInBytes());
         }
@@ -209,7 +218,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public int readInt(int addr) {
         try {
-            return buffer.getInt(addr);
+            return (int) INT_ARR_HANDLE.get(buffer, addr);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 4, sizeInBytes());
         }
@@ -218,7 +227,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public void writeLong(int addr, long data) {
         try {
-            buffer.putLong(addr, data);
+            LONG_ARR_HANDLE.set(buffer, addr, data);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 8, sizeInBytes());
         }
@@ -227,7 +236,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public long readLong(int addr) {
         try {
-            return buffer.getLong(addr);
+            return (long) LONG_ARR_HANDLE.get(buffer, addr);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 8, sizeInBytes());
         }
@@ -236,7 +245,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public void writeShort(int addr, short data) {
         try {
-            buffer.putShort(addr, data);
+            SHORT_ARR_HANDLE.set(buffer, addr, data);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 2, sizeInBytes());
         }
@@ -245,7 +254,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public short readShort(int addr) {
         try {
-            return buffer.getShort(addr);
+            return (short) SHORT_ARR_HANDLE.get(buffer, addr);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 2, sizeInBytes());
         }
@@ -254,7 +263,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public long readU16(int addr) {
         try {
-            return buffer.getShort(addr) & 0xffff;
+            return (short) SHORT_ARR_HANDLE.get(buffer, addr) & 0xffff;
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 2, sizeInBytes());
         }
@@ -263,7 +272,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public void writeByte(int addr, byte data) {
         try {
-            buffer.put(addr, data);
+            buffer[addr] = data;
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 1, sizeInBytes());
         }
@@ -272,7 +281,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public void writeF32(int addr, float data) {
         try {
-            buffer.putFloat(addr, data);
+            FLOAT_ARR_HANDLE.set(buffer, addr, data);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 4, sizeInBytes());
         }
@@ -281,7 +290,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public long readF32(int addr) {
         try {
-            return buffer.getInt(addr);
+            return (int) INT_ARR_HANDLE.get(buffer, addr);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 4, sizeInBytes());
         }
@@ -290,7 +299,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public float readFloat(int addr) {
         try {
-            return buffer.getFloat(addr);
+            return (float) FLOAT_ARR_HANDLE.get(buffer, addr);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 4, sizeInBytes());
         }
@@ -299,7 +308,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public void writeF64(int addr, double data) {
         try {
-            buffer.putDouble(addr, data);
+            DOUBLE_ARR_HANDLE.set(buffer, addr, data);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 8, sizeInBytes());
         }
@@ -308,7 +317,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public double readDouble(int addr) {
         try {
-            return buffer.getDouble(addr);
+            return (double) DOUBLE_ARR_HANDLE.get(buffer, addr);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 8, sizeInBytes());
         }
@@ -317,7 +326,7 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public long readF64(int addr) {
         try {
-            return buffer.getLong(addr);
+            return (long) LONG_ARR_HANDLE.get(buffer, addr);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, addr, 8, sizeInBytes());
         }
@@ -333,8 +342,7 @@ public final class ByteBufferMemory implements Memory {
     public void fill(byte value, int fromIndex, int toIndex) {
         // see https://appsintheopen.com/posts/53-resetting-bytebuffers-to-zero-in-java
         try {
-            Arrays.fill(buffer.array(), fromIndex, toIndex, value);
-            buffer.position(0);
+            Arrays.fill(buffer, fromIndex, toIndex, value);
         } catch (RuntimeException e) {
             throw outOfBoundsException(e, fromIndex, toIndex - fromIndex, sizeInBytes());
         }
