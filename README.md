@@ -83,16 +83,18 @@ If you have an interest in working on any of these please reach out in Zulip!
 * [x] Decouple interpreter and create separate compiler and interpreter "engines"
 * [x] Proof of concept AOT compiler (run some subset of modules)
 * [x] AOT engine passes all the same specs as interpreter (stretch goal)
-* [ ] Off-heap linear memory (stretch goal)
-
-### Proposals and Specs
-
 * [x] WASIp1 Support (including test gen)
   * [Read more details in the documentation](https://chicory.dev/docs/usage/wasi/)
+
+### 2025
+
 * [x] SIMD Support
   * in the interpreter
 * [x] Tail Call
   * in the interpreter
+
+### Proposals and Specs
+
 * [ ] Exception Handling
 * [ ] Multi-Memory Support
 * [ ] GC Support
@@ -113,3 +115,9 @@ If you have an interest in working on any of these please reach out in Zulip!
 * [asmble](https://github.com/cretz/asmble)
 * [kwasm](https://github.com/jasonwyatt/KWasm)
 * [wazero](https://wazero.io/)
+
+## Who uses Chicory?
+
+* [sqlite4j - Pure Java SQLite JDBC driver](https://github.com/roastedroot/sqlite4j)
+* [Debezium - Pluggable Go Single Message Transformations](https://github.com/debezium/debezium)
+* [OPA - Open Policy Agent - WebAssembly Java SDK](https://github.com/StyraInc/opa-java-wasm)
