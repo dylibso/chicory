@@ -682,7 +682,12 @@
           <failFast>false</failFast>
           <rules>
             <banDuplicatePomDependencyVersions/>
-            <requireUpperBoundDeps/>
+            <requireUpperBoundDeps>
+              <excludes>
+                <!-- Need an update of Jimfs + Guava: https://github.com/google/jimfs/issues/394 -->
+                <exclude>org.checkerframework:checker-qual</exclude>
+              </excludes>
+            </requireUpperBoundDeps>
           </rules>
         </configuration>
         <executions>
