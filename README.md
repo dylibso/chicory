@@ -120,3 +120,4 @@ If you have an interest in working on any of these please reach out in Zulip!
 
 * [sqlite4j - Pure Java SQLite JDBC driver](https://github.com/roastedroot/sqlite4j)
 * [Debezium - Pluggable Go Single Message Transformations](https://github.com/debezium/debezium)
+* [OPA - Open Policy Agent - WebAssembly Java SDK](https://github.com/StyraInc/opa-java-wasm)

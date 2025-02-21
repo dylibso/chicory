@@ -16,6 +16,7 @@ System.setOut(new PrintStream(
 
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.ByteBufferMemory;
 
 var module = Parser.parse(new File("count_vowels.rs.wasm"));
@@ -30,7 +31,7 @@ It's possible to provide a custom implementation of the entire Memory used by th
 
 ```java
 var instance = Instance.builder(module).withMemoryFactory(limits -> {
-        return new ByteBufferMemory(limits);
+        return new ByteArrayMemory(limits);
     }).build();
 ```
 
