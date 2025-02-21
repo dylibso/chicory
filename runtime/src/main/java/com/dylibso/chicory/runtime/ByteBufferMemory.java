@@ -21,6 +21,8 @@ import java.util.function.Function;
 /**
  * Represents the linear memory in the Wasm program. Can be shared
  * reference b/w the host and the guest.
+ *
+ * This is the preferred memory implementation on Android systems.
  */
 public final class ByteBufferMemory implements Memory {
 

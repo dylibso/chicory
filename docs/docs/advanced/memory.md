@@ -50,3 +50,9 @@ var instance = Instance.builder(module).withMemoryFactory(limits -> {
 docs.FileOps.writeResult("docs/advanced", "memory.md.result", "empty");
 ```
 -->
+
+Since Chicory 1.1.0, an optimized memory implementation called
+`ByteArrayMemory` is also available. We recommend plugging this 
+implementation on all recent OpenJDK systems for enhanced performance. 
+On different Java runtimes (in particular, on Android VMs) 
+you should stick to `ByteBufferMemory`.
