@@ -14,7 +14,7 @@ public final class ElementSection extends Section {
     }
 
     public Element[] elements() {
-        return elements.toArray(Element[]::new);
+        return elements.toArray(new Element[0]);
     }
 
     public int elementCount() {

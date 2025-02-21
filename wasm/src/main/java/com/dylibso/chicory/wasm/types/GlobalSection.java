@@ -13,7 +13,7 @@ public final class GlobalSection extends Section {
     }
 
     public Global[] globals() {
-        return globals.toArray(Global[]::new);
+        return globals.toArray(new Global[0]);
     }
 
     public int globalCount() {

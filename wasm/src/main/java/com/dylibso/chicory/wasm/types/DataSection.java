@@ -13,7 +13,7 @@ public final class DataSection extends Section {
     }
 
     public DataSegment[] dataSegments() {
-        return dataSegments.toArray(DataSegment[]::new);
+        return dataSegments.toArray(new DataSegment[0]);
     }
 
     public int dataSegmentCount() {
