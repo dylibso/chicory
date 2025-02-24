@@ -63,7 +63,7 @@ jobs:
         with:
           node-version: '22'
       - name: Build Chicory
-        run: mvn -B -Dquickly
+        run: ./mvnw -B -Dquickly
       - name: Test Docs
         working-directory: docs
         run: |
@@ -101,7 +101,7 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Test Java
-        run: mvn -B clean install
+        run: ./mvnw -B clean install
       - name: Name
         id: name
         run: |
