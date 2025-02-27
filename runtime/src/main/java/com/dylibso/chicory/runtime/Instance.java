@@ -205,7 +205,7 @@ public class Instance {
 
         public ExportFunction function(String name) {
             var export = getExport(FUNCTION, name);
-            return args -> instance.machine.call(export.index(), args);
+            return args -> instance.machine.call(export.index(), args, null);
         }
 
         public GlobalInstance global(String name) {

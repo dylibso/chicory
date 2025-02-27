@@ -21,9 +21,9 @@ import java.util.List;
  */
 public class InterpreterMachine implements Machine {
 
-    private final MStack stack;
+    protected final MStack stack;
 
-    private final Deque<StackFrame> callStack;
+    protected final Deque<StackFrame> callStack;
 
     protected final Instance instance;
 
@@ -44,24 +44,26 @@ public class InterpreterMachine implements Machine {
             Instance instance,
             Deque<StackFrame> callStack,
             Instruction instruction,
-            Operands operands)
+            Operands operands,
+            CallCtx ctx)
             throws ChicoryException {
         throw new RuntimeException("Machine doesn't recognize Instruction " + instruction);
     }
 
     @Override
-    public long[] call(int funcId, long[] args) throws ChicoryException {
-        return call(stack, instance, callStack, funcId, args, null, true);
+    public long[] call(int funcId, long[] args, CallCtx ctx) throws ChicoryException {
+        return call(stack, instance, callStack, funcId, args, null, true, ctx);
     }
 
-    private long[] call(
+    protected long[] call(
             MStack stack,
             Instance instance,
             Deque<StackFrame> callStack,
             int funcId,
             long[] args,
             FunctionType callType,
-            boolean popResults)
+            boolean popResults,
+            CallCtx ctx)
             throws ChicoryException {
 
         checkInterruption();
@@ -86,7 +88,7 @@ public class InterpreterMachine implements Machine {
             callStack.push(stackFrame);
 
             try {
-                eval(stack, instance, callStack);
+                eval(stack, instance, callStack, ctx);
             } catch (StackOverflowError e) {
                 throw new ChicoryException("call stack exhausted", e);
             }
@@ -129,7 +131,7 @@ public class InterpreterMachine implements Machine {
         return results;
     }
 
-    protected void eval(MStack stack, Instance instance, Deque<StackFrame> callStack)
+    protected void eval(MStack stack, Instance instance, Deque<StackFrame> callStack, CallCtx ctx)
             throws ChicoryException {
         var frame = callStack.peek();
         boolean shouldReturn = false;
@@ -207,7 +209,7 @@ public class InterpreterMachine implements Machine {
                     frame = RETURN_CALL_INDIRECT(stack, instance, callStack, operands, frame);
                     break;
                 case CALL_INDIRECT:
-                    CALL_INDIRECT(stack, instance, callStack, operands);
+                    CALL_INDIRECT(stack, instance, callStack, operands, ctx);
                     break;
                 case DROP:
                     stack.pop();
@@ -490,7 +492,7 @@ public class InterpreterMachine implements Machine {
                     F64_NEG(stack);
                     break;
                 case CALL:
-                    CALL(operands);
+                    CALL(operands, ctx);
                     break;
                 case I32_AND:
                     I32_AND(stack);
@@ -779,7 +781,7 @@ public class InterpreterMachine implements Machine {
                     break;
                 default:
                     {
-                        evalDefault(stack, instance, callStack, instruction, operands);
+                        evalDefault(stack, instance, callStack, instruction, operands, ctx);
                         break;
                     }
             }
@@ -1634,14 +1636,14 @@ public class InterpreterMachine implements Machine {
         stack.push(Value.floatToLong(OpcodeImpl.F32_TRUNC(val)));
     }
 
-    private void CALL(Operands operands) {
+    protected void CALL(Operands operands, CallCtx ctx) {
         var funcId = (int) operands.get(0);
         var typeId = instance.functionType(funcId);
         var type = instance.type(typeId);
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.params());
-        call(stack, instance, callStack, funcId, args, type, false);
+        call(stack, instance, callStack, funcId, args, type, false, ctx);
     }
 
     private static void F64_NEG(MStack stack) {
@@ -1975,8 +1977,12 @@ public class InterpreterMachine implements Machine {
         }
     }
 
-    private void CALL_INDIRECT(
-            MStack stack, Instance instance, Deque<StackFrame> callStack, Operands operands) {
+    protected void CALL_INDIRECT(
+            MStack stack,
+            Instance instance,
+            Deque<StackFrame> callStack,
+            Operands operands,
+            CallCtx ctx) {
         var tableIdx = (int) operands.get(1);
         var table = instance.table(tableIdx);
 
@@ -1991,12 +1997,12 @@ public class InterpreterMachine implements Machine {
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.params());
         if (refInstance.equals(instance)) {
-            call(stack, instance, callStack, funcId, args, type, false);
+            call(stack, instance, callStack, funcId, args, type, false, ctx);
         } else {
             checkInterruption();
             var callType = refInstance.type(refInstance.functionType(funcId));
             verifyIndirectCall(callType, type);
-            var results = refInstance.getMachine().call(funcId, args);
+            var results = refInstance.getMachine().call(funcId, args, ctx);
             if (results != null) {
                 for (var result : results) {
                     stack.push(result);
@@ -2091,7 +2097,7 @@ public class InterpreterMachine implements Machine {
         }
     }
 
-    static long[] extractArgsForParams(MStack stack, List<ValueType> params) {
+    protected static long[] extractArgsForParams(MStack stack, List<ValueType> params) {
         if (params == null) {
             return Value.EMPTY_VALUES;
         }
@@ -2115,7 +2121,7 @@ public class InterpreterMachine implements Machine {
      * Forward branches and other non-branch instructions are not checked, as the
      * execution will run until it eventually reaches a termination point.
      */
-    private static void checkInterruption() {
+    protected static void checkInterruption() {
         if (Thread.currentThread().isInterrupted()) {
             throw new ChicoryException("Thread interrupted");
         }

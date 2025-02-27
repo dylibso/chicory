@@ -859,6 +859,7 @@
         <module>jmh</module>
         <module>log</module>
         <module>machine-tests</module>
+        <module>observable-runtime</module>
         <module>runtime</module>
         <module>runtime-tests</module>
         <module>test-gen-lib</module>
@@ -869,7 +870,6 @@
         <module>wasi-tests</module>
         <module>wasm</module>
         <module>wasm-corpus</module>
-        <module>observable-runtime</module>
       </modules>
     </profile>
 
