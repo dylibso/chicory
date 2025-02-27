@@ -869,6 +869,7 @@
         <module>wasi-tests</module>
         <module>wasm</module>
         <module>wasm-corpus</module>
+        <module>observable-runtime</module>
       </modules>
     </profile>
 

@@ -25,7 +25,7 @@ public class InterpreterMachine implements Machine {
 
     private final Deque<StackFrame> callStack;
 
-    private final Instance instance;
+    protected final Instance instance;
 
     public InterpreterMachine(Instance instance) {
         this.instance = instance;
