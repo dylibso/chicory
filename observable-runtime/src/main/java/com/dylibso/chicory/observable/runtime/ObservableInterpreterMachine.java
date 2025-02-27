@@ -8,6 +8,8 @@ import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.sdk.OpenTelemetrySdk;
+import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 
 /**
  * This is responsible for holding and interpreting the Wasm code.
@@ -16,9 +18,13 @@ public class ObservableInterpreterMachine extends InterpreterMachine {
     private static final String OBSERVABILITY_TRACER_NAME = "com.dylibso.chicory";
     private final Tracer tracer;
 
+    private static OpenTelemetrySdk autoconfiguredSdk() {
+        return AutoConfiguredOpenTelemetrySdk.initialize().getOpenTelemetrySdk();
+    }
+
     public ObservableInterpreterMachine(Instance instance) {
         super(instance);
-        tracer = GlobalOpenTelemetry.getTracer(OBSERVABILITY_TRACER_NAME);
+        tracer = autoconfiguredSdk().getSdkTracerProvider().get(OBSERVABILITY_TRACER_NAME);
     }
 
     @Override
