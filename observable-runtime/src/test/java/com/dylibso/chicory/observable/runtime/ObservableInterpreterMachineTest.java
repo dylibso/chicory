@@ -23,7 +23,11 @@ public class ObservableInterpreterMachineTest {
         Thread.sleep(10000);
         // Assert
         // need something like this:
-        // https://github.com/open-telemetry/opentelemetry-java-examples/blob/main/telemetry-testing/src/test/java/io/opentelemetry/example/telemetry/ApplicationTest.java
-        // ???
+        // https://github.com/quarkusio/quarkus/blob/3ec1df9198ee37fd1488271e86ae3f5f2768ff23/integration-tests/opentelemetry/src/main/java/io/quarkus/it/opentelemetry/ExporterResource.java#L30
+        //
+        //        <dependency>
+        //            <groupId>io.opentelemetry</groupId>
+        //            <artifactId>opentelemetry-sdk-testing</artifactId>
+        //        </dependency>
     }
 }

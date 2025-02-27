@@ -33,7 +33,7 @@ public class StackFrame {
 
     private final List<CtrlFrame> ctrlStack = new ArrayList<>();
 
-    StackFrame(Instance instance, int funcId, long[] args) {
+    public StackFrame(Instance instance, int funcId, long[] args) {
         this(
                 instance,
                 funcId,
@@ -43,7 +43,7 @@ public class StackFrame {
                 Collections.emptyList());
     }
 
-    StackFrame(
+    public StackFrame(
             Instance instance,
             int funcId,
             long[] args,
@@ -148,7 +148,7 @@ public class StackFrame {
         ctrlStack.add(ctrlFrame);
     }
 
-    void pushCtrl(OpCode opcode, int startValues, int returnValues, int height) {
+    public void pushCtrl(OpCode opcode, int startValues, int returnValues, int height) {
         ctrlStack.add(new CtrlFrame(opcode, startValues, returnValues, height));
     }
 
