@@ -64,7 +64,7 @@
     <asm.version>9.7.1</asm.version>
     <commons-io.version>2.18.0</commons-io.version>
     <commons-lang.version>3.17.0</commons-lang.version>
-    <jackson.version>2.18.2</jackson.version>
+    <jackson.version>2.18.3</jackson.version>
     <javaparser.version>3.26.3</javaparser.version>
     <zip4j.version>2.11.5</zip4j.version>
     <jmh.version>1.37</jmh.version>
