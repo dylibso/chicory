@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.dylibso.chicory</groupId>
+    <artifactId>chicory</artifactId>
+    <version>999-SNAPSHOT</version>
+  </parent>
+  <artifactId>wasm-tools</artifactId>
+  <packaging>jar</packaging>
+
+  <name>Chicory - wasm-tools</name>
+  <description>wasm tools compiled to pure Java with Chicory</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>log</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>runtime</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasi</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.google.jimfs</groupId>
+      <artifactId>jimfs</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <phase>process-resources</phase>
+            <configuration>
+              <target>
+                <untar compression="gzip" dest="${project.basedir}/src/main/resources" src="${project.build.directory}/wasm-tools/wasm-tools-1.226.0-wasm32-wasip1.tar.gz">
+                  <flattenmapper/>
+                  <patternset>
+                    <include name="**/*.wasm"/>
+                  </patternset>
+                </untar>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>wagon-maven-plugin</artifactId>
+        <version>${wagon-maven-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>download-wasm-tools</id>
+            <goals>
+              <goal>download-single</goal>
+            </goals>
+            <phase>generate-resources</phase>
+            <configuration>
+              <url>https://github.com/bytecodealliance/wasm-tools/releases/download/v1.226.0/wasm-tools-1.226.0-wasm32-wasip1.tar.gz</url>
+              <toDir>${project.build.directory}/wasm-tools</toDir>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

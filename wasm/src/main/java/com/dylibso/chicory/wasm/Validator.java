@@ -194,9 +194,7 @@ final class Validator {
         var frame = peekCtrl();
         popVals(frame.endTypes);
         if (valueTypeStack.size() != frame.height) {
-            errors.add(
-                    new InvalidException(
-                            "type mismatch, mismatching stack height, invalid result arity"));
+            errors.add(new InvalidException("type mismatch, mismatching stack height"));
         }
         ctrlFrameStack.remove(ctrlFrameStack.size() - 1);
         return frame;
@@ -1183,6 +1181,9 @@ final class Validator {
                 case SELECT_T:
                     {
                         popVal(ValueType.I32);
+                        if (op.operands().length <= 0 || op.operands().length > 1) {
+                            throw new InvalidException("invalid result arity");
+                        }
                         var t = ValueType.forId((int) op.operand(0));
                         popVal(t);
                         popVal(t);

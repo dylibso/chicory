@@ -100,6 +100,7 @@
     <templating-maven-plugin.version>3.0.0</templating-maven-plugin.version>
     <maven-file-management.version>3.1.0</maven-file-management.version>
     <google-compile-testing.version>0.21.0</google-compile-testing.version>
+    <wagon-maven-plugin.version>2.0.2</wagon-maven-plugin.version>
     <guava.version>33.4.0-jre</guava.version>
     <jimfs.version>1.3.0</jimfs.version>
   </properties>
@@ -175,6 +176,11 @@
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>wasm-corpus</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wasm-tools</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -869,6 +875,7 @@
         <module>wasi-tests</module>
         <module>wasm</module>
         <module>wasm-corpus</module>
+        <module>wasm-tools</module>
       </modules>
     </profile>
 
