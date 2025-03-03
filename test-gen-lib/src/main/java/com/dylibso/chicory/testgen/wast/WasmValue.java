@@ -50,8 +50,6 @@ public class WasmValue {
                             sb.append("new int[] {");
                             break;
                         case I32:
-                            sb.append("new long[] {");
-                            break;
                         case I64:
                             sb.append("new long[] {");
                             break;
@@ -75,13 +73,13 @@ public class WasmValue {
                                 sb.append("(byte) (0xFF & Integer.parseInt(\"" + v + "\"))");
                                 break;
                             case I16:
-                                sb.append("Integer.parseUnsignedInt(\"" + v + "\")");
+                                sb.append(shortLaneValue(v));
                                 break;
                             case I32:
-                                sb.append("Long.parseUnsignedLong(\"" + v + "\")");
+                                sb.append(intLaneValue(v));
                                 break;
                             case I64:
-                                sb.append("Long.parseUnsignedLong(\"" + v + "\")");
+                                sb.append("Long.parseLong(\"" + v + "\")");
                                 break;
                             case F32:
                                 switch (v) {
@@ -124,9 +122,9 @@ public class WasmValue {
     public String toExpectedValue() {
         switch (type) {
             case I32:
-                return "Integer.parseUnsignedInt(\"" + value[0] + "\")";
+                return "Integer.parseInt(\"" + value[0] + "\")";
             case I64:
-                return "Long.parseUnsignedLong(\"" + value[0] + "\")";
+                return "Long.parseLong(\"" + value[0] + "\")";
             case F32:
                 if (value[0] != null) {
                     switch (value[0]) {
@@ -172,8 +170,6 @@ public class WasmValue {
                             sb.append("new int[] {");
                             break;
                         case I32:
-                            sb.append("new long[] {");
-                            break;
                         case I64:
                             sb.append("new long[] {");
                             break;
@@ -197,11 +193,17 @@ public class WasmValue {
                                 sb.append("(byte) (0xFF & Integer.parseInt(\"" + v + "\"))");
                                 break;
                             case I16:
+                                sb.append(shortLaneValue(v));
+                                break;
+                            case I32:
+                                sb.append(intLaneValue(v));
+                                break;
+                            case I64:
+                                sb.append("Long.parseLong(\"" + v + "\")");
+                                break;
                             case F32:
                                 sb.append("Integer.parseUnsignedInt(\"" + v + "\")");
                                 break;
-                            case I32:
-                            case I64:
                             case F64:
                                 sb.append("Long.parseUnsignedLong(\"" + v + "\")");
                                 break;
@@ -215,9 +217,20 @@ public class WasmValue {
         }
     }
 
+    public String shortLaneValue(String v) {
+        var intValue = Integer.parseInt(v);
+        return Integer.toString(0xFFFF & intValue);
+    }
+
+    public String intLaneValue(String v) {
+        var longValue = Long.parseLong(v);
+        return Integer.toUnsignedString((int) (0xFFFFFFFF & longValue)) + "L";
+    }
+
     public String toArgsValue() {
         switch (type) {
             case I32:
+                return "Integer.parseInt(\"" + value[0] + "\")";
             case F32:
                 if (value[0] != null) {
                     switch (value[0]) {
@@ -231,6 +244,7 @@ public class WasmValue {
                     return "null";
                 }
             case I64:
+                return "Long.parseLong(\"" + value[0] + "\")";
             case F64:
                 if (value[0] != null) {
                     switch (value[0]) {
@@ -286,11 +300,17 @@ public class WasmValue {
                             sb.append("(byte) (0xFF & Integer.parseInt(\"" + v + "\"))");
                             break;
                         case I16:
+                            sb.append(shortLaneValue(v));
+                            break;
+                        case I32:
+                            sb.append(intLaneValue(v));
+                            break;
+                        case I64:
+                            sb.append("Long.parseLong(\"" + v + "\")");
+                            break;
                         case F32:
                             sb.append("Integer.parseUnsignedInt(\"" + v + "\")");
                             break;
-                        case I32:
-                        case I64:
                         case F64:
                             sb.append("Long.parseUnsignedLong(\"" + v + "\")");
                             break;
