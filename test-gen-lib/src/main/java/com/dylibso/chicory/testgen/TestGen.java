@@ -3,7 +3,7 @@ package com.dylibso.chicory.testgen;
 import static com.dylibso.chicory.testgen.Constants.SPEC_JSON;
 
 import com.dylibso.chicory.testgen.wast.Wast;
-import com.dylibso.chicory.wabt.Wast2Json;
+import com.dylibso.chicory.tools.wasm.Wast2Json;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javaparser.utils.SourceRoot;
 import java.io.File;
@@ -121,20 +121,14 @@ public final class TestGen {
 
     private static final class Proposal {
         final String remapping;
-        final String[] wabtOpts;
 
-        private Proposal(String remapping, String[] wabtOpts) {
+        private Proposal(String remapping) {
             this.remapping = remapping;
-            this.wabtOpts = wabtOpts;
         }
     }
 
     private static Map<String, Proposal> proposals =
-            Map.of(
-                    "tail-call",
-                    new Proposal("tc", new String[] {"--enable-tail-call"}),
-                    "exception-handling",
-                    new Proposal("eh", new String[] {"--enable-tail-call", "--enable-exceptions"}));
+            Map.of("tail-call", new Proposal("tc"), "exception-handling", new Proposal("eh"));
 
     private static final class TestGenerator {
 
@@ -162,14 +156,12 @@ public final class TestGen {
             }
 
             var plainName = wastFile.getName().replace(".wast", "");
-            String[] wabtOptions = new String[0];
             if (wastFile.getParentFile().getParentFile().getName().equalsIgnoreCase("proposals")) {
                 var proposal = proposals.get(wastFile.getParentFile().getName());
                 plainName =
                         proposal.remapping
                                 + plainName.substring(0, 1).toUpperCase(Locale.ROOT)
                                 + plainName.substring(1);
-                wabtOptions = proposal.wabtOpts;
             }
             File wasmFilesFolder = compiledWastTargetFolder.toPath().resolve(plainName).toFile();
             File specFile = wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile();
@@ -179,8 +171,7 @@ public final class TestGen {
 
             Wast2Json.builder()
                     .withFile(wastFile)
-                    .withOutput(specFile)
-                    .withOptions(wabtOptions)
+                    .withOutput(specFile.toPath().getParent().toFile())
                     .build()
                     .process();
 
