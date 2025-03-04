@@ -12,7 +12,6 @@ import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -48,54 +47,50 @@ public final class Wast2Json {
     }
 
     public void process() {
-        try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream()) {
-            try (FileInputStream fis = new FileInputStream(input);
-                    FileSystem fs =
-                            Jimfs.newFileSystem(
-                                    Configuration.unix().toBuilder()
-                                            .setAttributeViews("unix")
-                                            .build())) {
+        try (FileInputStream fis = new FileInputStream(input);
+                FileSystem fs =
+                        Jimfs.newFileSystem(
+                                Configuration.unix().toBuilder()
+                                        .setAttributeViews("unix")
+                                        .build())) {
 
-                var wasiOpts = WasiOptions.builder();
+            var wasiOpts = WasiOptions.builder();
+            wasiOpts.inheritSystem();
 
-                wasiOpts.withStdout(stdoutStream);
-                wasiOpts.withStderr(stdoutStream);
+            Path inputFolder = fs.getPath("input");
+            java.nio.file.Files.createDirectory(inputFolder);
+            Path inputPath = inputFolder.resolve(input.getName());
+            copy(fis, inputPath, StandardCopyOption.REPLACE_EXISTING);
+            wasiOpts.withDirectory(inputFolder.toString(), inputFolder);
 
-                Path inputFolder = fs.getPath("input");
-                java.nio.file.Files.createDirectory(inputFolder);
-                Path inputPath = inputFolder.resolve(input.getName());
-                copy(fis, inputPath, StandardCopyOption.REPLACE_EXISTING);
-                wasiOpts.withDirectory(inputFolder.toString(), inputFolder);
+            Path outputFolder = fs.getPath("output");
+            java.nio.file.Files.createDirectory(outputFolder);
+            wasiOpts.withDirectory(outputFolder.toString(), outputFolder);
 
-                Path outputFolder = fs.getPath("output");
-                java.nio.file.Files.createDirectory(outputFolder);
-                wasiOpts.withDirectory(outputFolder.toString(), outputFolder);
+            List<String> args = new ArrayList<>();
+            args.add("wast2json");
+            args.add(inputPath.toString());
+            args.add("-o");
+            args.add(outputFolder.resolve(output.getName()).toString());
+            args.addAll(List.of(options));
+            wasiOpts.withArguments(args);
 
-                List<String> args = new ArrayList<>();
-                args.add("wast2json");
-                args.add(inputPath.toString());
-                args.add("-o");
-                args.add(outputFolder.resolve(output.getName()).toString());
-                args.addAll(List.of(options));
-                wasiOpts.withArguments(args);
+            try (var wasi =
+                    WasiPreview1.builder()
+                            .withLogger(logger)
+                            .withOptions(wasiOpts.build())
+                            .build()) {
+                ImportValues imports =
+                        ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
 
-                try (var wasi =
-                        WasiPreview1.builder()
-                                .withLogger(logger)
-                                .withOptions(wasiOpts.build())
-                                .build()) {
-                    ImportValues imports =
-                            ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
-
-                    Instance.builder(MODULE)
-                            .withImportValues(imports)
-                            .withMachineFactory(Wast2JsonModule::create)
-                            .build();
-                }
-
-                createDirectories(output.toPath().getParent());
-                Files.copyDirectory(outputFolder, output.toPath().getParent());
+                Instance.builder(MODULE)
+                        .withImportValues(imports)
+                        .withMachineFactory(Wast2JsonModule::create)
+                        .build();
             }
+
+            createDirectories(output.toPath().getParent());
+            Files.copyDirectory(outputFolder, output.toPath().getParent());
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
