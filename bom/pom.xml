@@ -14,6 +14,16 @@
 
   <dependencyManagement>
     <dependencies>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>aot-build-time-cli-experimental</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>aot-build-time-experimental</artifactId>
+        <version>${project.version}</version>
+      </dependency>
       <!-- Experimental -->
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
