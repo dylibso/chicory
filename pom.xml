@@ -115,6 +115,11 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>aot-build-time-experimental</artifactId>
+        <version>${project.version}</version>
+      </dependency>
 
       <!-- Chicory project modules -->
       <dependency>
@@ -847,6 +852,8 @@
       </activation>
       <modules>
         <module>aot</module>
+        <module>aot-build-time</module>
+        <module>aot-build-time-cli</module>
         <module>aot-maven-plugin</module>
         <module>aot-tests</module>
         <module>bom</module>
@@ -881,6 +888,8 @@
       </activation>
       <modules>
         <module>aot</module>
+        <module>aot-build-time</module>
+        <module>aot-build-time-cli</module>
         <module>aot-maven-plugin</module>
         <module>bom</module>
         <module>cli</module>
