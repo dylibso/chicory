@@ -148,7 +148,7 @@ To overcome this limitation you can use an additional Maven Plugin for a smoothe
 </plugin>
 ```
 
-### Using Gradle
+### Using Gradle [community]
 
 Gradle users can leverage the [wasm2class-gradle-plugin](https://github.com/illarionov/wasm2class-gradle-plugin),
 a third-party plugin that serves as an alternative to the Maven plugin, running the AOT compiler at build time
