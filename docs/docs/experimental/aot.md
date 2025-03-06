@@ -53,7 +53,7 @@ Please note that compiling and executing AoT modules at runtime requires:
 
 This is usually fine when running on a standard JVM, but it involve some additional configuration when using tools like `native-image`.
 
-## Pre-compiled AOT
+## Build-time AOT
 
 You can use the AOT compiler at build-time, by leveraging a Maven plug-in to overcome the usage of reflection and external dependencies of the "Runtime AOT".
 
