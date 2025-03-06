@@ -55,7 +55,8 @@ This is usually fine when running on a standard JVM, but it involve some additio
 
 ## Build-time AOT
 
-You can use the AOT compiler at build-time, by leveraging a Maven plug-in to overcome the usage of reflection and external dependencies of the "Runtime AOT".
+You can use the AOT compiler at build-time by leveraging either a Maven or Gradle plug-in to overcome the usage 
+of reflection and external dependencies of the "Runtime AOT".
 
 This mode of execution reduces startup time and will remove the need for distributing
 the original Wasm binary.
@@ -65,6 +66,8 @@ Key advantages are:
 - improved startup time because the translation occurs only once, when you are packaging your application
 - distribute Wasm modules as self-contained jars, making it a convenient way to distribute software that was not originally meant to run on the Java platform
 - same performance properties as the in-memory compiler (in fact, the compilation backend is the same)
+
+### Using Maven
 
 Example configuration of the Maven plug-in:
 
@@ -144,6 +147,46 @@ To overcome this limitation you can use an additional Maven Plugin for a smoothe
     </executions>
 </plugin>
 ```
+
+### Using Gradle [community]
+
+Gradle users can leverage the [wasm2class-gradle-plugin](https://github.com/illarionov/wasm2class-gradle-plugin),
+a third-party plugin that serves as an alternative to the Maven plugin, running the AOT compiler at build time
+and enabling the use of pre-compiled Wasm code in Java, Kotlin, and Android projects.
+
+To set it up, make sure MavenCentral is listed as a repository in the `pluginManagement` block of your `settings.gradle.kts`:
+
+```kotlin
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+```
+
+Configuration example in the `build.gradle.kts` file for the module:
+
+```kotlin
+plugins {
+    id("at.released.wasm2class.plugin") version "<latest version>"
+}
+
+wasm2class {
+    modules {
+        // Target package for the generated classes
+        targetPackage = "org.acme.wasm"
+        //  Use "Add" as the base name for generated classes
+        create("Add") {
+            // Translate `add.wasm` into bytecode
+            wasm = file("src/main/resources/add.wasm")
+        }
+    }
+}
+```
+
+This generates the class `org.acme.wasm.AddModule`, which you can use to instantiate the module just like shown earlier
+in the Maven example.
 
 <!--
 ```java
