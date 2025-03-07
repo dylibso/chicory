@@ -151,14 +151,24 @@ final class Validator {
     }
 
     private ValueType popVal(ValueType expected) {
+        // TODO: refactor this check?
+        var frame = peekCtrl();
+        if (valueTypeStack.size() == frame.height && !frame.unreachable) {
+            errors.add(
+                    new InvalidException(
+                            "type mismatch: instruction requires ["
+                                    + expected.toString().toLowerCase()
+                                    + "] but stack has []"));
+        }
         var actual = popVal();
         if (actual != expected && actual != ValueType.UNKNOWN && expected != ValueType.UNKNOWN) {
             errors.add(
                     new InvalidException(
-                            "type mismatch, popVal(expected), expected: "
-                                    + expected
-                                    + " but got: "
-                                    + actual));
+                            "type mismatch: instruction requires ["
+                                    + expected.toString().toLowerCase()
+                                    + "] but stack has ["
+                                    + actual.toString().toLowerCase()
+                                    + "]"));
         }
         return actual;
     }
@@ -532,12 +542,26 @@ final class Validator {
                 case UNREACHABLE:
                     unreachable();
                     break;
+                case THROW:
+                    {
+                        var tagNumber = (int) op.operand(0);
+                        if (module.tagSection().isEmpty()
+                                || module.tagSection().get().tagCount() <= tagNumber) {
+                            throw new InvalidException("unknown tag " + tagNumber);
+                        }
+                        var tag = module.tagSection().get().getTag(tagNumber);
+                        var type = module.typeSection().getType(tag.typeIdx());
+                        popVals(type.params()); // returns in case of LOOPS?
+                        unreachable();
+                        break;
+                    }
                 case IF:
                     popVal(ValueType.I32);
                     // fallthrough
                 case LOOP:
                     // t1* -> t2*
                     // fallthrough
+                case TRY_TABLE:
                 case BLOCK:
                     {
                         var t1 = getParams(op);
@@ -737,6 +761,8 @@ final class Validator {
             switch (op.opcode()) {
                 case NOP:
                 case UNREACHABLE:
+                case THROW:
+                case TRY_TABLE:
                 case LOOP:
                 case BLOCK:
                 case IF:
