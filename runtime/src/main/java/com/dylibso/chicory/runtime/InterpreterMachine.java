@@ -7,6 +7,7 @@ import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
+import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
@@ -162,6 +163,9 @@ public class InterpreterMachine implements Machine {
                 case BLOCK:
                     BLOCK(frame, stack, instance, instruction);
                     break;
+                case TRY_TABLE:
+                    TRY_TABLE(frame, stack, instance, instruction, frame.currentPc());
+                    break;
                 case IF:
                     IF(frame, stack, instance, instruction);
                     break;
@@ -206,6 +210,58 @@ public class InterpreterMachine implements Machine {
                     // swap in place the current frame
                     frame = RETURN_CALL_INDIRECT(stack, instance, callStack, operands, frame);
                     break;
+                case THROW:
+                    {
+                        int tagNumber = (int) operands.get(0);
+                        var tag = instance.tag(tagNumber);
+                        var type = instance.type(tag.tagType().typeIdx());
+                        var args = extractArgsForParams(stack, type.params());
+
+                        // go over the call stack to find the enclosing TRY block
+                        boolean catchFound = false;
+                        while (!catchFound) {
+                            while (!catchFound && frame.ctrlStackSize() > 0) {
+                                var ctrlFrame = frame.popCtrl();
+                                if (ctrlFrame.opCode == OpCode.TRY_TABLE) {
+                                    // Once a catching try block is found for the thrown exception,
+                                    // the operand stack is popped back to the size the operand
+                                    // stack had when the try block was entered after possible block
+                                    // parameters were popped.
+                                    frame.jumpTo(ctrlFrame.pc);
+                                    var tryInstruction = frame.loadCurrentInstruction();
+
+                                    // decode the operands and check if the exception is catch here
+                                    var matchingCatch =
+                                            CatchOpCode.catchLabel(
+                                                    tagNumber, tryInstruction.operands());
+                                    if (matchingCatch.isEmpty()) {
+                                        continue;
+                                    }
+                                    // NOT sure about indexes, review
+                                    var targetLabel = matchingCatch.get();
+                                    var resolvedLabel =
+                                            tryInstruction.labelTable().get(targetLabel);
+                                    // need to implement jump to label as we did in BR_TABLE I guess
+                                    // checkInterruption(); ?
+                                    // review, this is the content of CATCH for now they are zeroes
+                                    ctrlJump(frame, stack, targetLabel);
+                                    frame.jumpTo(resolvedLabel);
+                                    // frame.jumpTo(resolvedLabel);
+                                    catchFound = true;
+                                    break;
+                                }
+                            }
+                            if (catchFound || callStack.size() == 0) {
+                                break;
+                            }
+                            frame = callStack.pop();
+                        }
+
+                        if (!catchFound) {
+                            throw new WasmException(type, args);
+                        }
+                        break;
+                    }
                 case CALL_INDIRECT:
                     CALL_INDIRECT(stack, instance, callStack, operands);
                     break;
@@ -2039,6 +2095,18 @@ public class InterpreterMachine implements Machine {
         var paramsSize = numberOfParams(instance, instruction);
         var returnsSize = numberOfValuesToReturn(instance, instruction);
         frame.pushCtrl(instruction.opcode(), paramsSize, returnsSize, stack.size() - paramsSize);
+    }
+
+    private static void TRY_TABLE(
+            StackFrame frame,
+            MStack stack,
+            Instance instance,
+            AnnotatedInstruction instruction,
+            int pc) {
+        var paramsSize = numberOfParams(instance, instruction);
+        var returnsSize = numberOfValuesToReturn(instance, instruction);
+        frame.pushCtrl(
+                instruction.opcode(), paramsSize, returnsSize, stack.size() - paramsSize, pc);
     }
 
     private static void IF(

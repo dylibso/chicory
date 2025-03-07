@@ -83,6 +83,7 @@ public class JavaTestGen {
 
         // runtime imports
         cu.addImport("com.dylibso.chicory.wasm.ChicoryException");
+        cu.addImport("com.dylibso.chicory.runtime.WasmException");
         cu.addImport("com.dylibso.chicory.runtime.ExportFunction");
         cu.addImport("com.dylibso.chicory.runtime.Instance");
 
@@ -189,6 +190,7 @@ public class JavaTestGen {
                 case ASSERT_RETURN:
                 case ASSERT_TRAP:
                 case ASSERT_EXHAUSTION:
+                case ASSERT_EXCEPTION:
                     {
                         method =
                                 createTestMethod(
@@ -290,6 +292,7 @@ public class JavaTestGen {
                 return excludedUnlinkableWasts.contains(name + ".wast");
             case ASSERT_EXHAUSTION:
             case ASSERT_TRAP:
+            case ASSERT_EXCEPTION:
                 return false;
             default:
                 throw new IllegalArgumentException(typ + "not implemented");
@@ -309,6 +312,8 @@ public class JavaTestGen {
             case ASSERT_TRAP:
             case ASSERT_EXHAUSTION:
                 return "ChicoryException";
+            case ASSERT_EXCEPTION:
+                return "WasmException";
             default:
                 throw new IllegalArgumentException(typ + "not implemented");
         }
@@ -365,6 +370,7 @@ public class JavaTestGen {
     private List<Expression> generateAssert(String varName, Command cmd) {
         assert (cmd.type() == CommandType.ASSERT_RETURN
                 || cmd.type() == CommandType.ASSERT_TRAP
+                || cmd.type() == CommandType.ASSERT_EXCEPTION
                 || cmd.type() == CommandType.ASSERT_EXHAUSTION);
         assert (cmd.expected() != null);
         assert (cmd.expected().length > 0);
@@ -388,7 +394,9 @@ public class JavaTestGen {
                         ? ".apply(ArgsAdapter.builder()" + adaptedArgs + ".build()" + ")"
                         : ".getValue()";
 
-        if (cmd.type() == CommandType.ASSERT_TRAP || cmd.type() == CommandType.ASSERT_EXHAUSTION) {
+        if (cmd.type() == CommandType.ASSERT_TRAP
+                || cmd.type() == CommandType.ASSERT_EXHAUSTION
+                || cmd.type() == CommandType.ASSERT_EXCEPTION) {
             var assertDecl =
                     new NameExpr(
                             "var exception ="
