@@ -14,8 +14,12 @@ public final class BasicMath_ModuleFactory {
     }
 
     public static HostFunction[] toHostFunctions(BasicMath functions) {
+        return toHostFunctions(functions, "math");
+    }
+
+    public static HostFunction[] toHostFunctions(BasicMath functions, String moduleName) {
         return new HostFunction[] { //
-        new HostFunction("math",
+        new HostFunction(moduleName,
                          "add",
                          List.of(ValueType.I32,
                                  ValueType.I32),
@@ -25,7 +29,7 @@ public final class BasicMath_ModuleFactory {
                                                          (int) args[1]);
                              return new long[] { result };
                          }), //
-        new HostFunction("math",
+        new HostFunction(moduleName,
                          "square",
                          List.of(ValueType.F32),
                          List.of(ValueType.F64),
@@ -33,7 +37,7 @@ public final class BasicMath_ModuleFactory {
                              double result = functions.pow2(Value.longToFloat(args[0]));
                              return new long[] { Value.doubleToLong(result) };
                          }), //
-        new HostFunction("math",
+        new HostFunction(moduleName,
                          "floor_div",
                          List.of(ValueType.I32,
                                  ValueType.I32),
