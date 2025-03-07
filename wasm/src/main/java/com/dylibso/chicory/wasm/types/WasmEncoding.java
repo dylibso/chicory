@@ -7,6 +7,7 @@ public enum WasmEncoding {
     FLOAT32,
     FLOAT64,
     VEC_VARUINT,
+    VEC_CATCH,
     BYTE,
     V128
 }

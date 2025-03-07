@@ -8,6 +8,7 @@ import static java.util.stream.Collectors.toSet;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
+import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -20,6 +21,8 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.TableImport;
+import com.dylibso.chicory.wasm.types.TagImport;
+import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -27,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -84,6 +88,7 @@ final class Validator {
     private final List<Global> globalImports;
     private final List<Integer> functionImports;
     private final List<ValueType> tableImports;
+    private final List<TagType> tagImports;
     private final int memoryImports;
     private final Set<Integer> declaredFunctions;
 
@@ -119,6 +124,13 @@ final class Validator {
                         .flatMap(element -> element.initializers().stream())
                         .flatMap(this::declaredFunctions)
                         .collect(toSet());
+
+        this.tagImports =
+                module.importSection().stream()
+                        .filter(TagImport.class::isInstance)
+                        .map(TagImport.class::cast)
+                        .map(TagImport::tagType)
+                        .collect(toList());
     }
 
     private Stream<Integer> declaredFunctions(List<Instruction> init) {
@@ -144,7 +156,7 @@ final class Validator {
         if (valueTypeStack.size() == frame.height) {
             errors.add(
                     new InvalidException(
-                            "type mismatch, popVal(), stack reached limit at " + frame.height));
+                            "type mismatch: instruction requires [i32] but stack has []"));
             return ValueType.UNKNOWN;
         }
         return valueTypeStack.remove(valueTypeStack.size() - 1);
@@ -155,10 +167,11 @@ final class Validator {
         if (actual != expected && actual != ValueType.UNKNOWN && expected != ValueType.UNKNOWN) {
             errors.add(
                     new InvalidException(
-                            "type mismatch, popVal(expected), expected: "
-                                    + expected
-                                    + " but got: "
-                                    + actual));
+                            "type mismatch: instruction requires ["
+                                    + expected.toString().toLowerCase(Locale.ROOT)
+                                    + "] but stack has ["
+                                    + actual.toString().toLowerCase(Locale.ROOT)
+                                    + "]"));
         }
         return actual;
     }
@@ -312,6 +325,16 @@ final class Validator {
         return module.tableSection().getTable(idx - tableImports.size()).elementType();
     }
 
+    private TagType getTagType(int idx) {
+        if (idx < 0 || idx >= tagImports.size() + module.tagSection().get().tagCount()) {
+            throw new InvalidException("unknown tag " + idx);
+        }
+        if (idx < tagImports.size()) {
+            return tagImports.get(idx);
+        }
+        return module.tagSection().get().getTag(idx - tagImports.size());
+    }
+
     private Element getElement(int idx) {
         if (idx < 0 || idx >= module.elementSection().elementCount()) {
             throw new InvalidException("unknown elem segment " + idx);
@@ -445,7 +468,9 @@ final class Validator {
                     {
                         exprType = ValueType.refTypeForId((int) instruction.operand(0));
                         constInstrCount++;
-                        if (exprType != ValueType.ExternRef && exprType != ValueType.FuncRef) {
+                        if (exprType != ValueType.ExternRef
+                                && exprType != ValueType.FuncRef
+                                && exprType != ValueType.ExnRef) {
                             throw new IllegalStateException(
                                     "Unexpected wrong type for ref.null instruction");
                         }
@@ -530,6 +555,79 @@ final class Validator {
                 case UNREACHABLE:
                     unreachable();
                     break;
+                case TRY_TABLE:
+                    {
+                        var t1 = getParams(op);
+                        var t2 = getReturns(op);
+                        popVals(t1);
+                        // and now the catches
+                        var catches = CatchOpCode.decode(op.operands());
+
+                        for (int idx = 0; idx < catches.size(); idx++) {
+                            var currentCatch = catches.get(idx);
+                            if (ctrlFrameStack.size() < currentCatch.label()) {
+                                throw new InvalidException("something something");
+                            }
+                            // push_ctrl(catch, [], label_types(ctrls[handler.label]))
+                            // using THROW instead of CATCH ... doesn't matter as it's removed right
+                            // after
+                            pushCtrl(
+                                    OpCode.THROW,
+                                    List.of(),
+                                    labelTypes(getCtrl(currentCatch.label())));
+                            switch (currentCatch.opcode()) {
+                                case CATCH:
+                                    {
+                                        var tagType =
+                                                module.typeSection()
+                                                        .getType(
+                                                                getTagType(currentCatch.tag())
+                                                                        .typeIdx());
+                                        pushVals(tagType.params());
+                                        break;
+                                    }
+                                case CATCH_REF:
+                                    {
+                                        var tagType =
+                                                module.typeSection()
+                                                        .getType(
+                                                                getTagType(currentCatch.tag())
+                                                                        .typeIdx());
+                                        pushVals(tagType.params());
+                                        pushVal(ValueType.ExnRef);
+                                        break;
+                                    }
+                                case CATCH_ALL:
+                                    break;
+                                case CATCH_ALL_REF:
+                                    pushVal(ValueType.ExnRef);
+                                    break;
+                            }
+                            popCtrl();
+                        }
+                        pushCtrl(op.opcode(), t1, t2);
+                        break;
+                    }
+                case THROW:
+                    {
+                        var tagNumber = (int) op.operand(0);
+                        if ((tagImports.size()
+                                        + module.tagSection().map(TagSection::tagCount).orElse(0))
+                                <= tagNumber) {
+                            throw new InvalidException("unknown tag " + tagNumber);
+                        }
+                        var type = module.typeSection().getType(getTagType(tagNumber).typeIdx());
+                        popVals(type.params());
+                        assert (type.returns().size() == 0);
+                        unreachable();
+                        break;
+                    }
+                case THROW_REF:
+                    {
+                        popVal(ValueType.ExnRef);
+                        unreachable();
+                        break;
+                    }
                 case IF:
                     popVal(ValueType.I32);
                     // fallthrough
@@ -735,6 +833,9 @@ final class Validator {
             switch (op.opcode()) {
                 case NOP:
                 case UNREACHABLE:
+                case THROW:
+                case THROW_REF:
+                case TRY_TABLE:
                 case LOOP:
                 case BLOCK:
                 case IF:

@@ -136,6 +136,10 @@ public class StackFrame {
         return currentInstruction;
     }
 
+    int currentPc() {
+        return pc - 1;
+    }
+
     boolean isLastBlock() {
         return currentInstruction.depth() == 0;
     }
@@ -150,6 +154,14 @@ public class StackFrame {
 
     void pushCtrl(OpCode opcode, int startValues, int returnValues, int height) {
         ctrlStack.add(new CtrlFrame(opcode, startValues, returnValues, height));
+    }
+
+    void pushCtrl(OpCode opcode, int startValues, int returnValues, int height, int pc) {
+        ctrlStack.add(new CtrlFrame(opcode, startValues, returnValues, height, pc));
+    }
+
+    int ctrlStackSize() {
+        return ctrlStack.size();
     }
 
     CtrlFrame popCtrl() {

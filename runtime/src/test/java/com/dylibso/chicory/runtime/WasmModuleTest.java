@@ -11,6 +11,7 @@ import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableLimits;
@@ -540,5 +541,19 @@ public class WasmModuleTest {
         assertEquals(ValueType.ExternRef, instance.imports().table(1).table().elementType());
         assertEquals(0, instance.imports().tag(0).tag().tagType().typeIdx());
         assertEquals(1, instance.imports().tag(1).tag().tagType().typeIdx());
+    }
+
+    @Test
+    public void correctlyReturnAllLabels() {
+        // Arrange
+        var operands = new long[] {64, 2, 0, 0, 0, 0, 0, 0};
+
+        // Act
+        var result = CatchOpCode.allLabels(operands);
+
+        // Assert
+        assertEquals(2, result.size());
+        assertEquals(0, result.get(0));
+        assertEquals(0, result.get(1));
     }
 }

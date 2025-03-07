@@ -115,7 +115,11 @@
             <wast>proposals/exception-handling/binary.wast</wast>
             <wast>proposals/exception-handling/exports.wast</wast>
             <wast>proposals/exception-handling/imports.wast</wast>
+            <wast>proposals/exception-handling/ref_null.wast</wast>
             <wast>proposals/exception-handling/tag.wast</wast>
+            <wast>proposals/exception-handling/throw.wast</wast>
+            <wast>proposals/exception-handling/throw_ref.wast</wast>
+            <wast>proposals/exception-handling/try_table.wast</wast>
             <wast>proposals/tail-call/return_call.wast</wast>
             <wast>proposals/tail-call/return_call_indirect.wast</wast>
             <wast>ref_func.wast</wast>
@@ -149,7 +153,9 @@
             <wast>utf8-import-module.wast</wast>
             <wast>utf8-invalid-encoding.wast</wast>
           </includedWasts>
-          <excludedTests/>
+          <!-- This test is supposed to fail because there is a THROW_REF in a Global initializer -->
+          <!-- it's a different error with EH -->
+          <excludedTests>SpecV1BinaryTest.test40,SpecV1EhBinaryTest.test40</excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts/>
           <excludedUnlinkableWasts/>
@@ -328,7 +334,11 @@
                 <wast>proposals/exception-handling/binary.wast</wast>
                 <wast>proposals/exception-handling/exports.wast</wast>
                 <wast>proposals/exception-handling/imports.wast</wast>
+                <wast>proposals/exception-handling/ref_null.wast</wast>
                 <wast>proposals/exception-handling/tag.wast</wast>
+                <wast>proposals/exception-handling/throw.wast</wast>
+                <wast>proposals/exception-handling/throw_ref.wast</wast>
+                <wast>proposals/exception-handling/try_table.wast</wast>
                 <wast>proposals/tail-call/return_call.wast</wast>
                 <wast>proposals/tail-call/return_call_indirect.wast</wast>
                 <wast>ref_func.wast</wast>
@@ -419,7 +429,9 @@
                 <wast>utf8-import-module.wast</wast>
                 <wast>utf8-invalid-encoding.wast</wast>
               </includedWasts>
-              <excludedTests/>
+              <!-- This test is supposed to fail because there is a THROW_REF in a Global initializer -->
+              <!-- it's a different error with EH -->
+              <excludedTests>SpecV1BinaryTest.test40,SpecV1EhBinaryTest.test40</excludedTests>
               <excludedMalformedWasts/>
               <excludedInvalidWasts/>
               <excludedUnlinkableWasts/>
