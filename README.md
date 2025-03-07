@@ -121,3 +121,4 @@ If you have an interest in working on any of these please reach out in Zulip!
 * [sqlite4j - Pure Java SQLite JDBC driver](https://github.com/roastedroot/sqlite4j)
 * [Debezium - Pluggable Go Single Message Transformations](https://github.com/debezium/debezium)
 * [OPA - Open Policy Agent - WebAssembly Java SDK](https://github.com/StyraInc/opa-java-wasm)
+* [Trino - Python user-defined functions](https://trino.io/docs/current/udf/python.html) [(Trino plugin source)](https://github.com/trinodb/trino/tree/master/plugin/trino-functions-python) [(Python host source)](https://github.com/trinodb/trino-wasm-python)
