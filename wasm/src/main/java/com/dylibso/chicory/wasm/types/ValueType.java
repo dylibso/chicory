@@ -1,9 +1,9 @@
 package com.dylibso.chicory.wasm.types;
 
+import static com.dylibso.chicory.wasm.types.ValueType.ID.ExnRef;
+
 import com.dylibso.chicory.wasm.MalformedException;
 import java.util.List;
-
-import static com.dylibso.chicory.wasm.types.ValueType.ID.ExnRef;
 
 /**
  * The possible WASM value types.
