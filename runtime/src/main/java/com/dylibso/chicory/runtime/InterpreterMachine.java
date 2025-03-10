@@ -216,10 +216,8 @@ public class InterpreterMachine implements Machine {
                         int tagNumber = (int) operands.get(0);
                         var tag = instance.tag(tagNumber);
                         var type = instance.type(tag.tagType().typeIdx());
-                        var args = extractArgsForParams(stack, type.params());
 
-                        var exception = new WasmException(tagNumber, args);
-                        var exceptionIdx = instance.registerException(exception);
+                        WasmException exception = null;
 
                         // TODO: refactor this with THROW_REF!
                         // go over the call stack to find the enclosing TRY block
@@ -238,6 +236,10 @@ public class InterpreterMachine implements Machine {
                                     if (matchingCatchIdx.isEmpty()) {
                                         continue;
                                     }
+
+                                    var args = extractArgsForParams(stack, type.params());
+                                    exception = new WasmException(tagNumber, args);
+                                    var exceptionIdx = instance.registerException(exception);
 
                                     // In case of catch or catch_ref, the arguments of the exception are pushed back onto the stack. For catch_ref and catch_all_ref, an exception reference is then pushed to the stack, which represents the caught exception.
                                     var catchOpCode = CatchOpCode.catchOpCode(tagNumber, tryInstruction.operands());
@@ -273,6 +275,9 @@ public class InterpreterMachine implements Machine {
                         }
 
                         if (!catchFound) {
+                            var args = extractArgsForParams(stack, type.params());
+                            exception = new WasmException(tagNumber, args);
+                            var exceptionIdx = instance.registerException(exception);
                             throw exception;
                         }
                         break;
@@ -305,12 +310,12 @@ public class InterpreterMachine implements Machine {
                                     var catchOpCode = CatchOpCode.catchOpCode(tagNumber, tryInstruction.operands());
                                     switch (catchOpCode.get()) {
                                         case CATCH:
-                                        case CATCH_REF:
+                                            case CATCH_ALL:
                                             for (var a: exception.args()) {
                                                 stack.push(a);
                                             }
                                             break;
-                                        case CATCH_ALL:
+                                        case CATCH_REF:
                                         case CATCH_ALL_REF:
                                             stack.push(exceptionIdx);
                                             break;
