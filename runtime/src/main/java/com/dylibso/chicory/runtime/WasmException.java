@@ -1,7 +1,5 @@
 package com.dylibso.chicory.runtime;
 
-import com.dylibso.chicory.wasm.types.TagType;
-
 public class WasmException extends RuntimeException {
     private final int tagIdx;
     private final long[] args;

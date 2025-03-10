@@ -8,7 +8,6 @@ import static java.util.stream.Collectors.toSet;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
-import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -124,11 +123,12 @@ final class Validator {
                         .flatMap(this::declaredFunctions)
                         .collect(toSet());
 
-        this.tagImports = module.importSection().stream()
-                .filter(TagImport.class::isInstance)
-                .map(TagImport.class::cast)
-                .map(TagImport::tagType)
-                .collect(toList());
+        this.tagImports =
+                module.importSection().stream()
+                        .filter(TagImport.class::isInstance)
+                        .map(TagImport.class::cast)
+                        .map(TagImport::tagType)
+                        .collect(toList());
     }
 
     private Stream<Integer> declaredFunctions(List<Instruction> init) {
@@ -555,11 +555,18 @@ final class Validator {
                 case THROW:
                     {
                         var tagNumber = (int) op.operand(0);
-                        if ((tagImports.size() + module.tagSection().map(TagSection::tagCount).orElse(0)) <= tagNumber) {
+                        if ((tagImports.size()
+                                        + module.tagSection().map(TagSection::tagCount).orElse(0))
+                                <= tagNumber) {
                             throw new InvalidException("unknown tag " + tagNumber);
                         }
                         // TODO: is this correct?
-                        var tag = (tagNumber < tagImports.size()) ? tagImports.get(tagNumber) : module.tagSection().get().getTag(tagNumber - tagImports.size());
+                        var tag =
+                                (tagNumber < tagImports.size())
+                                        ? tagImports.get(tagNumber)
+                                        : module.tagSection()
+                                                .get()
+                                                .getTag(tagNumber - tagImports.size());
                         var type = module.typeSection().getType(tag.typeIdx());
                         popVals(type.params());
                         pushVals(type.returns());
@@ -567,14 +574,14 @@ final class Validator {
                         break;
                     }
                 case THROW_REF:
-                {
-                    popVal(ValueType.ExnRef);
-                    pushVal(ValueType.ExnRef);
-                    unreachable();
-                    // break;
-                    // TODO: FIXME disabling validation when THROW_REF
-                    return;
-                }
+                    {
+                        popVal(ValueType.ExnRef);
+                        pushVal(ValueType.ExnRef);
+                        unreachable();
+                        // break;
+                        // TODO: FIXME disabling validation when THROW_REF
+                        return;
+                    }
                 case IF:
                     popVal(ValueType.I32);
                     // fallthrough

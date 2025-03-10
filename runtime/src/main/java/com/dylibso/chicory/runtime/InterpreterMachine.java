@@ -1,7 +1,6 @@
 package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
-import static com.dylibso.chicory.wasm.types.ValueType.FuncRef;
 import static com.dylibso.chicory.wasm.types.ValueType.V128;
 import static com.dylibso.chicory.wasm.types.ValueType.sizeOf;
 import static java.util.Objects.requireNonNullElse;
@@ -242,12 +241,17 @@ public class InterpreterMachine implements Machine {
                                     exception = new WasmException(tagNumber, args);
                                     var exceptionIdx = instance.registerException(exception);
 
-                                    // In case of catch or catch_ref, the arguments of the exception are pushed back onto the stack. For catch_ref and catch_all_ref, an exception reference is then pushed to the stack, which represents the caught exception.
-                                    var catchOpCode = CatchOpCode.catchOpCode(tagNumber, tryInstruction.operands());
+                                    // In case of catch or catch_ref, the arguments of the exception
+                                    // are pushed back onto the stack. For catch_ref and
+                                    // catch_all_ref, an exception reference is then pushed to the
+                                    // stack, which represents the caught exception.
+                                    var catchOpCode =
+                                            CatchOpCode.catchOpCode(
+                                                    tagNumber, tryInstruction.operands());
                                     switch (catchOpCode.get()) {
                                         case CATCH:
                                         case CATCH_ALL:
-                                            for (var a: args) {
+                                            for (var a : args) {
                                                 stack.push(a);
                                             }
                                             break;
@@ -257,7 +261,9 @@ public class InterpreterMachine implements Machine {
                                             break;
                                     }
 
-                                    var targetLabel = CatchOpCode.catchLabelValue(tagNumber, tryInstruction.operands());
+                                    var targetLabel =
+                                            CatchOpCode.catchLabelValue(
+                                                    tagNumber, tryInstruction.operands());
                                     var resolvedLabel =
                                             tryInstruction.labelTable().get(matchingCatchIdx.get());
 
@@ -284,11 +290,11 @@ public class InterpreterMachine implements Machine {
                         break;
                     }
                 case THROW_REF:
-                {
-                    var exceptionIdx = stack.pop();
-                    var exception = instance.exn(exceptionIdx);
-                    assert(exception != null);
-                    var tagNumber = exception.tagIdx();
+                    {
+                        var exceptionIdx = stack.pop();
+                        var exception = instance.exn(exceptionIdx);
+                        assert (exception != null);
+                        var tagNumber = exception.tagIdx();
 
                         // go over the call stack to find the enclosing TRY block
                         boolean catchFound = false;
@@ -307,12 +313,17 @@ public class InterpreterMachine implements Machine {
                                         continue;
                                     }
 
-                                    // In case of catch or catch_ref, the arguments of the exception are pushed back onto the stack. For catch_ref and catch_all_ref, an exception reference is then pushed to the stack, which represents the caught exception.
-                                    var catchOpCode = CatchOpCode.catchOpCode(tagNumber, tryInstruction.operands());
+                                    // In case of catch or catch_ref, the arguments of the exception
+                                    // are pushed back onto the stack. For catch_ref and
+                                    // catch_all_ref, an exception reference is then pushed to the
+                                    // stack, which represents the caught exception.
+                                    var catchOpCode =
+                                            CatchOpCode.catchOpCode(
+                                                    tagNumber, tryInstruction.operands());
                                     switch (catchOpCode.get()) {
                                         case CATCH:
-                                            case CATCH_ALL:
-                                            for (var a: exception.args()) {
+                                        case CATCH_ALL:
+                                            for (var a : exception.args()) {
                                                 stack.push(a);
                                             }
                                             break;
@@ -322,7 +333,9 @@ public class InterpreterMachine implements Machine {
                                             break;
                                     }
 
-                                    var targetLabel = CatchOpCode.catchLabelValue(tagNumber, tryInstruction.operands());
+                                    var targetLabel =
+                                            CatchOpCode.catchLabelValue(
+                                                    tagNumber, tryInstruction.operands());
                                     var resolvedLabel =
                                             tryInstruction.labelTable().get(matchingCatchIdx.get());
 
@@ -344,7 +357,7 @@ public class InterpreterMachine implements Machine {
                             throw exception;
                         }
                         break;
-                }
+                    }
                 case CALL_INDIRECT:
                     CALL_INDIRECT(stack, instance, callStack, operands);
                     break;
