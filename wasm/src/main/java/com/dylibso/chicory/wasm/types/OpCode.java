@@ -20,6 +20,7 @@ public enum OpCode {
     IF(0x04, List.of(VARUINT)),
     ELSE(0x05),
     THROW(0x08, List.of(VARUINT)),
+    THROW_REF(0x0A),
     END(0x0B),
     BR(0x0C, List.of(VARUINT)),
     BR_IF(0x0D, List.of(VARUINT)),

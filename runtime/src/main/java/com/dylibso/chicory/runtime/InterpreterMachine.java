@@ -1,6 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+import static com.dylibso.chicory.wasm.types.ValueType.FuncRef;
 import static com.dylibso.chicory.wasm.types.ValueType.V128;
 import static com.dylibso.chicory.wasm.types.ValueType.sizeOf;
 import static java.util.Objects.requireNonNullElse;
@@ -224,30 +225,40 @@ public class InterpreterMachine implements Machine {
                             while (!catchFound && frame.ctrlStackSize() > 0) {
                                 var ctrlFrame = frame.popCtrl();
                                 if (ctrlFrame.opCode == OpCode.TRY_TABLE) {
-                                    // Once a catching try block is found for the thrown exception,
-                                    // the operand stack is popped back to the size the operand
-                                    // stack had when the try block was entered after possible block
-                                    // parameters were popped.
                                     frame.jumpTo(ctrlFrame.pc);
                                     var tryInstruction = frame.loadCurrentInstruction();
-
                                     // decode the operands and check if the exception is catch here
-                                    var matchingCatch =
-                                            CatchOpCode.catchLabel(
+                                    // too many "extractors logic" - refactor later
+                                    var matchingCatchIdx =
+                                            CatchOpCode.catchLabelIdx(
                                                     tagNumber, tryInstruction.operands());
-                                    if (matchingCatch.isEmpty()) {
+                                    if (matchingCatchIdx.isEmpty()) {
                                         continue;
                                     }
-                                    // NOT sure about indexes, review
-                                    var targetLabel = matchingCatch.get();
+
+                                    // In case of catch or catch_ref, the arguments of the exception are pushed back onto the stack. For catch_ref and catch_all_ref, an exception reference is then pushed to the stack, which represents the caught exception.
+                                    var catchOpCode = CatchOpCode.catchOpCode(tagNumber, tryInstruction.operands());
+                                    switch (catchOpCode.get()) {
+                                        case CATCH:
+                                        case CATCH_REF:
+                                            for (var a: args) {
+                                                stack.push(a);
+                                            }
+                                            break;
+                                        case CATCH_ALL:
+                                        case CATCH_ALL_REF:
+                                            stack.push(instance.registerException(new WasmException(type, args)));
+                                            break;
+                                    }
+
+                                    var targetLabel = CatchOpCode.catchLabelValue(tagNumber, tryInstruction.operands());
                                     var resolvedLabel =
-                                            tryInstruction.labelTable().get(targetLabel);
-                                    // need to implement jump to label as we did in BR_TABLE I guess
-                                    // checkInterruption(); ?
-                                    // review, this is the content of CATCH for now they are zeroes
-                                    ctrlJump(frame, stack, targetLabel);
+                                            tryInstruction.labelTable().get(matchingCatchIdx.get());
+
+                                    // this is a plain BR-like jump
+                                    ctrlJump(frame, stack, targetLabel.get());
                                     frame.jumpTo(resolvedLabel);
-                                    // frame.jumpTo(resolvedLabel);
+
                                     catchFound = true;
                                     break;
                                 }

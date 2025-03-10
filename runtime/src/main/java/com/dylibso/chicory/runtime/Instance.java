@@ -37,6 +37,8 @@ import com.dylibso.chicory.wasm.types.TagImport;
 import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.ValueType;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -63,6 +65,8 @@ public class Instance {
     private final Map<String, Export> exports;
     private final ExecutionListener listener;
     private final Exports fluentExports;
+
+    private final Map<Long, WasmException> exnRefs;
 
     Instance(
             WasmModule module,
@@ -103,6 +107,8 @@ public class Instance {
         this.exports = exports;
         this.listener = listener;
         this.fluentExports = new Exports(this);
+
+        this.exnRefs = new HashMap<>();
 
         if (initialize) {
             initialize(start);
@@ -313,6 +319,22 @@ public class Instance {
             return imports.tag(idx).tag();
         }
         return tags[idx - imports.tagCount()];
+    }
+
+    // TODO: review does this map belong to Instance or Machine?
+    public long registerException(WasmException ex) {
+        // TODO: use a better implementation
+        // TODO: how/when/how to cleanup?
+        long idx = exnRefs.size();
+        while (exnRefs.containsKey(idx)) {
+            idx++;
+        }
+        exnRefs.put(idx, ex);
+        return idx;
+    }
+
+    public WasmException exn(long idx) {
+        return exnRefs.get(idx);
     }
 
     public Machine getMachine() {
