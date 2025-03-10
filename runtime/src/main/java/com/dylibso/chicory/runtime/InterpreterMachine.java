@@ -249,11 +249,13 @@ public class InterpreterMachine implements Machine {
                                                     tagNumber, tryInstruction.operands());
                                     switch (catchOpCode.get()) {
                                         case CATCH:
-                                        case CATCH_ALL:
+                                        case CATCH_REF:
                                             for (var a : args) {
                                                 stack.push(a);
                                             }
                                             break;
+                                    }
+                                    switch (catchOpCode.get()) {
                                         case CATCH_REF:
                                         case CATCH_ALL_REF:
                                             stack.push(exceptionIdx);
@@ -321,11 +323,13 @@ public class InterpreterMachine implements Machine {
                                                     tagNumber, tryInstruction.operands());
                                     switch (catchOpCode.get()) {
                                         case CATCH:
-                                        case CATCH_ALL:
+                                        case CATCH_REF:
                                             for (var a : exception.args()) {
                                                 stack.push(a);
                                             }
                                             break;
+                                    }
+                                    switch (catchOpCode.get()) {
                                         case CATCH_REF:
                                         case CATCH_ALL_REF:
                                             stack.push(exceptionIdx);
