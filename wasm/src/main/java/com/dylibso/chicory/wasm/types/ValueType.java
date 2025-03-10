@@ -111,13 +111,14 @@ public enum ValueType {
      */
     public static boolean isValid(int typeId) {
         switch (typeId) {
-            case ID.F64:
             case ID.ExternRef:
+            case ID.ExnRef:
             case ID.FuncRef:
             case ID.V128:
             case ID.I32:
             case ID.I64:
             case ID.F32:
+            case ID.F64:
                 return true;
             default:
                 return false;

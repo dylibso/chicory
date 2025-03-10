@@ -558,13 +558,23 @@ final class Validator {
                         if ((tagImports.size() + module.tagSection().map(TagSection::tagCount).orElse(0)) <= tagNumber) {
                             throw new InvalidException("unknown tag " + tagNumber);
                         }
-                        // var matchingCatch = CatchOpCode.catchLabel(tagNumber, op.operands());
+                        // TODO: is this correct?
                         var tag = (tagNumber < tagImports.size()) ? tagImports.get(tagNumber) : module.tagSection().get().getTag(tagNumber - tagImports.size());
-                        var type = module.typeSection().getType(tag.typeIdx()); // verify
-                        popVals(type.params()); // returns in case of LOOPS?
+                        var type = module.typeSection().getType(tag.typeIdx());
+                        popVals(type.params());
+                        pushVals(type.returns());
                         unreachable();
                         break;
                     }
+                case THROW_REF:
+                {
+                    popVal(ValueType.ExnRef);
+                    pushVal(ValueType.ExnRef);
+                    unreachable();
+                    // break;
+                    // TODO: FIXME disabling validation when THROW_REF
+                    return;
+                }
                 case IF:
                     popVal(ValueType.I32);
                     // fallthrough
@@ -772,6 +782,7 @@ final class Validator {
                 case NOP:
                 case UNREACHABLE:
                 case THROW:
+                case THROW_REF:
                 case TRY_TABLE:
                 case LOOP:
                 case BLOCK:
