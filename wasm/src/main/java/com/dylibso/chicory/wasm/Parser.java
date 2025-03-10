@@ -930,10 +930,6 @@ public final class Parser {
                         }
                     case TRY_TABLE:
                         {
-                            // block start
-                            currentControlFlow =
-                                    currentControlFlow.spawn(instructions.size(), instruction);
-
                             // labels computation
                             var allLabels = CatchOpCode.allLabels(baseInstruction.operands());
                             var labelTable = new ArrayList<Integer>();
@@ -950,10 +946,14 @@ public final class Parser {
                                 }
                                 int finalIdx = idx;
                                 reference.addCallback(end -> labelTable.set(finalIdx, end));
-                                // start of the block
+                                // start of the block?
                                 // labelTable.set(idx, reference.instructionNumber());
                             }
                             instruction.withLabelTable(labelTable);
+
+                            // block start
+                            currentControlFlow =
+                                    currentControlFlow.spawn(instructions.size(), instruction);
                             break;
                         }
                     case END:
@@ -1068,39 +1068,6 @@ public final class Parser {
             default:
                 break;
         }
-
-        //        List<Long> catchOperands = null;
-        //        switch (op) {
-        //            case TRY_TABLE:
-        //                // TODO: review the parsing approach
-        //                // as a first attempt I just splat everything into the operands
-        //                // but I'll need to re-parse everytime this section from the operands
-        //                catchOperands = new ArrayList<>();
-        //                var blocktype = readVarUInt32(buffer);
-        //                catchOperands.add(blocktype);
-        //                var n = readVarUInt32(buffer);
-        //                catchOperands.add(n);
-        //                for (int i = 0; i < n; i++) {
-        //                    var catchOp = readByte(buffer);
-        //                    catchOperands.add(0L | catchOp);
-        //                    var catchOpcode = CatchOpCode.byOpCode(catchOp);
-        //                    switch (catchOpcode) {
-        //                        case CATCH:
-        //                        case CATCH_REF:
-        //                            var tag = readVarUInt32(buffer);
-        //                            catchOperands.add(tag);
-        //                            // intentional fall-through
-        //                        case CATCH_ALL:
-        //                        case CATCH_ALL_REF:
-        //                            var label = readVarUInt32(buffer);
-        //                            catchOperands.add(label);
-        //                            break;
-        //                    }
-        //                }
-        //                break;
-        //            default:
-        //                break;
-        //        }
 
         if (signature.isEmpty()) {
             return new Instruction(address, op, EMPTY_OPERANDS);

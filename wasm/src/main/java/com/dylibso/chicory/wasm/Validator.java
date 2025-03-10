@@ -8,6 +8,7 @@ import static java.util.stream.Collectors.toSet;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
+import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -20,6 +21,8 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.TableImport;
+import com.dylibso.chicory.wasm.types.TagImport;
+import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -84,6 +87,7 @@ final class Validator {
     private final List<Global> globalImports;
     private final List<Integer> functionImports;
     private final List<ValueType> tableImports;
+    private final List<TagType> tagImports;
     private final int memoryImports;
     private final Set<Integer> declaredFunctions;
 
@@ -119,6 +123,12 @@ final class Validator {
                         .flatMap(element -> element.initializers().stream())
                         .flatMap(this::declaredFunctions)
                         .collect(toSet());
+
+        this.tagImports = module.importSection().stream()
+                .filter(TagImport.class::isInstance)
+                .map(TagImport.class::cast)
+                .map(TagImport::tagType)
+                .collect(toList());
     }
 
     private Stream<Integer> declaredFunctions(List<Instruction> init) {
@@ -545,12 +555,12 @@ final class Validator {
                 case THROW:
                     {
                         var tagNumber = (int) op.operand(0);
-                        if (module.tagSection().isEmpty()
-                                || module.tagSection().get().tagCount() <= tagNumber) {
+                        if ((tagImports.size() + module.tagSection().map(TagSection::tagCount).orElse(0)) <= tagNumber) {
                             throw new InvalidException("unknown tag " + tagNumber);
                         }
-                        var tag = module.tagSection().get().getTag(tagNumber);
-                        var type = module.typeSection().getType(tag.typeIdx());
+                        // var matchingCatch = CatchOpCode.catchLabel(tagNumber, op.operands());
+                        var tag = (tagNumber < tagImports.size()) ? tagImports.get(tagNumber) : module.tagSection().get().getTag(tagNumber - tagImports.size());
+                        var type = module.typeSection().getType(tag.typeIdx()); // verify
                         popVals(type.params()); // returns in case of LOOPS?
                         unreachable();
                         break;
