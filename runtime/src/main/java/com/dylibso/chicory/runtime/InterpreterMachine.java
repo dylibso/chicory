@@ -278,6 +278,7 @@ public class InterpreterMachine implements Machine {
                                     var catchOpCode =
                                             CatchOpCode.catchOpCode(
                                                     tagNumber, tryInstruction.operands());
+
                                     switch (catchOpCode.get()) {
                                         case CATCH:
                                         case CATCH_REF:
