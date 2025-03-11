@@ -64,7 +64,7 @@ public class Instance {
     private final ExecutionListener listener;
     private final Exports fluentExports;
 
-    private final Map<Long, WasmException> exnRefs;
+    private final Map<Integer, WasmException> exnRefs;
 
     Instance(
             WasmModule module,
@@ -320,18 +320,19 @@ public class Instance {
     }
 
     // TODO: review does this map belong to Instance or Machine?
-    public long registerException(WasmException ex) {
+    public int registerException(WasmException ex) {
         // TODO: use a better implementation
         // TODO: how/when/how to cleanup?
-        long idx = exnRefs.size();
-        while (exnRefs.containsKey(idx)) {
-            idx++;
-        }
-        exnRefs.put(idx, ex);
-        return idx;
+        //        long idx = exnRefs.size();
+        //        while (exnRefs.containsKey(idx)) {
+        //            idx++;
+        //        }
+        // ATTEMPT: use the tagNumber as an identifier?
+        exnRefs.put(ex.tagIdx(), ex);
+        return ex.tagIdx();
     }
 
-    public WasmException exn(long idx) {
+    public WasmException exn(int idx) {
         return exnRefs.get(idx);
     }
 
