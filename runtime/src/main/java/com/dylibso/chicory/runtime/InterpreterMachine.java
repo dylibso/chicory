@@ -229,7 +229,7 @@ public class InterpreterMachine implements Machine {
                         // TODO: refactor this with THROW_REF!
                         // go over the call stack to find the enclosing TRY block
                         boolean catchFound = false;
-                        while (!catchFound) {
+                        // while (!catchFound) {
                             while (!catchFound && frame.ctrlStackSize() > 0) {
                                 var ctrlFrame = frame.popCtrl();
                                 if (ctrlFrame.opCode == OpCode.TRY_TABLE) {
@@ -239,7 +239,7 @@ public class InterpreterMachine implements Machine {
                                     // too many "extractors logic" - refactor later
                                     Optional<Integer> matchingCatchIdx = Optional.empty();
                                     if (tagNumber < instance.imports().tagCount()) {
-                                        // TODO: a more generic handling of aliases?
+                                        // TODO: should we have a more generic handling of aliases?
                                         // this is a bit hacked around
                                         // if it's an import I should look for aliases
                                         for (int i = 0; i < instance.imports().tagCount(); i++) {
@@ -266,10 +266,6 @@ public class InterpreterMachine implements Machine {
                                         continue;
                                     }
 
-                                    var args = extractArgsForParams(stack, type.params());
-                                    exception = new WasmException(instance, tagNumber, args);
-                                    var exceptionIdx = instance.registerException(exception);
-
                                     // In case of catch or catch_ref, the arguments of the exception
                                     // are pushed back onto the stack. For catch_ref and
                                     // catch_all_ref, an exception reference is then pushed to the
@@ -277,6 +273,10 @@ public class InterpreterMachine implements Machine {
                                     var catchOpCode =
                                             CatchOpCode.catchOpCode(
                                                     tagNumber, tryInstruction.operands());
+
+                                    var args = extractArgsForParams(stack, type.params());
+                                    exception = new WasmException(instance, tagNumber, args);
+                                    var exceptionIdx = instance.registerException(exception);
 
                                     switch (catchOpCode.get()) {
                                         case CATCH:
@@ -307,11 +307,11 @@ public class InterpreterMachine implements Machine {
                                     break;
                                 }
                             }
-                            if (catchFound || callStack.size() == 0) {
-                                break;
-                            }
-                            frame = callStack.pop();
-                        }
+//                            if (catchFound || callStack.size() == 0) {
+//                                break;
+//                            }
+//                            frame = callStack.pop();
+//                        }
 
                         if (!catchFound) {
                             // When caught, an exception is reified into an exception reference, a
@@ -2169,7 +2169,7 @@ public class InterpreterMachine implements Machine {
         var tagNumber = exception.tagIdx();
 
         boolean catchFound = false;
-        while (!catchFound) {
+        // while (!catchFound) {
             while (!catchFound && frame.ctrlStackSize() > 0) {
                 var ctrlFrame = frame.popCtrl();
                 if (ctrlFrame.opCode == OpCode.TRY_TABLE) {
@@ -2233,11 +2233,11 @@ public class InterpreterMachine implements Machine {
                     break;
                 }
             }
-            if (catchFound || callStack.size() == 0) {
-                break;
-            }
-            frame = callStack.pop();
-        }
+//            if (catchFound || callStack.size() == 0) {
+//                break;
+//            }
+//            frame = callStack.pop();
+//        }
 
         if (!catchFound) {
             throw exception;

@@ -40,7 +40,7 @@ public enum CatchOpCode {
     public static Optional<Integer> catchLabelIdx(int currentTag, long[] operands) {
         var n = operands[1];
         var idx = 0;
-        for (int i = 2; i < n + 2; i++) {
+        for (int i = 2; i < operands.length; i++) {
             var catchEnum = CatchOpCode.byOpCode((int) operands[i++]);
             switch (catchEnum) {
                 case CATCH:
@@ -61,7 +61,7 @@ public enum CatchOpCode {
 
     public static Optional<Integer> catchLabelValue(int currentTag, long[] operands) {
         var n = operands[1];
-        for (int i = 2; i < n + 2; i++) {
+        for (int i = 2; i < operands.length; i++) {
             var catchEnum = CatchOpCode.byOpCode((int) operands[i++]);
             switch (catchEnum) {
                 case CATCH:
@@ -81,7 +81,7 @@ public enum CatchOpCode {
 
     public static Optional<CatchOpCode> catchOpCode(int currentTag, long[] operands) {
         var n = operands[1];
-        for (int i = 2; i < n + 2; i++) {
+        for (int i = 2; i < operands.length; i++) {
             var catchEnum = CatchOpCode.byOpCode((int) operands[i++]);
             switch (catchEnum) {
                 case CATCH:
@@ -102,7 +102,10 @@ public enum CatchOpCode {
     public static List<Integer> allLabels(long[] operands) {
         var result = new ArrayList<Integer>();
         var n = operands[1];
-        for (int i = 2; i < n + 2; i++) {
+        for (int i = 2; i < operands.length; i++) {
+            if (result.size() == n) {
+                return result;
+            }
             var catchEnum = CatchOpCode.byOpCode((int) operands[i++]);
             switch (catchEnum) {
                 case CATCH:
@@ -110,9 +113,10 @@ public enum CatchOpCode {
                     i++; // skip tag
                 case CATCH_ALL:
                 case CATCH_ALL_REF:
-                    result.add((int) operands[i++]);
+                    result.add((int) operands[i]);
             }
         }
+        assert(result.size() == n);
         return result;
     }
 }
