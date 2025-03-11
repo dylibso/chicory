@@ -16,6 +16,7 @@ import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This is responsible for holding and interpreting the Wasm code.
@@ -89,7 +90,7 @@ public class InterpreterMachine implements Machine {
             try {
                 eval(stack, instance, callStack);
             } catch (WasmException we) {
-                THROW_REF(we, stackFrame, stack, callStack);
+                THROW_REF(we, instance, stackFrame, stack, callStack);
             } catch (StackOverflowError e) {
                 throw new ChicoryException("call stack exhausted", e);
             }
@@ -110,7 +111,7 @@ public class InterpreterMachine implements Machine {
                     }
                 }
             } catch (WasmException we) {
-                THROW_REF(we, stackFrame, stack, callStack);
+                THROW_REF(we, instance, stackFrame, stack, callStack);
             }
         }
 
@@ -236,15 +237,37 @@ public class InterpreterMachine implements Machine {
                                     var tryInstruction = frame.loadCurrentInstruction();
                                     // decode the operands and check if the exception is catch here
                                     // too many "extractors logic" - refactor later
-                                    var matchingCatchIdx =
-                                            CatchOpCode.catchLabelIdx(
-                                                    tagNumber, tryInstruction.operands());
+                                    Optional<Integer> matchingCatchIdx = Optional.empty();
+                                    if (tagNumber < instance.imports().tagCount()) {
+                                        // TODO: a more generic handling of aliases?
+                                        // this is a bit hacked around
+                                        // if it's an import I should look for aliases
+                                        for (int i = 0; i < instance.imports().tagCount(); i++) {
+                                            if (instance.tag(i).tagType().typeIdx()
+                                                    == tag.tagType().typeIdx()) {
+                                                matchingCatchIdx =
+                                                        CatchOpCode.catchLabelIdx(
+                                                                i, tryInstruction.operands());
+                                                if (!matchingCatchIdx.isEmpty()) {
+                                                    // TODO: clean this up... with a proper CATCH
+                                                    // data structure
+                                                    tagNumber = i;
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    } else {
+                                        matchingCatchIdx =
+                                                CatchOpCode.catchLabelIdx(
+                                                        tagNumber, tryInstruction.operands());
+                                    }
+
                                     if (matchingCatchIdx.isEmpty()) {
                                         continue;
                                     }
 
                                     var args = extractArgsForParams(stack, type.params());
-                                    exception = new WasmException(tagNumber, args);
+                                    exception = new WasmException(instance, tagNumber, args);
                                     var exceptionIdx = instance.registerException(exception);
 
                                     // In case of catch or catch_ref, the arguments of the exception
@@ -290,8 +313,11 @@ public class InterpreterMachine implements Machine {
                         }
 
                         if (!catchFound) {
+                            // When caught, an exception is reified into an exception reference, a
+                            // value of the new type exnref. Exception references can be used to
+                            // rethrow the caught exception.
                             var args = extractArgsForParams(stack, type.params());
-                            exception = new WasmException(tagNumber, args);
+                            exception = new WasmException(instance, tagNumber, args);
                             var exceptionIdx = instance.registerException(exception);
                             throw exception;
                         }
@@ -302,7 +328,7 @@ public class InterpreterMachine implements Machine {
                         var exceptionIdx = (int) stack.pop();
                         var exception = instance.exn(exceptionIdx);
                         assert (exception != null);
-                        THROW_REF(exception, frame, stack, callStack);
+                        THROW_REF(exception, instance, frame, stack, callStack);
                         break;
                     }
                 case CALL_INDIRECT:
@@ -2133,7 +2159,12 @@ public class InterpreterMachine implements Machine {
         return sizeOf(instance.type(typeId).returns());
     }
 
-    private static void THROW_REF(WasmException exception, StackFrame frame, MStack stack, Deque<StackFrame> callStack) {
+    private static void THROW_REF(
+            WasmException exception,
+            Instance instance,
+            StackFrame frame,
+            MStack stack,
+            Deque<StackFrame> callStack) {
         var tagNumber = exception.tagIdx();
 
         boolean catchFound = false;
@@ -2143,11 +2174,11 @@ public class InterpreterMachine implements Machine {
                 if (ctrlFrame.opCode == OpCode.TRY_TABLE) {
                     frame.jumpTo(ctrlFrame.pc);
                     var tryInstruction = frame.loadCurrentInstruction();
+
                     // decode the operands and check if the exception is catch here
                     // too many "extractors logic" - refactor later
                     var matchingCatchIdx =
-                            CatchOpCode.catchLabelIdx(
-                                    tagNumber, tryInstruction.operands());
+                            CatchOpCode.catchLabelIdx(tagNumber, tryInstruction.operands());
                     if (matchingCatchIdx.isEmpty()) {
                         continue;
                     }
@@ -2156,9 +2187,23 @@ public class InterpreterMachine implements Machine {
                     // are pushed back onto the stack. For catch_ref and
                     // catch_all_ref, an exception reference is then pushed to the
                     // stack, which represents the caught exception.
-                    var catchOpCode =
-                            CatchOpCode.catchOpCode(
-                                    tagNumber, tryInstruction.operands());
+                    var catchOpCode = CatchOpCode.catchOpCode(tagNumber, tryInstruction.operands());
+
+                    // This check has been done Test Driven from: "imported-mismatch"
+                    // review carefully! Maybe there is an easier way ...
+                    switch (catchOpCode.get()) {
+                        case CATCH:
+                        case CATCH_REF:
+                            if (exception.instance() != frame.instance()) {
+                                var exceptionTag = exception.instance().tag(tagNumber);
+                                var instanceTag = frame.instance().tag(tagNumber);
+
+                                if (exceptionTag.instance() != instanceTag.instance()) {
+                                    continue;
+                                }
+                            }
+                    }
+
                     switch (catchOpCode.get()) {
                         case CATCH:
                         case CATCH_REF:
@@ -2176,10 +2221,8 @@ public class InterpreterMachine implements Machine {
                     }
 
                     var targetLabel =
-                            CatchOpCode.catchLabelValue(
-                                    tagNumber, tryInstruction.operands());
-                    var resolvedLabel =
-                            tryInstruction.labelTable().get(matchingCatchIdx.get());
+                            CatchOpCode.catchLabelValue(tagNumber, tryInstruction.operands());
+                    var resolvedLabel = tryInstruction.labelTable().get(matchingCatchIdx.get());
 
                     // this is a plain BR-like jump
                     ctrlJump(frame, stack, targetLabel.get());
