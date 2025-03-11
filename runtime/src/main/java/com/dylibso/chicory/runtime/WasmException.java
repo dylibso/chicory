@@ -3,10 +3,17 @@ package com.dylibso.chicory.runtime;
 public class WasmException extends RuntimeException {
     private final int tagIdx;
     private final long[] args;
+    // can we avoid to carry around the entire instance?
+    private final Instance instance;
 
-    public WasmException(int tagIdx, long[] args) {
+    public WasmException(Instance instance, int tagIdx, long[] args) {
+        this.instance = instance;
         this.tagIdx = tagIdx;
         this.args = args.clone();
+    }
+
+    public Instance instance() {
+        return instance;
     }
 
     public int tagIdx() {
