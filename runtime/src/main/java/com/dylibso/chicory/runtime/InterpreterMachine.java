@@ -88,6 +88,8 @@ public class InterpreterMachine implements Machine {
 
             try {
                 eval(stack, instance, callStack);
+            } catch (WasmException we) {
+                THROW_REF(we, stackFrame, stack, callStack);
             } catch (StackOverflowError e) {
                 throw new ChicoryException("call stack exhausted", e);
             }
@@ -97,13 +99,18 @@ public class InterpreterMachine implements Machine {
             callStack.push(stackFrame);
 
             var imprt = instance.imports().function(funcId);
-            var results = imprt.handle().apply(instance, args);
-            // a host function can return null or an array of ints
-            // which we will push onto the stack
-            if (results != null) {
-                for (var result : results) {
-                    stack.push(result);
+
+            try {
+                var results = imprt.handle().apply(instance, args);
+                // a host function can return null or an array of ints
+                // which we will push onto the stack
+                if (results != null) {
+                    for (var result : results) {
+                        stack.push(result);
+                    }
                 }
+            } catch (WasmException we) {
+                THROW_REF(we, stackFrame, stack, callStack);
             }
         }
 
@@ -293,73 +300,10 @@ public class InterpreterMachine implements Machine {
                     }
                 case THROW_REF:
                     {
-                        var exceptionIdx = stack.pop();
+                        var exceptionIdx = (int) stack.pop();
                         var exception = instance.exn(exceptionIdx);
                         assert (exception != null);
-                        var tagNumber = exception.tagIdx();
-
-                        // go over the call stack to find the enclosing TRY block
-                        boolean catchFound = false;
-                        while (!catchFound) {
-                            while (!catchFound && frame.ctrlStackSize() > 0) {
-                                var ctrlFrame = frame.popCtrl();
-                                if (ctrlFrame.opCode == OpCode.TRY_TABLE) {
-                                    frame.jumpTo(ctrlFrame.pc);
-                                    var tryInstruction = frame.loadCurrentInstruction();
-                                    // decode the operands and check if the exception is catch here
-                                    // too many "extractors logic" - refactor later
-                                    var matchingCatchIdx =
-                                            CatchOpCode.catchLabelIdx(
-                                                    tagNumber, tryInstruction.operands());
-                                    if (matchingCatchIdx.isEmpty()) {
-                                        continue;
-                                    }
-
-                                    // In case of catch or catch_ref, the arguments of the exception
-                                    // are pushed back onto the stack. For catch_ref and
-                                    // catch_all_ref, an exception reference is then pushed to the
-                                    // stack, which represents the caught exception.
-                                    var catchOpCode =
-                                            CatchOpCode.catchOpCode(
-                                                    tagNumber, tryInstruction.operands());
-                                    switch (catchOpCode.get()) {
-                                        case CATCH:
-                                        case CATCH_REF:
-                                            for (var a : exception.args()) {
-                                                stack.push(a);
-                                            }
-                                            break;
-                                    }
-                                    switch (catchOpCode.get()) {
-                                        case CATCH_REF:
-                                        case CATCH_ALL_REF:
-                                            stack.push(exceptionIdx);
-                                            break;
-                                    }
-
-                                    var targetLabel =
-                                            CatchOpCode.catchLabelValue(
-                                                    tagNumber, tryInstruction.operands());
-                                    var resolvedLabel =
-                                            tryInstruction.labelTable().get(matchingCatchIdx.get());
-
-                                    // this is a plain BR-like jump
-                                    ctrlJump(frame, stack, targetLabel.get());
-                                    frame.jumpTo(resolvedLabel);
-
-                                    catchFound = true;
-                                    break;
-                                }
-                            }
-                            if (catchFound || callStack.size() == 0) {
-                                break;
-                            }
-                            frame = callStack.pop();
-                        }
-
-                        if (!catchFound) {
-                            throw exception;
-                        }
+                        THROW_REF(exception, frame, stack, callStack);
                         break;
                     }
                 case CALL_INDIRECT:
@@ -2188,6 +2132,73 @@ public class InterpreterMachine implements Machine {
             }
         }
         return sizeOf(instance.type(typeId).returns());
+    }
+
+    private static void THROW_REF(WasmException exception, StackFrame frame, MStack stack, Deque<StackFrame> callStack) {
+        var tagNumber = exception.tagIdx();
+
+        boolean catchFound = false;
+        while (!catchFound) {
+            while (!catchFound && frame.ctrlStackSize() > 0) {
+                var ctrlFrame = frame.popCtrl();
+                if (ctrlFrame.opCode == OpCode.TRY_TABLE) {
+                    frame.jumpTo(ctrlFrame.pc);
+                    var tryInstruction = frame.loadCurrentInstruction();
+                    // decode the operands and check if the exception is catch here
+                    // too many "extractors logic" - refactor later
+                    var matchingCatchIdx =
+                            CatchOpCode.catchLabelIdx(
+                                    tagNumber, tryInstruction.operands());
+                    if (matchingCatchIdx.isEmpty()) {
+                        continue;
+                    }
+
+                    // In case of catch or catch_ref, the arguments of the exception
+                    // are pushed back onto the stack. For catch_ref and
+                    // catch_all_ref, an exception reference is then pushed to the
+                    // stack, which represents the caught exception.
+                    var catchOpCode =
+                            CatchOpCode.catchOpCode(
+                                    tagNumber, tryInstruction.operands());
+                    switch (catchOpCode.get()) {
+                        case CATCH:
+                        case CATCH_REF:
+                            for (var a : exception.args()) {
+                                stack.push(a);
+                            }
+                            break;
+                    }
+                    switch (catchOpCode.get()) {
+                        case CATCH_REF:
+                        case CATCH_ALL_REF:
+                            // same as tagNumber?
+                            stack.push(tagNumber);
+                            break;
+                    }
+
+                    var targetLabel =
+                            CatchOpCode.catchLabelValue(
+                                    tagNumber, tryInstruction.operands());
+                    var resolvedLabel =
+                            tryInstruction.labelTable().get(matchingCatchIdx.get());
+
+                    // this is a plain BR-like jump
+                    ctrlJump(frame, stack, targetLabel.get());
+                    frame.jumpTo(resolvedLabel);
+
+                    catchFound = true;
+                    break;
+                }
+            }
+            if (catchFound || callStack.size() == 0) {
+                break;
+            }
+            frame = callStack.pop();
+        }
+
+        if (!catchFound) {
+            throw exception;
+        }
     }
 
     private static void BLOCK(
