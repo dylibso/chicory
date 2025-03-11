@@ -1,5 +1,6 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.wasm.types.CatchOpCode.CATCH_ALL;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -413,7 +414,7 @@ public class WasmModuleTest {
     @Test
     public void correctlyParseCatchClause() {
         // Arrange
-        var operands = new long[]{127, 2, 0, 2, 1, 0, 3, 0};
+        var operands = new long[] {127, 2, 0, 2, 1, 0, 3, 0};
 
         // Act
         var result = CatchOpCode.catchLabelIdx(3, operands);
@@ -435,5 +436,18 @@ public class WasmModuleTest {
         assertEquals(2, result.size());
         assertEquals(0, result.get(0));
         assertEquals(0, result.get(1));
+    }
+
+    @Test
+    public void correctlyReturnSomething() {
+        // Arrange
+        var operands = new long[] {127, 1, 2, 0};
+
+        // Act
+        var result = CatchOpCode.catchOpCode(4, operands);
+
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals(CATCH_ALL.opcode(), result.get().opcode());
     }
 }

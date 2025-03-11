@@ -116,7 +116,7 @@ public enum CatchOpCode {
                     result.add((int) operands[i]);
             }
         }
-        assert(result.size() == n);
+        assert (result.size() == n);
         return result;
     }
 }
