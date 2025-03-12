@@ -52,6 +52,7 @@ public class InterpreterMachine implements Machine {
 
     @Override
     public long[] call(int funcId, long[] args) throws ChicoryException {
+        callStack.clear();
         return call(stack, instance, callStack, funcId, args, null, true);
     }
 
@@ -221,13 +222,13 @@ public class InterpreterMachine implements Machine {
                         var args = extractArgsForParams(stack, type.params());
                         var exception = new WasmException(instance, tagNumber, args);
                         var exceptionIdx = instance.registerException(exception);
-                        THROW_REF(instance, exceptionIdx, stack, frame, callStack);
+                        frame = THROW_REF(instance, exceptionIdx, stack, frame, callStack);
                         break;
                     }
                 case THROW_REF:
                     {
                         var exceptionIdx = (int) stack.pop();
-                        THROW_REF(instance, exceptionIdx, stack, frame, callStack);
+                        frame = THROW_REF(instance, exceptionIdx, stack, frame, callStack);
                         break;
                     }
                 case CALL_INDIRECT:
@@ -2058,7 +2059,7 @@ public class InterpreterMachine implements Machine {
         return sizeOf(instance.type(typeId).returns());
     }
 
-    private static void THROW_REF(
+    private static StackFrame THROW_REF(
             Instance instance,
             int exceptionIdx,
             MStack stack,
@@ -2112,7 +2113,7 @@ public class InterpreterMachine implements Machine {
                         // BR l
                         ctrlJump(frame, stack, currentCatch.label());
                         frame.jumpTo(resolvedLabel);
-                        return;
+                        return frame;
                     }
                 }
             }
@@ -2124,92 +2125,8 @@ public class InterpreterMachine implements Machine {
                 }
             }
         }
+        throw new RuntimeException("unreacheable");
     }
-
-    //    private static void THROW_REF(
-    //            WasmException exception,
-    //            Instance instance,
-    //            StackFrame frame,
-    //            MStack stack,
-    //            Deque<StackFrame> callStack) {
-    //        var tagNumber = exception.tagIdx();
-    //
-    //        boolean catchFound = false;
-    //        //         while (!catchFound) {
-    //        while (!catchFound && frame.ctrlStackSize() > 0) {
-    //            var ctrlFrame = frame.popCtrl();
-    //            if (ctrlFrame.opCode == OpCode.TRY_TABLE) {
-    //                frame.jumpTo(ctrlFrame.pc);
-    //                var tryInstruction = frame.loadCurrentInstruction();
-    //
-    //                // decode the operands and check if the exception is catch here
-    //                // too many "extractors logic" - refactor later
-    //                var matchingCatchIdx =
-    //                        CatchOpCode.catchLabelIdx(tagNumber, tryInstruction.operands());
-    //                if (matchingCatchIdx.isEmpty()) {
-    //                    continue;
-    //                }
-    //
-    //                // In case of catch or catch_ref, the arguments of the exception
-    //                // are pushed back onto the stack. For catch_ref and
-    //                // catch_all_ref, an exception reference is then pushed to the
-    //                // stack, which represents the caught exception.
-    //                var catchOpCode = CatchOpCode.catchOpCode(tagNumber,
-    // tryInstruction.operands());
-    //
-    //                // This check has been done Test Driven from: "imported-mismatch"
-    //                // review carefully! Maybe there is an easier way ...
-    //                switch (catchOpCode.get()) {
-    //                    case CATCH:
-    //                    case CATCH_REF:
-    //                        if (exception.instance() != frame.instance()) {
-    //                            var exceptionTag = exception.instance().tag(tagNumber);
-    //                            var instanceTag = frame.instance().tag(tagNumber);
-    //
-    //                            if (exceptionTag.instance() != instanceTag.instance()) {
-    //                                continue;
-    //                            }
-    //                        }
-    //                }
-    //
-    //                switch (catchOpCode.get()) {
-    //                    case CATCH:
-    //                    case CATCH_REF:
-    //                        for (var a : exception.args()) {
-    //                            stack.push(a);
-    //                        }
-    //                        break;
-    //                }
-    //                switch (catchOpCode.get()) {
-    //                    case CATCH_REF:
-    //                    case CATCH_ALL_REF:
-    //                        // same as tagNumber?
-    //                        stack.push(tagNumber);
-    //                        break;
-    //                }
-    //
-    //                var targetLabel = CatchOpCode.catchLabelValue(tagNumber,
-    // tryInstruction.operands());
-    //                var resolvedLabel = tryInstruction.labelTable().get(matchingCatchIdx.get());
-    //
-    //                // this is a plain BR-like jump
-    //                ctrlJump(frame, stack, targetLabel.get());
-    //                frame.jumpTo(resolvedLabel);
-    //
-    //                catchFound = true;
-    //                break;
-    //            }
-    //        }
-    //        //            if (catchFound || callStack.size() == 0) {
-    //        //                break;
-    //        //            }
-    //        //            frame = callStack.pop();
-    //        //        }
-    //
-    //        if (!catchFound) {
-    //            throw exception;
-    //        }
-    //    }
 
     private static void BLOCK(
             StackFrame frame, MStack stack, Instance instance, AnnotatedInstruction instruction) {
