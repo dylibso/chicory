@@ -417,11 +417,16 @@ public class WasmModuleTest {
         var operands = new long[] {127, 2, 0, 2, 1, 0, 3, 0};
 
         // Act
-        var result = CatchOpCode.catchLabelIdx(3, operands);
+        var result1 = CatchOpCode.catch4Tag(2, operands);
+        var result2 = CatchOpCode.catch4Tag(3, operands);
+        var result3 = CatchOpCode.catch4Tag(4, operands);
 
         // Assert
-        assertTrue(result.isPresent());
-        assertEquals(1, result.get());
+        assertEquals(1, result1.get().label());
+        assertEquals(CatchOpCode.CATCH, result1.get().opcode());
+        assertEquals(2, result2.get().label());
+        assertEquals(CatchOpCode.CATCH, result2.get().opcode());
+        assertTrue(result3.isEmpty());
     }
 
     @Test
@@ -439,15 +444,16 @@ public class WasmModuleTest {
     }
 
     @Test
-    public void correctlyReturnSomething() {
+    public void correctlyReturnCatchAll() {
         // Arrange
         var operands = new long[] {127, 1, 2, 0};
 
         // Act
-        var result = CatchOpCode.catchOpCode(4, operands);
+        var result = CatchOpCode.catch4Tag(4, operands);
 
         // Assert
         assertTrue(result.isPresent());
-        assertEquals(CATCH_ALL.opcode(), result.get().opcode());
+        assertEquals(0, result.get().label());
+        assertEquals(CATCH_ALL, result.get().opcode());
     }
 }

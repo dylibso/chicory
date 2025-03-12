@@ -946,8 +946,6 @@ public final class Parser {
                                 }
                                 int finalIdx = idx;
                                 reference.addCallback(end -> labelTable.set(finalIdx, end));
-                                // start of the block?
-                                // labelTable.set(idx, reference.instructionNumber());
                             }
                             instruction.withLabelTable(labelTable);
 
