@@ -3,6 +3,7 @@ package com.dylibso.chicory.wasm.types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public enum CatchOpCode {
     CATCH(0x00),
@@ -35,88 +36,76 @@ public enum CatchOpCode {
         return CatchOpCodes.byOpCode[opcode];
     }
 
+    public static class Catch {
+        private final CatchOpCode opcode;
+        private final int tag;
+        private final int label;
+
+        private Catch(CatchOpCode opcode, int label) {
+            this(opcode, -1, label);
+            assert (opcode == CATCH_ALL || opcode == CATCH_ALL_REF);
+        }
+
+        private Catch(CatchOpCode opcode, int tag, int label) {
+            assert (tag == -1 || opcode == CATCH || opcode == CATCH_REF);
+            this.opcode = opcode;
+            this.tag = tag;
+            this.label = label;
+        }
+
+        public CatchOpCode opcode() {
+            return opcode;
+        }
+
+        public int tag() {
+            return tag;
+        }
+
+        public int label() {
+            return label;
+        }
+    }
+
+    public static List<Catch> decode(long[] operands) {
+        var length = operands[1];
+        var result = new ArrayList<Catch>();
+        for (int i = 2; i < operands.length; i++) {
+            var catchEnum = CatchOpCode.byOpCode((int) operands[i++]);
+            switch (catchEnum) {
+                case CATCH:
+                case CATCH_REF:
+                    {
+                        var tag = (int) operands[i++];
+                        var label = (int) operands[i];
+                        result.add(new Catch(catchEnum, tag, label));
+                        break;
+                    }
+                case CATCH_ALL:
+                case CATCH_ALL_REF:
+                    {
+                        var label = (int) operands[i];
+                        result.add(new Catch(catchEnum, label));
+                        break;
+                    }
+            }
+        }
+        assert (result.size() == length);
+        return result;
+    }
+
     // Optional: found/not found
-    // value: the index to look up in the labelTable
-    public static Optional<Integer> catchLabelIdx(int currentTag, long[] operands) {
-        var n = operands[1];
-        var idx = 0;
-        for (int i = 2; i < operands.length; i++) {
-            var catchEnum = CatchOpCode.byOpCode((int) operands[i++]);
-            switch (catchEnum) {
-                case CATCH:
-                case CATCH_REF:
-                    var tag = (int) operands[i++];
-                    if (currentTag == tag) {
-                        return Optional.of(idx);
-                    }
-                    break;
-                case CATCH_ALL:
-                case CATCH_ALL_REF:
-                    return Optional.of(idx);
-            }
-            idx++;
-        }
-        return Optional.empty();
-    }
-
-    public static Optional<Integer> catchLabelValue(int currentTag, long[] operands) {
-        var n = operands[1];
-        for (int i = 2; i < operands.length; i++) {
-            var catchEnum = CatchOpCode.byOpCode((int) operands[i++]);
-            switch (catchEnum) {
-                case CATCH:
-                case CATCH_REF:
-                    var tag = (int) operands[i++];
-                    if (currentTag == tag) {
-                        return Optional.of((int) operands[i]);
-                    }
-                    break;
-                case CATCH_ALL:
-                case CATCH_ALL_REF:
-                    return Optional.of((int) operands[i]);
-            }
-        }
-        return Optional.empty();
-    }
-
-    public static Optional<CatchOpCode> catchOpCode(int currentTag, long[] operands) {
-        var n = operands[1];
-        for (int i = 2; i < operands.length; i++) {
-            var catchEnum = CatchOpCode.byOpCode((int) operands[i++]);
-            switch (catchEnum) {
-                case CATCH:
-                case CATCH_REF:
-                    var tag = (int) operands[i++];
-                    if (currentTag == tag) {
-                        return Optional.of(catchEnum);
-                    }
-                    break;
-                case CATCH_ALL:
-                case CATCH_ALL_REF:
-                    return Optional.of(catchEnum);
-            }
-        }
-        return Optional.empty();
+    // value: the Catch found
+    public static Optional<Catch> catch4Tag(int tag, long[] operands) {
+        return decode(operands).stream()
+                .filter(
+                        c ->
+                                (c.opcode() == CATCH_ALL
+                                        || c.opcode() == CATCH_ALL_REF
+                                        || c.tag() == tag))
+                .findFirst();
     }
 
     public static List<Integer> allLabels(long[] operands) {
-        var result = new ArrayList<Integer>();
-        var n = operands[1];
-        for (int i = 2; i < operands.length; i++) {
-            if (result.size() == n) {
-                return result;
-            }
-            var catchEnum = CatchOpCode.byOpCode((int) operands[i++]);
-            switch (catchEnum) {
-                case CATCH:
-                case CATCH_REF:
-                    i++; // skip tag
-                case CATCH_ALL:
-                case CATCH_ALL_REF:
-                    result.add((int) operands[i]);
-            }
-        }
-        assert (result.size() == n);
-        return result;
+        return decode(operands).stream().map(Catch::label).collect(Collectors.toList());
     }
 }
