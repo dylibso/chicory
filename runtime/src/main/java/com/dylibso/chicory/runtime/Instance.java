@@ -323,21 +323,11 @@ public class Instance {
         return tags.length;
     }
 
-    // TODO: review does this map belong to Instance or Machine?
     public int registerException(WasmException ex) {
-        // TODO: use a better implementation
-        // TODO: how/when/how to cleanup?
-        //        long idx = exnRefs.size();
-        //        while (exnRefs.containsKey(idx)) {
-        //            idx++;
-        //        }
-        // ATTEMPT: use the tagNumber as an identifier?
         exnRefs.put(ex.tagIdx(), ex);
         return ex.tagIdx();
     }
 
-    // TODO: verify if we really need to store those exceptions in the Instance or we can just pass
-    // them around
     public WasmException exn(int idx) {
         return exnRefs.get(idx);
     }
