@@ -8,6 +8,7 @@ import static java.util.stream.Collectors.toSet;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
+import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -153,9 +154,9 @@ final class Validator {
         }
         if (valueTypeStack.size() == frame.height) {
             errors.add(
-                    new InvalidException(
+                new InvalidException(
                             "type mismatch, popVal(), stack reached limit at " + frame.height));
-            return ValueType.UNKNOWN;
+             return ValueType.UNKNOWN;
         }
         return valueTypeStack.remove(valueTypeStack.size() - 1);
     }
@@ -332,6 +333,16 @@ final class Validator {
             return tableImports.get(idx);
         }
         return module.tableSection().getTable(idx - tableImports.size()).elementType();
+    }
+
+    private TagType getTagType(int idx) {
+        if (idx < 0 || idx >= tagImports.size() + module.tagSection().get().tagCount()) {
+            throw new InvalidException("unknown tag " + idx);
+        }
+        if (idx < tagImports.size()) {
+            return tagImports.get(idx);
+        }
+        return module.tagSection().get().getTag(idx - tagImports.size());
     }
 
     private Element getElement(int idx) {
@@ -552,6 +563,45 @@ final class Validator {
                 case UNREACHABLE:
                     unreachable();
                     break;
+                case TRY_TABLE:
+                {
+                    var t1 = getParams(op);
+                    var t2 = getReturns(op);
+                    popVals(t1);
+                    // and now the catches
+                    var catches = CatchOpCode.decode(op.operands());
+
+                    for (int idx = 0; idx < catches.size(); idx++) {
+                        var currentCatch = catches.get(idx);
+                        if (ctrlFrameStack.size() < currentCatch.label()) {
+                            throw new InvalidException("something something");
+                        }
+                        // push_ctrl(catch, [], label_types(ctrls[handler.label]))
+                        // using THROW instead of CATCH ... doesn't matter as it's removed right after
+                        pushCtrl(OpCode.THROW, List.of(), labelTypes(getCtrl(currentCatch.label())));
+                        switch (currentCatch.opcode()) {
+                            case CATCH: {
+                                var tagType = module.typeSection().getType(getTagType(currentCatch.tag()).typeIdx());
+                                pushVals(tagType.params());
+                                break;
+                            }
+                            case CATCH_REF: {
+                                var tagType = module.typeSection().getType(getTagType(currentCatch.tag()).typeIdx());
+                                pushVals(tagType.params());
+                                pushVal(ValueType.ExnRef);
+                                break;
+                            }
+                            case CATCH_ALL:
+                                break;
+                            case CATCH_ALL_REF:
+                                pushVal(ValueType.ExnRef);
+                                break;
+                        }
+                        popCtrl();
+                    }
+                    pushCtrl(op.opcode(), t1, t2);
+                    break;
+                }
                 case THROW:
                     {
                         var tagNumber = (int) op.operand(0);
@@ -560,26 +610,17 @@ final class Validator {
                                 <= tagNumber) {
                             throw new InvalidException("unknown tag " + tagNumber);
                         }
-                        // TODO: is this correct?
-                        var tag =
-                                (tagNumber < tagImports.size())
-                                        ? tagImports.get(tagNumber)
-                                        : module.tagSection()
-                                                .get()
-                                                .getTag(tagNumber - tagImports.size());
-                        var type = module.typeSection().getType(tag.typeIdx());
+                        var type = module.typeSection().getType(getTagType(tagNumber).typeIdx());
                         popVals(type.params());
-                        pushVals(type.returns());
+                        assert(type.returns().size() == 0);
                         unreachable();
                         break;
                     }
                 case THROW_REF:
                     {
                         popVal(ValueType.ExnRef);
-                        pushVal(ValueType.ExnRef);
                         unreachable();
-                        // break;
-                        // TODO: FIXME disabling validation when THROW_REF
+                        // TODO: haven't found a better way ...
                         return;
                     }
                 case IF:
@@ -588,7 +629,6 @@ final class Validator {
                 case LOOP:
                     // t1* -> t2*
                     // fallthrough
-                case TRY_TABLE:
                 case BLOCK:
                     {
                         var t1 = getParams(op);
