@@ -7,6 +7,7 @@ import static com.dylibso.chicory.wasm.types.WasmEncoding.V128;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VARSINT32;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VARSINT64;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VARUINT;
+import static com.dylibso.chicory.wasm.types.WasmEncoding.VEC_CATCH;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VEC_VARUINT;
 
 import java.util.List;
@@ -18,6 +19,8 @@ public enum OpCode {
     LOOP(0x03, List.of(VARUINT)),
     IF(0x04, List.of(VARUINT)),
     ELSE(0x05),
+    THROW(0x08, List.of(VARUINT)),
+    THROW_REF(0x0A),
     END(0x0B),
     BR(0x0C, List.of(VARUINT)),
     BR_IF(0x0D, List.of(VARUINT)),
@@ -31,6 +34,7 @@ public enum OpCode {
     DROP(0x1A),
     SELECT(0x1B),
     SELECT_T(0x1C, List.of(VEC_VARUINT)),
+    TRY_TABLE(0x1F, List.of(VARUINT, VEC_CATCH)),
     LOCAL_GET(0x20, List.of(VARUINT)),
     LOCAL_SET(0x21, List.of(VARUINT)),
     LOCAL_TEE(0x22, List.of(VARUINT)),

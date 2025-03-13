@@ -64,6 +64,8 @@ public class Instance {
     private final ExecutionListener listener;
     private final Exports fluentExports;
 
+    private final Map<Integer, WasmException> exnRefs;
+
     Instance(
             WasmModule module,
             Global[] globalInitializers,
@@ -103,6 +105,8 @@ public class Instance {
         this.exports = exports;
         this.listener = listener;
         this.fluentExports = new Exports(this);
+
+        this.exnRefs = new HashMap<>();
 
         if (initialize) {
             initialize(start);
@@ -313,6 +317,19 @@ public class Instance {
             return imports.tag(idx).tag();
         }
         return tags[idx - imports.tagCount()];
+    }
+
+    public int tagCount() {
+        return tags.length;
+    }
+
+    public int registerException(WasmException ex) {
+        exnRefs.put(ex.tagIdx(), ex);
+        return ex.tagIdx();
+    }
+
+    public WasmException exn(int idx) {
+        return exnRefs.get(idx);
     }
 
     public Machine getMachine() {
