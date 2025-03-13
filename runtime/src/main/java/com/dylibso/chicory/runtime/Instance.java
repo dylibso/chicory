@@ -319,6 +319,10 @@ public class Instance {
         return tags[idx - imports.tagCount()];
     }
 
+    public int tagCount() {
+        return tags.length;
+    }
+
     // TODO: review does this map belong to Instance or Machine?
     public int registerException(WasmException ex) {
         // TODO: use a better implementation
@@ -332,6 +336,8 @@ public class Instance {
         return ex.tagIdx();
     }
 
+    // TODO: verify if we really need to store those exceptions in the Instance or we can just pass
+    // them around
     public WasmException exn(int idx) {
         return exnRefs.get(idx);
     }
