@@ -656,11 +656,6 @@ public final class Parser {
             var valueType = ValueType.forId((int) readVarUInt32(buffer));
             var mutabilityType = MutabilityType.forId(readByte(buffer));
             var init = parseExpression(buffer);
-            //            // special case to handle: binary.wast:113 @ spec.40.wasm
-            //            // the content of the initializer is super messy
-            //            if (init.length > 2) { // instruction + end
-            //                throw new MalformedException("unexpected end of section or function");
-            //            }
             globalSection.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
         }
 
