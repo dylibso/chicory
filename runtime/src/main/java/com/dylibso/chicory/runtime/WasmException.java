@@ -10,6 +10,8 @@ public class WasmException extends RuntimeException {
         this.instance = instance;
         this.tagIdx = tagIdx;
         this.args = args.clone();
+        // TODO: consider this?
+        // this.setStackTrace(new StackTraceElement[0]);
     }
 
     public Instance instance() {
