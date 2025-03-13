@@ -43,8 +43,6 @@ public class TestModule {
                     + "invalid lane length"
                     + "malformed lane index";
 
-    private static final Parser parser = Parser.builder().build();
-
     public static TestModule of(String classpath) {
         try (var is = TestModule.class.getResourceAsStream(classpath)) {
             if (classpath.endsWith(".wat")) {

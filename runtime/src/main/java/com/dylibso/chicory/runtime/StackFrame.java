@@ -91,10 +91,6 @@ public class StackFrame {
         }
     }
 
-    Instance instance() {
-        return instance;
-    }
-
     void reset(long[] args) {
         for (int i = 0; i < locals.length; i++) {
             setLocal(i, args[i]);

@@ -163,7 +163,6 @@ final class Validator {
     }
 
     private ValueType popVal(ValueType expected) {
-        // TODO: refactor this check?
         var frame = peekCtrl();
         if (valueTypeStack.size() == frame.height && !frame.unreachable) {
             errors.add(
