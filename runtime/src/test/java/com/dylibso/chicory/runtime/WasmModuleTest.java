@@ -424,7 +424,7 @@ public class WasmModuleTest {
         // Assert
         assertEquals(1, result1.get().label());
         assertEquals(CatchOpCode.CATCH, result1.get().opcode());
-        assertEquals(2, result2.get().label());
+        assertEquals(0, result2.get().label());
         assertEquals(CatchOpCode.CATCH, result2.get().opcode());
         assertTrue(result3.isEmpty());
     }
