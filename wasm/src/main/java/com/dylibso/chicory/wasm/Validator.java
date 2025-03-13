@@ -154,9 +154,9 @@ final class Validator {
         }
         if (valueTypeStack.size() == frame.height) {
             errors.add(
-                new InvalidException(
+                    new InvalidException(
                             "type mismatch, popVal(), stack reached limit at " + frame.height));
-             return ValueType.UNKNOWN;
+            return ValueType.UNKNOWN;
         }
         return valueTypeStack.remove(valueTypeStack.size() - 1);
     }
@@ -564,44 +564,58 @@ final class Validator {
                     unreachable();
                     break;
                 case TRY_TABLE:
-                {
-                    var t1 = getParams(op);
-                    var t2 = getReturns(op);
-                    popVals(t1);
-                    // and now the catches
-                    var catches = CatchOpCode.decode(op.operands());
+                    {
+                        var t1 = getParams(op);
+                        var t2 = getReturns(op);
+                        popVals(t1);
+                        // and now the catches
+                        var catches = CatchOpCode.decode(op.operands());
 
-                    for (int idx = 0; idx < catches.size(); idx++) {
-                        var currentCatch = catches.get(idx);
-                        if (ctrlFrameStack.size() < currentCatch.label()) {
-                            throw new InvalidException("something something");
-                        }
-                        // push_ctrl(catch, [], label_types(ctrls[handler.label]))
-                        // using THROW instead of CATCH ... doesn't matter as it's removed right after
-                        pushCtrl(OpCode.THROW, List.of(), labelTypes(getCtrl(currentCatch.label())));
-                        switch (currentCatch.opcode()) {
-                            case CATCH: {
-                                var tagType = module.typeSection().getType(getTagType(currentCatch.tag()).typeIdx());
-                                pushVals(tagType.params());
-                                break;
+                        for (int idx = 0; idx < catches.size(); idx++) {
+                            var currentCatch = catches.get(idx);
+                            if (ctrlFrameStack.size() < currentCatch.label()) {
+                                throw new InvalidException("something something");
                             }
-                            case CATCH_REF: {
-                                var tagType = module.typeSection().getType(getTagType(currentCatch.tag()).typeIdx());
-                                pushVals(tagType.params());
-                                pushVal(ValueType.ExnRef);
-                                break;
+                            // push_ctrl(catch, [], label_types(ctrls[handler.label]))
+                            // using THROW instead of CATCH ... doesn't matter as it's removed right
+                            // after
+                            pushCtrl(
+                                    OpCode.THROW,
+                                    List.of(),
+                                    labelTypes(getCtrl(currentCatch.label())));
+                            switch (currentCatch.opcode()) {
+                                case CATCH:
+                                    {
+                                        var tagType =
+                                                module.typeSection()
+                                                        .getType(
+                                                                getTagType(currentCatch.tag())
+                                                                        .typeIdx());
+                                        pushVals(tagType.params());
+                                        break;
+                                    }
+                                case CATCH_REF:
+                                    {
+                                        var tagType =
+                                                module.typeSection()
+                                                        .getType(
+                                                                getTagType(currentCatch.tag())
+                                                                        .typeIdx());
+                                        pushVals(tagType.params());
+                                        pushVal(ValueType.ExnRef);
+                                        break;
+                                    }
+                                case CATCH_ALL:
+                                    break;
+                                case CATCH_ALL_REF:
+                                    pushVal(ValueType.ExnRef);
+                                    break;
                             }
-                            case CATCH_ALL:
-                                break;
-                            case CATCH_ALL_REF:
-                                pushVal(ValueType.ExnRef);
-                                break;
+                            popCtrl();
                         }
-                        popCtrl();
+                        pushCtrl(op.opcode(), t1, t2);
+                        break;
                     }
-                    pushCtrl(op.opcode(), t1, t2);
-                    break;
-                }
                 case THROW:
                     {
                         var tagNumber = (int) op.operand(0);
@@ -612,15 +626,25 @@ final class Validator {
                         }
                         var type = module.typeSection().getType(getTagType(tagNumber).typeIdx());
                         popVals(type.params());
-                        assert(type.returns().size() == 0);
+                        assert (type.returns().size() == 0);
                         unreachable();
                         break;
                     }
                 case THROW_REF:
                     {
-                        popVal(ValueType.ExnRef);
+                        if (!errors.isEmpty()) {
+                            break;
+                        }
+                        var exn =
+                                (valueTypeStack.size() > 0)
+                                        ? valueTypeStack.get(valueTypeStack.size() - 1)
+                                        : null;
+                        if (exn != ValueType.ExnRef) {
+                            throw new InvalidException("type mismatch");
+                        }
                         unreachable();
-                        // TODO: haven't found a better way ...
+                        // TODO: is it correct? I couldn't find a better way
+                        // ask during review
                         return;
                     }
                 case IF:
