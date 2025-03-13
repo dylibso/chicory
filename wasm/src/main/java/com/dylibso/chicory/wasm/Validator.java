@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -168,7 +169,7 @@ final class Validator {
             errors.add(
                     new InvalidException(
                             "type mismatch: instruction requires ["
-                                    + expected.toString().toLowerCase()
+                                    + expected.toString().toLowerCase(Locale.ROOT)
                                     + "] but stack has []"));
         }
         var actual = popVal();
@@ -176,9 +177,9 @@ final class Validator {
             errors.add(
                     new InvalidException(
                             "type mismatch: instruction requires ["
-                                    + expected.toString().toLowerCase()
+                                    + expected.toString().toLowerCase(Locale.ROOT)
                                     + "] but stack has ["
-                                    + actual.toString().toLowerCase()
+                                    + actual.toString().toLowerCase(Locale.ROOT)
                                     + "]"));
         }
         return actual;

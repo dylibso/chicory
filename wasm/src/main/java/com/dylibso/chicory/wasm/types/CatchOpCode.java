@@ -2,7 +2,6 @@ package com.dylibso.chicory.wasm.types;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public enum CatchOpCode {
@@ -36,7 +35,7 @@ public enum CatchOpCode {
         return CatchOpCodes.byOpCode[opcode];
     }
 
-    public static class Catch {
+    public static final class Catch {
         private final CatchOpCode opcode;
         private final int tag;
         private final int label;
@@ -66,6 +65,7 @@ public enum CatchOpCode {
         }
     }
 
+    @SuppressWarnings("ModifiedControlVariable")
     public static List<Catch> decode(long[] operands) {
         var length = operands[1];
         var result = new ArrayList<Catch>();
@@ -91,18 +91,6 @@ public enum CatchOpCode {
         }
         assert (result.size() == length);
         return result;
-    }
-
-    // Optional: found/not found
-    // value: the Catch found
-    public static Optional<Catch> catch4Tag(int tag, long[] operands) {
-        return decode(operands).stream()
-                .filter(
-                        c ->
-                                (c.opcode() == CATCH_ALL
-                                        || c.opcode() == CATCH_ALL_REF
-                                        || c.tag() == tag))
-                .findFirst();
     }
 
     public static List<Integer> allLabels(long[] operands) {

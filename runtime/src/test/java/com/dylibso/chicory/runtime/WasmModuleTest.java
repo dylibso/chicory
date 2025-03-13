@@ -1,6 +1,5 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.wasm.types.CatchOpCode.CATCH_ALL;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -412,24 +411,6 @@ public class WasmModuleTest {
     }
 
     @Test
-    public void correctlyParseCatchClause() {
-        // Arrange
-        var operands = new long[] {127, 2, 0, 2, 1, 0, 3, 0};
-
-        // Act
-        var result1 = CatchOpCode.catch4Tag(2, operands);
-        var result2 = CatchOpCode.catch4Tag(3, operands);
-        var result3 = CatchOpCode.catch4Tag(4, operands);
-
-        // Assert
-        assertEquals(1, result1.get().label());
-        assertEquals(CatchOpCode.CATCH, result1.get().opcode());
-        assertEquals(0, result2.get().label());
-        assertEquals(CatchOpCode.CATCH, result2.get().opcode());
-        assertTrue(result3.isEmpty());
-    }
-
-    @Test
     public void correctlyReturnAllLabels() {
         // Arrange
         var operands = new long[] {64, 2, 0, 0, 0, 0, 0, 0};
@@ -441,19 +422,5 @@ public class WasmModuleTest {
         assertEquals(2, result.size());
         assertEquals(0, result.get(0));
         assertEquals(0, result.get(1));
-    }
-
-    @Test
-    public void correctlyReturnCatchAll() {
-        // Arrange
-        var operands = new long[] {127, 1, 2, 0};
-
-        // Act
-        var result = CatchOpCode.catch4Tag(4, operands);
-
-        // Assert
-        assertTrue(result.isPresent());
-        assertEquals(0, result.get().label());
-        assertEquals(CATCH_ALL, result.get().opcode());
     }
 }

@@ -164,13 +164,13 @@ public class StackFrame {
         ctrlStack.add(new CtrlFrame(opcode, startValues, returnValues, height, pc));
     }
 
+    int ctrlStackSize() {
+        return ctrlStack.size();
+    }
+
     CtrlFrame popCtrl() {
         var ctrlFrame = ctrlStack.remove(ctrlStack.size() - 1);
         return ctrlFrame;
-    }
-
-    int ctrlStackSize() {
-        return ctrlStack.size();
     }
 
     CtrlFrame popCtrl(int n) {
