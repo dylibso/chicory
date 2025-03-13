@@ -152,7 +152,10 @@
             <wast>utf8-import-module.wast</wast>
             <wast>utf8-invalid-encoding.wast</wast>
           </includedWasts>
-          <excludedTests/>
+          <excludedTests>
+            <!-- This test is supposed to fail because there is a THROW_REF in a Global initializer -->
+            SpecV1BinaryTest.test40
+          </excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts/>
           <excludedUnlinkableWasts/>
@@ -425,7 +428,10 @@
                 <wast>utf8-import-module.wast</wast>
                 <wast>utf8-invalid-encoding.wast</wast>
               </includedWasts>
-              <excludedTests/>
+              <excludedTests>
+                <!-- This test is supposed to fail because there is a THROW_REF in a Global initializer -->
+                SpecV1BinaryTest.test40
+              </excludedTests>
               <excludedMalformedWasts/>
               <excludedInvalidWasts/>
               <excludedUnlinkableWasts/>
