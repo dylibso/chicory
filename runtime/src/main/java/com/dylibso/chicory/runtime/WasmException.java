@@ -3,7 +3,6 @@ package com.dylibso.chicory.runtime;
 public class WasmException extends RuntimeException {
     private final int tagIdx;
     private final long[] args;
-    // TODO: can we avoid to carry around the entire instance?
     private final Instance instance;
 
     public WasmException(Instance instance, int tagIdx, long[] args) {
