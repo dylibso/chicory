@@ -52,7 +52,6 @@ public class InterpreterMachine implements Machine {
 
     @Override
     public long[] call(int funcId, long[] args) throws ChicoryException {
-        callStack.clear();
         return call(stack, instance, callStack, funcId, args, null, true);
     }
 
@@ -99,13 +98,17 @@ public class InterpreterMachine implements Machine {
 
             var imprt = instance.imports().function(funcId);
 
-            var results = imprt.handle().apply(instance, args);
-            // a host function can return null or an array of ints
-            // which we will push onto the stack
-            if (results != null) {
-                for (var result : results) {
-                    stack.push(result);
+            try {
+                var results = imprt.handle().apply(instance, args);
+                // a host function can return null or an array of ints
+                // which we will push onto the stack
+                if (results != null) {
+                    for (var result : results) {
+                        stack.push(result);
+                    }
                 }
+            } catch (WasmException e) {
+                THROW_REF(instance, instance.registerException(e), stack, stackFrame, callStack);
             }
         }
 
@@ -2081,9 +2084,34 @@ public class InterpreterMachine implements Machine {
                 for (int i = 0; i < catches.size() && !found; i++) {
                     var currentCatch = catches.get(i);
 
+                    // TODO: I cannot find the spec for the following block
+                    // so, it's test driven
+                    // happy to revisit when we have a spec paragraph
+                    var compatibleImport = false;
+                    if ((currentCatch.opcode() == CatchOpCode.CATCH
+                            || currentCatch.opcode() == CatchOpCode.CATCH_REF)) {
+                        // almost TDD after: catch-imported-alias
+                        // and: imported-mismatch
+                        var currentCatchTag = instance.tag(currentCatch.tag());
+                        var currentCatchType = instance.type(currentCatchTag.tagType().typeIdx());
+                        var exceptionTag = exception.instance().tag(exception.tagIdx());
+                        var exceptionType =
+                                exception.instance().type(exceptionTag.tagType().typeIdx());
+
+                        if (exceptionTag.instance() != currentCatchTag.instance()) {
+                            continue;
+                        }
+
+                        if (currentCatch.tag() < instance.imports().tagCount()
+                                && currentCatchType.paramsMatch(exceptionType)
+                                && exceptionType.returnsMatch(exceptionType)) {
+                            compatibleImport = true;
+                        }
+                    }
+
                     switch (currentCatch.opcode()) {
                         case CATCH:
-                            if (currentCatch.tag() == exception.tagIdx()) {
+                            if (currentCatch.tag() == exception.tagIdx() || compatibleImport) {
                                 found = true;
                                 for (var arg : exception.args()) {
                                     stack.push(arg);
@@ -2091,7 +2119,7 @@ public class InterpreterMachine implements Machine {
                             }
                             break;
                         case CATCH_REF:
-                            if (currentCatch.tag() == exception.tagIdx()) {
+                            if (currentCatch.tag() == exception.tagIdx() || compatibleImport) {
                                 found = true;
                                 for (var arg : exception.args()) {
                                     stack.push(arg);
