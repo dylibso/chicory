@@ -71,7 +71,7 @@ public final class HostModuleProcessor extends AbstractModuleProcessor {
         var functions = new NodeList<Expression>();
         for (Element member : elements().getAllMembers(type)) {
             if (member instanceof ExecutableElement && annotatedWith(member, WasmExport.class)) {
-                functions.add(processMethod(member, (ExecutableElement) member, moduleName));
+                functions.add(processMethod(member, (ExecutableElement) member));
             }
         }
         var pkg = getPackageName(type);
@@ -103,10 +103,24 @@ public final class HostModuleProcessor extends AbstractModuleProcessor {
                         new NodeList<>(new ArrayCreationLevel()),
                         new ArrayInitializerExpr(functions));
 
+        var overloadFunction =
+                new MethodCallExpr(
+                        "toHostFunctions",
+                        new NameExpr("functions"),
+                        new StringLiteralExpr(moduleName));
+
         classDef.addMethod("toHostFunctions")
                 .setPublic(true)
                 .setStatic(true)
                 .addParameter(typeName, "functions")
+                .setType("HostFunction[]")
+                .setBody(new BlockStmt(new NodeList<>(new ReturnStmt(overloadFunction))));
+
+        classDef.addMethod("toHostFunctions")
+                .setPublic(true)
+                .setStatic(true)
+                .addParameter(typeName, "functions")
+                .addParameter("String", "moduleName")
                 .setType("HostFunction[]")
                 .setBody(new BlockStmt(new NodeList<>(new ReturnStmt(newHostFunctions))));
 
@@ -119,8 +133,7 @@ public final class HostModuleProcessor extends AbstractModuleProcessor {
         }
     }
 
-    private Expression processMethod(
-            Element member, ExecutableElement executable, String moduleName) {
+    private Expression processMethod(Element member, ExecutableElement executable) {
         // compute function name
         var name = executable.getAnnotation(WasmExport.class).value();
         if (name.isEmpty()) {
@@ -260,7 +273,7 @@ public final class HostModuleProcessor extends AbstractModuleProcessor {
         var function =
                 new ObjectCreationExpr()
                         .setType("HostFunction")
-                        .addArgument(new StringLiteralExpr(moduleName))
+                        .addArgument(new NameExpr("moduleName"))
                         .addArgument(new StringLiteralExpr(name))
                         .addArgument(new MethodCallExpr(new NameExpr("List"), "of", paramTypes))
                         .addArgument(new MethodCallExpr(new NameExpr("List"), "of", returnType))

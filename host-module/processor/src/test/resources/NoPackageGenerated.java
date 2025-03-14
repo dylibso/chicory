@@ -12,8 +12,12 @@ public final class NoPackage_ModuleFactory {
     }
 
     public static HostFunction[] toHostFunctions(NoPackage functions) {
+        return toHostFunctions(functions, "nopackage");
+    }
+
+    public static HostFunction[] toHostFunctions(NoPackage functions, String moduleName) {
         return new HostFunction[] { //
-        new HostFunction("nopackage",
+        new HostFunction(moduleName,
                          "print",
                          List.of(ValueType.I32,
                                  ValueType.I32),
@@ -24,7 +28,7 @@ public final class NoPackage_ModuleFactory {
                                              (int) args[1]);
                              return null;
                          }), //
-        new HostFunction("nopackage",
+        new HostFunction(moduleName,
                          "exit",
                          List.of(),
                          List.of(),
