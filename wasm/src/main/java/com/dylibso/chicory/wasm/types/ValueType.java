@@ -1,112 +1,80 @@
 package com.dylibso.chicory.wasm.types;
 
 import com.dylibso.chicory.wasm.MalformedException;
+import com.dylibso.chicory.wasm.types.valuetypes.ID;
+import com.dylibso.chicory.wasm.types.valuetypes.NumType;
+import com.dylibso.chicory.wasm.types.valuetypes.RefType;
+import com.dylibso.chicory.wasm.types.valuetypes.UnknownType;
+import com.dylibso.chicory.wasm.types.valuetypes.VecType;
 import java.util.List;
 
 /**
- * The possible WASM value types.
+ * The possible WASM value types implement this interface.
+ *
+ * We should use Sealed Classes to make this more explicit.
  */
-public enum ValueType {
-    UNKNOWN(-1),
-    F64(ID.F64),
-    F32(ID.F32),
-    I64(ID.I64),
-    I32(ID.I32),
-    V128(ID.V128),
-    FuncRef(ID.FuncRef),
-    ExternRef(ID.ExternRef);
-
-    private final int id;
-
-    ValueType(int id) {
-        this.id = id;
-    }
+public interface ValueType {
+    ValueType UNKNOWN = UnknownType.UNKNOWN;
+    ValueType F64 = NumType.F64;
+    ValueType F32 = NumType.F32;
+    ValueType I64 = NumType.I64;
+    ValueType I32 = NumType.I32;
+    ValueType V128 = VecType.V128;
+    ValueType FuncRef = new RefType(RefType.HeapType.Union.FUNC);
+    ValueType ExternRef = new RefType(RefType.HeapType.Union.EXTERN);
 
     /**
      * @return the numerical identifier for this type
      */
-    public int id() {
-        return id;
-    }
+    int id();
+
+    /**
+     * @return abbreviated name, useful for method generation
+     */
+    String shortName();
 
     /**
      * @return the size of this type in memory
      *
      * @throws IllegalStateException if the type cannot be stored in memory
      */
-    public int size() {
-        switch (this) {
-            case F64:
-            case I64:
-                return 8;
-            case F32:
-            case I32:
-                return 4;
-            case V128:
-                return 16;
-            default:
-                throw new IllegalStateException("Type does not have size");
-        }
-    }
+    int size();
 
     /**
      * @return {@code true} if the type is a numeric type, or {@code false} otherwise
      */
-    public boolean isNumeric() {
-        switch (this) {
-            case F64:
-            case F32:
-            case I64:
-            case I32:
-                return true;
-            default:
-                return false;
-        }
-    }
+    boolean isNumeric();
 
     /**
      * @return {@code true} if the type is an integer type, or {@code false} otherwise
      */
-    public boolean isInteger() {
-        switch (this) {
-            case I64:
-            case I32:
-                return true;
-            default:
-                return false;
-        }
-    }
+    boolean isInteger();
 
     /**
      * @return {@code true} if the type is a floating-point type, or {@code false} otherwise
      */
-    public boolean isFloatingPoint() {
-        switch (this) {
-            case F64:
-            case F32:
-                return true;
-            default:
-                return false;
-        }
-    }
+    boolean isFloatingPoint();
 
     /**
      * @return {@code true} if the type is a reference type, or {@code false} otherwise
      */
-    public boolean isReference() {
-        switch (this) {
-            case FuncRef:
-            case ExternRef:
-                return true;
-            default:
-                return false;
-        }
-    }
+    boolean isReference();
+
+    /**
+     * @return {@code true} if the type is a vector type, or {@code false} otherwise
+     */
+    boolean isVec();
+
+    boolean equals(ValueType other);
+
+    int hashCode();
+
+    String toString();
 
     /**
      * @return {@code true} if the given type ID is a valid value type ID, or {@code false} if it is not
      */
-    public static boolean isValid(int typeId) {
+    static boolean isValid(int typeId) {
         switch (typeId) {
             case ID.F64:
             case ID.ExternRef:
@@ -126,7 +94,7 @@ public enum ValueType {
      *
      * @throws IllegalArgumentException if the ID value does not correspond to a valid value type
      */
-    public static ValueType forId(int id) {
+    static ValueType forId(int id) {
         switch (id) {
             case ID.F64:
                 return F64;
@@ -152,7 +120,7 @@ public enum ValueType {
      *
      * @throws IllegalArgumentException if the ID value does not correspond to a valid reference type
      */
-    public static ValueType refTypeForId(int id) {
+    static ValueType refTypeForId(int id) {
         switch (id) {
             case ID.FuncRef:
                 return FuncRef;
@@ -163,32 +131,11 @@ public enum ValueType {
         }
     }
 
-    public static int sizeOf(List<ValueType> args) {
+    static int sizeOf(List<ValueType> args) {
         int total = 0;
-        for (var a : args) {
-            if (a == ValueType.V128) {
-                total += 2;
-            } else {
-                total += 1;
-            }
+        for (var t : args) {
+            total += t.size();
         }
         return total;
-    }
-
-    /**
-     * A separate holder class for ID constants.
-     * This is necessary because enum constants are initialized before normal fields, so any reference to an ID constant
-     * in the same class would be considered an invalid forward reference.
-     */
-    static final class ID {
-        private ID() {}
-
-        static final int ExternRef = 0x6f;
-        static final int FuncRef = 0x70;
-        static final int V128 = 0x7b;
-        static final int F64 = 0x7c;
-        static final int F32 = 0x7d;
-        static final int I64 = 0x7e;
-        static final int I32 = 0x7f;
     }
 }

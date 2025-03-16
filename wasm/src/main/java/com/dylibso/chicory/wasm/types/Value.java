@@ -1,5 +1,12 @@
 package com.dylibso.chicory.wasm.types;
 
+import static com.dylibso.chicory.wasm.types.valuetypes.ID.ExternRef;
+import static com.dylibso.chicory.wasm.types.valuetypes.ID.F32;
+import static com.dylibso.chicory.wasm.types.valuetypes.ID.F64;
+import static com.dylibso.chicory.wasm.types.valuetypes.ID.FuncRef;
+import static com.dylibso.chicory.wasm.types.valuetypes.ID.I32;
+import static com.dylibso.chicory.wasm.types.valuetypes.ID.I64;
+import static com.dylibso.chicory.wasm.types.valuetypes.ID.V128;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Objects;
@@ -268,7 +275,7 @@ public class Value {
      * @return a zero.
      */
     public static long zero(ValueType valueType) {
-        switch (valueType) {
+        switch (valueType.id()) {
             case I32:
             case F32:
             case I64:
@@ -285,7 +292,7 @@ public class Value {
 
     @Override
     public String toString() {
-        switch (type) {
+        switch (type.id()) {
             case I32:
                 return ((int) data) + "@i32";
             case I64:

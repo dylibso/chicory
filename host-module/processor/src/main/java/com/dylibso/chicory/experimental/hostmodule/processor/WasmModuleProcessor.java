@@ -1,5 +1,9 @@
 package com.dylibso.chicory.experimental.hostmodule.processor;
 
+import static com.dylibso.chicory.wasm.types.valuetypes.ID.F32;
+import static com.dylibso.chicory.wasm.types.valuetypes.ID.F64;
+import static com.dylibso.chicory.wasm.types.valuetypes.ID.I32;
+import static com.dylibso.chicory.wasm.types.valuetypes.ID.I64;
 import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import static com.github.javaparser.StaticJavaParser.parseType;
 import static java.lang.String.format;
@@ -87,7 +91,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
     }
 
     private Class javaClassFromValueType(ValueType type) {
-        switch (type) {
+        switch (type.id()) {
             case I32:
                 return int.class;
             case I64:
@@ -103,7 +107,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
     }
 
     private Expression toLong(ValueType type, Expression nameExpr, CompilationUnit cu) {
-        switch (type) {
+        switch (type.id()) {
             case I32:
                 return new CastExpr(parseType("long"), nameExpr);
             case I64:
@@ -123,7 +127,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
     }
 
     private Expression fromLong(ValueType type, Expression nameExpr, CompilationUnit cu) {
-        switch (type) {
+        switch (type.id()) {
             case I32:
                 return new CastExpr(parseType("int"), nameExpr);
             case I64:
@@ -156,7 +160,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                 valueTypes.stream()
                         .map(
                                 vt -> {
-                                    switch (vt) {
+                                    switch (vt.id()) {
                                         case I32:
                                             return new FieldAccessExpr(
                                                     new NameExpr("ValueType"), "I32");
