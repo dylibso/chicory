@@ -14,8 +14,12 @@ public final class Simple_ModuleFactory {
     }
 
     public static HostFunction[] toHostFunctions(Simple functions) {
+        return toHostFunctions(functions, "simple");
+    }
+
+    public static HostFunction[] toHostFunctions(Simple functions, String moduleName) {
         return new HostFunction[] { //
-        new HostFunction("simple",
+        new HostFunction(moduleName,
                          "print",
                          List.of(ValueType.I32,
                                  ValueType.I32),
@@ -25,7 +29,7 @@ public final class Simple_ModuleFactory {
                                                                           (int) args[1]));
                              return null;
                          }), //
-        new HostFunction("simple",
+        new HostFunction(moduleName,
                          "printx",
                          List.of(ValueType.I32),
                          List.of(),
@@ -33,7 +37,7 @@ public final class Simple_ModuleFactory {
                              functions.printx(instance.memory().readCString((int) args[0]));
                              return null;
                          }), //
-        new HostFunction("simple",
+        new HostFunction(moduleName,
                          "random_get",
                          List.of(ValueType.I32,
                                  ValueType.I32),
@@ -44,7 +48,7 @@ public final class Simple_ModuleFactory {
                                                  (int) args[1]);
                              return null;
                          }), //
-        new HostFunction("simple",
+        new HostFunction(moduleName,
                          "exit",
                          List.of(),
                          List.of(),
