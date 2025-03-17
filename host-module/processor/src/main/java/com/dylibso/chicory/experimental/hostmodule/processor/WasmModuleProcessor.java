@@ -87,7 +87,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
     }
 
     private Class javaClassFromValueType(ValueType type) {
-        switch (type) {
+        switch (type.opcode()) {
             case I32:
                 return int.class;
             case I64:
@@ -103,7 +103,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
     }
 
     private Expression toLong(ValueType type, Expression nameExpr, CompilationUnit cu) {
-        switch (type) {
+        switch (type.opcode()) {
             case I32:
                 return new CastExpr(parseType("long"), nameExpr);
             case I64:
@@ -123,7 +123,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
     }
 
     private Expression fromLong(ValueType type, Expression nameExpr, CompilationUnit cu) {
-        switch (type) {
+        switch (type.opcode()) {
             case I32:
                 return new CastExpr(parseType("int"), nameExpr);
             case I64:
@@ -156,7 +156,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                 valueTypes.stream()
                         .map(
                                 vt -> {
-                                    switch (vt) {
+                                    switch (vt.opcode()) {
                                         case I32:
                                             return new FieldAccessExpr(
                                                     new NameExpr("ValueType"), "I32");

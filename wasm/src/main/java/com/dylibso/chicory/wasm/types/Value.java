@@ -268,7 +268,7 @@ public class Value {
      * @return a zero.
      */
     public static long zero(ValueType valueType) {
-        switch (valueType) {
+        switch (valueType.opcode()) {
             case I32:
             case F32:
             case I64:
@@ -285,7 +285,7 @@ public class Value {
 
     @Override
     public String toString() {
-        switch (type) {
+        switch (type.opcode()) {
             case I32:
                 return ((int) data) + "@i32";
             case I64:
