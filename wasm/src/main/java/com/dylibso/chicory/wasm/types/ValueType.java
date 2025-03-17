@@ -99,6 +99,7 @@ public enum ValueType {
     public boolean isReference() {
         switch (this) {
             case FuncRef:
+            case ExnRef:
             case ExternRef:
                 return true;
             default:
