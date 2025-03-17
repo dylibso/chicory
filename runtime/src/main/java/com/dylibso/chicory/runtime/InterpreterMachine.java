@@ -194,6 +194,7 @@ public class InterpreterMachine implements Machine {
                         // RETURN doesn't pass through the END
                         var ctrlFrame = frame.popCtrlTillCall();
                         StackFrame.doControlTransfer(ctrlFrame, stack);
+                        callStack.clear();
 
                         shouldReturn = true;
                         break;
