@@ -119,6 +119,8 @@
             <wast>memory_trap.wast</wast>
             <wast>names.wast</wast>
             <wast>nop.wast</wast>
+            <wast>proposals/tail-call/return_call.wast</wast>
+            <wast>proposals/tail-call/return_call_indirect.wast</wast>
             <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
             <wast>ref_null.wast</wast>

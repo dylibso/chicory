@@ -119,6 +119,39 @@ final class AotAnalyzer {
                     }
                     result.add(new AotInstruction(AotOpCode.RETURN, ids(functionType.returns())));
                     break;
+                case RETURN_CALL:
+                    // The JVM does not support proper tail calls, so we desugar RETURN_CALL
+                    // into a CALL + RETURN.
+
+                    // [p*] -> [r*]
+                    result.add(new AotInstruction(AotOpCode.of(OpCode.CALL), ins.operands()));
+                    updateStack(stack, functionTypes.get((int) ins.operand(0)));
+
+                    exitBlockDepth = ins.depth();
+                    for (var type : reversed(functionType.returns())) {
+                        stack.pop(type);
+                    }
+                    result.add(new AotInstruction(AotOpCode.RETURN, ids(functionType.returns())));
+                    break;
+
+                case RETURN_CALL_INDIRECT:
+                    // The JVM does not support proper tail calls, so we desugar
+                    // RETURN_CALL_INDIRECT into a CALL_INDIRECT + RETURN.
+
+                    // [p* I32] -> [r*]
+                    stack.pop(ValueType.I32);
+                    updateStack(stack, module.typeSection().getType((int) ins.operand(0)));
+                    result.add(
+                            new AotInstruction(AotOpCode.of(OpCode.CALL_INDIRECT), ins.operands()));
+
+                    exitBlockDepth = ins.depth();
+                    for (var type : reversed(functionType.returns())) {
+                        stack.pop(type);
+                    }
+
+                    result.add(new AotInstruction(AotOpCode.RETURN, ids(functionType.returns())));
+                    break;
+
                 case IF:
                     stack.pop(ValueType.I32);
                     stack.enterScope(ins.scope(), blockType(ins));
