@@ -46,7 +46,7 @@ public final class ValueType {
      *     We store as operand in the MSB and the opcode in the LSB.
      */
     public long id() {
-        return ((long) operand << OPERAND_SHIFT) | opcode.id();
+        return ((long) operand << OPERAND_SHIFT) | opcode.opcode();
     }
 
     public ValueTypeOpCode opcode() {
@@ -59,7 +59,7 @@ public final class ValueType {
      * @throws IllegalStateException if the type cannot be stored in memory
      */
     public int size() {
-        switch (this.opcode.id()) {
+        switch (this.opcode.opcode()) {
             case ValueTypeOpCode.ID.F64:
             case ValueTypeOpCode.ID.I64:
                 return 8;
@@ -77,7 +77,7 @@ public final class ValueType {
      * @return {@code true} if the type is a numeric type, or {@code false} otherwise
      */
     public boolean isNumeric() {
-        switch (this.opcode.id()) {
+        switch (this.opcode.opcode()) {
             case ValueTypeOpCode.ID.F64:
             case ValueTypeOpCode.ID.F32:
             case ValueTypeOpCode.ID.I64:
@@ -92,7 +92,7 @@ public final class ValueType {
      * @return {@code true} if the type is an integer type, or {@code false} otherwise
      */
     public boolean isInteger() {
-        switch (this.opcode.id()) {
+        switch (this.opcode.opcode()) {
             case ValueTypeOpCode.ID.I64:
             case ValueTypeOpCode.ID.I32:
                 return true;
@@ -105,7 +105,7 @@ public final class ValueType {
      * @return {@code true} if the type is a floating-point type, or {@code false} otherwise
      */
     public boolean isFloatingPoint() {
-        switch (this.opcode.id()) {
+        switch (this.opcode.opcode()) {
             case ValueTypeOpCode.ID.F64:
             case ValueTypeOpCode.ID.F32:
                 return true;
@@ -118,7 +118,7 @@ public final class ValueType {
      * @return {@code true} if the type is a reference type, or {@code false} otherwise
      */
     public boolean isReference() {
-        switch (this.opcode.id()) {
+        switch (this.opcode.opcode()) {
             case ValueTypeOpCode.ID.FuncRef:
             case ValueTypeOpCode.ID.ExternRef:
                 return true;

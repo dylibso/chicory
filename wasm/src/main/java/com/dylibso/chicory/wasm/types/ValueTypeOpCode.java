@@ -14,27 +14,45 @@ public enum ValueTypeOpCode {
     FuncRef(ID.FuncRef),
     ExternRef(ID.ExternRef);
 
-    private final int id;
+    private final int opcode;
 
     // trick: the enum constructor cannot access its own static fields
     // but can access another class
     private static final class ValueTypeOpCodes {
         private ValueTypeOpCodes() {}
 
-        private static final Map<Integer, List<WasmEncoding>> byOpCode = new HashMap<>();
+        private static final Map<Integer, ValueTypeOpCode> byOpCode = new HashMap<>();
+        private static final Map<Integer, List<WasmEncoding>> signatures = new HashMap<>();
+
     }
 
-    ValueTypeOpCode(int id) {
-        this(id, List.of());
+    ValueTypeOpCode(int opcode) {
+        this(opcode, List.of());
     }
 
-    ValueTypeOpCode(int id, List<WasmEncoding> signature) {
-        this.id = id;
-        ValueTypeOpCodes.byOpCode.put(id, signature);
+    ValueTypeOpCode(int opcode, List<WasmEncoding> signature) {
+        this.opcode = opcode;
+        ValueTypeOpCodes.byOpCode.put(opcode, this);
     }
 
-    public int id() {
-        return this.id;
+    public int opcode() {
+        return this.opcode;
+    }
+
+    public static ValueTypeOpCode byOpCode(int opcode) {
+        if (ValueTypeOpCodes.byOpCode.containsKey(opcode)) {
+            return ValueTypeOpCodes.byOpCode.get(opcode);
+        }
+
+        throw new IllegalArgumentException("invalid ValueTypeOpCode: " + opcode);
+    }
+
+    public static List<WasmEncoding> signature(ValueTypeOpCode opcode) {
+        if (ValueTypeOpCodes.signatures.containsKey(opcode.opcode())) {
+            return ValueTypeOpCodes.signatures.get(opcode.opcode());
+        }
+
+        throw new IllegalArgumentException("invalid ValueTypeOpCode: " + opcode);
     }
 
     /**
