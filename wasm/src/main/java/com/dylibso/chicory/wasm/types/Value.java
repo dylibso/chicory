@@ -268,15 +268,15 @@ public class Value {
      * @return a zero.
      */
     public static long zero(ValueType valueType) {
-        switch (valueType) {
-            case I32:
-            case F32:
-            case I64:
-            case F64:
+        switch (valueType.opcode()) {
+            case ValueType.ID.I32:
+            case ValueType.ID.F32:
+            case ValueType.ID.I64:
+            case ValueType.ID.F64:
                 return 0L;
-            case ExnRef:
-            case FuncRef:
-            case ExternRef:
+            case ValueType.ID.ExnRef:
+            case ValueType.ID.Ref:
+            case ValueType.ID.RefNull:
                 return REF_NULL_VALUE;
             default:
                 throw new IllegalArgumentException(
@@ -286,21 +286,21 @@ public class Value {
 
     @Override
     public String toString() {
-        switch (type) {
-            case I32:
+        switch (type.opcode()) {
+            case ValueType.ID.I32:
                 return ((int) data) + "@i32";
-            case I64:
+            case ValueType.ID.I64:
                 return data + "@i64";
-            case F32:
+            case ValueType.ID.F32:
                 return longToFloat(data) + "@f32";
-            case F64:
+            case ValueType.ID.F64:
                 return longToDouble(data) + "@f64";
-            case V128:
+            case ValueType.ID.V128:
                 return data + "@v128";
-            case FuncRef:
-                return "func[" + (int) data + "]";
-            case ExternRef:
-                return "ext[" + (int) data + "]";
+            case ValueType.ID.Ref:
+                return "ref[" + (int) data + "]";
+            case ValueType.ID.RefNull:
+                return "refnull[" + (int) data + "]";
             default:
                 throw new AssertionError("Unhandled type: " + type);
         }

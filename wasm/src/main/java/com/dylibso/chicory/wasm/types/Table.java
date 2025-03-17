@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
+import java.util.List;
 import java.util.Objects;
 
 public class Table {
@@ -7,6 +8,13 @@ public class Table {
     private final TableLimits limits;
 
     public Table(ValueType elementType, TableLimits limits) {
+        this(
+                elementType,
+                limits,
+                List.of(new Instruction(-1, OpCode.REF_NULL, new long[] {elementType.typeIdx()})));
+    }
+
+    public Table(ValueType elementType, TableLimits limits, List<Instruction> init) {
         this.elementType = Objects.requireNonNull(elementType, "elementType");
         if (!elementType.isReference()) {
             throw new IllegalArgumentException("Table element type must be a reference type");
@@ -31,7 +39,7 @@ public class Table {
             return false;
         }
         Table table = (Table) o;
-        return elementType == table.elementType && Objects.equals(limits, table.limits);
+        return elementType.equals(table.elementType) && Objects.equals(limits, table.limits);
     }
 
     @Override

@@ -38,7 +38,7 @@ public final class Global {
             return false;
         }
         Global global = (Global) o;
-        return valueType == global.valueType
+        return valueType.equals(global.valueType)
                 && mutabilityType == global.mutabilityType
                 && Objects.equals(init, global.init);
     }

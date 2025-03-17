@@ -1,6 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -45,11 +45,11 @@ public final class FunctionType {
         return hashCode;
     }
 
-    private static final EnumMap<ValueType, FunctionType> returning;
-    private static final EnumMap<ValueType, FunctionType> accepting;
+    private static final HashMap<ValueType, FunctionType> returning;
+    private static final HashMap<ValueType, FunctionType> accepting;
 
     static {
-        EnumMap<ValueType, FunctionType> map = new EnumMap<>(ValueType.class);
+        HashMap<ValueType, FunctionType> map = new HashMap<>();
         map.put(ValueType.ExternRef, new FunctionType(List.of(), List.of(ValueType.ExternRef)));
         map.put(ValueType.ExnRef, new FunctionType(List.of(), List.of(ValueType.ExnRef)));
         map.put(ValueType.FuncRef, new FunctionType(List.of(), List.of(ValueType.FuncRef)));
@@ -59,7 +59,7 @@ public final class FunctionType {
         map.put(ValueType.I64, new FunctionType(List.of(), List.of(ValueType.I64)));
         map.put(ValueType.I32, new FunctionType(List.of(), List.of(ValueType.I32)));
         returning = map;
-        map = new EnumMap<>(ValueType.class);
+        map = new HashMap<>();
         map.put(ValueType.ExternRef, new FunctionType(List.of(ValueType.ExternRef), List.of()));
         map.put(ValueType.ExnRef, new FunctionType(List.of(ValueType.ExnRef), List.of()));
         map.put(ValueType.FuncRef, new FunctionType(List.of(ValueType.FuncRef), List.of()));

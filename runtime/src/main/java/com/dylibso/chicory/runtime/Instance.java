@@ -133,10 +133,10 @@ public class Instance {
                     var value = computeConstantValue(this, init);
                     var inst = computeConstantInstance(this, init);
 
-                    if (ae.type() == ValueType.FuncRef) {
+                    if (ae.type().equals(ValueType.FuncRef)) {
                         table.setRef(index, (int) value[0], inst);
                     } else {
-                        assert ae.type() == ValueType.ExternRef;
+                        assert ae.type().equals(ValueType.ExternRef);
                         table.setRef(index, (int) value[0], inst);
                     }
                 }
@@ -423,7 +423,7 @@ public class Instance {
             for (int i = 0; i < expectedType.params().size(); i++) {
                 var expected = expectedType.params().get(i);
                 var got = f.paramTypes().get(i);
-                if (expected != got) {
+                if (!expected.equals(got)) {
                     throw new UnlinkableException(
                             "incompatible import type for host function "
                                     + f.module()
@@ -434,7 +434,7 @@ public class Instance {
             for (int i = 0; i < expectedType.returns().size(); i++) {
                 var expected = expectedType.returns().get(i);
                 var got = f.returnTypes().get(i);
-                if (expected != got) {
+                if (!expected.equals(got)) {
                     throw new UnlinkableException(
                             "incompatible import type for host function "
                                     + f.module()
@@ -454,7 +454,7 @@ public class Instance {
         }
 
         private void validateHostGlobalType(GlobalImport i, ImportGlobal g) {
-            if (i.type() != g.instance().getType()
+            if (!i.type().equals(g.instance().getType())
                     || i.mutabilityType() != g.instance().getMutabilityType()) {
                 throw new UnlinkableException("incompatible import type");
             }
@@ -480,7 +480,7 @@ public class Instance {
             for (int j = 0; j < expectedType.params().size(); j++) {
                 var expected = expectedType.params().get(j);
                 var got = gotType.params().get(j);
-                if (expected != got) {
+                if (!expected.equals(got)) {
                     throw new UnlinkableException(
                             "incompatible import type for tag " + t.module() + "." + t.name());
                 }
@@ -488,7 +488,7 @@ public class Instance {
             for (int j = 0; j < expectedType.returns().size(); j++) {
                 var expected = expectedType.returns().get(j);
                 var got = gotType.returns().get(j);
-                if (expected != got) {
+                if (!expected.equals(got)) {
                     throw new UnlinkableException(
                             "incompatible import type for tag " + t.module() + "." + t.name());
                 }
@@ -509,7 +509,7 @@ public class Instance {
             var maxExpected = t.table().limits().max();
             var minCurrent = i.limits().min();
             var maxCurrent = i.limits().max();
-            if (i.entryType() != t.table().elementType()) {
+            if (!i.entryType().equals(t.table().elementType())) {
                 throw new UnlinkableException("incompatible import type");
             } else if (minExpected < minCurrent || maxExpected > maxCurrent) {
                 throw new UnlinkableException(

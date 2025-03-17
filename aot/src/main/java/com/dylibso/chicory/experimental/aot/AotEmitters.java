@@ -78,19 +78,19 @@ final class AotEmitters {
         // save result values
         int slot = ctx.tempSlot();
         for (int i = ins.operandCount() - 1; i >= keepStart; i--) {
-            var type = ValueType.forId((int) ins.operand(i));
+            var type = ValueType.forId(ins.operand(i));
             asm.store(slot, asmType(type));
             slot += slotCount(type);
         }
 
         // drop intervening values
         for (int i = keepStart - 1; i >= 1; i--) {
-            emitPop(asm, ValueType.forId((int) ins.operand(i)));
+            emitPop(asm, ValueType.forId(ins.operand(i)));
         }
 
         // restore result values
         for (int i = keepStart; i < ins.operandCount(); i++) {
-            var type = ValueType.forId((int) ins.operand(i));
+            var type = ValueType.forId(ins.operand(i));
             slot -= slotCount(type);
             asm.load(slot, asmType(type));
         }
@@ -108,7 +108,7 @@ final class AotEmitters {
     }
 
     public static void DROP(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
-        emitPop(asm, ValueType.forId((int) ins.operand(0)));
+        emitPop(asm, ValueType.forId(ins.operand(0)));
     }
 
     public static void ELEM_DROP(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
@@ -120,7 +120,7 @@ final class AotEmitters {
     }
 
     public static void SELECT(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
-        var type = ValueType.forId((int) ins.operand(0));
+        var type = ValueType.forId(ins.operand(0));
         var endLabel = new Label();
         asm.ifne(endLabel);
         if (slotCount(type) == 1) {
@@ -234,7 +234,7 @@ final class AotEmitters {
     }
 
     public static void LOCAL_TEE(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
-        if (slotCount(ValueType.forId((int) ins.operand(1))) == 1) {
+        if (slotCount(ValueType.forId(ins.operand(1))) == 1) {
             asm.dup();
         } else {
             asm.dup2();

@@ -41,11 +41,11 @@ import java.util.stream.Stream;
 final class Validator {
 
     private static boolean isNum(ValueType t) {
-        return t.isNumeric() || t == ValueType.UNKNOWN;
+        return t.isNumeric() || t.equals(ValueType.UNKNOWN);
     }
 
     private static boolean isRef(ValueType t) {
-        return t.isReference() || t == ValueType.UNKNOWN;
+        return t.isReference() || t.equals(ValueType.UNKNOWN);
     }
 
     @SuppressWarnings("PublicField")
@@ -164,7 +164,9 @@ final class Validator {
 
     private ValueType popVal(ValueType expected) {
         var actual = popVal();
-        if (actual != expected && actual != ValueType.UNKNOWN && expected != ValueType.UNKNOWN) {
+        if (!actual.equals(expected)
+                && !actual.equals(ValueType.UNKNOWN)
+                && !expected.equals(ValueType.UNKNOWN)) {
             errors.add(
                     new InvalidException(
                             "type mismatch: instruction requires ["
@@ -257,14 +259,14 @@ final class Validator {
     }
 
     private List<ValueType> getReturns(AnnotatedInstruction op) {
-        var typeId = (int) op.operand(0);
+        var typeId = op.operand(0);
         if (typeId == 0x40) { // epsilon
             return List.of();
         }
         if (ValueType.isValid(typeId)) {
             return List.of(ValueType.forId(typeId));
         }
-        return getType(typeId).returns();
+        return getType((int) typeId).returns();
     }
 
     private List<ValueType> getParams(AnnotatedInstruction op) {
@@ -466,11 +468,12 @@ final class Validator {
                     break;
                 case REF_NULL:
                     {
-                        exprType = ValueType.refTypeForId((int) instruction.operand(0));
+                        long operand = instruction.operand(0);
+                        exprType = ValueType.forId(operand);
                         constInstrCount++;
-                        if (exprType != ValueType.ExternRef
-                                && exprType != ValueType.FuncRef
-                                && exprType != ValueType.ExnRef) {
+                        if (!exprType.equals(ValueType.ExternRef)
+                                && !exprType.equals(ValueType.FuncRef)
+                                && !exprType.equals(ValueType.ExnRef)) {
                             throw new IllegalStateException(
                                     "Unexpected wrong type for ref.null instruction");
                         }
@@ -480,7 +483,7 @@ final class Validator {
                     {
                         exprType = ValueType.FuncRef;
                         constInstrCount++;
-                        long idx = instruction.operand(0);
+                        int idx = (int) instruction.operand(0);
 
                         if (idx < 0 || idx > allFuncCount) {
                             throw new InvalidException("unknown function " + idx);
@@ -518,7 +521,7 @@ final class Validator {
                                     + instruction);
             }
 
-            if (exprType != null && exprType != expectedType) {
+            if (exprType != null && !exprType.equals(expectedType)) {
                 throw new InvalidException("type mismatch");
             }
 
@@ -704,7 +707,7 @@ final class Validator {
                                                     + n);
                                 }
                                 for (var t = 0; t < arity; t++) {
-                                    if (labelTypes.get(t) != defaultBranchLabelTypes.get(t)) {
+                                    if (!labelTypes.get(t).equals(defaultBranchLabelTypes.get(t))) {
                                         throw new InvalidException(
                                                 "type mismatch, br_table labels have inconsistent"
                                                         + " types: expected: "
@@ -1232,11 +1235,11 @@ final class Validator {
                     VALIDATE_CALL((int) op.operand(0));
                     break;
                 case CALL_INDIRECT:
-                    VALIDATE_CALL_INDIRECT((int) op.operand(0), (int) op.operand(1));
+                    VALIDATE_CALL_INDIRECT(op.operand(0), (int) op.operand(1));
                     break;
                 case REF_NULL:
                     {
-                        pushVal(ValueType.forId((int) op.operand(0)));
+                        pushVal(ValueType.forId(op.operand(0)));
                         break;
                     }
                 case REF_IS_NULL:
@@ -1268,11 +1271,13 @@ final class Validator {
                             throw new InvalidException(
                                     "type mismatch: select should have numeric arguments");
                         }
-                        if (t1 != t2 && t1 != ValueType.UNKNOWN && t2 != ValueType.UNKNOWN) {
+                        if (!t1.equals(t2)
+                                && !t1.equals(ValueType.UNKNOWN)
+                                && !t2.equals(ValueType.UNKNOWN)) {
                             throw new InvalidException(
                                     "type mismatch, in SELECT t1: " + t1 + ", t2: " + t2);
                         }
-                        if (t1 == ValueType.UNKNOWN) {
+                        if (t1.equals(ValueType.UNKNOWN)) {
                             pushVal(t2);
                         } else {
                             pushVal(t1);
@@ -1285,7 +1290,7 @@ final class Validator {
                         if (op.operands().length <= 0 || op.operands().length > 1) {
                             throw new InvalidException("invalid result arity");
                         }
-                        var t = ValueType.forId((int) op.operand(0));
+                        var t = ValueType.forId(op.operand(0));
                         popVal(t);
                         popVal(t);
                         pushVal(t);
@@ -1296,7 +1301,7 @@ final class Validator {
                         var table1 = getTableType((int) op.operand(1));
                         var table2 = getTableType((int) op.operand(0));
 
-                        if (table1 != table2) {
+                        if (!table1.equals(table2)) {
                             throw new InvalidException(
                                     "type mismatch, table 1 type: "
                                             + table1
@@ -1315,7 +1320,7 @@ final class Validator {
                         var elemIdx = (int) op.operand(0);
                         var elem = getElement(elemIdx);
 
-                        if (table != elem.type()) {
+                        if (!table.equals(elem.type())) {
                             throw new InvalidException(
                                     "type mismatch, table type: "
                                             + table
@@ -1734,14 +1739,14 @@ final class Validator {
         pushVals(types.returns());
     }
 
-    private void VALIDATE_CALL_INDIRECT(int typeId, int tableId) {
+    private void VALIDATE_CALL_INDIRECT(long typeId, int tableId) {
         popVal(ValueType.I32);
         var tableType = getTableType(tableId);
-        if (tableType != ValueType.FuncRef) {
+        if (!tableType.equals(ValueType.FuncRef)) {
             throw new InvalidException(
                     "type mismatch expected a table of FuncRefs buf found " + tableType);
         }
-        var types = getType(typeId);
+        var types = getType((int) typeId);
         for (int j = types.params().size() - 1; j >= 0; j--) {
             popVal(types.params().get(j));
         }

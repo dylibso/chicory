@@ -475,7 +475,7 @@ public final class Parser {
 
             // Parse parameter types
             for (int j = 0; j < paramCount; j++) {
-                params[j] = ValueType.forId((int) readVarUInt32(buffer));
+                params[j] = readValueType(buffer);
             }
 
             var returnCount = (int) readVarUInt32(buffer);
@@ -483,7 +483,7 @@ public final class Parser {
 
             // Parse return types
             for (int j = 0; j < returnCount; j++) {
-                returns[j] = ValueType.forId((int) readVarUInt32(buffer));
+                returns[j] = readValueType(buffer);
             }
 
             typeSection.addFunctionType(FunctionType.of(params, returns));
@@ -556,7 +556,7 @@ public final class Parser {
                         break;
                     }
                 case GLOBAL:
-                    var globalValType = ValueType.forId((int) readVarUInt32(buffer));
+                    var globalValType = readValueType(buffer);
                     var globalMut = MutabilityType.forId(readByte(buffer));
                     importSection.addImport(
                             new GlobalImport(moduleName, importName, globalMut, globalValType));
@@ -600,7 +600,7 @@ public final class Parser {
 
         // Parse individual tables in the tables section
         for (int i = 0; i < tableCount; i++) {
-            var tableType = ValueType.refTypeForId((int) readVarUInt32(buffer));
+            var tableType = readValueType(buffer);
             var limitType = readByte(buffer);
             if (!(limitType == 0x00 || limitType == 0x01)) {
                 throw new MalformedException("integer representation too long, integer too large");
@@ -653,7 +653,7 @@ public final class Parser {
 
         // Parse individual globals
         for (int i = 0; i < globalCount; i++) {
-            var valueType = ValueType.forId((int) readVarUInt32(buffer));
+            var valueType = readValueType(buffer);
             var mutabilityType = MutabilityType.forId(readByte(buffer));
             var init = parseExpression(buffer);
             globalSection.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
@@ -746,7 +746,7 @@ public final class Parser {
             }
         } else {
             assert hasRefType;
-            type = ValueType.refTypeForId(Math.toIntExact(readVarUInt32(buffer)));
+            type = ValueType.refTypeForId(readValueType(buffer).id());
         }
         int initCnt = Math.toIntExact(readVarUInt32(buffer));
         List<List<Instruction>> inits = new ArrayList<>(initCnt);
@@ -784,7 +784,7 @@ public final class Parser {
             if (numberOfLocals > MAX_FUNCTION_LOCALS) {
                 throw new MalformedException("too many locals");
             }
-            var type = ValueType.forId((int) readVarUInt32(buffer));
+            var type = readValueType(buffer);
             for (int j = 0; j < numberOfLocals; j++) {
                 locals.add(type);
             }
@@ -1132,6 +1132,26 @@ public final class Parser {
                         }
                         break;
                     }
+                case BLOCK_TYPE:
+                    var operand = (int) readVarUInt32(buffer);
+                    if (ValueType.ID.isValidOpcode(operand)) {
+                        // is value type
+                        ValueType v = readValueTypeFromOpCode(buffer, operand);
+                        operands.add(v.id());
+                    } else {
+                        operands.add((long) operand);
+                    }
+                    break;
+                case VALUE_TYPE:
+                    var valueType = readValueType(buffer);
+                    operands.add(valueType.id());
+                    break;
+                case VEC_VALUE_TYPE:
+                    var vcount = (int) readVarUInt32(buffer);
+                    for (var j = 0; j < vcount; j++) {
+                        operands.add(readValueType(buffer).id());
+                    }
+                    break;
             }
         }
         var operandsArray = new long[operands.size()];
@@ -1211,6 +1231,20 @@ public final class Parser {
                         "alignment must not be larger than natural alignment (" + operand0 + ")");
             }
         }
+    }
+
+    private static ValueType readValueTypeFromOpCode(ByteBuffer buffer, int valueTypeOpCode) {
+        if (valueTypeOpCode == ValueType.ID.Ref || valueTypeOpCode == ValueType.ID.RefNull) {
+            return new ValueType(valueTypeOpCode, (int) readVarSInt32(buffer));
+        } else {
+            return new ValueType(valueTypeOpCode);
+        }
+    }
+
+    private static ValueType readValueType(ByteBuffer buffer) {
+        var valueTypeOpCode = (int) readVarUInt32(buffer);
+
+        return readValueTypeFromOpCode(buffer, valueTypeOpCode);
     }
 
     private static Instruction[] parseExpression(ByteBuffer buffer) {

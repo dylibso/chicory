@@ -87,14 +87,14 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
     }
 
     private Class javaClassFromValueType(ValueType type) {
-        switch (type) {
-            case I32:
+        switch (type.opcode()) {
+            case ValueType.ID.I32:
                 return int.class;
-            case I64:
+            case ValueType.ID.I64:
                 return long.class;
-            case F32:
+            case ValueType.ID.F32:
                 return float.class;
-            case F64:
+            case ValueType.ID.F64:
                 return double.class;
             default:
                 log(ERROR, "Unsupported WASM type: " + type, currentElement);
@@ -103,16 +103,16 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
     }
 
     private Expression toLong(ValueType type, Expression nameExpr, CompilationUnit cu) {
-        switch (type) {
-            case I32:
+        switch (type.opcode()) {
+            case ValueType.ID.I32:
                 return new CastExpr(parseType("long"), nameExpr);
-            case I64:
+            case ValueType.ID.I64:
                 return nameExpr;
-            case F32:
+            case ValueType.ID.F32:
                 cu.addImport(Value.class);
                 return new MethodCallExpr(
                         new NameExpr("Value"), "floatToLong", new NodeList<>(nameExpr));
-            case F64:
+            case ValueType.ID.F64:
                 cu.addImport(Value.class);
                 return new MethodCallExpr(
                         new NameExpr("Value"), "doubleToLong", new NodeList<>(nameExpr));
@@ -123,16 +123,16 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
     }
 
     private Expression fromLong(ValueType type, Expression nameExpr, CompilationUnit cu) {
-        switch (type) {
-            case I32:
+        switch (type.opcode()) {
+            case ValueType.ID.I32:
                 return new CastExpr(parseType("int"), nameExpr);
-            case I64:
+            case ValueType.ID.I64:
                 return nameExpr;
-            case F32:
+            case ValueType.ID.F32:
                 cu.addImport(Value.class);
                 return new MethodCallExpr(
                         new NameExpr("Value"), "longToFloat", new NodeList<>(nameExpr));
-            case F64:
+            case ValueType.ID.F64:
                 cu.addImport(Value.class);
                 return new MethodCallExpr(
                         new NameExpr("Value"), "longToDouble", new NodeList<>(nameExpr));
@@ -156,17 +156,17 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                 valueTypes.stream()
                         .map(
                                 vt -> {
-                                    switch (vt) {
-                                        case I32:
+                                    switch (vt.opcode()) {
+                                        case ValueType.ID.I32:
                                             return new FieldAccessExpr(
                                                     new NameExpr("ValueType"), "I32");
-                                        case I64:
+                                        case ValueType.ID.I64:
                                             return new FieldAccessExpr(
                                                     new NameExpr("ValueType"), "I64");
-                                        case F32:
+                                        case ValueType.ID.F32:
                                             return new FieldAccessExpr(
                                                     new NameExpr("ValueType"), "F32");
-                                        case F64:
+                                        case ValueType.ID.F64:
                                             return new FieldAccessExpr(
                                                     new NameExpr("ValueType"), "F64");
                                         default:
