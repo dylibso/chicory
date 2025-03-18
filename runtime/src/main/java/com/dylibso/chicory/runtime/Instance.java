@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class Instance {
     public static final String START_FUNCTION_NAME = "_start";
@@ -382,6 +383,29 @@ public class Instance {
             return this;
         }
 
+        private boolean checkExternalFunctionSignature(FunctionImport imprt, ImportFunction f) {
+            var expectedType = module.typeSection().getType(imprt.typeIndex());
+            if (expectedType.params().size() != f.paramTypes().size()
+                    || expectedType.returns().size() != f.returnTypes().size()) {
+                return false;
+            }
+            for (int i = 0; i < expectedType.params().size(); i++) {
+                var expected = expectedType.params().get(i);
+                var got = f.paramTypes().get(i);
+                if (expected != got) {
+                    return false;
+                }
+            }
+            for (int i = 0; i < expectedType.returns().size(); i++) {
+                var expected = expectedType.returns().get(i);
+                var got = f.returnTypes().get(i);
+                if (expected != got) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         private void validateExternalFunctionSignature(FunctionImport imprt, ImportFunction f) {
             var expectedType = module.typeSection().getType(imprt.typeIndex());
             if (expectedType.params().size() != f.paramTypes().size()
@@ -565,9 +589,16 @@ public class Instance {
             var hostTables = new ImportTable[count.apply(TABLE)];
             var hostTableIdx = 0;
             int cnt;
+            var names =
+                    Arrays.stream(imports)
+                            .map(i -> i.module() + "." + i.name())
+                            .collect(Collectors.toUnmodifiableList());
             for (var impIdx = 0; impIdx < imports.length; impIdx++) {
                 var i = imports[impIdx];
                 var name = i.module() + "." + i.name();
+                var aliases = names.stream().filter(s -> s.equals(name));
+                var aliasesCount = aliases.count();
+                var aliasNum = 0;
                 var found = false;
                 validateNegativeImportType(i.module(), i.name(), i.importType(), importValues);
                 Function<ImportValue, Boolean> checkName =
@@ -579,7 +610,18 @@ public class Instance {
                         for (int j = 0; j < cnt; j++) {
                             ImportFunction f = importValues.function(j);
                             if (checkName.apply(f)) {
-                                validateExternalFunctionSignature((FunctionImport) i, f);
+                                if (aliasesCount > 1) {
+                                    if ((aliasNum++ + 1) == aliasesCount) { // last alias to check
+                                        validateExternalFunctionSignature((FunctionImport) i, f);
+                                    } else {
+                                        if (!checkExternalFunctionSignature(
+                                                (FunctionImport) i, f)) {
+                                            continue;
+                                        }
+                                    }
+                                } else {
+                                    validateExternalFunctionSignature((FunctionImport) i, f);
+                                }
                                 hostFuncs[hostFuncIdx] = f;
                                 found = true;
                                 break;

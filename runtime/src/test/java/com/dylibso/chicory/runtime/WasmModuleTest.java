@@ -10,7 +10,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.UninstantiableException;
-import com.dylibso.chicory.wasm.UnlinkableException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.ValueType;
@@ -451,22 +450,42 @@ public class WasmModuleTest {
     }
 
     @Test
-    public void shouldFailToImportMismatchingSignatures() {
-        var logFn =
+    public void shouldResolveMultipleImportsByType() {
+        AtomicBoolean loggedI32 = new AtomicBoolean(false);
+        AtomicBoolean loggedI64 = new AtomicBoolean(false);
+        var logI32 =
                 new HostFunction(
-                        "env", "log", List.of(ValueType.I32), List.of(), (inst, args) -> null);
-        var logWrongSignatureFn =
+                        "env",
+                        "log",
+                        List.of(ValueType.I32),
+                        List.of(),
+                        (inst, args) -> {
+                            loggedI32.set(true);
+                            return null;
+                        });
+        var logI64 =
                 new HostFunction(
-                        "env", "log", List.of(ValueType.I64), List.of(), (inst, args) -> null);
+                        "env",
+                        "log",
+                        List.of(ValueType.I64),
+                        List.of(),
+                        (inst, args) -> {
+                            loggedI64.set(true);
+                            return null;
+                        });
 
-        var imports =
-                ImportValues.builder().addFunction(logFn).addFunction(logWrongSignatureFn).build();
+        var imports = ImportValues.builder().addFunction(logI32).addFunction(logI64).build();
 
-        assertThrows(
-                UnlinkableException.class,
-                () ->
-                        Instance.builder(loadModule("compiled/alias-imports2.wat.wasm"))
-                                .withImportValues(imports)
-                                .build());
+        var instance =
+                Instance.builder(loadModule("compiled/alias-imports2.wat.wasm"))
+                        .withImportValues(imports)
+                        .build();
+
+        instance.exports().function("log-i32").apply(0);
+        assertTrue(loggedI32.get());
+        assertFalse(loggedI64.get());
+        instance.exports().function("log-i64").apply(0);
+        assertTrue(loggedI32.get());
+        assertTrue(loggedI64.get());
     }
 }
