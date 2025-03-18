@@ -610,17 +610,10 @@ public class Instance {
                         for (int j = 0; j < cnt; j++) {
                             ImportFunction f = importValues.function(j);
                             if (checkName.apply(f)) {
-                                if (aliasesCount > 1) {
-                                    if ((aliasNum++ + 1) == aliasesCount) { // last alias to check
-                                        validateExternalFunctionSignature((FunctionImport) i, f);
-                                    } else {
-                                        if (!checkExternalFunctionSignature(
-                                                (FunctionImport) i, f)) {
-                                            continue;
-                                        }
-                                    }
-                                } else {
+                                if (aliasesCount == 1 || (aliasNum++ + 1) == aliasesCount) {
                                     validateExternalFunctionSignature((FunctionImport) i, f);
+                                } else if (!checkExternalFunctionSignature((FunctionImport) i, f)) {
+                                    continue;
                                 }
                                 hostFuncs[hostFuncIdx] = f;
                                 found = true;
