@@ -12,6 +12,10 @@ import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
+import com.dylibso.chicory.wasm.types.Table;
+import com.dylibso.chicory.wasm.types.TableLimits;
+import com.dylibso.chicory.wasm.types.TagType;
+import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -411,7 +415,7 @@ public class WasmModuleTest {
     }
 
     @Test
-    public void shouldImportASingleName() {
+    public void shouldImportAliases() {
         AtomicBoolean logged1 = new AtomicBoolean(false);
         AtomicBoolean logged2 = new AtomicBoolean(false);
         var logFn =
@@ -438,7 +442,7 @@ public class WasmModuleTest {
                 ImportValues.builder().addFunction(logFn).addFunction(logWrongSignatureFn).build();
 
         var instance =
-                Instance.builder(loadModule("compiled/alias-imports.wat.wasm"))
+                Instance.builder(loadModule("compiled/alias-imports1.wat.wasm"))
                         .withImportValues(imports)
                         .build();
 
@@ -450,7 +454,7 @@ public class WasmModuleTest {
     }
 
     @Test
-    public void shouldResolveMultipleImportsByType() {
+    public void shouldResolveMultipleAliasesByType() {
         AtomicBoolean loggedI32 = new AtomicBoolean(false);
         AtomicBoolean loggedI64 = new AtomicBoolean(false);
         var logI32 =
@@ -487,5 +491,54 @@ public class WasmModuleTest {
         instance.exports().function("log-i64").apply(0);
         assertTrue(loggedI32.get());
         assertTrue(loggedI64.get());
+    }
+
+    @Test
+    public void shouldResolveMultipleAliasesByTypeForAllImports() {
+        var module = loadModule("compiled/alias-imports3.wat.wasm");
+        var globalI32 = new ImportGlobal("env", "global", new GlobalInstance(Value.i32(123)));
+        var globalI64 = new ImportGlobal("env", "global", new GlobalInstance(Value.i64(124)));
+        var tableFuncref =
+                new ImportTable(
+                        "env",
+                        "table",
+                        new TableInstance(new Table(ValueType.FuncRef, new TableLimits(1))));
+        var tableExternref =
+                new ImportTable(
+                        "env",
+                        "table",
+                        new TableInstance(new Table(ValueType.ExternRef, new TableLimits(2))));
+        var tagI32 =
+                new ImportTag(
+                        "env",
+                        "tag",
+                        new TagInstance(new TagType((byte) 0, 0), module.typeSection().getType(0)));
+        var tagI64 =
+                new ImportTag(
+                        "env",
+                        "tag",
+                        new TagInstance(new TagType((byte) 0, 1), module.typeSection().getType(1)));
+
+        var imports =
+                ImportValues.builder()
+                        .addGlobal(globalI64)
+                        .addGlobal(globalI32)
+                        .addTable(tableExternref)
+                        .addTable(tableFuncref)
+                        .addTag(tagI64)
+                        .addTag(tagI32)
+                        .build();
+
+        var instance =
+                Instance.builder(loadModule("compiled/alias-imports3.wat.wasm"))
+                        .withImportValues(imports)
+                        .build();
+
+        assertEquals(123L, instance.imports().global(0).instance().getValue());
+        assertEquals(124L, instance.imports().global(1).instance().getValue());
+        assertEquals(ValueType.FuncRef, instance.imports().table(0).table().elementType());
+        assertEquals(ValueType.ExternRef, instance.imports().table(1).table().elementType());
+        assertEquals(0, instance.imports().tag(0).tag().tagType().typeIdx());
+        assertEquals(1, instance.imports().tag(1).tag().tagType().typeIdx());
     }
 }
