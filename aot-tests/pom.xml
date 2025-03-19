@@ -119,6 +119,8 @@
             <wast>memory_trap.wast</wast>
             <wast>names.wast</wast>
             <wast>nop.wast</wast>
+            <wast>proposals/tail-call/return_call.wast</wast>
+            <wast>proposals/tail-call/return_call_indirect.wast</wast>
             <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
             <wast>ref_null.wast</wast>
@@ -150,7 +152,8 @@
             <wast>utf8-import-module.wast</wast>
             <wast>utf8-invalid-encoding.wast</wast>
           </includedWasts>
-          <excludedTests/>
+          <!-- Skip stack-overflows in tail calls -->
+          <excludedTests>SpecV1TcReturnCallTest.test19,SpecV1TcReturnCallTest.test24,SpecV1TcReturnCallTest.test25,SpecV1TcReturnCallTest.test30,SpecV1TcReturnCallTest.test31,SpecV1TcReturnCallIndirectTest.test40,SpecV1TcReturnCallIndirectTest.test41,SpecV1TcReturnCallIndirectTest.test46,SpecV1TcReturnCallIndirectTest.test47</excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts/>
           <excludedUnlinkableWasts/>
