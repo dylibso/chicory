@@ -128,7 +128,13 @@ public final class TestGen {
     }
 
     private static Map<String, Proposal> proposals =
-            Map.of("tail-call", new Proposal("tc"), "exception-handling", new Proposal("eh"));
+            Map.of(
+                    "gc",
+                    new Proposal("gc"),
+                    "tail-call",
+                    new Proposal("tc"),
+                    "exception-handling",
+                    new Proposal("eh"));
 
     private static final class TestGenerator {
 

@@ -13,6 +13,10 @@
   <name>Chicory - wasm-tools</name>
   <description>wasm tools compiled to pure Java with Chicory</description>
 
+  <properties>
+    <wasm-tools.version>1.227.1</wasm-tools.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
@@ -53,7 +57,7 @@
             <phase>process-resources</phase>
             <configuration>
               <target>
-                <untar compression="gzip" dest="${project.basedir}/src/main/resources" src="${project.build.directory}/wasm-tools/wasm-tools-1.226.0-wasm32-wasip1.tar.gz">
+                <untar compression="gzip" dest="${project.basedir}/src/main/resources" src="${project.build.directory}/wasm-tools/wasm-tools-${wasm-tools.version}-wasm32-wasip1.tar.gz">
                   <flattenmapper/>
                   <patternset>
                     <include name="**/*.wasm"/>
@@ -76,7 +80,7 @@
             </goals>
             <phase>generate-resources</phase>
             <configuration>
-              <url>https://github.com/bytecodealliance/wasm-tools/releases/download/v1.226.0/wasm-tools-1.226.0-wasm32-wasip1.tar.gz</url>
+              <url>https://github.com/bytecodealliance/wasm-tools/releases/download/v${wasm-tools.version}/wasm-tools-${wasm-tools.version}-wasm32-wasip1.tar.gz</url>
               <toDir>${project.build.directory}/wasm-tools</toDir>
             </configuration>
           </execution>
