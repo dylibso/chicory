@@ -54,7 +54,7 @@
             <goals>
               <goal>run</goal>
             </goals>
-            <phase>process-resources</phase>
+            <phase>initialize</phase>
             <configuration>
               <target>
                 <untar compression="gzip" dest="${project.basedir}/src/main/resources" src="${project.build.directory}/wasm-tools/wasm-tools-${wasm-tools.version}-wasm32-wasip1.tar.gz">
@@ -78,7 +78,7 @@
             <goals>
               <goal>download-single</goal>
             </goals>
-            <phase>generate-resources</phase>
+            <phase>validate</phase>
             <configuration>
               <url>https://github.com/bytecodealliance/wasm-tools/releases/download/v${wasm-tools.version}/wasm-tools-${wasm-tools.version}-wasm32-wasip1.tar.gz</url>
               <toDir>${project.build.directory}/wasm-tools</toDir>
