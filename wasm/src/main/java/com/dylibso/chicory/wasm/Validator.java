@@ -478,7 +478,9 @@ final class Validator {
                     {
                         exprType = ValueType.refTypeForId((int) instruction.operand(0));
                         constInstrCount++;
-                        if (exprType != ValueType.ExternRef && exprType != ValueType.FuncRef) {
+                        if (exprType != ValueType.ExternRef
+                                && exprType != ValueType.FuncRef
+                                && exprType != ValueType.ExnRef) {
                             throw new IllegalStateException(
                                     "Unexpected wrong type for ref.null instruction");
                         }

@@ -115,6 +115,7 @@
             <wast>proposals/exception-handling/binary.wast</wast>
             <wast>proposals/exception-handling/exports.wast</wast>
             <wast>proposals/exception-handling/imports.wast</wast>
+            <wast>proposals/exception-handling/ref_null.wast</wast>
             <wast>proposals/exception-handling/tag.wast</wast>
             <wast>proposals/exception-handling/throw.wast</wast>
             <wast>proposals/exception-handling/throw_ref.wast</wast>
@@ -333,6 +334,7 @@
                 <wast>proposals/exception-handling/binary.wast</wast>
                 <wast>proposals/exception-handling/exports.wast</wast>
                 <wast>proposals/exception-handling/imports.wast</wast>
+                <wast>proposals/exception-handling/ref_null.wast</wast>
                 <wast>proposals/exception-handling/tag.wast</wast>
                 <wast>proposals/exception-handling/throw.wast</wast>
                 <wast>proposals/exception-handling/throw_ref.wast</wast>

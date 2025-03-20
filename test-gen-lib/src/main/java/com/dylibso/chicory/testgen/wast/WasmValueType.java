@@ -18,8 +18,8 @@ public enum WasmValueType {
     EXTERN_REF("externref"),
     @JsonProperty("funcref")
     FUNC_REF("funcref"),
-    @JsonProperty("extnref")
-    EXTN_REF("extnref");
+    @JsonProperty("exnref")
+    EXN_REF("exnref");
 
     private final String value;
 

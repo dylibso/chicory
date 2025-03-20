@@ -165,6 +165,8 @@ public enum ValueType {
                 return FuncRef;
             case ID.ExternRef:
                 return ExternRef;
+            case ID.ExnRef:
+                return ExnRef;
             default:
                 throw new MalformedException("malformed reference type " + id);
         }
