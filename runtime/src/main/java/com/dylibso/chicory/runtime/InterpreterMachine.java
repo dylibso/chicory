@@ -2084,28 +2084,27 @@ public class InterpreterMachine implements Machine {
                 for (int i = 0; i < catches.size() && !found; i++) {
                     var currentCatch = catches.get(i);
 
-                    // TODO: I cannot find the spec for the following block
-                    // so, it's test driven
-                    // happy to revisit when we have a spec paragraph
+                    // verify import compatibility
                     var compatibleImport = false;
                     if ((currentCatch.opcode() == CatchOpCode.CATCH
                             || currentCatch.opcode() == CatchOpCode.CATCH_REF)) {
-                        // almost TDD after: catch-imported-alias
-                        // and: imported-mismatch
                         var currentCatchTag = instance.tag(currentCatch.tag());
-                        var currentCatchType = instance.type(currentCatchTag.tagType().typeIdx());
                         var exceptionTag = exception.instance().tag(exception.tagIdx());
-                        var exceptionType =
-                                exception.instance().type(exceptionTag.tagType().typeIdx());
 
-                        if (exceptionTag.instance() != currentCatchTag.instance()) {
+                        // if it's an import we verify the compatibility
+                        if (currentCatch.tag() < instance.imports().tagCount()) {
+                            var currentCatchType =
+                                    instance.type(currentCatchTag.tagType().typeIdx());
+                            var exceptionType =
+                                    exception.instance().type(exceptionTag.tagType().typeIdx());
+
+                            if (currentCatchType.paramsMatch(exceptionType)
+                                    && exceptionType.returnsMatch(exceptionType)) {
+                                compatibleImport = true;
+                            }
+                        } else if (exceptionTag != currentCatchTag) {
+                            // if it's not an import the tag should be the same
                             continue;
-                        }
-
-                        if (currentCatch.tag() < instance.imports().tagCount()
-                                && currentCatchType.paramsMatch(exceptionType)
-                                && exceptionType.returnsMatch(exceptionType)) {
-                            compatibleImport = true;
                         }
                     }
 
