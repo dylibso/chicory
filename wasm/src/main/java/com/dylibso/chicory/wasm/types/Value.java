@@ -274,8 +274,8 @@ public class Value {
             case I64:
             case F64:
                 return 0L;
-            case FuncRef:
-            case ExternRef:
+            case Ref:
+            case RefNull:
                 return REF_NULL_VALUE;
             default:
                 throw new IllegalArgumentException(
@@ -296,10 +296,10 @@ public class Value {
                 return longToDouble(data) + "@f64";
             case V128:
                 return data + "@v128";
-            case FuncRef:
-                return "func[" + (int) data + "]";
-            case ExternRef:
-                return "ext[" + (int) data + "]";
+            case Ref:
+                return "ref[" + (int) data + "]";
+            case RefNull:
+                return "refnull[" + (int) data + "]";
             default:
                 throw new AssertionError("Unhandled type: " + type);
         }

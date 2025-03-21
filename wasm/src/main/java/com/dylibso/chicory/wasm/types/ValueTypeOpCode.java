@@ -12,7 +12,9 @@ public enum ValueTypeOpCode {
     I32(ID.I32),
     V128(ID.V128),
     FuncRef(ID.FuncRef),
-    ExternRef(ID.ExternRef);
+    ExternRef(ID.ExternRef),
+    RefNull(ID.RefNull, List.of(WasmEncoding.VARSINT32)),
+    Ref(ID.Ref, List.of(WasmEncoding.VARSINT32));
 
     private final int opcode;
 
@@ -23,7 +25,6 @@ public enum ValueTypeOpCode {
 
         private static final Map<Integer, ValueTypeOpCode> byOpCode = new HashMap<>();
         private static final Map<Integer, List<WasmEncoding>> signatures = new HashMap<>();
-
     }
 
     ValueTypeOpCode(int opcode) {
@@ -33,10 +34,15 @@ public enum ValueTypeOpCode {
     ValueTypeOpCode(int opcode, List<WasmEncoding> signature) {
         this.opcode = opcode;
         ValueTypeOpCodes.byOpCode.put(opcode, this);
+        ValueTypeOpCodes.signatures.put(opcode, signature);
     }
 
     public int opcode() {
         return this.opcode;
+    }
+
+    public static boolean isValidOpCode(int opcode) {
+        return ValueTypeOpCodes.byOpCode.containsKey(opcode);
     }
 
     public static ValueTypeOpCode byOpCode(int opcode) {
@@ -63,6 +69,8 @@ public enum ValueTypeOpCode {
     static final class ID {
         private ID() {}
 
+        static final int RefNull = 0x63;
+        static final int Ref = 0x64;
         static final int ExternRef = 0x6f;
         static final int FuncRef = 0x70;
         static final int V128 = 0x7b;

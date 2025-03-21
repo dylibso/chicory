@@ -856,13 +856,13 @@ public final class OpcodeImpl {
         for (int i = offset; i < end; i++) {
             var elem = instance.element(elementidx);
             var val = (int) computeConstantValue(instance, elem.initializers().get(elemidx++))[0];
-            if (table.elementType() == ValueType.FuncRef) {
+            if (table.elementType().equals(ValueType.FuncRef)) {
                 if (val > instance.functionCount()) {
                     throw new WasmRuntimeException("out of bounds table access");
                 }
                 table.setRef(i, val, instance);
             } else {
-                assert table.elementType() == ValueType.ExternRef;
+                assert table.elementType().equals(ValueType.ExternRef);
                 table.setRef(i, val, instance);
             }
         }
