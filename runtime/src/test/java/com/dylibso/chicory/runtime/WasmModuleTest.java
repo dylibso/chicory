@@ -10,6 +10,7 @@ import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
@@ -407,5 +408,19 @@ public class WasmModuleTest {
         assertThrows(InvalidException.class, () -> instance.exports().table("mem"));
         assertThrows(InvalidException.class, () -> instance.exports().global("get-1"));
         assertThrows(InvalidException.class, () -> instance.exports().function("glob1"));
+    }
+
+    @Test
+    public void correctlyReturnAllLabels() {
+        // Arrange
+        var operands = new long[] {64, 2, 0, 0, 0, 0, 0, 0};
+
+        // Act
+        var result = CatchOpCode.allLabels(operands);
+
+        // Assert
+        assertEquals(2, result.size());
+        assertEquals(0, result.get(0));
+        assertEquals(0, result.get(1));
     }
 }

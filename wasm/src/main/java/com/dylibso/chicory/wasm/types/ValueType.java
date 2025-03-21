@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
+import static com.dylibso.chicory.wasm.types.ValueType.ID.ExnRef;
+
 import com.dylibso.chicory.wasm.MalformedException;
 import java.util.List;
 
@@ -14,6 +16,7 @@ public enum ValueType {
     I32(ID.I32),
     V128(ID.V128),
     FuncRef(ID.FuncRef),
+    ExnRef(ID.ExnRef),
     ExternRef(ID.ExternRef);
 
     private final int id;
@@ -96,6 +99,7 @@ public enum ValueType {
     public boolean isReference() {
         switch (this) {
             case FuncRef:
+            case ExnRef:
             case ExternRef:
                 return true;
             default:
@@ -108,13 +112,14 @@ public enum ValueType {
      */
     public static boolean isValid(int typeId) {
         switch (typeId) {
-            case ID.F64:
             case ID.ExternRef:
+            case ID.ExnRef:
             case ID.FuncRef:
             case ID.V128:
             case ID.I32:
             case ID.I64:
             case ID.F32:
+            case ID.F64:
                 return true;
             default:
                 return false;
@@ -140,6 +145,8 @@ public enum ValueType {
                 return V128;
             case ID.FuncRef:
                 return FuncRef;
+            case ID.ExnRef:
+                return ExnRef;
             case ID.ExternRef:
                 return ExternRef;
             default:
@@ -158,6 +165,8 @@ public enum ValueType {
                 return FuncRef;
             case ID.ExternRef:
                 return ExternRef;
+            case ID.ExnRef:
+                return ExnRef;
             default:
                 throw new MalformedException("malformed reference type " + id);
         }
@@ -184,6 +193,8 @@ public enum ValueType {
         private ID() {}
 
         static final int ExternRef = 0x6f;
+        // From the Exception Handling proposal
+        static final int ExnRef = 0x69; // -0x17
         static final int FuncRef = 0x70;
         static final int V128 = 0x7b;
         static final int F64 = 0x7c;
