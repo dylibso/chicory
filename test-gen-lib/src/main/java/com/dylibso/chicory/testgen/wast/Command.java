@@ -19,6 +19,10 @@ public class Command {
     @JsonProperty("filename")
     private String filename;
 
+    @SuppressWarnings("UnusedVariable")
+    @JsonProperty("binary_filename")
+    private String binaryFilename;
+
     @JsonProperty("module_type")
     private String moduleType;
 

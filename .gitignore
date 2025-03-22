@@ -20,3 +20,5 @@ scripts/jmh-tmp
 .DS_Store
 
 /local-repo
+
+/wasm-tools/*.tar.gz
