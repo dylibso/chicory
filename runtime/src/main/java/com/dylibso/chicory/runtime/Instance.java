@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class Instance {
     public static final String START_FUNCTION_NAME = "_start";
@@ -98,7 +99,8 @@ public class Instance {
         this.elements = elements.clone();
         this.tags = (tags == null) ? new TagInstance[0] : new TagInstance[tags.length];
         for (int i = 0; i < this.tags.length; i++) {
-            this.tags[i] = new TagInstance(tags[i], this);
+            this.tags[i] = new TagInstance(tags[i]);
+            this.tags[i].setType(types[tags[i].typeIdx()]);
         }
         this.exports = exports;
         this.listener = listener;
@@ -382,6 +384,15 @@ public class Instance {
             return this;
         }
 
+        private boolean checkExternalFunctionSignature(FunctionImport imprt, ImportFunction f) {
+            try {
+                validateExternalFunctionSignature(imprt, f);
+                return true;
+            } catch (UnlinkableException e) {
+                return false;
+            }
+        }
+
         private void validateExternalFunctionSignature(FunctionImport imprt, ImportFunction f) {
             var expectedType = module.typeSection().getType(imprt.typeIndex());
             if (expectedType.params().size() != f.paramTypes().size()
@@ -416,6 +427,15 @@ public class Instance {
             }
         }
 
+        private boolean checkHostGlobalType(GlobalImport i, ImportGlobal g) {
+            try {
+                validateHostGlobalType(i, g);
+                return true;
+            } catch (UnlinkableException e) {
+                return false;
+            }
+        }
+
         private void validateHostGlobalType(GlobalImport i, ImportGlobal g) {
             if (i.type() != g.instance().getType()
                     || i.mutabilityType() != g.instance().getMutabilityType()) {
@@ -423,9 +443,18 @@ public class Instance {
             }
         }
 
+        private boolean checkHostTagType(TagImport i, ImportTag t) {
+            try {
+                validateHostTagType(i, t);
+                return true;
+            } catch (UnlinkableException e) {
+                return false;
+            }
+        }
+
         private void validateHostTagType(TagImport i, ImportTag t) {
             var expectedType = module.typeSection().getType(i.tagType().typeIdx());
-            var gotType = t.tag().instance().type(t.tag().tagType().typeIdx());
+            var gotType = t.tag().type();
             if (expectedType.params().size() != gotType.params().size()
                     || expectedType.returns().size() != gotType.returns().size()) {
                 throw new UnlinkableException(
@@ -446,6 +475,15 @@ public class Instance {
                     throw new UnlinkableException(
                             "incompatible import type for tag " + t.module() + "." + t.name());
                 }
+            }
+        }
+
+        private boolean checkHostTableType(TableImport i, ImportTable t) {
+            try {
+                validateHostTableType(i, t);
+                return true;
+            } catch (UnlinkableException e) {
+                return false;
             }
         }
 
@@ -565,9 +603,16 @@ public class Instance {
             var hostTables = new ImportTable[count.apply(TABLE)];
             var hostTableIdx = 0;
             int cnt;
+            var names =
+                    Arrays.stream(imports)
+                            .map(i -> i.module() + "." + i.name())
+                            .collect(Collectors.toList());
             for (var impIdx = 0; impIdx < imports.length; impIdx++) {
                 var i = imports[impIdx];
                 var name = i.module() + "." + i.name();
+                var aliases = names.stream().filter(s -> s.equals(name));
+                var aliasesCount = aliases.count();
+                var aliasNum = 0;
                 var found = false;
                 validateNegativeImportType(i.module(), i.name(), i.importType(), importValues);
                 Function<ImportValue, Boolean> checkName =
@@ -579,7 +624,11 @@ public class Instance {
                         for (int j = 0; j < cnt; j++) {
                             ImportFunction f = importValues.function(j);
                             if (checkName.apply(f)) {
-                                validateExternalFunctionSignature((FunctionImport) i, f);
+                                if (aliasesCount == 1 || ++aliasNum == aliasesCount) {
+                                    validateExternalFunctionSignature((FunctionImport) i, f);
+                                } else if (!checkExternalFunctionSignature((FunctionImport) i, f)) {
+                                    continue;
+                                }
                                 hostFuncs[hostFuncIdx] = f;
                                 found = true;
                                 break;
@@ -592,7 +641,11 @@ public class Instance {
                         for (int j = 0; j < cnt; j++) {
                             ImportGlobal g = importValues.global(j);
                             if (checkName.apply(g)) {
-                                validateHostGlobalType((GlobalImport) i, g);
+                                if (aliasesCount == 1 || ++aliasNum == aliasesCount) {
+                                    validateHostGlobalType((GlobalImport) i, g);
+                                } else if (!checkHostGlobalType((GlobalImport) i, g)) {
+                                    continue;
+                                }
                                 hostGlobals[hostGlobalIdx] = g;
                                 found = true;
                                 break;
@@ -618,7 +671,11 @@ public class Instance {
                         for (int j = 0; j < cnt; j++) {
                             ImportTable t = importValues.table(j);
                             if (checkName.apply(t)) {
-                                validateHostTableType((TableImport) i, t);
+                                if (aliasesCount == 1 || ++aliasNum == aliasesCount) {
+                                    validateHostTableType((TableImport) i, t);
+                                } else if (!checkHostTableType((TableImport) i, t)) {
+                                    continue;
+                                }
                                 hostTables[hostTableIdx] = t;
                                 found = true;
                                 break;
@@ -631,7 +688,11 @@ public class Instance {
                         for (int j = 0; j < cnt; j++) {
                             ImportTag t = importValues.tag(j);
                             if (checkName.apply(t)) {
-                                validateHostTagType((TagImport) i, t);
+                                if (aliasesCount == 1 || ++aliasNum == aliasesCount) {
+                                    validateHostTagType((TagImport) i, t);
+                                } else if (!checkHostTagType((TagImport) i, t)) {
+                                    continue;
+                                }
                                 hostTags[hostTagIdx] = t;
                                 found = true;
                                 break;
