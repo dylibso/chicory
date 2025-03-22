@@ -57,7 +57,7 @@
             <phase>initialize</phase>
             <configuration>
               <target>
-                <untar compression="gzip" dest="${project.basedir}/src/main/resources" src="${project.build.directory}/wasm-tools/wasm-tools-${wasm-tools.version}-wasm32-wasip1.tar.gz">
+                <untar compression="gzip" dest="${project.basedir}/src/main/resources" src="${project.basedir}/wasm-tools-${wasm-tools.version}-wasm32-wasip1.tar.gz">
                   <flattenmapper/>
                   <patternset>
                     <include name="**/*.wasm"/>
@@ -81,7 +81,8 @@
             <phase>validate</phase>
             <configuration>
               <url>https://github.com/bytecodealliance/wasm-tools/releases/download/v${wasm-tools.version}/wasm-tools-${wasm-tools.version}-wasm32-wasip1.tar.gz</url>
-              <toDir>${project.build.directory}/wasm-tools</toDir>
+              <toDir>${project.basedir}</toDir>
+              <skipIfExists>true</skipIfExists>
             </configuration>
           </execution>
         </executions>
