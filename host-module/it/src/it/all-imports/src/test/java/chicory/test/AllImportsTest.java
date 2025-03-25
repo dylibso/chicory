@@ -22,8 +22,9 @@ import org.junit.jupiter.api.Test;
 class AllImportsTest {
 
     @WasmModuleInterface("all-imports.wat.wasm")
-    class TestModule implements TestModule_ModuleImports, TestModule_ModuleExports, TestModule_Env {
+    class TestModule implements TestModule_ModuleImports, TestModule_Env {
         private final Instance instance;
+        private final TestModule_ModuleExports exports;
         private final Memory memory;
         private final Table table;
         public boolean func3Invoked;
@@ -36,11 +37,11 @@ class AllImportsTest {
                     Parser.parse(AllImportsTest.class.getResourceAsStream("/all-imports.wat.wasm"));
 
             instance = Instance.builder(module).withImportValues(toImportValues()).build();
+            exports = new TestModule_ModuleExports(instance);
         }
 
-        @Override
-        public Instance instance() {
-            return instance;
+        public TestModule_ModuleExports exports() {
+            return exports;
         }
 
         @Override
@@ -123,20 +124,20 @@ class AllImportsTest {
         assertEquals(2L, allImportsModule.global2().getValue());
         assertEquals(3.0f, allImportsModule.global3().getValue());
         assertEquals(4.0d, allImportsModule.global4().getValue());
-        assertEquals(4.0d, allImportsModule.fun1(2));
-        assertEquals(6.0d, allImportsModule.fun2(3.0d));
+        assertEquals(4.0d, allImportsModule.exports().fun1(2));
+        assertEquals(6.0d, allImportsModule.exports().fun2(3.0d));
         assertFalse(allImportsModule.func3Invoked);
-        allImportsModule.fun3(0, 0.0);
+        allImportsModule.exports().fun3(0, 0.0);
         assertTrue(allImportsModule.func3Invoked);
-        assertEquals(8.0d, allImportsModule.fun2(4.0d));
-        var fun5Result = allImportsModule.fun5(1, 2.0);
+        assertEquals(8.0d, allImportsModule.exports().fun2(4.0d));
+        var fun5Result = allImportsModule.exports().fun5(1, 2.0);
         assertEquals(2, fun5Result.length);
         assertEquals(1L, fun5Result[0]);
         assertEquals(4.0d, Value.longToDouble(fun5Result[1]));
         assertFalse(allImportsModule.func6Invoked);
-        allImportsModule.fun6();
+        allImportsModule.exports().fun6();
         assertTrue(allImportsModule.func6Invoked);
-        assertEquals(allImportsModule.memory(), allImportsModule.instance().memory());
+        assertNotNull(allImportsModule.memory());
         assertNotNull(allImportsModule.table());
     }
 }

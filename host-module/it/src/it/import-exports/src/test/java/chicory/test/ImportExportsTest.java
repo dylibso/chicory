@@ -12,22 +12,22 @@ class ImportExportsTest {
     public final AtomicInteger count = new AtomicInteger();
 
     @WasmModuleInterface("host-function.wat.wasm")
-    class TestModule
-            implements TestModule_ModuleExports, TestModule_ModuleImports, TestModule_Console {
+    class TestModule implements TestModule_ModuleImports, TestModule_Console {
         private static final String EXPECTED = "Hello, World!";
         private final Instance instance;
+        private final TestModule_ModuleExports exports;
 
         public TestModule() {
             var module =
                     Parser.parse(
                             ImportExportsTest.class.getResourceAsStream("/host-function.wat.wasm"));
 
-            instance = Instance.builder(module).withImportValues(toImportValues()).build();
+            this.instance = Instance.builder(module).withImportValues(toImportValues()).build();
+            this.exports = new TestModule_ModuleExports(instance);
         }
 
-        @Override
-        public Instance instance() {
-            return instance;
+        public TestModule_ModuleExports exports() {
+            return exports;
         }
 
         @Override
@@ -51,7 +51,7 @@ class ImportExportsTest {
         var withImportsModule = new TestModule();
 
         // Act
-        withImportsModule.logIt();
+        withImportsModule.exports().logIt();
 
         // Assert
         assertEquals(10, count.get());

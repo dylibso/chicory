@@ -99,7 +99,7 @@ The annotation accepts a single argument, which can be either:
 - The location of the Wasm module on the current classpath (transitive references are not supported).
 - An absolute URI pointing to the Wasm module, in the form of file://....
 
-This annotation generates several Java interfaces, depending on the provided module:
+This annotation generates several things, depending on the provided module:
 
 - `ModuleExports`: Represents the Wasm module's exported functions, mapped to typed Java parameters and return values.
 - `ModuleImports`: Represents the module's imported host functions and includes a convenient `toImportValues()` method to obtain ImportValues after implementing the interfaces.

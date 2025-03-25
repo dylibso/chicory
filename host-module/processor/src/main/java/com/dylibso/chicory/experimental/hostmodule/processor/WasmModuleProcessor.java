@@ -37,6 +37,7 @@ import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
+import com.github.javaparser.ast.type.Type;
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URI;
@@ -47,7 +48,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.processing.Generated;
@@ -205,16 +205,12 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
 
         var typeName = type.getSimpleName().toString();
         var processorName = new StringLiteralExpr(getClass().getName());
-        var exportsInterface =
+        var exportsClass =
                 exportsCu
-                        .addInterface(typeName + "_ModuleExports")
+                        .addClass(typeName + "_ModuleExports", Modifier.Keyword.PUBLIC)
                         .setPublic(true)
                         .addSingleMemberAnnotation(Generated.class, processorName);
         writableClasses.put(prefix + type.getSimpleName() + "_ModuleExports", exportsCu);
-
-        var instanceMethod = exportsInterface.addMethod("instance");
-        instanceMethod.setType("Instance");
-        instanceMethod.removeBody();
 
         var functionImports =
                 module.importSection().stream()
@@ -222,48 +218,99 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                         .map(i -> (FunctionImport) i)
                         .toArray(FunctionImport[]::new);
 
+        var exportsConstructor = exportsClass.addConstructor(Modifier.Keyword.PUBLIC);
+        exportsConstructor.addParameter(parseType("Instance"), "instance");
+
         // generate module exports
         var exportCallHandle =
-                new MethodCallExpr(new MethodCallExpr("instance"), "exports", NodeList.nodeList());
+                new MethodCallExpr(new NameExpr("instance"), "exports", NodeList.nodeList());
+        var exportNames = new ArrayList<String>();
+
         for (int i = 0; i < module.exportSection().exportCount(); i++) {
             var export = module.exportSection().getExport(i);
 
-            var exportMethod =
-                    exportsInterface.addMethod(
-                            snakeCaseToCamelCase(export.name(), false), Modifier.Keyword.DEFAULT);
+            var name =
+                    deduplicatedMethodName(snakeCaseToCamelCase(export.name(), false), exportNames);
+            exportNames.add(name);
 
-            Consumer<String> exportMethodBodyGen =
+            var exportFieldName = new NameExpr("field_" + name);
+            Type exportFieldType = null;
+            switch (export.exportType()) {
+                case MEMORY:
+                    exportFieldType = parseType("Memory");
+                    break;
+                case GLOBAL:
+                    exportFieldType = parseType("GlobalInstance");
+                    break;
+                case TABLE:
+                    exportFieldType = parseType("TableInstance");
+                    break;
+                case FUNCTION:
+                    exportFieldType = parseType("ExportFunction");
+                    break;
+            }
+            exportsClass.addField(
+                    exportFieldType,
+                    exportFieldName.getName().asString(),
+                    Modifier.Keyword.PRIVATE,
+                    Modifier.Keyword.FINAL);
+
+            var exportMethod = exportsClass.addMethod(name, Modifier.Keyword.PUBLIC);
+
+            Function<String, Expression> exportMethodBodyGen =
                     accessor -> {
-                        exportMethod
-                                .createBody()
-                                .addStatement(
-                                        new ReturnStmt(
-                                                new MethodCallExpr(
-                                                        exportCallHandle,
-                                                        accessor,
-                                                        NodeList.nodeList(
-                                                                new StringLiteralExpr(
-                                                                        export.name())))));
+                        return new MethodCallExpr(
+                                exportCallHandle,
+                                accessor,
+                                NodeList.nodeList(new StringLiteralExpr(export.name())));
                     };
 
             if (export.exportType() == ExternalType.MEMORY) {
                 exportsCu.addImport("com.dylibso.chicory.runtime.Memory");
-                exportMethod.setType("Memory");
-                exportMethodBodyGen.accept("memory");
+
+                exportsConstructor
+                        .getBody()
+                        .addStatement(
+                                new AssignExpr(
+                                        exportFieldName,
+                                        exportMethodBodyGen.apply("memory"),
+                                        AssignExpr.Operator.ASSIGN));
+
+                exportMethod.setType(exportFieldType);
+                exportMethod.createBody().addStatement(new ReturnStmt(exportFieldName));
                 continue;
             } else if (export.exportType() == ExternalType.GLOBAL) {
                 exportsCu.addImport("com.dylibso.chicory.runtime.GlobalInstance");
-                exportMethod.setType("GlobalInstance");
-                exportMethodBodyGen.accept("global");
+
+                exportsConstructor
+                        .getBody()
+                        .addStatement(
+                                new AssignExpr(
+                                        exportFieldName,
+                                        exportMethodBodyGen.apply("global"),
+                                        AssignExpr.Operator.ASSIGN));
+
+                exportMethod.setType(exportFieldType);
+                exportMethod.createBody().addStatement(new ReturnStmt(exportFieldName));
                 continue;
             } else if (export.exportType() == ExternalType.TABLE) {
                 exportsCu.addImport("com.dylibso.chicory.runtime.TableInstance");
-                exportMethod.setType("TableInstance");
-                exportMethodBodyGen.accept("table");
+
+                exportsConstructor
+                        .getBody()
+                        .addStatement(
+                                new AssignExpr(
+                                        exportFieldName,
+                                        exportMethodBodyGen.apply("table"),
+                                        AssignExpr.Operator.ASSIGN));
+
+                exportMethod.setType(exportFieldType);
+                exportMethod.createBody().addStatement(new ReturnStmt(exportFieldName));
                 continue;
             }
             // it should be a function here
             assert (export.exportType() == ExternalType.FUNCTION);
+            exportsCu.addImport("com.dylibso.chicory.runtime.ExportFunction");
 
             var funcType =
                     (export.index() >= functionImports.length)
@@ -291,8 +338,15 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                             exportCallHandle,
                             "function",
                             NodeList.nodeList(new StringLiteralExpr(export.name())));
+            exportsConstructor
+                    .getBody()
+                    .addStatement(
+                            new AssignExpr(
+                                    exportFieldName, exportCall, AssignExpr.Operator.ASSIGN));
+
             var exportApplyHandle =
-                    new MethodCallExpr(exportCall, "apply", NodeList.nodeList(handleCallArguments));
+                    new MethodCallExpr(
+                            exportFieldName, "apply", NodeList.nodeList(handleCallArguments));
 
             if (exportType.returns().size() == 0) {
                 exportMethod.setType(void.class);
@@ -536,6 +590,14 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             writer.write(cu.printer(printer()).toString());
         } catch (IOException e) {
             log(ERROR, format("Failed to create %s file: %s", qualifiedName, e), null);
+        }
+    }
+
+    private static String deduplicatedMethodName(String name, List<String> names) {
+        if (!names.contains(name)) {
+            return name;
+        } else {
+            return deduplicatedMethodName("_" + name, names);
         }
     }
 }

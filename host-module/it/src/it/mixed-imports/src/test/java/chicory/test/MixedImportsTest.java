@@ -14,9 +14,10 @@ import org.junit.jupiter.api.Test;
 class MixedImportsTest {
 
     @WasmModuleInterface("mixed-imports.wat.wasm")
-    class TestModule implements TestModule_ModuleImports, TestModule_ModuleExports, TestModule_Env {
+    class TestModule implements TestModule_ModuleImports, TestModule_Env {
         public final AtomicReference logResult = new AtomicReference<String>(null);
         private final Instance instance;
+        private final TestModule_ModuleExports exports;
         private final Memory memory;
 
         public TestModule() {
@@ -25,12 +26,12 @@ class MixedImportsTest {
                     Parser.parse(
                             MixedImportsTest.class.getResourceAsStream("/mixed-imports.wat.wasm"));
 
-            instance = Instance.builder(module).withImportValues(toImportValues()).build();
+            this.instance = Instance.builder(module).withImportValues(toImportValues()).build();
+            this.exports = new TestModule_ModuleExports(instance);
         }
 
-        @Override
-        public Instance instance() {
-            return instance;
+        public TestModule_ModuleExports exports() {
+            return exports;
         }
 
         @Override
@@ -60,7 +61,7 @@ class MixedImportsTest {
         var importsModule = new TestModule();
 
         // Act
-        importsModule.main();
+        importsModule.exports().main();
 
         // Assert
         assertEquals("1: 164.0", importsModule.logResult.get());
