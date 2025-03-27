@@ -7,6 +7,7 @@ import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
+import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
@@ -96,13 +97,18 @@ public class InterpreterMachine implements Machine {
             callStack.push(stackFrame);
 
             var imprt = instance.imports().function(funcId);
-            var results = imprt.handle().apply(instance, args);
-            // a host function can return null or an array of ints
-            // which we will push onto the stack
-            if (results != null) {
-                for (var result : results) {
-                    stack.push(result);
+
+            try {
+                var results = imprt.handle().apply(instance, args);
+                // a host function can return null or an array of ints
+                // which we will push onto the stack
+                if (results != null) {
+                    for (var result : results) {
+                        stack.push(result);
+                    }
                 }
+            } catch (WasmException e) {
+                THROW_REF(instance, instance.registerException(e), stack, stackFrame, callStack);
             }
         }
 
@@ -162,6 +168,9 @@ public class InterpreterMachine implements Machine {
                 case BLOCK:
                     BLOCK(frame, stack, instance, instruction);
                     break;
+                case TRY_TABLE:
+                    TRY_TABLE(frame, stack, instance, instruction, frame.currentPc());
+                    break;
                 case IF:
                     IF(frame, stack, instance, instruction);
                     break;
@@ -207,6 +216,24 @@ public class InterpreterMachine implements Machine {
                     // swap in place the current frame
                     frame = RETURN_CALL_INDIRECT(stack, instance, callStack, operands, frame);
                     break;
+                case THROW:
+                    {
+                        int tagNumber = (int) operands.get(0);
+                        var tag = instance.tag(tagNumber);
+                        var type = instance.type(tag.tagType().typeIdx());
+
+                        var args = extractArgsForParams(stack, type.params());
+                        var exception = new WasmException(instance, tagNumber, args);
+                        var exceptionIdx = instance.registerException(exception);
+                        frame = THROW_REF(instance, exceptionIdx, stack, frame, callStack);
+                        break;
+                    }
+                case THROW_REF:
+                    {
+                        var exceptionIdx = (int) stack.pop();
+                        frame = THROW_REF(instance, exceptionIdx, stack, frame, callStack);
+                        break;
+                    }
                 case CALL_INDIRECT:
                     CALL_INDIRECT(stack, instance, callStack, operands);
                     break;
@@ -2035,11 +2062,110 @@ public class InterpreterMachine implements Machine {
         return sizeOf(instance.type(typeId).returns());
     }
 
+    private static StackFrame THROW_REF(
+            Instance instance,
+            int exceptionIdx,
+            MStack stack,
+            StackFrame frame,
+            Deque<StackFrame> callStack) {
+        var exception = instance.exn(exceptionIdx);
+        boolean found = false;
+        while (!found) {
+            while (frame.ctrlStackSize() > 0) {
+                var ctrlFrame = frame.popCtrl();
+                if (ctrlFrame.opCode != OpCode.TRY_TABLE) {
+                    continue;
+                }
+
+                frame.jumpTo(ctrlFrame.pc);
+                var tryInst = frame.loadCurrentInstruction();
+
+                var catches = CatchOpCode.decode(tryInst.operands());
+                for (int i = 0; i < catches.size() && !found; i++) {
+                    var currentCatch = catches.get(i);
+
+                    // verify import compatibility
+                    var compatibleImport = false;
+                    if ((currentCatch.opcode() == CatchOpCode.CATCH
+                            || currentCatch.opcode() == CatchOpCode.CATCH_REF)) {
+                        var currentCatchTag = instance.tag(currentCatch.tag());
+                        var exceptionTag = exception.instance().tag(exception.tagIdx());
+
+                        // if it's an import we verify the compatibility
+                        if (currentCatch.tag() < instance.imports().tagCount()
+                                && currentCatchTag.type().paramsMatch(exceptionTag.type())
+                                && currentCatchTag.type().returnsMatch(exceptionTag.type())) {
+                            compatibleImport = true;
+                        } else if (exceptionTag != currentCatchTag) {
+                            // if it's not an import the tag should be the same
+                            continue;
+                        }
+                    }
+
+                    switch (currentCatch.opcode()) {
+                        case CATCH:
+                            if (currentCatch.tag() == exception.tagIdx() || compatibleImport) {
+                                found = true;
+                                for (var arg : exception.args()) {
+                                    stack.push(arg);
+                                }
+                            }
+                            break;
+                        case CATCH_REF:
+                            if (currentCatch.tag() == exception.tagIdx() || compatibleImport) {
+                                found = true;
+                                for (var arg : exception.args()) {
+                                    stack.push(arg);
+                                }
+                                stack.push(exceptionIdx);
+                            }
+                            break;
+                        case CATCH_ALL:
+                            found = true;
+                            break;
+                        case CATCH_ALL_REF:
+                            found = true;
+                            stack.push(exceptionIdx);
+                            break;
+                    }
+
+                    if (found) {
+                        var resolvedLabel = tryInst.labelTable().get(i);
+                        // BR l
+                        ctrlJump(frame, stack, currentCatch.label());
+                        frame.jumpTo(resolvedLabel);
+                        return frame;
+                    }
+                }
+            }
+            if (!found) {
+                if (callStack.isEmpty()) {
+                    throw exception;
+                } else {
+                    frame = callStack.pop();
+                }
+            }
+        }
+        throw new RuntimeException("unreacheable");
+    }
+
     private static void BLOCK(
             StackFrame frame, MStack stack, Instance instance, AnnotatedInstruction instruction) {
         var paramsSize = numberOfParams(instance, instruction);
         var returnsSize = numberOfValuesToReturn(instance, instruction);
         frame.pushCtrl(instruction.opcode(), paramsSize, returnsSize, stack.size() - paramsSize);
+    }
+
+    private static void TRY_TABLE(
+            StackFrame frame,
+            MStack stack,
+            Instance instance,
+            AnnotatedInstruction instruction,
+            int pc) {
+        var paramsSize = numberOfParams(instance, instruction);
+        var returnsSize = numberOfValuesToReturn(instance, instruction);
+        frame.pushCtrl(
+                instruction.opcode(), paramsSize, returnsSize, stack.size() - paramsSize, pc);
     }
 
     private static void IF(

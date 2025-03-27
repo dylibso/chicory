@@ -34,6 +34,7 @@ public class WasmValue {
             case F64:
                 return "Double.longBitsToDouble(" + result + "), 0.0";
             case EXTERN_REF:
+            case EXN_REF:
             case FUNC_REF:
                 if (result.equals("null")) {
                     return "Value.REF_NULL_VALUE";
@@ -154,6 +155,7 @@ public class WasmValue {
                     return "null";
                 }
             case EXTERN_REF:
+            case EXN_REF:
             case FUNC_REF:
                 if (value[0].equals("null")) {
                     return "Value.REF_NULL_VALUE";
@@ -258,6 +260,7 @@ public class WasmValue {
                     return "null";
                 }
             case EXTERN_REF:
+            case EXN_REF:
             case FUNC_REF:
                 if (value[0].toString().equals("null")) {
                     return "Value.REF_NULL_VALUE";

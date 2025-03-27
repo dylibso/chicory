@@ -16,6 +16,7 @@ import com.dylibso.chicory.wasm.io.InputStreams;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
+import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.CodeSection;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.DataCountSection;
@@ -828,6 +829,7 @@ public final class Parser {
                     case BLOCK:
                     case LOOP:
                     case IF:
+                    case TRY_TABLE:
                         {
                             depth++;
                             instruction.withDepth(depth);
@@ -924,6 +926,32 @@ public final class Parser {
                                 reference.addCallback(end -> labelTable.set(finalIdx, end));
                             }
                             instruction.withLabelTable(labelTable);
+                            break;
+                        }
+                    case TRY_TABLE:
+                        {
+                            // labels computation
+                            var allLabels = CatchOpCode.allLabels(baseInstruction.operands());
+                            var labelTable = new ArrayList<Integer>();
+                            for (var idx = 0; idx < allLabels.size(); idx++) {
+                                labelTable.add(null);
+                                var offset = allLabels.get(idx);
+                                ControlTree reference = currentControlFlow;
+                                while (offset > 0) {
+                                    if (reference == null) {
+                                        throw new InvalidException("unknown label");
+                                    }
+                                    reference = reference.parent();
+                                    offset--;
+                                }
+                                int finalIdx = idx;
+                                reference.addCallback(end -> labelTable.set(finalIdx, end));
+                            }
+                            instruction.withLabelTable(labelTable);
+
+                            // block start
+                            currentControlFlow =
+                                    currentControlFlow.spawn(instructions.size(), instruction);
                             break;
                         }
                     case END:
@@ -1069,6 +1097,27 @@ public final class Parser {
                         var vcount = (int) readVarUInt32(buffer);
                         for (var j = 0; j < vcount; j++) {
                             operands.add(readVarUInt32(buffer));
+                        }
+                        break;
+                    }
+                case VEC_CATCH:
+                    {
+                        var n = readVarUInt32(buffer);
+                        operands.add(n);
+                        for (var j = 0; j < n; j++) {
+                            var catchOp = readByte(buffer);
+                            operands.add(0L | catchOp);
+                            var catchOpcode = CatchOpCode.byOpCode(catchOp);
+                            switch (catchOpcode) {
+                                case CATCH:
+                                case CATCH_REF:
+                                    operands.add(readVarUInt32(buffer)); // tag
+                                    // intentional fall-through
+                                case CATCH_ALL:
+                                case CATCH_ALL_REF:
+                                    operands.add(readVarUInt32(buffer)); // label
+                                    break;
+                            }
                         }
                         break;
                     }

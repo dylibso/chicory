@@ -274,6 +274,7 @@ public class Value {
             case I64:
             case F64:
                 return 0L;
+            case ExnRef:
             case FuncRef:
             case ExternRef:
                 return REF_NULL_VALUE;

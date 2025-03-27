@@ -138,6 +138,7 @@ public final class AnnotatedInstruction extends Instruction {
                 case LOOP:
                 case END:
                 case IF:
+                case TRY_TABLE:
                     assert (scope.isPresent());
                     break;
                 default:
@@ -164,6 +165,7 @@ public final class AnnotatedInstruction extends Instruction {
             }
             switch (base.opcode()) {
                 case BR_TABLE:
+                case TRY_TABLE:
                     if (labelTable.isEmpty()) {
                         throw new InvalidException("unknown label table" + base);
                     }

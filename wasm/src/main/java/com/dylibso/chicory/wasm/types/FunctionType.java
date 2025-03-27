@@ -51,6 +51,7 @@ public final class FunctionType {
     static {
         EnumMap<ValueType, FunctionType> map = new EnumMap<>(ValueType.class);
         map.put(ValueType.ExternRef, new FunctionType(List.of(), List.of(ValueType.ExternRef)));
+        map.put(ValueType.ExnRef, new FunctionType(List.of(), List.of(ValueType.ExnRef)));
         map.put(ValueType.FuncRef, new FunctionType(List.of(), List.of(ValueType.FuncRef)));
         map.put(ValueType.V128, new FunctionType(List.of(), List.of(ValueType.V128)));
         map.put(ValueType.F64, new FunctionType(List.of(), List.of(ValueType.F64)));
@@ -60,6 +61,7 @@ public final class FunctionType {
         returning = map;
         map = new EnumMap<>(ValueType.class);
         map.put(ValueType.ExternRef, new FunctionType(List.of(ValueType.ExternRef), List.of()));
+        map.put(ValueType.ExnRef, new FunctionType(List.of(ValueType.ExnRef), List.of()));
         map.put(ValueType.FuncRef, new FunctionType(List.of(ValueType.FuncRef), List.of()));
         map.put(ValueType.V128, new FunctionType(List.of(ValueType.V128), List.of()));
         map.put(ValueType.F64, new FunctionType(List.of(ValueType.F64), List.of()));
