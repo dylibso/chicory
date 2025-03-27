@@ -12,26 +12,27 @@ import org.junit.jupiter.api.Test;
 class AllExportsTest {
 
     @WasmModuleInterface("all-exports.wat.wasm")
-    class TestModule implements TestModule_ModuleExports {
-        private final Instance instance;
+    class TestModule {
+        private final TestModule_ModuleExports exports;
 
         public TestModule() {
+            super();
             var module =
                     Parser.parse(AllExportsTest.class.getResourceAsStream("/all-exports.wat.wasm"));
 
-            instance = Instance.builder(module).build();
+            var instance = Instance.builder(module).build();
+            this.exports = new TestModule_ModuleExports(instance);
         }
 
-        @Override
-        public Instance instance() {
-            return instance;
+        public TestModule_ModuleExports exports() {
+            return exports;
         }
     }
 
     @Test
     public void exportsModule() {
         // Arrange
-        var exportsModule = new TestModule();
+        var exportsModule = new TestModule().exports();
 
         // Assert
         assertEquals(exportsModule.glob1().getValue(), exportsModule.get1());
@@ -50,7 +51,7 @@ class AllExportsTest {
         var multiReturn = exportsModule.get10(1, 2L, 3.0f, 4.0d);
         assertEquals(47, multiReturn[0]);
         assertEquals(48, multiReturn[1]);
-        assertEquals(exportsModule.mem(), exportsModule.instance().memory());
+        assertNotNull(exportsModule.mem());
         assertNotNull(exportsModule.tab());
     }
 }

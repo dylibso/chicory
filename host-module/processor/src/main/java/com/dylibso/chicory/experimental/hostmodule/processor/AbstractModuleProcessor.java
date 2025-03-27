@@ -51,7 +51,7 @@ public abstract class AbstractModuleProcessor extends AbstractProcessor {
         var toUppercase = className;
         for (int i = 0; i < name.length(); i++) {
             var c = name.charAt(i);
-            if (c == '_' || c == '-') {
+            if ((c == '_' || c == '-') && i != 0) {
                 toUppercase = true;
             } else if (toUppercase) {
                 sb.append(Character.toUpperCase(c));

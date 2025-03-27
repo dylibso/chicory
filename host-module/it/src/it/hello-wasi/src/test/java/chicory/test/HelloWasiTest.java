@@ -14,11 +14,9 @@ import org.junit.jupiter.api.Test;
 class HelloWasiTest {
 
     @WasmModuleInterface("hello-wasi.wat.wasm")
-    class TestModule
-            implements TestModule_ModuleImports,
-                    TestModule_ModuleExports,
-                    TestModule_WasiSnapshotPreview1 {
+    class TestModule implements TestModule_ModuleImports, TestModule_WasiSnapshotPreview1 {
         private final Instance instance;
+        private final TestModule_ModuleExports exports;
         private final WasiPreview1 wasi;
         public final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
@@ -30,16 +28,17 @@ class HelloWasiTest {
             var module =
                     Parser.parse(HelloWasiTest.class.getResourceAsStream("/hello-wasi.wat.wasm"));
 
-            instance =
+            this.instance =
                     Instance.builder(module)
                             .withImportValues(toImportValues())
                             .withStart(false) // Needed to avoid circular references of instance
                             .build();
+
+            this.exports = new TestModule_ModuleExports(instance);
         }
 
-        @Override
-        public Instance instance() {
-            return instance;
+        public TestModule_ModuleExports exports() {
+            return exports;
         }
 
         @Override
@@ -49,7 +48,7 @@ class HelloWasiTest {
 
         @Override
         public int fdWrite(int fd, int iovs, int iovsLen, int nwrittenPtr) {
-            return wasi.fdWrite(instance().memory(), fd, iovs, iovsLen, nwrittenPtr);
+            return wasi.fdWrite(instance.memory(), fd, iovs, iovsLen, nwrittenPtr);
         }
     }
 
@@ -59,7 +58,7 @@ class HelloWasiTest {
         var helloWasiModule = new TestModule();
 
         // Act
-        helloWasiModule.Start();
+        helloWasiModule.exports()._start();
 
         // Assert
         assertEquals("hello world\n", helloWasiModule.baos.toString(UTF_8));

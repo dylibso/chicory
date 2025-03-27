@@ -1,0 +1,11 @@
+(module
+    (func $add1 (export "func") (param $a i32) (param $b i32) (result i32)
+        (i32.add (local.get $a) (local.get $b))
+    )
+    (func $mul2 (export "_func") (param $a i32) (param $b i32) (result i32)
+        (i32.mul (local.get $a) (local.get $b))
+    )
+    (func $sub3 (export "Func") (param $a i32) (param $b i32) (result i32)
+        (i32.sub (local.get $a) (local.get $b))
+    )
+)
