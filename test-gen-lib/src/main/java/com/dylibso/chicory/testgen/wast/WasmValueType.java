@@ -17,7 +17,9 @@ public enum WasmValueType {
     @JsonProperty("externref")
     EXTERN_REF("externref"),
     @JsonProperty("funcref")
-    FUNC_REF("funcref");
+    FUNC_REF("funcref"),
+    @JsonProperty("refnull")
+    REF_NULL("refnull");
 
     private final String value;
 

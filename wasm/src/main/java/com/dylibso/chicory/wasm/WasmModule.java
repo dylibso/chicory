@@ -271,11 +271,13 @@ public final class WasmModule {
             var validator = new Validator(module);
             validator.validateModule();
             if (validate) {
+                validator.validateTypes();
                 validator.validateFunctions();
                 validator.validateGlobals();
                 validator.validateElements();
                 validator.validateData();
                 validator.validateTags();
+                validator.validateTables();
             }
 
             return module;

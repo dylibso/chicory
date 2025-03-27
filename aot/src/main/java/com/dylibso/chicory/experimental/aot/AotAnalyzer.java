@@ -20,6 +20,7 @@ import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValueTypeOpCode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -559,7 +560,9 @@ final class AotAnalyzer {
                 break;
             case REF_NULL:
                 // [] -> [ref]
-                stack.push(ValueType.refTypeForId((int) ins.operand(0)));
+                int operand = (int) ins.operand(0);
+                ValueType t = new ValueType(ValueTypeOpCode.RefNull, operand);
+                stack.push(t);
                 break;
             case REF_IS_NULL:
                 // [ref] -> [I32]
@@ -692,14 +695,14 @@ final class AotAnalyzer {
     }
 
     private FunctionType blockType(Instruction ins) {
-        var typeId = (int) ins.operand(0);
+        var typeId = ins.operand(0);
         if (typeId == 0x40) {
             return FunctionType.empty();
         }
         if (ValueType.isValid(typeId)) {
             return FunctionType.returning(ValueType.forId(typeId));
         }
-        return module.typeSection().getType(typeId);
+        return module.typeSection().getType((int) typeId);
     }
 
     private static List<ValueType> getGlobalTypes(WasmModule module) {

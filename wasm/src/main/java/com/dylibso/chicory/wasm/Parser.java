@@ -59,6 +59,8 @@ import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.UnknownCustomSection;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValueTypeOpCode;
+import com.dylibso.chicory.wasm.types.WasmEncoding;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -474,7 +476,7 @@ public final class Parser {
 
             // Parse parameter types
             for (int j = 0; j < paramCount; j++) {
-                params[j] = ValueType.forId((int) readVarUInt32(buffer));
+                params[j] = readValueType(buffer);
             }
 
             var returnCount = (int) readVarUInt32(buffer);
@@ -482,7 +484,7 @@ public final class Parser {
 
             // Parse return types
             for (int j = 0; j < returnCount; j++) {
-                returns[j] = ValueType.forId((int) readVarUInt32(buffer));
+                returns[j] = readValueType(buffer);
             }
 
             typeSection.addFunctionType(FunctionType.of(params, returns));
@@ -519,10 +521,7 @@ public final class Parser {
                     }
                 case TABLE:
                     {
-                        var rawTableType = readVarUInt32(buffer);
-                        assert rawTableType == 0x70 || rawTableType == 0x6F;
-                        var tableType =
-                                (rawTableType == 0x70) ? ValueType.FuncRef : ValueType.ExternRef;
+                        var rawTableType = readValueType(buffer);
 
                         var limitType = readByte(buffer);
                         assert limitType == 0x00 || limitType == 0x01;
@@ -533,7 +532,7 @@ public final class Parser {
                                         : new TableLimits(min);
 
                         importSection.addImport(
-                                new TableImport(moduleName, importName, tableType, limits));
+                                new TableImport(moduleName, importName, rawTableType, limits));
                         break;
                     }
                 case MEMORY:
@@ -555,7 +554,7 @@ public final class Parser {
                         break;
                     }
                 case GLOBAL:
-                    var globalValType = ValueType.forId((int) readVarUInt32(buffer));
+                    var globalValType = readValueType(buffer);
                     var globalMut = MutabilityType.forId(readByte(buffer));
                     importSection.addImport(
                             new GlobalImport(moduleName, importName, globalMut, globalValType));
@@ -592,6 +591,17 @@ public final class Parser {
         return functionSection.build();
     }
 
+    private static TableLimits readTableLimits(ByteBuffer buffer) {
+        var limitType = readByte(buffer);
+        if (!(limitType == 0x00 || limitType == 0x01)) {
+            throw new MalformedException("integer representation too long, integer too large");
+        }
+        var min = readVarUInt32(buffer);
+        var limits =
+                limitType > 0 ? new TableLimits(min, readVarUInt32(buffer)) : new TableLimits(min);
+        return limits;
+    }
+
     private static TableSection parseTableSection(ByteBuffer buffer) {
 
         var tableCount = readVarUInt32(buffer);
@@ -599,17 +609,20 @@ public final class Parser {
 
         // Parse individual tables in the tables section
         for (int i = 0; i < tableCount; i++) {
-            var tableType = ValueType.refTypeForId((int) readVarUInt32(buffer));
-            var limitType = readByte(buffer);
-            if (!(limitType == 0x00 || limitType == 0x01)) {
-                throw new MalformedException("integer representation too long, integer too large");
+            var firstByte = (int) readVarUInt32(buffer);
+            if (firstByte == 0x40) {
+                var secondByte = readVarUInt32(buffer);
+                assert secondByte == 0x00;
+                var tableType = readValueType(buffer);
+                var limits = readTableLimits(buffer);
+                var init = parseExpression(buffer);
+                tableSection.addTable(new Table(tableType, limits, List.of(init)));
+            } else {
+                var opcode = ValueTypeOpCode.byOpCode(firstByte);
+                var tableType = readValueTypeFromOpCode(buffer, opcode);
+                var limits = readTableLimits(buffer);
+                tableSection.addTable(new Table(tableType, limits));
             }
-            var min = readVarUInt32(buffer);
-            var limits =
-                    limitType > 0
-                            ? new TableLimits(min, readVarUInt32(buffer))
-                            : new TableLimits(min);
-            tableSection.addTable(new Table(tableType, limits));
         }
 
         return tableSection.build();
@@ -652,7 +665,7 @@ public final class Parser {
 
         // Parse individual globals
         for (int i = 0; i < globalCount; i++) {
-            var valueType = ValueType.forId((int) readVarUInt32(buffer));
+            var valueType = readValueType(buffer);
             var mutabilityType = MutabilityType.forId(readByte(buffer));
             var init = parseExpression(buffer);
             globalSection.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
@@ -735,17 +748,25 @@ public final class Parser {
         // common path
         ValueType type;
         if (alwaysFuncRef) {
-            type = ValueType.FuncRef;
+            if (exprInit) {
+                type = ValueType.FuncRef;
+            } else {
+                type = new ValueType(ValueTypeOpCode.Ref, ValueType.OperandCode.FUNC.code());
+            }
         } else if (hasElemKind) {
             int ek = (int) readVarUInt32(buffer);
             if (ek == 0x00) {
-                type = ValueType.FuncRef;
+                type = new ValueType(ValueTypeOpCode.Ref, ValueType.OperandCode.FUNC.code());
             } else {
                 throw new ChicoryException("Invalid element kind");
             }
         } else {
             assert hasRefType;
-            type = ValueType.refTypeForId(Math.toIntExact(readVarUInt32(buffer)));
+            type = readValueType(buffer);
+            if (!type.isReference()) {
+                throw new MalformedException(
+                        "malformed reference type: element section has non-reference type");
+            }
         }
         int initCnt = Math.toIntExact(readVarUInt32(buffer));
         List<List<Instruction>> inits = new ArrayList<>(initCnt);
@@ -783,7 +804,7 @@ public final class Parser {
             if (numberOfLocals > MAX_FUNCTION_LOCALS) {
                 throw new MalformedException("too many locals");
             }
-            var type = ValueType.forId((int) readVarUInt32(buffer));
+            var type = readValueType(buffer);
             for (int j = 0; j < numberOfLocals; j++) {
                 locals.add(type);
             }
@@ -887,6 +908,8 @@ public final class Parser {
                             break;
                         }
                     case BR_IF:
+                    case BR_ON_NULL:
+                    case BR_ON_NON_NULL:
                         {
                             instruction.withLabelFalse(instructions.size() + 1);
                         }
@@ -1083,6 +1106,27 @@ public final class Parser {
                         }
                         break;
                     }
+                case BLOCK_TYPE:
+                    var operand = (int) readVarUInt32(buffer);
+                    if (ValueTypeOpCode.isValidOpCode(operand)) {
+                        // is value type
+                        var valueTypeOpCode = ValueTypeOpCode.byOpCode(operand);
+                        ValueType v = readValueTypeFromOpCode(buffer, valueTypeOpCode);
+                        operands.add(v.id());
+                    } else {
+                        operands.add((long) operand);
+                    }
+                    break;
+                case VALUE_TYPE:
+                    var valueType = readValueType(buffer);
+                    operands.add(valueType.id());
+                    break;
+                case VEC_VALUE_TYPE:
+                    var vcount = (int) readVarUInt32(buffer);
+                    for (var j = 0; j < vcount; j++) {
+                        operands.add(readValueType(buffer).id());
+                    }
+                    break;
             }
         }
         var operandsArray = new long[operands.size()];
@@ -1162,6 +1206,34 @@ public final class Parser {
                         "alignment must not be larger than natural alignment (" + operand0 + ")");
             }
         }
+    }
+
+    private static ValueType readValueTypeFromOpCode(
+            ByteBuffer buffer, ValueTypeOpCode valueTypeOpCode) {
+        var signature = ValueTypeOpCode.signature(valueTypeOpCode);
+        var operands = new ArrayList<Integer>();
+
+        for (var sig : signature) {
+            if (sig == WasmEncoding.VARSINT32) {
+                operands.add((int) readVarSInt32(buffer));
+            } else {
+                throw new IllegalArgumentException("please implement encoding for: " + sig);
+            }
+        }
+
+        assert operands.size() <= 1;
+
+        if (operands.isEmpty()) {
+            return new ValueType(valueTypeOpCode);
+        } else {
+            return new ValueType(valueTypeOpCode, operands.get(0));
+        }
+    }
+
+    private static ValueType readValueType(ByteBuffer buffer) {
+        var valueTypeOpCode = ValueTypeOpCode.byOpCode((int) readVarUInt32(buffer));
+
+        return readValueTypeFromOpCode(buffer, valueTypeOpCode);
     }
 
     private static Instruction[] parseExpression(ByteBuffer buffer) {
