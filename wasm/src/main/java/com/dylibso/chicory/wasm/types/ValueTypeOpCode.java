@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 public enum ValueTypeOpCode {
-    UNKNOWN(-1),
+    BOT(-1),
     F64(ID.F64),
     F32(ID.F32),
     I64(ID.I64),

@@ -1,5 +1,6 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -502,12 +503,15 @@ public class WasmModuleTest {
                 new ImportTable(
                         "env",
                         "table",
-                        new TableInstance(new Table(ValueType.FuncRef, new TableLimits(1))));
+                        new TableInstance(
+                                new Table(ValueType.FuncRef, new TableLimits(1)), REF_NULL_VALUE));
         var tableExternref =
                 new ImportTable(
                         "env",
                         "table",
-                        new TableInstance(new Table(ValueType.ExternRef, new TableLimits(2))));
+                        new TableInstance(
+                                new Table(ValueType.ExternRef, new TableLimits(2)),
+                                REF_NULL_VALUE));
         var tagI32 =
                 new ImportTag(
                         "env",

@@ -1,5 +1,7 @@
 package com.dylibso.chicory.testing;
 
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+
 import com.dylibso.chicory.runtime.ByteBufferMemory;
 import com.dylibso.chicory.runtime.GlobalInstance;
 import com.dylibso.chicory.runtime.HostFunction;
@@ -88,7 +90,8 @@ public final class Spectest {
                                 "spectest",
                                 "table",
                                 new TableInstance(
-                                        new Table(ValueType.FuncRef, new TableLimits(10, 20)))))
+                                        new Table(ValueType.FuncRef, new TableLimits(10, 20)),
+                                        REF_NULL_VALUE)))
                 .build();
     }
 }

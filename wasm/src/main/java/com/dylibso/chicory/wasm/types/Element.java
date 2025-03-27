@@ -55,7 +55,7 @@ public abstract class Element {
             return false;
         }
         Element element = (Element) o;
-        return type == element.type && Objects.equals(initializers, element.initializers);
+        return type.equals(element.type) && Objects.equals(initializers, element.initializers);
     }
 
     @Override

@@ -5,7 +5,6 @@ import static com.dylibso.chicory.wasm.types.WasmEncoding.BYTE;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.FLOAT32;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.FLOAT64;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.V128;
-import static com.dylibso.chicory.wasm.types.WasmEncoding.VALUE_TYPE;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VARSINT32;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VARSINT64;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VARUINT;
@@ -31,6 +30,7 @@ public enum OpCode {
     RETURN_CALL(0x12, List.of(VARUINT)),
     RETURN_CALL_INDIRECT(0x13, List.of(VARUINT, VARUINT)),
     CALL_REF(0x14, List.of(VARUINT)),
+    RETURN_CALL_REF(0x15, List.of(VARUINT)),
     DROP(0x1A),
     SELECT(0x1B),
     SELECT_T(0x1C, List.of(VEC_VALUE_TYPE)),
@@ -198,9 +198,12 @@ public enum OpCode {
     I64_EXTEND_8_S(0xC2),
     I64_EXTEND_16_S(0xC3),
     I64_EXTEND_32_S(0xC4),
-    REF_NULL(0xD0, List.of(VALUE_TYPE)),
+    REF_NULL(0xD0, List.of(VARSINT32)),
     REF_IS_NULL(0xD1),
     REF_FUNC(0xD2, List.of(VARUINT)),
+    REF_AS_NON_NULL(0xD4),
+    BR_ON_NULL(0xD5, List.of(VARUINT)),
+    BR_ON_NON_NULL(0xD6, List.of(VARUINT)),
     I32_TRUNC_SAT_F32_S(0xFC00),
     I32_TRUNC_SAT_F32_U(0xFC01),
     I32_TRUNC_SAT_F64_S(0xFC02),

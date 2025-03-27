@@ -1,8 +1,10 @@
 package com.dylibso.chicory.wasm.types;
 
 import com.dylibso.chicory.wasm.MalformedException;
+import com.dylibso.chicory.wasm.WasmModule;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 
 /**
  * The possible WASM value types.
@@ -12,7 +14,7 @@ public final class ValueType {
     private static final long OPCODE_MASK = 0x0000FFFFL;
     private static final long OPERAND_SHIFT = 32;
 
-    public static ValueType UNKNOWN = new ValueType(ValueTypeOpCode.UNKNOWN);
+    public static ValueType BOT = new ValueType(ValueTypeOpCode.BOT);
     public static ValueType F64 = new ValueType(ValueTypeOpCode.F64);
 
     public static ValueType F32 = new ValueType(ValueTypeOpCode.F32);
@@ -50,6 +52,7 @@ public final class ValueType {
             case Ref:
                 assert operand == OperandCode.FUNC.code()
                         || operand == OperandCode.EXTERN.code()
+                        || operand == OperandCode.BOT.code()
                         || operand >= 0;
                 break;
             default:
@@ -222,6 +225,90 @@ public final class ValueType {
         return total;
     }
 
+    private static boolean eq_def(WasmModule context, int typeIdx1, int typeIdx2) {
+        var funcType1 = context.typeSection().getType(typeIdx1);
+        var funcType2 = context.typeSection().getType(typeIdx2);
+
+        // substitute any type indexes when comparing equality
+        if (funcType1.params().size() != funcType2.params().size()
+                || funcType1.returns().size() != funcType2.returns().size()) {
+            return false;
+        }
+
+        ValueType[] types1 =
+                Stream.concat(funcType1.params().stream(), funcType1.returns().stream())
+                        .toArray(ValueType[]::new);
+        ValueType[] types2 =
+                Stream.concat(funcType2.params().stream(), funcType2.returns().stream())
+                        .toArray(ValueType[]::new);
+
+        for (int i = 0; i < types1.length; i++) {
+            var type1 = types1[i];
+            var type2 = types2[i];
+
+            if (type1.isReference()
+                    && type2.isReference()
+                    && type1.operand() >= 0
+                    && type2.operand >= 0) {
+                // both are defined function types, substitute again!
+                if (!eq_def(context, type1.operand(), type2.operand())) {
+                    return false;
+                }
+            } else if (!type1.equals(type2)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean matches_null(boolean null1, boolean null2) {
+        return null1 == null2 || null2;
+    }
+
+    private static boolean matches_heap(WasmModule context, int heapType1, int heapType2) {
+        if (heapType1 >= 0 && heapType2 >= 0) {
+            return eq_def(context, heapType1, heapType2);
+        } else if (heapType1 >= 0 && heapType2 == ValueType.OperandCode.FUNC.code()) {
+            return true;
+        } else if (heapType1 == ValueType.OperandCode.BOT.code()) {
+            return true;
+        } else {
+            return heapType1 == heapType2;
+        }
+    }
+
+    public static boolean matches_ref(WasmModule context, ValueType t1, ValueType t2) {
+        return matches_heap(context, t1.operand(), t2.operand())
+                && matches_null(t1.isNullable(), t2.isNullable());
+    }
+
+    public static boolean matches(WasmModule context, ValueType t1, ValueType t2) {
+        if (t1.isReference() && t2.isReference()) {
+            return matches_ref(context, t1, t2);
+        } else if (t1.opcode() == ValueType.Variant.BOT) {
+            return true;
+        } else {
+            return t1.id() == t2.id();
+        }
+    }
+
+    public boolean isNullable() {
+        switch (opcode) {
+            case Ref:
+                return false;
+            case RefNull:
+                return true;
+            default:
+                throw new IllegalArgumentException(
+                        "got non-reference type to isNullable(): " + this);
+        }
+    }
+
+    public int operand() {
+        return operand;
+    }
+
     @Override
     public int hashCode() {
         return Objects.hash(opcode, operand);
@@ -256,8 +343,8 @@ public final class ValueType {
     /**
      * basically ValueTypeOpcode, but removes FuncRef and ExternRef, which alias Ref/RefNull
      */
-    public enum Variant {
-        UNKNOWN(-1),
+    public static enum Variant {
+        BOT(-1),
         F64(ValueTypeOpCode.ID.F64),
         F32(ValueTypeOpCode.ID.F32),
         I64(ValueTypeOpCode.ID.I64),
@@ -278,8 +365,8 @@ public final class ValueType {
 
         static Variant ofValueTypeOpCode(ValueTypeOpCode opcode) {
             switch (opcode) {
-                case UNKNOWN:
-                    return UNKNOWN;
+                case BOT:
+                    return BOT;
                 case F64:
                     return F64;
                 case F32:
@@ -306,8 +393,9 @@ public final class ValueType {
 
     public enum OperandCode {
         // heap type
-        EXTERN(0x6F),
-        FUNC(0x70);
+        EXTERN(-17), // 0x6F
+        FUNC(-16), // 0x70
+        BOT(-1);
 
         private final int code;
 
