@@ -1,12 +1,15 @@
 package com.dylibso.chicory.wasm.types;
 
+import static com.dylibso.chicory.wasm.types.WasmEncoding.BLOCK_TYPE;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.BYTE;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.FLOAT32;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.FLOAT64;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.V128;
+import static com.dylibso.chicory.wasm.types.WasmEncoding.VALUE_TYPE;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VARSINT32;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VARSINT64;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VARUINT;
+import static com.dylibso.chicory.wasm.types.WasmEncoding.VEC_VALUE_TYPE;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VEC_VARUINT;
 
 import java.util.List;
@@ -14,9 +17,9 @@ import java.util.List;
 public enum OpCode {
     UNREACHABLE(0x00),
     NOP(0x01),
-    BLOCK(0x02, List.of(VARUINT)),
-    LOOP(0x03, List.of(VARUINT)),
-    IF(0x04, List.of(VARUINT)),
+    BLOCK(0x02, List.of(BLOCK_TYPE)),
+    LOOP(0x03, List.of(BLOCK_TYPE)),
+    IF(0x04, List.of(BLOCK_TYPE)),
     ELSE(0x05),
     END(0x0B),
     BR(0x0C, List.of(VARUINT)),
@@ -30,7 +33,7 @@ public enum OpCode {
     CALL_REF(0x14, List.of(VARUINT)),
     DROP(0x1A),
     SELECT(0x1B),
-    SELECT_T(0x1C, List.of(VEC_VARUINT)),
+    SELECT_T(0x1C, List.of(VEC_VALUE_TYPE)),
     LOCAL_GET(0x20, List.of(VARUINT)),
     LOCAL_SET(0x21, List.of(VARUINT)),
     LOCAL_TEE(0x22, List.of(VARUINT)),
@@ -195,7 +198,7 @@ public enum OpCode {
     I64_EXTEND_8_S(0xC2),
     I64_EXTEND_16_S(0xC3),
     I64_EXTEND_32_S(0xC4),
-    REF_NULL(0xD0, List.of(VARUINT)),
+    REF_NULL(0xD0, List.of(VALUE_TYPE)),
     REF_IS_NULL(0xD1),
     REF_FUNC(0xD2, List.of(VARUINT)),
     I32_TRUNC_SAT_F32_S(0xFC00),

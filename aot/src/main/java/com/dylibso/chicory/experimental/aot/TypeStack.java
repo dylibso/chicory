@@ -34,14 +34,14 @@ final class TypeStack {
 
     public void pop(ValueType expected) {
         var actual = types().pop();
-        if (expected != actual) {
+        if (!expected.equals(actual)) {
             throw new IllegalArgumentException("Expected type " + expected + " <> " + actual);
         }
     }
 
     public void popRef() {
         var actual = types().pop();
-        if (actual != ValueType.FuncRef && actual != ValueType.ExternRef) {
+        if (!actual.equals(ValueType.FuncRef) && !actual.equals(ValueType.ExternRef)) {
             throw new IllegalArgumentException("Expected reference type <> " + actual);
         }
     }

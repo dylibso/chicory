@@ -2026,7 +2026,7 @@ public class InterpreterMachine implements Machine {
             return 0;
         }
         if (ValueType.isValid(typeId)) {
-            if (ValueType.forId(typeId) == ValueType.V128) {
+            if (ValueType.forId(typeId).opcode() == ValueType.Variant.V128) {
                 return 2;
             } else {
                 return 1;

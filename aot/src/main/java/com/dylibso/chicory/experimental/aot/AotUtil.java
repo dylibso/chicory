@@ -46,10 +46,10 @@ final class AotUtil {
     }
 
     public static Class<?> jvmType(ValueType type) {
-        switch (type) {
+        switch (type.opcode()) {
             case I32:
-            case ExternRef:
-            case FuncRef:
+            case Ref:
+            case RefNull:
                 return int.class;
             case I64:
                 return long.class;
@@ -58,15 +58,15 @@ final class AotUtil {
             case F64:
                 return double.class;
             default:
-                throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
+                throw new IllegalArgumentException("Unsupported ValueType: " + type);
         }
     }
 
     public static Type asmType(ValueType type) {
-        switch (type) {
+        switch (type.opcode()) {
             case I32:
-            case ExternRef:
-            case FuncRef:
+            case Ref:
+            case RefNull:
                 return INT_TYPE;
             case I64:
                 return LONG_TYPE;
@@ -88,10 +88,10 @@ final class AotUtil {
     }
 
     public static void emitLongToJvm(MethodVisitor asm, ValueType type) {
-        switch (type) {
+        switch (type.opcode()) {
             case I32:
-            case ExternRef:
-            case FuncRef:
+            case Ref:
+            case RefNull:
                 asm.visitInsn(Opcodes.L2I);
                 return;
             case I64:
@@ -103,15 +103,15 @@ final class AotUtil {
                 emitInvokeStatic(asm, LONG_TO_F64);
                 return;
             default:
-                throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
+                throw new IllegalArgumentException("Unsupported ValueType: " + type);
         }
     }
 
     public static void emitJvmToLong(MethodVisitor asm, ValueType type) {
-        switch (type) {
+        switch (type.opcode()) {
             case I32:
-            case ExternRef:
-            case FuncRef:
+            case Ref:
+            case RefNull:
                 asm.visitInsn(Opcodes.I2L);
                 return;
             case I64:
@@ -123,7 +123,7 @@ final class AotUtil {
                 emitInvokeStatic(asm, F64_TO_LONG);
                 return;
             default:
-                throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
+                throw new IllegalArgumentException("Unsupported ValueType: " + type);
         }
     }
 
@@ -164,7 +164,7 @@ final class AotUtil {
     }
 
     public static Object defaultValue(ValueType type) {
-        switch (type) {
+        switch (type.opcode()) {
             case I32:
                 return 0;
             case I64:
@@ -173,20 +173,20 @@ final class AotUtil {
                 return 0.0f;
             case F64:
                 return 0.0d;
-            case ExternRef:
-            case FuncRef:
+            case Ref:
+            case RefNull:
                 return REF_NULL_VALUE;
             default:
-                throw new IllegalArgumentException("Unsupported ValueType: " + type.name());
+                throw new IllegalArgumentException("Unsupported ValueType: " + type);
         }
     }
 
     public static int slotCount(ValueType type) {
-        switch (type) {
+        switch (type.opcode()) {
             case I32:
             case F32:
-            case ExternRef:
-            case FuncRef:
+            case Ref:
+            case RefNull:
                 return 1;
             case I64:
             case F64:

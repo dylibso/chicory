@@ -31,7 +31,7 @@ public class Table {
             return false;
         }
         Table table = (Table) o;
-        return elementType == table.elementType && Objects.equals(limits, table.limits);
+        return elementType.equals(table.elementType) && Objects.equals(limits, table.limits);
     }
 
     @Override
