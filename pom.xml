@@ -61,7 +61,7 @@
     <maven.dependency.failOnWarning>true</maven.dependency.failOnWarning>
 
     <approvaltests.version>24.19.0</approvaltests.version>
-    <asm.version>9.7.1</asm.version>
+    <asm.version>9.8</asm.version>
     <commons-io.version>2.18.0</commons-io.version>
     <commons-lang.version>3.17.0</commons-lang.version>
     <jackson.version>2.18.3</jackson.version>
