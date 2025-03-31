@@ -5,7 +5,7 @@
   <parent>
     <groupId>com.dylibso.chicory</groupId>
     <artifactId>chicory</artifactId>
-    <version>1.2.0</version>
+    <version>999-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>test-gen-plugin</artifactId>
