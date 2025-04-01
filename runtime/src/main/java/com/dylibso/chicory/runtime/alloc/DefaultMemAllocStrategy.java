@@ -17,6 +17,9 @@ public final class DefaultMemAllocStrategy implements MemAllocStrategy {
         int next = (current <= 0) ? target : current;
         while (next < target && next < max) {
             next = next << 1;
+            if (next < 0) {
+                return max;
+            }
         }
         return Math.min(max, next);
     }
