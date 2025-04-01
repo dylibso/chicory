@@ -2,6 +2,7 @@ package com.dylibso.chicory.runtime.alloc;
 
 import static com.dylibso.chicory.runtime.Memory.PAGE_SIZE;
 import static com.dylibso.chicory.runtime.Memory.RUNTIME_MAX_PAGES;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,18 @@ public class MemAllocStrategyTest {
 
         // Assert
         assertTrue(result >= 3);
+    }
+
+    @Test
+    public void avoidOverflows() {
+        // Arrange
+        var memAlloc = new DefaultMemAllocStrategy(2147418112);
+
+        // Act
+        var result = memAlloc.next(1610612736, 1610678272);
+
+        // Assert
+        assertEquals(2147418112, result);
     }
 
     @Test
