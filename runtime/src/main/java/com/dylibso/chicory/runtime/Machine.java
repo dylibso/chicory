@@ -5,5 +5,8 @@ import com.dylibso.chicory.wasm.ChicoryException;
 @FunctionalInterface
 public interface Machine {
 
-    long[] call(int funcId, long[] args) throws ChicoryException;
+    interface CallCtx {}
+    ;
+
+    long[] call(int funcId, long[] args, CallCtx ctx) throws ChicoryException;
 }
