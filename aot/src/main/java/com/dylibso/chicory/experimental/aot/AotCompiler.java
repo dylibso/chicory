@@ -22,6 +22,7 @@ import static com.dylibso.chicory.experimental.aot.AotUtil.emitInvokeStatic;
 import static com.dylibso.chicory.experimental.aot.AotUtil.emitInvokeVirtual;
 import static com.dylibso.chicory.experimental.aot.AotUtil.emitJvmToLong;
 import static com.dylibso.chicory.experimental.aot.AotUtil.emitLongToJvm;
+import static com.dylibso.chicory.experimental.aot.AotUtil.hasTooManyParameters;
 import static com.dylibso.chicory.experimental.aot.AotUtil.internalClassName;
 import static com.dylibso.chicory.experimental.aot.AotUtil.jvmReturnType;
 import static com.dylibso.chicory.experimental.aot.AotUtil.localType;
@@ -73,12 +74,14 @@ import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodTooLargeException;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.InstructionAdapter;
 import org.objectweb.asm.util.CheckClassAdapter;
 
 public final class AotCompiler {
 
     public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.$gen.CompiledMachine";
+    public static final Type LONG_ARRAY_TYPE = Type.getType(long[].class);
 
     private static final MethodType CALL_METHOD_TYPE =
             methodType(long[].class, Instance.class, Memory.class, long[].class);
@@ -506,13 +509,17 @@ public final class AotCompiler {
     }
 
     private void compileCallFunction(int funcId, FunctionType type, InstructionAdapter asm) {
-        // unbox the arguments from long[]
-        for (int i = 0; i < type.params().size(); i++) {
-            var param = type.params().get(i);
-            asm.load(2, OBJECT_TYPE);
-            asm.iconst(i);
-            asm.aload(LONG_TYPE);
-            emitLongToJvm(asm, param);
+        if (hasTooManyParameters(type)) {
+            asm.load(2, LONG_ARRAY_TYPE);
+        } else {
+            // unbox the arguments from long[]
+            for (int i = 0; i < type.params().size(); i++) {
+                var param = type.params().get(i);
+                asm.load(2, OBJECT_TYPE);
+                asm.iconst(i);
+                asm.aload(LONG_TYPE);
+                emitLongToJvm(asm, param);
+            }
         }
 
         asm.load(1, OBJECT_TYPE);
@@ -540,6 +547,10 @@ public final class AotCompiler {
     private void compileCallIndirect(
             String internalClassName, int typeId, FunctionType type, InstructionAdapter asm) {
         int slots = type.params().stream().mapToInt(AotUtil::slotCount).sum();
+        if (hasTooManyParameters(type)) {
+            slots = 1; // for long[]
+        }
+
         int funcTableIdx = slots;
         int tableIdx = slots + 1;
         int memory = slots + 2;
@@ -580,11 +591,14 @@ public final class AotCompiler {
 
         // local: call function in this module
         asm.mark(local);
-
-        int slot = 0;
-        for (ValueType param : type.params()) {
-            asm.load(slot, asmType(param));
-            slot += slotCount(param);
+        if (hasTooManyParameters(type)) {
+            asm.load(0, LONG_ARRAY_TYPE);
+        } else {
+            int slot = 0;
+            for (ValueType param : type.params()) {
+                asm.load(slot, asmType(param));
+                slot += slotCount(param);
+            }
         }
         asm.load(memory, OBJECT_TYPE);
         asm.load(instance, OBJECT_TYPE);
@@ -604,6 +618,8 @@ public final class AotCompiler {
         asm.lookupswitch(invalid, keys, labels);
 
         for (int i = 0; i < validIds.size(); i++) {
+            // case 0:
+            //    return func_0(a, b, memory, callerInstance);
             asm.mark(labels[i]);
             emitInvokeFunction(asm, internalClassName, keys[i], type);
             asm.areturn(getType(jvmReturnType(type)));
@@ -616,7 +632,11 @@ public final class AotCompiler {
         // other: call function in another module
         asm.mark(other);
 
-        emitBoxArguments(asm, type.params());
+        if (hasTooManyParameters(type)) {
+            asm.load(0, LONG_ARRAY_TYPE);
+        } else {
+            emitBoxArguments(asm, type.params());
+        }
         asm.iconst(typeId);
         asm.load(funcId, INT_TYPE);
         asm.load(refInstance, OBJECT_TYPE);
@@ -627,6 +647,7 @@ public final class AotCompiler {
     }
 
     private static void compileHostFunction(int funcId, FunctionType type, InstructionAdapter asm) {
+
         int slot = type.params().stream().mapToInt(AotUtil::slotCount).sum();
 
         asm.load(slot + 1, OBJECT_TYPE); // instance
@@ -676,6 +697,7 @@ public final class AotCompiler {
             FunctionBody body,
             InstructionAdapter asm) {
 
+        // func_xxx() body impl
         var ctx =
                 new AotContext(
                         internalClassName,
@@ -687,6 +709,18 @@ public final class AotCompiler {
                         body);
 
         List<AotInstruction> instructions = analyzer.analyze(funcId);
+
+        if (hasTooManyParameters(type)) {
+            // unbox the arguments from long[]
+            for (int i = 0; i < type.params().size(); i++) {
+                var param = type.params().get(i);
+                asm.load(0, OBJECT_TYPE);
+                asm.iconst(i);
+                asm.aload(LONG_TYPE);
+                emitLongToJvm(asm, param);
+                asm.store(ctx.localSlotIndex(i), asmType(param));
+            }
+        }
 
         // initialize local variables to their default values
         int localsCount = type.params().size() + body.localTypes().size();

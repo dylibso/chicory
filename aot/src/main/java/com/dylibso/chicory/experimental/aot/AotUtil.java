@@ -140,8 +140,14 @@ final class AotUtil {
         return rawMethodTypeFor(type).appendParameterTypes(Memory.class, Instance.class);
     }
 
+    public static boolean hasTooManyParameters(FunctionType type) {
+        return type.params().stream().mapToInt(AotUtil::slotCount).sum() > 253;
+    }
+
     public static MethodType rawMethodTypeFor(FunctionType type) {
-        return methodType(jvmReturnType(type), jvmParameterTypes(type));
+        var paramsTypes =
+                hasTooManyParameters(type) ? new Class[] {long[].class} : jvmParameterTypes(type);
+        return methodType(jvmReturnType(type), paramsTypes);
     }
 
     public static Class<?>[] jvmTypes(List<ValueType> types) {
