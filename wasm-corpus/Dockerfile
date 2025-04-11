@@ -13,7 +13,7 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 RUN rustc --version && cargo --version
 RUN rustup target add wasm32-unknown-unknown
-RUN rustup target add wasm32-wasi
+RUN rustup target add wasm32-wasip1
 
 WORKDIR /tmp
 

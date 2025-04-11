@@ -1,0 +1,3810 @@
+public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylibso/chicory/runtime/Machine {
+
+  NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$AotMethods
+  NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$MachineCall
+
+  private final Lcom/dylibso/chicory/runtime/Instance; instance
+
+  public <init>(Lcom/dylibso/chicory/runtime/Instance;)V
+    ALOAD 0
+    INVOKESPECIAL java/lang/Object.<init> ()V
+    ALOAD 0
+    ALOAD 1
+    PUTFIELD com/dylibso/chicory/$gen/CompiledMachine.instance : Lcom/dylibso/chicory/runtime/Instance;
+    RETURN
+
+  public call(I[J)[J
+    TRYCATCHBLOCK L0 L1 L1 java/lang/StackOverflowError
+   L0
+    ALOAD 0
+    GETFIELD com/dylibso/chicory/$gen/CompiledMachine.instance : Lcom/dylibso/chicory/runtime/Instance;
+    DUP
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.memory ()Lcom/dylibso/chicory/runtime/Memory;
+    ILOAD 1
+    ALOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;I[J)[J
+    ARETURN
+   L1
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwCallStackExhausted (Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
+    ATHROW
+
+  public static func_0(IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    ILOAD 0
+    LCONST_0
+    FCONST_0
+    DCONST_0
+    ICONST_M1
+    ICONST_M1
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ICONST_0
+    ILOAD 1
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    ISTORE 305
+    ISTORE 304
+    ISTORE 303
+    ISTORE 302
+    ISTORE 301
+    ISTORE 300
+    ISTORE 299
+    ISTORE 298
+    ISTORE 297
+    ISTORE 296
+    ISTORE 295
+    ISTORE 294
+    ISTORE 293
+    ISTORE 292
+    ISTORE 291
+    ISTORE 290
+    ISTORE 289
+    ISTORE 288
+    ISTORE 287
+    ISTORE 286
+    ISTORE 285
+    ISTORE 284
+    ISTORE 283
+    ISTORE 282
+    ISTORE 281
+    ISTORE 280
+    ISTORE 279
+    ISTORE 278
+    ISTORE 277
+    ISTORE 276
+    ISTORE 275
+    ISTORE 274
+    ISTORE 273
+    ISTORE 272
+    ISTORE 271
+    ISTORE 270
+    ISTORE 269
+    ISTORE 268
+    ISTORE 267
+    ISTORE 266
+    ISTORE 265
+    ISTORE 264
+    ISTORE 263
+    ISTORE 262
+    ISTORE 261
+    ISTORE 260
+    ISTORE 259
+    ISTORE 258
+    ISTORE 257
+    ISTORE 256
+    ISTORE 255
+    ISTORE 254
+    ISTORE 253
+    ISTORE 252
+    ISTORE 251
+    ISTORE 250
+    ISTORE 249
+    ISTORE 248
+    ISTORE 247
+    ISTORE 246
+    ISTORE 245
+    ISTORE 244
+    ISTORE 243
+    ISTORE 242
+    ISTORE 241
+    ISTORE 240
+    ISTORE 239
+    ISTORE 238
+    ISTORE 237
+    ISTORE 236
+    ISTORE 235
+    ISTORE 234
+    ISTORE 233
+    ISTORE 232
+    ISTORE 231
+    ISTORE 230
+    ISTORE 229
+    ISTORE 228
+    ISTORE 227
+    ISTORE 226
+    ISTORE 225
+    ISTORE 224
+    ISTORE 223
+    ISTORE 222
+    ISTORE 221
+    ISTORE 220
+    ISTORE 219
+    ISTORE 218
+    ISTORE 217
+    ISTORE 216
+    ISTORE 215
+    ISTORE 214
+    ISTORE 213
+    ISTORE 212
+    ISTORE 211
+    ISTORE 210
+    ISTORE 209
+    ISTORE 208
+    ISTORE 207
+    ISTORE 206
+    ISTORE 205
+    ISTORE 204
+    ISTORE 203
+    ISTORE 202
+    ISTORE 201
+    ISTORE 200
+    ISTORE 199
+    ISTORE 198
+    ISTORE 197
+    ISTORE 196
+    ISTORE 195
+    ISTORE 194
+    ISTORE 193
+    ISTORE 192
+    ISTORE 191
+    ISTORE 190
+    ISTORE 189
+    ISTORE 188
+    ISTORE 187
+    ISTORE 186
+    ISTORE 185
+    ISTORE 184
+    ISTORE 183
+    ISTORE 182
+    ISTORE 181
+    ISTORE 180
+    ISTORE 179
+    ISTORE 178
+    ISTORE 177
+    ISTORE 176
+    ISTORE 175
+    ISTORE 174
+    ISTORE 173
+    ISTORE 172
+    ISTORE 171
+    ISTORE 170
+    ISTORE 169
+    ISTORE 168
+    ISTORE 167
+    ISTORE 166
+    ISTORE 165
+    ISTORE 164
+    ISTORE 163
+    ISTORE 162
+    ISTORE 161
+    ISTORE 160
+    ISTORE 159
+    ISTORE 158
+    ISTORE 157
+    ISTORE 156
+    ISTORE 155
+    ISTORE 154
+    ISTORE 153
+    ISTORE 152
+    ISTORE 151
+    ISTORE 150
+    ISTORE 149
+    ISTORE 148
+    ISTORE 147
+    ISTORE 146
+    ISTORE 145
+    ISTORE 144
+    ISTORE 143
+    ISTORE 142
+    ISTORE 141
+    ISTORE 140
+    ISTORE 139
+    ISTORE 138
+    ISTORE 137
+    ISTORE 136
+    ISTORE 135
+    ISTORE 134
+    ISTORE 133
+    ISTORE 132
+    ISTORE 131
+    ISTORE 130
+    ISTORE 129
+    ISTORE 128
+    ISTORE 127
+    ISTORE 126
+    ISTORE 125
+    ISTORE 124
+    ISTORE 123
+    ISTORE 122
+    ISTORE 121
+    ISTORE 120
+    ISTORE 119
+    ISTORE 118
+    ISTORE 117
+    ISTORE 116
+    ISTORE 115
+    ISTORE 114
+    ISTORE 113
+    ISTORE 112
+    ISTORE 111
+    ISTORE 110
+    ISTORE 109
+    ISTORE 108
+    ISTORE 107
+    ISTORE 106
+    ISTORE 105
+    ISTORE 104
+    ISTORE 103
+    ISTORE 102
+    ISTORE 101
+    ISTORE 100
+    ISTORE 99
+    ISTORE 98
+    ISTORE 97
+    ISTORE 96
+    ISTORE 95
+    ISTORE 94
+    ISTORE 93
+    ISTORE 92
+    ISTORE 91
+    ISTORE 90
+    ISTORE 89
+    ISTORE 88
+    ISTORE 87
+    ISTORE 86
+    ISTORE 85
+    ISTORE 84
+    ISTORE 83
+    ISTORE 82
+    ISTORE 81
+    ISTORE 80
+    ISTORE 79
+    ISTORE 78
+    ISTORE 77
+    ISTORE 76
+    ISTORE 75
+    ISTORE 74
+    ISTORE 73
+    ISTORE 72
+    ISTORE 71
+    ISTORE 70
+    ISTORE 69
+    ISTORE 68
+    ISTORE 67
+    ISTORE 66
+    ISTORE 65
+    ISTORE 64
+    ISTORE 63
+    ISTORE 62
+    ISTORE 61
+    ISTORE 60
+    ISTORE 59
+    ISTORE 58
+    ISTORE 57
+    ISTORE 56
+    ISTORE 55
+    ISTORE 54
+    ISTORE 53
+    ISTORE 52
+    ISTORE 51
+    ISTORE 50
+    ISTORE 49
+    ISTORE 48
+    ISTORE 47
+    ISTORE 46
+    ISTORE 45
+    ISTORE 44
+    ISTORE 43
+    ISTORE 42
+    ISTORE 41
+    ISTORE 40
+    ISTORE 39
+    ISTORE 38
+    ISTORE 37
+    ISTORE 36
+    ISTORE 35
+    ISTORE 34
+    ISTORE 33
+    ISTORE 32
+    ISTORE 31
+    ISTORE 30
+    ISTORE 29
+    ISTORE 28
+    ISTORE 27
+    ISTORE 26
+    ISTORE 25
+    ISTORE 24
+    ISTORE 23
+    ISTORE 22
+    ISTORE 21
+    ISTORE 20
+    ISTORE 19
+    ISTORE 18
+    ISTORE 17
+    ISTORE 16
+    ISTORE 15
+    ISTORE 14
+    ISTORE 13
+    ISTORE 12
+    ISTORE 11
+    ISTORE 10
+    DSTORE 8
+    FSTORE 7
+    LSTORE 5
+    ISTORE 4
+    SIPUSH 300
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    ILOAD 4
+    I2L
+    LASTORE
+    DUP
+    ICONST_1
+    LLOAD 5
+    LASTORE
+    DUP
+    ICONST_2
+    FLOAD 7
+    INVOKESTATIC com/dylibso/chicory/wasm/types/Value.floatToLong (F)J
+    LASTORE
+    DUP
+    ICONST_3
+    DLOAD 8
+    INVOKESTATIC com/dylibso/chicory/wasm/types/Value.doubleToLong (D)J
+    LASTORE
+    DUP
+    ICONST_4
+    ILOAD 10
+    I2L
+    LASTORE
+    DUP
+    ICONST_5
+    ILOAD 11
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 6
+    ILOAD 12
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 7
+    ILOAD 13
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 8
+    ILOAD 14
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 9
+    ILOAD 15
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 10
+    ILOAD 16
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 11
+    ILOAD 17
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 12
+    ILOAD 18
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 13
+    ILOAD 19
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 14
+    ILOAD 20
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 15
+    ILOAD 21
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 16
+    ILOAD 22
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 17
+    ILOAD 23
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 18
+    ILOAD 24
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 19
+    ILOAD 25
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 20
+    ILOAD 26
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 21
+    ILOAD 27
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 22
+    ILOAD 28
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 23
+    ILOAD 29
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 24
+    ILOAD 30
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 25
+    ILOAD 31
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 26
+    ILOAD 32
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 27
+    ILOAD 33
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 28
+    ILOAD 34
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 29
+    ILOAD 35
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 30
+    ILOAD 36
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 31
+    ILOAD 37
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 32
+    ILOAD 38
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 33
+    ILOAD 39
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 34
+    ILOAD 40
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 35
+    ILOAD 41
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 36
+    ILOAD 42
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 37
+    ILOAD 43
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 38
+    ILOAD 44
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 39
+    ILOAD 45
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 40
+    ILOAD 46
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 41
+    ILOAD 47
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 42
+    ILOAD 48
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 43
+    ILOAD 49
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 44
+    ILOAD 50
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 45
+    ILOAD 51
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 46
+    ILOAD 52
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 47
+    ILOAD 53
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 48
+    ILOAD 54
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 49
+    ILOAD 55
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 50
+    ILOAD 56
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 51
+    ILOAD 57
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 52
+    ILOAD 58
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 53
+    ILOAD 59
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 54
+    ILOAD 60
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 55
+    ILOAD 61
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 56
+    ILOAD 62
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 57
+    ILOAD 63
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 58
+    ILOAD 64
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 59
+    ILOAD 65
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 60
+    ILOAD 66
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 61
+    ILOAD 67
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 62
+    ILOAD 68
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 63
+    ILOAD 69
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 64
+    ILOAD 70
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 65
+    ILOAD 71
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 66
+    ILOAD 72
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 67
+    ILOAD 73
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 68
+    ILOAD 74
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 69
+    ILOAD 75
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 70
+    ILOAD 76
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 71
+    ILOAD 77
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 72
+    ILOAD 78
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 73
+    ILOAD 79
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 74
+    ILOAD 80
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 75
+    ILOAD 81
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 76
+    ILOAD 82
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 77
+    ILOAD 83
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 78
+    ILOAD 84
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 79
+    ILOAD 85
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 80
+    ILOAD 86
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 81
+    ILOAD 87
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 82
+    ILOAD 88
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 83
+    ILOAD 89
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 84
+    ILOAD 90
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 85
+    ILOAD 91
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 86
+    ILOAD 92
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 87
+    ILOAD 93
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 88
+    ILOAD 94
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 89
+    ILOAD 95
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 90
+    ILOAD 96
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 91
+    ILOAD 97
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 92
+    ILOAD 98
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 93
+    ILOAD 99
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 94
+    ILOAD 100
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 95
+    ILOAD 101
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 96
+    ILOAD 102
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 97
+    ILOAD 103
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 98
+    ILOAD 104
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 99
+    ILOAD 105
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 100
+    ILOAD 106
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 101
+    ILOAD 107
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 102
+    ILOAD 108
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 103
+    ILOAD 109
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 104
+    ILOAD 110
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 105
+    ILOAD 111
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 106
+    ILOAD 112
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 107
+    ILOAD 113
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 108
+    ILOAD 114
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 109
+    ILOAD 115
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 110
+    ILOAD 116
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 111
+    ILOAD 117
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 112
+    ILOAD 118
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 113
+    ILOAD 119
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 114
+    ILOAD 120
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 115
+    ILOAD 121
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 116
+    ILOAD 122
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 117
+    ILOAD 123
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 118
+    ILOAD 124
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 119
+    ILOAD 125
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 120
+    ILOAD 126
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 121
+    ILOAD 127
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 122
+    ILOAD 128
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 123
+    ILOAD 129
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 124
+    ILOAD 130
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 125
+    ILOAD 131
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 126
+    ILOAD 132
+    I2L
+    LASTORE
+    DUP
+    BIPUSH 127
+    ILOAD 133
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 128
+    ILOAD 134
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 129
+    ILOAD 135
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 130
+    ILOAD 136
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 131
+    ILOAD 137
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 132
+    ILOAD 138
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 133
+    ILOAD 139
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 134
+    ILOAD 140
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 135
+    ILOAD 141
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 136
+    ILOAD 142
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 137
+    ILOAD 143
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 138
+    ILOAD 144
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 139
+    ILOAD 145
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 140
+    ILOAD 146
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 141
+    ILOAD 147
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 142
+    ILOAD 148
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 143
+    ILOAD 149
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 144
+    ILOAD 150
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 145
+    ILOAD 151
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 146
+    ILOAD 152
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 147
+    ILOAD 153
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 148
+    ILOAD 154
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 149
+    ILOAD 155
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 150
+    ILOAD 156
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 151
+    ILOAD 157
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 152
+    ILOAD 158
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 153
+    ILOAD 159
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 154
+    ILOAD 160
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 155
+    ILOAD 161
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 156
+    ILOAD 162
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 157
+    ILOAD 163
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 158
+    ILOAD 164
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 159
+    ILOAD 165
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 160
+    ILOAD 166
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 161
+    ILOAD 167
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 162
+    ILOAD 168
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 163
+    ILOAD 169
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 164
+    ILOAD 170
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 165
+    ILOAD 171
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 166
+    ILOAD 172
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 167
+    ILOAD 173
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 168
+    ILOAD 174
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 169
+    ILOAD 175
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 170
+    ILOAD 176
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 171
+    ILOAD 177
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 172
+    ILOAD 178
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 173
+    ILOAD 179
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 174
+    ILOAD 180
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 175
+    ILOAD 181
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 176
+    ILOAD 182
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 177
+    ILOAD 183
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 178
+    ILOAD 184
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 179
+    ILOAD 185
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 180
+    ILOAD 186
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 181
+    ILOAD 187
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 182
+    ILOAD 188
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 183
+    ILOAD 189
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 184
+    ILOAD 190
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 185
+    ILOAD 191
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 186
+    ILOAD 192
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 187
+    ILOAD 193
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 188
+    ILOAD 194
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 189
+    ILOAD 195
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 190
+    ILOAD 196
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 191
+    ILOAD 197
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 192
+    ILOAD 198
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 193
+    ILOAD 199
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 194
+    ILOAD 200
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 195
+    ILOAD 201
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 196
+    ILOAD 202
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 197
+    ILOAD 203
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 198
+    ILOAD 204
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 199
+    ILOAD 205
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 200
+    ILOAD 206
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 201
+    ILOAD 207
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 202
+    ILOAD 208
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 203
+    ILOAD 209
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 204
+    ILOAD 210
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 205
+    ILOAD 211
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 206
+    ILOAD 212
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 207
+    ILOAD 213
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 208
+    ILOAD 214
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 209
+    ILOAD 215
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 210
+    ILOAD 216
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 211
+    ILOAD 217
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 212
+    ILOAD 218
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 213
+    ILOAD 219
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 214
+    ILOAD 220
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 215
+    ILOAD 221
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 216
+    ILOAD 222
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 217
+    ILOAD 223
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 218
+    ILOAD 224
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 219
+    ILOAD 225
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 220
+    ILOAD 226
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 221
+    ILOAD 227
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 222
+    ILOAD 228
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 223
+    ILOAD 229
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 224
+    ILOAD 230
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 225
+    ILOAD 231
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 226
+    ILOAD 232
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 227
+    ILOAD 233
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 228
+    ILOAD 234
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 229
+    ILOAD 235
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 230
+    ILOAD 236
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 231
+    ILOAD 237
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 232
+    ILOAD 238
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 233
+    ILOAD 239
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 234
+    ILOAD 240
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 235
+    ILOAD 241
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 236
+    ILOAD 242
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 237
+    ILOAD 243
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 238
+    ILOAD 244
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 239
+    ILOAD 245
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 240
+    ILOAD 246
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 241
+    ILOAD 247
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 242
+    ILOAD 248
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 243
+    ILOAD 249
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 244
+    ILOAD 250
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 245
+    ILOAD 251
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 246
+    ILOAD 252
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 247
+    ILOAD 253
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 248
+    ILOAD 254
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 249
+    ILOAD 255
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 250
+    ILOAD 256
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 251
+    ILOAD 257
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 252
+    ILOAD 258
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 253
+    ILOAD 259
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 254
+    ILOAD 260
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 255
+    ILOAD 261
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 256
+    ILOAD 262
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 257
+    ILOAD 263
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 258
+    ILOAD 264
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 259
+    ILOAD 265
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 260
+    ILOAD 266
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 261
+    ILOAD 267
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 262
+    ILOAD 268
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 263
+    ILOAD 269
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 264
+    ILOAD 270
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 265
+    ILOAD 271
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 266
+    ILOAD 272
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 267
+    ILOAD 273
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 268
+    ILOAD 274
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 269
+    ILOAD 275
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 270
+    ILOAD 276
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 271
+    ILOAD 277
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 272
+    ILOAD 278
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 273
+    ILOAD 279
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 274
+    ILOAD 280
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 275
+    ILOAD 281
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 276
+    ILOAD 282
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 277
+    ILOAD 283
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 278
+    ILOAD 284
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 279
+    ILOAD 285
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 280
+    ILOAD 286
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 281
+    ILOAD 287
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 282
+    ILOAD 288
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 283
+    ILOAD 289
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 284
+    ILOAD 290
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 285
+    ILOAD 291
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 286
+    ILOAD 292
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 287
+    ILOAD 293
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 288
+    ILOAD 294
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 289
+    ILOAD 295
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 290
+    ILOAD 296
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 291
+    ILOAD 297
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 292
+    ILOAD 298
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 293
+    ILOAD 299
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 294
+    ILOAD 300
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 295
+    ILOAD 301
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 296
+    ILOAD 302
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 297
+    ILOAD 303
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 298
+    ILOAD 304
+    I2L
+    LASTORE
+    DUP
+    SIPUSH 299
+    ILOAD 305
+    I2L
+    LASTORE
+    ALOAD 2
+    ALOAD 3
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_1 ([JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    IRETURN
+
+  public static func_1([JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    ALOAD 0
+    ICONST_0
+    LALOAD
+    L2I
+    ISTORE 3
+    ALOAD 0
+    ICONST_1
+    LALOAD
+    LSTORE 4
+    ALOAD 0
+    ICONST_2
+    LALOAD
+    INVOKESTATIC com/dylibso/chicory/wasm/types/Value.longToFloat (J)F
+    FSTORE 6
+    ALOAD 0
+    ICONST_3
+    LALOAD
+    INVOKESTATIC com/dylibso/chicory/wasm/types/Value.longToDouble (J)D
+    DSTORE 7
+    ALOAD 0
+    ICONST_4
+    LALOAD
+    L2I
+    ISTORE 9
+    ALOAD 0
+    ICONST_5
+    LALOAD
+    L2I
+    ISTORE 10
+    ALOAD 0
+    BIPUSH 6
+    LALOAD
+    L2I
+    ISTORE 11
+    ALOAD 0
+    BIPUSH 7
+    LALOAD
+    L2I
+    ISTORE 12
+    ALOAD 0
+    BIPUSH 8
+    LALOAD
+    L2I
+    ISTORE 13
+    ALOAD 0
+    BIPUSH 9
+    LALOAD
+    L2I
+    ISTORE 14
+    ALOAD 0
+    BIPUSH 10
+    LALOAD
+    L2I
+    ISTORE 15
+    ALOAD 0
+    BIPUSH 11
+    LALOAD
+    L2I
+    ISTORE 16
+    ALOAD 0
+    BIPUSH 12
+    LALOAD
+    L2I
+    ISTORE 17
+    ALOAD 0
+    BIPUSH 13
+    LALOAD
+    L2I
+    ISTORE 18
+    ALOAD 0
+    BIPUSH 14
+    LALOAD
+    L2I
+    ISTORE 19
+    ALOAD 0
+    BIPUSH 15
+    LALOAD
+    L2I
+    ISTORE 20
+    ALOAD 0
+    BIPUSH 16
+    LALOAD
+    L2I
+    ISTORE 21
+    ALOAD 0
+    BIPUSH 17
+    LALOAD
+    L2I
+    ISTORE 22
+    ALOAD 0
+    BIPUSH 18
+    LALOAD
+    L2I
+    ISTORE 23
+    ALOAD 0
+    BIPUSH 19
+    LALOAD
+    L2I
+    ISTORE 24
+    ALOAD 0
+    BIPUSH 20
+    LALOAD
+    L2I
+    ISTORE 25
+    ALOAD 0
+    BIPUSH 21
+    LALOAD
+    L2I
+    ISTORE 26
+    ALOAD 0
+    BIPUSH 22
+    LALOAD
+    L2I
+    ISTORE 27
+    ALOAD 0
+    BIPUSH 23
+    LALOAD
+    L2I
+    ISTORE 28
+    ALOAD 0
+    BIPUSH 24
+    LALOAD
+    L2I
+    ISTORE 29
+    ALOAD 0
+    BIPUSH 25
+    LALOAD
+    L2I
+    ISTORE 30
+    ALOAD 0
+    BIPUSH 26
+    LALOAD
+    L2I
+    ISTORE 31
+    ALOAD 0
+    BIPUSH 27
+    LALOAD
+    L2I
+    ISTORE 32
+    ALOAD 0
+    BIPUSH 28
+    LALOAD
+    L2I
+    ISTORE 33
+    ALOAD 0
+    BIPUSH 29
+    LALOAD
+    L2I
+    ISTORE 34
+    ALOAD 0
+    BIPUSH 30
+    LALOAD
+    L2I
+    ISTORE 35
+    ALOAD 0
+    BIPUSH 31
+    LALOAD
+    L2I
+    ISTORE 36
+    ALOAD 0
+    BIPUSH 32
+    LALOAD
+    L2I
+    ISTORE 37
+    ALOAD 0
+    BIPUSH 33
+    LALOAD
+    L2I
+    ISTORE 38
+    ALOAD 0
+    BIPUSH 34
+    LALOAD
+    L2I
+    ISTORE 39
+    ALOAD 0
+    BIPUSH 35
+    LALOAD
+    L2I
+    ISTORE 40
+    ALOAD 0
+    BIPUSH 36
+    LALOAD
+    L2I
+    ISTORE 41
+    ALOAD 0
+    BIPUSH 37
+    LALOAD
+    L2I
+    ISTORE 42
+    ALOAD 0
+    BIPUSH 38
+    LALOAD
+    L2I
+    ISTORE 43
+    ALOAD 0
+    BIPUSH 39
+    LALOAD
+    L2I
+    ISTORE 44
+    ALOAD 0
+    BIPUSH 40
+    LALOAD
+    L2I
+    ISTORE 45
+    ALOAD 0
+    BIPUSH 41
+    LALOAD
+    L2I
+    ISTORE 46
+    ALOAD 0
+    BIPUSH 42
+    LALOAD
+    L2I
+    ISTORE 47
+    ALOAD 0
+    BIPUSH 43
+    LALOAD
+    L2I
+    ISTORE 48
+    ALOAD 0
+    BIPUSH 44
+    LALOAD
+    L2I
+    ISTORE 49
+    ALOAD 0
+    BIPUSH 45
+    LALOAD
+    L2I
+    ISTORE 50
+    ALOAD 0
+    BIPUSH 46
+    LALOAD
+    L2I
+    ISTORE 51
+    ALOAD 0
+    BIPUSH 47
+    LALOAD
+    L2I
+    ISTORE 52
+    ALOAD 0
+    BIPUSH 48
+    LALOAD
+    L2I
+    ISTORE 53
+    ALOAD 0
+    BIPUSH 49
+    LALOAD
+    L2I
+    ISTORE 54
+    ALOAD 0
+    BIPUSH 50
+    LALOAD
+    L2I
+    ISTORE 55
+    ALOAD 0
+    BIPUSH 51
+    LALOAD
+    L2I
+    ISTORE 56
+    ALOAD 0
+    BIPUSH 52
+    LALOAD
+    L2I
+    ISTORE 57
+    ALOAD 0
+    BIPUSH 53
+    LALOAD
+    L2I
+    ISTORE 58
+    ALOAD 0
+    BIPUSH 54
+    LALOAD
+    L2I
+    ISTORE 59
+    ALOAD 0
+    BIPUSH 55
+    LALOAD
+    L2I
+    ISTORE 60
+    ALOAD 0
+    BIPUSH 56
+    LALOAD
+    L2I
+    ISTORE 61
+    ALOAD 0
+    BIPUSH 57
+    LALOAD
+    L2I
+    ISTORE 62
+    ALOAD 0
+    BIPUSH 58
+    LALOAD
+    L2I
+    ISTORE 63
+    ALOAD 0
+    BIPUSH 59
+    LALOAD
+    L2I
+    ISTORE 64
+    ALOAD 0
+    BIPUSH 60
+    LALOAD
+    L2I
+    ISTORE 65
+    ALOAD 0
+    BIPUSH 61
+    LALOAD
+    L2I
+    ISTORE 66
+    ALOAD 0
+    BIPUSH 62
+    LALOAD
+    L2I
+    ISTORE 67
+    ALOAD 0
+    BIPUSH 63
+    LALOAD
+    L2I
+    ISTORE 68
+    ALOAD 0
+    BIPUSH 64
+    LALOAD
+    L2I
+    ISTORE 69
+    ALOAD 0
+    BIPUSH 65
+    LALOAD
+    L2I
+    ISTORE 70
+    ALOAD 0
+    BIPUSH 66
+    LALOAD
+    L2I
+    ISTORE 71
+    ALOAD 0
+    BIPUSH 67
+    LALOAD
+    L2I
+    ISTORE 72
+    ALOAD 0
+    BIPUSH 68
+    LALOAD
+    L2I
+    ISTORE 73
+    ALOAD 0
+    BIPUSH 69
+    LALOAD
+    L2I
+    ISTORE 74
+    ALOAD 0
+    BIPUSH 70
+    LALOAD
+    L2I
+    ISTORE 75
+    ALOAD 0
+    BIPUSH 71
+    LALOAD
+    L2I
+    ISTORE 76
+    ALOAD 0
+    BIPUSH 72
+    LALOAD
+    L2I
+    ISTORE 77
+    ALOAD 0
+    BIPUSH 73
+    LALOAD
+    L2I
+    ISTORE 78
+    ALOAD 0
+    BIPUSH 74
+    LALOAD
+    L2I
+    ISTORE 79
+    ALOAD 0
+    BIPUSH 75
+    LALOAD
+    L2I
+    ISTORE 80
+    ALOAD 0
+    BIPUSH 76
+    LALOAD
+    L2I
+    ISTORE 81
+    ALOAD 0
+    BIPUSH 77
+    LALOAD
+    L2I
+    ISTORE 82
+    ALOAD 0
+    BIPUSH 78
+    LALOAD
+    L2I
+    ISTORE 83
+    ALOAD 0
+    BIPUSH 79
+    LALOAD
+    L2I
+    ISTORE 84
+    ALOAD 0
+    BIPUSH 80
+    LALOAD
+    L2I
+    ISTORE 85
+    ALOAD 0
+    BIPUSH 81
+    LALOAD
+    L2I
+    ISTORE 86
+    ALOAD 0
+    BIPUSH 82
+    LALOAD
+    L2I
+    ISTORE 87
+    ALOAD 0
+    BIPUSH 83
+    LALOAD
+    L2I
+    ISTORE 88
+    ALOAD 0
+    BIPUSH 84
+    LALOAD
+    L2I
+    ISTORE 89
+    ALOAD 0
+    BIPUSH 85
+    LALOAD
+    L2I
+    ISTORE 90
+    ALOAD 0
+    BIPUSH 86
+    LALOAD
+    L2I
+    ISTORE 91
+    ALOAD 0
+    BIPUSH 87
+    LALOAD
+    L2I
+    ISTORE 92
+    ALOAD 0
+    BIPUSH 88
+    LALOAD
+    L2I
+    ISTORE 93
+    ALOAD 0
+    BIPUSH 89
+    LALOAD
+    L2I
+    ISTORE 94
+    ALOAD 0
+    BIPUSH 90
+    LALOAD
+    L2I
+    ISTORE 95
+    ALOAD 0
+    BIPUSH 91
+    LALOAD
+    L2I
+    ISTORE 96
+    ALOAD 0
+    BIPUSH 92
+    LALOAD
+    L2I
+    ISTORE 97
+    ALOAD 0
+    BIPUSH 93
+    LALOAD
+    L2I
+    ISTORE 98
+    ALOAD 0
+    BIPUSH 94
+    LALOAD
+    L2I
+    ISTORE 99
+    ALOAD 0
+    BIPUSH 95
+    LALOAD
+    L2I
+    ISTORE 100
+    ALOAD 0
+    BIPUSH 96
+    LALOAD
+    L2I
+    ISTORE 101
+    ALOAD 0
+    BIPUSH 97
+    LALOAD
+    L2I
+    ISTORE 102
+    ALOAD 0
+    BIPUSH 98
+    LALOAD
+    L2I
+    ISTORE 103
+    ALOAD 0
+    BIPUSH 99
+    LALOAD
+    L2I
+    ISTORE 104
+    ALOAD 0
+    BIPUSH 100
+    LALOAD
+    L2I
+    ISTORE 105
+    ALOAD 0
+    BIPUSH 101
+    LALOAD
+    L2I
+    ISTORE 106
+    ALOAD 0
+    BIPUSH 102
+    LALOAD
+    L2I
+    ISTORE 107
+    ALOAD 0
+    BIPUSH 103
+    LALOAD
+    L2I
+    ISTORE 108
+    ALOAD 0
+    BIPUSH 104
+    LALOAD
+    L2I
+    ISTORE 109
+    ALOAD 0
+    BIPUSH 105
+    LALOAD
+    L2I
+    ISTORE 110
+    ALOAD 0
+    BIPUSH 106
+    LALOAD
+    L2I
+    ISTORE 111
+    ALOAD 0
+    BIPUSH 107
+    LALOAD
+    L2I
+    ISTORE 112
+    ALOAD 0
+    BIPUSH 108
+    LALOAD
+    L2I
+    ISTORE 113
+    ALOAD 0
+    BIPUSH 109
+    LALOAD
+    L2I
+    ISTORE 114
+    ALOAD 0
+    BIPUSH 110
+    LALOAD
+    L2I
+    ISTORE 115
+    ALOAD 0
+    BIPUSH 111
+    LALOAD
+    L2I
+    ISTORE 116
+    ALOAD 0
+    BIPUSH 112
+    LALOAD
+    L2I
+    ISTORE 117
+    ALOAD 0
+    BIPUSH 113
+    LALOAD
+    L2I
+    ISTORE 118
+    ALOAD 0
+    BIPUSH 114
+    LALOAD
+    L2I
+    ISTORE 119
+    ALOAD 0
+    BIPUSH 115
+    LALOAD
+    L2I
+    ISTORE 120
+    ALOAD 0
+    BIPUSH 116
+    LALOAD
+    L2I
+    ISTORE 121
+    ALOAD 0
+    BIPUSH 117
+    LALOAD
+    L2I
+    ISTORE 122
+    ALOAD 0
+    BIPUSH 118
+    LALOAD
+    L2I
+    ISTORE 123
+    ALOAD 0
+    BIPUSH 119
+    LALOAD
+    L2I
+    ISTORE 124
+    ALOAD 0
+    BIPUSH 120
+    LALOAD
+    L2I
+    ISTORE 125
+    ALOAD 0
+    BIPUSH 121
+    LALOAD
+    L2I
+    ISTORE 126
+    ALOAD 0
+    BIPUSH 122
+    LALOAD
+    L2I
+    ISTORE 127
+    ALOAD 0
+    BIPUSH 123
+    LALOAD
+    L2I
+    ISTORE 128
+    ALOAD 0
+    BIPUSH 124
+    LALOAD
+    L2I
+    ISTORE 129
+    ALOAD 0
+    BIPUSH 125
+    LALOAD
+    L2I
+    ISTORE 130
+    ALOAD 0
+    BIPUSH 126
+    LALOAD
+    L2I
+    ISTORE 131
+    ALOAD 0
+    BIPUSH 127
+    LALOAD
+    L2I
+    ISTORE 132
+    ALOAD 0
+    SIPUSH 128
+    LALOAD
+    L2I
+    ISTORE 133
+    ALOAD 0
+    SIPUSH 129
+    LALOAD
+    L2I
+    ISTORE 134
+    ALOAD 0
+    SIPUSH 130
+    LALOAD
+    L2I
+    ISTORE 135
+    ALOAD 0
+    SIPUSH 131
+    LALOAD
+    L2I
+    ISTORE 136
+    ALOAD 0
+    SIPUSH 132
+    LALOAD
+    L2I
+    ISTORE 137
+    ALOAD 0
+    SIPUSH 133
+    LALOAD
+    L2I
+    ISTORE 138
+    ALOAD 0
+    SIPUSH 134
+    LALOAD
+    L2I
+    ISTORE 139
+    ALOAD 0
+    SIPUSH 135
+    LALOAD
+    L2I
+    ISTORE 140
+    ALOAD 0
+    SIPUSH 136
+    LALOAD
+    L2I
+    ISTORE 141
+    ALOAD 0
+    SIPUSH 137
+    LALOAD
+    L2I
+    ISTORE 142
+    ALOAD 0
+    SIPUSH 138
+    LALOAD
+    L2I
+    ISTORE 143
+    ALOAD 0
+    SIPUSH 139
+    LALOAD
+    L2I
+    ISTORE 144
+    ALOAD 0
+    SIPUSH 140
+    LALOAD
+    L2I
+    ISTORE 145
+    ALOAD 0
+    SIPUSH 141
+    LALOAD
+    L2I
+    ISTORE 146
+    ALOAD 0
+    SIPUSH 142
+    LALOAD
+    L2I
+    ISTORE 147
+    ALOAD 0
+    SIPUSH 143
+    LALOAD
+    L2I
+    ISTORE 148
+    ALOAD 0
+    SIPUSH 144
+    LALOAD
+    L2I
+    ISTORE 149
+    ALOAD 0
+    SIPUSH 145
+    LALOAD
+    L2I
+    ISTORE 150
+    ALOAD 0
+    SIPUSH 146
+    LALOAD
+    L2I
+    ISTORE 151
+    ALOAD 0
+    SIPUSH 147
+    LALOAD
+    L2I
+    ISTORE 152
+    ALOAD 0
+    SIPUSH 148
+    LALOAD
+    L2I
+    ISTORE 153
+    ALOAD 0
+    SIPUSH 149
+    LALOAD
+    L2I
+    ISTORE 154
+    ALOAD 0
+    SIPUSH 150
+    LALOAD
+    L2I
+    ISTORE 155
+    ALOAD 0
+    SIPUSH 151
+    LALOAD
+    L2I
+    ISTORE 156
+    ALOAD 0
+    SIPUSH 152
+    LALOAD
+    L2I
+    ISTORE 157
+    ALOAD 0
+    SIPUSH 153
+    LALOAD
+    L2I
+    ISTORE 158
+    ALOAD 0
+    SIPUSH 154
+    LALOAD
+    L2I
+    ISTORE 159
+    ALOAD 0
+    SIPUSH 155
+    LALOAD
+    L2I
+    ISTORE 160
+    ALOAD 0
+    SIPUSH 156
+    LALOAD
+    L2I
+    ISTORE 161
+    ALOAD 0
+    SIPUSH 157
+    LALOAD
+    L2I
+    ISTORE 162
+    ALOAD 0
+    SIPUSH 158
+    LALOAD
+    L2I
+    ISTORE 163
+    ALOAD 0
+    SIPUSH 159
+    LALOAD
+    L2I
+    ISTORE 164
+    ALOAD 0
+    SIPUSH 160
+    LALOAD
+    L2I
+    ISTORE 165
+    ALOAD 0
+    SIPUSH 161
+    LALOAD
+    L2I
+    ISTORE 166
+    ALOAD 0
+    SIPUSH 162
+    LALOAD
+    L2I
+    ISTORE 167
+    ALOAD 0
+    SIPUSH 163
+    LALOAD
+    L2I
+    ISTORE 168
+    ALOAD 0
+    SIPUSH 164
+    LALOAD
+    L2I
+    ISTORE 169
+    ALOAD 0
+    SIPUSH 165
+    LALOAD
+    L2I
+    ISTORE 170
+    ALOAD 0
+    SIPUSH 166
+    LALOAD
+    L2I
+    ISTORE 171
+    ALOAD 0
+    SIPUSH 167
+    LALOAD
+    L2I
+    ISTORE 172
+    ALOAD 0
+    SIPUSH 168
+    LALOAD
+    L2I
+    ISTORE 173
+    ALOAD 0
+    SIPUSH 169
+    LALOAD
+    L2I
+    ISTORE 174
+    ALOAD 0
+    SIPUSH 170
+    LALOAD
+    L2I
+    ISTORE 175
+    ALOAD 0
+    SIPUSH 171
+    LALOAD
+    L2I
+    ISTORE 176
+    ALOAD 0
+    SIPUSH 172
+    LALOAD
+    L2I
+    ISTORE 177
+    ALOAD 0
+    SIPUSH 173
+    LALOAD
+    L2I
+    ISTORE 178
+    ALOAD 0
+    SIPUSH 174
+    LALOAD
+    L2I
+    ISTORE 179
+    ALOAD 0
+    SIPUSH 175
+    LALOAD
+    L2I
+    ISTORE 180
+    ALOAD 0
+    SIPUSH 176
+    LALOAD
+    L2I
+    ISTORE 181
+    ALOAD 0
+    SIPUSH 177
+    LALOAD
+    L2I
+    ISTORE 182
+    ALOAD 0
+    SIPUSH 178
+    LALOAD
+    L2I
+    ISTORE 183
+    ALOAD 0
+    SIPUSH 179
+    LALOAD
+    L2I
+    ISTORE 184
+    ALOAD 0
+    SIPUSH 180
+    LALOAD
+    L2I
+    ISTORE 185
+    ALOAD 0
+    SIPUSH 181
+    LALOAD
+    L2I
+    ISTORE 186
+    ALOAD 0
+    SIPUSH 182
+    LALOAD
+    L2I
+    ISTORE 187
+    ALOAD 0
+    SIPUSH 183
+    LALOAD
+    L2I
+    ISTORE 188
+    ALOAD 0
+    SIPUSH 184
+    LALOAD
+    L2I
+    ISTORE 189
+    ALOAD 0
+    SIPUSH 185
+    LALOAD
+    L2I
+    ISTORE 190
+    ALOAD 0
+    SIPUSH 186
+    LALOAD
+    L2I
+    ISTORE 191
+    ALOAD 0
+    SIPUSH 187
+    LALOAD
+    L2I
+    ISTORE 192
+    ALOAD 0
+    SIPUSH 188
+    LALOAD
+    L2I
+    ISTORE 193
+    ALOAD 0
+    SIPUSH 189
+    LALOAD
+    L2I
+    ISTORE 194
+    ALOAD 0
+    SIPUSH 190
+    LALOAD
+    L2I
+    ISTORE 195
+    ALOAD 0
+    SIPUSH 191
+    LALOAD
+    L2I
+    ISTORE 196
+    ALOAD 0
+    SIPUSH 192
+    LALOAD
+    L2I
+    ISTORE 197
+    ALOAD 0
+    SIPUSH 193
+    LALOAD
+    L2I
+    ISTORE 198
+    ALOAD 0
+    SIPUSH 194
+    LALOAD
+    L2I
+    ISTORE 199
+    ALOAD 0
+    SIPUSH 195
+    LALOAD
+    L2I
+    ISTORE 200
+    ALOAD 0
+    SIPUSH 196
+    LALOAD
+    L2I
+    ISTORE 201
+    ALOAD 0
+    SIPUSH 197
+    LALOAD
+    L2I
+    ISTORE 202
+    ALOAD 0
+    SIPUSH 198
+    LALOAD
+    L2I
+    ISTORE 203
+    ALOAD 0
+    SIPUSH 199
+    LALOAD
+    L2I
+    ISTORE 204
+    ALOAD 0
+    SIPUSH 200
+    LALOAD
+    L2I
+    ISTORE 205
+    ALOAD 0
+    SIPUSH 201
+    LALOAD
+    L2I
+    ISTORE 206
+    ALOAD 0
+    SIPUSH 202
+    LALOAD
+    L2I
+    ISTORE 207
+    ALOAD 0
+    SIPUSH 203
+    LALOAD
+    L2I
+    ISTORE 208
+    ALOAD 0
+    SIPUSH 204
+    LALOAD
+    L2I
+    ISTORE 209
+    ALOAD 0
+    SIPUSH 205
+    LALOAD
+    L2I
+    ISTORE 210
+    ALOAD 0
+    SIPUSH 206
+    LALOAD
+    L2I
+    ISTORE 211
+    ALOAD 0
+    SIPUSH 207
+    LALOAD
+    L2I
+    ISTORE 212
+    ALOAD 0
+    SIPUSH 208
+    LALOAD
+    L2I
+    ISTORE 213
+    ALOAD 0
+    SIPUSH 209
+    LALOAD
+    L2I
+    ISTORE 214
+    ALOAD 0
+    SIPUSH 210
+    LALOAD
+    L2I
+    ISTORE 215
+    ALOAD 0
+    SIPUSH 211
+    LALOAD
+    L2I
+    ISTORE 216
+    ALOAD 0
+    SIPUSH 212
+    LALOAD
+    L2I
+    ISTORE 217
+    ALOAD 0
+    SIPUSH 213
+    LALOAD
+    L2I
+    ISTORE 218
+    ALOAD 0
+    SIPUSH 214
+    LALOAD
+    L2I
+    ISTORE 219
+    ALOAD 0
+    SIPUSH 215
+    LALOAD
+    L2I
+    ISTORE 220
+    ALOAD 0
+    SIPUSH 216
+    LALOAD
+    L2I
+    ISTORE 221
+    ALOAD 0
+    SIPUSH 217
+    LALOAD
+    L2I
+    ISTORE 222
+    ALOAD 0
+    SIPUSH 218
+    LALOAD
+    L2I
+    ISTORE 223
+    ALOAD 0
+    SIPUSH 219
+    LALOAD
+    L2I
+    ISTORE 224
+    ALOAD 0
+    SIPUSH 220
+    LALOAD
+    L2I
+    ISTORE 225
+    ALOAD 0
+    SIPUSH 221
+    LALOAD
+    L2I
+    ISTORE 226
+    ALOAD 0
+    SIPUSH 222
+    LALOAD
+    L2I
+    ISTORE 227
+    ALOAD 0
+    SIPUSH 223
+    LALOAD
+    L2I
+    ISTORE 228
+    ALOAD 0
+    SIPUSH 224
+    LALOAD
+    L2I
+    ISTORE 229
+    ALOAD 0
+    SIPUSH 225
+    LALOAD
+    L2I
+    ISTORE 230
+    ALOAD 0
+    SIPUSH 226
+    LALOAD
+    L2I
+    ISTORE 231
+    ALOAD 0
+    SIPUSH 227
+    LALOAD
+    L2I
+    ISTORE 232
+    ALOAD 0
+    SIPUSH 228
+    LALOAD
+    L2I
+    ISTORE 233
+    ALOAD 0
+    SIPUSH 229
+    LALOAD
+    L2I
+    ISTORE 234
+    ALOAD 0
+    SIPUSH 230
+    LALOAD
+    L2I
+    ISTORE 235
+    ALOAD 0
+    SIPUSH 231
+    LALOAD
+    L2I
+    ISTORE 236
+    ALOAD 0
+    SIPUSH 232
+    LALOAD
+    L2I
+    ISTORE 237
+    ALOAD 0
+    SIPUSH 233
+    LALOAD
+    L2I
+    ISTORE 238
+    ALOAD 0
+    SIPUSH 234
+    LALOAD
+    L2I
+    ISTORE 239
+    ALOAD 0
+    SIPUSH 235
+    LALOAD
+    L2I
+    ISTORE 240
+    ALOAD 0
+    SIPUSH 236
+    LALOAD
+    L2I
+    ISTORE 241
+    ALOAD 0
+    SIPUSH 237
+    LALOAD
+    L2I
+    ISTORE 242
+    ALOAD 0
+    SIPUSH 238
+    LALOAD
+    L2I
+    ISTORE 243
+    ALOAD 0
+    SIPUSH 239
+    LALOAD
+    L2I
+    ISTORE 244
+    ALOAD 0
+    SIPUSH 240
+    LALOAD
+    L2I
+    ISTORE 245
+    ALOAD 0
+    SIPUSH 241
+    LALOAD
+    L2I
+    ISTORE 246
+    ALOAD 0
+    SIPUSH 242
+    LALOAD
+    L2I
+    ISTORE 247
+    ALOAD 0
+    SIPUSH 243
+    LALOAD
+    L2I
+    ISTORE 248
+    ALOAD 0
+    SIPUSH 244
+    LALOAD
+    L2I
+    ISTORE 249
+    ALOAD 0
+    SIPUSH 245
+    LALOAD
+    L2I
+    ISTORE 250
+    ALOAD 0
+    SIPUSH 246
+    LALOAD
+    L2I
+    ISTORE 251
+    ALOAD 0
+    SIPUSH 247
+    LALOAD
+    L2I
+    ISTORE 252
+    ALOAD 0
+    SIPUSH 248
+    LALOAD
+    L2I
+    ISTORE 253
+    ALOAD 0
+    SIPUSH 249
+    LALOAD
+    L2I
+    ISTORE 254
+    ALOAD 0
+    SIPUSH 250
+    LALOAD
+    L2I
+    ISTORE 255
+    ALOAD 0
+    SIPUSH 251
+    LALOAD
+    L2I
+    ISTORE 256
+    ALOAD 0
+    SIPUSH 252
+    LALOAD
+    L2I
+    ISTORE 257
+    ALOAD 0
+    SIPUSH 253
+    LALOAD
+    L2I
+    ISTORE 258
+    ALOAD 0
+    SIPUSH 254
+    LALOAD
+    L2I
+    ISTORE 259
+    ALOAD 0
+    SIPUSH 255
+    LALOAD
+    L2I
+    ISTORE 260
+    ALOAD 0
+    SIPUSH 256
+    LALOAD
+    L2I
+    ISTORE 261
+    ALOAD 0
+    SIPUSH 257
+    LALOAD
+    L2I
+    ISTORE 262
+    ALOAD 0
+    SIPUSH 258
+    LALOAD
+    L2I
+    ISTORE 263
+    ALOAD 0
+    SIPUSH 259
+    LALOAD
+    L2I
+    ISTORE 264
+    ALOAD 0
+    SIPUSH 260
+    LALOAD
+    L2I
+    ISTORE 265
+    ALOAD 0
+    SIPUSH 261
+    LALOAD
+    L2I
+    ISTORE 266
+    ALOAD 0
+    SIPUSH 262
+    LALOAD
+    L2I
+    ISTORE 267
+    ALOAD 0
+    SIPUSH 263
+    LALOAD
+    L2I
+    ISTORE 268
+    ALOAD 0
+    SIPUSH 264
+    LALOAD
+    L2I
+    ISTORE 269
+    ALOAD 0
+    SIPUSH 265
+    LALOAD
+    L2I
+    ISTORE 270
+    ALOAD 0
+    SIPUSH 266
+    LALOAD
+    L2I
+    ISTORE 271
+    ALOAD 0
+    SIPUSH 267
+    LALOAD
+    L2I
+    ISTORE 272
+    ALOAD 0
+    SIPUSH 268
+    LALOAD
+    L2I
+    ISTORE 273
+    ALOAD 0
+    SIPUSH 269
+    LALOAD
+    L2I
+    ISTORE 274
+    ALOAD 0
+    SIPUSH 270
+    LALOAD
+    L2I
+    ISTORE 275
+    ALOAD 0
+    SIPUSH 271
+    LALOAD
+    L2I
+    ISTORE 276
+    ALOAD 0
+    SIPUSH 272
+    LALOAD
+    L2I
+    ISTORE 277
+    ALOAD 0
+    SIPUSH 273
+    LALOAD
+    L2I
+    ISTORE 278
+    ALOAD 0
+    SIPUSH 274
+    LALOAD
+    L2I
+    ISTORE 279
+    ALOAD 0
+    SIPUSH 275
+    LALOAD
+    L2I
+    ISTORE 280
+    ALOAD 0
+    SIPUSH 276
+    LALOAD
+    L2I
+    ISTORE 281
+    ALOAD 0
+    SIPUSH 277
+    LALOAD
+    L2I
+    ISTORE 282
+    ALOAD 0
+    SIPUSH 278
+    LALOAD
+    L2I
+    ISTORE 283
+    ALOAD 0
+    SIPUSH 279
+    LALOAD
+    L2I
+    ISTORE 284
+    ALOAD 0
+    SIPUSH 280
+    LALOAD
+    L2I
+    ISTORE 285
+    ALOAD 0
+    SIPUSH 281
+    LALOAD
+    L2I
+    ISTORE 286
+    ALOAD 0
+    SIPUSH 282
+    LALOAD
+    L2I
+    ISTORE 287
+    ALOAD 0
+    SIPUSH 283
+    LALOAD
+    L2I
+    ISTORE 288
+    ALOAD 0
+    SIPUSH 284
+    LALOAD
+    L2I
+    ISTORE 289
+    ALOAD 0
+    SIPUSH 285
+    LALOAD
+    L2I
+    ISTORE 290
+    ALOAD 0
+    SIPUSH 286
+    LALOAD
+    L2I
+    ISTORE 291
+    ALOAD 0
+    SIPUSH 287
+    LALOAD
+    L2I
+    ISTORE 292
+    ALOAD 0
+    SIPUSH 288
+    LALOAD
+    L2I
+    ISTORE 293
+    ALOAD 0
+    SIPUSH 289
+    LALOAD
+    L2I
+    ISTORE 294
+    ALOAD 0
+    SIPUSH 290
+    LALOAD
+    L2I
+    ISTORE 295
+    ALOAD 0
+    SIPUSH 291
+    LALOAD
+    L2I
+    ISTORE 296
+    ALOAD 0
+    SIPUSH 292
+    LALOAD
+    L2I
+    ISTORE 297
+    ALOAD 0
+    SIPUSH 293
+    LALOAD
+    L2I
+    ISTORE 298
+    ALOAD 0
+    SIPUSH 294
+    LALOAD
+    L2I
+    ISTORE 299
+    ALOAD 0
+    SIPUSH 295
+    LALOAD
+    L2I
+    ISTORE 300
+    ALOAD 0
+    SIPUSH 296
+    LALOAD
+    L2I
+    ISTORE 301
+    ALOAD 0
+    SIPUSH 297
+    LALOAD
+    L2I
+    ISTORE 302
+    ALOAD 0
+    SIPUSH 298
+    LALOAD
+    L2I
+    ISTORE 303
+    ALOAD 0
+    SIPUSH 299
+    LALOAD
+    L2I
+    ISTORE 304
+    ILOAD 3
+    ILOAD 304
+    IADD
+    IRETURN
+
+  public static call_indirect_0(IIIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    ALOAD 5
+    ILOAD 3
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
+    ASTORE 6
+    ALOAD 6
+    ILOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.requiredRef (I)I
+    ISTORE 7
+    ALOAD 6
+    ILOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.instance (I)Lcom/dylibso/chicory/runtime/Instance;
+    ASTORE 8
+    ALOAD 8
+    IFNULL L0
+    ALOAD 8
+    ALOAD 5
+    IF_ACMPNE L1
+   L0
+    ILOAD 0
+    ILOAD 1
+    ALOAD 4
+    ALOAD 5
+    ILOAD 7
+    LOOKUPSWITCH
+      0: L2
+      default: L3
+   L2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_0 (IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    IRETURN
+   L3
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
+    ATHROW
+   L1
+    ICONST_2
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    ILOAD 0
+    I2L
+    LASTORE
+    DUP
+    ICONST_1
+    ILOAD 1
+    I2L
+    LASTORE
+    ICONST_0
+    ILOAD 7
+    ALOAD 8
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
+    ICONST_0
+    LALOAD
+    L2I
+    IRETURN
+
+  public static call_indirect_1([JIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    ALOAD 4
+    ILOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
+    ASTORE 5
+    ALOAD 5
+    ILOAD 1
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.requiredRef (I)I
+    ISTORE 6
+    ALOAD 5
+    ILOAD 1
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.instance (I)Lcom/dylibso/chicory/runtime/Instance;
+    ASTORE 7
+    ALOAD 7
+    IFNULL L0
+    ALOAD 7
+    ALOAD 4
+    IF_ACMPNE L1
+   L0
+    ALOAD 0
+    ALOAD 3
+    ALOAD 4
+    ILOAD 6
+    LOOKUPSWITCH
+      1: L2
+      default: L3
+   L2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_1 ([JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    IRETURN
+   L3
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
+    ATHROW
+   L1
+    ALOAD 0
+    ICONST_1
+    ILOAD 6
+    ALOAD 7
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
+    ICONST_0
+    LALOAD
+    L2I
+    IRETURN
+}
+
+final class com/dylibso/chicory/$gen/CompiledMachine$MachineCall {
+
+  NESTHOST com/dylibso/chicory/$gen/CompiledMachine
+
+  public <init>()V
+    ALOAD 0
+    INVOKESPECIAL java/lang/Object.<init> ()V
+    RETURN
+
+  public static call(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;I[J)[J
+    ALOAD 0
+    ALOAD 1
+    ALOAD 3
+    ILOAD 2
+    TABLESWITCH
+      0: L0
+      1: L1
+      default: L2
+   L0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call_0 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ARETURN
+   L1
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call_1 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ARETURN
+   L2
+    ILOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwUnknownFunction (I)Ljava/lang/RuntimeException;
+    ATHROW
+
+  public static call_0(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ALOAD 2
+    ICONST_0
+    LALOAD
+    L2I
+    ALOAD 2
+    ICONST_1
+    LALOAD
+    L2I
+    ALOAD 1
+    ALOAD 0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_0 (IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    I2L
+    LSTORE 3
+    ICONST_1
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    LLOAD 3
+    LASTORE
+    ARETURN
+
+  public static call_1(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ALOAD 2
+    ALOAD 1
+    ALOAD 0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_1 ([JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    I2L
+    LSTORE 3
+    ICONST_1
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    LLOAD 3
+    LASTORE
+    ARETURN
+}

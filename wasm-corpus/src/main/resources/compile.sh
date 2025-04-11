@@ -11,7 +11,7 @@ compileRust() {
   filename=$(basename "$1")
   # we can use the wasi targets for any file that end in -wasi.rs
   if [[ "$filename" =~ wasi.rs$ ]]; then
-    target="wasm32-wasi"
+    target="wasm32-wasip1"
     crate_type="bin"
   else
     target="wasm32-unknown-unknown"
@@ -80,7 +80,7 @@ compile() {
       compileDotnet $2
       ;;
     *)
-      echo "Don't know how to compile language $lang"
+      echo "Don't know how to compile language [$lang]"
       exit 1
       ;;
   esac
@@ -90,7 +90,7 @@ lang="${1:-all}"
 path="${2:-all}"
 
 if [[ "$lang" == "all" ]]; then
-  langs=("wat" "rust" "c" "javy" "javy-dynamic" "tinygo", "go", "dotnet")
+  langs=("wat" "rust" "c" "javy" "javy-dynamic" "tinygo" "go" "dotnet")
 else
   langs=("$lang")
 fi
