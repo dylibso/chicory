@@ -185,6 +185,10 @@ final class AotEmitters {
         int tableIdx = (int) ins.operand(1);
         FunctionType functionType = ctx.types()[typeId];
 
+        if (hasTooManyParameters(functionType)) {
+            emitBoxValuesOnStack(ctx, asm, functionType.params());
+        }
+
         asm.iconst(tableIdx);
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
