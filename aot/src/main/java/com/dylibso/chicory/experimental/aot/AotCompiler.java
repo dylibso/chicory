@@ -710,6 +710,7 @@ public final class AotCompiler {
 
         List<AotInstruction> instructions = analyzer.analyze(funcId);
 
+        int localsCount = type.params().size();
         if (hasTooManyParameters(type)) {
             // unbox the arguments from long[]
             for (int i = 0; i < type.params().size(); i++) {
@@ -720,10 +721,12 @@ public final class AotCompiler {
                 emitLongToJvm(asm, param);
                 asm.store(ctx.localSlotIndex(i), asmType(param));
             }
+            // since we just converted the arguments to long[].
+            localsCount = 1;
         }
 
         // initialize local variables to their default values
-        int localsCount = type.params().size() + body.localTypes().size();
+        localsCount += body.localTypes().size();
         for (int i = type.params().size(); i < localsCount; i++) {
             var localType = localType(type, body, i);
             asm.visitLdcInsn(defaultValue(localType));

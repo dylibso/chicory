@@ -29,6 +29,12 @@ final class AotUtil {
 
     private AotUtil() {}
 
+    // The maximum number of wasm parameters that can be passed to a function before we box them
+    // since Java
+    // methods have a limit of 255 parameters, but we need to reserve a few for the Instance and
+    // Memory args.
+    private static final int MAX_PARAMETER_COUNT = 253;
+
     private static final Method LONG_TO_F32;
     private static final Method LONG_TO_F64;
     private static final Method F32_TO_LONG;
@@ -141,7 +147,7 @@ final class AotUtil {
     }
 
     public static boolean hasTooManyParameters(FunctionType type) {
-        return type.params().stream().mapToInt(AotUtil::slotCount).sum() > 253;
+        return type.params().stream().mapToInt(AotUtil::slotCount).sum() > MAX_PARAMETER_COUNT;
     }
 
     public static MethodType rawMethodTypeFor(FunctionType type) {
