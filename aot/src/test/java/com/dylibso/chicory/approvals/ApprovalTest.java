@@ -29,6 +29,11 @@ public class ApprovalTest {
     }
 
     @Test
+    public void verifyLotsOfArgs() {
+        verifyGeneratedBytecode("lots-of-args.wat.wasm");
+    }
+
+    @Test
     public void verifyFloat() {
         verifyGeneratedBytecode("float.wat.wasm");
     }

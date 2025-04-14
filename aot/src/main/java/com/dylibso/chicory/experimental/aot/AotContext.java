@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.aot;
 
+import static com.dylibso.chicory.experimental.aot.AotUtil.hasTooManyParameters;
 import static com.dylibso.chicory.experimental.aot.AotUtil.slotCount;
 
 import com.dylibso.chicory.wasm.types.FunctionBody;
@@ -42,13 +43,17 @@ final class AotContext {
         this.body = body;
 
         // compute JVM slot indices for WASM locals
-        List<Integer> slots = new ArrayList<>();
+        List<Integer> slots = new ArrayList<>(type.params().size() + body.localTypes().size());
         int slot = 0;
 
         // WASM arguments
-        for (ValueType param : type.params()) {
-            slots.add(slot);
-            slot += slotCount(param);
+        if (hasTooManyParameters(type)) {
+            slot += 1; // long[]
+        } else {
+            for (ValueType param : type.params()) {
+                slots.add(slot);
+                slot += slotCount(param);
+            }
         }
 
         // extra arguments
@@ -56,6 +61,14 @@ final class AotContext {
         slot++;
         this.instanceSlot = slot;
         slot++;
+
+        // the long[] gets unboxed
+        if (hasTooManyParameters(type)) {
+            for (ValueType param : type.params()) {
+                slots.add(slot);
+                slot += slotCount(param);
+            }
+        }
 
         // WASM locals
         for (ValueType local : body.localTypes()) {

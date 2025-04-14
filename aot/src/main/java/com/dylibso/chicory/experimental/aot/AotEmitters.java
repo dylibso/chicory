@@ -9,6 +9,7 @@ import static com.dylibso.chicory.experimental.aot.AotUtil.emitInvokeVirtual;
 import static com.dylibso.chicory.experimental.aot.AotUtil.emitJvmToLong;
 import static com.dylibso.chicory.experimental.aot.AotUtil.emitLongToJvm;
 import static com.dylibso.chicory.experimental.aot.AotUtil.emitPop;
+import static com.dylibso.chicory.experimental.aot.AotUtil.hasTooManyParameters;
 import static com.dylibso.chicory.experimental.aot.AotUtil.jvmReturnType;
 import static com.dylibso.chicory.experimental.aot.AotUtil.localType;
 import static com.dylibso.chicory.experimental.aot.AotUtil.slotCount;
@@ -132,11 +133,43 @@ final class AotEmitters {
         emitPop(asm, type);
     }
 
+    private static void emitBoxValuesOnStack(
+            AotContext ctx, InstructionAdapter asm, List<ValueType> types) {
+
+        // Store values from stack to locals in reverse order
+        int slot = ctx.tempSlot() + types.stream().mapToInt(AotUtil::slotCount).sum();
+        for (int i = types.size() - 1; i >= 0; i--) {
+            ValueType valueType = types.get(i);
+            slot -= slotCount(valueType);
+            asm.store(slot, asmType(valueType));
+        }
+
+        // Create the array
+        asm.iconst(types.size());
+        asm.newarray(LONG_TYPE);
+
+        // Load from locals and store in array
+        slot = ctx.tempSlot();
+        for (int i = 0; i < types.size(); i++) {
+            ValueType valueType = types.get(i);
+
+            asm.dup(); // Duplicate the array reference
+            asm.iconst(i); // Array index
+            asm.load(slot, asmType(valueType)); // Load value from local
+            slot += slotCount(valueType);
+            emitJvmToLong(asm, valueType); // Convert to long
+            asm.astore(LONG_TYPE); // Store in array
+        }
+    }
+
     public static void CALL(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
         int funcId = (int) ins.operand(0);
         FunctionType functionType = ctx.functionTypes().get(funcId);
 
         emitInvokeStatic(asm, AotMethodRefs.CHECK_INTERRUPTION);
+        if (hasTooManyParameters(functionType)) {
+            emitBoxValuesOnStack(ctx, asm, functionType.params());
+        }
 
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
@@ -151,6 +184,10 @@ final class AotEmitters {
         int typeId = (int) ins.operand(0);
         int tableIdx = (int) ins.operand(1);
         FunctionType functionType = ctx.types()[typeId];
+
+        if (hasTooManyParameters(functionType)) {
+            emitBoxValuesOnStack(ctx, asm, functionType.params());
+        }
 
         asm.iconst(tableIdx);
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
