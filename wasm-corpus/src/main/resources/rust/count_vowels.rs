@@ -19,7 +19,7 @@ pub unsafe extern "C" fn dealloc(ptr: &mut u8, len: i32) {
 }
 
 #[no_mangle]
-pub extern fn count_vowels(ptr: i32, len: i32) -> i32 {
+pub extern "C" fn count_vowels(ptr: i32, len: i32) -> i32 {
     let bytes = unsafe { slice::from_raw_parts(ptr as *const u8, len as usize) };
     let s = str::from_utf8(bytes).unwrap();
     let mut count: i32 = 0;
