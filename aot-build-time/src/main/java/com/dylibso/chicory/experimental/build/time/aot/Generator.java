@@ -49,7 +49,8 @@ public class Generator {
     public void generateResources() throws IOException {
         var module = Parser.parse(config.wasmFile());
         var machineName = config.name() + "Machine";
-        var result = AotCompiler.compileModule(module, machineName);
+        var compiler = AotCompiler.builder(module).withClassName(machineName).build();
+        var result = compiler.compile();
 
         var finalFolder = config.targetClassFolder();
 

@@ -1,11 +1,11 @@
 package com.dylibso.chicory.approvals;
 
-import static com.dylibso.chicory.experimental.aot.AotCompiler.compileModule;
 import static com.dylibso.chicory.wasm.Parser.parse;
 import static java.lang.ClassLoader.getSystemClassLoader;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.objectweb.asm.Type.getInternalName;
 
+import com.dylibso.chicory.experimental.aot.AotCompiler;
 import com.dylibso.chicory.experimental.aot.AotMethods;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -51,7 +51,7 @@ public class ApprovalTest {
     @Test
     public void verifyI32Renamed() {
         var module = parse(getSystemClassLoader().getResourceAsStream("compiled/i32.wat.wasm"));
-        var result = compileModule(module, "FOO");
+        var result = AotCompiler.builder(module).withClassName("FOO").build().compile();
         verifyClass(result.classBytes(), false);
     }
 
@@ -82,7 +82,7 @@ public class ApprovalTest {
 
     private static void verifyGeneratedBytecode(String name) {
         var module = parse(getSystemClassLoader().getResourceAsStream("compiled/" + name));
-        var result = compileModule(module);
+        var result = AotCompiler.builder(module).build().compile();
         verifyClass(result.classBytes(), true);
     }
 

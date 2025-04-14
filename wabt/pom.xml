@@ -52,6 +52,7 @@
       <plugin>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>aot-maven-plugin-experimental</artifactId>
+        <version>${project.version}</version>
         <executions>
           <execution>
             <id>wast2json</id>

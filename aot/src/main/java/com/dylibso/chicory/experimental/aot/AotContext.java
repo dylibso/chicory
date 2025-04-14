@@ -15,6 +15,7 @@ import java.util.List;
 final class AotContext {
 
     private final String internalClassName;
+    private final int maxFunctionsPerClass;
     private final List<ValueType> globalTypes;
     private final List<FunctionType> functionTypes;
     private final FunctionType[] types;
@@ -28,6 +29,7 @@ final class AotContext {
 
     public AotContext(
             String internalClassName,
+            int maxFunctionsPerClass,
             List<ValueType> globalTypes,
             List<FunctionType> functionTypes,
             FunctionType[] types,
@@ -35,6 +37,7 @@ final class AotContext {
             FunctionType type,
             FunctionBody body) {
         this.internalClassName = internalClassName;
+        this.maxFunctionsPerClass = maxFunctionsPerClass;
         this.globalTypes = globalTypes;
         this.functionTypes = functionTypes;
         this.types = types;
@@ -122,5 +125,9 @@ final class AotContext {
 
     public int tempSlot() {
         return tempSlot;
+    }
+
+    public String classNameForFuncGroup(int funcId) {
+        return "FuncGroup_" + (funcId / maxFunctionsPerClass);
     }
 }

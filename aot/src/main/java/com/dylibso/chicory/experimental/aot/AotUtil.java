@@ -238,7 +238,7 @@ final class AotUtil {
         asm.visitMethodInsn(
                 Opcodes.INVOKESTATIC,
                 internalClassName,
-                methodNameFor(funcId),
+                methodNameForFunc(funcId),
                 methodTypeFor(functionType).toMethodDescriptorString(),
                 false);
     }
@@ -250,8 +250,12 @@ final class AotUtil {
                         .collect(joining("_"));
     }
 
-    public static String methodNameFor(int funcId) {
+    public static String methodNameForFunc(int funcId) {
         return "func_" + funcId;
+    }
+
+    static String callMethodName(int funcId) {
+        return "call_" + funcId;
     }
 
     public static String callIndirectMethodName(int typeId) {
@@ -260,5 +264,17 @@ final class AotUtil {
 
     public static String internalClassName(String name) {
         return name.replace('.', '/');
+    }
+
+    static String classNameForDispatch(int id) {
+        return "Dispatch_" + id;
+    }
+
+    static String callDispatchMethodName(int start) {
+        return "call_dispatch_" + start;
+    }
+
+    static String classNameForCallIndirect(int typeId, int start) {
+        return "Indirect_" + typeId + "_" + start;
     }
 }

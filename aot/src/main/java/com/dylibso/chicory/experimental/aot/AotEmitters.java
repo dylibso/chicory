@@ -173,7 +173,11 @@ final class AotEmitters {
 
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        emitInvokeFunction(asm, ctx.internalClassName(), funcId, functionType);
+        emitInvokeFunction(
+                asm,
+                ctx.internalClassName() + ctx.classNameForFuncGroup(funcId),
+                funcId,
+                functionType);
 
         if (functionType.returns().size() > 1) {
             emitUnboxResult(asm, ctx, functionType.returns());

@@ -1,6 +1,7 @@
 public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylibso/chicory/runtime/Machine {
 
   NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$AotMethods
+  NESTMEMBER com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0
   NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$MachineCall
 
   private final Lcom/dylibso/chicory/runtime/Instance; instance
@@ -27,6 +28,109 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
    L1
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwCallStackExhausted (Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
     ATHROW
+
+  public static call_indirect_0(IIIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    ALOAD 5
+    ILOAD 3
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
+    ASTORE 6
+    ALOAD 6
+    ILOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.requiredRef (I)I
+    ISTORE 7
+    ALOAD 6
+    ILOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.instance (I)Lcom/dylibso/chicory/runtime/Instance;
+    ASTORE 8
+    ALOAD 8
+    IFNULL L0
+    ALOAD 8
+    ALOAD 5
+    IF_ACMPNE L1
+   L0
+    ILOAD 0
+    ILOAD 1
+    ALOAD 4
+    ALOAD 5
+    ILOAD 7
+    LOOKUPSWITCH
+      0: L2
+      default: L3
+   L2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_0 (IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    IRETURN
+   L3
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
+    ATHROW
+   L1
+    ICONST_2
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    ILOAD 0
+    I2L
+    LASTORE
+    DUP
+    ICONST_1
+    ILOAD 1
+    I2L
+    LASTORE
+    ICONST_0
+    ILOAD 7
+    ALOAD 8
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
+    ICONST_0
+    LALOAD
+    L2I
+    IRETURN
+
+  public static call_indirect_1([JIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    ALOAD 4
+    ILOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
+    ASTORE 5
+    ALOAD 5
+    ILOAD 1
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.requiredRef (I)I
+    ISTORE 6
+    ALOAD 5
+    ILOAD 1
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.instance (I)Lcom/dylibso/chicory/runtime/Instance;
+    ASTORE 7
+    ALOAD 7
+    IFNULL L0
+    ALOAD 7
+    ALOAD 4
+    IF_ACMPNE L1
+   L0
+    ALOAD 0
+    ALOAD 3
+    ALOAD 4
+    ILOAD 6
+    LOOKUPSWITCH
+      1: L2
+      default: L3
+   L2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_1 ([JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    IRETURN
+   L3
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
+    ATHROW
+   L1
+    ALOAD 0
+    ICONST_1
+    ILOAD 6
+    ALOAD 7
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
+    ICONST_0
+    LALOAD
+    L2I
+    IRETURN
+}
+
+final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
 
   public static func_0(IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     ILOAD 0
@@ -2133,8 +2237,30 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     LASTORE
     ALOAD 2
     ALOAD 3
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_1 ([JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_1 ([JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
+
+  public static call_0(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ALOAD 2
+    ICONST_0
+    LALOAD
+    L2I
+    ALOAD 2
+    ICONST_1
+    LALOAD
+    L2I
+    ALOAD 1
+    ALOAD 0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_0 (IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    I2L
+    LSTORE 3
+    ICONST_1
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    LLOAD 3
+    LASTORE
+    ARETURN
 
   public static func_1([JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     ALOAD 0
@@ -3641,105 +3767,20 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     IADD
     IRETURN
 
-  public static call_indirect_0(IIIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
-    ALOAD 5
-    ILOAD 3
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
-    ASTORE 6
-    ALOAD 6
-    ILOAD 2
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.requiredRef (I)I
-    ISTORE 7
-    ALOAD 6
-    ILOAD 2
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.instance (I)Lcom/dylibso/chicory/runtime/Instance;
-    ASTORE 8
-    ALOAD 8
-    IFNULL L0
-    ALOAD 8
-    ALOAD 5
-    IF_ACMPNE L1
-   L0
-    ILOAD 0
-    ILOAD 1
-    ALOAD 4
-    ALOAD 5
-    ILOAD 7
-    LOOKUPSWITCH
-      0: L2
-      default: L3
-   L2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_0 (IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    IRETURN
-   L3
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
-    ATHROW
-   L1
-    ICONST_2
+  public static call_1(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ALOAD 2
+    ALOAD 1
+    ALOAD 0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_1 ([JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    I2L
+    LSTORE 3
+    ICONST_1
     NEWARRAY T_LONG
     DUP
     ICONST_0
-    ILOAD 0
-    I2L
+    LLOAD 3
     LASTORE
-    DUP
-    ICONST_1
-    ILOAD 1
-    I2L
-    LASTORE
-    ICONST_0
-    ILOAD 7
-    ALOAD 8
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
-    ICONST_0
-    LALOAD
-    L2I
-    IRETURN
-
-  public static call_indirect_1([JIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
-    ALOAD 4
-    ILOAD 2
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
-    ASTORE 5
-    ALOAD 5
-    ILOAD 1
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.requiredRef (I)I
-    ISTORE 6
-    ALOAD 5
-    ILOAD 1
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.instance (I)Lcom/dylibso/chicory/runtime/Instance;
-    ASTORE 7
-    ALOAD 7
-    IFNULL L0
-    ALOAD 7
-    ALOAD 4
-    IF_ACMPNE L1
-   L0
-    ALOAD 0
-    ALOAD 3
-    ALOAD 4
-    ILOAD 6
-    LOOKUPSWITCH
-      1: L2
-      default: L3
-   L2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_1 ([JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    IRETURN
-   L3
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
-    ATHROW
-   L1
-    ALOAD 0
-    ICONST_1
-    ILOAD 6
-    ALOAD 7
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
-    ICONST_0
-    LALOAD
-    L2I
-    IRETURN
+    ARETURN
 }
 
 final class com/dylibso/chicory/$gen/CompiledMachine$MachineCall {
@@ -3761,50 +3802,13 @@ final class com/dylibso/chicory/$gen/CompiledMachine$MachineCall {
       1: L1
       default: L2
    L0
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call_0 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.call_0 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ARETURN
    L1
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call_1 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.call_1 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ARETURN
    L2
     ILOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwUnknownFunction (I)Ljava/lang/RuntimeException;
     ATHROW
-
-  public static call_0(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
-    ALOAD 2
-    ICONST_0
-    LALOAD
-    L2I
-    ALOAD 2
-    ICONST_1
-    LALOAD
-    L2I
-    ALOAD 1
-    ALOAD 0
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_0 (IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    I2L
-    LSTORE 3
-    ICONST_1
-    NEWARRAY T_LONG
-    DUP
-    ICONST_0
-    LLOAD 3
-    LASTORE
-    ARETURN
-
-  public static call_1(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
-    ALOAD 2
-    ALOAD 1
-    ALOAD 0
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_1 ([JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    I2L
-    LSTORE 3
-    ICONST_1
-    NEWARRAY T_LONG
-    DUP
-    ICONST_0
-    LLOAD 3
-    LASTORE
-    ARETURN
 }
