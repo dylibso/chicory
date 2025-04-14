@@ -20,12 +20,13 @@ import com.dylibso.chicory.wasm.types.GlobalImport;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TagImport;
 import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
-import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -41,11 +42,11 @@ import java.util.stream.Stream;
 final class Validator {
 
     private static boolean isNum(ValType t) {
-        return t.isNumeric() || t.equals(ValType.UNKNOWN);
+        return t.isNumeric() || t.equals(ValType.BOT);
     }
 
     private static boolean isRef(ValType t) {
-        return t.isReference() || t.equals(ValType.UNKNOWN);
+        return t.isReference() || t.equals(ValType.BOT);
     }
 
     @SuppressWarnings("PublicField")
@@ -56,8 +57,10 @@ final class Validator {
         public final List<ValType> startTypes;
         // returns or outputs
         public final List<ValType> endTypes;
-        // the height of the stack before entering the current Control Flow instruction
+        // the height of the value stack before entering the current Control Flow instruction
         public final int height;
+        // the height of the init stack before entering the current Control Flow
+        public final int initHeight;
         // set after unconditional jumps
         public boolean unreachable;
         // if there is no else, we explicit check that the enclosing IF is not returning values
@@ -68,23 +71,29 @@ final class Validator {
                 List<ValType> startTypes,
                 List<ValType> endTypes,
                 int height,
+                int initHeight,
                 boolean unreachable,
                 boolean hasElse) {
             this.opCode = opCode;
             this.startTypes = startTypes;
             this.endTypes = endTypes;
+            this.initHeight = initHeight;
             this.height = height;
             this.unreachable = unreachable;
             this.hasElse = hasElse;
         }
     }
 
+    private final List<ValType> valueTypeStack = new ArrayList<>();
     private final List<ValType> valTypeStack = new ArrayList<>();
     private final List<CtrlFrame> ctrlFrameStack = new ArrayList<>();
+    private final List<Integer> initStack = new ArrayList<>();
 
     private final List<InvalidException> errors = new ArrayList<>();
 
     private final WasmModule module;
+    private final List<ValType> locals;
+    private final List<Boolean> localsInitialized;
     private final List<Global> globalImports;
     private final List<Integer> functionImports;
     private final List<ValType> tableImports;
@@ -94,6 +103,9 @@ final class Validator {
 
     Validator(WasmModule module) {
         this.module = requireNonNull(module);
+
+        this.locals = new ArrayList<>();
+        this.localsInitialized = new ArrayList<>();
 
         this.globalImports =
                 module.importSection().stream()
@@ -151,22 +163,22 @@ final class Validator {
     private ValType popVal() {
         var frame = peekCtrl();
         if (valTypeStack.size() == frame.height && frame.unreachable) {
-            return ValType.UNKNOWN;
+            return ValType.BOT;
         }
         if (valTypeStack.size() == frame.height) {
             errors.add(
                     new InvalidException(
                             "type mismatch: instruction requires [i32] but stack has []"));
-            return ValType.UNKNOWN;
+            return ValType.BOT;
         }
         return valTypeStack.remove(valTypeStack.size() - 1);
     }
 
     private ValType popVal(ValType expected) {
         var actual = popVal();
-        if (!actual.equals(expected)
-                && !actual.equals(ValType.UNKNOWN)
-                && !expected.equals(ValType.UNKNOWN)) {
+        if (!ValType.matches(module, actual, expected)
+                && !actual.equals(ValType.BOT)
+                && !expected.equals(ValType.BOT)) {
             errors.add(
                     new InvalidException(
                             "type mismatch: instruction requires ["
@@ -175,6 +187,22 @@ final class Validator {
                                     + actual.toString().toLowerCase(Locale.ROOT)
                                     + "]"));
         }
+        return actual;
+    }
+
+    private ValType popRef() {
+        var actual = popVal();
+        if (!isRef(actual)) {
+            errors.add(
+                    new InvalidException(
+                            "type mismatch, popRef(), expected reference type"
+                                    + " but got: "
+                                    + actual));
+        }
+        if (actual.equals(ValType.BOT)) {
+            return new ValType(ValType.ID.Ref, ValType.TypeIdxCode.BOT.code());
+        }
+
         return actual;
     }
 
@@ -192,8 +220,36 @@ final class Validator {
         return Arrays.asList(popped);
     }
 
+    private ValType getLocal(int idx) {
+        if (idx >= locals.size()) {
+            throw new InvalidException("unknown local " + idx);
+        }
+        if (!localsInitialized.get(idx)) {
+            errors.add(new InvalidException("uninitialized local: index " + idx));
+        }
+        return getLocalType(idx);
+    }
+
+    private void setLocal(int idx) {
+        if (idx >= locals.size()) {
+            throw new InvalidException("unknown local " + idx);
+        }
+        if (!localsInitialized.get(idx)) {
+            initStack.add(idx);
+            localsInitialized.set(idx, true);
+        }
+    }
+
+    private void resetLocals(int height) {
+        while (initStack.size() > height) {
+            localsInitialized.set(initStack.remove(initStack.size() - 1), false);
+        }
+    }
+
     private void pushCtrl(OpCode opCode, List<ValType> in, List<ValType> out) {
-        var frame = new CtrlFrame(opCode, in, out, valTypeStack.size(), false, false);
+        var frame =
+                new CtrlFrame(
+                        opCode, in, out, valueTypeStack.size(), initStack.size(), false, false);
         pushCtrl(frame);
         pushVals(in);
     }
@@ -211,6 +267,7 @@ final class Validator {
         if (valTypeStack.size() != frame.height) {
             errors.add(new InvalidException("type mismatch, mismatching stack height"));
         }
+        resetLocals(frame.initHeight);
         ctrlFrameStack.remove(ctrlFrameStack.size() - 1);
         return frame;
     }
@@ -270,7 +327,7 @@ final class Validator {
     }
 
     private List<ValType> getParams(AnnotatedInstruction op) {
-        var typeId = (int) op.operand(0);
+        var typeId = op.operand(0);
         if (typeId == 0x40) { // epsilon
             return List.of();
         }
@@ -280,14 +337,14 @@ final class Validator {
         if (typeId >= module.typeSection().typeCount()) {
             throw new MalformedException("unexpected end");
         }
-        return getType(typeId).params();
+        return getType((int) typeId).params();
     }
 
-    private static ValType getLocalType(List<ValType> localTypes, int idx) {
-        if (idx >= localTypes.size()) {
+    private ValType getLocalType(int idx) {
+        if (idx >= locals.size()) {
             throw new InvalidException("unknown local " + idx);
         }
-        return localTypes.get(idx);
+        return locals.get(idx);
     }
 
     private FunctionType getType(int idx) {
@@ -381,12 +438,41 @@ final class Validator {
         }
     }
 
+    void validateTypes() {
+        var types = module.typeSection().types();
+        for (var i = 0; i < types.length; i++) {
+            var t = types[i];
+            t.params().forEach(this::validateValueType);
+            t.returns().forEach(this::validateValueType);
+
+            // a type can only refer to types with idx less than it
+            var maxTypeIdx = i - 1;
+            Stream.concat(t.params().stream(), t.returns().stream())
+                    .forEach(
+                            v -> {
+                                if (v.isReference()) {
+                                    var typeIdx = v.typeIdx();
+                                    if (typeIdx > maxTypeIdx) {
+                                        throw new InvalidException("unknown type: recursive type");
+                                    }
+                                }
+                            });
+        }
+    }
+
     void validateTags() {
         for (var tagType : module.tagSection().map(ts -> ts.types()).orElse(new TagType[0])) {
             var type = module.typeSection().getType(tagType.typeIdx());
             if (type.returns().size() > 0) {
                 throw new InvalidException("non-empty tag result type index: " + tagType.typeIdx());
             }
+        }
+    }
+
+    void validateTables() {
+        for (int i = 0; i < module.tableSection().tableCount(); i++) {
+            Table t = module.tableSection().getTable(i);
+            validateConstantExpression(t.initialize(), t.elementType());
         }
     }
 
@@ -398,8 +484,13 @@ final class Validator {
                                 .filter(i -> i.importType() == ExternalType.FUNCTION)
                                 .count();
         for (Element el : module.elementSection().elements()) {
+            validateValueType(el.type());
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
+                if (!ValType.matches(module, ae.type(), getTableType(ae.tableIndex()))) {
+                    throw new InvalidException(
+                            "type mismatch, active element doesn't match table type");
+                }
                 validateConstantExpression(ae.offset(), ValType.I32);
                 for (int i = 0; i < ae.initializers().size(); i++) {
                     var initializers = ae.initializers().get(i);
@@ -440,6 +531,7 @@ final class Validator {
 
     private void validateConstantExpression(
             List<? extends Instruction> expr, ValType expectedType) {
+        validateValueType(expectedType);
         int allFuncCount = this.functionImports.size() + module.functionSection().functionCount();
         int constInstrCount = 0;
         for (var instruction : expr) {
@@ -468,15 +560,9 @@ final class Validator {
                     break;
                 case REF_NULL:
                     {
-                        long operand = instruction.operand(0);
-                        exprType = ValType.forId(operand);
+                        int operand = (int) instruction.operand(0);
+                        exprType = new ValType(ValType.ID.RefNull, operand);
                         constInstrCount++;
-                        if (!exprType.equals(ValType.ExternRef)
-                                && !exprType.equals(ValType.FuncRef)
-                                && !exprType.equals(ValType.ExnRef)) {
-                            throw new IllegalStateException(
-                                    "Unexpected wrong type for ref.null instruction");
-                        }
                         break;
                     }
                 case REF_FUNC:
@@ -484,6 +570,7 @@ final class Validator {
                         exprType = ValType.FuncRef;
                         constInstrCount++;
                         int idx = (int) instruction.operand(0);
+                        exprType = new ValType(ValType.ID.Ref, getFunctionType(idx));
 
                         if (idx < 0 || idx > allFuncCount) {
                             throw new InvalidException("unknown function " + idx);
@@ -521,7 +608,7 @@ final class Validator {
                                     + instruction);
             }
 
-            if (exprType != null && !exprType.equals(expectedType)) {
+            if (exprType != null && !ValType.matches(module, exprType, expectedType)) {
                 throw new InvalidException("type mismatch");
             }
 
@@ -544,10 +631,61 @@ final class Validator {
         }
     }
 
+    private static int[] typesWithDefaultValue =
+            new int[] {
+                ValType.ID.F64,
+                ValType.ID.F64,
+                ValType.ID.F32,
+                ValType.ID.I64,
+                ValType.ID.I32,
+                ValType.ID.V128,
+                ValType.ID.RefNull
+            };
+
+    private static boolean hasDefaultValue(ValType t) {
+        for (var t2 : typesWithDefaultValue) {
+            if (t.opcode() == t2) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private void validateValueType(ValType valueType) {
+        if (valueType.isReference() && valueType.typeIdx() >= 0) {
+            int idx = valueType.typeIdx();
+            if (idx >= module.typeSection().typeCount()) {
+                throw new InvalidException("unknown type " + idx);
+            }
+        }
+    }
+
     @SuppressWarnings("UnnecessaryCodeBlock")
     void validateFunction(int funcIdx, FunctionBody body, FunctionType functionType) {
-        var localTypes = body.localTypes();
-        var inputLen = functionType.params().size();
+        valueTypeStack.clear();
+        locals.clear();
+        localsInitialized.clear();
+
+        functionType
+                .params()
+                .forEach(
+                        t -> {
+                            validateValueType(t);
+                            locals.add(t);
+                            localsInitialized.add(true);
+                        });
+
+        body.localTypes()
+                .forEach(
+                        t -> {
+                            validateValueType(t);
+                            locals.add(t);
+                            localsInitialized.add(hasDefaultValue(t));
+                        });
+
+        functionType.returns().forEach(this::validateValueType);
+
         pushCtrl(null, new ArrayList<>(), functionType.returns());
 
         for (var i = 0; i < body.instructions().size(); i++) {
@@ -641,6 +779,7 @@ final class Validator {
                     {
                         var t1 = getParams(op);
                         var t2 = getReturns(op);
+                        t2.forEach(this::validateValueType);
                         popVals(t1);
                         pushCtrl(op.opcode(), t1, t2);
                         break;
@@ -725,15 +864,40 @@ final class Validator {
                         unreachable();
                         break;
                     }
+                case BR_ON_NULL:
+                    {
+                        var n = (int) op.operand(0);
+                        var rt = popRef();
+                        var labelTypes = labelTypes(getCtrl(n));
+                        popVals(labelTypes);
+                        pushVals(labelTypes);
+                        pushVal(new ValType(ValType.ID.Ref, rt.typeIdx()));
+                        break;
+                    }
+                case BR_ON_NON_NULL:
+                    {
+                        var n = (int) op.operand(0);
+                        var rt = popRef();
+                        pushVal(new ValType(ValType.ID.Ref, rt.typeIdx()));
+                        var labelTypes = labelTypes(getCtrl(n));
+                        popVals(labelTypes);
+                        pushVals(labelTypes);
+                        popVal();
+                        break;
+                    }
                 case RETURN:
                     VALIDATE_RETURN();
                     break;
                 case RETURN_CALL:
-                    VALIDATE_CALL((int) op.operand(0));
+                    VALIDATE_CALL((int) op.operand(0), true);
                     VALIDATE_RETURN();
                     break;
                 case RETURN_CALL_INDIRECT:
-                    VALIDATE_CALL_INDIRECT(op.operand(0), (int) op.operand(1));
+                    VALIDATE_CALL_INDIRECT(op.operand(0), (int) op.operand(1), true);
+                    VALIDATE_RETURN();
+                    break;
+                case RETURN_CALL_REF:
+                    VALIDATE_CALL_REF((int) op.operand(0), true);
                     VALIDATE_RETURN();
                     break;
                 default:
@@ -846,9 +1010,12 @@ final class Validator {
                 case RETURN:
                 case RETURN_CALL:
                 case RETURN_CALL_INDIRECT:
+                case RETURN_CALL_REF:
                 case BR_IF:
                 case BR_TABLE:
                 case BR:
+                case BR_ON_NULL:
+                case BR_ON_NON_NULL:
                 case END:
                     break;
                 case DATA_DROP:
@@ -1194,32 +1361,28 @@ final class Validator {
                 case LOCAL_SET:
                     {
                         var index = (int) op.operand(0);
-                        ValType expectedType =
-                                (index < inputLen)
-                                        ? functionType.params().get(index)
-                                        : getLocalType(localTypes, index - inputLen);
-                        popVal(expectedType);
+                        popVal(getLocalType(index));
+                        setLocal(index);
                         break;
                     }
                 case LOCAL_GET:
                     {
                         var index = (int) op.operand(0);
-                        ValType expectedType =
-                                (index < inputLen)
-                                        ? functionType.params().get(index)
-                                        : getLocalType(localTypes, index - inputLen);
-                        pushVal(expectedType);
+                        getLocal(index);
+                        pushVal(getLocalType(index));
                         break;
                     }
                 case LOCAL_TEE:
                     {
                         var index = (int) op.operand(0);
-                        ValType expectedType =
-                                (index < inputLen)
-                                        ? functionType.params().get(index)
-                                        : getLocalType(localTypes, index - inputLen);
-                        popVal(expectedType);
-                        pushVal(expectedType);
+                        ValType actualType = popVal();
+                        setLocal(index);
+                        ValType localType = getLocalType(index);
+                        if (!ValType.matches(module, actualType, localType)) {
+                            throw new InvalidException(
+                                    "type mismatch: local_tee: " + actualType + " " + localType);
+                        }
+                        pushVal(localType);
                         break;
                     }
                 case GLOBAL_GET:
@@ -1232,30 +1395,40 @@ final class Validator {
                     {
                         var global = getGlobal((int) op.operand(0));
                         if (global.mutabilityType() == MutabilityType.Const) {
-                            throw new InvalidException("global is immutable");
+                            // global.wast in the origin spec and function references
+                            // have exact same test that exact two different errors
+                            // TOOD: figure out which one
+                            throw new InvalidException("global is immutable, immutable global");
                         }
                         popVal(global.valueType());
                         break;
                     }
                 case CALL:
-                    VALIDATE_CALL((int) op.operand(0));
+                    VALIDATE_CALL((int) op.operand(0), false);
                     break;
                 case CALL_INDIRECT:
-                    VALIDATE_CALL_INDIRECT(op.operand(0), (int) op.operand(1));
+                    VALIDATE_CALL_INDIRECT(op.operand(0), (int) op.operand(1), false);
+                    break;
+                case CALL_REF:
+                    VALIDATE_CALL_REF((int) op.operand(0), false);
                     break;
                 case REF_NULL:
                     {
-                        pushVal(ValType.forId(op.operand(0)));
+                        int operand = (int) op.operand(0);
+                        ValType type = new ValType(ValType.ID.RefNull, operand);
+                        pushVal(type);
                         break;
                     }
                 case REF_IS_NULL:
                     {
-                        var ref = popVal();
-                        if (!isRef(ref)) {
-                            throw new InvalidException(
-                                    "type mismatch: expected FuncRef or ExtRef, but was " + ref);
-                        }
+                        popRef();
                         pushVal(ValType.I32);
+                        break;
+                    }
+                case REF_AS_NON_NULL:
+                    {
+                        var rt = popRef();
+                        pushVal(new ValType(ValType.ID.Ref, rt.typeIdx()));
                         break;
                     }
                 case REF_FUNC:
@@ -1265,7 +1438,7 @@ final class Validator {
                                 && !declaredFunctions.contains(idx)) {
                             throw new InvalidException("undeclared function reference");
                         }
-                        pushVal(ValType.FuncRef);
+                        pushVal(new ValType(ValType.ID.Ref, getFunctionType(idx)));
                         break;
                     }
                 case SELECT:
@@ -1294,12 +1467,12 @@ final class Validator {
                                             + t2);
                         }
                         if (!t1.equals(t2)
-                                && !t1.equals(ValType.UNKNOWN)
-                                && !t2.equals(ValType.UNKNOWN)) {
+                                && !t1.equals(ValType.BOT)
+                                && !t2.equals(ValType.BOT)) {
                             throw new InvalidException(
                                     "type mismatch, in SELECT t1: " + t1 + ", t2: " + t2);
                         }
-                        if (t1.equals(ValType.UNKNOWN)) {
+                        if (t1.equals(ValType.BOT)) {
                             pushVal(t2);
                         } else {
                             pushVal(t1);
@@ -1313,6 +1486,7 @@ final class Validator {
                             throw new InvalidException("invalid result arity");
                         }
                         var t = ValType.forId(op.operand(0));
+                        validateValueType(t);
                         popVal(t);
                         popVal(t);
                         pushVal(t);
@@ -1323,7 +1497,7 @@ final class Validator {
                         var table1 = getTableType((int) op.operand(1));
                         var table2 = getTableType((int) op.operand(0));
 
-                        if (!table1.equals(table2)) {
+                        if (!ValType.matches(module, table1, table2)) {
                             throw new InvalidException(
                                     "type mismatch, table 1 type: "
                                             + table1
@@ -1342,7 +1516,7 @@ final class Validator {
                         var elemIdx = (int) op.operand(0);
                         var elem = getElement(elemIdx);
 
-                        if (!table.equals(elem.type())) {
+                        if (!ValType.matches(module, elem.type(), table)) {
                             throw new InvalidException(
                                     "type mismatch, table type: "
                                             + table
@@ -1752,16 +1926,34 @@ final class Validator {
         }
     }
 
-    private void VALIDATE_CALL(int funcId) {
+    private void validateTailCall(List<ValType> funcReturnType) {
+        var expected = labelTypes(ctrlFrameStack.get(0));
+
+        if (funcReturnType.size() != expected.size()) {
+            throw new InvalidException("type mismatch: return arity");
+        }
+
+        for (int i = 0; i < funcReturnType.size(); i++) {
+            if (!ValType.matches(module, funcReturnType.get(i), expected.get(i))) {
+                throw new InvalidException(
+                        "type mismatch: tail call doesn't match frame type at index " + i);
+            }
+        }
+    }
+
+    private void VALIDATE_CALL(int funcId, boolean isReturn) {
         int typeId = getFunctionType(funcId);
         var types = getType(typeId);
         for (int j = types.params().size() - 1; j >= 0; j--) {
             popVal(types.params().get(j));
         }
         pushVals(types.returns());
+        if (isReturn) {
+            validateTailCall(types.returns());
+        }
     }
 
-    private void VALIDATE_CALL_INDIRECT(long typeId, int tableId) {
+    private void VALIDATE_CALL_INDIRECT(long typeId, int tableId, boolean isReturn) {
         popVal(ValType.I32);
         var tableType = getTableType(tableId);
         if (!tableType.equals(ValType.FuncRef)) {
@@ -1773,6 +1965,31 @@ final class Validator {
             popVal(types.params().get(j));
         }
         pushVals(types.returns());
+        if (isReturn) {
+            validateTailCall(types.returns());
+        }
+    }
+
+    private void VALIDATE_CALL_REF(int typeId, boolean isReturn) {
+        var rt = popRef();
+        var funcType = getType(typeId);
+        popVals(funcType.params());
+        pushVals(funcType.returns());
+
+        if (isReturn) {
+            validateTailCall(funcType.returns());
+        }
+
+        if (rt.typeIdx() != ValType.TypeIdxCode.BOT.code()) {
+            int idx = rt.typeIdx();
+            if (idx < 0) {
+                // error
+                throw new InvalidException(
+                        "type mismatch: call_ref should be called on a defined"
+                                + " reference type, got operand: "
+                                + idx);
+            }
+        }
     }
 
     private void VALIDATE_RETURN() {

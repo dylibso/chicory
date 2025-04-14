@@ -134,7 +134,9 @@ public final class TestGen {
                     "tail-call",
                     new Proposal("tc"),
                     "exception-handling",
-                    new Proposal("eh"));
+                    new Proposal("eh"),
+                    "function-references",
+                    new Proposal("function-references"));
 
     private static final class TestGenerator {
 

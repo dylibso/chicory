@@ -1,5 +1,6 @@
 package com.dylibso.chicory.testing;
 
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.copy;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -226,7 +227,9 @@ public final class MachinesTest {
     @Test
     public void shouldCallIndirectInterpreterToAot() {
         var store = new Store();
-        var table = new TableInstance(new Table(ValType.FuncRef, new TableLimits(3, 3)));
+        var table =
+                new TableInstance(
+                        new Table(ValType.FuncRef, new TableLimits(3, 3)), REF_NULL_VALUE);
         store.addTable(new ImportTable("test", "table", table));
 
         var instance =
@@ -252,7 +255,9 @@ public final class MachinesTest {
     @Test
     public void shouldCallIndirectAotToInterpreter() {
         var store = new Store();
-        var table = new TableInstance(new Table(ValType.FuncRef, new TableLimits(3, 3)));
+        var table =
+                new TableInstance(
+                        new Table(ValType.FuncRef, new TableLimits(3, 3)), REF_NULL_VALUE);
         store.addTable(new ImportTable("test", "table", table));
 
         var instance =

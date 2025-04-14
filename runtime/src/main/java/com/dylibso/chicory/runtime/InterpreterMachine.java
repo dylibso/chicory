@@ -1,17 +1,18 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.wasm.types.ValType.sizeOf;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+import static com.dylibso.chicory.wasm.types.ValType.sizeOf;
 import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.wasm.ChicoryException;
+import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
-import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
@@ -69,7 +70,7 @@ public class InterpreterMachine implements Machine {
         var type = instance.type(typeId);
 
         if (callType != null) {
-            verifyIndirectCall(type, callType);
+            verifyIndirectCall(instance.module(), type, callType);
         }
 
         var func = instance.function(funcId);
@@ -193,6 +194,12 @@ public class InterpreterMachine implements Machine {
                 case BR_TABLE:
                     BR_TABLE(frame, stack, instruction);
                     break;
+                case BR_ON_NULL:
+                    BR_ON_NULL(frame, stack, instruction);
+                    break;
+                case BR_ON_NON_NULL:
+                    BR_ON_NON_NULL(frame, stack, instruction);
+                    break;
                 case END:
                     {
                         var ctrlFrame = frame.popCtrl();
@@ -222,6 +229,10 @@ public class InterpreterMachine implements Machine {
                 case RETURN_CALL_INDIRECT:
                     // swap in place the current frame
                     frame = RETURN_CALL_INDIRECT(stack, instance, callStack, operands, frame);
+                    break;
+                case RETURN_CALL_REF:
+                    // swap in place the current frame
+                    frame = RETURN_CALL_REF(stack, instance, callStack, frame);
                     break;
                 case THROW:
                     {
@@ -527,6 +538,9 @@ public class InterpreterMachine implements Machine {
                 case CALL:
                     CALL(operands);
                     break;
+                case CALL_REF:
+                    CALL_REF();
+                    break;
                 case I32_AND:
                     I32_AND(stack);
                     break;
@@ -808,6 +822,9 @@ public class InterpreterMachine implements Machine {
                     break;
                 case REF_IS_NULL:
                     REF_IS_NULL(stack);
+                    break;
+                case REF_AS_NON_NULL:
+                    REF_AS_NON_NULL(stack);
                     break;
                 case ELEM_DROP:
                     ELEM_DROP(instance, operands);
@@ -1503,6 +1520,14 @@ public class InterpreterMachine implements Machine {
         stack.push(((val == REF_NULL_VALUE) ? Value.TRUE : Value.FALSE));
     }
 
+    private static void REF_AS_NON_NULL(MStack stack) {
+        var val = stack.pop();
+        if (val == REF_NULL_VALUE) {
+            throw new TrapException("Trapped on ref_as_non_null on null reference");
+        }
+        stack.push(val);
+    }
+
     private static void DATA_DROP(Instance instance, Operands operands) {
         var segment = (int) operands.get(0);
         instance.memory().drop(segment);
@@ -1671,6 +1696,19 @@ public class InterpreterMachine implements Machine {
 
     protected void CALL(Operands operands) {
         var funcId = (int) operands.get(0);
+        var typeId = instance.functionType(funcId);
+        var type = instance.type(typeId);
+        // given a list of param types, let's pop those params off the stack
+        // and pass as args to the function call
+        var args = extractArgsForParams(stack, type.params());
+        call(stack, instance, callStack, funcId, args, type, false);
+    }
+
+    private void CALL_REF() {
+        int funcId = (int) stack.pop();
+        if (funcId == REF_NULL_VALUE) {
+            throw new TrapException("Trapped on call_ref on null function reference");
+        }
         var typeId = instance.functionType(funcId);
         var type = instance.type(typeId);
         // given a list of param types, let's pop those params off the stack
@@ -2011,7 +2049,7 @@ public class InterpreterMachine implements Machine {
         var type = refInstance.type(typeId);
 
         var callType = refInstance.type(refInstance.functionType(funcId));
-        verifyIndirectCall(callType, type);
+        verifyIndirectCall(instance.module(), callType, type);
 
         var refMachine = refInstance.getMachine().getClass();
         if (!refInstance.equals(instance) && !refMachine.equals(instance.getMachine().getClass())) {
@@ -2031,6 +2069,46 @@ public class InterpreterMachine implements Machine {
             return currentStackFrame;
         } else {
             var func = instance.function(funcId);
+            var ctrlFrame = callStack.pop();
+            StackFrame.doControlTransfer(ctrlFrame.popCtrlTillCall(), stack);
+            var newFrame =
+                    new StackFrame(
+                            instance,
+                            funcId,
+                            args,
+                            type.params(),
+                            func.localTypes(),
+                            func.instructions());
+            newFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
+            callStack.push(newFrame);
+            return newFrame;
+        }
+    }
+
+    private static StackFrame RETURN_CALL_REF(
+            MStack stack,
+            Instance instance,
+            Deque<StackFrame> callStack,
+            StackFrame currentStackFrame) {
+        int funcId = (int) stack.pop();
+        if (funcId == REF_NULL_VALUE) {
+            throw new TrapException("Trapped on call_ref on null function reference");
+        }
+        var typeId = instance.functionType(funcId);
+        var type = instance.type(typeId);
+        var func = instance.function(funcId);
+        // given a list of param types, let's pop those params off the stack
+        // and pass as args to the function call
+        var args = extractArgsForParams(stack, type.params());
+
+        // optimizing when the tail call happens in the same function
+        if (currentStackFrame.funcId() == funcId) {
+            var ctrlFrame = currentStackFrame.popCtrlTillCall();
+            StackFrame.doControlTransfer(ctrlFrame, stack);
+            currentStackFrame.reset(args);
+            currentStackFrame.pushCtrl(ctrlFrame);
+            return currentStackFrame;
+        } else {
             var ctrlFrame = callStack.pop();
             StackFrame.doControlTransfer(ctrlFrame.popCtrlTillCall(), stack);
             var newFrame =
@@ -2067,7 +2145,7 @@ public class InterpreterMachine implements Machine {
         } else {
             checkInterruption();
             var callType = refInstance.type(refInstance.functionType(funcId));
-            verifyIndirectCall(callType, type);
+            verifyIndirectCall(instance.module(), callType, type);
             var results = refInstance.getMachine().call(funcId, args);
             if (results != null) {
                 for (var result : results) {
@@ -2267,6 +2345,28 @@ public class InterpreterMachine implements Machine {
         }
     }
 
+    private static void BR_ON_NULL(
+            StackFrame frame, MStack stack, AnnotatedInstruction instruction) {
+        var ref = (int) stack.pop();
+        if (ref == REF_NULL_VALUE) {
+            BR(frame, stack, instruction);
+        } else {
+            stack.push(ref);
+        }
+    }
+
+    private static void BR_ON_NON_NULL(
+            StackFrame frame, MStack stack, AnnotatedInstruction instruction) {
+        var ref = (int) stack.pop();
+        if (ref == REF_NULL_VALUE) {
+            // do nothing
+        } else {
+            stack.push(ref);
+            BR(frame, stack, instruction);
+        }
+    }
+
+    static long[] extractArgsForParams(MStack stack, List<ValType> params) {
     protected static long[] extractArgsForParams(MStack stack, List<ValType> params) {
         if (params == null) {
             return Value.EMPTY_VALUES;
@@ -2278,9 +2378,38 @@ public class InterpreterMachine implements Machine {
         return args;
     }
 
-    protected static void verifyIndirectCall(FunctionType actual, FunctionType expected)
+    private static boolean functionTypeMatch(
+            WasmModule context, FunctionType actual, FunctionType expected) {
+        if (actual.params().size() != expected.params().size()
+                || actual.returns().size() != expected.returns().size()) {
+            return false;
+        }
+
+        for (int i = 0; i < actual.params().size(); i++) {
+            var actualParam = actual.params().get(i);
+            var expectedParam = expected.params().get(i);
+
+            if (!ValType.matches(context, actualParam, expectedParam)) {
+                return false;
+            }
+        }
+
+        for (int i = 0; i < actual.returns().size(); i++) {
+            var actualReturn = actual.returns().get(i);
+            var expectedReturn = expected.returns().get(i);
+
+            if (!ValType.matches(context, expectedReturn, actualReturn)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected static void verifyIndirectCall(
+            WasmModule context, FunctionType actual, FunctionType expected)
             throws ChicoryException {
-        if (!actual.typesMatch(expected)) {
+        if (!functionTypeMatch(context, actual, expected)) {
             throw new ChicoryException("indirect call type mismatch");
         }
     }

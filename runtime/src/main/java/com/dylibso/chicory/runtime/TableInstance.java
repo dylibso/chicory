@@ -7,6 +7,7 @@ import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.ValType;
+
 import java.util.Arrays;
 
 public class TableInstance {
@@ -15,11 +16,11 @@ public class TableInstance {
     private Instance[] instances;
     private int[] refs;
 
-    public TableInstance(Table table) {
+    public TableInstance(Table table, int initialValue) {
         this.table = table;
         this.instances = new Instance[(int) table.limits().min()];
         refs = new int[(int) table.limits().min()];
-        Arrays.fill(refs, REF_NULL_VALUE);
+        Arrays.fill(refs, initialValue);
     }
 
     public int size() {

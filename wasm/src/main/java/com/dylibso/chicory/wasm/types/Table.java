@@ -35,6 +35,7 @@ public class Table {
             throw new IllegalArgumentException("Table element type must be a reference type");
         }
         this.limits = Objects.requireNonNull(limits, "limits");
+        this.init = init;
     }
 
     public ValType elementType() {
@@ -43,6 +44,10 @@ public class Table {
 
     public TableLimits limits() {
         return limits;
+    }
+
+    public List<Instruction> initialize() {
+        return init;
     }
 
     @Override

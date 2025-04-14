@@ -4,8 +4,8 @@ import static com.dylibso.chicory.wasm.types.ValType.sizeOf;
 
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.OpCode;
-import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;

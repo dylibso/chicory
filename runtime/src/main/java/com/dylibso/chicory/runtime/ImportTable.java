@@ -1,8 +1,11 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
+
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.ValType;
+
 import java.util.Map;
 
 public class ImportTable implements ImportValue {
@@ -29,7 +32,8 @@ public class ImportTable implements ImportValue {
 
         this.table =
                 new TableInstance(
-                        new Table(ValType.FuncRef, new TableLimits(maxFuncRef, maxFuncRef)));
+                        new Table(ValType.FuncRef, new TableLimits(maxFuncRef, maxFuncRef)),
+                        REF_NULL_VALUE);
         this.table.reset();
     }
 

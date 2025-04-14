@@ -10,6 +10,7 @@ import static com.dylibso.chicory.wasm.types.ExternalType.TAG;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
+import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.UnlinkableException;
@@ -31,6 +32,7 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MemoryImport;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MemorySection;
+import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TagImport;
@@ -95,9 +97,6 @@ public class Instance {
         this.imports = imports;
         this.machine = machineFactory.apply(this);
         this.tables = new TableInstance[tables.length];
-        for (int i = 0; i < tables.length; i++) {
-            this.tables[i] = new TableInstance(tables[i]);
-        }
         this.elements = elements.clone();
         this.tags = (tags == null) ? new TagInstance[0] : new TagInstance[tags.length];
         for (int i = 0; i < this.tags.length; i++) {
@@ -109,6 +108,11 @@ public class Instance {
         this.fluentExports = new Exports(this);
 
         this.exnRefs = new HashMap<>();
+
+        for (int i = 0; i < tables.length; i++) {
+            var initValue = (int) computeConstantValue(this, tables[i].initialize())[0];
+            this.tables[i] = new TableInstance(tables[i], initValue);
+        }
 
         if (initialize) {
             initialize(start);
@@ -133,12 +137,8 @@ public class Instance {
                     var value = computeConstantValue(this, init);
                     var inst = computeConstantInstance(this, init);
 
-                    if (ae.type().equals(ValType.FuncRef)) {
-                        table.setRef(index, (int) value[0], inst);
-                    } else {
-                        assert ae.type().equals(ValType.ExternRef);
-                        table.setRef(index, (int) value[0], inst);
-                    }
+                    assert ae.type().isReference();
+                    table.setRef(index, (int) value[0], inst);
                 }
             }
         }
@@ -411,6 +411,8 @@ public class Instance {
         }
 
         private void validateExternalFunctionSignature(FunctionImport imprt, ImportFunction f) {
+            // TODO: not too sure how defined function types across modules are checked.
+            // are they substitued until we get an exact type?
             var expectedType = module.typeSection().getType(imprt.typeIndex());
             if (expectedType.params().size() != f.paramTypes().size()
                     || expectedType.returns().size() != f.returnTypes().size()) {
@@ -423,7 +425,7 @@ public class Instance {
             for (int i = 0; i < expectedType.params().size(); i++) {
                 var expected = expectedType.params().get(i);
                 var got = f.paramTypes().get(i);
-                if (!expected.equals(got)) {
+                if (!ValType.matches(module, got, expected)) {
                     throw new UnlinkableException(
                             "incompatible import type for host function "
                                     + f.module()
@@ -434,7 +436,8 @@ public class Instance {
             for (int i = 0; i < expectedType.returns().size(); i++) {
                 var expected = expectedType.returns().get(i);
                 var got = f.returnTypes().get(i);
-                if (!expected.equals(got)) {
+                // TODO: runtime subtype check?
+                if (!ValType.matches(module, expected, got)) {
                     throw new UnlinkableException(
                             "incompatible import type for host function "
                                     + f.module()
@@ -454,8 +457,21 @@ public class Instance {
         }
 
         private void validateHostGlobalType(GlobalImport i, ImportGlobal g) {
-            if (!i.type().equals(g.instance().getType())
-                    || i.mutabilityType() != g.instance().getMutabilityType()) {
+            boolean typesMatch;
+
+            if (i.mutabilityType() == MutabilityType.Var) {
+                // for mutable globals, types must match exactly
+                typesMatch = i.type().equals(g.instance().getType());
+            } else if (i.mutabilityType() == MutabilityType.Const) {
+                // for const, subtyping is allowed
+                typesMatch = ValType.matches(module, g.instance().getType(), i.type());
+            } else {
+                throw new ChicoryException(
+                        "internal error: mutability type is not var or const: "
+                                + i.mutabilityType());
+            }
+
+            if (!typesMatch || i.mutabilityType() != g.instance().getMutabilityType()) {
                 throw new UnlinkableException("incompatible import type");
             }
         }
