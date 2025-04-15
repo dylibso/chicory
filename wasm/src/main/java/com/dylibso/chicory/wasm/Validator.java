@@ -733,7 +733,7 @@ final class Validator {
                     VALIDATE_RETURN();
                     break;
                 case RETURN_CALL_INDIRECT:
-                    VALIDATE_CALL_INDIRECT((int) op.operand(0), (int) op.operand(1));
+                    VALIDATE_CALL_INDIRECT(op.operand(0), (int) op.operand(1));
                     VALIDATE_RETURN();
                     break;
                 default:
