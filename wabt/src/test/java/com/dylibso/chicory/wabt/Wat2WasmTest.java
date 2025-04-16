@@ -5,18 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dylibso.chicory.corpus.WatGenerator;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiExitException;
 import com.dylibso.chicory.wasm.Parser;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -70,48 +64,14 @@ public class Wat2WasmTest {
     @Test
     @Order(3)
     public void canCompile50kFunctions() throws IOException {
-        var funcCount = 50_000;
-        buildBigWasm(funcCount, 0);
+        String wat = WatGenerator.bigWat(50_000, 0);
+        Wat2Wasm.parse(wat);
     }
 
     @Test
     @Order(4)
     public void canCompileBigFunctions() throws IOException {
-        var funcCount = 10;
-        buildBigWasm(funcCount, 15_000);
-    }
-
-    public static final class Context {
-        public final ArrayList<Integer> functions = new ArrayList<>();
-        public final ArrayList<Integer> instructions = new ArrayList<>();
-    }
-
-    private byte[] buildBigWasm(int funcCount, int funcSize) {
-        var ctx = new Context();
-        for (int i = 0; i < funcCount; i++) {
-            ctx.functions.add(i + 1);
-        }
-        for (int i = 0; i < funcSize; i++) {
-            ctx.instructions.add(i + 1);
-        }
-
-        VelocityEngine velocityEngine = new VelocityEngine();
-        velocityEngine.setProperty(RuntimeConstants.RESOURCE_LOADER, "classpath");
-        velocityEngine.setProperty(
-                "classpath.resource.loader.class", ClasspathResourceLoader.class.getName());
-        velocityEngine.init();
-
-        Template t = velocityEngine.getTemplate("/big.wat");
-
-        VelocityContext context = new VelocityContext();
-        context.put("functions", ctx.functions);
-        context.put("instructions", ctx.instructions);
-
-        StringWriter writer = new StringWriter();
-        t.merge(context, writer);
-        writer.flush();
-        String wat = writer.toString();
-
-        return Wat2Wasm.parse(wat);
+        String wat = WatGenerator.bigWat(10, 15_000);
+        Wat2Wasm.parse(wat);
     }
 }
