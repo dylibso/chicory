@@ -24,6 +24,17 @@ public class Wat2WasmTest {
     }
 
     @Test
+    public void shouldRunWat2WasmInterpreted() throws IOException {
+        Wat2Wasm.Options options =
+                Wat2Wasm.options().withExecutionType(Wat2Wasm.ExecutionType.INTERPRETED);
+        var result =
+                Wat2Wasm.parse(
+                        new File("../wasm-corpus/src/main/resources/wat/iterfact.wat"), options);
+        assertTrue(result.length > 0);
+        assertTrue(new String(result, UTF_8).contains("iterFact"));
+    }
+
+    @Test
     public void shouldRunWat2WasmOnString() {
         var moduleInstance =
                 Instance.builder(
