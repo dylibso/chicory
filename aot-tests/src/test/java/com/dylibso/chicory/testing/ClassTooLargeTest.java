@@ -1,5 +1,6 @@
 package com.dylibso.chicory.testing;
 
+import static com.dylibso.chicory.corpus.WatGenerator.bigWat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.experimental.aot.AotMachine;
@@ -7,23 +8,16 @@ import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasm.Parser;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.util.ArrayList;
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.VelocityEngine;
-import org.apache.velocity.runtime.RuntimeConstants;
-import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.junit.jupiter.api.Test;
 
 public class ClassTooLargeTest {
 
     @Test
-    public void testFunc50k() throws IOException {
+    public void testFunc50k() {
         var funcCount = 50_000;
+        byte[] wasm = Wat2Wasm.parse(bigWat(funcCount, 0));
         var instance =
-                Instance.builder(Parser.parse(buildHugeWasm(funcCount, 0)))
+                Instance.builder(Parser.parse(wasm))
                         .withMachineFactory(AotMachine::new)
                         .withStart(false)
                         .build();
@@ -38,10 +32,11 @@ public class ClassTooLargeTest {
     }
 
     @Test
-    public void testManyBigFuncs() throws IOException {
+    public void testManyBigFuncs() {
         var funcCount = 10;
+        byte[] wasm = Wat2Wasm.parse(bigWat(funcCount, 15_000));
         var instance =
-                Instance.builder(Parser.parse(buildHugeWasm(funcCount, 15_000)))
+                Instance.builder(Parser.parse(wasm))
                         .withMachineFactory(AotMachine::new)
                         .withStart(false)
                         .build();
@@ -52,39 +47,5 @@ public class ClassTooLargeTest {
         }
         ExportFunction func1 = instance.export("func_" + funcCount);
         assertEquals(expected, func1.apply(0)[0]);
-    }
-
-    public static final class Context {
-        public final ArrayList<Integer> functions = new ArrayList<>();
-        public final ArrayList<Integer> instructions = new ArrayList<>();
-    }
-
-    private byte[] buildHugeWasm(int funcCount, int funcSize) {
-        var ctx = new Context();
-        for (int i = 0; i < funcCount; i++) {
-            ctx.functions.add(i + 1);
-        }
-        for (int i = 0; i < funcSize; i++) {
-            ctx.instructions.add(i + 1);
-        }
-
-        VelocityEngine velocityEngine = new VelocityEngine();
-        velocityEngine.setProperty(RuntimeConstants.RESOURCE_LOADER, "classpath");
-        velocityEngine.setProperty(
-                "classpath.resource.loader.class", ClasspathResourceLoader.class.getName());
-        velocityEngine.init();
-
-        Template t = velocityEngine.getTemplate("/experimental/aot/class-too-large.wat");
-
-        VelocityContext context = new VelocityContext();
-        context.put("functions", ctx.functions);
-        context.put("instructions", ctx.instructions);
-
-        StringWriter writer = new StringWriter();
-        t.merge(context, writer);
-        writer.flush();
-        String wat = writer.toString();
-
-        return Wat2Wasm.parse(wat);
     }
 }
