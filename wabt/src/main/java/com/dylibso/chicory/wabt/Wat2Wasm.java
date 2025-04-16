@@ -66,7 +66,7 @@ public final class Wat2Wasm {
                 WasiOptions wasiOpts =
                         WasiOptions.builder()
                                 .withStdout(stdoutStream)
-                                .withStderr(stdoutStream)
+                                .withStderr(stderrStream)
                                 .withDirectory(target.toString(), target)
                                 .withArguments(List.of("wat2wasm", path.toString(), "--output=-"))
                                 .build();

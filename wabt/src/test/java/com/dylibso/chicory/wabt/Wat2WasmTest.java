@@ -17,11 +17,16 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.RuntimeConstants;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class Wat2WasmTest {
 
     @Test
+    @Order(0)
     public void shouldRunWat2Wasm() throws Exception {
         var result = Wat2Wasm.parse(new File("../wasm-corpus/src/main/resources/wat/iterfact.wat"));
 
@@ -30,6 +35,7 @@ public class Wat2WasmTest {
     }
 
     @Test
+    @Order(1)
     public void shouldRunWat2WasmOnString() {
         var moduleInstance =
                 Instance.builder(
@@ -48,6 +54,7 @@ public class Wat2WasmTest {
     }
 
     @Test
+    @Order(2)
     public void shouldThrowMalformedException() throws Exception {
         var exitException =
                 assertThrows(
@@ -61,12 +68,14 @@ public class Wat2WasmTest {
     }
 
     @Test
+    @Order(3)
     public void canCompile50kFunctions() throws IOException {
         var funcCount = 50_000;
         buildBigWasm(funcCount, 0);
     }
 
     @Test
+    @Order(4)
     public void canCompileBigFunctions() throws IOException {
         var funcCount = 10;
         buildBigWasm(funcCount, 15_000);
