@@ -41,9 +41,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.velocity</groupId>
-      <artifactId>velocity</artifactId>
-      <version>1.7</version>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm-tools</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
