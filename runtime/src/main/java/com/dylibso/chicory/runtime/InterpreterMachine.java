@@ -1835,7 +1835,7 @@ public class InterpreterMachine implements Machine {
 
     private static void GLOBAL_SET(MStack stack, Instance instance, Operands operands) {
         var id = (int) operands.get(0);
-        if (instance.global(id).getType().opcode() != ValueType.ID.V128) {
+        if (!instance.global(id).getType().equals(ValueType.V128)) {
             var val = stack.pop();
             instance.global(id).setValue(val);
         } else {
@@ -1850,7 +1850,7 @@ public class InterpreterMachine implements Machine {
         int idx = (int) operands.get(0);
 
         stack.push(instance.global(idx).getValueLow());
-        if (instance.global(idx).getType().opcode() == ValueType.ID.V128) {
+        if (instance.global(idx).getType().equals(ValueType.V128)) {
             stack.push(instance.global(idx).getValueHigh());
         }
     }
