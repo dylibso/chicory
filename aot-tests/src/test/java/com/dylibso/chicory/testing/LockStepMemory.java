@@ -3,6 +3,9 @@ package com.dylibso.chicory.testing;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.types.DataSegment;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.List;
@@ -98,6 +101,17 @@ public final class LockStepMemory implements Memory {
         try {
             eventsOut.put(expected);
             Event actual = eventsIn.take();
+            if (expected.eventId % 1_000_000 == 0) {
+                System.out.println(
+                        String.format(
+                                "%s: %s %d %s %s",
+                                name,
+                                expected.method,
+                                expected.eventId,
+                                expected.args,
+                                expected.result));
+            }
+
             if (!expected.equals(actual)) {
 
                 throw new IllegalStateException(
@@ -206,10 +220,33 @@ public final class LockStepMemory implements Memory {
         exchange("zero", null);
     }
 
+    //    private static final VarHandle SHORT_ARR_HANDLE =
+    //            MethodHandles.byteArrayViewVarHandle(short[].class, ByteOrder.LITTLE_ENDIAN);
+    private static final VarHandle INT_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(int[].class, ByteOrder.LITTLE_ENDIAN);
+    private static final VarHandle FLOAT_ARR_HANDLE =
+            MethodHandles.byteArrayViewVarHandle(float[].class, ByteOrder.LITTLE_ENDIAN);
+
+    private float toFloat(long value) {
+        byte[] bytes = new byte[4];
+        INT_ARR_HANDLE.set(bytes, 0, (int) value);
+        return (float) FLOAT_ARR_HANDLE.get(bytes, 0);
+    }
+
+    //    private static final VarHandle LONG_ARR_HANDLE =
+    //            MethodHandles.byteArrayViewVarHandle(long[].class, ByteOrder.LITTLE_ENDIAN);
+    //    private static final VarHandle DOUBLE_ARR_HANDLE =
+    //            MethodHandles.byteArrayViewVarHandle(double[].class, ByteOrder.LITTLE_ENDIAN);
+    //    private float toDouble(long value) {
+    //        byte[] bytes = new byte[8];
+    //        LONG_ARR_HANDLE.set(bytes, 0, value);
+    //        return (float) DOUBLE_ARR_HANDLE.get(bytes, 0);
+    //    }
+
     @Override
-    public long readLong(int addr) {
-        long result = memory.readLong(addr);
-        exchange("readLong", result, addr);
+    public long readF32(int addr) {
+        long result = memory.readF32(addr);
+        exchange("readFloat", toFloat(result), addr); // remapped.
         return result;
     }
 
@@ -223,14 +260,14 @@ public final class LockStepMemory implements Memory {
     @Override
     public long readU16(int addr) {
         long result = memory.readU16(addr);
-        exchange("readU16", result, addr);
+        exchange("readShort", (short) result, addr); // remapped.
         return result;
     }
 
     @Override
-    public byte read(int addr) {
-        byte result = memory.read(addr);
-        exchange("read", result, addr);
+    public short readShort(int addr) {
+        short result = memory.readShort(addr);
+        exchange("readShort", result, addr);
         return result;
     }
 
@@ -248,36 +285,15 @@ public final class LockStepMemory implements Memory {
     }
 
     @Override
-    public long readF32(int addr) {
-        long result = memory.readF32(addr);
-        exchange("readF32", result, addr);
-        return result;
-    }
-
-    @Override
     public void writeShort(int addr, short data) {
         memory.writeShort(addr, data);
         exchange("writeShort", null, addr, data);
     }
 
     @Override
-    public short readShort(int addr) {
-        short result = memory.readShort(addr);
-        exchange("readShort", result, addr);
-        return result;
-    }
-
-    @Override
     public double readDouble(int addr) {
         double result = memory.readDouble(addr);
         exchange("readDouble", result, addr);
-        return result;
-    }
-
-    @Override
-    public int readInt(int addr) {
-        int result = memory.readInt(addr);
-        exchange("readInt", result, addr);
         return result;
     }
 
@@ -290,21 +306,56 @@ public final class LockStepMemory implements Memory {
     @Override
     public long readU32(int addr) {
         long result = memory.readU32(addr);
-        exchange("readU32", result, addr);
-        return result;
-    }
-
-    @Override
-    public long readU8(int addr) {
-        long result = memory.readU8(addr);
-        exchange("readU8", result, addr);
+        exchange("readInt", (int) result, addr); // remapped.
         return result;
     }
 
     @Override
     public long readI32(int addr) {
         long result = memory.readI32(addr);
-        exchange("readI32", result, addr);
+        exchange("readInt", (int) result, addr); // remapped.
+        return result;
+    }
+
+    @Override
+    public int readInt(int addr) {
+        int result = memory.readInt(addr);
+        exchange("readInt", result, addr);
+        return result;
+    }
+
+    @Override
+    public long readI64(int addr) {
+        long result = memory.readI64(addr);
+        exchange("readLong", result, addr); // remapped.
+        return result;
+    }
+
+    @Override
+    public long readLong(int addr) {
+        long result = memory.readLong(addr);
+        exchange("readLong", result, addr);
+        return result;
+    }
+
+    @Override
+    public long readU8(int addr) {
+        long result = memory.readU8(addr);
+        exchange("read", (byte) result, addr); // remapped.
+        return result;
+    }
+
+    @Override
+    public long readI8(int addr) {
+        byte result = memory.read(addr);
+        exchange("read", result, addr); // remapped.
+        return result;
+    }
+
+    @Override
+    public byte read(int addr) {
+        byte result = memory.read(addr);
+        exchange("read", result, addr);
         return result;
     }
 
@@ -346,13 +397,6 @@ public final class LockStepMemory implements Memory {
     }
 
     @Override
-    public long readI8(int addr) {
-        long result = memory.readI8(addr);
-        exchange("readI8", result, addr);
-        return result;
-    }
-
-    @Override
     public String readCString(int addr) {
         String result = memory.readCString(addr);
         exchange("readCString", result, addr);
@@ -363,13 +407,6 @@ public final class LockStepMemory implements Memory {
     public String readCString(int addr, Charset charSet) {
         String result = memory.readCString(addr, charSet);
         exchange("readCString", result, addr, charSet);
-        return result;
-    }
-
-    @Override
-    public long readI64(int addr) {
-        long result = memory.readI64(addr);
-        exchange("readI64", result, addr);
         return result;
     }
 
