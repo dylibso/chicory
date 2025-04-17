@@ -99,8 +99,6 @@ final class AotUtil {
             case ExternRef:
             case FuncRef:
                 asm.visitInsn(Opcodes.L2I);
-                asm.visitLdcInsn(0xFFFFFFFF);
-                asm.visitInsn(Opcodes.IAND);
                 return;
             case I64:
                 return;

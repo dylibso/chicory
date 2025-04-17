@@ -2141,8 +2141,6 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ICONST_0
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 3
     ALOAD 0
     ICONST_1
@@ -2162,2073 +2160,1481 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ICONST_4
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 9
     ALOAD 0
     ICONST_5
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 10
     ALOAD 0
     BIPUSH 6
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 11
     ALOAD 0
     BIPUSH 7
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 12
     ALOAD 0
     BIPUSH 8
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 13
     ALOAD 0
     BIPUSH 9
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 14
     ALOAD 0
     BIPUSH 10
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 15
     ALOAD 0
     BIPUSH 11
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 16
     ALOAD 0
     BIPUSH 12
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 17
     ALOAD 0
     BIPUSH 13
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 18
     ALOAD 0
     BIPUSH 14
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 19
     ALOAD 0
     BIPUSH 15
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 20
     ALOAD 0
     BIPUSH 16
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 21
     ALOAD 0
     BIPUSH 17
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 22
     ALOAD 0
     BIPUSH 18
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 23
     ALOAD 0
     BIPUSH 19
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 24
     ALOAD 0
     BIPUSH 20
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 25
     ALOAD 0
     BIPUSH 21
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 26
     ALOAD 0
     BIPUSH 22
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 27
     ALOAD 0
     BIPUSH 23
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 28
     ALOAD 0
     BIPUSH 24
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 29
     ALOAD 0
     BIPUSH 25
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 30
     ALOAD 0
     BIPUSH 26
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 31
     ALOAD 0
     BIPUSH 27
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 32
     ALOAD 0
     BIPUSH 28
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 33
     ALOAD 0
     BIPUSH 29
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 34
     ALOAD 0
     BIPUSH 30
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 35
     ALOAD 0
     BIPUSH 31
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 36
     ALOAD 0
     BIPUSH 32
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 37
     ALOAD 0
     BIPUSH 33
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 38
     ALOAD 0
     BIPUSH 34
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 39
     ALOAD 0
     BIPUSH 35
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 40
     ALOAD 0
     BIPUSH 36
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 41
     ALOAD 0
     BIPUSH 37
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 42
     ALOAD 0
     BIPUSH 38
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 43
     ALOAD 0
     BIPUSH 39
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 44
     ALOAD 0
     BIPUSH 40
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 45
     ALOAD 0
     BIPUSH 41
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 46
     ALOAD 0
     BIPUSH 42
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 47
     ALOAD 0
     BIPUSH 43
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 48
     ALOAD 0
     BIPUSH 44
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 49
     ALOAD 0
     BIPUSH 45
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 50
     ALOAD 0
     BIPUSH 46
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 51
     ALOAD 0
     BIPUSH 47
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 52
     ALOAD 0
     BIPUSH 48
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 53
     ALOAD 0
     BIPUSH 49
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 54
     ALOAD 0
     BIPUSH 50
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 55
     ALOAD 0
     BIPUSH 51
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 56
     ALOAD 0
     BIPUSH 52
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 57
     ALOAD 0
     BIPUSH 53
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 58
     ALOAD 0
     BIPUSH 54
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 59
     ALOAD 0
     BIPUSH 55
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 60
     ALOAD 0
     BIPUSH 56
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 61
     ALOAD 0
     BIPUSH 57
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 62
     ALOAD 0
     BIPUSH 58
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 63
     ALOAD 0
     BIPUSH 59
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 64
     ALOAD 0
     BIPUSH 60
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 65
     ALOAD 0
     BIPUSH 61
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 66
     ALOAD 0
     BIPUSH 62
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 67
     ALOAD 0
     BIPUSH 63
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 68
     ALOAD 0
     BIPUSH 64
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 69
     ALOAD 0
     BIPUSH 65
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 70
     ALOAD 0
     BIPUSH 66
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 71
     ALOAD 0
     BIPUSH 67
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 72
     ALOAD 0
     BIPUSH 68
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 73
     ALOAD 0
     BIPUSH 69
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 74
     ALOAD 0
     BIPUSH 70
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 75
     ALOAD 0
     BIPUSH 71
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 76
     ALOAD 0
     BIPUSH 72
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 77
     ALOAD 0
     BIPUSH 73
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 78
     ALOAD 0
     BIPUSH 74
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 79
     ALOAD 0
     BIPUSH 75
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 80
     ALOAD 0
     BIPUSH 76
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 81
     ALOAD 0
     BIPUSH 77
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 82
     ALOAD 0
     BIPUSH 78
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 83
     ALOAD 0
     BIPUSH 79
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 84
     ALOAD 0
     BIPUSH 80
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 85
     ALOAD 0
     BIPUSH 81
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 86
     ALOAD 0
     BIPUSH 82
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 87
     ALOAD 0
     BIPUSH 83
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 88
     ALOAD 0
     BIPUSH 84
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 89
     ALOAD 0
     BIPUSH 85
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 90
     ALOAD 0
     BIPUSH 86
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 91
     ALOAD 0
     BIPUSH 87
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 92
     ALOAD 0
     BIPUSH 88
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 93
     ALOAD 0
     BIPUSH 89
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 94
     ALOAD 0
     BIPUSH 90
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 95
     ALOAD 0
     BIPUSH 91
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 96
     ALOAD 0
     BIPUSH 92
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 97
     ALOAD 0
     BIPUSH 93
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 98
     ALOAD 0
     BIPUSH 94
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 99
     ALOAD 0
     BIPUSH 95
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 100
     ALOAD 0
     BIPUSH 96
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 101
     ALOAD 0
     BIPUSH 97
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 102
     ALOAD 0
     BIPUSH 98
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 103
     ALOAD 0
     BIPUSH 99
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 104
     ALOAD 0
     BIPUSH 100
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 105
     ALOAD 0
     BIPUSH 101
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 106
     ALOAD 0
     BIPUSH 102
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 107
     ALOAD 0
     BIPUSH 103
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 108
     ALOAD 0
     BIPUSH 104
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 109
     ALOAD 0
     BIPUSH 105
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 110
     ALOAD 0
     BIPUSH 106
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 111
     ALOAD 0
     BIPUSH 107
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 112
     ALOAD 0
     BIPUSH 108
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 113
     ALOAD 0
     BIPUSH 109
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 114
     ALOAD 0
     BIPUSH 110
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 115
     ALOAD 0
     BIPUSH 111
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 116
     ALOAD 0
     BIPUSH 112
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 117
     ALOAD 0
     BIPUSH 113
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 118
     ALOAD 0
     BIPUSH 114
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 119
     ALOAD 0
     BIPUSH 115
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 120
     ALOAD 0
     BIPUSH 116
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 121
     ALOAD 0
     BIPUSH 117
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 122
     ALOAD 0
     BIPUSH 118
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 123
     ALOAD 0
     BIPUSH 119
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 124
     ALOAD 0
     BIPUSH 120
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 125
     ALOAD 0
     BIPUSH 121
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 126
     ALOAD 0
     BIPUSH 122
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 127
     ALOAD 0
     BIPUSH 123
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 128
     ALOAD 0
     BIPUSH 124
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 129
     ALOAD 0
     BIPUSH 125
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 130
     ALOAD 0
     BIPUSH 126
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 131
     ALOAD 0
     BIPUSH 127
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 132
     ALOAD 0
     SIPUSH 128
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 133
     ALOAD 0
     SIPUSH 129
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 134
     ALOAD 0
     SIPUSH 130
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 135
     ALOAD 0
     SIPUSH 131
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 136
     ALOAD 0
     SIPUSH 132
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 137
     ALOAD 0
     SIPUSH 133
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 138
     ALOAD 0
     SIPUSH 134
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 139
     ALOAD 0
     SIPUSH 135
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 140
     ALOAD 0
     SIPUSH 136
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 141
     ALOAD 0
     SIPUSH 137
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 142
     ALOAD 0
     SIPUSH 138
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 143
     ALOAD 0
     SIPUSH 139
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 144
     ALOAD 0
     SIPUSH 140
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 145
     ALOAD 0
     SIPUSH 141
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 146
     ALOAD 0
     SIPUSH 142
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 147
     ALOAD 0
     SIPUSH 143
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 148
     ALOAD 0
     SIPUSH 144
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 149
     ALOAD 0
     SIPUSH 145
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 150
     ALOAD 0
     SIPUSH 146
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 151
     ALOAD 0
     SIPUSH 147
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 152
     ALOAD 0
     SIPUSH 148
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 153
     ALOAD 0
     SIPUSH 149
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 154
     ALOAD 0
     SIPUSH 150
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 155
     ALOAD 0
     SIPUSH 151
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 156
     ALOAD 0
     SIPUSH 152
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 157
     ALOAD 0
     SIPUSH 153
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 158
     ALOAD 0
     SIPUSH 154
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 159
     ALOAD 0
     SIPUSH 155
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 160
     ALOAD 0
     SIPUSH 156
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 161
     ALOAD 0
     SIPUSH 157
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 162
     ALOAD 0
     SIPUSH 158
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 163
     ALOAD 0
     SIPUSH 159
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 164
     ALOAD 0
     SIPUSH 160
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 165
     ALOAD 0
     SIPUSH 161
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 166
     ALOAD 0
     SIPUSH 162
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 167
     ALOAD 0
     SIPUSH 163
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 168
     ALOAD 0
     SIPUSH 164
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 169
     ALOAD 0
     SIPUSH 165
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 170
     ALOAD 0
     SIPUSH 166
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 171
     ALOAD 0
     SIPUSH 167
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 172
     ALOAD 0
     SIPUSH 168
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 173
     ALOAD 0
     SIPUSH 169
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 174
     ALOAD 0
     SIPUSH 170
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 175
     ALOAD 0
     SIPUSH 171
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 176
     ALOAD 0
     SIPUSH 172
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 177
     ALOAD 0
     SIPUSH 173
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 178
     ALOAD 0
     SIPUSH 174
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 179
     ALOAD 0
     SIPUSH 175
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 180
     ALOAD 0
     SIPUSH 176
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 181
     ALOAD 0
     SIPUSH 177
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 182
     ALOAD 0
     SIPUSH 178
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 183
     ALOAD 0
     SIPUSH 179
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 184
     ALOAD 0
     SIPUSH 180
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 185
     ALOAD 0
     SIPUSH 181
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 186
     ALOAD 0
     SIPUSH 182
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 187
     ALOAD 0
     SIPUSH 183
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 188
     ALOAD 0
     SIPUSH 184
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 189
     ALOAD 0
     SIPUSH 185
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 190
     ALOAD 0
     SIPUSH 186
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 191
     ALOAD 0
     SIPUSH 187
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 192
     ALOAD 0
     SIPUSH 188
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 193
     ALOAD 0
     SIPUSH 189
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 194
     ALOAD 0
     SIPUSH 190
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 195
     ALOAD 0
     SIPUSH 191
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 196
     ALOAD 0
     SIPUSH 192
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 197
     ALOAD 0
     SIPUSH 193
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 198
     ALOAD 0
     SIPUSH 194
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 199
     ALOAD 0
     SIPUSH 195
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 200
     ALOAD 0
     SIPUSH 196
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 201
     ALOAD 0
     SIPUSH 197
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 202
     ALOAD 0
     SIPUSH 198
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 203
     ALOAD 0
     SIPUSH 199
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 204
     ALOAD 0
     SIPUSH 200
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 205
     ALOAD 0
     SIPUSH 201
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 206
     ALOAD 0
     SIPUSH 202
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 207
     ALOAD 0
     SIPUSH 203
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 208
     ALOAD 0
     SIPUSH 204
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 209
     ALOAD 0
     SIPUSH 205
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 210
     ALOAD 0
     SIPUSH 206
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 211
     ALOAD 0
     SIPUSH 207
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 212
     ALOAD 0
     SIPUSH 208
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 213
     ALOAD 0
     SIPUSH 209
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 214
     ALOAD 0
     SIPUSH 210
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 215
     ALOAD 0
     SIPUSH 211
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 216
     ALOAD 0
     SIPUSH 212
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 217
     ALOAD 0
     SIPUSH 213
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 218
     ALOAD 0
     SIPUSH 214
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 219
     ALOAD 0
     SIPUSH 215
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 220
     ALOAD 0
     SIPUSH 216
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 221
     ALOAD 0
     SIPUSH 217
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 222
     ALOAD 0
     SIPUSH 218
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 223
     ALOAD 0
     SIPUSH 219
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 224
     ALOAD 0
     SIPUSH 220
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 225
     ALOAD 0
     SIPUSH 221
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 226
     ALOAD 0
     SIPUSH 222
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 227
     ALOAD 0
     SIPUSH 223
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 228
     ALOAD 0
     SIPUSH 224
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 229
     ALOAD 0
     SIPUSH 225
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 230
     ALOAD 0
     SIPUSH 226
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 231
     ALOAD 0
     SIPUSH 227
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 232
     ALOAD 0
     SIPUSH 228
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 233
     ALOAD 0
     SIPUSH 229
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 234
     ALOAD 0
     SIPUSH 230
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 235
     ALOAD 0
     SIPUSH 231
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 236
     ALOAD 0
     SIPUSH 232
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 237
     ALOAD 0
     SIPUSH 233
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 238
     ALOAD 0
     SIPUSH 234
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 239
     ALOAD 0
     SIPUSH 235
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 240
     ALOAD 0
     SIPUSH 236
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 241
     ALOAD 0
     SIPUSH 237
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 242
     ALOAD 0
     SIPUSH 238
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 243
     ALOAD 0
     SIPUSH 239
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 244
     ALOAD 0
     SIPUSH 240
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 245
     ALOAD 0
     SIPUSH 241
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 246
     ALOAD 0
     SIPUSH 242
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 247
     ALOAD 0
     SIPUSH 243
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 248
     ALOAD 0
     SIPUSH 244
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 249
     ALOAD 0
     SIPUSH 245
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 250
     ALOAD 0
     SIPUSH 246
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 251
     ALOAD 0
     SIPUSH 247
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 252
     ALOAD 0
     SIPUSH 248
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 253
     ALOAD 0
     SIPUSH 249
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 254
     ALOAD 0
     SIPUSH 250
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 255
     ALOAD 0
     SIPUSH 251
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 256
     ALOAD 0
     SIPUSH 252
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 257
     ALOAD 0
     SIPUSH 253
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 258
     ALOAD 0
     SIPUSH 254
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 259
     ALOAD 0
     SIPUSH 255
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 260
     ALOAD 0
     SIPUSH 256
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 261
     ALOAD 0
     SIPUSH 257
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 262
     ALOAD 0
     SIPUSH 258
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 263
     ALOAD 0
     SIPUSH 259
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 264
     ALOAD 0
     SIPUSH 260
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 265
     ALOAD 0
     SIPUSH 261
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 266
     ALOAD 0
     SIPUSH 262
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 267
     ALOAD 0
     SIPUSH 263
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 268
     ALOAD 0
     SIPUSH 264
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 269
     ALOAD 0
     SIPUSH 265
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 270
     ALOAD 0
     SIPUSH 266
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 271
     ALOAD 0
     SIPUSH 267
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 272
     ALOAD 0
     SIPUSH 268
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 273
     ALOAD 0
     SIPUSH 269
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 274
     ALOAD 0
     SIPUSH 270
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 275
     ALOAD 0
     SIPUSH 271
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 276
     ALOAD 0
     SIPUSH 272
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 277
     ALOAD 0
     SIPUSH 273
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 278
     ALOAD 0
     SIPUSH 274
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 279
     ALOAD 0
     SIPUSH 275
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 280
     ALOAD 0
     SIPUSH 276
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 281
     ALOAD 0
     SIPUSH 277
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 282
     ALOAD 0
     SIPUSH 278
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 283
     ALOAD 0
     SIPUSH 279
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 284
     ALOAD 0
     SIPUSH 280
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 285
     ALOAD 0
     SIPUSH 281
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 286
     ALOAD 0
     SIPUSH 282
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 287
     ALOAD 0
     SIPUSH 283
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 288
     ALOAD 0
     SIPUSH 284
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 289
     ALOAD 0
     SIPUSH 285
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 290
     ALOAD 0
     SIPUSH 286
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 291
     ALOAD 0
     SIPUSH 287
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 292
     ALOAD 0
     SIPUSH 288
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 293
     ALOAD 0
     SIPUSH 289
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 294
     ALOAD 0
     SIPUSH 290
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 295
     ALOAD 0
     SIPUSH 291
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 296
     ALOAD 0
     SIPUSH 292
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 297
     ALOAD 0
     SIPUSH 293
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 298
     ALOAD 0
     SIPUSH 294
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 299
     ALOAD 0
     SIPUSH 295
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 300
     ALOAD 0
     SIPUSH 296
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 301
     ALOAD 0
     SIPUSH 297
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 302
     ALOAD 0
     SIPUSH 298
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 303
     ALOAD 0
     SIPUSH 299
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ISTORE 304
     ILOAD 3
     ILOAD 304
@@ -4289,8 +3695,6 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ICONST_0
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     IRETURN
 
   public static call_indirect_1([JIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
@@ -4335,8 +3739,6 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ICONST_0
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     IRETURN
 }
 
@@ -4374,14 +3776,10 @@ final class com/dylibso/chicory/$gen/CompiledMachine$MachineCall {
     ICONST_0
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ALOAD 2
     ICONST_1
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     ALOAD 1
     ALOAD 0
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine.func_0 (IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I

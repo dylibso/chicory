@@ -57,8 +57,6 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ICONST_0
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     IRETURN
 
   public static func_1(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
@@ -149,8 +147,6 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ICONST_0
     LALOAD
     L2I
-    ICONST_M1
-    IAND
     IRETURN
 
   public static call_indirect_1(IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V

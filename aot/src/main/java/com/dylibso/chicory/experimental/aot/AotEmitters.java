@@ -554,14 +554,12 @@ final class AotEmitters {
     }
 
     public static void I32_STORE8(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
-        asm.iconst(0xFF);
-        asm.visitInsn(Opcodes.IAND);
+        asm.visitInsn(Opcodes.I2B);
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_WRITE_BYTE);
     }
 
     public static void I32_STORE16(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
-        asm.iconst(0xFFFF);
-        asm.visitInsn(Opcodes.IAND);
+        asm.visitInsn(Opcodes.I2S);
         emitLoadOrStore(ctx, ins, asm, AotMethodRefs.MEMORY_WRITE_SHORT);
     }
 
