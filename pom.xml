@@ -456,7 +456,7 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>${maven-surefire-plugin.version}</version>
           <configuration>
-            <argLine>-XX:CompileCommand=dontinline,com/dylibso/chicory/wabt/Wat2WasmMachine$AotMethods.memoryCopy</argLine>
+            <argLine>-XX:CompileCommand=dontinline,com/dylibso/chicory/runtime/ByteBufferMemory.copy</argLine>
           </configuration>
         </plugin>
         <plugin>
