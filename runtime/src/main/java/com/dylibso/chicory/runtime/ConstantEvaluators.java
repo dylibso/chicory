@@ -38,7 +38,7 @@ final class ConstantEvaluators {
                 case GLOBAL_GET:
                     {
                         var idx = (int) instruction.operand(0);
-                        if (instance.global(idx).getType() == ValueType.V128) {
+                        if (instance.global(idx).getType().equals(ValueType.V128)) {
                             return new long[] {
                                 instance.global(idx).getValueLow(),
                                 instance.global(idx).getValueHigh()

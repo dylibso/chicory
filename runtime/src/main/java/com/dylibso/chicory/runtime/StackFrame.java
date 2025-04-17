@@ -69,7 +69,7 @@ public class StackFrame {
         for (var i = 0; i < localTypes.size(); i++) {
             ValueType type = localTypes.get(i);
             var idx = j + sizeOf(argsTypes);
-            if (type != ValueType.V128) {
+            if (!type.equals(ValueType.V128)) {
                 locals[idx] = Value.zero(type);
                 j += 1;
             } else {
@@ -83,7 +83,7 @@ public class StackFrame {
         j = 0;
         for (int i = 0; i < this.localTypes.length; i++) {
             this.localIdx[i] = j;
-            if (localType(i) != ValueType.V128) {
+            if (!localType(i).equals(ValueType.V128)) {
                 j += 1;
             } else {
                 j += 2;

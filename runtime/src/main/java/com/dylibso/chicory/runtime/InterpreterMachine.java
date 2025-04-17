@@ -1880,7 +1880,7 @@ public class InterpreterMachine implements Machine {
     private static void LOCAL_GET(MStack stack, Operands operands, StackFrame currentStackFrame) {
         var idx = (int) operands.get(0);
         var i = currentStackFrame.localIndexOf(idx);
-        if (currentStackFrame.localType(idx).opcode() == ValueType.ID.V128) {
+        if (currentStackFrame.localType(idx).equals(ValueType.V128)) {
             stack.push(currentStackFrame.local(i));
             stack.push(currentStackFrame.local(i + 1));
         } else {
@@ -1891,7 +1891,7 @@ public class InterpreterMachine implements Machine {
     private static void LOCAL_SET(MStack stack, Operands operands, StackFrame currentStackFrame) {
         var idx = (int) operands.get(0);
         var i = currentStackFrame.localIndexOf(idx);
-        if (currentStackFrame.localType(idx).opcode() == ValueType.ID.V128) {
+        if (currentStackFrame.localType(idx).equals(ValueType.V128)) {
             currentStackFrame.setLocal(i, stack.pop());
             currentStackFrame.setLocal(i + 1, stack.pop());
         } else {
@@ -1903,7 +1903,7 @@ public class InterpreterMachine implements Machine {
         // here we peek instead of pop, leaving it on the stack
         var idx = (int) operands.get(0);
         var i = currentStackFrame.localIndexOf(idx);
-        if (currentStackFrame.localType(idx).opcode() == ValueType.ID.V128) {
+        if (currentStackFrame.localType(idx).equals(ValueType.V128)) {
             var tmp = stack.pop();
             currentStackFrame.setLocal(i, tmp);
             currentStackFrame.setLocal(i + 1, stack.peek());
@@ -2052,7 +2052,7 @@ public class InterpreterMachine implements Machine {
             return 0;
         }
         if (ValueType.isValid(typeId)) {
-            if (ValueType.forId(typeId).opcode() == ValueType.ID.V128) {
+            if (ValueType.forId(typeId).equals(ValueType.V128)) {
                 return 2;
             } else {
                 return 1;
