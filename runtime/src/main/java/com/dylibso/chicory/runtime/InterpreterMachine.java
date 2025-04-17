@@ -1,7 +1,6 @@
 package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
-import static com.dylibso.chicory.wasm.types.ValueType.V128;
 import static com.dylibso.chicory.wasm.types.ValueType.sizeOf;
 import static java.util.Objects.requireNonNullElse;
 
@@ -1836,7 +1835,7 @@ public class InterpreterMachine implements Machine {
 
     private static void GLOBAL_SET(MStack stack, Instance instance, Operands operands) {
         var id = (int) operands.get(0);
-        if (instance.global(id).getType() != V128) {
+        if (instance.global(id).getType().opcode() != ValueType.ID.V128) {
             var val = stack.pop();
             instance.global(id).setValue(val);
         } else {
@@ -1851,7 +1850,7 @@ public class InterpreterMachine implements Machine {
         int idx = (int) operands.get(0);
 
         stack.push(instance.global(idx).getValueLow());
-        if (instance.global(idx).getType() == V128) {
+        if (instance.global(idx).getType().opcode() == ValueType.ID.V128) {
             stack.push(instance.global(idx).getValueHigh());
         }
     }
@@ -1881,7 +1880,7 @@ public class InterpreterMachine implements Machine {
     private static void LOCAL_GET(MStack stack, Operands operands, StackFrame currentStackFrame) {
         var idx = (int) operands.get(0);
         var i = currentStackFrame.localIndexOf(idx);
-        if (currentStackFrame.localType(idx) == ValueType.V128) {
+        if (currentStackFrame.localType(idx).opcode() == ValueType.ID.V128) {
             stack.push(currentStackFrame.local(i));
             stack.push(currentStackFrame.local(i + 1));
         } else {
@@ -1892,7 +1891,7 @@ public class InterpreterMachine implements Machine {
     private static void LOCAL_SET(MStack stack, Operands operands, StackFrame currentStackFrame) {
         var idx = (int) operands.get(0);
         var i = currentStackFrame.localIndexOf(idx);
-        if (currentStackFrame.localType(idx) == ValueType.V128) {
+        if (currentStackFrame.localType(idx).opcode() == ValueType.ID.V128) {
             currentStackFrame.setLocal(i, stack.pop());
             currentStackFrame.setLocal(i + 1, stack.pop());
         } else {
@@ -1904,7 +1903,7 @@ public class InterpreterMachine implements Machine {
         // here we peek instead of pop, leaving it on the stack
         var idx = (int) operands.get(0);
         var i = currentStackFrame.localIndexOf(idx);
-        if (currentStackFrame.localType(idx) == ValueType.V128) {
+        if (currentStackFrame.localType(idx).opcode() == ValueType.ID.V128) {
             var tmp = stack.pop();
             currentStackFrame.setLocal(i, tmp);
             currentStackFrame.setLocal(i + 1, stack.peek());
