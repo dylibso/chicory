@@ -136,11 +136,7 @@ public interface Memory {
 
     void fill(byte value, int fromIndex, int toIndex);
 
-    default void copy(int dest, int src, int size) {
-        synchronized (this) {
-            write(dest, readBytes(src, size));
-        }
-    }
+    void copy(int dest, int src, int size);
 
     void drop(int segment);
 }
