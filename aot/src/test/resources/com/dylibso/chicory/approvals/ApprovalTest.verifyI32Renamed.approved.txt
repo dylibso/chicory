@@ -109,8 +109,6 @@ final class FOO$AotMethods {
 
   private final static Z enableMemCopyWorkaround
 
-  private static Ljava/util/concurrent/locks/ReadWriteLock; lock
-
   private <init>()V
    L0
     ALOAD 0
@@ -267,7 +265,7 @@ final class FOO$AotMethods {
     ILOAD 1
     ILOAD 2
     ALOAD 3
-    INVOKESTATIC FOO$AotMethods.notInlinableMemoryCopy (IIILcom/dylibso/chicory/runtime/Memory;)V
+    INVOKESTATIC com/dylibso/chicory/runtime/MemCopyWorkaround.apply (IIILcom/dylibso/chicory/runtime/Memory;)V
     GOTO L3
    L1
     ALOAD 3
@@ -278,44 +276,6 @@ final class FOO$AotMethods {
    L3
     RETURN
    L4
-
-  public static notInlinableMemoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
-    TRYCATCHBLOCK L0 L1 L2 com/dylibso/chicory/runtime/WasmRuntimeException
-    TRYCATCHBLOCK L0 L1 L3 null
-    TRYCATCHBLOCK L2 L4 L3 null
-   L5
-    GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
-    INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
-    INVOKEINTERFACE java/util/concurrent/locks/Lock.lock ()V (itf)
-   L0
-    ALOAD 3
-    ILOAD 0
-    ILOAD 1
-    ILOAD 2
-    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.copy (III)V (itf)
-   L1
-    GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
-    INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
-    INVOKEINTERFACE java/util/concurrent/locks/Lock.unlock ()V (itf)
-   L6
-    GOTO L7
-   L2
-    ASTORE 4
-   L8
-    ALOAD 4
-    ATHROW
-   L3
-    ASTORE 5
-   L4
-    GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
-    INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
-    INVOKEINTERFACE java/util/concurrent/locks/Lock.unlock ()V (itf)
-   L9
-    ALOAD 5
-    ATHROW
-   L7
-    RETURN
-   L10
 
   public static memoryFill(IBILcom/dylibso/chicory/runtime/Memory;)V
    L0
@@ -621,10 +581,6 @@ final class FOO$AotMethods {
    L6
     PUTSTATIC FOO$AotMethods.enableMemCopyWorkaround : Z
    L4
-    NEW java/util/concurrent/locks/ReentrantReadWriteLock
-    DUP
-    INVOKESPECIAL java/util/concurrent/locks/ReentrantReadWriteLock.<init> ()V
-    PUTSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
     RETURN
 }
 
