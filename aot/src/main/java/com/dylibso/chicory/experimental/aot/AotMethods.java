@@ -74,11 +74,7 @@ public final class AotMethods {
         if (isMac) {
             notInlinableMemoryCopy(destination, offset, size, memory);
         } else {
-            try {
-                memory.copy(destination, offset, size);
-            } catch (WasmRuntimeException wre) {
-                notInlinableMemoryCopy(destination, offset, size, memory);
-            }
+            memory.copy(destination, offset, size);
         }
     }
 

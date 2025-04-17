@@ -260,36 +260,25 @@ final class FOO$AotMethods {
    L2
 
   public static memoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
-    TRYCATCHBLOCK L0 L1 L2 com/dylibso/chicory/runtime/WasmRuntimeException
-   L3
+   L0
     GETSTATIC FOO$AotMethods.isMac : Z
-    IFEQ L0
-   L4
+    IFEQ L1
+   L2
     ILOAD 0
     ILOAD 1
     ILOAD 2
     ALOAD 3
     INVOKESTATIC FOO$AotMethods.notInlinableMemoryCopy (IIILcom/dylibso/chicory/runtime/Memory;)V
-    GOTO L5
-   L0
+    GOTO L3
+   L1
     ALOAD 3
     ILOAD 0
     ILOAD 1
     ILOAD 2
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.copy (III)V (itf)
-   L1
-    GOTO L5
-   L2
-    ASTORE 4
-   L6
-    ILOAD 0
-    ILOAD 1
-    ILOAD 2
-    ALOAD 3
-    INVOKESTATIC FOO$AotMethods.notInlinableMemoryCopy (IIILcom/dylibso/chicory/runtime/Memory;)V
-   L5
+   L3
     RETURN
-   L7
+   L4
 
   public static notInlinableMemoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
     TRYCATCHBLOCK L0 L1 L2 null
