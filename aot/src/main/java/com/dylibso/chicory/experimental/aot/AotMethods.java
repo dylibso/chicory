@@ -65,7 +65,9 @@ public final class AotMethods {
     }
 
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
-        synchronized (memory) {
+        try {
+            memory.copy(destination, offset, size);
+        } catch (WasmRuntimeException wre) {
             memory.copy(destination, offset, size);
         }
     }
