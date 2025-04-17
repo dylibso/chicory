@@ -67,17 +67,27 @@ public final class AotMethods {
         OpcodeImpl.TABLE_INIT(instance, tableidx, elementidx, size, elemidx, offset);
     }
 
+    // This is a ugly hack to workaround a bug on some JVMs
     private static String os = System.getProperty("os.name", "generic").toLowerCase(Locale.ROOT);
     private static boolean isMac = (os.indexOf("mac") >= 0) || (os.indexOf("darwin") >= 0);
 
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
+        // If it's Mac on Java 11 and 17(Temurin only afaik) at least, inlining this method causes
+        // issues
         if (isMac) {
             notInlinableMemoryCopy(destination, offset, size, memory);
         } else {
-            memory.copy(destination, offset, size);
+            // Alternatively we keep the the control flow complex enough but we let other
+            // optimizations kick in
+            try {
+                memory.copy(destination, offset, size);
+            } catch (WasmRuntimeException wre) {
+                notInlinableMemoryCopy(destination, offset, size, memory);
+            }
         }
     }
 
+    // HACK: this is a whole trick to prevent incorrect inlining of the JVM
     private static ReadWriteLock lock = new ReentrantReadWriteLock();
 
     public static void notInlinableMemoryCopy(
