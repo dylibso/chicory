@@ -354,7 +354,7 @@ public final class ByteBufferMemory implements Memory {
             buffer.position(src);
             buffer.get(bytes);
             buffer.position(dest);
-            buffer.put(bytes);
+            buffer.put(bytes.clone());
         }
     }
 }
