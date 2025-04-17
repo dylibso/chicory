@@ -104,11 +104,10 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
 final class FOO$AotMethods {
 
   NESTHOST FOO
+  public final static INNERCLASS java/lang/Runtime$Version java/lang/Runtime Version
   public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
 
-  private static Ljava/lang/String; os
-
-  private static Z isMac
+  private static Z java21plus
 
   private static Ljava/util/concurrent/locks/ReadWriteLock; lock
 
@@ -260,36 +259,25 @@ final class FOO$AotMethods {
    L2
 
   public static memoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
-    TRYCATCHBLOCK L0 L1 L2 com/dylibso/chicory/runtime/WasmRuntimeException
-   L3
-    GETSTATIC FOO$AotMethods.isMac : Z
-    IFEQ L0
-   L4
+   L0
+    GETSTATIC FOO$AotMethods.java21plus : Z
+    IFEQ L1
+   L2
     ILOAD 0
     ILOAD 1
     ILOAD 2
     ALOAD 3
     INVOKESTATIC FOO$AotMethods.notInlinableMemoryCopy (IIILcom/dylibso/chicory/runtime/Memory;)V
-    GOTO L5
-   L0
+    GOTO L3
+   L1
     ALOAD 3
     ILOAD 0
     ILOAD 1
     ILOAD 2
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.copy (III)V (itf)
-   L1
-    GOTO L5
-   L2
-    ASTORE 4
-   L6
-    ILOAD 0
-    ILOAD 1
-    ILOAD 2
-    ALOAD 3
-    INVOKESTATIC FOO$AotMethods.notInlinableMemoryCopy (IIILcom/dylibso/chicory/runtime/Memory;)V
-   L5
+   L3
     RETURN
-   L7
+   L4
 
   public static notInlinableMemoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
     TRYCATCHBLOCK L0 L1 L2 null
@@ -604,29 +592,18 @@ final class FOO$AotMethods {
 
   static <clinit>()V
    L0
-    LDC "os.name"
-    LDC "generic"
-    INVOKESTATIC java/lang/System.getProperty (Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-    GETSTATIC java/util/Locale.ROOT : Ljava/util/Locale;
-    INVOKEVIRTUAL java/lang/String.toLowerCase (Ljava/util/Locale;)Ljava/lang/String;
-    PUTSTATIC FOO$AotMethods.os : Ljava/lang/String;
-   L1
-    GETSTATIC FOO$AotMethods.os : Ljava/lang/String;
-    LDC "mac"
-    INVOKEVIRTUAL java/lang/String.indexOf (Ljava/lang/String;)I
-    IFGE L2
-    GETSTATIC FOO$AotMethods.os : Ljava/lang/String;
-    LDC "darwin"
-    INVOKEVIRTUAL java/lang/String.indexOf (Ljava/lang/String;)I
-    IFLT L3
-   L2
+    INVOKESTATIC java/lang/Runtime.version ()Ljava/lang/Runtime$Version;
+    LDC "21"
+    INVOKESTATIC java/lang/Runtime$Version.parse (Ljava/lang/String;)Ljava/lang/Runtime$Version;
+    INVOKEVIRTUAL java/lang/Runtime$Version.compareTo (Ljava/lang/Runtime$Version;)I
+    IFLT L1
     ICONST_1
-    GOTO L4
-   L3
+    GOTO L2
+   L1
     ICONST_0
-   L4
-    PUTSTATIC FOO$AotMethods.isMac : Z
-   L5
+   L2
+    PUTSTATIC FOO$AotMethods.java21plus : Z
+   L3
     NEW java/util/concurrent/locks/ReentrantReadWriteLock
     DUP
     INVOKESPECIAL java/util/concurrent/locks/ReentrantReadWriteLock.<init> ()V

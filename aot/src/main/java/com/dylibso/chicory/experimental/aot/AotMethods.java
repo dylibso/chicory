@@ -10,7 +10,6 @@ import com.dylibso.chicory.runtime.WasmRuntimeException;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import java.util.Locale;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -68,22 +67,15 @@ public final class AotMethods {
     }
 
     // This is a ugly hack to workaround a bug on some JVMs
-    private static String os = System.getProperty("os.name", "generic").toLowerCase(Locale.ROOT);
-    private static boolean isMac = (os.indexOf("mac") >= 0) || (os.indexOf("darwin") >= 0);
+    private static boolean java21plus =
+            Runtime.version().compareTo(Runtime.Version.parse("21")) >= 0;
 
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
-        // If it's Mac on Java 11 and 17(Temurin only afaik) at least, inlining this method causes
-        // issues
-        if (isMac) {
+        // up to Java 17 the bug happens on various platforms we need to be conservative
+        if (java21plus) {
             notInlinableMemoryCopy(destination, offset, size, memory);
         } else {
-            // Alternatively we keep the the control flow complex enough but we let other
-            // optimizations kick in
-            try {
-                memory.copy(destination, offset, size);
-            } catch (WasmRuntimeException wre) {
-                notInlinableMemoryCopy(destination, offset, size, memory);
-            }
+            memory.copy(destination, offset, size);
         }
     }
 
