@@ -106,7 +106,7 @@ final class FOO$AotMethods {
   NESTHOST FOO
   public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
 
-  private final static Z workaroundMemCopy
+  private final static Z enableMemCopyWorkaround
 
   private static Ljava/util/concurrent/locks/ReadWriteLock; lock
 
@@ -259,7 +259,7 @@ final class FOO$AotMethods {
 
   public static memoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
    L0
-    GETSTATIC FOO$AotMethods.workaroundMemCopy : Z
+    GETSTATIC FOO$AotMethods.enableMemCopyWorkaround : Z
     IFEQ L1
    L2
     ILOAD 0
@@ -600,7 +600,7 @@ final class FOO$AotMethods {
    L3
     ALOAD 0
     INVOKESTATIC java/lang/Boolean.parseBoolean (Ljava/lang/String;)Z
-    PUTSTATIC FOO$AotMethods.workaroundMemCopy : Z
+    PUTSTATIC FOO$AotMethods.enableMemCopyWorkaround : Z
     GOTO L4
    L2
     LDC "java.version"
@@ -648,7 +648,7 @@ final class FOO$AotMethods {
    L13
     ICONST_0
    L14
-    PUTSTATIC FOO$AotMethods.workaroundMemCopy : Z
+    PUTSTATIC FOO$AotMethods.enableMemCopyWorkaround : Z
    L4
     NEW java/util/concurrent/locks/ReentrantReadWriteLock
     DUP

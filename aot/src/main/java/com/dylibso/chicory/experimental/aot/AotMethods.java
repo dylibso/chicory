@@ -67,15 +67,13 @@ public final class AotMethods {
     }
 
     // This is an ugly hack to workaround a bug on some JVMs (Temurin 17-)
-    private static final boolean workaroundMemCopy;
+    private static final boolean enableMemCopyWorkaround;
 
     static {
         String workaround = System.getProperty("chicory.workaroundMemCopy");
 
         if (workaround != null) {
-            workaroundMemCopy = Boolean.parseBoolean(workaround);
-
-            throw new IllegalArgumentException("WORKAROUND IS: " + workaround);
+            enableMemCopyWorkaround = Boolean.parseBoolean(workaround);
         } else {
             String versionStr = System.getProperty("java.version");
             int majorVersion;
@@ -86,17 +84,15 @@ public final class AotMethods {
                 int dot = versionStr.indexOf(".");
                 majorVersion =
                         Integer.parseInt(dot != -1 ? versionStr.substring(0, dot) : versionStr);
-
-                throw new IllegalArgumentException("DEBUG ME: " + majorVersion);
             }
 
-            workaroundMemCopy = majorVersion < 21;
+            enableMemCopyWorkaround = majorVersion < 21;
         }
     }
 
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
         // up to Java 17 the bug happens on various platforms we need to be conservative
-        if (workaroundMemCopy) {
+        if (enableMemCopyWorkaround) {
             notInlinableMemoryCopy(destination, offset, size, memory);
         } else {
             memory.copy(destination, offset, size);
