@@ -48,22 +48,17 @@ public final class FunctionType {
 
     public static FunctionType returning(ValueType valueType) {
         switch (valueType.opcode()) {
-            case ValueType.ID.ExternRef:
-                return new FunctionType(List.of(), List.of(ValueType.ExternRef));
+            case ValueType.ID.RefNull:
+                if (valueType.equals(ValueType.ExternRef) || valueType.equals(ValueType.FuncRef)) {
+                    return new FunctionType(List.of(), List.of(valueType));
+                }
             case ValueType.ID.ExnRef:
-                return new FunctionType(List.of(), List.of(ValueType.ExnRef));
-            case ValueType.ID.FuncRef:
-                return new FunctionType(List.of(), List.of(ValueType.FuncRef));
             case ValueType.ID.V128:
-                return new FunctionType(List.of(), List.of(ValueType.V128));
             case ValueType.ID.F64:
-                return new FunctionType(List.of(), List.of(ValueType.F64));
             case ValueType.ID.F32:
-                return new FunctionType(List.of(), List.of(ValueType.F32));
             case ValueType.ID.I64:
-                return new FunctionType(List.of(), List.of(ValueType.I64));
             case ValueType.ID.I32:
-                return new FunctionType(List.of(), List.of(ValueType.I32));
+                return new FunctionType(List.of(), List.of(valueType));
             default:
                 throw new IllegalArgumentException("invalid ValueType " + valueType);
         }
@@ -71,22 +66,17 @@ public final class FunctionType {
 
     public static FunctionType accepting(ValueType valueType) {
         switch (valueType.opcode()) {
-            case ValueType.ID.ExternRef:
-                return new FunctionType(List.of(ValueType.ExternRef), List.of());
+            case ValueType.ID.RefNull:
+                if (valueType.equals(ValueType.ExternRef) || valueType.equals(ValueType.FuncRef)) {
+                    return new FunctionType(List.of(valueType), List.of());
+                }
             case ValueType.ID.ExnRef:
-                return new FunctionType(List.of(ValueType.ExnRef), List.of());
-            case ValueType.ID.FuncRef:
-                return new FunctionType(List.of(ValueType.FuncRef), List.of());
             case ValueType.ID.V128:
-                return new FunctionType(List.of(ValueType.V128), List.of());
             case ValueType.ID.F64:
-                return new FunctionType(List.of(ValueType.F64), List.of());
             case ValueType.ID.F32:
-                return new FunctionType(List.of(ValueType.F32), List.of());
             case ValueType.ID.I64:
-                return new FunctionType(List.of(ValueType.I64), List.of());
             case ValueType.ID.I32:
-                return new FunctionType(List.of(ValueType.I32), List.of());
+                return new FunctionType(List.of(valueType), List.of());
             default:
                 throw new IllegalArgumentException("invalid ValueType " + valueType);
         }
