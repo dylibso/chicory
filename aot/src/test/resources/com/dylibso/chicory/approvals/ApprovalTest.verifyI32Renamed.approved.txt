@@ -280,9 +280,10 @@ final class FOO$AotMethods {
    L4
 
   public static notInlinableMemoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
-    TRYCATCHBLOCK L0 L1 L2 null
-    TRYCATCHBLOCK L2 L3 L2 null
-   L4
+    TRYCATCHBLOCK L0 L1 L2 com/dylibso/chicory/runtime/WasmRuntimeException
+    TRYCATCHBLOCK L0 L1 L3 null
+    TRYCATCHBLOCK L2 L4 L3 null
+   L5
     GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
     INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
     INVOKEINTERFACE java/util/concurrent/locks/Lock.lock ()V (itf)
@@ -296,20 +297,25 @@ final class FOO$AotMethods {
     GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
     INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
     INVOKEINTERFACE java/util/concurrent/locks/Lock.unlock ()V (itf)
-   L5
-    GOTO L6
+   L6
+    GOTO L7
    L2
     ASTORE 4
+   L8
+    ALOAD 4
+    ATHROW
    L3
+    ASTORE 5
+   L4
     GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
     INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
     INVOKEINTERFACE java/util/concurrent/locks/Lock.unlock ()V (itf)
-   L7
-    ALOAD 4
+   L9
+    ALOAD 5
     ATHROW
-   L6
+   L7
     RETURN
-   L8
+   L10
 
   public static memoryFill(IBILcom/dylibso/chicory/runtime/Memory;)V
    L0
@@ -615,6 +621,16 @@ final class FOO$AotMethods {
    L6
     PUTSTATIC FOO$AotMethods.enableMemCopyWorkaround : Z
    L4
+    INVOKESTATIC java/util/logging/Logger.getAnonymousLogger ()Ljava/util/logging/Logger;
+    GETSTATIC java/util/logging/Level.ALL : Ljava/util/logging/Level;
+    GETSTATIC FOO$AotMethods.enableMemCopyWorkaround : Z
+    INVOKEDYNAMIC makeConcatWithConstants(Z)Ljava/lang/String; [
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      "Mem copy workaround is \u0001"
+    ]
+   L7
+    INVOKEVIRTUAL java/util/logging/Logger.log (Ljava/util/logging/Level;Ljava/lang/String;)V
+   L8
     NEW java/util/concurrent/locks/ReentrantReadWriteLock
     DUP
     INVOKESPECIAL java/util/concurrent/locks/ReentrantReadWriteLock.<init> ()V

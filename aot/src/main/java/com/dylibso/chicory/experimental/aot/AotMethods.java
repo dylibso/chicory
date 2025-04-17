@@ -12,6 +12,8 @@ import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public final class AotMethods {
 
@@ -77,6 +79,8 @@ public final class AotMethods {
         } else {
             enableMemCopyWorkaround = Runtime.version().feature() < 21;
         }
+        Logger.getAnonymousLogger()
+                .log(Level.ALL, "Mem copy workaround is " + enableMemCopyWorkaround);
     }
 
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
@@ -96,6 +100,8 @@ public final class AotMethods {
         lock.writeLock().lock();
         try {
             memory.copy(destination, offset, size);
+        } catch (WasmRuntimeException ex) {
+            throw ex;
         } finally {
             lock.writeLock().unlock();
         }
