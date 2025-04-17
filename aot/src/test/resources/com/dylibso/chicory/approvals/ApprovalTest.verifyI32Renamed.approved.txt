@@ -621,16 +621,6 @@ final class FOO$AotMethods {
    L6
     PUTSTATIC FOO$AotMethods.enableMemCopyWorkaround : Z
    L4
-    INVOKESTATIC java/util/logging/Logger.getAnonymousLogger ()Ljava/util/logging/Logger;
-    GETSTATIC java/util/logging/Level.ALL : Ljava/util/logging/Level;
-    GETSTATIC FOO$AotMethods.enableMemCopyWorkaround : Z
-    INVOKEDYNAMIC makeConcatWithConstants(Z)Ljava/lang/String; [
-      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
-      "Mem copy workaround is \u0001"
-    ]
-   L7
-    INVOKEVIRTUAL java/util/logging/Logger.log (Ljava/util/logging/Level;Ljava/lang/String;)V
-   L8
     NEW java/util/concurrent/locks/ReentrantReadWriteLock
     DUP
     INVOKESPECIAL java/util/concurrent/locks/ReentrantReadWriteLock.<init> ()V
