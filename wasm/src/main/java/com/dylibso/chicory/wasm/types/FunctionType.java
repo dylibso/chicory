@@ -48,10 +48,6 @@ public final class FunctionType {
 
     public static FunctionType returning(ValueType valueType) {
         switch (valueType.opcode()) {
-            case ValueType.ID.RefNull:
-                if (valueType.equals(ValueType.ExternRef) || valueType.equals(ValueType.FuncRef)) {
-                    return new FunctionType(List.of(), List.of(valueType));
-                }
             case ValueType.ID.ExnRef:
             case ValueType.ID.V128:
             case ValueType.ID.F64:
@@ -59,6 +55,11 @@ public final class FunctionType {
             case ValueType.ID.I64:
             case ValueType.ID.I32:
                 return new FunctionType(List.of(), List.of(valueType));
+            case ValueType.ID.RefNull:
+                if (valueType.equals(ValueType.ExternRef) || valueType.equals(ValueType.FuncRef)) {
+                    return new FunctionType(List.of(), List.of(valueType));
+                }
+                // fallthrough
             default:
                 throw new IllegalArgumentException("invalid ValueType " + valueType);
         }
@@ -66,10 +67,6 @@ public final class FunctionType {
 
     public static FunctionType accepting(ValueType valueType) {
         switch (valueType.opcode()) {
-            case ValueType.ID.RefNull:
-                if (valueType.equals(ValueType.ExternRef) || valueType.equals(ValueType.FuncRef)) {
-                    return new FunctionType(List.of(valueType), List.of());
-                }
             case ValueType.ID.ExnRef:
             case ValueType.ID.V128:
             case ValueType.ID.F64:
@@ -77,6 +74,11 @@ public final class FunctionType {
             case ValueType.ID.I64:
             case ValueType.ID.I32:
                 return new FunctionType(List.of(valueType), List.of());
+            case ValueType.ID.RefNull:
+                if (valueType.equals(ValueType.ExternRef) || valueType.equals(ValueType.FuncRef)) {
+                    return new FunctionType(List.of(valueType), List.of());
+                }
+                // fallthrough
             default:
                 throw new IllegalArgumentException("invalid ValueType " + valueType);
         }
