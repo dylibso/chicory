@@ -127,7 +127,6 @@ public final class AotCompiler {
     public static final class Builder {
         private final WasmModule module;
         private String className;
-        private int maxFunctionsPerClass;
 
         private Builder(WasmModule module) {
             this.module = module;
@@ -138,19 +137,11 @@ public final class AotCompiler {
             return this;
         }
 
-        public Builder withMaxFunctionsPerClass(int maxFunctionsPerClass) {
-            this.maxFunctionsPerClass = maxFunctionsPerClass;
-            return this;
-        }
-
         public AotCompiler build() {
             if (className == null) {
                 className = DEFAULT_CLASS_NAME;
             }
-            if (maxFunctionsPerClass <= 0) {
-                maxFunctionsPerClass = DEFAULT_MAX_FUNCTIONS_PER_CLASS;
-            }
-            return new AotCompiler(module, className, maxFunctionsPerClass);
+            return new AotCompiler(module, className, DEFAULT_MAX_FUNCTIONS_PER_CLASS);
         }
     }
 
