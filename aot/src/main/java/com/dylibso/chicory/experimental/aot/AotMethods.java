@@ -10,6 +10,7 @@ import com.dylibso.chicory.runtime.WasmRuntimeException;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import java.util.Locale;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -66,11 +67,18 @@ public final class AotMethods {
         OpcodeImpl.TABLE_INIT(instance, tableidx, elementidx, size, elemidx, offset);
     }
 
+    private static String os = System.getProperty("os.name", "generic").toLowerCase(Locale.ROOT);
+    private static boolean isMac = (os.indexOf("mac") >= 0) || (os.indexOf("darwin") >= 0);
+
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
-        try {
-            memory.copy(destination, offset, size);
-        } catch (WasmRuntimeException wre) {
+        if (isMac) {
             notInlinableMemoryCopy(destination, offset, size, memory);
+        } else {
+            try {
+                memory.copy(destination, offset, size);
+            } catch (WasmRuntimeException wre) {
+                notInlinableMemoryCopy(destination, offset, size, memory);
+            }
         }
     }
 
