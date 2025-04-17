@@ -352,12 +352,4 @@ public final class ByteArrayMemory implements Memory {
     public void drop(int segment) {
         dataSegments[segment] = PassiveDataSegment.EMPTY;
     }
-
-    // TODO: verify that this works
-    @Override
-    public void copy(int dest, int src, int size) {
-        synchronized (this) {
-            write(dest, readBytes(src, size));
-        }
-    }
 }

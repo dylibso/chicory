@@ -346,19 +346,4 @@ public final class ByteBufferMemory implements Memory {
     public void drop(int segment) {
         dataSegments[segment] = PassiveDataSegment.EMPTY;
     }
-
-    @Override
-    public void copy(int dest, int src, int size) {
-        synchronized (this) {
-            try {
-                var bytes = new byte[size];
-                buffer.position(src);
-                buffer.get(bytes);
-                buffer.position(dest);
-                buffer.put(bytes.clone());
-            } catch (RuntimeException e) {
-                throw outOfBoundsException(e, src, dest, sizeInBytes());
-            }
-        }
-    }
 }

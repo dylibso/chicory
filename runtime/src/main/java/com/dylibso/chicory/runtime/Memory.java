@@ -136,7 +136,9 @@ public interface Memory {
 
     void fill(byte value, int fromIndex, int toIndex);
 
-    void copy(int dest, int src, int size);
+    default void copy(int dest, int src, int size) {
+        write(dest, readBytes(src, size));
+    }
 
     void drop(int segment);
 }
