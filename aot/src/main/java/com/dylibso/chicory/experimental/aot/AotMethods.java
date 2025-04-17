@@ -10,6 +10,8 @@ import com.dylibso.chicory.runtime.WasmRuntimeException;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public final class AotMethods {
 
@@ -68,7 +70,19 @@ public final class AotMethods {
         try {
             memory.copy(destination, offset, size);
         } catch (WasmRuntimeException wre) {
+            notInlinableMemoryCopy(destination, offset, size, memory);
+        }
+    }
+
+    private static ReadWriteLock lock = new ReentrantReadWriteLock();
+
+    public static void notInlinableMemoryCopy(
+            int destination, int offset, int size, Memory memory) {
+        lock.writeLock().lock();
+        try {
             memory.copy(destination, offset, size);
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 

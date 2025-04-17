@@ -106,6 +106,8 @@ final class FOO$AotMethods {
   NESTHOST FOO
   public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
 
+  private static Ljava/util/concurrent/locks/ReadWriteLock; lock
+
   private <init>()V
    L0
     ALOAD 0
@@ -266,14 +268,46 @@ final class FOO$AotMethods {
    L2
     ASTORE 4
    L4
+    ILOAD 0
+    ILOAD 1
+    ILOAD 2
+    ALOAD 3
+    INVOKESTATIC FOO$AotMethods.notInlinableMemoryCopy (IIILcom/dylibso/chicory/runtime/Memory;)V
+   L3
+    RETURN
+   L5
+
+  public static notInlinableMemoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
+    TRYCATCHBLOCK L0 L1 L2 null
+    TRYCATCHBLOCK L2 L3 L2 null
+   L4
+    GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
+    INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
+    INVOKEINTERFACE java/util/concurrent/locks/Lock.lock ()V (itf)
+   L0
     ALOAD 3
     ILOAD 0
     ILOAD 1
     ILOAD 2
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.copy (III)V (itf)
-   L3
-    RETURN
+   L1
+    GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
+    INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
+    INVOKEINTERFACE java/util/concurrent/locks/Lock.unlock ()V (itf)
    L5
+    GOTO L6
+   L2
+    ASTORE 4
+   L3
+    GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
+    INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
+    INVOKEINTERFACE java/util/concurrent/locks/Lock.unlock ()V (itf)
+   L7
+    ALOAD 4
+    ATHROW
+   L6
+    RETURN
+   L8
 
   public static memoryFill(IBILcom/dylibso/chicory/runtime/Memory;)V
    L0
@@ -553,6 +587,14 @@ final class FOO$AotMethods {
    L1
     RETURN
    L2
+
+  static <clinit>()V
+   L0
+    NEW java/util/concurrent/locks/ReentrantReadWriteLock
+    DUP
+    INVOKESPECIAL java/util/concurrent/locks/ReentrantReadWriteLock.<init> ()V
+    PUTSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
+    RETURN
 }
 
 final class FOO$MachineCall {
