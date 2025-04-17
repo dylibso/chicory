@@ -254,34 +254,26 @@ final class FOO$AotMethods {
    L2
 
   public static memoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
-    TRYCATCHBLOCK L0 L1 L2 null
-    TRYCATCHBLOCK L2 L3 L2 null
-   L4
-    ALOAD 3
-    DUP
-    ASTORE 4
-    MONITORENTER
+    TRYCATCHBLOCK L0 L1 L2 com/dylibso/chicory/runtime/WasmRuntimeException
    L0
     ALOAD 3
     ILOAD 0
     ILOAD 1
     ILOAD 2
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.copy (III)V (itf)
-   L5
-    ALOAD 4
-    MONITOREXIT
    L1
-    GOTO L6
+    GOTO L3
    L2
-    ASTORE 5
-    ALOAD 4
-    MONITOREXIT
+    ASTORE 4
+   L4
+    ALOAD 3
+    ILOAD 0
+    ILOAD 1
+    ILOAD 2
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.copy (III)V (itf)
    L3
-    ALOAD 5
-    ATHROW
-   L6
     RETURN
-   L7
+   L5
 
   public static memoryFill(IBILcom/dylibso/chicory/runtime/Memory;)V
    L0
