@@ -65,7 +65,9 @@ public final class AotMethods {
     }
 
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
-        memory.copy(destination, offset, size);
+        synchronized (memory) {
+            memory.copy(destination, offset, size);
+        }
     }
 
     public static void memoryFill(int offset, byte value, int size, Memory memory) {
