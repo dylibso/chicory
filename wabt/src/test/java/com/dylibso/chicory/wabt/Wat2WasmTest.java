@@ -11,17 +11,11 @@ import com.dylibso.chicory.wasi.WasiExitException;
 import com.dylibso.chicory.wasm.Parser;
 import java.io.File;
 import java.io.IOException;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class Wat2WasmTest {
 
     @Test
-    @Order(0)
     public void shouldRunWat2Wasm() throws Exception {
         var result = Wat2Wasm.parse(new File("../wasm-corpus/src/main/resources/wat/iterfact.wat"));
 
@@ -30,7 +24,6 @@ public class Wat2WasmTest {
     }
 
     @Test
-    @Order(1)
     public void shouldRunWat2WasmOnString() {
         var moduleInstance =
                 Instance.builder(
@@ -49,7 +42,6 @@ public class Wat2WasmTest {
     }
 
     @Test
-    @Order(2)
     public void shouldThrowMalformedException() throws Exception {
         var exitException =
                 assertThrows(
@@ -63,18 +55,12 @@ public class Wat2WasmTest {
     }
 
     @Test
-    @Order(3)
-    @Disabled(
-            "fails with com.dylibso.chicory.runtime.WasmRuntimeException: out of bounds memory"
-                + " access: attempted to access address: 100663296 but limit is: 56819712 and size:"
-                + " 8")
     public void canCompile50kFunctions() throws IOException {
         String wat = WatGenerator.bigWat(50_000, 0);
         Wat2Wasm.parse(wat);
     }
 
     @Test
-    @Order(4)
     public void canCompileBigFunctions() throws IOException {
         String wat = WatGenerator.bigWat(10, 15_000);
         Wat2Wasm.parse(wat);
