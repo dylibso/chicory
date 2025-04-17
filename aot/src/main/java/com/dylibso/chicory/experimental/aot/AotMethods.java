@@ -70,23 +70,12 @@ public final class AotMethods {
     private static final boolean enableMemCopyWorkaround;
 
     static {
-        String workaround = System.getProperty("chicory.workaroundMemCopy");
+        String workaround = System.getProperty("chicory.enableMemCopyWorkaround");
 
         if (workaround != null) {
             enableMemCopyWorkaround = Boolean.parseBoolean(workaround);
         } else {
-            String versionStr = System.getProperty("java.version");
-            int majorVersion;
-
-            if (versionStr.startsWith("1.")) {
-                majorVersion = Integer.parseInt(versionStr.substring(2, 3));
-            } else {
-                int dot = versionStr.indexOf(".");
-                majorVersion =
-                        Integer.parseInt(dot != -1 ? versionStr.substring(0, dot) : versionStr);
-            }
-
-            enableMemCopyWorkaround = majorVersion < 21;
+            enableMemCopyWorkaround = Runtime.version().feature() < 21;
         }
     }
 
