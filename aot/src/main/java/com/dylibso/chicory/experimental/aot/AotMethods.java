@@ -67,8 +67,7 @@ public final class AotMethods {
     }
 
     // This is a ugly hack to workaround a bug on some JVMs
-    private static boolean java21plus =
-            Runtime.version().compareTo(Runtime.Version.parse("21")) >= 0;
+    private static boolean java21plus = Runtime.version().feature() >= 21;
 
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
         // up to Java 17 the bug happens on various platforms we need to be conservative

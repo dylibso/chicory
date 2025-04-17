@@ -593,10 +593,9 @@ final class FOO$AotMethods {
   static <clinit>()V
    L0
     INVOKESTATIC java/lang/Runtime.version ()Ljava/lang/Runtime$Version;
-    LDC "21"
-    INVOKESTATIC java/lang/Runtime$Version.parse (Ljava/lang/String;)Ljava/lang/Runtime$Version;
-    INVOKEVIRTUAL java/lang/Runtime$Version.compareTo (Ljava/lang/Runtime$Version;)I
-    IFLT L1
+    INVOKEVIRTUAL java/lang/Runtime$Version.feature ()I
+    BIPUSH 21
+    IF_ICMPLT L1
     ICONST_1
     GOTO L2
    L1
