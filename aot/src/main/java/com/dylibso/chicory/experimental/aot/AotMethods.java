@@ -74,6 +74,8 @@ public final class AotMethods {
 
         if (workaround != null) {
             workaroundMemCopy = Boolean.parseBoolean(workaround);
+
+            throw new IllegalArgumentException("WORKAROUND IS: " + workaround);
         } else {
             String versionStr = System.getProperty("java.version");
             int majorVersion;
@@ -84,6 +86,8 @@ public final class AotMethods {
                 int dot = versionStr.indexOf(".");
                 majorVersion =
                         Integer.parseInt(dot != -1 ? versionStr.substring(0, dot) : versionStr);
+
+                throw new IllegalArgumentException("DEBUG ME: " + majorVersion);
             }
 
             workaroundMemCopy = majorVersion < 21;
