@@ -66,12 +66,33 @@ public final class AotMethods {
         OpcodeImpl.TABLE_INIT(instance, tableidx, elementidx, size, elemidx, offset);
     }
 
-    // This is a ugly hack to workaround a bug on some JVMs
-    private static boolean java21plus = Runtime.version().feature() >= 21;
+    // This is an ugly hack to workaround a bug on some JVMs (Temurin 17-)
+    private static final boolean workaroundMemCopy;
+
+    static {
+        String workaround = System.getProperty("chicory.workaroundMemCopy");
+
+        if (workaround != null) {
+            workaroundMemCopy = Boolean.parseBoolean(workaround);
+        } else {
+            String versionStr = System.getProperty("java.version");
+            int majorVersion;
+
+            if (versionStr.startsWith("1.")) {
+                majorVersion = Integer.parseInt(versionStr.substring(2, 3));
+            } else {
+                int dot = versionStr.indexOf(".");
+                majorVersion =
+                        Integer.parseInt(dot != -1 ? versionStr.substring(0, dot) : versionStr);
+            }
+
+            workaroundMemCopy = majorVersion < 21;
+        }
+    }
 
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
         // up to Java 17 the bug happens on various platforms we need to be conservative
-        if (!java21plus) {
+        if (workaroundMemCopy) {
             notInlinableMemoryCopy(destination, offset, size, memory);
         } else {
             memory.copy(destination, offset, size);

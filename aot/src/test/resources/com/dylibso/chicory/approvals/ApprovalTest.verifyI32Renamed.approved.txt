@@ -104,10 +104,9 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
 final class FOO$AotMethods {
 
   NESTHOST FOO
-  public final static INNERCLASS java/lang/Runtime$Version java/lang/Runtime Version
   public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
 
-  private static Z java21plus
+  private final static Z workaroundMemCopy
 
   private static Ljava/util/concurrent/locks/ReadWriteLock; lock
 
@@ -260,8 +259,8 @@ final class FOO$AotMethods {
 
   public static memoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
    L0
-    GETSTATIC FOO$AotMethods.java21plus : Z
-    IFNE L1
+    GETSTATIC FOO$AotMethods.workaroundMemCopy : Z
+    IFEQ L1
    L2
     ILOAD 0
     ILOAD 1
@@ -592,17 +591,65 @@ final class FOO$AotMethods {
 
   static <clinit>()V
    L0
-    INVOKESTATIC java/lang/Runtime.version ()Ljava/lang/Runtime$Version;
-    INVOKEVIRTUAL java/lang/Runtime$Version.feature ()I
-    BIPUSH 21
-    IF_ICMPLT L1
-    ICONST_1
-    GOTO L2
+    LDC "chicory.workaroundMemCopy"
+    INVOKESTATIC java/lang/System.getProperty (Ljava/lang/String;)Ljava/lang/String;
+    ASTORE 0
    L1
-    ICONST_0
-   L2
-    PUTSTATIC FOO$AotMethods.java21plus : Z
+    ALOAD 0
+    IFNULL L2
    L3
+    ALOAD 0
+    INVOKESTATIC java/lang/Boolean.parseBoolean (Ljava/lang/String;)Z
+    PUTSTATIC FOO$AotMethods.workaroundMemCopy : Z
+    GOTO L4
+   L2
+    LDC "java.version"
+    INVOKESTATIC java/lang/System.getProperty (Ljava/lang/String;)Ljava/lang/String;
+    ASTORE 1
+   L5
+    ALOAD 1
+    LDC "1."
+    INVOKEVIRTUAL java/lang/String.startsWith (Ljava/lang/String;)Z
+    IFEQ L6
+   L7
+    ALOAD 1
+    ICONST_2
+    ICONST_3
+    INVOKEVIRTUAL java/lang/String.substring (II)Ljava/lang/String;
+    INVOKESTATIC java/lang/Integer.parseInt (Ljava/lang/String;)I
+    ISTORE 2
+   L8
+    GOTO L9
+   L6
+    ALOAD 1
+    LDC "."
+    INVOKEVIRTUAL java/lang/String.indexOf (Ljava/lang/String;)I
+    ISTORE 3
+   L10
+    ILOAD 3
+    ICONST_M1
+    IF_ICMPEQ L11
+    ALOAD 1
+    ICONST_0
+    ILOAD 3
+    INVOKEVIRTUAL java/lang/String.substring (II)Ljava/lang/String;
+    GOTO L12
+   L11
+    ALOAD 1
+   L12
+    INVOKESTATIC java/lang/Integer.parseInt (Ljava/lang/String;)I
+    ISTORE 2
+   L9
+    ILOAD 2
+    BIPUSH 21
+    IF_ICMPGE L13
+    ICONST_1
+    GOTO L14
+   L13
+    ICONST_0
+   L14
+    PUTSTATIC FOO$AotMethods.workaroundMemCopy : Z
+   L4
     NEW java/util/concurrent/locks/ReentrantReadWriteLock
     DUP
     INVOKESPECIAL java/util/concurrent/locks/ReentrantReadWriteLock.<init> ()V
