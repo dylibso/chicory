@@ -261,7 +261,7 @@ final class FOO$AotMethods {
   public static memoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
    L0
     GETSTATIC FOO$AotMethods.java21plus : Z
-    IFEQ L1
+    IFNE L1
    L2
     ILOAD 0
     ILOAD 1

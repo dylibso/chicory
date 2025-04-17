@@ -72,7 +72,7 @@ public final class AotMethods {
 
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
         // up to Java 17 the bug happens on various platforms we need to be conservative
-        if (java21plus) {
+        if (!java21plus) {
             notInlinableMemoryCopy(destination, offset, size, memory);
         } else {
             memory.copy(destination, offset, size);
