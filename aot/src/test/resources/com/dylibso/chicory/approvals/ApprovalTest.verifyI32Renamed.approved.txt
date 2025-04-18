@@ -288,6 +288,15 @@ final class FOO$AotMethods {
     INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
     INVOKEINTERFACE java/util/concurrent/locks/Lock.lock ()V (itf)
    L0
+    INVOKESTATIC java/lang/System.nanoTime ()J
+    LCONST_0
+    LCMP
+    IFGE L6
+   L7
+    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
+    LDC "useless message just to prevent inlining"
+    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
+   L6
     ALOAD 3
     ILOAD 0
     ILOAD 1
@@ -297,11 +306,11 @@ final class FOO$AotMethods {
     GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
     INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
     INVOKEINTERFACE java/util/concurrent/locks/Lock.unlock ()V (itf)
-   L6
-    GOTO L7
+   L8
+    GOTO L9
    L2
     ASTORE 4
-   L8
+   L10
     ALOAD 4
     ATHROW
    L3
@@ -310,12 +319,12 @@ final class FOO$AotMethods {
     GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
     INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
     INVOKEINTERFACE java/util/concurrent/locks/Lock.unlock ()V (itf)
-   L9
+   L11
     ALOAD 5
     ATHROW
-   L7
+   L9
     RETURN
-   L10
+   L12
 
   public static memoryFill(IBILcom/dylibso/chicory/runtime/Memory;)V
    L0

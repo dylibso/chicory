@@ -96,6 +96,9 @@ public final class AotMethods {
             int destination, int offset, int size, Memory memory) {
         lock.writeLock().lock();
         try {
+            if (System.nanoTime() < 0) {
+                System.out.println("useless message just to prevent inlining");
+            }
             memory.copy(destination, offset, size);
         } catch (WasmRuntimeException ex) {
             throw ex;
