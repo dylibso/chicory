@@ -1,54 +1,57 @@
 package com.dylibso.chicory.runtime;
 
-// This is an ugly hack to workaround a bug on some JVMs (Temurin 17-)
+// This is an ugly hack to work around a bug on some JVMs (Temurin 17-)
 public final class MemCopyWorkaround {
     private MemCopyWorkaround() {}
 
-    private interface Func {
+    private interface MemoryCopyFunc {
         void apply(int destination, int offset, int size, Memory memory);
     }
 
-    private static final class Actual implements Func {
+    private static final class Actual implements MemoryCopyFunc {
         @Override
         public void apply(int destination, int offset, int size, Memory memory) {
             memory.copy(destination, offset, size);
         }
     }
 
-    private static final class AddOption implements Func {
+    private static final class Noop1 implements MemoryCopyFunc {
         @Override
-        public void apply(int destination, int offset, int size, Memory memory) {
-            hits += 1;
-        }
+        public void apply(int destination, int offset, int size, Memory memory) {}
     }
 
-    private static final class SubtractOption implements Func {
+    private static final class Noop2 implements MemoryCopyFunc {
         @Override
-        public void apply(int destination, int offset, int size, Memory memory) {
-            var x = hits;
-            hits = x + 1;
-        }
+        public void apply(int destination, int offset, int size, Memory memory) {}
     }
-
-    private static int hits;
 
     static {
-        // Warm up the the JIT... to make it think func is megamorphic
-        int loops = 10_000;
-        func = new AddOption();
-        for (int i = 0; i < loops; i++) {
-            MemCopyWorkaround.apply(0, 0, 0, null);
+        String workaround = System.getProperty("chicory.enableMemCopyWorkaround");
+
+        boolean enableMemCopyWorkaround;
+        if (workaround != null) {
+            enableMemCopyWorkaround = Boolean.parseBoolean(workaround);
+        } else {
+            enableMemCopyWorkaround = Runtime.version().feature() < 21;
         }
-        func = new SubtractOption();
-        for (int i = 0; i < loops; i++) {
-            MemCopyWorkaround.apply(0, 0, 0, null);
+
+        if (enableMemCopyWorkaround) {
+            Noop1 noop1 = new Noop1();
+            Noop2 noop2 = new Noop2();
+            // Warm up the JIT... to make it see memoryCopyFunc.apply is megamorphic
+            for (int i = 0; i < 1000; i++) {
+                memoryCopyFunc = noop1;
+                MemCopyWorkaround.memoryCopy(0, 0, 0, null);
+                memoryCopyFunc = noop2;
+                MemCopyWorkaround.memoryCopy(0, 0, 0, null);
+            }
         }
-        func = new Actual();
+        memoryCopyFunc = new Actual();
     }
 
-    static Func func;
+    static MemoryCopyFunc memoryCopyFunc;
 
-    public static void apply(int destination, int offset, int size, Memory memory) {
-        func.apply(destination, offset, size, memory);
+    public static void memoryCopy(int destination, int offset, int size, Memory memory) {
+        memoryCopyFunc.apply(destination, offset, size, memory);
     }
 }

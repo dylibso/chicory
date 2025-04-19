@@ -65,26 +65,12 @@ public final class AotMethods {
         OpcodeImpl.TABLE_INIT(instance, tableidx, elementidx, size, elemidx, offset);
     }
 
-    // This is an ugly hack to workaround a bug on some JVMs (Temurin 17-)
-    private static final boolean enableMemCopyWorkaround;
-
-    static {
-        String workaround = System.getProperty("chicory.enableMemCopyWorkaround");
-
-        if (workaround != null) {
-            enableMemCopyWorkaround = Boolean.parseBoolean(workaround);
-        } else {
-            enableMemCopyWorkaround = Runtime.version().feature() < 21;
-        }
-    }
-
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
-        // up to Java 17 the bug happens on various platforms we need to be conservative
-        if (enableMemCopyWorkaround) {
-            MemCopyWorkaround.apply(destination, offset, size, memory);
-        } else {
-            memory.copy(destination, offset, size);
-        }
+        // Use this workaround to avoid a bug in some JVMs (Temurin 17)
+        MemCopyWorkaround.memoryCopy(destination, offset, size, memory);
+
+        // Go back to the original implementation, once that bug is no longer an issue:
+        // memory.copy(destination, offset, size);
     }
 
     public static void memoryFill(int offset, byte value, int size, Memory memory) {
