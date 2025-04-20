@@ -70,6 +70,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -106,15 +107,18 @@ public final class AotCompiler {
     private final WasmModule module;
     private final AotAnalyzer analyzer;
     private final int functionImports;
+    private final SourceMap sourceMap;
     private final List<FunctionType> functionTypes;
     private final Map<String, byte[]> extraClasses = new LinkedHashMap<>();
     private int maxFunctionsPerClass;
 
-    private AotCompiler(WasmModule module, String className, int maxFunctionsPerClass) {
+    private AotCompiler(
+            WasmModule module, String className, int maxFunctionsPerClass, SourceMap sourceMap) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.analyzer = new AotAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
+        this.sourceMap = Objects.requireNonNullElseGet(sourceMap, () -> new SourceMap(List.of()));
         this.functionTypes = analyzer.functionTypes();
         this.maxFunctionsPerClass = maxFunctionsPerClass;
         compileExtraClasses();
@@ -127,6 +131,7 @@ public final class AotCompiler {
     public static final class Builder {
         private final WasmModule module;
         private String className;
+        private SourceMap sourceMap;
         private int maxFunctionsPerClass;
 
         private Builder(WasmModule module) {
@@ -135,6 +140,11 @@ public final class AotCompiler {
 
         public Builder withClassName(String className) {
             this.className = className;
+            return this;
+        }
+
+        public Builder withSourceMap(SourceMap sourceMap) {
+            this.sourceMap = sourceMap;
             return this;
         }
 
@@ -153,7 +163,7 @@ public final class AotCompiler {
             if (maxFunctionsPerClass <= 0) {
                 maxFunctionsPerClass = DEFAULT_MAX_FUNCTIONS_PER_CLASS;
             }
-            return new AotCompiler(module, className, maxFunctionsPerClass);
+            return new AotCompiler(module, className, maxFunctionsPerClass, sourceMap);
         }
     }
 
@@ -252,14 +262,14 @@ public final class AotCompiler {
 
     /**
      * Loads a chunked class based on the given size and chunk size.
-     *
+     * <p>
      * This method attempts to load a class in chunks to avoid MethodTooLargeException or ClassTooLargeException.
      * It dynamically adjusts the chunk size based on the size of the class to be loaded and the maximum size
      * that can be loaded without causing an exception. The method returns the final chunk size used for loading.
      *
-     * @param size The total size of the class to be loaded.
+     * @param size      The total size of the class to be loaded.
      * @param chunkSize The initial chunk size to use for loading.
-     * @param emitter The ChunkedClassEmitter that generates the class bytes for a given chunk.
+     * @param emitter   The ChunkedClassEmitter that generates the class bytes for a given chunk.
      * @return The final chunk size used for loading the class.
      */
     int loadChunkedClass(int size, int chunkSize, ChunkedClassEmitter emitter) {
@@ -584,7 +594,19 @@ public final class AotCompiler {
                 null,
                 getInternalName(Object.class),
                 null);
+
+        // reset source map line tracking..
+        nextLineNo = 1;
+        mappedLines.clear();
         consumer.accept(classWriter);
+
+        if (!mappedLines.isEmpty()) {
+            // add the source map entries to the class
+            var sourceFile = internalClassName + ".java";
+            String smap = sourceMap.generateSmap(sourceFile, mappedLines);
+            classWriter.visitSource(internalClassName, smap);
+        }
+
         return binaryWriter.toByteArray();
     }
 
@@ -973,6 +995,9 @@ public final class AotCompiler {
         }
     }
 
+    int nextLineNo = 1;
+    ArrayList<SourceMap.MappedLine> mappedLines = new ArrayList<>();
+
     private void compileFunction(
             String internalClassName,
             int funcId,
@@ -1028,8 +1053,35 @@ public final class AotCompiler {
         // track targets to detect backward jumps
         Set<Long> visitedTargets = new HashSet<>();
 
+        int lastSourceMapIndex = -1;
+
         // compile the function body
         for (AotInstruction ins : instructions) {
+
+            // get the sourceMapIndex for the current instruction:
+            int sourceMapIndex = -1;
+            if (lastSourceMapIndex == -1) {
+                // this does a binary search...
+                sourceMapIndex = sourceMap.entryIndex(ins.address());
+            } else {
+                // once we have starting point, we can use it to more efficiently find the next
+                // entry
+                var t = sourceMap.entryAt(lastSourceMapIndex + 1);
+                if (t.address() == ins.address()) {
+                    sourceMapIndex = lastSourceMapIndex + 1;
+                }
+            }
+            if (sourceMapIndex != -1) {
+                var entry = sourceMap.entryAt(sourceMapIndex);
+                lastSourceMapIndex = sourceMapIndex;
+                var lineNo = nextLineNo++;
+
+                var label = new Label();
+                asm.visitLabel(label);
+                asm.visitLineNumber(lineNo, label);
+                mappedLines.add(new SourceMap.MappedLine(lineNo, entry));
+            }
+
             switch (ins.opcode()) {
                 case LABEL:
                     Label label = labels.get(ins.operand(0));
