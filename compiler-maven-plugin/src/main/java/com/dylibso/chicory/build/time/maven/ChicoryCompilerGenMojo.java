@@ -3,8 +3,11 @@ package com.dylibso.chicory.build.time.maven;
 import com.dylibso.chicory.build.time.compiler.Config;
 import com.dylibso.chicory.build.time.compiler.Generator;
 import com.dylibso.chicory.compiler.InterpreterFallback;
+import com.dylibso.chicory.runtime.DebugParser;
 import java.io.File;
 import java.io.IOException;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import java.util.Set;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
@@ -76,6 +79,19 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+
+        DebugParser debugParser = null;
+        // Use the DebugParser if it's on the classpath.
+        try {
+            for (var service : ServiceLoader.load(DebugParser.class)) {
+                debugParser = service;
+                getLog().info("Using debug parser: " + debugParser.getClass().getName());
+                break;
+            }
+        } catch (ServiceConfigurationError ignore) {
+            debugParser = null;
+        }
+
         getLog().info("Generating AOT classes for " + name + " from " + wasmFile);
 
         var config =
@@ -87,6 +103,7 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
                         .withTargetWasmFolder(targetWasmFolder.toPath())
                         .withInterpreterFallback(interpreterFallback)
                         .withInterpretedFunctions(interpretedFunctions)
+                        .withDebugParser(debugParser)
                         .build();
 
         var generator = new Generator(config);

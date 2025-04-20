@@ -63,5 +63,3 @@ ENV PATH="/opt/wabt/bin:${PATH}"
 RUN cargo install wasm-tools
 
 WORKDIR /usr/code
-
-ENTRYPOINT ["./compile.sh"]

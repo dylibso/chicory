@@ -53,6 +53,7 @@ public final class ShadedRefs {
     static final Method THROW_TRAP_EXCEPTION;
     static final Method THROW_UNKNOWN_FUNCTION;
     static final Method AOT_INTERPRETER_MACHINE_CALL;
+    static final Method INIT;
 
     // Exception handling methods
     static final Method CREATE_WASM_EXCEPTION;
@@ -176,6 +177,7 @@ public final class ShadedRefs {
                     Shaded.class.getMethod(
                             "exceptionMatches", WasmException.class, int.class, Instance.class);
 
+            INIT = Shaded.class.getMethod("init", String[].class, String.class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }

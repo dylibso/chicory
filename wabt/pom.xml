@@ -52,6 +52,13 @@
       <plugin>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>chicory-compiler-maven-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>com.dylibso.chicory</groupId>
+            <artifactId>dwarf-rust-experimental</artifactId>
+            <version>${project.version}</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <id>wast2json</id>

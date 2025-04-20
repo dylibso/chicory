@@ -26,6 +26,7 @@ describe("ApprovalTests", () => {
   });
 
   it.each(markdownFiles)('test %s', (f) => {
+    console.log("Testing", f);
     const jbangExec = jbang.exec(f);
     expect(jbangExec.code).toBe(0);
     if (jbangExec.stderr.toLowerCase().includes("error")) {

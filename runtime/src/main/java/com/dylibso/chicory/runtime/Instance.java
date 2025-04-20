@@ -69,6 +69,8 @@ public class Instance {
 
     private final Map<Integer, WasmException> exnRefs;
 
+    DebugParser debugParser;
+
     Instance(
             WasmModule module,
             Global[] globalInitializers,
@@ -85,8 +87,10 @@ public class Instance {
             Function<Instance, Machine> machineFactory,
             boolean initialize,
             boolean start,
-            ExecutionListener listener) {
+            ExecutionListener listener,
+            DebugParser debugParser) {
         this.module = module;
+        this.debugParser = debugParser;
         this.globalInitializers = globalInitializers.clone();
         this.globals = new GlobalInstance[globalInitializers.length];
         this.memory = memory;
@@ -358,6 +362,7 @@ public class Instance {
         private ExecutionListener listener;
         private ImportValues importValues;
         private Function<Instance, Machine> machineFactory;
+        private DebugParser debugParser;
 
         private Builder(WasmModule module) {
             this.module = Objects.requireNonNull(module);
@@ -370,6 +375,11 @@ public class Instance {
 
         public Builder withStart(boolean s) {
             this.start = s;
+            return this;
+        }
+
+        public Builder withDebugParser(DebugParser debugParser) {
+            this.debugParser = debugParser;
             return this;
         }
 
@@ -884,7 +894,12 @@ public class Instance {
                     machineFactory,
                     initialize,
                     start,
-                    listener);
+                    listener,
+                    debugParser);
         }
+    }
+
+    public DebugParser debugParser() {
+        return debugParser;
     }
 }

@@ -30,3 +30,15 @@ pub extern "C" fn count_vowels(ptr: i32, len: i32) -> i32 {
     }
     count
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_count_vowels() {
+        count_vowels(0, -1);
+    }
+
+
+}

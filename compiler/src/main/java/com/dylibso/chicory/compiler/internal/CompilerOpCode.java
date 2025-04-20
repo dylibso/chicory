@@ -7,6 +7,7 @@ import java.util.Optional;
 
 enum CompilerOpCode {
     LABEL,
+    LINE_NUMBER,
     DROP_KEEP,
     TRAP,
     GOTO,
