@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
+import com.dylibso.chicory.dwarf.rust.DebugParser;
 import com.dylibso.chicory.runtime.ImportTable;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
@@ -32,11 +33,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public final class MachinesTest {
@@ -278,5 +282,86 @@ public final class MachinesTest {
         var ex = assertThrows(TrapException.class, instance.export("call-other-fail")::apply);
         var className = ex.getStackTrace()[0].getClassName();
         assertTrue(className.contains("InterpreterMachine"), className);
+    }
+
+    private String readStackTrace(Throwable t) {
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
+    }
+
+    @Test
+    public void shouldEmitUnderstandableStackTraces() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
+                        .withDebugParser(DebugParser::parse)
+                        .build();
+        var countVowels = instance.export("count_vowels");
+        var exception = assertThrows(TrapException.class, () -> countVowels.apply(0, -1));
+        var exceptionTxt = readStackTrace(exception);
+
+        // To generate the following stack track in rust, run:
+        //     ./wasm-corpus/run.sh run bash -c "cd rust/count_vowels; RUST_BACKTRACE=1 cargo test"
+        //
+        //   0: __rustc::rust_begin_unwind
+        //             at
+        // /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/std/src/panicking.rs:697:5
+        //   1: core::panicking::panic_nounwind_fmt::runtime
+        //             at
+        // /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/panicking.rs:117:22
+        //   2: core::panicking::panic_nounwind_fmt
+        //             at
+        // /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/intrinsics/mod.rs:3241:9
+        //   3: core::panicking::panic_nounwind
+        //             at
+        // /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/panicking.rs:218:5
+        //   4: core::slice::raw::from_raw_parts::precondition_check
+        //             at
+        // /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:68:21
+        //   5: core::slice::raw::from_raw_parts
+        //             at
+        // /rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:75:17
+        //   6: count_vowels
+        //             at ./src/lib.rs:23:26
+        //   7: count_vowels::tests::test_count_vowels
+        //             at ./src/lib.rs:40:9
+
+        // It's not exactly 1-to-1, but it's close enough.
+        assertTrue(
+                exceptionTxt.contains(
+                        "at chicory interpreter 0x00627d:"
+                                + " func.86(library/std/src/panicking.rs:697)"));
+        assertTrue(
+                exceptionTxt.contains(
+                        "at chicory interpreter 0x007e74:"
+                                + " func.118(library/core/src/panicking.rs:117)"));
+        assertTrue(
+                exceptionTxt.contains(
+                        "at chicory interpreter 0x007ec8:"
+                                + " func.119(library/core/src/panicking.rs:218)"));
+        assertTrue(
+                exceptionTxt.contains(
+                        "at chicory interpreter 0x001cf6:"
+                            + " func.30(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:68)"));
+        assertTrue(
+                exceptionTxt.contains(
+                        "at chicory interpreter 0x003948:"
+                            + " func.54(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:75)"));
+        assertTrue(
+                exceptionTxt.contains("at chicory interpreter 0x000d7f: func.11(src/lib.rs:23)"));
+    }
+
+    @Test
+    @Disabled("wip")
+    public void shouldEmitUnderstandableStackTracesCompiled() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
+                        .withDebugParser(DebugParser::parse)
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .build();
+        var countVowels = instance.export("count_vowels");
+        var exception = assertThrows(TrapException.class, () -> countVowels.apply(0, -1));
+        var exceptionTxt = readStackTrace(exception);
+        System.out.println(exceptionTxt);
     }
 }

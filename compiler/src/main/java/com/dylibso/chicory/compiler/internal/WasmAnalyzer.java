@@ -6,6 +6,7 @@ import static java.util.Collections.reverse;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+import com.dylibso.chicory.runtime.internal.smap.LineMapping;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
@@ -55,7 +56,7 @@ final class WasmAnalyzer {
         return functionTypes;
     }
 
-    public List<CompilerInstruction> analyze(int funcId) {
+    public List<CompilerInstruction> analyze(int funcId, Compiler.DebugContext debugContext) {
         var functionType = functionTypes.get(funcId);
         var body = module.codeSection().getFunctionBody(funcId - functionImports);
         var stack = new TypeStack();
@@ -78,12 +79,34 @@ final class WasmAnalyzer {
         stack.enterScope(FUNCTION_SCOPE, FunctionType.of(List.of(), functionType.returns()));
 
         int exitBlockDepth = -1;
+        LineMapping lastLineMapping = null;
         for (int idx = 0; idx < body.instructions().size(); idx++) {
             AnnotatedInstruction ins = body.instructions().get(idx);
 
-            if (labels.contains(idx)) {
+            // get the sourceMapIndex for the current instruction:
+            var lineMapping = debugContext.inputStratum.getLineMapping(ins.address());
+            if (lineMapping != null && lineMapping != lastLineMapping) {
+                var outputLineNo = debugContext.nextOutputLineNo++;
+
+                String file = debugContext.inputStratum.getFile(lineMapping.lineFileID());
+                String path = debugContext.inputStratum.getPath(lineMapping.lineFileID());
+                debugContext.outputStratum.addLineData(
+                        file,
+                        path,
+                        lineMapping.inputStartLine(),
+                        lineMapping.inputLineCount(),
+                        outputLineNo,
+                        1);
+
+                labels.add(idx);
+                result.add(new CompilerInstruction(CompilerOpCode.LABEL, idx));
+                result.add(
+                        new CompilerInstruction(
+                                CompilerOpCode.LINE_NUMBER, new long[] {outputLineNo, idx}));
+            } else if (labels.contains(idx)) {
                 result.add(new CompilerInstruction(CompilerOpCode.LABEL, idx));
             }
+            lastLineMapping = lineMapping;
 
             // skip instructions after unconditional control transfer
             if (exitBlockDepth >= 0) {

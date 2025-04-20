@@ -10,9 +10,12 @@ import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.TrapException;
 import com.dylibso.chicory.runtime.WasmRuntimeException;
+import com.dylibso.chicory.runtime.internal.smap.SmapParser;
+import com.dylibso.chicory.runtime.internal.smap.Stratum;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import java.util.HashMap;
 
 /**
  * This class will get shaded into the compiled code.
@@ -203,5 +206,46 @@ public final class Shaded {
 
     public static void writeGlobal(long value, int index, Instance instance) {
         instance.global(index).setValue(value);
+    }
+
+    private static final HashMap<Integer, Stratum> STRATA_BY_FUNC_GROUP = new HashMap<>();
+
+    private static Stratum getStratum(int group, String smap) {
+        synchronized (STRATA_BY_FUNC_GROUP) {
+            return STRATA_BY_FUNC_GROUP.computeIfAbsent(
+                    group, (x) -> SmapParser.parse(smap).getDefaultStratum().optimizeForLookups());
+        }
+    }
+
+    public static void enhanceStackTrace(Throwable e, String[] smaps, String funcGroupClassPrefix) {
+        var elements = e.getStackTrace();
+        for (int i = 0; i < elements.length; i++) {
+            var element = elements[i];
+            if (element.getClassName().startsWith(funcGroupClassPrefix)) {
+
+                String suffix = element.getClassName().substring(funcGroupClassPrefix.length());
+                var group = Integer.parseInt(suffix);
+                if (group < smaps.length) {
+
+                    var line = element.getLineNumber();
+
+                    var stratum = getStratum(group, smaps[group]);
+                    var lineMapping = stratum.getLineMapping(line);
+                    var path = stratum.getPath(lineMapping.lineFileID());
+
+                    // Find what it maps to.
+                    if (lineMapping != null) {
+                        elements[i] =
+                                new StackTraceElement(
+                                        element.getClassName(),
+                                        element.getMethodName(), // todo: can we get the wasm
+                                        // function name?
+                                        path,
+                                        (int) lineMapping.inputStartLine());
+                    }
+                }
+            }
+        }
+        e.setStackTrace(elements);
     }
 }

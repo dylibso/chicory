@@ -29,6 +29,7 @@ import static com.dylibso.chicory.compiler.internal.ShadedRefs.CALL_HOST_FUNCTIO
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.CALL_INDIRECT;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.CALL_INDIRECT_ON_INTERPRETER;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.CHECK_INTERRUPTION;
+import static com.dylibso.chicory.compiler.internal.ShadedRefs.ENHANCE_STACK_TRACE;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.INSTANCE_MEMORY;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.INSTANCE_TABLE;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.TABLE_INSTANCE;
@@ -45,6 +46,7 @@ import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
+import static java.util.Objects.requireNonNullElseGet;
 import static java.util.stream.Collectors.toSet;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
@@ -60,6 +62,8 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.internal.CompilerInterpreterMachine;
+import com.dylibso.chicory.runtime.internal.smap.Smap;
+import com.dylibso.chicory.runtime.internal.smap.Stratum;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -121,16 +125,38 @@ public final class Compiler {
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions;
 
+    private final DebugContext debugContext;
+    private int funcGroupCount;
+
+    // Debug information
+    static final class DebugContext {
+        final Stratum inputStratum;
+        final Stratum outputStratum = new Stratum("WASM");
+        int nextOutputLineNo = 1;
+
+        DebugContext(Stratum stratum) {
+            this.inputStratum = requireNonNull(stratum, "stratum");
+            this.inputStratum.optimizeForLookups();
+        }
+
+        void reset() {
+            outputStratum.clear();
+            nextOutputLineNo = 1;
+        }
+    }
+
     private Compiler(
             WasmModule module,
             String className,
             int maxFunctionsPerClass,
             InterpreterFallback interpreterFallback,
-            Set<Integer> interpretedFunctions) {
+            Set<Integer> interpretedFunctions,
+            Stratum stratum) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.analyzer = new WasmAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
+        this.debugContext = new DebugContext(requireNonNullElseGet(stratum, () -> new Stratum("")));
 
         if (interpretedFunctions == null || interpretedFunctions.isEmpty()) {
             this.interpretedFunctions = new HashSet<>();
@@ -162,6 +188,7 @@ public final class Compiler {
         private int maxFunctionsPerClass;
         private InterpreterFallback interpreterFallback;
         private Set<Integer> interpretedFunctions;
+        private Function<WasmModule, Stratum> debugParser;
 
         private Builder(WasmModule module) {
             this.module = module;
@@ -169,6 +196,11 @@ public final class Compiler {
 
         public Builder withClassName(String className) {
             this.className = className;
+            return this;
+        }
+
+        public Builder withDebugParser(Function<WasmModule, Stratum> debugParser) {
+            this.debugParser = debugParser;
             return this;
         }
 
@@ -197,12 +229,19 @@ public final class Compiler {
             if (maxFunctionsPerClass <= 0) {
                 maxFunctionsPerClass = DEFAULT_MAX_FUNCTIONS_PER_CLASS;
             }
+
+            Stratum stratum = null;
+            if (debugParser != null) {
+                stratum = debugParser.apply(module);
+            }
+
             return new Compiler(
                     module,
                     className,
                     maxFunctionsPerClass,
                     interpreterFallback,
-                    interpretedFunctions);
+                    interpretedFunctions,
+                    stratum);
         }
     }
 
@@ -286,12 +325,14 @@ public final class Compiler {
         //
         var originalMaxFunctionsPerClass = maxFunctionsPerClass;
         while (true) {
+            funcGroupCount = 0;
             try {
                 maxFunctionsPerClass =
                         loadChunkedClass(
                                 totalFunctions,
                                 maxFunctionsPerClass,
                                 (start, end, chunkSize) -> {
+                                    funcGroupCount++;
                                     maxFunctionsPerClass = chunkSize;
                                     String className = classNameForFuncGroup(start);
                                     return compileExtraClass(
@@ -396,6 +437,7 @@ public final class Compiler {
 
     private Consumer<ClassVisitor> emitFunctionGroup(int start, int end, String internalClassName) {
         return (classWriter) -> {
+            debugContext.reset();
             for (int i = start; i < end; i++) {
                 FunctionBody body = null;
                 try {
@@ -436,6 +478,25 @@ public final class Compiler {
                     throw handleMethodTooLarge(e, module);
                 }
             }
+            if (!debugContext.outputStratum.isEmpty()) {
+                // add the source map entries to the class
+                var sourceFile = internalClassName + ".java";
+
+                String smap =
+                        new Smap()
+                                .withOutputFileName(sourceFile)
+                                .withStratum(debugContext.outputStratum.optimizeForWrite(), true)
+                                .toString();
+
+                classWriter.visitSource(internalClassName, smap);
+
+                classWriter.visitField(
+                        Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC,
+                        "SMAP",
+                        getDescriptor(String.class),
+                        null,
+                        smap);
+            }
         };
     }
 
@@ -469,6 +530,35 @@ public final class Compiler {
                     getDescriptor(CompilerInterpreterMachine.class),
                     null,
                     null);
+        }
+
+        // if we have debug info
+        if (!debugContext.inputStratum.isEmpty()) {
+
+            // emit a: public static final String[] SMAPS = new String[]{ FuncGroup_0.SMAP,
+            // FuncGroup_1.SMAP, ... };
+            classWriter.visitField(
+                    Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC,
+                    "SMAPS",
+                    getDescriptor(String[].class),
+                    null,
+                    null);
+
+            // static initializer for SMAPS field
+            emitFunction(
+                    classWriter,
+                    "<clinit>",
+                    methodType(void.class),
+                    true,
+                    asm -> compileStaticInitializer(asm, internalClassName));
+
+            // emit: enhanceStackTrace method
+            emitFunction(
+                    classWriter,
+                    "enhanceStackTrace",
+                    methodType(void.class, Throwable.class),
+                    true,
+                    asm -> compileEnhanceStackTrace(asm, internalClassName));
         }
 
         // constructor
@@ -572,6 +662,34 @@ public final class Compiler {
         asm.load(0, OBJECT_TYPE);
         asm.invokespecial(
                 OBJECT_TYPE.getInternalName(), "<init>", getMethodDescriptor(VOID_TYPE), false);
+    }
+
+    private void compileStaticInitializer(InstructionAdapter asm, String internalClassName) {
+
+        asm.iconst(funcGroupCount);
+        asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(String.class));
+        for (int i = 0; i < funcGroupCount; i++) {
+            asm.dup();
+            asm.iconst(i);
+            asm.getstatic(
+                    internalClassName + classNameForFuncGroup(i * maxFunctionsPerClass),
+                    "SMAP",
+                    getDescriptor(String.class));
+            asm.astore(OBJECT_TYPE);
+        }
+
+        asm.putstatic(internalClassName, "SMAPS", getDescriptor(String[].class));
+        asm.areturn(VOID_TYPE);
+    }
+
+    private void compileEnhanceStackTrace(InstructionAdapter asm, String internalClassName) {
+        // return Shaded.enhanceStackTrace(e, SMAPS, internalClassName+"FuncGroup_");
+        asm.load(0, OBJECT_TYPE); // elements parameter
+        asm.getstatic(internalClassName, "SMAPS", getDescriptor(String[].class));
+        var classNamePrefix = internalClassName.replaceAll("/", ".") + "FuncGroup_";
+        asm.aconst(classNamePrefix);
+        emitInvokeStatic(asm, ENHANCE_STACK_TRACE);
+        asm.areturn(VOID_TYPE);
     }
 
     private void compileConstructor(InstructionAdapter asm, String internalClassName) {
@@ -1187,7 +1305,7 @@ public final class Compiler {
                         type,
                         body);
 
-        List<CompilerInstruction> instructions = analyzer.analyze(funcId);
+        List<CompilerInstruction> instructions = analyzer.analyze(funcId, debugContext);
 
         int localsCount = type.params().size();
         if (hasTooManyParameters(type)) {
@@ -1225,6 +1343,7 @@ public final class Compiler {
 
         // compile the function body
         for (CompilerInstruction ins : instructions) {
+
             switch (ins.opcode()) {
                 case LABEL:
                     Label label = labels.get(ins.operand(0));
@@ -1232,6 +1351,12 @@ public final class Compiler {
                         asm.mark(label);
                         visitedTargets.add(ins.operand(0));
                     }
+
+                    break;
+                case LINE_NUMBER:
+                    int line = (int) ins.operand(0);
+                    label = labels.get(ins.operand(1));
+                    asm.visitLineNumber(line, label);
                     break;
                 case GOTO:
                     if (visitedTargets.contains(ins.operand(0))) {
