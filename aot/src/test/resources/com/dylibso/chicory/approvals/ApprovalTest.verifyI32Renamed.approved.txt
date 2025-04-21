@@ -104,7 +104,10 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
 final class FOO$AotMethods {
 
   NESTHOST FOO
+  public final static INNERCLASS java/lang/Runtime$Version java/lang/Runtime Version
   public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
+
+  private final static Z memCopyWorkaround
 
   private <init>()V
    L0
@@ -255,14 +258,24 @@ final class FOO$AotMethods {
 
   public static memoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
    L0
+    GETSTATIC FOO$AotMethods.memCopyWorkaround : Z
+    IFEQ L1
+   L2
     ILOAD 0
     ILOAD 1
     ILOAD 2
     ALOAD 3
     INVOKESTATIC com/dylibso/chicory/runtime/MemCopyWorkaround.memoryCopy (IIILcom/dylibso/chicory/runtime/Memory;)V
+    GOTO L3
    L1
+    ALOAD 3
+    ILOAD 0
+    ILOAD 1
+    ILOAD 2
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.copy (III)V (itf)
+   L3
     RETURN
-   L2
+   L4
 
   public static memoryFill(IBILcom/dylibso/chicory/runtime/Memory;)V
    L0
@@ -542,6 +555,34 @@ final class FOO$AotMethods {
    L1
     RETURN
    L2
+
+  static <clinit>()V
+   L0
+    LDC "chicory.memCopyWorkaround"
+    INVOKESTATIC java/lang/System.getProperty (Ljava/lang/String;)Ljava/lang/String;
+    ASTORE 0
+   L1
+    ALOAD 0
+    IFNULL L2
+   L3
+    ALOAD 0
+    INVOKESTATIC java/lang/Boolean.valueOf (Ljava/lang/String;)Ljava/lang/Boolean;
+    INVOKEVIRTUAL java/lang/Boolean.booleanValue ()Z
+    PUTSTATIC FOO$AotMethods.memCopyWorkaround : Z
+    GOTO L4
+   L2
+    INVOKESTATIC java/lang/Runtime.version ()Ljava/lang/Runtime$Version;
+    INVOKEVIRTUAL java/lang/Runtime$Version.feature ()I
+    BIPUSH 17
+    IF_ICMPGT L5
+    ICONST_1
+    GOTO L6
+   L5
+    ICONST_0
+   L6
+    PUTSTATIC FOO$AotMethods.memCopyWorkaround : Z
+   L4
+    RETURN
 }
 
 final class FOO$MachineCall {

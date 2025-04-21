@@ -65,12 +65,26 @@ public final class AotMethods {
         OpcodeImpl.TABLE_INIT(instance, tableidx, elementidx, size, elemidx, offset);
     }
 
-    public static void memoryCopy(int destination, int offset, int size, Memory memory) {
-        // Use this workaround to avoid a bug in some JVMs (Temurin 17)
-        MemCopyWorkaround.memoryCopy(destination, offset, size, memory);
+    private static final boolean memCopyWorkaround;
 
-        // Go back to the original implementation, once that bug is no longer an issue:
-        // memory.copy(destination, offset, size);
+    static {
+        var prop = System.getProperty("chicory.memCopyWorkaround");
+
+        if (prop != null) {
+            memCopyWorkaround = Boolean.valueOf(prop);
+        } else {
+            memCopyWorkaround = Runtime.version().feature() <= 17;
+        }
+    }
+
+    public static void memoryCopy(int destination, int offset, int size, Memory memory) {
+        if (memCopyWorkaround) {
+            // Use this workaround to avoid a bug in some JVMs (Temurin 17)
+            MemCopyWorkaround.memoryCopy(destination, offset, size, memory);
+        } else {
+            // Go back to the original implementation, once that bug is no longer an issue:
+            memory.copy(destination, offset, size);
+        }
     }
 
     public static void memoryFill(int offset, byte value, int size, Memory memory) {
