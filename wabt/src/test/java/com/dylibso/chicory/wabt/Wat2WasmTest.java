@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dylibso.chicory.corpus.WatGenerator;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiExitException;
 import com.dylibso.chicory.wasm.Parser;
 import java.io.File;
+import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
 public class Wat2WasmTest {
@@ -50,5 +52,17 @@ public class Wat2WasmTest {
                                                 "src/test/resources/utf8-invalid-encoding-spec.0.wat")));
 
         assertEquals(1, exitException.exitCode());
+    }
+
+    @Test
+    public void canCompile50kFunctions() throws IOException {
+        String wat = WatGenerator.bigWat(50_000, 0);
+        Wat2Wasm.parse(wat);
+    }
+
+    @Test
+    public void canCompileBigFunctions() throws IOException {
+        String wat = WatGenerator.bigWat(10, 15_000);
+        Wat2Wasm.parse(wat);
     }
 }

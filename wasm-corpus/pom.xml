@@ -9,4 +9,13 @@
   <artifactId>wasm-corpus</artifactId>
   <name>Chicory - WASM Corpus</name>
   <description>A Corpus of guest modules for testing</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.velocity</groupId>
+      <artifactId>velocity</artifactId>
+      <version>1.7</version>
+    </dependency>
+  </dependencies>
+
 </project>
