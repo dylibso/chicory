@@ -110,13 +110,12 @@ public final class AotCompiler {
     private final Map<String, byte[]> extraClasses = new LinkedHashMap<>();
     private int maxFunctionsPerClass;
 
-    private AotCompiler(WasmModule module, String className, int maxFunctionsPerClass) {
+    private AotCompiler(WasmModule module, String className) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.analyzer = new AotAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
         this.functionTypes = analyzer.functionTypes();
-        this.maxFunctionsPerClass = maxFunctionsPerClass;
         compileExtraClasses();
     }
 
@@ -141,7 +140,7 @@ public final class AotCompiler {
             if (className == null) {
                 className = DEFAULT_CLASS_NAME;
             }
-            return new AotCompiler(module, className, DEFAULT_MAX_FUNCTIONS_PER_CLASS);
+            return new AotCompiler(module, className);
         }
     }
 
@@ -201,10 +200,7 @@ public final class AotCompiler {
 
         int totalFunctions = functionImports + module.functionSection().functionCount();
 
-        // 1024*12 was empirically determined to work for the 50K small wasm functions.
-        // So lets start there and halve it until we find a size that works.
-        // This should give us the biggest class size possible.
-        maxFunctionsPerClass = 1024 * 12;
+        maxFunctionsPerClass = DEFAULT_MAX_FUNCTIONS_PER_CLASS;
         maxFunctionsPerClass =
                 loadChunkedClass(
                         totalFunctions,
@@ -235,15 +231,7 @@ public final class AotCompiler {
                     generated.add(loadExtraClass(emitter.emit(start, end)));
                 }
                 break;
-            } catch (MethodTooLargeException e) {
-                for (var x : generated) {
-                    extraClasses.remove(x);
-                }
-                chunkSize = chunkSize >> 1;
-                if (chunkSize == 0) {
-                    throw e;
-                }
-            } catch (ClassTooLargeException e) {
+            } catch (MethodTooLargeException | ClassTooLargeException e) {
                 for (var x : generated) {
                     extraClasses.remove(x);
                 }
