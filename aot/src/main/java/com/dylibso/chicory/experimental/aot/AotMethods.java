@@ -3,6 +3,7 @@ package com.dylibso.chicory.experimental.aot;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.MemCopyWorkaround;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.TrapException;
@@ -10,8 +11,6 @@ import com.dylibso.chicory.runtime.WasmRuntimeException;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public final class AotMethods {
 
@@ -66,45 +65,12 @@ public final class AotMethods {
         OpcodeImpl.TABLE_INIT(instance, tableidx, elementidx, size, elemidx, offset);
     }
 
-    // This is an ugly hack to workaround a bug on some JVMs (Temurin 17-)
-    private static final boolean enableMemCopyWorkaround;
-
-    static {
-        String workaround = System.getProperty("chicory.enableMemCopyWorkaround");
-
-        if (workaround != null) {
-            enableMemCopyWorkaround = Boolean.parseBoolean(workaround);
-        } else {
-            enableMemCopyWorkaround = Runtime.version().feature() < 21;
-        }
-    }
-
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
-        // up to Java 17 the bug happens on various platforms we need to be conservative
-        if (enableMemCopyWorkaround) {
-            notInlinableMemoryCopy(destination, offset, size, memory);
-        } else {
-            memory.copy(destination, offset, size);
-        }
-    }
+        // Use this workaround to avoid a bug in some JVMs (Temurin 17)
+        MemCopyWorkaround.memoryCopy(destination, offset, size, memory);
 
-    // HACK: this is a whole trick to prevent incorrect inlining of the JVM
-    private static ReadWriteLock lock = new ReentrantReadWriteLock();
-
-    // control flow + locking should make this method really hard to be inlined
-    public static void notInlinableMemoryCopy(
-            int destination, int offset, int size, Memory memory) {
-        lock.writeLock().lock();
-        try {
-            if (System.nanoTime() < 0) {
-                System.out.println("useless message just to prevent inlining");
-            }
-            memory.copy(destination, offset, size);
-        } catch (WasmRuntimeException ex) {
-            throw ex;
-        } finally {
-            lock.writeLock().unlock();
-        }
+        // Go back to the original implementation, once that bug is no longer an issue:
+        // memory.copy(destination, offset, size);
     }
 
     public static void memoryFill(int offset, byte value, int size, Memory memory) {

@@ -24,7 +24,15 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wabt</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm-corpus</artifactId>
     </dependency>
     <dependency>
       <groupId>org.openjdk.jmh</groupId>

@@ -104,12 +104,7 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
 final class FOO$AotMethods {
 
   NESTHOST FOO
-  public final static INNERCLASS java/lang/Runtime$Version java/lang/Runtime Version
   public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
-
-  private final static Z enableMemCopyWorkaround
-
-  private static Ljava/util/concurrent/locks/ReadWriteLock; lock
 
   private <init>()V
    L0
@@ -260,71 +255,14 @@ final class FOO$AotMethods {
 
   public static memoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
    L0
-    GETSTATIC FOO$AotMethods.enableMemCopyWorkaround : Z
-    IFEQ L1
-   L2
     ILOAD 0
     ILOAD 1
     ILOAD 2
     ALOAD 3
-    INVOKESTATIC FOO$AotMethods.notInlinableMemoryCopy (IIILcom/dylibso/chicory/runtime/Memory;)V
-    GOTO L3
+    INVOKESTATIC com/dylibso/chicory/runtime/MemCopyWorkaround.memoryCopy (IIILcom/dylibso/chicory/runtime/Memory;)V
    L1
-    ALOAD 3
-    ILOAD 0
-    ILOAD 1
-    ILOAD 2
-    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.copy (III)V (itf)
-   L3
     RETURN
-   L4
-
-  public static notInlinableMemoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
-    TRYCATCHBLOCK L0 L1 L2 com/dylibso/chicory/runtime/WasmRuntimeException
-    TRYCATCHBLOCK L0 L1 L3 null
-    TRYCATCHBLOCK L2 L4 L3 null
-   L5
-    GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
-    INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
-    INVOKEINTERFACE java/util/concurrent/locks/Lock.lock ()V (itf)
-   L0
-    INVOKESTATIC java/lang/System.nanoTime ()J
-    LCONST_0
-    LCMP
-    IFGE L6
-   L7
-    GETSTATIC java/lang/System.out : Ljava/io/PrintStream;
-    LDC "useless message just to prevent inlining"
-    INVOKEVIRTUAL java/io/PrintStream.println (Ljava/lang/String;)V
-   L6
-    ALOAD 3
-    ILOAD 0
-    ILOAD 1
-    ILOAD 2
-    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.copy (III)V (itf)
-   L1
-    GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
-    INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
-    INVOKEINTERFACE java/util/concurrent/locks/Lock.unlock ()V (itf)
-   L8
-    GOTO L9
    L2
-    ASTORE 4
-   L10
-    ALOAD 4
-    ATHROW
-   L3
-    ASTORE 5
-   L4
-    GETSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
-    INVOKEINTERFACE java/util/concurrent/locks/ReadWriteLock.writeLock ()Ljava/util/concurrent/locks/Lock; (itf)
-    INVOKEINTERFACE java/util/concurrent/locks/Lock.unlock ()V (itf)
-   L11
-    ALOAD 5
-    ATHROW
-   L9
-    RETURN
-   L12
 
   public static memoryFill(IBILcom/dylibso/chicory/runtime/Memory;)V
    L0
@@ -604,37 +542,6 @@ final class FOO$AotMethods {
    L1
     RETURN
    L2
-
-  static <clinit>()V
-   L0
-    LDC "chicory.enableMemCopyWorkaround"
-    INVOKESTATIC java/lang/System.getProperty (Ljava/lang/String;)Ljava/lang/String;
-    ASTORE 0
-   L1
-    ALOAD 0
-    IFNULL L2
-   L3
-    ALOAD 0
-    INVOKESTATIC java/lang/Boolean.parseBoolean (Ljava/lang/String;)Z
-    PUTSTATIC FOO$AotMethods.enableMemCopyWorkaround : Z
-    GOTO L4
-   L2
-    INVOKESTATIC java/lang/Runtime.version ()Ljava/lang/Runtime$Version;
-    INVOKEVIRTUAL java/lang/Runtime$Version.feature ()I
-    BIPUSH 21
-    IF_ICMPGE L5
-    ICONST_1
-    GOTO L6
-   L5
-    ICONST_0
-   L6
-    PUTSTATIC FOO$AotMethods.enableMemCopyWorkaround : Z
-   L4
-    NEW java/util/concurrent/locks/ReentrantReadWriteLock
-    DUP
-    INVOKESPECIAL java/util/concurrent/locks/ReentrantReadWriteLock.<init> ()V
-    PUTSTATIC FOO$AotMethods.lock : Ljava/util/concurrent/locks/ReadWriteLock;
-    RETURN
 }
 
 final class FOO$MachineCall {
