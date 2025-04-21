@@ -41,11 +41,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wasm-tools</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>
