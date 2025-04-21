@@ -80,6 +80,14 @@ public class ApprovalTest {
         verifyGeneratedBytecode("trap.wat.wasm");
     }
 
+    @Test
+    public void functions10() {
+        var module =
+                parse(getSystemClassLoader().getResourceAsStream("compiled/functions_10.wat.wasm"));
+        var result = AotCompiler.builder(module).withMaxFunctionsPerClass(5).build().compile();
+        verifyClass(result.classBytes(), true);
+    }
+
     private static void verifyGeneratedBytecode(String name) {
         var module = parse(getSystemClassLoader().getResourceAsStream("compiled/" + name));
         var result = AotCompiler.builder(module).build().compile();

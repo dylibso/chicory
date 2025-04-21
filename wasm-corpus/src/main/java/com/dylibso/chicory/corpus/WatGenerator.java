@@ -1,7 +1,9 @@
 package com.dylibso.chicory.corpus;
 
 import java.io.StringWriter;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.List;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -44,5 +46,18 @@ public final class WatGenerator {
         t.merge(context, writer);
         writer.flush();
         return writer.toString();
+    }
+
+    public static void main(String[] args) {
+        var remaining = new ArrayDeque<>(List.of(args));
+        int funcCount = 50_000;
+        int funcSize = 0;
+        if (!remaining.isEmpty()) {
+            funcCount = Integer.parseInt(remaining.removeFirst());
+        }
+        if (!remaining.isEmpty()) {
+            funcSize = Integer.parseInt(remaining.removeFirst());
+        }
+        System.out.println(bigWat(funcCount, funcSize));
     }
 }

@@ -18,4 +18,34 @@
     </dependency>
   </dependencies>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.5.0</version>
+        <executions>
+          <execution>
+            <id>generate-wat</id>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+            <phase>install</phase>
+            <configuration>
+              <outputFile>${project.basedir}/src/main/resources/wat/functions_10.wat</outputFile>
+              <executable>java</executable>
+              <arguments>
+                <argument>-cp</argument>
+                <classpath/>
+                <argument>com.dylibso.chicory.corpus.WatGenerator</argument>
+                <argument>10</argument>
+                <argument>0</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>

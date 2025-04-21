@@ -110,12 +110,13 @@ public final class AotCompiler {
     private final Map<String, byte[]> extraClasses = new LinkedHashMap<>();
     private int maxFunctionsPerClass;
 
-    private AotCompiler(WasmModule module, String className) {
+    private AotCompiler(WasmModule module, String className, int maxFunctionsPerClass) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.analyzer = new AotAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
         this.functionTypes = analyzer.functionTypes();
+        this.maxFunctionsPerClass = maxFunctionsPerClass;
         compileExtraClasses();
     }
 
@@ -126,6 +127,7 @@ public final class AotCompiler {
     public static final class Builder {
         private final WasmModule module;
         private String className;
+        private int maxFunctionsPerClass;
 
         private Builder(WasmModule module) {
             this.module = module;
@@ -136,11 +138,22 @@ public final class AotCompiler {
             return this;
         }
 
+        public Builder withMaxFunctionsPerClass(int maxFunctionsPerClass) {
+            this.maxFunctionsPerClass = maxFunctionsPerClass;
+            return this;
+        }
+
         public AotCompiler build() {
+            var className = this.className;
             if (className == null) {
                 className = DEFAULT_CLASS_NAME;
             }
-            return new AotCompiler(module, className);
+
+            int maxFunctionsPerClass = this.maxFunctionsPerClass;
+            if (maxFunctionsPerClass <= 0) {
+                maxFunctionsPerClass = DEFAULT_MAX_FUNCTIONS_PER_CLASS;
+            }
+            return new AotCompiler(module, className, maxFunctionsPerClass);
         }
     }
 
@@ -200,7 +213,6 @@ public final class AotCompiler {
 
         int totalFunctions = functionImports + module.functionSection().functionCount();
 
-        maxFunctionsPerClass = DEFAULT_MAX_FUNCTIONS_PER_CLASS;
         maxFunctionsPerClass =
                 loadChunkedClass(
                         totalFunctions,
@@ -224,7 +236,7 @@ public final class AotCompiler {
         ArrayList<String> generated = new ArrayList<>();
         while (true) {
             try {
-                int chunks = (size / chunkSize) + 1;
+                int chunks = (size / chunkSize) + (size % chunkSize == 0 ? 0 : 1);
                 for (int i = 0; i < chunks; i++) {
                     var start = i * chunkSize;
                     var end = min(start + chunkSize, size);
