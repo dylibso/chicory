@@ -411,21 +411,7 @@ public final class AotCompiler {
                                 asm -> compileCallFunction(funcId, type, asm));
                     }
                 } catch (MethodTooLargeException e) {
-                    String details = "WASM function index: " + i;
-                    if (module.nameSection() != null) {
-                        String name = module.nameSection().nameOfFunction(i);
-                        if (name != null) {
-                            details += String.format(", name: %s", name);
-                        }
-                    }
-                    if (body != null) {
-                        details +=
-                                String.format(
-                                        ", locals: %d, instructions: %d",
-                                        body.localTypes().size(), body.instructions().size());
-                    }
-                    e.addSuppressed(new ChicoryException(details));
-                    throw e;
+                    throw handleMethodTooLarge(e, module);
                 }
             }
         };
@@ -515,20 +501,25 @@ public final class AotCompiler {
         try {
             return binaryWriter.toByteArray();
         } catch (MethodTooLargeException e) {
-            String name = e.getMethodName();
-            if (name.startsWith("func_") && module.nameSection() != null) {
-                int funcId = Integer.parseInt(name.split("_", -1)[1]);
-                String function = module.nameSection().nameOfFunction(funcId);
-                if (function != null) {
-                    name += " (" + function + ")";
-                }
-            }
-            throw new ChicoryException(
-                    String.format(
-                            "JVM bytecode too large for WASM method: %s size=%d",
-                            name, e.getCodeSize()),
-                    e);
+            throw handleMethodTooLarge(e, module);
         }
+    }
+
+    private static RuntimeException handleMethodTooLarge(
+            MethodTooLargeException e, WasmModule module) {
+        String name = e.getMethodName();
+        if (name.startsWith("func_") && module.nameSection() != null) {
+            int funcId = Integer.parseInt(name.split("_", -1)[1]);
+            String function = module.nameSection().nameOfFunction(funcId);
+            if (function != null) {
+                name += " (" + function + ")";
+            }
+        }
+        return new ChicoryException(
+                String.format(
+                        "JVM bytecode too large for WASM method: %s size=%d",
+                        name, e.getCodeSize()),
+                e);
     }
 
     private static void emitFunction(
