@@ -213,6 +213,24 @@ public final class AotCompiler {
 
         int totalFunctions = functionImports + module.functionSection().functionCount();
 
+        // Emit the "${className}FuncGroup_${chunk}" classes:
+        // We group the wasm functions into chunks to avoid MethodTooLargeException or
+        // ClassTooLargeException.
+        // The chunk size is dynamically adjusted based on the size of the class to be loaded and
+        // the maximum size
+        // that can be loaded without causing an exception.
+        //
+        // Example: wasm file has 1024 * 15 functions.  Then the first 12k functions will be located
+        // in "${className}FuncGroup_0" and the last 3k functions will be located in
+        // "${className}FuncGroup_1".
+        // That is if no  MethodTooLargeException or ClassTooLargeException occur when generating
+        // those two classes.
+        // This can happen if for example a function requires alot of class constants etc.   Then
+        // default
+        // chunk size of 12k will be halved to 6k and the first 6k functions will be located in
+        // "${className}FuncGroup_0", "${className}FuncGroup_1", and  "${className}FuncGroup_2" with
+        // each class holding up to 6k of the functions.
+        //
         maxFunctionsPerClass =
                 loadChunkedClass(
                         totalFunctions,
@@ -232,6 +250,18 @@ public final class AotCompiler {
         byte[] emit(int start, int end);
     }
 
+    /**
+     * Loads a chunked class based on the given size and chunk size.
+     *
+     * This method attempts to load a class in chunks to avoid MethodTooLargeException or ClassTooLargeException.
+     * It dynamically adjusts the chunk size based on the size of the class to be loaded and the maximum size
+     * that can be loaded without causing an exception. The method returns the final chunk size used for loading.
+     *
+     * @param size The total size of the class to be loaded.
+     * @param chunkSize The initial chunk size to use for loading.
+     * @param emitter The ChunkedClassEmitter that generates the class bytes for a given chunk.
+     * @return The final chunk size used for loading the class.
+     */
     int loadChunkedClass(int size, int chunkSize, ChunkedClassEmitter emitter) {
         ArrayList<String> generated = new ArrayList<>();
         while (true) {
