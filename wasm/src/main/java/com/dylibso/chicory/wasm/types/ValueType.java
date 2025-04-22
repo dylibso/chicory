@@ -6,17 +6,28 @@ import com.dylibso.chicory.wasm.MalformedException;
 import java.util.List;
 
 /**
- * The possible WASM value types.
+ * Represents the possible value types in WebAssembly.
+ * Includes numeric types (I32, I64, F32, F64), vector types (V128),
+ * and reference types (FuncRef, ExternRef, ExnRef).
  */
 public enum ValueType {
+    /** Represents an unknown or invalid value type. */
     UNKNOWN(-1),
+    /** 64-bit floating-point number (double). */
     F64(ID.F64),
+    /** 32-bit floating-point number (float). */
     F32(ID.F32),
+    /** 64-bit integer (long). */
     I64(ID.I64),
+    /** 32-bit integer (int). */
     I32(ID.I32),
+    /** 128-bit vector type (SIMD). */
     V128(ID.V128),
+    /** Reference to a function. */
     FuncRef(ID.FuncRef),
+    /** Reference to an exception (part of the Exception Handling proposal). */
     ExnRef(ID.ExnRef),
+    /** Reference to an external host value. */
     ExternRef(ID.ExternRef);
 
     private final int id;
@@ -26,16 +37,19 @@ public enum ValueType {
     }
 
     /**
-     * @return the numerical identifier for this type
+     * Returns the numerical identifier (byte code) for this value type.
+     *
+     * @return the numerical identifier.
      */
     public int id() {
         return id;
     }
 
     /**
-     * @return the size of this type in memory
+     * Returns the size of this type in bytes when stored in memory.
      *
-     * @throws IllegalStateException if the type cannot be stored in memory
+     * @return the size in bytes (4, 8, or 16).
+     * @throws IllegalStateException if the type cannot be stored directly in memory (e.g., reference types).
      */
     public int size() {
         switch (this) {
@@ -53,7 +67,9 @@ public enum ValueType {
     }
 
     /**
-     * @return {@code true} if the type is a numeric type, or {@code false} otherwise
+     * Checks if this type is a numeric type (I32, I64, F32, F64).
+     *
+     * @return {@code true} if the type is numeric, {@code false} otherwise.
      */
     public boolean isNumeric() {
         switch (this) {
@@ -68,7 +84,9 @@ public enum ValueType {
     }
 
     /**
-     * @return {@code true} if the type is an integer type, or {@code false} otherwise
+     * Checks if this type is an integer type (I32, I64).
+     *
+     * @return {@code true} if the type is an integer type, {@code false} otherwise.
      */
     public boolean isInteger() {
         switch (this) {
@@ -81,7 +99,9 @@ public enum ValueType {
     }
 
     /**
-     * @return {@code true} if the type is a floating-point type, or {@code false} otherwise
+     * Checks if this type is a floating-point type (F32, F64).
+     *
+     * @return {@code true} if the type is a floating-point type, {@code false} otherwise.
      */
     public boolean isFloatingPoint() {
         switch (this) {
@@ -94,7 +114,9 @@ public enum ValueType {
     }
 
     /**
-     * @return {@code true} if the type is a reference type, or {@code false} otherwise
+     * Checks if this type is a reference type (FuncRef, ExternRef, ExnRef).
+     *
+     * @return {@code true} if the type is a reference type, {@code false} otherwise.
      */
     public boolean isReference() {
         switch (this) {
@@ -108,7 +130,10 @@ public enum ValueType {
     }
 
     /**
-     * @return {@code true} if the given type ID is a valid value type ID, or {@code false} if it is not
+     * Checks if the given numeric ID corresponds to a valid WebAssembly value type.
+     *
+     * @param typeId the numeric ID to check.
+     * @return {@code true} if the ID represents a valid {@link ValueType}, {@code false} otherwise.
      */
     public static boolean isValid(int typeId) {
         switch (typeId) {
@@ -127,9 +152,11 @@ public enum ValueType {
     }
 
     /**
-     * @return the {@code ValueType} for the given ID value
+     * Retrieves the {@code ValueType} enum constant corresponding to the given numerical ID.
      *
-     * @throws IllegalArgumentException if the ID value does not correspond to a valid value type
+     * @param id the numerical ID of the value type.
+     * @return the corresponding {@link ValueType} enum constant.
+     * @throws IllegalArgumentException if the ID does not correspond to a valid value type.
      */
     public static ValueType forId(int id) {
         switch (id) {
@@ -155,9 +182,11 @@ public enum ValueType {
     }
 
     /**
-     * @return the reference-typed {@code ValueType} for the given ID value
+     * Retrieves the reference-typed {@code ValueType} corresponding to the given numerical ID.
      *
-     * @throws IllegalArgumentException if the ID value does not correspond to a valid reference type
+     * @param id the numerical ID of the reference type (e.g., 0x70 for FuncRef).
+     * @return the corresponding reference {@link ValueType} enum constant (FuncRef, ExternRef, or ExnRef).
+     * @throws MalformedException if the ID does not correspond to a valid reference type.
      */
     public static ValueType refTypeForId(int id) {
         switch (id) {
@@ -172,6 +201,13 @@ public enum ValueType {
         }
     }
 
+    /**
+     * Calculates the size of a list of value types in terms of stack slots.
+     * V128 counts as 2 slots, other types count as 1.
+     *
+     * @param args the list of {@link ValueType}s.
+     * @return the total number of stack slots occupied by these types.
+     */
     public static int sizeOf(List<ValueType> args) {
         int total = 0;
         for (var a : args) {

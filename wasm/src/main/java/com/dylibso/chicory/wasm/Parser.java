@@ -165,18 +165,32 @@ public final class Parser {
         }
     }
 
+    /**
+     * Creates a new builder for configuring the Parser.
+     *
+     * @return A new Parser.Builder instance.
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Builder class for configuring the {@link Parser}.
+     * Allows specifying included sections and custom section parsers.
+     */
     public static final class Builder {
         private Map<String, Function<byte[], CustomSection>> customParsers;
         private BitSet includeSections;
 
         private Builder() {}
 
-        /*
-         * @param sectionId : the sectionId to be included while parsing, e.g. SectionId.MEMORY
+        /**
+         * Specifies a section ID to be included during parsing.
+         * If this method is never called, all sections are included by default.
+         * Once called, only the specified sections (and custom sections) will be parsed.
+         *
+         * @param sectionId the sectionId to be included (e.g., {@link SectionId#MEMORY}).
+         * @return this Builder instance for chaining.
          */
         public Builder includeSectionId(int sectionId) {
             if (includeSections == null) {
@@ -186,12 +200,25 @@ public final class Parser {
             return this;
         }
 
+        /**
+         * Provides custom parsers for specific named custom sections.
+         * By default, a parser for the "name" custom section is included.
+         *
+         * @param customParsers A map where keys are custom section names and values are functions
+         *                      that take the section's byte content and return a {@link CustomSection}.
+         * @return this Builder instance for chaining.
+         */
         public Builder withCustomParsers(
                 Map<String, Function<byte[], CustomSection>> customParsers) {
             this.customParsers = customParsers;
             return this;
         }
 
+        /**
+         * Builds the configured {@link Parser}.
+         *
+         * @return A new Parser instance.
+         */
         public Parser build() {
             if (customParsers == null) {
                 customParsers = DEFAULT_CUSTOM_PARSERS;
@@ -200,18 +227,49 @@ public final class Parser {
         }
     }
 
+    /**
+     * Parses a Wasm module from an InputStream using default parser settings.
+     *
+     * @param input The InputStream containing the Wasm binary.
+     * @return The parsed {@link WasmModule}.
+     * @throws MalformedException if the Wasm binary is malformed.
+     * @throws ChicoryException if an IO error occurs.
+     */
     public static WasmModule parse(InputStream input) {
         return new Parser().parse(() -> input);
     }
 
+    /**
+     * Parses a Wasm module from a byte array using default parser settings.
+     *
+     * @param buffer The byte array containing the Wasm binary.
+     * @return The parsed {@link WasmModule}.
+     * @throws MalformedException if the Wasm binary is malformed.
+     */
     public static WasmModule parse(byte[] buffer) {
         return new Parser().parse(() -> new ByteArrayInputStream(buffer));
     }
 
+    /**
+     * Parses a Wasm module from a File using default parser settings.
+     *
+     * @param file The File object representing the Wasm binary.
+     * @return The parsed {@link WasmModule}.
+     * @throws MalformedException if the Wasm binary is malformed.
+     * @throws ChicoryException if an IO error occurs reading the file.
+     */
     public static WasmModule parse(File file) {
         return parse(file.toPath());
     }
 
+    /**
+     * Parses a Wasm module from a Path using default parser settings.
+     *
+     * @param path The Path object representing the Wasm binary.
+     * @return The parsed {@link WasmModule}.
+     * @throws MalformedException if the Wasm binary is malformed.
+     * @throws ChicoryException if an IO error occurs reading the file.
+     */
     public static WasmModule parse(Path path) {
         return new Parser()
                 .parse(
@@ -225,6 +283,15 @@ public final class Parser {
                         });
     }
 
+    /**
+     * Parses a Wasm module using the configuration of this Parser instance.
+     *
+     * @param inputStreamSupplier A supplier for the InputStream containing the Wasm binary.
+     *                          This allows for resource management (e.g., closing the stream).
+     * @return The parsed {@link WasmModule}.
+     * @throws MalformedException if the Wasm binary is malformed.
+     * @throws ChicoryException if an IO error occurs.
+     */
     public WasmModule parse(Supplier<InputStream> inputStreamSupplier) {
         WasmModule.Builder moduleBuilder = WasmModule.builder();
         try (InputStream is = inputStreamSupplier.get()) {
@@ -240,10 +307,28 @@ public final class Parser {
         return moduleBuilder.build();
     }
 
+    /**
+     * Parses a Wasm module from an InputStream, notifying a listener as sections are parsed.
+     * This version fully decodes all section contents before notifying the listener.
+     *
+     * @param in The InputStream containing the Wasm binary.
+     * @param listener The listener to be notified of parsed sections.
+     * @throws MalformedException if the Wasm binary is malformed.
+     * @throws ChicoryException if an IO error occurs.
+     */
     public void parse(InputStream in, ParserListener listener) {
         parse(in, listener, true);
     }
 
+    /**
+     * Internal parsing method that reads the Wasm header and iterates through sections.
+     *
+     * @param in The InputStream containing the Wasm binary.
+     * @param listener The listener to receive parsed sections.
+     * @param decode If true, fully decode section content; if false, only provide raw section data.
+     * @throws MalformedException if the header is incorrect or section data is malformed.
+     * @throws ChicoryException if an IO error occurs.
+     */
     private void parse(InputStream in, ParserListener listener, boolean decode) {
 
         requireNonNull(listener, "listener");
@@ -385,10 +470,30 @@ public final class Parser {
         }
     }
 
+    /**
+     * Parses a Wasm module from a byte array without fully decoding section contents.
+     * The listener receives {@link RawSection} objects containing the raw byte data for each section.
+     * Useful for tools that only need section boundaries or want to defer parsing.
+     *
+     * @param bytes The byte array containing the Wasm binary.
+     * @param listener The listener to receive {@link RawSection} objects.
+     * @throws MalformedException if the Wasm binary is malformed.
+     * @throws ChicoryException if an IO error occurs (though unlikely with byte array).
+     */
     public static void parseWithoutDecoding(byte[] bytes, ParserListener listener) {
         new Parser().parseWithoutDecoding(new ByteArrayInputStream(bytes), listener);
     }
 
+    /**
+     * Parses a Wasm module from an InputStream without fully decoding section contents.
+     * The listener receives {@link RawSection} objects containing the raw byte data for each section.
+     * Useful for tools that only need section boundaries or want to defer parsing.
+     *
+     * @param in The InputStream containing the Wasm binary.
+     * @param listener The listener to receive {@link RawSection} objects.
+     * @throws MalformedException if the Wasm binary is malformed.
+     * @throws ChicoryException if an IO error occurs.
+     */
     public void parseWithoutDecoding(InputStream in, ParserListener listener) {
         parse(in, listener, false);
     }

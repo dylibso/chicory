@@ -4,9 +4,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+/** Utility class for handling InputStreams. */
 public final class InputStreams {
     private InputStreams() {}
 
+    /**
+     * Reads all bytes from an InputStream.
+     *
+     * @param is the InputStream to read from
+     * @return a byte array containing all bytes from the stream
+     * @throws IOException if an I/O error occurs
+     */
     public static byte[] readAllBytes(InputStream is) throws IOException {
         if (is == null) {
             throw new IllegalArgumentException("InputStream cannot be null");

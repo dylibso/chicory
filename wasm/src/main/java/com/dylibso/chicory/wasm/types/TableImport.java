@@ -24,29 +24,51 @@ public final class TableImport extends Import {
     }
 
     /**
-     * @return the table entry type
+     * Returns the type of elements stored in this imported table.
+     *
+     * @return the table entry {@link ValueType}.
      */
     public ValueType entryType() {
         return entryType;
     }
 
     /**
-     * @return the table size limits
+     * Returns the size limits (initial and optional maximum) of this imported table.
+     *
+     * @return the {@link TableLimits}.
      */
     public TableLimits limits() {
         return limits;
     }
 
+    /**
+     * Returns the external type, which is always {@link ExternalType#TABLE}.
+     *
+     * @return {@link ExternalType#TABLE}.
+     */
     @Override
     public ExternalType importType() {
         return ExternalType.TABLE;
     }
 
+    /**
+     * Compares this table import to another import.
+     *
+     * @param other the object to compare against.
+     * @return {@code true} if the other object is a {@code TableImport} and is equal to this one, {@code false} otherwise.
+     */
     @Override
     public boolean equals(Import other) {
         return other instanceof TableImport && equals((TableImport) other);
     }
 
+    /**
+     * Compares this table import to another table import for equality.
+     * Equality is based on module name, name, entry type, and limits.
+     *
+     * @param other the {@code TableImport} to compare against.
+     * @return {@code true} if the imports are equal, {@code false} otherwise.
+     */
     public boolean equals(TableImport other) {
         return this == other
                 || super.equals(other)
@@ -54,11 +76,22 @@ public final class TableImport extends Import {
                         && limits.equals(other.limits);
     }
 
+    /**
+     * Computes the hash code for this table import.
+     *
+     * @return the hash code.
+     */
     @Override
     public int hashCode() {
         return (super.hashCode() * 19 + entryType.hashCode()) * 19 + limits.hashCode();
     }
 
+    /**
+     * Appends a string representation of this table import to the given {@link StringBuilder}.
+     *
+     * @param b the {@link StringBuilder} to append to.
+     * @return the modified {@link StringBuilder}.
+     */
     @Override
     public StringBuilder toString(StringBuilder b) {
         b.append("table (type=").append(entryType).append(",limits=");

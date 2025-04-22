@@ -57,21 +57,27 @@ public final class MemoryLimits {
     }
 
     /**
-     * @return the default memory limits
+     * Returns the default memory limits (0 initial, {@link #MAX_PAGES} maximum).
+     *
+     * @return the default {@link MemoryLimits} instance.
      */
     public static MemoryLimits defaultLimits() {
         return DEFAULT_LIMITS;
     }
 
     /**
-     * @return the initial size, in pages
+     * Returns the initial size of the memory, in pages.
+     *
+     * @return the initial size in WebAssembly pages (64KiB each).
      */
     public int initialPages() {
         return initial;
     }
 
     /**
-     * @return the maximum size, in pages
+     * Returns the maximum allowed size of the memory, in pages.
+     *
+     * @return the maximum size in WebAssembly pages (64KiB each).
      */
     public int maximumPages() {
         return maximum;
@@ -82,11 +88,22 @@ public final class MemoryLimits {
         return obj instanceof MemoryLimits && equals((MemoryLimits) obj);
     }
 
+    /**
+     * Compares this memory limits object to another {@code MemoryLimits} object for equality.
+     *
+     * @param other the {@code MemoryLimits} object to compare against.
+     * @return {@code true} if both objects have the same initial and maximum values, {@code false} otherwise.
+     */
     public boolean equals(MemoryLimits other) {
         return this == other
                 || other != null && initial == other.initial && maximum == other.maximum;
     }
 
+    /**
+     * Computes the hash code for this memory limits object.
+     *
+     * @return the hash code.
+     */
     @Override
     public int hashCode() {
         return maximum * 19 + initial;
@@ -97,6 +114,12 @@ public final class MemoryLimits {
         return toString(new StringBuilder()).toString();
     }
 
+    /**
+     * Appends a string representation of these memory limits to the given {@link StringBuilder}.
+     *
+     * @param b the {@link StringBuilder} to append to.
+     * @return the modified {@link StringBuilder}.
+     */
     public StringBuilder toString(StringBuilder b) {
         b.append("[").append(initial).append(',');
         if (maximum == MAX_PAGES) {

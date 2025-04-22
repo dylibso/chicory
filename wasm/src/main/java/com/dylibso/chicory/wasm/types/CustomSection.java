@@ -9,5 +9,11 @@ public abstract class CustomSection extends Section {
         super(SectionId.CUSTOM);
     }
 
+    /**
+     * Returns the name of this custom section.
+     * Standard custom section names include "name", "linking", etc.
+     *
+     * @return the name string.
+     */
     public abstract String name();
 }

@@ -29,14 +29,19 @@ public final class ActiveElement extends Element {
     }
 
     /**
-     * @return the table to actively initialize
+     * Returns the index of the table that this active element segment initializes.
+     *
+     * @return the target table index.
      */
     public int tableIndex() {
         return tableIndex;
     }
 
     /**
-     * @return a constant expression defining the offset into the table
+     * Returns the list of instructions that compute the starting offset within the target table
+     * where the elements should be placed. This is typically a single `i32.const` instruction.
+     *
+     * @return an unmodifiable list of offset instructions.
      */
     public List<Instruction> offset() {
         return offset;

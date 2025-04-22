@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Represents the Data Section in a WebAssembly module.
+ * This section declares initialized data that is copied into memory instances.
+ */
 public final class DataSection extends Section {
     private final List<DataSegment> dataSegments;
 
@@ -12,22 +16,46 @@ public final class DataSection extends Section {
         this.dataSegments = List.copyOf(dataSegments);
     }
 
+    /**
+     * Returns the data segments defined in this section.
+     *
+     * @return an array of {@link DataSegment} instances.
+     */
     public DataSegment[] dataSegments() {
         return dataSegments.toArray(new DataSegment[0]);
     }
 
+    /**
+     * Returns the number of data segments defined in this section.
+     *
+     * @return the count of data segments.
+     */
     public int dataSegmentCount() {
         return dataSegments.size();
     }
 
+    /**
+     * Returns the data segment at the specified index.
+     *
+     * @param idx the index of the data segment to retrieve.
+     * @return the {@link DataSegment} at the given index.
+     */
     public DataSegment getDataSegment(int idx) {
         return dataSegments.get(idx);
     }
 
+    /**
+     * Creates a new builder for constructing a {@link DataSection}.
+     *
+     * @return a new {@link Builder} instance.
+     */
     public static Builder builder() {
         return new Builder();
     }
 
+    /**
+     * Builder for creating {@link DataSection} instances.
+     */
     public static final class Builder {
         private final List<DataSegment> dataSegments = new ArrayList<>();
 
@@ -45,11 +73,22 @@ public final class DataSection extends Section {
             return this;
         }
 
+        /**
+         * Constructs the {@link DataSection} instance from the added data segments.
+         *
+         * @return the built {@link DataSection}.
+         */
         public DataSection build() {
             return new DataSection(dataSegments);
         }
     }
 
+    /**
+     * Compares this data section to another object for equality.
+     *
+     * @param o the object to compare against.
+     * @return {@code true} if the object is a {@code DataSection} with the same data segments, {@code false} otherwise.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -62,6 +101,11 @@ public final class DataSection extends Section {
         return Objects.equals(dataSegments, that.dataSegments);
     }
 
+    /**
+     * Computes the hash code for this data section.
+     *
+     * @return the hash code.
+     */
     @Override
     public int hashCode() {
         return Objects.hashCode(dataSegments);

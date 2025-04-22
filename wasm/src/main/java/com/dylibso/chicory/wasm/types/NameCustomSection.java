@@ -50,9 +50,10 @@ public final class NameCustomSection extends CustomSection {
     }
 
     /**
-     * Parse a new instance from a byte array.
+     * Parses the byte content of a "name" custom section to create a {@code NameCustomSection}.
      *
-     * @param bytes the byte content of the section
+     * @param bytes the raw byte content of the custom section.
+     * @return a new {@link NameCustomSection} instance populated with the parsed names.
      */
     public static NameCustomSection parse(byte[] bytes) {
         String moduleName = null;
@@ -122,86 +123,123 @@ public final class NameCustomSection extends CustomSection {
                 tagNames);
     }
 
+    /**
+     * Returns the name of this custom section, which is always "name".
+     *
+     * @return the string "name".
+     */
     @Override
     public String name() {
         return "name";
     }
 
     /**
-     * @return the optional module name
+     * Returns the optional name defined for the module itself.
+     *
+     * @return an {@link Optional} containing the module name, or empty if not defined.
      */
     public Optional<String> moduleName() {
         return moduleName;
     }
 
     /**
-     * @return the name of the function with the given index, or {@code null} if none is set
+     * Returns the name defined for the function at the given index.
+     *
+     * @param functionIdx the index of the function.
+     * @return the function name, or {@code null} if no name is defined for this index.
      */
     public String nameOfFunction(int functionIdx) {
         return oneLevelSearch(funcNames, functionIdx);
     }
 
     /**
-     * @return the number of function names in this section
-     *         This value does not have any relationship to the function index of any particular entry;
-     *         it merely reflects the number of function names in this section.
-     *         Used for testing.
+     * Returns the total number of function names defined in this section.
+     * Note: This count is not necessarily equal to the number of functions in the module.
+     *
+     * @return the number of function name entries.
      */
     public int functionNameCount() {
         return funcNames.size();
     }
 
     /**
-     * @return the name of the local with the given index within the function with the given index, or {@code null} if none is set
+     * Returns the name defined for the local variable at the given index within the specified function.
+     *
+     * @param functionIdx the index of the function.
+     * @param localIdx the index of the local variable within the function.
+     * @return the local variable name, or {@code null} if no name is defined for this combination.
      */
     public String nameOfLocal(int functionIdx, int localIdx) {
         return twoLevelSearch(localNames, functionIdx, localIdx);
     }
 
     /**
-     * @return the name of the local with the given index within the function with the given index, or {@code null} if none is set
+     * Returns the name defined for the label at the given index within the specified function.
+     * Note: Label names are typically used for debugging and are not part of the core Wasm specification.
+     *
+     * @param functionIdx the index of the function.
+     * @param labelIdx the index of the label within the function's control flow structure.
+     * @return the label name, or {@code null} if no name is defined for this combination.
      */
     public String nameOfLabel(int functionIdx, int labelIdx) {
         return twoLevelSearch(labelNames, functionIdx, labelIdx);
     }
 
     /**
-     * @return the name of the table with the given index, or {@code null} if none is set
+     * Returns the name defined for the table at the given index.
+     *
+     * @param tableIdx the index of the table.
+     * @return the table name, or {@code null} if no name is defined for this index.
      */
     public String nameOfTable(int tableIdx) {
         return oneLevelSearch(tableNames, tableIdx);
     }
 
     /**
-     * @return the name of the memory with the given index, or {@code null} if none is set
+     * Returns the name defined for the memory at the given index.
+     *
+     * @param memoryIdx the index of the memory.
+     * @return the memory name, or {@code null} if no name is defined for this index.
      */
     public String nameOfMemory(int memoryIdx) {
         return oneLevelSearch(memoryNames, memoryIdx);
     }
 
     /**
-     * @return the name of the global with the given index, or {@code null} if none is set
+     * Returns the name defined for the global variable at the given index.
+     *
+     * @param globalIdx the index of the global variable.
+     * @return the global variable name, or {@code null} if no name is defined for this index.
      */
     public String nameOfGlobal(int globalIdx) {
         return oneLevelSearch(globalNames, globalIdx);
     }
 
     /**
-     * @return the name of the element with the given index, or {@code null} if none is set
+     * Returns the name defined for the element segment at the given index.
+     *
+     * @param elementIdx the index of the element segment.
+     * @return the element segment name, or {@code null} if no name is defined for this index.
      */
     public String nameOfElement(int elementIdx) {
         return oneLevelSearch(elementNames, elementIdx);
     }
 
     /**
-     * @return the name of the data segment with the given index, or {@code null} if none is set
+     * Returns the name defined for the data segment at the given index.
+     *
+     * @param dataIdx the index of the data segment.
+     * @return the data segment name, or {@code null} if no name is defined for this index.
      */
     public String nameOfData(int dataIdx) {
         return oneLevelSearch(dataNames, dataIdx);
     }
 
     /**
-     * @return the name of the tag with the given index, or {@code null} if none is set
+     * Returns the name defined for the tag (exception) at the given index.
+     *
+     * @param tagIdx the index of the tag.
+     * @return the tag name, or {@code null} if no name is defined for this index.
      */
     public String nameOfTag(int tagIdx) {
         return oneLevelSearch(tagNames, tagIdx);

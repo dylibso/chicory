@@ -4,6 +4,9 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Represents the signature of a WebAssembly function, defining its parameter and return types.
+ */
 public final class FunctionType {
     private final List<ValueType> params;
     private final List<ValueType> returns;
@@ -15,18 +18,40 @@ public final class FunctionType {
         hashCode = Objects.hash(params, returns);
     }
 
+    /**
+     * Returns the list of parameter types for this function signature.
+     *
+     * @return an unmodifiable {@link List} of parameter {@link ValueType}s.
+     */
     public List<ValueType> params() {
         return params;
     }
 
+    /**
+     * Returns the list of return types for this function signature.
+     *
+     * @return an unmodifiable {@link List} of return {@link ValueType}s.
+     */
     public List<ValueType> returns() {
         return returns;
     }
 
+    /**
+     * Checks if the parameter types of this signature match another signature.
+     *
+     * @param other the other {@link FunctionType} to compare against.
+     * @return {@code true} if the parameter lists are equal, {@code false} otherwise.
+     */
     public boolean paramsMatch(FunctionType other) {
         return params.equals(other.params);
     }
 
+    /**
+     * Checks if the return types of this signature match another signature.
+     *
+     * @param other the other {@link FunctionType} to compare against.
+     * @return {@code true} if the return lists are equal, {@code false} otherwise.
+     */
     public boolean returnsMatch(FunctionType other) {
         return returns.equals(other.returns);
     }
@@ -36,6 +61,13 @@ public final class FunctionType {
         return obj instanceof FunctionType && equals((FunctionType) obj);
     }
 
+    /**
+     * Compares this function type to another function type for equality.
+     * Equality is based on both parameter and return types.
+     *
+     * @param other the {@code FunctionType} to compare against.
+     * @return {@code true} if the types are equal, {@code false} otherwise.
+     */
     public boolean equals(FunctionType other) {
         return hashCode == other.hashCode && paramsMatch(other) && returnsMatch(other);
     }
@@ -73,18 +105,47 @@ public final class FunctionType {
 
     private static final FunctionType empty = new FunctionType(List.of(), List.of());
 
+    /**
+     * Returns a cached {@link FunctionType} instance representing a function with no parameters
+     * and a single return value of the specified type.
+     *
+     * @param valueType the single return type.
+     * @return a cached {@link FunctionType} instance, or {@code null} if the type is not cached.
+     */
     public static FunctionType returning(ValueType valueType) {
         return returning.get(valueType);
     }
 
+    /**
+     * Returns a cached {@link FunctionType} instance representing a function with a single parameter
+     * of the specified type and no return values.
+     *
+     * @param valueType the single parameter type.
+     * @return a cached {@link FunctionType} instance, or {@code null} if the type is not cached.
+     */
     public static FunctionType accepting(ValueType valueType) {
         return accepting.get(valueType);
     }
 
+    /**
+     * Checks if this function type signature matches another signature exactly
+     * (both parameters and return types).
+     *
+     * @param other the other {@link FunctionType} to compare against.
+     * @return {@code true} if both parameter and return lists are equal, {@code false} otherwise.
+     */
     public boolean typesMatch(FunctionType other) {
         return paramsMatch(other) && returnsMatch(other);
     }
 
+    /**
+     * Creates or retrieves a {@link FunctionType} instance for the given parameter and return types.
+     * Uses cached instances for common simple types (empty, single param, single return).
+     *
+     * @param params the list of parameter types.
+     * @param returns the list of return types.
+     * @return a {@link FunctionType} instance representing the signature.
+     */
     public static FunctionType of(List<ValueType> params, List<ValueType> returns) {
         if (params.isEmpty()) {
             if (returns.isEmpty()) {
@@ -101,14 +162,33 @@ public final class FunctionType {
         return new FunctionType(List.copyOf(params), List.copyOf(returns));
     }
 
+    /**
+     * Creates or retrieves a {@link FunctionType} instance for the given parameter and return types.
+     * Uses cached instances for common simple types (empty, single param, single return).
+     *
+     * @param params the array of parameter types.
+     * @param returns the array of return types.
+     * @return a {@link FunctionType} instance representing the signature.
+     */
     public static FunctionType of(ValueType[] params, ValueType[] returns) {
         return of(List.of(params), List.of(returns));
     }
 
+    /**
+     * Returns the cached {@link FunctionType} instance representing a function with no parameters
+     * and no return values.
+     *
+     * @return the empty {@link FunctionType} instance.
+     */
     public static FunctionType empty() {
         return empty;
     }
 
+    /**
+     * Returns a string representation of this function type signature.
+     *
+     * @return a string representation of the function type.
+     */
     @Override
     public String toString() {
         var builder = new StringBuilder();

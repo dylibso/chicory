@@ -28,36 +28,61 @@ public class Export {
     }
 
     /**
-     * @return the export name
+     * Returns the external name under which this definition is exported.
+     *
+     * @return the export name string.
      */
     public String name() {
         return name;
     }
 
     /**
-     * @return the export index
+     * Returns the index of the exported definition within its corresponding index space
+     * (e.g., function index space, table index space).
+     *
+     * @return the index of the exported item.
      */
     public int index() {
         return index;
     }
 
     /**
-     * @return the type of exported definition
+     * Returns the type of the exported definition (e.g., Function, Table, Memory, Global, Tag).
+     *
+     * @return the {@link ExternalType} of the export.
      */
     public ExternalType exportType() {
         return exportType;
     }
 
+    /**
+     * Computes the hash code for this export.
+     *
+     * @return the hash code.
+     */
     @Override
     public int hashCode() {
         return (name.hashCode() * 31 + index) * 31 + exportType.hashCode();
     }
 
+    /**
+     * Compares this export to another object for equality.
+     *
+     * @param obj the object to compare against.
+     * @return {@code true} if the object is an {@code Export} and is equal to this one, {@code false} otherwise.
+     */
     @Override
     public boolean equals(Object obj) {
         return obj instanceof Export && equals((Export) obj);
     }
 
+    /**
+     * Compares this export to another export for equality.
+     * Equality is based on name, index, and export type.
+     *
+     * @param other the {@code Export} to compare against.
+     * @return {@code true} if the exports are equal, {@code false} otherwise.
+     */
     public boolean equals(Export other) {
         return this == other
                 || other != null

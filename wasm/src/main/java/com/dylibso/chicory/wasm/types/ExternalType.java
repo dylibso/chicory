@@ -11,11 +11,15 @@ import java.util.List;
  * for the history of {@link #TAG}.
  */
 public enum ExternalType {
-    // note: keep in order
+    /** External type for Functions (ID 0). */
     FUNCTION(0x00),
+    /** External type for Tables (ID 1). */
     TABLE(0x01),
+    /** External type for Memories (ID 2). */
     MEMORY(0x02),
+    /** External type for Globals (ID 3). */
     GLOBAL(0x03),
+    /** External type for Tags (Exceptions) (ID 4). */
     TAG(0x04);
 
     private final int id;
@@ -27,7 +31,9 @@ public enum ExternalType {
     }
 
     /**
-     * @return the numerical identifier for this external kind
+     * Returns the numerical identifier for this external type (0x00 to 0x04).
+     *
+     * @return the numerical identifier for this external kind.
      */
     public int id() {
         return id;
@@ -35,6 +41,13 @@ public enum ExternalType {
 
     private static final List<ExternalType> values = List.of(values());
 
+    /**
+     * Retrieves the {@code ExternalType} corresponding to the given numerical ID.
+     *
+     * @param id the numerical ID (0-4).
+     * @return the corresponding {@link ExternalType} enum constant.
+     * @throws IndexOutOfBoundsException if the ID is invalid.
+     */
     public static ExternalType byId(int id) {
         return values.get(id);
     }

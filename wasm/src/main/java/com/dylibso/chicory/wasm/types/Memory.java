@@ -21,12 +21,20 @@ public final class Memory {
     }
 
     /**
-     * @return the defined memory limits
+     * Returns the size limits (initial and optional maximum) of this memory.
+     *
+     * @return the defined {@link MemoryLimits}.
      */
     public MemoryLimits limits() {
         return limits;
     }
 
+    /**
+     * Compares this memory definition to another object for equality.
+     *
+     * @param o the object to compare against.
+     * @return {@code true} if the object is a {@code Memory} with the same limits, {@code false} otherwise.
+     */
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -39,6 +47,11 @@ public final class Memory {
         return Objects.equals(limits, memory.limits);
     }
 
+    /**
+     * Computes the hash code for this memory definition.
+     *
+     * @return the hash code.
+     */
     @Override
     public int hashCode() {
         return Objects.hashCode(limits);
