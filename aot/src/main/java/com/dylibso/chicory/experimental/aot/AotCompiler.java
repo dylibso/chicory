@@ -900,7 +900,7 @@ public final class AotCompiler {
         int[] keys = validIds.stream().mapToInt(x -> x).toArray();
         Label[] labels = validIds.stream().map(x -> new Label()).toArray(Label[]::new);
 
-        // push call the call args on the stack...
+        // push the call args on to the stack...
         for (int i = 0; i < type.params().size(); i++) {
             asm.load(i, asmType(type.params().get(i)));
         }
