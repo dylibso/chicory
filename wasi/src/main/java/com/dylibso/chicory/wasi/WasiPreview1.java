@@ -51,6 +51,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
+import java.security.SecureRandom;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -70,7 +71,7 @@ import java.util.stream.Stream;
 @HostModule("wasi_snapshot_preview1")
 public final class WasiPreview1 implements Closeable {
     private final Logger logger;
-    private final Random random;
+    private Random random;
     private final Clock clock;
     private final List<byte[]> arguments;
     private final List<Entry<byte[], byte[]>> environment;
@@ -1478,6 +1479,7 @@ public final class WasiPreview1 implements Closeable {
             return wasiResult(WasiErrno.EINVAL);
         }
 
+        Random r = getRandom();
         byte[] data = new byte[min(bufLen, 4096)];
         int written = 0;
         while (written < bufLen) {
@@ -1488,11 +1490,22 @@ public final class WasiPreview1 implements Closeable {
             if (size < data.length) {
                 data = new byte[size];
             }
-            random.nextBytes(data);
+            r.nextBytes(data);
             memory.write(buf + written, data, 0, size);
             written += size;
         }
         return wasiResult(WasiErrno.ESUCCESS);
+    }
+
+    public Random getRandom() {
+        if (random == null) {
+            random = new SecureRandom();
+        }
+        return random;
+    }
+
+    public void setRandom(Random random) {
+        this.random = random;
     }
 
     @WasmExport
