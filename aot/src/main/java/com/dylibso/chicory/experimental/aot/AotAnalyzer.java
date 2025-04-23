@@ -19,7 +19,7 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,9 +34,9 @@ import java.util.stream.Stream;
 final class AotAnalyzer {
 
     private final WasmModule module;
-    private final List<ValueType> globalTypes;
+    private final List<ValType> globalTypes;
     private final List<FunctionType> functionTypes;
-    private final List<ValueType> tableTypes;
+    private final List<ValType> tableTypes;
     private final int functionImports;
 
     public AotAnalyzer(WasmModule module) {
@@ -47,7 +47,7 @@ final class AotAnalyzer {
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
     }
 
-    public List<ValueType> globalTypes() {
+    public List<ValType> globalTypes() {
         return globalTypes;
     }
 
@@ -139,7 +139,7 @@ final class AotAnalyzer {
                     // RETURN_CALL_INDIRECT into a CALL_INDIRECT + RETURN.
 
                     // [p* I32] -> [r*]
-                    stack.pop(ValueType.I32);
+                    stack.pop(ValType.I32);
                     updateStack(stack, module.typeSection().getType((int) ins.operand(0)));
                     result.add(
                             new AotInstruction(AotOpCode.of(OpCode.CALL_INDIRECT), ins.operands()));
@@ -153,7 +153,7 @@ final class AotAnalyzer {
                     break;
 
                 case IF:
-                    stack.pop(ValueType.I32);
+                    stack.pop(ValType.I32);
                     stack.enterScope(ins.scope(), blockType(ins));
                     // use the same starting stack sizes for both sides of the branch
                     if (body.instructions().get(ins.labelFalse() - 1).opcode() == OpCode.ELSE) {
@@ -172,7 +172,7 @@ final class AotAnalyzer {
                     result.add(new AotInstruction(AotOpCode.GOTO, ins.labelTrue()));
                     break;
                 case BR_IF:
-                    stack.pop(ValueType.I32);
+                    stack.pop(ValType.I32);
                     var ifUnwind = unwindStack(functionType, body, ins, ins.labelTrue(), stack);
                     if (ifUnwind.isPresent()) {
                         result.add(new AotInstruction(AotOpCode.IFEQ, ins.labelFalse()));
@@ -184,10 +184,10 @@ final class AotAnalyzer {
                     break;
                 case BR_TABLE:
                     exitBlockDepth = ins.depth();
-                    stack.pop(ValueType.I32);
+                    stack.pop(ValType.I32);
                     // convert to jump if it only has a default
                     if (ins.labelTable().size() == 1) {
-                        result.add(new AotInstruction(AotOpCode.DROP, ValueType.I32.id()));
+                        result.add(new AotInstruction(AotOpCode.DROP, ValType.I32.id()));
                         unwindStack(functionType, body, ins, ins.labelTable().get(0), stack)
                                 .ifPresent(result::add);
                         result.add(new AotInstruction(AotOpCode.GOTO, ins.labelTable().get(0)));
@@ -217,7 +217,7 @@ final class AotAnalyzer {
                 case SELECT:
                 case SELECT_T:
                     // [t t I32] -> [t]
-                    stack.pop(ValueType.I32);
+                    stack.pop(ValType.I32);
                     var selectType = stack.peek();
                     stack.pop(selectType);
                     stack.pop(selectType);
@@ -273,16 +273,16 @@ final class AotAnalyzer {
             case I32_POPCNT:
             case MEMORY_GROW:
                 // [I32] -> [I32]
-                stack.pop(ValueType.I32);
-                stack.push(ValueType.I32);
+                stack.pop(ValType.I32);
+                stack.push(ValType.I32);
                 break;
             case F32_CONVERT_I32_S:
             case F32_CONVERT_I32_U:
             case F32_LOAD:
             case F32_REINTERPRET_I32:
                 // [I32] -> [F32]
-                stack.pop(ValueType.I32);
-                stack.push(ValueType.F32);
+                stack.pop(ValType.I32);
+                stack.push(ValType.F32);
                 break;
             case F32_ABS:
             case F32_CEIL:
@@ -292,8 +292,8 @@ final class AotAnalyzer {
             case F32_SQRT:
             case F32_TRUNC:
                 // [F32] -> [F32]
-                stack.pop(ValueType.F32);
-                stack.push(ValueType.F32);
+                stack.pop(ValType.F32);
+                stack.push(ValType.F32);
                 break;
             case I32_REINTERPRET_F32:
             case I32_TRUNC_F32_S:
@@ -301,33 +301,33 @@ final class AotAnalyzer {
             case I32_TRUNC_SAT_F32_S:
             case I32_TRUNC_SAT_F32_U:
                 // [F32] -> [I32]
-                stack.pop(ValueType.F32);
-                stack.push(ValueType.I32);
+                stack.pop(ValType.F32);
+                stack.push(ValType.I32);
                 break;
             case I32_WRAP_I64:
             case I64_EQZ:
                 // [I64] -> [I32]
-                stack.pop(ValueType.I64);
-                stack.push(ValueType.I32);
+                stack.pop(ValType.I64);
+                stack.push(ValType.I32);
                 break;
             case F32_CONVERT_I64_S:
             case F32_CONVERT_I64_U:
                 // [I64] -> [F32]
-                stack.pop(ValueType.I64);
-                stack.push(ValueType.F32);
+                stack.pop(ValType.I64);
+                stack.push(ValType.F32);
                 break;
             case F32_DEMOTE_F64:
                 // [F64] -> [F32]
-                stack.pop(ValueType.F64);
-                stack.push(ValueType.F32);
+                stack.pop(ValType.F64);
+                stack.push(ValType.F32);
                 break;
             case I32_TRUNC_F64_S:
             case I32_TRUNC_F64_U:
             case I32_TRUNC_SAT_F64_S:
             case I32_TRUNC_SAT_F64_U:
                 // [F64] -> [I32]
-                stack.pop(ValueType.F64);
-                stack.push(ValueType.I32);
+                stack.pop(ValType.F64);
+                stack.push(ValType.I32);
                 break;
             case I32_ADD:
             case I32_AND:
@@ -355,9 +355,9 @@ final class AotAnalyzer {
             case I32_SUB:
             case I32_XOR:
                 // [I32 I32] -> [I32]
-                stack.pop(ValueType.I32);
-                stack.pop(ValueType.I32);
-                stack.push(ValueType.I32);
+                stack.pop(ValType.I32);
+                stack.pop(ValType.I32);
+                stack.push(ValType.I32);
                 break;
             case I64_EQ:
             case I64_GE_S:
@@ -370,9 +370,9 @@ final class AotAnalyzer {
             case I64_LT_U:
             case I64_NE:
                 // [I64 I64] -> [I32]
-                stack.pop(ValueType.I64);
-                stack.pop(ValueType.I64);
-                stack.push(ValueType.I32);
+                stack.pop(ValType.I64);
+                stack.pop(ValType.I64);
+                stack.push(ValType.I32);
                 break;
             case F32_ADD:
             case F32_COPYSIGN:
@@ -382,9 +382,9 @@ final class AotAnalyzer {
             case F32_MUL:
             case F32_SUB:
                 // [F32 F32] -> [F32]
-                stack.pop(ValueType.F32);
-                stack.pop(ValueType.F32);
-                stack.push(ValueType.F32);
+                stack.pop(ValType.F32);
+                stack.pop(ValType.F32);
+                stack.push(ValType.F32);
                 break;
             case F32_EQ:
             case F32_GE:
@@ -393,9 +393,9 @@ final class AotAnalyzer {
             case F32_LT:
             case F32_NE:
                 // [F32 F32] -> [I32]
-                stack.pop(ValueType.F32);
-                stack.pop(ValueType.F32);
-                stack.push(ValueType.I32);
+                stack.pop(ValType.F32);
+                stack.pop(ValType.F32);
+                stack.push(ValType.I32);
                 break;
             case F64_EQ:
             case F64_GE:
@@ -404,9 +404,9 @@ final class AotAnalyzer {
             case F64_LT:
             case F64_NE:
                 // [F64 F64] -> [I32]
-                stack.pop(ValueType.F64);
-                stack.pop(ValueType.F64);
-                stack.push(ValueType.I32);
+                stack.pop(ValType.F64);
+                stack.pop(ValType.F64);
+                stack.push(ValType.I32);
                 break;
             case I64_CLZ:
             case I64_CTZ:
@@ -415,8 +415,8 @@ final class AotAnalyzer {
             case I64_EXTEND_8_S:
             case I64_POPCNT:
                 // [I64] -> [I64]
-                stack.pop(ValueType.I64);
-                stack.push(ValueType.I64);
+                stack.pop(ValType.I64);
+                stack.push(ValType.I64);
                 break;
             case I64_REINTERPRET_F64:
             case I64_TRUNC_F64_S:
@@ -424,8 +424,8 @@ final class AotAnalyzer {
             case I64_TRUNC_SAT_F64_S:
             case I64_TRUNC_SAT_F64_U:
                 // [F64] -> [I64]
-                stack.pop(ValueType.F64);
-                stack.push(ValueType.I64);
+                stack.pop(ValType.F64);
+                stack.push(ValType.I64);
                 break;
             case F64_TRUNC:
             case F64_SQRT:
@@ -435,15 +435,15 @@ final class AotAnalyzer {
             case F64_FLOOR:
             case F64_NEG:
                 // [F64] -> [F64]
-                stack.pop(ValueType.F64);
-                stack.push(ValueType.F64);
+                stack.pop(ValType.F64);
+                stack.push(ValType.F64);
                 break;
             case F64_CONVERT_I64_S:
             case F64_CONVERT_I64_U:
             case F64_REINTERPRET_I64:
                 // [I64] -> [F64]
-                stack.pop(ValueType.I64);
-                stack.push(ValueType.F64);
+                stack.pop(ValType.I64);
+                stack.push(ValType.F64);
                 break;
             case I64_EXTEND_I32_S:
             case I64_EXTEND_I32_U:
@@ -455,28 +455,28 @@ final class AotAnalyzer {
             case I64_LOAD8_U:
             case I64_LOAD:
                 // [I32] -> [I64]
-                stack.pop(ValueType.I32);
-                stack.push(ValueType.I64);
+                stack.pop(ValType.I32);
+                stack.push(ValType.I64);
                 break;
             case I64_TRUNC_F32_S:
             case I64_TRUNC_F32_U:
             case I64_TRUNC_SAT_F32_S:
             case I64_TRUNC_SAT_F32_U:
                 // [F32] -> [I64]
-                stack.pop(ValueType.F32);
-                stack.push(ValueType.I64);
+                stack.pop(ValType.F32);
+                stack.push(ValType.I64);
                 break;
             case F64_CONVERT_I32_S:
             case F64_CONVERT_I32_U:
             case F64_LOAD:
                 // [I32] -> [F64]
-                stack.pop(ValueType.I32);
-                stack.push(ValueType.F64);
+                stack.pop(ValType.I32);
+                stack.push(ValType.F64);
                 break;
             case F64_PROMOTE_F32:
                 // [F32] -> [F64]
-                stack.pop(ValueType.F32);
-                stack.push(ValueType.F64);
+                stack.pop(ValType.F32);
+                stack.push(ValType.F64);
                 break;
             case I64_ADD:
             case I64_AND:
@@ -494,9 +494,9 @@ final class AotAnalyzer {
             case I64_SUB:
             case I64_XOR:
                 // [I64 I64] -> [I64]
-                stack.pop(ValueType.I64);
-                stack.pop(ValueType.I64);
-                stack.push(ValueType.I64);
+                stack.pop(ValType.I64);
+                stack.pop(ValType.I64);
+                stack.push(ValType.I64);
                 break;
             case F64_ADD:
             case F64_COPYSIGN:
@@ -506,65 +506,65 @@ final class AotAnalyzer {
             case F64_MUL:
             case F64_SUB:
                 // [F64 F64] -> [F64]
-                stack.pop(ValueType.F64);
-                stack.pop(ValueType.F64);
-                stack.push(ValueType.F64);
+                stack.pop(ValType.F64);
+                stack.pop(ValType.F64);
+                stack.push(ValType.F64);
                 break;
             case I32_STORE:
             case I32_STORE8:
             case I32_STORE16:
                 // [I32 I32] -> []
-                stack.pop(ValueType.I32);
-                stack.pop(ValueType.I32);
+                stack.pop(ValType.I32);
+                stack.pop(ValType.I32);
                 break;
             case F32_STORE:
                 // [I32 F32] -> []
-                stack.pop(ValueType.F32);
-                stack.pop(ValueType.I32);
+                stack.pop(ValType.F32);
+                stack.pop(ValType.I32);
                 break;
             case I64_STORE:
             case I64_STORE8:
             case I64_STORE16:
             case I64_STORE32:
                 // [I32 I64] -> []
-                stack.pop(ValueType.I64);
-                stack.pop(ValueType.I32);
+                stack.pop(ValType.I64);
+                stack.pop(ValType.I32);
                 break;
             case F64_STORE:
                 // [I32 F64] -> []
-                stack.pop(ValueType.F64);
-                stack.pop(ValueType.I32);
+                stack.pop(ValType.F64);
+                stack.pop(ValType.I32);
                 break;
             case I32_CONST:
             case MEMORY_SIZE:
             case TABLE_SIZE:
                 // [] -> [I32]
-                stack.push(ValueType.I32);
+                stack.push(ValType.I32);
                 break;
             case F32_CONST:
                 // [] -> [F32]
-                stack.push(ValueType.F32);
+                stack.push(ValType.F32);
                 break;
             case I64_CONST:
                 // [] -> [I64]
-                stack.push(ValueType.I64);
+                stack.push(ValType.I64);
                 break;
             case F64_CONST:
                 // [] -> [F64]
-                stack.push(ValueType.F64);
+                stack.push(ValType.F64);
                 break;
             case REF_FUNC:
                 // [] -> [ref]
-                stack.push(ValueType.FuncRef);
+                stack.push(ValType.FuncRef);
                 break;
             case REF_NULL:
                 // [] -> [ref]
-                stack.push(ValueType.refTypeForId(ins.operand(0)));
+                stack.push(ValType.refTypeForId(ins.operand(0)));
                 break;
             case REF_IS_NULL:
                 // [ref] -> [I32]
                 stack.popRef();
-                stack.push(ValueType.I32);
+                stack.push(ValType.I32);
                 break;
             case MEMORY_COPY:
             case MEMORY_FILL:
@@ -572,31 +572,31 @@ final class AotAnalyzer {
             case TABLE_COPY:
             case TABLE_INIT:
                 // [I32 I32 I32] -> []
-                stack.pop(ValueType.I32);
-                stack.pop(ValueType.I32);
-                stack.pop(ValueType.I32);
+                stack.pop(ValType.I32);
+                stack.pop(ValType.I32);
+                stack.pop(ValType.I32);
                 break;
             case TABLE_FILL:
                 // [I32 ref I32] -> []
-                stack.pop(ValueType.I32);
+                stack.pop(ValType.I32);
                 stack.pop(stack.peek());
-                stack.pop(ValueType.I32);
+                stack.pop(ValType.I32);
                 break;
             case TABLE_GET:
                 // [I32] -> [ref]
-                stack.pop(ValueType.I32);
+                stack.pop(ValType.I32);
                 stack.push(tableTypes.get((int) ins.operand(0)));
                 break;
             case TABLE_GROW:
                 // [ref I32] -> [I32]
-                stack.pop(ValueType.I32);
+                stack.pop(ValType.I32);
                 stack.pop(tableTypes.get((int) ins.operand(0)));
-                stack.push(ValueType.I32);
+                stack.push(ValType.I32);
                 break;
             case TABLE_SET:
                 // [I32 ref] -> []
                 stack.pop(tableTypes.get((int) ins.operand(0)));
-                stack.pop(ValueType.I32);
+                stack.pop(ValType.I32);
                 break;
             case CALL:
                 // [p*] -> [r*]
@@ -604,7 +604,7 @@ final class AotAnalyzer {
                 break;
             case CALL_INDIRECT:
                 // [p* I32] -> [r*]
-                stack.pop(ValueType.I32);
+                stack.pop(ValType.I32);
                 updateStack(stack, module.typeSection().getType((int) ins.operand(0)));
                 break;
             case GLOBAL_SET:
@@ -631,10 +631,10 @@ final class AotAnalyzer {
     }
 
     private static void updateStack(TypeStack stack, FunctionType functionType) {
-        for (ValueType type : reversed(functionType.params())) {
+        for (ValType type : reversed(functionType.params())) {
             stack.pop(type);
         }
-        for (ValueType type : functionType.returns()) {
+        for (ValType type : functionType.returns()) {
             stack.push(type);
         }
     }
@@ -683,10 +683,10 @@ final class AotAnalyzer {
         var operands = LongStream.builder();
         operands.add(drop);
 
-        List<ValueType> dropKeepTypes =
+        List<ValType> dropKeepTypes =
                 stack.types().stream().limit(drop + keep).collect(toCollection(ArrayList::new));
         reverse(dropKeepTypes);
-        dropKeepTypes.stream().mapToLong(ValueType::id).forEach(operands::add);
+        dropKeepTypes.stream().mapToLong(ValType::id).forEach(operands::add);
 
         return Optional.of(new AotInstruction(AotOpCode.DROP_KEEP, operands.build().toArray()));
     }
@@ -696,13 +696,13 @@ final class AotAnalyzer {
         if (typeId == 0x40) {
             return FunctionType.empty();
         }
-        if (ValueType.isValid(typeId)) {
-            return FunctionType.returning(ValueType.forId(typeId));
+        if (ValType.isValid(typeId)) {
+            return FunctionType.returning(ValType.forId(typeId));
         }
         return module.typeSection().getType((int) typeId);
     }
 
-    private static List<ValueType> getGlobalTypes(WasmModule module) {
+    private static List<ValType> getGlobalTypes(WasmModule module) {
         var importedGlobals =
                 module.importSection().stream()
                         .filter(GlobalImport.class::isInstance)
@@ -733,7 +733,7 @@ final class AotAnalyzer {
         return Stream.concat(importedFunctions, moduleFunctions).collect(toUnmodifiableList());
     }
 
-    private static List<ValueType> getTableTypes(WasmModule module) {
+    private static List<ValType> getTableTypes(WasmModule module) {
         var importedTables =
                 module.importSection().stream()
                         .filter(TableImport.class::isInstance)
@@ -758,7 +758,7 @@ final class AotAnalyzer {
         return reversed;
     }
 
-    private static long[] ids(List<ValueType> types) {
-        return types.stream().mapToLong(ValueType::id).toArray();
+    private static long[] ids(List<ValType> types) {
+        return types.stream().mapToLong(ValType::id).toArray();
     }
 }

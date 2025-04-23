@@ -1,7 +1,7 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.wasm.types.ValType.sizeOf;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
-import static com.dylibso.chicory.wasm.types.ValueType.sizeOf;
 import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.wasm.ChicoryException;
@@ -10,8 +10,8 @@ import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
@@ -1835,7 +1835,7 @@ public class InterpreterMachine implements Machine {
 
     private static void GLOBAL_SET(MStack stack, Instance instance, Operands operands) {
         var id = (int) operands.get(0);
-        if (!instance.global(id).getType().equals(ValueType.V128)) {
+        if (!instance.global(id).getType().equals(ValType.V128)) {
             var val = stack.pop();
             instance.global(id).setValue(val);
         } else {
@@ -1850,7 +1850,7 @@ public class InterpreterMachine implements Machine {
         int idx = (int) operands.get(0);
 
         stack.push(instance.global(idx).getValueLow());
-        if (instance.global(idx).getType().equals(ValueType.V128)) {
+        if (instance.global(idx).getType().equals(ValType.V128)) {
             stack.push(instance.global(idx).getValueHigh());
         }
     }
@@ -1880,7 +1880,7 @@ public class InterpreterMachine implements Machine {
     private static void LOCAL_GET(MStack stack, Operands operands, StackFrame currentStackFrame) {
         var idx = (int) operands.get(0);
         var i = currentStackFrame.localIndexOf(idx);
-        if (currentStackFrame.localType(idx).equals(ValueType.V128)) {
+        if (currentStackFrame.localType(idx).equals(ValType.V128)) {
             stack.push(currentStackFrame.local(i));
             stack.push(currentStackFrame.local(i + 1));
         } else {
@@ -1891,7 +1891,7 @@ public class InterpreterMachine implements Machine {
     private static void LOCAL_SET(MStack stack, Operands operands, StackFrame currentStackFrame) {
         var idx = (int) operands.get(0);
         var i = currentStackFrame.localIndexOf(idx);
-        if (currentStackFrame.localType(idx).equals(ValueType.V128)) {
+        if (currentStackFrame.localType(idx).equals(ValType.V128)) {
             currentStackFrame.setLocal(i, stack.pop());
             currentStackFrame.setLocal(i + 1, stack.pop());
         } else {
@@ -1903,7 +1903,7 @@ public class InterpreterMachine implements Machine {
         // here we peek instead of pop, leaving it on the stack
         var idx = (int) operands.get(0);
         var i = currentStackFrame.localIndexOf(idx);
-        if (currentStackFrame.localType(idx).equals(ValueType.V128)) {
+        if (currentStackFrame.localType(idx).equals(ValType.V128)) {
             var tmp = stack.pop();
             currentStackFrame.setLocal(i, tmp);
             currentStackFrame.setLocal(i + 1, stack.peek());
@@ -2037,7 +2037,7 @@ public class InterpreterMachine implements Machine {
         if (typeId == 0x40) { // epsilon
             return 0;
         }
-        if (ValueType.isValid(typeId)) {
+        if (ValType.isValid(typeId)) {
             return 0;
         }
         return sizeOf(instance.type(typeId).params());
@@ -2051,8 +2051,8 @@ public class InterpreterMachine implements Machine {
         if (typeId == 0x40) { // epsilon
             return 0;
         }
-        if (ValueType.isValid(typeId)) {
-            if (ValueType.forId(typeId).equals(ValueType.V128)) {
+        if (ValType.isValid(typeId)) {
+            if (ValType.forId(typeId).equals(ValType.V128)) {
                 return 2;
             } else {
                 return 1;
@@ -2217,7 +2217,7 @@ public class InterpreterMachine implements Machine {
         }
     }
 
-    static long[] extractArgsForParams(MStack stack, List<ValueType> params) {
+    static long[] extractArgsForParams(MStack stack, List<ValType> params) {
         if (params == null) {
             return Value.EMPTY_VALUES;
         }

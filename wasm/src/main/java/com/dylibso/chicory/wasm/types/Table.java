@@ -4,17 +4,27 @@ import java.util.List;
 import java.util.Objects;
 
 public class Table {
-    private final ValueType elementType;
+    private final ValType elementType;
     private final TableLimits limits;
 
-    public Table(ValueType elementType, TableLimits limits) {
+    public Table(ValType elementType, TableLimits limits) {
         this(
                 elementType,
                 limits,
                 List.of(new Instruction(-1, OpCode.REF_NULL, new long[] {elementType.typeIdx()})));
     }
 
-    public Table(ValueType elementType, TableLimits limits, List<Instruction> init) {
+    @Deprecated(since = "23/05/2025", forRemoval = true)
+    public Table(ValueType elementType, TableLimits limits) {
+        this(
+                elementType.toNew(),
+                limits,
+                List.of(
+                        new Instruction(
+                                -1, OpCode.REF_NULL, new long[] {elementType.toNew().typeIdx()})));
+    }
+
+    public Table(ValType elementType, TableLimits limits, List<Instruction> init) {
         this.elementType = Objects.requireNonNull(elementType, "elementType");
         if (!elementType.isReference()) {
             throw new IllegalArgumentException("Table element type must be a reference type");
@@ -22,7 +32,16 @@ public class Table {
         this.limits = Objects.requireNonNull(limits, "limits");
     }
 
-    public ValueType elementType() {
+    @Deprecated(since = "23/05/2025", forRemoval = true)
+    public Table(ValueType elementType, TableLimits limits, List<Instruction> init) {
+        this.elementType = Objects.requireNonNull(elementType, "elementType").toNew();
+        if (!elementType.isReference()) {
+            throw new IllegalArgumentException("Table element type must be a reference type");
+        }
+        this.limits = Objects.requireNonNull(limits, "limits");
+    }
+
+    public ValType elementType() {
         return elementType;
     }
 

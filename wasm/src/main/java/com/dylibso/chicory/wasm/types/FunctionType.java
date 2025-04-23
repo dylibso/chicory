@@ -4,21 +4,21 @@ import java.util.List;
 import java.util.Objects;
 
 public final class FunctionType {
-    private final List<ValueType> params;
-    private final List<ValueType> returns;
+    private final List<ValType> params;
+    private final List<ValType> returns;
     private final int hashCode;
 
-    private FunctionType(List<ValueType> params, List<ValueType> returns) {
+    private FunctionType(List<ValType> params, List<ValType> returns) {
         this.params = params;
         this.returns = returns;
         hashCode = Objects.hash(params, returns);
     }
 
-    public List<ValueType> params() {
+    public List<ValType> params() {
         return params;
     }
 
-    public List<ValueType> returns() {
+    public List<ValType> returns() {
         return returns;
     }
 
@@ -46,41 +46,41 @@ public final class FunctionType {
 
     private static final FunctionType empty = new FunctionType(List.of(), List.of());
 
-    public static FunctionType returning(ValueType valueType) {
-        switch (valueType.opcode()) {
-            case ValueType.ID.ExnRef:
-            case ValueType.ID.V128:
-            case ValueType.ID.F64:
-            case ValueType.ID.F32:
-            case ValueType.ID.I64:
-            case ValueType.ID.I32:
-                return new FunctionType(List.of(), List.of(valueType));
-            case ValueType.ID.RefNull:
-                if (valueType.equals(ValueType.ExternRef) || valueType.equals(ValueType.FuncRef)) {
-                    return new FunctionType(List.of(), List.of(valueType));
+    public static FunctionType returning(ValType valType) {
+        switch (valType.opcode()) {
+            case ValType.ID.ExnRef:
+            case ValType.ID.V128:
+            case ValType.ID.F64:
+            case ValType.ID.F32:
+            case ValType.ID.I64:
+            case ValType.ID.I32:
+                return new FunctionType(List.of(), List.of(valType));
+            case ValType.ID.RefNull:
+                if (valType.equals(ValType.ExternRef) || valType.equals(ValType.FuncRef)) {
+                    return new FunctionType(List.of(), List.of(valType));
                 }
                 // fallthrough
             default:
-                throw new IllegalArgumentException("invalid ValueType " + valueType);
+                throw new IllegalArgumentException("invalid ValType " + valType);
         }
     }
 
-    public static FunctionType accepting(ValueType valueType) {
-        switch (valueType.opcode()) {
-            case ValueType.ID.ExnRef:
-            case ValueType.ID.V128:
-            case ValueType.ID.F64:
-            case ValueType.ID.F32:
-            case ValueType.ID.I64:
-            case ValueType.ID.I32:
-                return new FunctionType(List.of(valueType), List.of());
-            case ValueType.ID.RefNull:
-                if (valueType.equals(ValueType.ExternRef) || valueType.equals(ValueType.FuncRef)) {
-                    return new FunctionType(List.of(valueType), List.of());
+    public static FunctionType accepting(ValType valType) {
+        switch (valType.opcode()) {
+            case ValType.ID.ExnRef:
+            case ValType.ID.V128:
+            case ValType.ID.F64:
+            case ValType.ID.F32:
+            case ValType.ID.I64:
+            case ValType.ID.I32:
+                return new FunctionType(List.of(valType), List.of());
+            case ValType.ID.RefNull:
+                if (valType.equals(ValType.ExternRef) || valType.equals(ValType.FuncRef)) {
+                    return new FunctionType(List.of(valType), List.of());
                 }
                 // fallthrough
             default:
-                throw new IllegalArgumentException("invalid ValueType " + valueType);
+                throw new IllegalArgumentException("invalid ValType " + valType);
         }
     }
 
@@ -88,7 +88,7 @@ public final class FunctionType {
         return paramsMatch(other) && returnsMatch(other);
     }
 
-    public static FunctionType of(List<ValueType> params, List<ValueType> returns) {
+    public static FunctionType of(List<ValType> params, List<ValType> returns) {
         if (params.isEmpty()) {
             if (returns.isEmpty()) {
                 return empty;
@@ -104,7 +104,7 @@ public final class FunctionType {
         return new FunctionType(List.copyOf(params), List.copyOf(returns));
     }
 
-    public static FunctionType of(ValueType[] params, ValueType[] returns) {
+    public static FunctionType of(ValType[] params, ValType[] returns) {
         return of(List.of(params), List.of(returns));
     }
 

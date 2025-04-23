@@ -70,7 +70,7 @@ System.setOut(new PrintStream(
 ```java
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 
 var func = new HostFunction(
     "console",

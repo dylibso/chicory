@@ -5,7 +5,7 @@ import static com.dylibso.chicory.experimental.aot.AotUtil.slotCount;
 
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +16,7 @@ final class AotContext {
 
     private final String internalClassName;
     private final int maxFunctionsPerClass;
-    private final List<ValueType> globalTypes;
+    private final List<ValType> globalTypes;
     private final List<FunctionType> functionTypes;
     private final FunctionType[] types;
     private final int funcId;
@@ -29,8 +29,12 @@ final class AotContext {
 
     public AotContext(
             String internalClassName,
+<<<<<<< HEAD
             int maxFunctionsPerClass,
             List<ValueType> globalTypes,
+=======
+            List<ValType> globalTypes,
+>>>>>>> bb5eb4bb (Make ValueType retrocompatible)
             List<FunctionType> functionTypes,
             FunctionType[] types,
             int funcId,
@@ -53,7 +57,7 @@ final class AotContext {
         if (hasTooManyParameters(type)) {
             slot += 1; // long[]
         } else {
-            for (ValueType param : type.params()) {
+            for (ValType param : type.params()) {
                 slots.add(slot);
                 slot += slotCount(param);
             }
@@ -67,14 +71,14 @@ final class AotContext {
 
         // the long[] gets unboxed
         if (hasTooManyParameters(type)) {
-            for (ValueType param : type.params()) {
+            for (ValType param : type.params()) {
                 slots.add(slot);
                 slot += slotCount(param);
             }
         }
 
         // WASM locals
-        for (ValueType local : body.localTypes()) {
+        for (ValType local : body.localTypes()) {
             slots.add(slot);
             slot += slotCount(local);
         }
@@ -87,7 +91,7 @@ final class AotContext {
         return internalClassName;
     }
 
-    public List<ValueType> globalTypes() {
+    public List<ValType> globalTypes() {
         return globalTypes;
     }
 

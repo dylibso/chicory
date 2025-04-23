@@ -36,7 +36,7 @@ import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TagImport;
 import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -133,10 +133,10 @@ public class Instance {
                     var value = computeConstantValue(this, init);
                     var inst = computeConstantInstance(this, init);
 
-                    if (ae.type().equals(ValueType.FuncRef)) {
+                    if (ae.type().equals(ValType.FuncRef)) {
                         table.setRef(index, (int) value[0], inst);
                     } else {
-                        assert ae.type().equals(ValueType.ExternRef);
+                        assert ae.type().equals(ValType.ExternRef);
                         table.setRef(index, (int) value[0], inst);
                     }
                 }

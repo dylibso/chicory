@@ -84,7 +84,8 @@ public final class HostModuleProcessor extends AbstractModuleProcessor {
         cu.addImport("com.dylibso.chicory.runtime.HostFunction");
         cu.addImport("com.dylibso.chicory.runtime.Instance");
         cu.addImport("com.dylibso.chicory.wasm.types.Value");
-        cu.addImport("com.dylibso.chicory.wasm.types.ValueType");
+        cu.addImport("com.dylibso.chicory.wasm.types.FunctionType");
+        cu.addImport("com.dylibso.chicory.wasm.types.ValType");
         cu.addImport("java.util.List");
 
         var typeName = type.getSimpleName().toString();
@@ -275,8 +276,15 @@ public final class HostModuleProcessor extends AbstractModuleProcessor {
                         .setType("HostFunction")
                         .addArgument(new NameExpr("moduleName"))
                         .addArgument(new StringLiteralExpr(name))
-                        .addArgument(new MethodCallExpr(new NameExpr("List"), "of", paramTypes))
-                        .addArgument(new MethodCallExpr(new NameExpr("List"), "of", returnType))
+                        .addArgument(
+                                new MethodCallExpr(
+                                        new NameExpr("FunctionType"),
+                                        "of",
+                                        NodeList.nodeList(
+                                                new MethodCallExpr(
+                                                        new NameExpr("List"), "of", paramTypes),
+                                                new MethodCallExpr(
+                                                        new NameExpr("List"), "of", returnType))))
                         .addArgument(handle);
         // TODO: update javaparser and replace with multiline formatting
         function.setLineComment("");
@@ -296,6 +304,6 @@ public final class HostModuleProcessor extends AbstractModuleProcessor {
     }
 
     private static Expression valueType(String type) {
-        return new FieldAccessExpr(new NameExpr("ValueType"), type);
+        return new FieldAccessExpr(new NameExpr("ValType"), type);
     }
 }

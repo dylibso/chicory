@@ -24,7 +24,7 @@ import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
 import com.dylibso.chicory.runtime.OpCodeIdentifier;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.EnumMap;
@@ -78,19 +78,19 @@ final class AotEmitters {
         // save result values
         int slot = ctx.tempSlot();
         for (int i = ins.operandCount() - 1; i >= keepStart; i--) {
-            var type = ValueType.forId(ins.operand(i));
+            var type = ValType.forId(ins.operand(i));
             asm.store(slot, asmType(type));
             slot += slotCount(type);
         }
 
         // drop intervening values
         for (int i = keepStart - 1; i >= 1; i--) {
-            emitPop(asm, ValueType.forId(ins.operand(i)));
+            emitPop(asm, ValType.forId(ins.operand(i)));
         }
 
         // restore result values
         for (int i = keepStart; i < ins.operandCount(); i++) {
-            var type = ValueType.forId(ins.operand(i));
+            var type = ValType.forId(ins.operand(i));
             slot -= slotCount(type);
             asm.load(slot, asmType(type));
         }
@@ -108,7 +108,7 @@ final class AotEmitters {
     }
 
     public static void DROP(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
-        emitPop(asm, ValueType.forId(ins.operand(0)));
+        emitPop(asm, ValType.forId(ins.operand(0)));
     }
 
     public static void ELEM_DROP(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
@@ -120,7 +120,7 @@ final class AotEmitters {
     }
 
     public static void SELECT(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
-        var type = ValueType.forId(ins.operand(0));
+        var type = ValType.forId(ins.operand(0));
         var endLabel = new Label();
         asm.ifne(endLabel);
         if (slotCount(type) == 1) {
@@ -134,14 +134,14 @@ final class AotEmitters {
     }
 
     private static void emitBoxValuesOnStack(
-            AotContext ctx, InstructionAdapter asm, List<ValueType> types) {
+            AotContext ctx, InstructionAdapter asm, List<ValType> types) {
 
         // Store values from stack to locals in reverse order
         int slot = ctx.tempSlot() + types.stream().mapToInt(AotUtil::slotCount).sum();
         for (int i = types.size() - 1; i >= 0; i--) {
-            ValueType valueType = types.get(i);
-            slot -= slotCount(valueType);
-            asm.store(slot, asmType(valueType));
+            ValType valType = types.get(i);
+            slot -= slotCount(valType);
+            asm.store(slot, asmType(valType));
         }
 
         // Create the array
@@ -151,13 +151,13 @@ final class AotEmitters {
         // Load from locals and store in array
         slot = ctx.tempSlot();
         for (int i = 0; i < types.size(); i++) {
-            ValueType valueType = types.get(i);
+            ValType valType = types.get(i);
 
             asm.dup(); // Duplicate the array reference
             asm.iconst(i); // Array index
-            asm.load(slot, asmType(valueType)); // Load value from local
-            slot += slotCount(valueType);
-            emitJvmToLong(asm, valueType); // Convert to long
+            asm.load(slot, asmType(valType)); // Load value from local
+            slot += slotCount(valType);
+            emitJvmToLong(asm, valType); // Convert to long
             asm.astore(LONG_TYPE); // Store in array
         }
     }
@@ -234,7 +234,7 @@ final class AotEmitters {
     }
 
     public static void LOCAL_TEE(AotContext ctx, AotInstruction ins, InstructionAdapter asm) {
-        if (slotCount(ValueType.forId(ins.operand(1))) == 1) {
+        if (slotCount(ValType.forId(ins.operand(1))) == 1) {
             asm.dup();
         } else {
             asm.dup2();
@@ -609,7 +609,7 @@ final class AotEmitters {
     }
 
     private static void emitUnboxResult(
-            InstructionAdapter asm, AotContext ctx, List<ValueType> types) {
+            InstructionAdapter asm, AotContext ctx, List<ValType> types) {
         asm.store(ctx.tempSlot(), OBJECT_TYPE);
         for (int i = 0; i < types.size(); i++) {
             asm.load(ctx.tempSlot(), OBJECT_TYPE);

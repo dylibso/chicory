@@ -1,13 +1,14 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.MutabilityType;
+import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 
 public class GlobalInstance {
     private long valueLow;
     private long valueHigh;
-    private final ValueType valueType;
+    private final ValType valType;
     private Instance instance;
     private final MutabilityType mutabilityType;
 
@@ -18,15 +19,24 @@ public class GlobalInstance {
     public GlobalInstance(Value value, MutabilityType mutabilityType) {
         this.valueLow = value.raw();
         this.valueHigh = 0;
-        this.valueType = value.type();
+        this.valType = value.type();
         this.mutabilityType = mutabilityType;
     }
 
+    @Deprecated(since = "23/05/2025", forRemoval = true)
     public GlobalInstance(
             long valueLow, long valueHigh, ValueType valueType, MutabilityType mutabilityType) {
         this.valueLow = valueLow;
         this.valueHigh = valueHigh;
-        this.valueType = valueType;
+        this.valType = valueType.toNew();
+        this.mutabilityType = mutabilityType;
+    }
+
+    public GlobalInstance(
+            long valueLow, long valueHigh, ValType valType, MutabilityType mutabilityType) {
+        this.valueLow = valueLow;
+        this.valueHigh = valueHigh;
+        this.valType = valType;
         this.mutabilityType = mutabilityType;
     }
 
@@ -42,13 +52,13 @@ public class GlobalInstance {
         return valueLow;
     }
 
-    public ValueType getType() {
-        return valueType;
+    public ValType getType() {
+        return valType;
     }
 
     public void setValue(Value value) {
         // globals can not be type polimorphic
-        assert (value.type() == valueType);
+        assert (value.type() == valType);
         this.valueLow = value.raw();
     }
 

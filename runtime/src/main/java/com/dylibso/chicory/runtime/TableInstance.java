@@ -6,7 +6,7 @@ import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.UninstantiableException;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableLimits;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.util.Arrays;
 
 public class TableInstance {
@@ -26,7 +26,7 @@ public class TableInstance {
         return refs.length;
     }
 
-    public ValueType elementType() {
+    public ValType elementType() {
         return table.elementType();
     }
 

@@ -6,7 +6,7 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValu
 
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveElement;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 
 /**
  * Note: Some opcodes are easy or trivial to implement as compiler intrinsics (local.get, i32.add, etc).
@@ -856,13 +856,13 @@ public final class OpcodeImpl {
         for (int i = offset; i < end; i++) {
             var elem = instance.element(elementidx);
             var val = (int) computeConstantValue(instance, elem.initializers().get(elemidx++))[0];
-            if (table.elementType().equals(ValueType.FuncRef)) {
+            if (table.elementType().equals(ValType.FuncRef)) {
                 if (val > instance.functionCount()) {
                     throw new WasmRuntimeException("out of bounds table access");
                 }
                 table.setRef(i, val, instance);
             } else {
-                assert table.elementType().equals(ValueType.ExternRef);
+                assert table.elementType().equals(ValType.ExternRef);
                 table.setRef(i, val, instance);
             }
         }
