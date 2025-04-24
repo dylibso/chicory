@@ -6,12 +6,12 @@ import static java.util.Objects.requireNonNull;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Path;
-import java.security.SecureRandom;
 import java.time.Clock;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class WasiOptions {
     private final Random random;
@@ -79,7 +79,9 @@ public final class WasiOptions {
     }
 
     public static final class Builder {
-        private Random random = new SecureRandom();
+        // ThreadLocalRandom is correctly substituted in graal native-image:
+        // https://github.com/oracle/graal/blob/f63ba1767a34d9a4e9d747d077d684f20f4d934d/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/ThreadLocalRandomAccessors.java#L38
+        private Random random = ThreadLocalRandom.current();
         private Clock clock = Clock.systemUTC();
         private OutputStream stdout = OutputStream.nullOutputStream();
         private OutputStream stderr = OutputStream.nullOutputStream();
