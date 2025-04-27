@@ -110,6 +110,16 @@ final class FOOAotMethods {
     ARETURN
    L5
 
+  public static callIndirect([JILcom/dylibso/chicory/runtime/Instance;)[J
+   L0
+    ALOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.getMachine ()Lcom/dylibso/chicory/runtime/Machine;
+    ILOAD 1
+    ALOAD 0
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Machine.call (I[J)[J (itf)
+    ARETURN
+   L1
+
   public static callHostFunction(Lcom/dylibso/chicory/runtime/Instance;I[J)[J
    L0
     ALOAD 0

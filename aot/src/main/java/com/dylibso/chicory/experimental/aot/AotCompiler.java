@@ -5,6 +5,7 @@ import static com.dylibso.chicory.experimental.aot.AotMethodInliner.aotMethodsRe
 import static com.dylibso.chicory.experimental.aot.AotMethodInliner.createAotMethodsClass;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_INDIRECT;
+import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_INDIRECT_V2;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CHECK_INTERRUPTION;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.INSTANCE_MEMORY;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.INSTANCE_TABLE;
@@ -53,6 +54,7 @@ import static org.objectweb.asm.Type.getType;
 import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.InterpreterMachine;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.ChicoryException;
@@ -64,6 +66,7 @@ import com.dylibso.chicory.wasm.types.ValType;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -88,12 +91,25 @@ public final class AotCompiler {
 
     public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.$gen.CompiledMachine";
     private static final Type LONG_ARRAY_TYPE = Type.getType(long[].class);
+    private static final Type INTERPRETER_MACHINE_TYPE = Type.getType(InterpreterMachine.class);
+    private static final Type INSTANCE_TYPE = Type.getType(Instance.class);
 
     private static final MethodType CALL_METHOD_TYPE =
             methodType(long[].class, Instance.class, Memory.class, long[].class);
 
     private static final MethodType MACHINE_CALL_METHOD_TYPE =
             methodType(long[].class, Instance.class, Memory.class, int.class, long[].class);
+
+    static final Method INTERPRETER_MACHINE_CALL;
+
+    static {
+        try {
+            INTERPRETER_MACHINE_CALL =
+                    InterpreterMachine.class.getMethod("call", int.class, long[].class);
+        } catch (NoSuchMethodException e) {
+            throw new AssertionError(e);
+        }
+    }
 
     private static final int MAX_MACHINE_CALL_METHODS = 1024; // must be power of two
     // 1024*12 was empirically determined to work for the 50K small wasm functions.
@@ -109,6 +125,7 @@ public final class AotCompiler {
     private final List<FunctionType> functionTypes;
     private final Map<String, byte[]> extraClasses = new LinkedHashMap<>();
     private int maxFunctionsPerClass;
+    private final HashSet<Integer> interpretedFunctions = new HashSet<>();
 
     private AotCompiler(WasmModule module, String className, int maxFunctionsPerClass) {
         this.className = requireNonNull(className, "className");
@@ -231,15 +248,30 @@ public final class AotCompiler {
         // "${className}FuncGroup_0", "${className}FuncGroup_1", and  "${className}FuncGroup_2" with
         // each class holding up to 6k of the functions.
         //
-        maxFunctionsPerClass =
-                loadChunkedClass(
-                        totalFunctions,
-                        maxFunctionsPerClass,
-                        (start, end) ->
-                                compileExtraClass(
-                                        classNameForFuncGroup(start),
-                                        emitFunctionGroup(
-                                                start, end, internalClassName(className))));
+
+        while (true) {
+            try {
+                maxFunctionsPerClass =
+                        loadChunkedClass(
+                                totalFunctions,
+                                maxFunctionsPerClass,
+                                (start, end) ->
+                                        compileExtraClass(
+                                                classNameForFuncGroup(start),
+                                                emitFunctionGroup(
+                                                        start, end, internalClassName(className))));
+                break;
+            } catch (MethodTooLargeException e) {
+                String methodName = e.getMethodName();
+                if (methodName.startsWith("func_")) {
+                    // Add the method to interpreted function list... and try again.
+                    var funcId = Integer.parseInt(methodName.substring("func_".length()));
+                    interpretedFunctions.add(funcId);
+                } else {
+                    throw e;
+                }
+            }
+        }
 
         if (!functionTypes.isEmpty()) {
             loadExtraClass(compileMachineCallClass());
@@ -310,6 +342,7 @@ public final class AotCompiler {
                     } else {
                         body = module.codeSection().getFunctionBody(i - functionImports);
                         var bodyCopy = body;
+
                         emitFunction(
                                 classWriter,
                                 methodNameForFunc(funcId),
@@ -370,6 +403,15 @@ public final class AotCompiler {
                 getDescriptor(Instance.class),
                 null,
                 null);
+
+        if (!interpretedFunctions.isEmpty()) {
+            classWriter.visitField(
+                    Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
+                    "interpreterMachine",
+                    getDescriptor(InterpreterMachine.class),
+                    null,
+                    null);
+        }
 
         // constructor
         emitFunction(
@@ -466,7 +508,7 @@ public final class AotCompiler {
                 OBJECT_TYPE.getInternalName(), "<init>", getMethodDescriptor(VOID_TYPE), false);
     }
 
-    private static void compileConstructor(InstructionAdapter asm, String internalClassName) {
+    private void compileConstructor(InstructionAdapter asm, String internalClassName) {
         emitCallSuper(asm);
 
         // this.instance = instance;
@@ -474,16 +516,67 @@ public final class AotCompiler {
         asm.load(1, OBJECT_TYPE);
         asm.putfield(internalClassName, "instance", getDescriptor(Instance.class));
 
+        if (!interpretedFunctions.isEmpty()) {
+
+            asm.load(0, OBJECT_TYPE);
+            asm.anew(INTERPRETER_MACHINE_TYPE);
+            asm.dup();
+            asm.load(1, OBJECT_TYPE);
+            asm.invokespecial(
+                    INTERPRETER_MACHINE_TYPE.getInternalName(),
+                    "<init>",
+                    getMethodDescriptor(VOID_TYPE, INSTANCE_TYPE),
+                    false);
+            asm.putfield(
+                    internalClassName,
+                    "interpreterMachine",
+                    getDescriptor(InterpreterMachine.class));
+        }
+
         asm.areturn(VOID_TYPE);
     }
 
+    // implements the body of:
+    // public long[] call(int var1, long[] var2)
     private void compileMachineCall(String internalClassName, InstructionAdapter asm) {
+
         // handle modules with no functions
         if (functionTypes.isEmpty()) {
             asm.load(1, INT_TYPE);
             emitInvokeStatic(asm, THROW_UNKNOWN_FUNCTION);
             asm.athrow();
             return;
+        }
+
+        if (!interpretedFunctions.isEmpty()) {
+            Label invalid = new Label();
+            int[] keys = interpretedFunctions.stream().mapToInt(x -> x).toArray();
+            Label[] labels =
+                    interpretedFunctions.stream().map(x -> new Label()).toArray(Label[]::new);
+            asm.load(1, INT_TYPE);
+            asm.lookupswitch(invalid, keys, labels);
+            for (int i = 0; i < interpretedFunctions.size(); i++) {
+                // case 0:
+                //    return this.interpreterMachine.call(var1, var2);
+                asm.mark(labels[i]);
+
+                asm.load(0, OBJECT_TYPE);
+                asm.getfield(
+                        internalClassName,
+                        "interpreterMachine",
+                        getDescriptor(InterpreterMachine.class));
+                asm.load(1, INT_TYPE);
+                asm.load(2, OBJECT_TYPE);
+
+                asm.visitMethodInsn(
+                        Opcodes.INVOKEVIRTUAL,
+                        INTERPRETER_MACHINE_TYPE.getInternalName(),
+                        "call",
+                        getMethodDescriptor(INTERPRETER_MACHINE_CALL),
+                        false);
+                asm.areturn(OBJECT_TYPE);
+            }
+            asm.mark(invalid);
         }
 
         // try block
@@ -665,7 +758,10 @@ public final class AotCompiler {
         asm.athrow();
     }
 
+    // implements the body of:
+    // public static long[] call_xxx(Memory memory, Instance instance, long[] args)
     private void compileCallFunction(int funcId, FunctionType type, InstructionAdapter asm) {
+
         if (hasTooManyParameters(type)) {
             asm.load(2, LONG_ARRAY_TYPE);
         } else {
@@ -702,8 +798,12 @@ public final class AotCompiler {
         asm.areturn(OBJECT_TYPE);
     }
 
+    // implements the body of:
+    // public static <TypeR> call_indirect_xxx(<TypeN> argN...,
+    //      int funcTableIdx, int tableIdx, Memory memory, Instance instance)
     private void compileCallIndirect(
             String internalClassName, int typeId, FunctionType type, InstructionAdapter asm) {
+
         int slots = type.params().stream().mapToInt(AotUtil::slotCount).sum();
         if (hasTooManyParameters(type)) {
             slots = 1; // for long[]
@@ -923,6 +1023,8 @@ public final class AotCompiler {
         asm.athrow();
     }
 
+    // implements the body of:
+    // public static <TypeR> func_xx(<TypeN> argN..., Memory memory, Instance instance)
     private static void compileHostFunction(int funcId, FunctionType type, InstructionAdapter asm) {
 
         int slot = type.params().stream().mapToInt(AotUtil::slotCount).sum();
@@ -967,6 +1069,8 @@ public final class AotCompiler {
         }
     }
 
+    // implements the body of:
+    // public static <TypeR> func_xxx(<TypeN> ArgN..., Memory memory, Instance instance)
     private void compileFunction(
             String internalClassName,
             int funcId,
@@ -974,7 +1078,26 @@ public final class AotCompiler {
             FunctionBody body,
             InstructionAdapter asm) {
 
-        // func_xxx() body impl
+        if (interpretedFunctions.contains(funcId)) {
+
+            var slots = 0;
+            if (hasTooManyParameters(type)) {
+                asm.load(0, LONG_ARRAY_TYPE);
+                slots = 1;
+            } else {
+                emitBoxArguments(asm, type.params());
+                slots = type.params().stream().mapToInt(AotUtil::slotCount).sum();
+            }
+
+            var refInstance = slots + 1;
+
+            asm.iconst(funcId);
+            asm.load(refInstance, OBJECT_TYPE);
+            emitInvokeStatic(asm, CALL_INDIRECT_V2);
+            emitUnboxResult(type, asm);
+            return;
+        }
+
         var ctx =
                 new AotContext(
                         internalClassName,
