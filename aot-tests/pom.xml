@@ -16,6 +16,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.approvaltests</groupId>
+      <artifactId>approvaltests</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>aot-experimental</artifactId>
       <scope>test</scope>
