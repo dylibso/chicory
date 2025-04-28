@@ -1,0 +1,3 @@
+[package]
+name = "greet-wasi"
+version = "0.0.1"
