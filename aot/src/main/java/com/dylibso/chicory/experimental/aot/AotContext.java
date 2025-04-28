@@ -29,12 +29,8 @@ final class AotContext {
 
     public AotContext(
             String internalClassName,
-<<<<<<< HEAD
             int maxFunctionsPerClass,
-            List<ValueType> globalTypes,
-=======
             List<ValType> globalTypes,
->>>>>>> bb5eb4bb (Make ValueType retrocompatible)
             List<FunctionType> functionTypes,
             FunctionType[] types,
             int funcId,

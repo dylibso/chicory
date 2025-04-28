@@ -14,6 +14,9 @@ public class Table {
                 List.of(new Instruction(-1, OpCode.REF_NULL, new long[] {elementType.typeIdx()})));
     }
 
+    /**
+     * @deprecated use {@link #Table(ValType, TableLimits)}
+     */
     @Deprecated(since = "23/05/2025", forRemoval = true)
     public Table(ValueType elementType, TableLimits limits) {
         this(
@@ -26,15 +29,6 @@ public class Table {
 
     public Table(ValType elementType, TableLimits limits, List<Instruction> init) {
         this.elementType = Objects.requireNonNull(elementType, "elementType");
-        if (!elementType.isReference()) {
-            throw new IllegalArgumentException("Table element type must be a reference type");
-        }
-        this.limits = Objects.requireNonNull(limits, "limits");
-    }
-
-    @Deprecated(since = "23/05/2025", forRemoval = true)
-    public Table(ValueType elementType, TableLimits limits, List<Instruction> init) {
-        this.elementType = Objects.requireNonNull(elementType, "elementType").toNew();
         if (!elementType.isReference()) {
             throw new IllegalArgumentException("Table element type must be a reference type");
         }

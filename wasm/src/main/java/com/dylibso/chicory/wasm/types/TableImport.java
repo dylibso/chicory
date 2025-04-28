@@ -23,6 +23,9 @@ public final class TableImport extends Import {
         this.limits = Objects.requireNonNull(limits, "limits");
     }
 
+    /**
+     * @deprecated use {@link #TableImport(String, String, ValType, TableLimits)}
+     */
     @Deprecated(since = "23/05/2025", forRemoval = true)
     public TableImport(String moduleName, String name, ValueType entryType, TableLimits limits) {
         super(moduleName, name);

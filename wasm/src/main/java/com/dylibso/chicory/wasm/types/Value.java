@@ -95,6 +95,9 @@ public class Value {
         return new Value(ValType.FuncRef, data);
     }
 
+    /**
+     * @deprecated use {@link #Value(ValType, long)}
+     */
     @Deprecated(since = "23/05/2025", forRemoval = true)
     public Value(ValueType type, long value) {
         this.type = requireNonNull(type, "type").toNew();

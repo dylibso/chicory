@@ -23,6 +23,9 @@ public class GlobalInstance {
         this.mutabilityType = mutabilityType;
     }
 
+    /**
+     * @deprecated use {@link #GlobalInstance(long, long, ValType, MutabilityType)}
+     */
     @Deprecated(since = "23/05/2025", forRemoval = true)
     public GlobalInstance(
             long valueLow, long valueHigh, ValueType valueType, MutabilityType mutabilityType) {

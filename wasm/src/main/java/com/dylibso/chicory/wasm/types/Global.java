@@ -17,6 +17,9 @@ public final class Global {
         this.init = List.copyOf(init);
     }
 
+    /**
+     * @deprecated use {@link #Global(ValType, MutabilityType, List)}
+     */
     @Deprecated(since = "23/05/2025", forRemoval = true)
     public Global(ValueType valueType, MutabilityType mutabilityType, List<Instruction> init) {
         this.valType = valueType.toNew();

@@ -24,6 +24,9 @@ public final class GlobalImport extends Import {
         this.type = Objects.requireNonNull(type, "type");
     }
 
+    /**
+     * @deprecated use {@link #GlobalImport(String, String, MutabilityType, ValType)}
+     */
     @Deprecated(since = "23/05/2025", forRemoval = true)
     public GlobalImport(
             String moduleName, String name, MutabilityType mutabilityType, ValueType type) {
