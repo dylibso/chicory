@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.build.time.aot;
 
+import com.dylibso.chicory.experimental.aot.InterpreterFallback;
 import java.nio.file.Path;
 import java.util.StringJoiner;
 
@@ -29,17 +30,24 @@ public final class Config {
      */
     private final Path targetWasmFolder;
 
+    /**
+     * the interpreter fallback to be used
+     */
+    public final InterpreterFallback interpreterFallback;
+
     private Config(
             Path wasmFile,
             String name,
             Path targetClassFolder,
             Path targetSourceFolder,
-            Path targetWasmFolder) {
+            Path targetWasmFolder,
+            InterpreterFallback interpreterFallback) {
         this.wasmFile = wasmFile;
         this.name = name;
         this.targetClassFolder = targetClassFolder;
         this.targetSourceFolder = targetSourceFolder;
         this.targetWasmFolder = targetWasmFolder;
+        this.interpreterFallback = interpreterFallback;
     }
 
     public Path wasmFile() {
@@ -88,6 +96,7 @@ public final class Config {
         private Path targetClassFolder;
         private Path targetSourceFolder;
         private Path targetWasmFolder;
+        private InterpreterFallback interpreterFallback;
 
         private Builder() {}
 
@@ -116,9 +125,19 @@ public final class Config {
             return this;
         }
 
+        public Builder withInterpreterFallback(InterpreterFallback interpreterFallback) {
+            this.interpreterFallback = interpreterFallback;
+            return this;
+        }
+
         public Config build() {
             return new Config(
-                    wasmFile, name, targetClassFolder, targetSourceFolder, targetWasmFolder);
+                    wasmFile,
+                    name,
+                    targetClassFolder,
+                    targetSourceFolder,
+                    targetWasmFolder,
+                    interpreterFallback);
         }
     }
 }

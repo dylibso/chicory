@@ -43,6 +43,7 @@ import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
 import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toSet;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
@@ -124,16 +125,23 @@ public final class AotCompiler {
     private final WasmModule module;
     private final AotAnalyzer analyzer;
     private final int functionImports;
+    private final InterpreterFallback interpreterFallback;
     private final List<FunctionType> functionTypes;
     private final Map<String, byte[]> extraClasses = new LinkedHashMap<>();
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions = new HashSet<>();
 
-    private AotCompiler(WasmModule module, String className, int maxFunctionsPerClass) {
+    private AotCompiler(
+            WasmModule module,
+            String className,
+            int maxFunctionsPerClass,
+            InterpreterFallback interpreterFallback) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.analyzer = new AotAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
+        this.interpreterFallback =
+                requireNonNullElse(interpreterFallback, InterpreterFallback.WARN);
         this.functionTypes = analyzer.functionTypes();
         this.maxFunctionsPerClass = maxFunctionsPerClass;
         compileExtraClasses();
@@ -147,6 +155,7 @@ public final class AotCompiler {
         private final WasmModule module;
         private String className;
         private int maxFunctionsPerClass;
+        private InterpreterFallback interpreterFallback;
 
         private Builder(WasmModule module) {
             this.module = module;
@@ -162,6 +171,11 @@ public final class AotCompiler {
             return this;
         }
 
+        public Builder withInterpreterFallback(InterpreterFallback interpreterFallback) {
+            this.interpreterFallback = interpreterFallback;
+            return this;
+        }
+
         public AotCompiler build() {
             var className = this.className;
             if (className == null) {
@@ -172,7 +186,7 @@ public final class AotCompiler {
             if (maxFunctionsPerClass <= 0) {
                 maxFunctionsPerClass = DEFAULT_MAX_FUNCTIONS_PER_CLASS;
             }
-            return new AotCompiler(module, className, maxFunctionsPerClass);
+            return new AotCompiler(module, className, maxFunctionsPerClass, interpreterFallback);
         }
     }
 
@@ -183,7 +197,7 @@ public final class AotCompiler {
         Map<String, byte[]> classBytes = new LinkedHashMap<>();
         classBytes.put(className, bytes);
         classBytes.putAll(extraClasses);
-        return new CompilerResult(factory, classBytes);
+        return new CompilerResult(factory, classBytes, Set.copyOf(interpretedFunctions));
     }
 
     private Function<Instance, Machine> createMachineFactory(byte[] classBytes) {
@@ -275,6 +289,26 @@ public final class AotCompiler {
                 if (methodName.startsWith("func_")) {
                     // Add the method to interpreted function list... and try again.
                     var funcId = Integer.parseInt(methodName.substring("func_".length()));
+
+                    switch (interpreterFallback) {
+                        case SILENT:
+                            break;
+                        case WARN:
+                            String message =
+                                    "Warning: using interpreted mode for WASM function index: "
+                                            + funcId;
+                            if (module.nameSection() != null) {
+                                String name = module.nameSection().nameOfFunction(funcId);
+                                if (name != null) {
+                                    message += String.format(", name: %s", name);
+                                }
+                            }
+                            System.err.println(message);
+                            break;
+                        case FAIL:
+                            throw e;
+                    }
+
                     interpretedFunctions.add(funcId);
                     maxFunctionsPerClass = originalMaxFunctionsPerClass;
                 } else {

@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.maven.aot;
 
+import com.dylibso.chicory.experimental.aot.InterpreterFallback;
 import com.dylibso.chicory.experimental.build.time.aot.Config;
 import com.dylibso.chicory.experimental.build.time.aot.Generator;
 import java.io.File;
@@ -55,6 +56,12 @@ public class AotGenMojo extends AbstractMojo {
     private File targetWasmFolder;
 
     /**
+     * the action to take if the compiler needs to use the interpreter because a function is too big
+     */
+    @Parameter(required = true, defaultValue = "FAIL")
+    InterpreterFallback interpreterFallback;
+
+    /**
      * The current Maven project.
      */
     @Parameter(property = "project", required = true, readonly = true)
@@ -71,13 +78,14 @@ public class AotGenMojo extends AbstractMojo {
                         .withTargetClassFolder(targetClassFolder.toPath())
                         .withTargetSourceFolder(targetSourceFolder.toPath())
                         .withTargetWasmFolder(targetWasmFolder.toPath())
+                        .withInterpreterFallback(interpreterFallback)
                         .build();
 
         var generator = new Generator(config);
 
         try {
-            generator.generateMetaWasm();
             generator.generateResources();
+            generator.generateMetaWasm();
             generator.generateSources();
         } catch (IOException e) {
             throw new MojoExecutionException("Failed to generate resources", e);

@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.build.time.aot;
 
+import static com.dylibso.chicory.wasm.Encoding.readVarUInt32;
 import static com.dylibso.chicory.wasm.WasmWriter.writeVarUInt32;
 import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import static com.github.javaparser.StaticJavaParser.parseType;
@@ -34,13 +35,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Set;
 
 public class Generator {
 
     private final Config config;
+    private Set<Integer> interpretedFunctions;
 
     public Generator(Config config) {
         this.config = config;
@@ -49,8 +53,14 @@ public class Generator {
     public void generateResources() throws IOException {
         var module = Parser.parse(config.wasmFile());
         var machineName = config.name() + "Machine";
-        var compiler = AotCompiler.builder(module).withClassName(machineName).build();
+        var compiler =
+                AotCompiler.builder(module)
+                        .withClassName(machineName)
+                        .withInterpreterFallback(config.interpreterFallback)
+                        .build();
         var result = compiler.compile();
+
+        this.interpretedFunctions = result.interpretedFunctions();
 
         var finalFolder = config.targetClassFolder();
 
@@ -93,6 +103,10 @@ public class Generator {
     }
 
     public void generateMetaWasm() throws IOException {
+        if (this.interpretedFunctions == null) {
+            throw new IllegalStateException("generateResources() must be called first");
+        }
+
         byte[] wasmBytes = Files.readAllBytes(config.wasmFile());
         var module = Parser.builder().includeSectionId(SectionId.CODE).build().parse(wasmBytes);
 
@@ -101,14 +115,40 @@ public class Generator {
                 wasmBytes,
                 section -> {
                     if (section.sectionId() == SectionId.CODE) {
+
+                        var source = ByteBuffer.wrap(((RawSection) section).contents());
+
                         var out = new ByteArrayOutputStream();
+                        var importFuncs = module.importSection().importCount();
                         int count = module.codeSection().functionBodyCount();
                         writeVarUInt32(out, count);
+                        readVarUInt32(source);
                         for (int i = 0; i < count; i++) {
-                            writeVarUInt32(out, 3); // function size in bytes
-                            writeVarUInt32(out, 0); // locals count
-                            out.write(OpCode.UNREACHABLE.opcode());
-                            out.write(OpCode.END.opcode());
+                            var funcId = importFuncs + i;
+                            if (this.interpretedFunctions.contains(funcId)) {
+
+                                // Copy over the original function body
+                                var bodySize = (int) readVarUInt32(source);
+                                writeVarUInt32(out, bodySize);
+                                var bodyBytes = new byte[bodySize];
+                                source.get(bodyBytes);
+                                try {
+                                    out.write(bodyBytes);
+                                } catch (IOException e) {
+                                    throw new UncheckedIOException(e);
+                                }
+
+                            } else {
+
+                                // Write an empty function body
+                                var bodySize = (int) readVarUInt32(source);
+                                source.position(source.position() + bodySize);
+
+                                writeVarUInt32(out, 3); // function size in bytes
+                                writeVarUInt32(out, 0); // locals count
+                                out.write(OpCode.UNREACHABLE.opcode());
+                                out.write(OpCode.END.opcode());
+                            }
                         }
                         writer.writeSection(SectionId.CODE, out.toByteArray());
                     } else if (section.sectionId() != SectionId.CUSTOM) {

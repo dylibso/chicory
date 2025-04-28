@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.aot.cli;
 
+import com.dylibso.chicory.experimental.aot.InterpreterFallback;
 import com.dylibso.chicory.experimental.build.time.aot.Config;
 import com.dylibso.chicory.experimental.build.time.aot.Generator;
 import com.dylibso.chicory.wasm.Version;
@@ -52,6 +53,15 @@ public class Cli implements Runnable {
             defaultValue = ".")
     Path targetWasmFolder;
 
+    @CommandLine.Option(
+            order = 4,
+            names = "--interpreter-fallback",
+            description =
+                    "Action to take if the compiler needs to use the interpreter because a function"
+                            + " is too big",
+            defaultValue = "FAIL")
+    InterpreterFallback interpreterFallback;
+
     @Override
     public void run() {
         var config =
@@ -61,13 +71,14 @@ public class Cli implements Runnable {
                         .withTargetClassFolder(targetClassFolder)
                         .withTargetSourceFolder(targetSourceFolder)
                         .withTargetWasmFolder(targetWasmFolder)
+                        .withInterpreterFallback(interpreterFallback)
                         .build();
 
         var generator = new Generator(config);
 
         try {
-            generator.generateMetaWasm();
             generator.generateResources();
+            generator.generateMetaWasm();
             generator.generateSources();
         } catch (IOException e) {
             throw new CommandLine.PicocliException("Failed to execute the command", e);
