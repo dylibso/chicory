@@ -199,6 +199,10 @@ public final class AotCompiler {
     }
 
     private Class<?> loadClass(byte[] classBytes) {
+        return loadClass(classLoader, classBytes);
+    }
+
+    private Class<?> loadClass(AotClassLoader classLoader, byte[] classBytes) {
         try {
             var clazz = classLoader.loadFromBytes(classBytes);
             // force initialization to run JVM verifier
@@ -248,18 +252,21 @@ public final class AotCompiler {
         // "${className}FuncGroup_0", "${className}FuncGroup_1", and  "${className}FuncGroup_2" with
         // each class holding up to 6k of the functions.
         //
-
+        var originalMaxFunctionsPerClass = maxFunctionsPerClass;
         while (true) {
             try {
                 maxFunctionsPerClass =
                         loadChunkedClass(
                                 totalFunctions,
                                 maxFunctionsPerClass,
-                                (start, end) ->
-                                        compileExtraClass(
-                                                classNameForFuncGroup(start),
-                                                emitFunctionGroup(
-                                                        start, end, internalClassName(className))));
+                                (start, end) -> {
+                                    maxFunctionsPerClass = end - start;
+                                    String className = classNameForFuncGroup(start);
+                                    return compileExtraClass(
+                                            className,
+                                            emitFunctionGroup(
+                                                    start, end, internalClassName(this.className)));
+                                });
                 break;
             } catch (MethodTooLargeException e) {
                 String methodName = e.getMethodName();
@@ -267,6 +274,7 @@ public final class AotCompiler {
                     // Add the method to interpreted function list... and try again.
                     var funcId = Integer.parseInt(methodName.substring("func_".length()));
                     interpretedFunctions.add(funcId);
+                    maxFunctionsPerClass = originalMaxFunctionsPerClass;
                 } else {
                     throw e;
                 }
@@ -295,25 +303,31 @@ public final class AotCompiler {
      * @return The final chunk size used for loading the class.
      */
     int loadChunkedClass(int size, int chunkSize, ChunkedClassEmitter emitter) {
-        ArrayList<String> generated = new ArrayList<>();
+        ArrayList<byte[]> generated = new ArrayList<byte[]>();
+        AotClassLoader classLoader = new AotClassLoader();
         while (true) {
             try {
                 int chunks = (size / chunkSize) + (size % chunkSize == 0 ? 0 : 1);
                 for (int i = 0; i < chunks; i++) {
                     var start = i * chunkSize;
                     var end = min(start + chunkSize, size);
-                    generated.add(loadExtraClass(emitter.emit(start, end)));
+
+                    byte[] bytes = emitter.emit(start, end);
+                    loadClass(classLoader, bytes);
+                    generated.add(bytes);
                 }
                 break;
             } catch (MethodTooLargeException | ClassTooLargeException e) {
-                for (var x : generated) {
-                    extraClasses.remove(x);
-                }
                 chunkSize = chunkSize >> 1;
                 if (chunkSize == 0) {
                     throw e;
                 }
+                generated.clear();
+                classLoader = new AotClassLoader();
             }
+        }
+        for (var bytes : generated) {
+            loadExtraClass(bytes);
         }
         return chunkSize;
     }
