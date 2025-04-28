@@ -45,7 +45,7 @@ public class MethodTooLargeTest {
                             int i = 0;
                             for (StackTraceElement element : thread.getStackTrace()) {
                                 i++;
-                                if (i < 2 || i > 19) {
+                                if (i < 2 || i > 21) {
                                     continue;
                                 }
                                 hostStackTrace.add(
@@ -61,26 +61,25 @@ public class MethodTooLargeTest {
                         .withStart(false)
                         .build();
 
-        verifyClass(result.classBytes(), true);
-
         assertEquals(35, instance.export("func_2").apply(0)[0]);
 
         assertEquals(
                 List.of(
                         "com.dylibso.chicory.testing.MethodTooLargeTest.lambda$testBigFunc$0",
-                        "com.dylibso.chicory.runtime.InterpreterMachine.call",
-                        "com.dylibso.chicory.runtime.InterpreterMachine.CALL",
-                        "com.dylibso.chicory.runtime.InterpreterMachine.eval",
-                        "com.dylibso.chicory.runtime.InterpreterMachine.call",
-                        "com.dylibso.chicory.runtime.InterpreterMachine.CALL",
+                        "com.dylibso.chicory.$gen.CompiledMachine$AotMethods.callHostFunction",
+                        "com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_0",
+                        "com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_1",
+                        "com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.call_1",
+                        "com.dylibso.chicory.$gen.CompiledMachine$MachineCall.call",
+                        "com.dylibso.chicory.$gen.CompiledMachine.call",
+                        // here is where the Interpreter switches back to AOT for the call to func_1
+                        "com.dylibso.chicory.runtime.AotInterpreterMachine.CALL",
                         "com.dylibso.chicory.runtime.InterpreterMachine.eval",
                         "com.dylibso.chicory.runtime.InterpreterMachine.call",
                         "com.dylibso.chicory.runtime.InterpreterMachine.call",
                         "com.dylibso.chicory.$gen.CompiledMachine.call",
                         "com.dylibso.chicory.$gen.CompiledMachine$AotMethods.callIndirect",
-                        // here is where the AOT method switches to the interpreter, would be nice
-                        // if we can get the interpreter to switch back to AOT for the call to
-                        // func_1
+                        // here is where the AOT method switches to the interpreter
                         "com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_2",
                         "com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_3",
                         "com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.call_3",
@@ -89,6 +88,8 @@ public class MethodTooLargeTest {
                         "com.dylibso.chicory.runtime.Instance$Exports.lambda$function$0",
                         "com.dylibso.chicory.testing.MethodTooLargeTest.testBigFunc"),
                 hostStackTrace);
+
+        verifyClass(result.classBytes(), true);
     }
 
     private static void verifyClass(Map<String, byte[]> classBytes, boolean skipAotMethods) {

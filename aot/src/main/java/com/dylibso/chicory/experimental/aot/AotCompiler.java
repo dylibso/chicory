@@ -53,8 +53,8 @@ import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
+import com.dylibso.chicory.runtime.AotInterpreterMachine;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.InterpreterMachine;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.ChicoryException;
@@ -91,7 +91,9 @@ public final class AotCompiler {
 
     public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.$gen.CompiledMachine";
     private static final Type LONG_ARRAY_TYPE = Type.getType(long[].class);
-    private static final Type INTERPRETER_MACHINE_TYPE = Type.getType(InterpreterMachine.class);
+    private static final Type INT_ARRAY_TYPE = Type.getType(int[].class);
+    private static final Type AOT_INTERPRETER_MACHINE_TYPE =
+            Type.getType(AotInterpreterMachine.class);
     private static final Type INSTANCE_TYPE = Type.getType(Instance.class);
 
     private static final MethodType CALL_METHOD_TYPE =
@@ -100,12 +102,12 @@ public final class AotCompiler {
     private static final MethodType MACHINE_CALL_METHOD_TYPE =
             methodType(long[].class, Instance.class, Memory.class, int.class, long[].class);
 
-    static final Method INTERPRETER_MACHINE_CALL;
+    static final Method AOT_INTERPRETER_MACHINE_CALL;
 
     static {
         try {
-            INTERPRETER_MACHINE_CALL =
-                    InterpreterMachine.class.getMethod("call", int.class, long[].class);
+            AOT_INTERPRETER_MACHINE_CALL =
+                    AotInterpreterMachine.class.getMethod("call", int.class, long[].class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }
@@ -421,8 +423,8 @@ public final class AotCompiler {
         if (!interpretedFunctions.isEmpty()) {
             classWriter.visitField(
                     Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
-                    "interpreterMachine",
-                    getDescriptor(InterpreterMachine.class),
+                    "aotInterpreterMachine",
+                    getDescriptor(AotInterpreterMachine.class),
                     null,
                     null);
         }
@@ -533,18 +535,30 @@ public final class AotCompiler {
         if (!interpretedFunctions.isEmpty()) {
 
             asm.load(0, OBJECT_TYPE);
-            asm.anew(INTERPRETER_MACHINE_TYPE);
+            asm.anew(AOT_INTERPRETER_MACHINE_TYPE);
             asm.dup();
             asm.load(1, OBJECT_TYPE);
+
+            // construct int[] with the interpreted function ids
+            var funcIds = new ArrayList<>(interpretedFunctions);
+            asm.iconst(funcIds.size());
+            asm.newarray(INT_TYPE);
+            for (int i = 0; i < funcIds.size(); i++) {
+                asm.dup();
+                asm.iconst(i);
+                asm.iconst(funcIds.get(i));
+                asm.astore(INT_TYPE);
+            }
+
             asm.invokespecial(
-                    INTERPRETER_MACHINE_TYPE.getInternalName(),
+                    AOT_INTERPRETER_MACHINE_TYPE.getInternalName(),
                     "<init>",
-                    getMethodDescriptor(VOID_TYPE, INSTANCE_TYPE),
+                    getMethodDescriptor(VOID_TYPE, INSTANCE_TYPE, INT_ARRAY_TYPE),
                     false);
             asm.putfield(
                     internalClassName,
-                    "interpreterMachine",
-                    getDescriptor(InterpreterMachine.class));
+                    "aotInterpreterMachine",
+                    getDescriptor(AotInterpreterMachine.class));
         }
 
         asm.areturn(VOID_TYPE);
@@ -571,22 +585,22 @@ public final class AotCompiler {
             asm.lookupswitch(invalid, keys, labels);
             for (int i = 0; i < interpretedFunctions.size(); i++) {
                 // case 0:
-                //    return this.interpreterMachine.call(var1, var2);
+                //    return this.aotInterpreterMachine.call(var1, var2);
                 asm.mark(labels[i]);
 
                 asm.load(0, OBJECT_TYPE);
                 asm.getfield(
                         internalClassName,
-                        "interpreterMachine",
-                        getDescriptor(InterpreterMachine.class));
+                        "aotInterpreterMachine",
+                        getDescriptor(AotInterpreterMachine.class));
                 asm.load(1, INT_TYPE);
                 asm.load(2, OBJECT_TYPE);
 
                 asm.visitMethodInsn(
                         Opcodes.INVOKEVIRTUAL,
-                        INTERPRETER_MACHINE_TYPE.getInternalName(),
+                        AOT_INTERPRETER_MACHINE_TYPE.getInternalName(),
                         "call",
-                        getMethodDescriptor(INTERPRETER_MACHINE_CALL),
+                        getMethodDescriptor(AOT_INTERPRETER_MACHINE_CALL),
                         false);
                 asm.areturn(OBJECT_TYPE);
             }

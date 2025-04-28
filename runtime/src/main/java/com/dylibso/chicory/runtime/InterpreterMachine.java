@@ -134,6 +134,18 @@ public class InterpreterMachine implements Machine {
         return results;
     }
 
+    protected Instance instance() {
+        return instance;
+    }
+
+    protected MStack stack() {
+        return stack;
+    }
+
+    protected Deque<StackFrame> callStack() {
+        return callStack;
+    }
+
     protected void eval(MStack stack, Instance instance, Deque<StackFrame> callStack)
             throws ChicoryException {
         var frame = callStack.peek();
@@ -1661,7 +1673,7 @@ public class InterpreterMachine implements Machine {
         stack.push(Value.floatToLong(OpcodeImpl.F32_TRUNC(val)));
     }
 
-    private void CALL(Operands operands) {
+    protected void CALL(Operands operands) {
         var funcId = (int) operands.get(0);
         var typeId = instance.functionType(funcId);
         var type = instance.type(typeId);
@@ -2061,7 +2073,7 @@ public class InterpreterMachine implements Machine {
         return sizeOf(instance.type(typeId).returns());
     }
 
-    private static StackFrame THROW_REF(
+    protected static StackFrame THROW_REF(
             Instance instance,
             int exceptionIdx,
             MStack stack,
