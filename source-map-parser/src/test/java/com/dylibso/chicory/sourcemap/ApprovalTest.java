@@ -23,6 +23,11 @@ public class ApprovalTest {
         verifyGeneratedBytecode("count_vowels.rs.wasm");
     }
 
+    @Test
+    public void verifyLogTinyGo() {
+        verifyGeneratedBytecode("log.go.tiny.wasm");
+    }
+
     private static void verifyGeneratedBytecode(String name) {
         try {
             var module = parse(getSystemClassLoader().getResourceAsStream("compiled/" + name));
