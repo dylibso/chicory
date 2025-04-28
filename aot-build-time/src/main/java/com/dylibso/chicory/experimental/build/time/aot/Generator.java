@@ -122,12 +122,13 @@ public class Generator {
                         var importFuncs = module.importSection().importCount();
                         int count = module.codeSection().functionBodyCount();
                         writeVarUInt32(out, count);
-                        readVarUInt32(source);
+                        var actual = readVarUInt32(source);
+                        assert count == actual;
                         for (int i = 0; i < count; i++) {
                             var funcId = importFuncs + i;
                             if (this.interpretedFunctions.contains(funcId)) {
 
-                                // Copy over the original function body
+                                // Copy over the original function body from the source
                                 var bodySize = (int) readVarUInt32(source);
                                 writeVarUInt32(out, bodySize);
                                 var bodyBytes = new byte[bodySize];
@@ -140,10 +141,13 @@ public class Generator {
 
                             } else {
 
-                                // Write an empty function body
+                                // Move the source position past the function body
                                 var bodySize = (int) readVarUInt32(source);
-                                source.position(source.position() + bodySize);
+                                source.position(source.position() + bodySize - 1);
+                                var end_op = source.get();
+                                assert end_op == OpCode.END.opcode();
 
+                                // Write an empty function body
                                 writeVarUInt32(out, 3); // function size in bytes
                                 writeVarUInt32(out, 0); // locals count
                                 out.write(OpCode.UNREACHABLE.opcode());
