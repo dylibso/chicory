@@ -22,7 +22,7 @@ public final class Global {
      */
     @Deprecated(since = "23/05/2025", forRemoval = true)
     public Global(ValueType valueType, MutabilityType mutabilityType, List<Instruction> init) {
-        this.valType = valueType.toNew();
+        this.valType = valueType.toValType();
         this.mutabilityType = mutabilityType;
         this.init = List.copyOf(init);
     }

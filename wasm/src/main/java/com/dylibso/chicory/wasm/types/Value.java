@@ -100,7 +100,7 @@ public class Value {
      */
     @Deprecated(since = "23/05/2025", forRemoval = true)
     public Value(ValueType type, long value) {
-        this.type = requireNonNull(type, "type").toNew();
+        this.type = requireNonNull(type, "type").toValType();
         data = value;
     }
 

@@ -32,7 +32,7 @@ public final class GlobalImport extends Import {
             String moduleName, String name, MutabilityType mutabilityType, ValueType type) {
         super(moduleName, name);
         this.mutabilityType = Objects.requireNonNull(mutabilityType, "mutabilityType");
-        this.type = Objects.requireNonNull(type, "type").toNew();
+        this.type = Objects.requireNonNull(type, "type").toValType();
     }
 
     /**

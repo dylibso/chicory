@@ -20,7 +20,7 @@ public class ImportFunction implements ImportValue {
             if (v instanceof ValType) {
                 result.add((ValType) v);
             } else if (v instanceof ValueType) {
-                result.add(((ValueType) v).toNew());
+                result.add(((ValueType) v).toValType());
             } else {
                 throw new IllegalArgumentException(
                         "Expected ValueType or ValType, but got: "

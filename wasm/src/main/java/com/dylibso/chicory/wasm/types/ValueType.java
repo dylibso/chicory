@@ -153,7 +153,7 @@ public enum ValueType {
         }
     }
 
-    public ValType toNew() {
+    public ValType toValType() {
         switch (id) {
             case ID.F64:
                 return ValType.F64;

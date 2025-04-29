@@ -31,7 +31,7 @@ public class GlobalInstance {
             long valueLow, long valueHigh, ValueType valueType, MutabilityType mutabilityType) {
         this.valueLow = valueLow;
         this.valueHigh = valueHigh;
-        this.valType = valueType.toNew();
+        this.valType = valueType.toValType();
         this.mutabilityType = mutabilityType;
     }
 

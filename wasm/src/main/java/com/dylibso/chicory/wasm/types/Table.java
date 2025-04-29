@@ -20,11 +20,13 @@ public class Table {
     @Deprecated(since = "23/05/2025", forRemoval = true)
     public Table(ValueType elementType, TableLimits limits) {
         this(
-                elementType.toNew(),
+                elementType.toValType(),
                 limits,
                 List.of(
                         new Instruction(
-                                -1, OpCode.REF_NULL, new long[] {elementType.toNew().typeIdx()})));
+                                -1,
+                                OpCode.REF_NULL,
+                                new long[] {elementType.toValType().typeIdx()})));
     }
 
     public Table(ValType elementType, TableLimits limits, List<Instruction> init) {

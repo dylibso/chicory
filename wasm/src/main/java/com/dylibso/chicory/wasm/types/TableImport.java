@@ -29,7 +29,7 @@ public final class TableImport extends Import {
     @Deprecated(since = "23/05/2025", forRemoval = true)
     public TableImport(String moduleName, String name, ValueType entryType, TableLimits limits) {
         super(moduleName, name);
-        this.entryType = Objects.requireNonNull(entryType, "entryType").toNew();
+        this.entryType = Objects.requireNonNull(entryType, "entryType").toValType();
         this.limits = Objects.requireNonNull(limits, "limits");
     }
 
