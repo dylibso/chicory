@@ -9,15 +9,12 @@ compileWat() {
 
 compileRust() {
   filename=$(basename "$1")
-  # we can use the wasi targets for any file that end in -wasi.rs
-  if [[ "$filename" =~ wasi.rs$ ]]; then
+  # Target is based on the crate-type
+  target="wasm32-unknown-unknown"
+  if [[ -f "$1/src/main.rs" ]]; then
     target="wasm32-wasip1"
-    crate_type="bin"
-  else
-    target="wasm32-unknown-unknown"
-    crate_type="cdylib"
   fi
-  (set -x; rustc $1 --target=$target --crate-type=$crate_type -o "./compiled/$filename.wasm")
+  (set -x; cd $1 && cargo build --target=$target &&  cp ./target/${target}/debug/*.wasm "../../compiled/$filename.rs.wasm")
 }
 
 ENV_WASI_SDK_PATH="${WASK_SDK_PATH:-/opt/wasi-sdk}"
