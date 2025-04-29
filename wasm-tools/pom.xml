@@ -62,16 +62,6 @@
               <interpreterFallback>WARN</interpreterFallback>
             </configuration>
           </execution>
-          <execution>
-            <id>wat2wasm</id>
-            <goals>
-              <goal>wasm-aot-gen</goal>
-            </goals>
-            <configuration>
-              <name>com.dylibso.chicory.wabt.Wat2Wasm</name>
-              <wasmFile>src/main/resources/wat2wasm</wasmFile>
-            </configuration>
-          </execution>
         </executions>
       </plugin>
       <plugin>
