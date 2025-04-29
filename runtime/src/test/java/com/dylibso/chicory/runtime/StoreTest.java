@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.types.FunctionType;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -19,11 +20,11 @@ public class StoreTest {
     public void nameClashesShouldOverwriteTheStore() {
         Store store = new Store();
 
-        HostFunction f1 = new HostFunction("m", "f", null, null, null);
+        HostFunction f1 = new HostFunction("m", "f", FunctionType.empty(), null);
         store.addFunction(f1);
         assertEquals(f1, store.functions.get(new Store.QualifiedName("m", "f")));
 
-        HostFunction f2 = new HostFunction("m", "f", null, null, null);
+        HostFunction f2 = new HostFunction("m", "f", FunctionType.empty(), null);
         store.addFunction(f2);
         assertEquals(f2, store.functions.get(new Store.QualifiedName("m", "f")));
     }

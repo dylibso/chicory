@@ -70,13 +70,16 @@ System.setOut(new PrintStream(
 ```java
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValType;
+import com.dylibso.chicory.wasm.types.FunctionType;
 
 var func = new HostFunction(
     "console",
     "log",
-    List.of(ValueType.I32, ValueType.I32),
-    List.of(),
+    FunctionType.of(
+        List.of(ValType.I32, ValType.I32),
+        List.of()
+    ),
     (Instance instance, long... args) -> {
         var len = (int) args[0];
         var offset = (int) args[1];

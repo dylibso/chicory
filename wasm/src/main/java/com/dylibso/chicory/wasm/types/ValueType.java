@@ -1,13 +1,12 @@
 package com.dylibso.chicory.wasm.types;
 
-import static com.dylibso.chicory.wasm.types.ValueType.ID.ExnRef;
-
 import com.dylibso.chicory.wasm.MalformedException;
 import java.util.List;
 
 /**
- * The possible WASM value types.
+ * @deprecated use {@link com.dylibso.chicory.wasm.types.ValType}
  */
+@Deprecated(since = "23/05/2025")
 public enum ValueType {
     UNKNOWN(-1),
     F64(ID.F64),
@@ -149,6 +148,29 @@ public enum ValueType {
                 return ExnRef;
             case ID.ExternRef:
                 return ExternRef;
+            default:
+                throw new IllegalArgumentException("Invalid value type " + id);
+        }
+    }
+
+    public ValType toValType() {
+        switch (id) {
+            case ID.F64:
+                return ValType.F64;
+            case ID.F32:
+                return ValType.F32;
+            case ID.I64:
+                return ValType.I64;
+            case ID.I32:
+                return ValType.I32;
+            case ID.V128:
+                return ValType.V128;
+            case ID.FuncRef:
+                return ValType.FuncRef;
+            case ID.ExnRef:
+                return ValType.ExnRef;
+            case ID.ExternRef:
+                return ValType.ExternRef;
             default:
                 throw new IllegalArgumentException("Invalid value type " + id);
         }

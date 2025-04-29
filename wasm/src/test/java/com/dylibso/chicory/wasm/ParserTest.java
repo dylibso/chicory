@@ -12,7 +12,7 @@ import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.SectionId;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -112,7 +112,7 @@ public class ParserTest {
             var func = codeSection.getFunctionBody(0);
             var locals = func.localTypes();
             assertEquals(1, locals.size());
-            assertEquals(ValueType.I32, locals.get(0));
+            assertEquals(ValType.I32, locals.get(0));
             var instructions = func.instructions();
             assertEquals(22, instructions.size());
         }
@@ -190,8 +190,8 @@ public class ParserTest {
             var module = Parser.parse(is);
             var codeSection = module.codeSection();
             var fbody = codeSection.getFunctionBody(0);
-            assertEquals(fbody.localTypes().get(0), ValueType.I32);
-            assertEquals(fbody.localTypes().get(1), ValueType.I64);
+            assertEquals(fbody.localTypes().get(0), ValType.I32);
+            assertEquals(fbody.localTypes().get(1), ValType.I64);
         }
     }
 

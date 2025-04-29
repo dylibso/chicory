@@ -60,7 +60,7 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.invoke.MethodType;
@@ -770,7 +770,7 @@ public final class AotCompiler {
             asm.load(0, LONG_ARRAY_TYPE);
         } else {
             int slot = 0;
-            for (ValueType param : type.params()) {
+            for (ValType param : type.params()) {
                 asm.load(slot, asmType(param));
                 slot += slotCount(param);
             }
@@ -942,7 +942,7 @@ public final class AotCompiler {
         emitUnboxResult(type, asm);
     }
 
-    private static void emitBoxArguments(InstructionAdapter asm, List<ValueType> types) {
+    private static void emitBoxArguments(InstructionAdapter asm, List<ValType> types) {
         int slot = 0;
         // box the arguments into long[]
         asm.iconst(types.size());
@@ -950,11 +950,11 @@ public final class AotCompiler {
         for (int i = 0; i < types.size(); i++) {
             asm.dup();
             asm.iconst(i);
-            ValueType valueType = types.get(i);
-            asm.load(slot, asmType(valueType));
-            emitJvmToLong(asm, valueType);
+            ValType valType = types.get(i);
+            asm.load(slot, asmType(valType));
+            emitJvmToLong(asm, valType);
             asm.astore(LONG_TYPE);
-            slot += slotCount(valueType);
+            slot += slotCount(valType);
         }
     }
 

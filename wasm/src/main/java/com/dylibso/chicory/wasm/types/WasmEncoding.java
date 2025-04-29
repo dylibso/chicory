@@ -9,5 +9,8 @@ public enum WasmEncoding {
     VEC_VARUINT,
     VEC_CATCH,
     BYTE,
-    V128
+    V128,
+    BLOCK_TYPE,
+    VALUE_TYPE,
+    VEC_VALUE_TYPE
 }

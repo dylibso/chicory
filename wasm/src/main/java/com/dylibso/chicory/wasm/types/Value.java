@@ -11,7 +11,7 @@ public class Value {
     public static final int REF_NULL_VALUE = -1;
     public static final long[] EMPTY_VALUES = new long[0];
 
-    private final ValueType type;
+    private final ValType type;
 
     private final long data;
 
@@ -19,7 +19,7 @@ public class Value {
         return data;
     }
 
-    public ValueType type() {
+    public ValType type() {
         return type;
     }
 
@@ -44,22 +44,22 @@ public class Value {
     }
 
     public int asInt() {
-        assert (type == ValueType.I32);
+        assert (type == ValType.I32);
         return (int) data;
     }
 
     public long asLong() {
-        assert (type == ValueType.I64);
+        assert (type == ValType.I64);
         return data;
     }
 
     public float asFloat() {
-        assert (type == ValueType.F32);
+        assert (type == ValType.F32);
         return longToFloat(data);
     }
 
     public double asDouble() {
-        assert (type == ValueType.F64);
+        assert (type == ValType.F64);
         return longToDouble(data);
     }
 
@@ -72,30 +72,39 @@ public class Value {
     }
 
     public static Value i32(long data) {
-        return new Value(ValueType.I32, data);
+        return new Value(ValType.I32, data);
     }
 
     public static Value i64(long data) {
-        return new Value(ValueType.I64, data);
+        return new Value(ValType.I64, data);
     }
 
     public static Value f32(long data) {
-        return new Value(ValueType.F32, data);
+        return new Value(ValType.F32, data);
     }
 
     public static Value f64(long data) {
-        return new Value(ValueType.F64, data);
+        return new Value(ValType.F64, data);
     }
 
     public static Value externRef(long data) {
-        return new Value(ValueType.ExternRef, data);
+        return new Value(ValType.ExternRef, data);
     }
 
     public static Value funcRef(long data) {
-        return new Value(ValueType.FuncRef, data);
+        return new Value(ValType.FuncRef, data);
     }
 
+    /**
+     * @deprecated use {@link #Value(ValType, long)}
+     */
+    @Deprecated(since = "23/05/2025", forRemoval = true)
     public Value(ValueType type, long value) {
+        this.type = requireNonNull(type, "type").toValType();
+        data = value;
+    }
+
+    public Value(ValType type, long value) {
         this.type = requireNonNull(type, "type");
         data = value;
     }
@@ -264,43 +273,42 @@ public class Value {
     /**
      * Create a zeroed value for the particular type.
      *
-     * @param valueType must be a valid zeroable type.
+     * @param valType must be a valid zeroable type.
      * @return a zero.
      */
-    public static long zero(ValueType valueType) {
-        switch (valueType) {
-            case I32:
-            case F32:
-            case I64:
-            case F64:
+    public static long zero(ValType valType) {
+        switch (valType.opcode()) {
+            case ValType.ID.I32:
+            case ValType.ID.F32:
+            case ValType.ID.I64:
+            case ValType.ID.F64:
                 return 0L;
-            case ExnRef:
-            case FuncRef:
-            case ExternRef:
+            case ValType.ID.ExnRef:
+            case ValType.ID.Ref:
+            case ValType.ID.RefNull:
                 return REF_NULL_VALUE;
             default:
-                throw new IllegalArgumentException(
-                        "Can't create a zero value for type " + valueType);
+                throw new IllegalArgumentException("Can't create a zero value for type " + valType);
         }
     }
 
     @Override
     public String toString() {
-        switch (type) {
-            case I32:
+        switch (type.opcode()) {
+            case ValType.ID.I32:
                 return ((int) data) + "@i32";
-            case I64:
+            case ValType.ID.I64:
                 return data + "@i64";
-            case F32:
+            case ValType.ID.F32:
                 return longToFloat(data) + "@f32";
-            case F64:
+            case ValType.ID.F64:
                 return longToDouble(data) + "@f64";
-            case V128:
+            case ValType.ID.V128:
                 return data + "@v128";
-            case FuncRef:
-                return "func[" + (int) data + "]";
-            case ExternRef:
-                return "ext[" + (int) data + "]";
+            case ValType.ID.Ref:
+                return "ref[" + (int) data + "]";
+            case ValType.ID.RefNull:
+                return "refnull[" + (int) data + "]";
             default:
                 throw new AssertionError("Unhandled type: " + type);
         }

@@ -1,25 +1,24 @@
 package com.dylibso.chicory.wasm.types;
 
-import java.util.EnumMap;
 import java.util.List;
 import java.util.Objects;
 
 public final class FunctionType {
-    private final List<ValueType> params;
-    private final List<ValueType> returns;
+    private final List<ValType> params;
+    private final List<ValType> returns;
     private final int hashCode;
 
-    private FunctionType(List<ValueType> params, List<ValueType> returns) {
+    private FunctionType(List<ValType> params, List<ValType> returns) {
         this.params = params;
         this.returns = returns;
         hashCode = Objects.hash(params, returns);
     }
 
-    public List<ValueType> params() {
+    public List<ValType> params() {
         return params;
     }
 
-    public List<ValueType> returns() {
+    public List<ValType> returns() {
         return returns;
     }
 
@@ -45,47 +44,51 @@ public final class FunctionType {
         return hashCode;
     }
 
-    private static final EnumMap<ValueType, FunctionType> returning;
-    private static final EnumMap<ValueType, FunctionType> accepting;
-
-    static {
-        EnumMap<ValueType, FunctionType> map = new EnumMap<>(ValueType.class);
-        map.put(ValueType.ExternRef, new FunctionType(List.of(), List.of(ValueType.ExternRef)));
-        map.put(ValueType.ExnRef, new FunctionType(List.of(), List.of(ValueType.ExnRef)));
-        map.put(ValueType.FuncRef, new FunctionType(List.of(), List.of(ValueType.FuncRef)));
-        map.put(ValueType.V128, new FunctionType(List.of(), List.of(ValueType.V128)));
-        map.put(ValueType.F64, new FunctionType(List.of(), List.of(ValueType.F64)));
-        map.put(ValueType.F32, new FunctionType(List.of(), List.of(ValueType.F32)));
-        map.put(ValueType.I64, new FunctionType(List.of(), List.of(ValueType.I64)));
-        map.put(ValueType.I32, new FunctionType(List.of(), List.of(ValueType.I32)));
-        returning = map;
-        map = new EnumMap<>(ValueType.class);
-        map.put(ValueType.ExternRef, new FunctionType(List.of(ValueType.ExternRef), List.of()));
-        map.put(ValueType.ExnRef, new FunctionType(List.of(ValueType.ExnRef), List.of()));
-        map.put(ValueType.FuncRef, new FunctionType(List.of(ValueType.FuncRef), List.of()));
-        map.put(ValueType.V128, new FunctionType(List.of(ValueType.V128), List.of()));
-        map.put(ValueType.F64, new FunctionType(List.of(ValueType.F64), List.of()));
-        map.put(ValueType.F32, new FunctionType(List.of(ValueType.F32), List.of()));
-        map.put(ValueType.I64, new FunctionType(List.of(ValueType.I64), List.of()));
-        map.put(ValueType.I32, new FunctionType(List.of(ValueType.I32), List.of()));
-        accepting = map;
-    }
-
     private static final FunctionType empty = new FunctionType(List.of(), List.of());
 
-    public static FunctionType returning(ValueType valueType) {
-        return returning.get(valueType);
+    public static FunctionType returning(ValType valType) {
+        switch (valType.opcode()) {
+            case ValType.ID.ExnRef:
+            case ValType.ID.V128:
+            case ValType.ID.F64:
+            case ValType.ID.F32:
+            case ValType.ID.I64:
+            case ValType.ID.I32:
+                return new FunctionType(List.of(), List.of(valType));
+            case ValType.ID.RefNull:
+                if (valType.equals(ValType.ExternRef) || valType.equals(ValType.FuncRef)) {
+                    return new FunctionType(List.of(), List.of(valType));
+                }
+                // fallthrough
+            default:
+                throw new IllegalArgumentException("invalid ValType " + valType);
+        }
     }
 
-    public static FunctionType accepting(ValueType valueType) {
-        return accepting.get(valueType);
+    public static FunctionType accepting(ValType valType) {
+        switch (valType.opcode()) {
+            case ValType.ID.ExnRef:
+            case ValType.ID.V128:
+            case ValType.ID.F64:
+            case ValType.ID.F32:
+            case ValType.ID.I64:
+            case ValType.ID.I32:
+                return new FunctionType(List.of(valType), List.of());
+            case ValType.ID.RefNull:
+                if (valType.equals(ValType.ExternRef) || valType.equals(ValType.FuncRef)) {
+                    return new FunctionType(List.of(valType), List.of());
+                }
+                // fallthrough
+            default:
+                throw new IllegalArgumentException("invalid ValType " + valType);
+        }
     }
 
     public boolean typesMatch(FunctionType other) {
         return paramsMatch(other) && returnsMatch(other);
     }
 
-    public static FunctionType of(List<ValueType> params, List<ValueType> returns) {
+    public static FunctionType of(List<ValType> params, List<ValType> returns) {
         if (params.isEmpty()) {
             if (returns.isEmpty()) {
                 return empty;
@@ -101,7 +104,7 @@ public final class FunctionType {
         return new FunctionType(List.copyOf(params), List.copyOf(returns));
     }
 
-    public static FunctionType of(ValueType[] params, ValueType[] returns) {
+    public static FunctionType of(ValType[] params, ValType[] returns) {
         return of(List.of(params), List.of(returns));
     }
 

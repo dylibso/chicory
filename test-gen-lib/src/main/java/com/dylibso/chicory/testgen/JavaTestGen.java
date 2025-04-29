@@ -424,7 +424,7 @@ public class JavaTestGen {
                                 ? expected.toResultValue(resVarName + "[" + i + "]")
                                 : expected.toResultValue(resVarName);
 
-                if (expected.type() == WasmValueType.V128) {
+                if (expected.type().equals(WasmValueType.V128)) {
                     exprs.add(new NameExpr("var expected = " + resultVar));
                     switch (expected.laneType()) {
                         case I8:

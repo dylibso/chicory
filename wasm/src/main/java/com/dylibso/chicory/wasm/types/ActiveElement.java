@@ -19,7 +19,7 @@ public final class ActiveElement extends Element {
      * @param offset the list of instructions which give the offset into the table (must not be {@code null})
      */
     public ActiveElement(
-            ValueType type,
+            ValType type,
             List<List<Instruction>> initializers,
             int tableIndex,
             List<Instruction> offset) {

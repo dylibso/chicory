@@ -7,7 +7,7 @@ import java.util.Objects;
  */
 public final class GlobalImport extends Import {
     private final MutabilityType mutabilityType;
-    private final ValueType type;
+    private final ValType type;
 
     /**
      * Construct a new instance.
@@ -18,10 +18,21 @@ public final class GlobalImport extends Import {
      * @param type the type of the value stored in the global (must not be {@code null})
      */
     public GlobalImport(
-            String moduleName, String name, MutabilityType mutabilityType, ValueType type) {
+            String moduleName, String name, MutabilityType mutabilityType, ValType type) {
         super(moduleName, name);
         this.mutabilityType = Objects.requireNonNull(mutabilityType, "mutabilityType");
         this.type = Objects.requireNonNull(type, "type");
+    }
+
+    /**
+     * @deprecated use {@link #GlobalImport(String, String, MutabilityType, ValType)}
+     */
+    @Deprecated(since = "23/05/2025", forRemoval = true)
+    public GlobalImport(
+            String moduleName, String name, MutabilityType mutabilityType, ValueType type) {
+        super(moduleName, name);
+        this.mutabilityType = Objects.requireNonNull(mutabilityType, "mutabilityType");
+        this.type = Objects.requireNonNull(type, "type").toValType();
     }
 
     /**
@@ -34,7 +45,7 @@ public final class GlobalImport extends Import {
     /**
      * @return the type of the value stored in the global
      */
-    public ValueType type() {
+    public ValType type() {
         return type;
     }
 

@@ -24,7 +24,7 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableLimits;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayOutputStream;
@@ -226,7 +226,7 @@ public final class MachinesTest {
     @Test
     public void shouldCallIndirectInterpreterToAot() {
         var store = new Store();
-        var table = new TableInstance(new Table(ValueType.FuncRef, new TableLimits(3, 3)));
+        var table = new TableInstance(new Table(ValType.FuncRef, new TableLimits(3, 3)));
         store.addTable(new ImportTable("test", "table", table));
 
         var instance =
@@ -252,7 +252,7 @@ public final class MachinesTest {
     @Test
     public void shouldCallIndirectAotToInterpreter() {
         var store = new Store();
-        var table = new TableInstance(new Table(ValueType.FuncRef, new TableLimits(3, 3)));
+        var table = new TableInstance(new Table(ValType.FuncRef, new TableLimits(3, 3)));
         store.addTable(new ImportTable("test", "table", table));
 
         var instance =

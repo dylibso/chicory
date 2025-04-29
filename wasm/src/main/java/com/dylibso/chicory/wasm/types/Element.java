@@ -9,7 +9,7 @@ import java.util.Objects;
  * An element, used to initialize table ranges.
  */
 public abstract class Element {
-    private final ValueType type;
+    private final ValType type;
     private final List<List<Instruction>> initializers;
 
     /**
@@ -18,7 +18,7 @@ public abstract class Element {
      * @param type the type of the element values (must not be {@code null})
      * @param initializers the list of instruction lists which are used to initialize each element in the range (must not be {@code null})
      */
-    Element(ValueType type, List<List<Instruction>> initializers) {
+    Element(ValType type, List<List<Instruction>> initializers) {
         this.type = requireNonNull(type, "type");
         this.initializers = List.copyOf(initializers);
     }
@@ -26,7 +26,7 @@ public abstract class Element {
     /**
      * @return the type of the element values
      */
-    public ValueType type() {
+    public ValType type() {
         return type;
     }
 

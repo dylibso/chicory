@@ -35,7 +35,7 @@ public class ValueTest {
 
     @Test
     public void validConstruction() {
-        new Value(ValueType.I32, 42);
+        new Value(ValType.I32, 42);
         assertTrue(true);
     }
 

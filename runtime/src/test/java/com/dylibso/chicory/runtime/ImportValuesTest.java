@@ -2,6 +2,7 @@ package com.dylibso.chicory.runtime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,8 +31,13 @@ class ImportValuesTest {
                         ImportValues.builder()
                                 .withFunctions(
                                         Arrays.asList(
-                                                new HostFunction("module_1", "", null, null, null),
-                                                new HostFunction("module_2", "", null, null, null)))
+                                                new HostFunction(
+                                                        "module_1", "", FunctionType.empty(), null),
+                                                new HostFunction(
+                                                        "module_2",
+                                                        "",
+                                                        FunctionType.empty(),
+                                                        null)))
                                 .build();
                 assertEquals(2, result.functionCount());
             }
@@ -40,8 +46,12 @@ class ImportValuesTest {
             void addFunction() {
                 final ImportValues result =
                         ImportValues.builder()
-                                .addFunction(new HostFunction("module_1", "", null, null, null))
-                                .addFunction(new HostFunction("module_2", "", null, null, null))
+                                .addFunction(
+                                        new HostFunction(
+                                                "module_1", "", FunctionType.empty(), null))
+                                .addFunction(
+                                        new HostFunction(
+                                                "module_2", "", FunctionType.empty(), null))
                                 .build();
                 assertEquals(2, result.functionCount());
             }
