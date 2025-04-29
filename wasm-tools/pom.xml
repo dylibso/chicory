@@ -48,6 +48,33 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>aot-maven-plugin-experimental</artifactId>
+        <executions>
+          <execution>
+            <id>wasmtools</id>
+            <goals>
+              <goal>wasm-aot-gen</goal>
+            </goals>
+            <configuration>
+              <name>com.dylibso.chicory.tools.wasm.WasmTools</name>
+              <wasmFile>${project.basedir}/target/wasm-tools.wasm</wasmFile>
+              <interpreterFallback>WARN</interpreterFallback>
+            </configuration>
+          </execution>
+          <execution>
+            <id>wat2wasm</id>
+            <goals>
+              <goal>wasm-aot-gen</goal>
+            </goals>
+            <configuration>
+              <name>com.dylibso.chicory.wabt.Wat2Wasm</name>
+              <wasmFile>src/main/resources/wat2wasm</wasmFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <artifactId>maven-antrun-plugin</artifactId>
         <executions>
           <execution>
@@ -57,7 +84,7 @@
             <phase>initialize</phase>
             <configuration>
               <target>
-                <untar compression="gzip" dest="${project.basedir}/src/main/resources" src="${project.basedir}/wasm-tools-${wasm-tools.version}-wasm32-wasip1.tar.gz">
+                <untar compression="gzip" dest="${project.basedir}/target" src="${project.basedir}/wasm-tools-${wasm-tools.version}-wasm32-wasip1.tar.gz">
                   <flattenmapper/>
                   <patternset>
                     <include name="**/*.wasm"/>
