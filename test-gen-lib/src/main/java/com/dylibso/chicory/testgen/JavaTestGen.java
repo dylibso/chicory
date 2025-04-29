@@ -372,9 +372,6 @@ public class JavaTestGen {
                 || cmd.type() == CommandType.ASSERT_TRAP
                 || cmd.type() == CommandType.ASSERT_EXCEPTION
                 || cmd.type() == CommandType.ASSERT_EXHAUSTION);
-        assert (cmd.expected() != null);
-        assert (cmd.expected().length > 0);
-        assert (cmd.action().type() == ActionType.INVOKE);
 
         var args =
                 (cmd.action().args() != null)
@@ -412,6 +409,8 @@ public class JavaTestGen {
                 return List.of(assertDecl);
             }
         } else if (cmd.type() == CommandType.ASSERT_RETURN) {
+            assert (cmd.expected() != null);
+
             List<Expression> exprs = new ArrayList<>();
             var resVarName = (cmd.action().type() == ActionType.INVOKE) ? "results" : "result";
             exprs.add(new NameExpr("var " + resVarName + " = " + varName + invocationMethod));
