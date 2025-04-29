@@ -4,7 +4,7 @@ import com.dylibso.chicory.wasm.MalformedException;
 import java.util.List;
 
 /**
- * The possible WASM value types.
+ * @deprecated use {@link #ValType}
  */
 @Deprecated(since = "23/05/2025")
 public enum ValueType {
