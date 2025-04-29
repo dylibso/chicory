@@ -1,6 +1,6 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.wasm.types.ValueType.sizeOf;
+import static com.dylibso.chicory.wasm.types.ValType.sizeOf;
 
 import com.dylibso.chicory.wasm.types.OpCode;
 import java.util.Set;
