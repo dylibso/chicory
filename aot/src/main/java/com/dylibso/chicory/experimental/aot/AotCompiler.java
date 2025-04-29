@@ -290,23 +290,23 @@ public final class AotCompiler {
                     // Add the method to interpreted function list... and try again.
                     var funcId = Integer.parseInt(methodName.substring("func_".length()));
 
+                    String message = "WASM function index: " + funcId;
+                    if (module.nameSection() != null) {
+                        String name = module.nameSection().nameOfFunction(funcId);
+                        if (name != null) {
+                            message += String.format(", name: %s", name);
+                        }
+                    }
+
                     switch (interpreterFallback) {
                         case SILENT:
                             break;
                         case WARN:
-                            String message =
-                                    "Warning: using interpreted mode for WASM function index: "
-                                            + funcId;
-                            if (module.nameSection() != null) {
-                                String name = module.nameSection().nameOfFunction(funcId);
-                                if (name != null) {
-                                    message += String.format(", name: %s", name);
-                                }
-                            }
-                            System.err.println(message);
+                            System.err.println("Warning: using interpreted mode for " + message);
                             break;
                         case FAIL:
-                            throw e;
+                            throw new ChicoryException(
+                                    "Interpreter needed (but disabled) for " + message, e);
                     }
 
                     interpretedFunctions.add(funcId);
