@@ -353,7 +353,7 @@ public final class AotCompiler {
                     generated.add(bytes);
                 }
                 break;
-            } catch (MethodTooLargeException | ClassTooLargeException e) {
+            } catch (ClassTooLargeException e) {
                 chunkSize = chunkSize >> 1;
                 if (chunkSize == 0) {
                     throw e;
