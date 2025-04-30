@@ -275,8 +275,8 @@ public final class AotCompiler {
                         loadChunkedClass(
                                 totalFunctions,
                                 maxFunctionsPerClass,
-                                (start, end) -> {
-                                    maxFunctionsPerClass = end - start;
+                                (start, end, chunkSize) -> {
+                                    maxFunctionsPerClass = chunkSize;
                                     String className = classNameForFuncGroup(start);
                                     return compileExtraClass(
                                             className,
@@ -323,7 +323,7 @@ public final class AotCompiler {
     }
 
     interface ChunkedClassEmitter {
-        byte[] emit(int start, int end);
+        byte[] emit(int start, int end, int chunkSize);
     }
 
     /**
@@ -348,7 +348,7 @@ public final class AotCompiler {
                     var start = i * chunkSize;
                     var end = min(start + chunkSize, size);
 
-                    byte[] bytes = emitter.emit(start, end);
+                    byte[] bytes = emitter.emit(start, end, chunkSize);
                     loadClass(classLoader, bytes);
                     generated.add(bytes);
                 }
@@ -697,7 +697,7 @@ public final class AotCompiler {
                     loadChunkedClass(
                             functionTypes.size(),
                             maxMachineCallMethods,
-                            (start, end) ->
+                            (start, end, chunkSize) ->
                                     compileExtraClass(
                                             classNameForDispatch(start),
                                             (cw) ->
@@ -960,7 +960,7 @@ public final class AotCompiler {
             loadChunkedClass(
                     functionTypes.size(),
                     maxMachineCallMethods,
-                    (start, end) ->
+                    (start, end, chunkSize) ->
                             compileExtraClass(
                                     classNameForCallIndirect(typeId, start),
                                     (cw) -> {
