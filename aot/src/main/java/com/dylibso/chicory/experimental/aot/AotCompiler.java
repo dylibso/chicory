@@ -537,6 +537,9 @@ public final class AotCompiler {
                         null,
                         null);
 
+        // uncomment if you ever want to troubleshoot invalid bytecode generation
+        // methodWriter = new CheckMethodAdapter(methodWriter);
+
         methodWriter.visitCode();
         consumer.accept(new InstructionAdapter(methodWriter));
         methodWriter.visitMaxs(0, 0);
@@ -603,7 +606,7 @@ public final class AotCompiler {
 
         if (!interpretedFunctions.isEmpty()) {
             Label invalid = new Label();
-            int[] keys = interpretedFunctions.stream().mapToInt(x -> x).toArray();
+            int[] keys = interpretedFunctions.stream().mapToInt(x -> x).sorted().toArray();
             Label[] labels =
                     interpretedFunctions.stream().map(x -> new Label()).toArray(Label[]::new);
             asm.load(1, INT_TYPE);
