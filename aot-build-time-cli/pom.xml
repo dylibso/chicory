@@ -78,28 +78,12 @@
               <showWarnings>true</showWarnings>
               <compilerArgs>
                 <arg>-Aproject=${project.groupId}/${project.artifactId}</arg>
-                <arg>-XDcompilePolicy=simple</arg>
-                <arg>--should-stop=ifError=FLOW</arg>
-                <arg>-Xplugin:ErrorProne \
-                                    -Xep:MissingCasesInEnumSwitch:OFF \
-                                    -Xep:MissingOverride:ERROR \
-                                    -Xep:MissingSummary:OFF \
-                                    -Xep:NonOverridingEquals:OFF \
-                                    -Xep:OperatorPrecedence:OFF \
-                                    -Xep:ReferenceEquality:OFF \
-                                    -Xep:UnnecessaryParentheses:OFF \
-                                    -XepExcludedPaths:.*/target/generated-(|test-)sources/.*</arg>
               </compilerArgs>
               <annotationProcessorPaths>
                 <path>
                   <groupId>info.picocli</groupId>
                   <artifactId>picocli-codegen</artifactId>
                   <version>${picocli.version}</version>
-                </path>
-                <path>
-                  <groupId>com.google.errorprone</groupId>
-                  <artifactId>error_prone_core</artifactId>
-                  <version>${error-prone.version}</version>
                 </path>
               </annotationProcessorPaths>
             </configuration>
