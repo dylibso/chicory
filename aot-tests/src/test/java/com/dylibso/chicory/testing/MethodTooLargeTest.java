@@ -12,7 +12,8 @@ import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -38,8 +39,7 @@ public class MethodTooLargeTest {
                 new HostFunction(
                         "funcs",
                         "host_func",
-                        List.of(ValueType.I32),
-                        List.of(ValueType.I32),
+                        FunctionType.of(List.of(ValType.I32), List.of(ValType.I32)),
                         (inst, args) -> {
                             var thread = Thread.currentThread();
                             int i = 0;
