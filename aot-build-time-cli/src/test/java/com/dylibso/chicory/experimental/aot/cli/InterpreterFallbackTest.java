@@ -3,6 +3,7 @@ package com.dylibso.chicory.experimental.aot.cli;
 import static com.dylibso.chicory.corpus.WatGenerator.methodTooLarge;
 import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
 import static java.lang.invoke.MethodHandles.publicLookup;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -14,7 +15,8 @@ import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
-import com.dylibso.chicory.wasm.types.ValueType;
+import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,12 +72,12 @@ public class InterpreterFallbackTest {
         CommandLine cmd = new CommandLine(cli);
 
         ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
-        cmd.setErr(new PrintWriter(stdErr));
+        cmd.setErr(new PrintWriter(stdErr, true, UTF_8));
         var exitCode = cmd.execute(args("--prefix=com.dylibso.chicory.experimental.aot.cli.Test1"));
 
         assertEquals(1, exitCode);
         assertTrue(
-                stdErr.toString()
+                stdErr.toString(UTF_8)
                         .startsWith(
                                 "com.dylibso.chicory.wasm.ChicoryException: Interpreter needed (but"
                                         + " disabled) for WASM function index: 2"));
@@ -89,8 +91,8 @@ public class InterpreterFallbackTest {
         var orignalErr = System.err;
         try {
             ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
-            System.setErr(new PrintStream(stdErr));
-            cmd.setErr(new PrintWriter(stdErr));
+            System.setErr(new PrintStream(stdErr, true, UTF_8));
+            cmd.setErr(new PrintWriter(stdErr, true, UTF_8));
 
             var exitCode =
                     cmd.execute(
@@ -100,7 +102,7 @@ public class InterpreterFallbackTest {
 
             assertEquals(0, exitCode);
             assertTrue(
-                    stdErr.toString()
+                    stdErr.toString(UTF_8)
                             .startsWith(
                                     "Warning: using interpreted mode for WASM function index: 2"));
         } finally {
@@ -117,12 +119,12 @@ public class InterpreterFallbackTest {
         var orignalStdOut = System.out;
         try {
             ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
-            System.setErr(new PrintStream(stdErr));
-            cmd.setErr(new PrintWriter(stdErr));
+            System.setErr(new PrintStream(stdErr, true, UTF_8));
+            cmd.setErr(new PrintWriter(stdErr, true, UTF_8));
 
             ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
-            System.setOut(new PrintStream(stdOut));
-            cmd.setOut(new PrintWriter(stdOut));
+            System.setOut(new PrintStream(stdOut, true, UTF_8));
+            cmd.setOut(new PrintWriter(stdOut, true, UTF_8));
 
             var exitCode =
                     cmd.execute(
@@ -131,8 +133,8 @@ public class InterpreterFallbackTest {
                                     "--prefix=com.dylibso.chicory.experimental.aot.cli.Test3"));
 
             assertEquals(0, exitCode);
-            assertEquals("", stdErr.toString());
-            assertEquals("", stdOut.toString());
+            assertEquals("", stdErr.toString(UTF_8));
+            assertEquals("", stdOut.toString(UTF_8));
         } finally {
             System.setErr(orignalStdErr);
             System.setOut(orignalStdOut);
@@ -152,11 +154,9 @@ public class InterpreterFallbackTest {
                 new HostFunction(
                         "funcs",
                         "host_func",
-                        List.of(ValueType.I32),
-                        List.of(ValueType.I32),
+                        FunctionType.of(List.of(ValType.I32), List.of(ValType.I32)),
                         (inst, args) -> {
                             var thread = Thread.currentThread();
-                            new RuntimeException("x").printStackTrace();
                             int i = 0;
                             for (StackTraceElement element : thread.getStackTrace()) {
                                 i++;

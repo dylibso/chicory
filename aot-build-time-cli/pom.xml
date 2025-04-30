@@ -32,12 +32,22 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
+      <artifactId>runtime</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
       <artifactId>wabt</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm-corpus</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -53,39 +63,49 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <release>${maven.compiler.release}</release>
-          <parameters>true</parameters>
-          <failOnWarning>${maven.compiler.failOnWarning}</failOnWarning>
-          <showDeprecation>true</showDeprecation>
-          <showWarnings>true</showWarnings>
-          <compilerArgs>
-            <arg>-Aproject=${project.groupId}/${project.artifactId}</arg>
-            <arg>-XDcompilePolicy=simple</arg>
-            <arg>--should-stop=ifError=FLOW</arg>
-            <arg>-Xplugin:ErrorProne \
-              -Xep:MissingCasesInEnumSwitch:OFF \
-              -Xep:MissingOverride:ERROR \
-              -Xep:MissingSummary:OFF \
-              -Xep:NonOverridingEquals:OFF \
-              -Xep:OperatorPrecedence:OFF \
-              -Xep:ReferenceEquality:OFF \
-              -Xep:UnnecessaryParentheses:OFF \
-              -XepExcludedPaths:.*/target/generated-(|test-)sources/.*</arg>
-          </compilerArgs>
-          <annotationProcessorPaths>
-            <path>
-              <groupId>info.picocli</groupId>
-              <artifactId>picocli-codegen</artifactId>
-              <version>${picocli.version}</version>
-            </path>
-            <path>
-              <groupId>com.google.errorprone</groupId>
-              <artifactId>error_prone_core</artifactId>
-              <version>${error-prone.version}</version>
-            </path>
-          </annotationProcessorPaths>
-        </configuration>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <phase>compile</phase>
+            <configuration>
+              <release>${maven.compiler.release}</release>
+              <parameters>true</parameters>
+              <failOnWarning>${maven.compiler.failOnWarning}</failOnWarning>
+              <showDeprecation>true</showDeprecation>
+              <showWarnings>true</showWarnings>
+              <compilerArgs>
+                <arg>-Aproject=${project.groupId}/${project.artifactId}</arg>
+                <arg>-XDcompilePolicy=simple</arg>
+                <arg>--should-stop=ifError=FLOW</arg>
+                <arg>-Xplugin:ErrorProne \
+                                    -Xep:MissingCasesInEnumSwitch:OFF \
+                                    -Xep:MissingOverride:ERROR \
+                                    -Xep:MissingSummary:OFF \
+                                    -Xep:NonOverridingEquals:OFF \
+                                    -Xep:OperatorPrecedence:OFF \
+                                    -Xep:ReferenceEquality:OFF \
+                                    -Xep:UnnecessaryParentheses:OFF \
+                                    -XepExcludedPaths:.*/target/generated-(|test-)sources/.*</arg>
+              </compilerArgs>
+              <annotationProcessorPaths>
+                <path>
+                  <groupId>info.picocli</groupId>
+                  <artifactId>picocli-codegen</artifactId>
+                  <version>${picocli.version}</version>
+                </path>
+                <path>
+                  <groupId>com.google.errorprone</groupId>
+                  <artifactId>error_prone_core</artifactId>
+                  <version>${error-prone.version}</version>
+                </path>
+              </annotationProcessorPaths>
+            </configuration>
+          </execution>
+        </executions>
+
       </plugin>
 
       <plugin>
