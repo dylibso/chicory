@@ -25,8 +25,8 @@ import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TagImport;
 import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValType;
+import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1466,9 +1466,7 @@ final class Validator {
                                             + " "
                                             + t2);
                         }
-                        if (!t1.equals(t2)
-                                && !t1.equals(ValType.BOT)
-                                && !t2.equals(ValType.BOT)) {
+                        if (!t1.equals(t2) && !t1.equals(ValType.BOT) && !t2.equals(ValType.BOT)) {
                             throw new InvalidException(
                                     "type mismatch, in SELECT t1: " + t1 + ", t2: " + t2);
                         }

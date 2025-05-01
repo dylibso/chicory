@@ -1,8 +1,8 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.MutabilityType;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValType;
+import com.dylibso.chicory.wasm.types.Value;
 
 public class GlobalInstance {
     private long valueLow;

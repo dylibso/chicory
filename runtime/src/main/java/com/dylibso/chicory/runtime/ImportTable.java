@@ -5,7 +5,6 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.ValType;
-
 import java.util.Map;
 
 public class ImportTable implements ImportValue {

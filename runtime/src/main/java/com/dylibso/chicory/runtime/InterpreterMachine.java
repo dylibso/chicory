@@ -1,7 +1,7 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static com.dylibso.chicory.wasm.types.ValType.sizeOf;
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.wasm.ChicoryException;
@@ -11,8 +11,8 @@ import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
-import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValType;
+import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;

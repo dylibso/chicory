@@ -20,7 +20,6 @@ import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValType;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -509,8 +508,7 @@ public class WasmModuleTest {
                         "env",
                         "table",
                         new TableInstance(
-                                new Table(ValType.ExternRef, new TableLimits(2)),
-                                REF_NULL_VALUE));
+                                new Table(ValType.ExternRef, new TableLimits(2)), REF_NULL_VALUE));
         var tagI32 =
                 new ImportTag(
                         "env",

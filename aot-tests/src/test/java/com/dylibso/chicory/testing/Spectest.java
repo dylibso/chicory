@@ -37,21 +37,18 @@ public final class Spectest {
                                 noop))
                 .addFunction(
                         new HostFunction(
-                                "spectest", "print_i32_1", List.of(ValType.I32), List.of(), noop))
                                 "spectest",
                                 "print_i32_1",
                                 FunctionType.of(List.of(ValType.I32), List.of()),
                                 noop))
                 .addFunction(
                         new HostFunction(
-                                "spectest", "print_i32_2", List.of(ValType.I32), List.of(), noop))
                                 "spectest",
                                 "print_i32_2",
                                 FunctionType.of(List.of(ValType.I32), List.of()),
                                 noop))
                 .addFunction(
                         new HostFunction(
-                                "spectest", "print_f32", List.of(ValType.F32), List.of(), noop))
                                 "spectest",
                                 "print_f32",
                                 FunctionType.of(List.of(ValType.F32), List.of()),
@@ -60,8 +57,6 @@ public final class Spectest {
                         new HostFunction(
                                 "spectest",
                                 "print_i32_f32",
-                                List.of(ValType.I32, ValType.F32),
-                                List.of(),
                                 FunctionType.of(List.of(ValType.I32, ValType.F32), List.of()),
                                 noop))
                 .addFunction(

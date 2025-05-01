@@ -5,7 +5,6 @@ import static com.dylibso.chicory.wasm.types.WasmEncoding.BYTE;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.FLOAT32;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.FLOAT64;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.V128;
-import static com.dylibso.chicory.wasm.types.WasmEncoding.VALUE_TYPE;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VARSINT32;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VARSINT64;
 import static com.dylibso.chicory.wasm.types.WasmEncoding.VARUINT;
