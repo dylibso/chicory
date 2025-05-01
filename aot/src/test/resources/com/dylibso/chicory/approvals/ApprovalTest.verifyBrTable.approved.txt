@@ -1,7 +1,7 @@
 public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylibso/chicory/runtime/Machine {
 
   NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$AotMethods
-  NESTMEMBER com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0
+  NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$FuncGroup_0
   NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$MachineCall
 
   private final Lcom/dylibso/chicory/runtime/Instance; instance
@@ -57,7 +57,7 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
       0: L2
       default: L3
    L2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$FuncGroup_0.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
    L3
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
@@ -80,7 +80,9 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     IRETURN
 }
 
-final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
+final class com/dylibso/chicory/$gen/CompiledMachine$FuncGroup_0 {
+
+  NESTHOST com/dylibso/chicory/$gen/CompiledMachine
 
   public static func_0(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     ILOAD 0
@@ -111,7 +113,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     L2I
     ALOAD 1
     ALOAD 0
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$FuncGroup_0.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     I2L
     LSTORE 3
     ICONST_1
@@ -141,7 +143,7 @@ final class com/dylibso/chicory/$gen/CompiledMachine$MachineCall {
       0: L0
       default: L1
    L0
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.call_0 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$FuncGroup_0.call_0 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ARETURN
    L1
     ILOAD 2

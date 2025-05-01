@@ -78,7 +78,7 @@ public class InterruptionTest {
             for (StackTraceElement element : thread.getStackTrace()) {
                 var className = element.getClassName();
                 var methodName = element.getMethodName();
-                if (className.startsWith(AotCompiler.DEFAULT_CLASS_NAME + "FuncGroup_")
+                if (className.startsWith(AotCompiler.DEFAULT_CLASS_NAME + "$FuncGroup_")
                         && methodName.equals(methodNameForFunc(funcIdx))) {
                     return;
                 }

@@ -267,7 +267,7 @@ final class AotUtil {
     }
 
     static String classNameForDispatch(int id) {
-        return "Dispatch_" + id;
+        return "$Dispatch_" + id;
     }
 
     static String callDispatchMethodName(int start) {

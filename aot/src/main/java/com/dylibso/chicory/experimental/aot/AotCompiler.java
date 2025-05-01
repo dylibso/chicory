@@ -287,7 +287,7 @@ public final class AotCompiler {
     }
 
     private String classNameForFuncGroup(int funcId) {
-        return "FuncGroup_" + (funcId / maxFunctionsPerClass);
+        return "$FuncGroup_" + (funcId / maxFunctionsPerClass);
     }
 
     private Consumer<ClassVisitor> emitFunctionGroup(int start, int end, String internalClassName) {
@@ -584,6 +584,7 @@ public final class AotCompiler {
                 null,
                 getInternalName(Object.class),
                 null);
+        classWriter.visitNestHost(internalClassName(className));
         consumer.accept(classWriter);
         return binaryWriter.toByteArray();
     }

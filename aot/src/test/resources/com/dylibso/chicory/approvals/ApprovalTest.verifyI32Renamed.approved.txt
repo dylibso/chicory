@@ -1,7 +1,7 @@
 public final class FOO implements com/dylibso/chicory/runtime/Machine {
 
   NESTMEMBER FOO$AotMethods
-  NESTMEMBER FOOFuncGroup_0
+  NESTMEMBER FOO$FuncGroup_0
   NESTMEMBER FOO$MachineCall
 
   private final Lcom/dylibso/chicory/runtime/Instance; instance
@@ -56,7 +56,7 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
       0: L2
       default: L3
    L2
-    INVOKESTATIC FOOFuncGroup_0.func_0 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
+    INVOKESTATIC FOO$FuncGroup_0.func_0 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     RETURN
    L3
     INVOKESTATIC FOO$AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
@@ -555,7 +555,9 @@ final class FOO$AotMethods {
     RETURN
 }
 
-final class FOOFuncGroup_0 {
+final class FOO$FuncGroup_0 {
+
+  NESTHOST FOO
 
   public static func_0(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     LDC -2147483648
@@ -591,7 +593,7 @@ final class FOOFuncGroup_0 {
   public static call_0(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ALOAD 1
     ALOAD 0
-    INVOKESTATIC FOOFuncGroup_0.func_0 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
+    INVOKESTATIC FOO$FuncGroup_0.func_0 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     ACONST_NULL
     ARETURN
 }
@@ -614,7 +616,7 @@ final class FOO$MachineCall {
       0: L0
       default: L1
    L0
-    INVOKESTATIC FOOFuncGroup_0.call_0 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    INVOKESTATIC FOO$FuncGroup_0.call_0 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ARETURN
    L1
     ILOAD 2

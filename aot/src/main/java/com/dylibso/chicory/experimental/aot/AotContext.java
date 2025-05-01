@@ -128,6 +128,6 @@ final class AotContext {
     }
 
     public String classNameForFuncGroup(int funcId) {
-        return "FuncGroup_" + (funcId / maxFunctionsPerClass);
+        return "$FuncGroup_" + (funcId / maxFunctionsPerClass);
     }
 }
