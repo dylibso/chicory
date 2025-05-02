@@ -10,7 +10,7 @@ public final class AotMethodRefs {
 
     static final Method CHECK_INTERRUPTION;
     static final Method CALL_INDIRECT;
-    static final Method CALL_INDIRECT_V2;
+    static final Method CALL_INDIRECT_ON_INTERPRETER;
     static final Method INSTANCE_MEMORY;
     static final Method CALL_HOST_FUNCTION;
     static final Method READ_GLOBAL;
@@ -57,7 +57,7 @@ public final class AotMethodRefs {
             CALL_INDIRECT =
                     AotMethods.class.getMethod(
                             "callIndirect", long[].class, int.class, int.class, Instance.class);
-            CALL_INDIRECT_V2 =
+            CALL_INDIRECT_ON_INTERPRETER =
                     AotMethods.class.getMethod(
                             "callIndirect", long[].class, int.class, Instance.class);
             INSTANCE_MEMORY = Instance.class.getMethod("memory");

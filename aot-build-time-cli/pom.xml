@@ -31,6 +31,11 @@
       <artifactId>picocli</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.approvaltests</groupId>
+      <artifactId>approvaltests</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>runtime</artifactId>
       <scope>test</scope>

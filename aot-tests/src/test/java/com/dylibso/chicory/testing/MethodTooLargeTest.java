@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
@@ -63,31 +64,10 @@ public class MethodTooLargeTest {
 
         assertEquals(35, instance.export("func_2").apply(0)[0]);
 
-        assertEquals(
-                List.of(
-                        "com.dylibso.chicory.testing.MethodTooLargeTest.lambda$testBigFunc$0",
-                        "com.dylibso.chicory.$gen.CompiledMachine$AotMethods.callHostFunction",
-                        "com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_0",
-                        "com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_1",
-                        "com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.call_1",
-                        "com.dylibso.chicory.$gen.CompiledMachine$MachineCall.call",
-                        "com.dylibso.chicory.$gen.CompiledMachine.call",
-                        // here is where the Interpreter switches back to AOT for the call to func_1
-                        "com.dylibso.chicory.runtime.AotInterpreterMachine.CALL",
-                        "com.dylibso.chicory.runtime.InterpreterMachine.eval",
-                        "com.dylibso.chicory.runtime.InterpreterMachine.call",
-                        "com.dylibso.chicory.runtime.InterpreterMachine.call",
-                        "com.dylibso.chicory.$gen.CompiledMachine.call",
-                        "com.dylibso.chicory.$gen.CompiledMachine$AotMethods.callIndirect",
-                        // here is where the AOT method switches to the interpreter
-                        "com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_2",
-                        "com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_3",
-                        "com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.call_3",
-                        "com.dylibso.chicory.$gen.CompiledMachine$MachineCall.call",
-                        "com.dylibso.chicory.$gen.CompiledMachine.call",
-                        "com.dylibso.chicory.runtime.Instance$Exports.lambda$function$0",
-                        "com.dylibso.chicory.testing.MethodTooLargeTest.testBigFunc"),
-                hostStackTrace);
+        var stackTrace = String.join("\n", hostStackTrace);
+        Approvals.verify(
+                stackTrace,
+                new Options().forFile().withBaseName("MethodTooLargeTest.testBigFunc-stackTrace"));
 
         verifyClass(result.classBytes(), true);
     }

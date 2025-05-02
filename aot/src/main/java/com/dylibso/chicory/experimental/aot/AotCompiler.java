@@ -5,7 +5,7 @@ import static com.dylibso.chicory.experimental.aot.AotMethodInliner.aotMethodsRe
 import static com.dylibso.chicory.experimental.aot.AotMethodInliner.createAotMethodsClass;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_INDIRECT;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_INDIRECT_V2;
+import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_INDIRECT_ON_INTERPRETER;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CHECK_INTERRUPTION;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.INSTANCE_MEMORY;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.INSTANCE_TABLE;
@@ -290,11 +290,11 @@ public final class AotCompiler {
                     // Add the method to interpreted function list... and try again.
                     var funcId = Integer.parseInt(methodName.substring("func_".length()));
 
-                    String message = "WASM function index: " + funcId;
+                    String functionDescription = "WASM function index: " + funcId;
                     if (module.nameSection() != null) {
                         String name = module.nameSection().nameOfFunction(funcId);
                         if (name != null) {
-                            message += String.format(", name: %s", name);
+                            functionDescription += String.format(" (name: %s)", name);
                         }
                     }
 
@@ -302,11 +302,17 @@ public final class AotCompiler {
                         case SILENT:
                             break;
                         case WARN:
-                            System.err.println("Warning: using interpreted mode for " + message);
+                            System.err.println(
+                                    "Warning: using interpreted mode for " + functionDescription);
                             break;
                         case FAIL:
                             throw new ChicoryException(
-                                    "Interpreter needed (but disabled) for " + message, e);
+                                    "WASM function size exceeds the Java method size limits and"
+                                        + " cannot be compiled to Java bytecode. It can only be run"
+                                        + " in the interpreter. Either reduce the size of the"
+                                        + " function or enable the interpreter fallback mode: "
+                                            + functionDescription,
+                                    e);
                     }
 
                     interpretedFunctions.add(funcId);
@@ -1149,7 +1155,7 @@ public final class AotCompiler {
 
             asm.iconst(funcId);
             asm.load(refInstance, OBJECT_TYPE);
-            emitInvokeStatic(asm, CALL_INDIRECT_V2);
+            emitInvokeStatic(asm, CALL_INDIRECT_ON_INTERPRETER);
             emitUnboxResult(type, asm);
             return;
         }

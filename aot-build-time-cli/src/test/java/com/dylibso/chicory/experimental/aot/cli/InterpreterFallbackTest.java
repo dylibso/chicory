@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import org.approvaltests.Approvals;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
@@ -79,8 +80,11 @@ public class InterpreterFallbackTest {
         assertTrue(
                 stdErr.toString(UTF_8)
                         .startsWith(
-                                "com.dylibso.chicory.wasm.ChicoryException: Interpreter needed (but"
-                                        + " disabled) for WASM function index: 2"));
+                                "com.dylibso.chicory.wasm.ChicoryException: WASM function size"
+                                    + " exceeds the Java method size limits and cannot be compiled"
+                                    + " to Java bytecode. It can only be run in the interpreter."
+                                    + " Either reduce the size of the function or enable the"
+                                    + " interpreter fallback mode: WASM function index: 2"));
     }
 
     @Test
@@ -184,31 +188,8 @@ public class InterpreterFallbackTest {
 
         assertEquals(35, instance.export("func_2").apply(0)[0]);
 
-        assertEquals(
-                List.of(
-                        "com.dylibso.chicory.experimental.aot.cli.InterpreterFallbackTest.lambda$testSilentInterpreterFallback$0",
-                        "com.dylibso.chicory.experimental.aot.cli.Test3Machine$AotMethods.callHostFunction",
-                        "com.dylibso.chicory.experimental.aot.cli.Test3MachineFuncGroup_0.func_0",
-                        "com.dylibso.chicory.experimental.aot.cli.Test3MachineFuncGroup_0.func_1",
-                        "com.dylibso.chicory.experimental.aot.cli.Test3MachineFuncGroup_0.call_1",
-                        "com.dylibso.chicory.experimental.aot.cli.Test3Machine$MachineCall.call",
-                        "com.dylibso.chicory.experimental.aot.cli.Test3Machine.call",
-                        // here is where the Interpreter switches back to AOT for the call to func_1
-                        "com.dylibso.chicory.runtime.AotInterpreterMachine.CALL",
-                        "com.dylibso.chicory.runtime.InterpreterMachine.eval",
-                        "com.dylibso.chicory.runtime.InterpreterMachine.call",
-                        "com.dylibso.chicory.runtime.InterpreterMachine.call",
-                        "com.dylibso.chicory.experimental.aot.cli.Test3Machine.call",
-                        "com.dylibso.chicory.experimental.aot.cli.Test3Machine$AotMethods.callIndirect",
-                        // here is where the AOT method switches to the interpreter
-                        "com.dylibso.chicory.experimental.aot.cli.Test3MachineFuncGroup_0.func_2",
-                        "com.dylibso.chicory.experimental.aot.cli.Test3MachineFuncGroup_0.func_3",
-                        "com.dylibso.chicory.experimental.aot.cli.Test3MachineFuncGroup_0.call_3",
-                        "com.dylibso.chicory.experimental.aot.cli.Test3Machine$MachineCall.call",
-                        "com.dylibso.chicory.experimental.aot.cli.Test3Machine.call",
-                        "com.dylibso.chicory.runtime.Instance$Exports.lambda$function$0",
-                        "com.dylibso.chicory.experimental.aot.cli.InterpreterFallbackTest.testSilentInterpreterFallback"),
-                hostStackTrace);
+        var stackTrace = String.join("\n", hostStackTrace);
+        Approvals.verify(stackTrace);
     }
 
     private Function<Instance, Machine> createMachineFactory(Class<?> machineClass) {
