@@ -69,6 +69,16 @@ public class MethodTooLargeTest {
                 stackTrace,
                 new Options().forFile().withBaseName("MethodTooLargeTest.testBigFunc-stackTrace"));
 
+        hostStackTrace.clear();
+        assertEquals(35, instance.export("func_2").apply(1)[0]);
+
+        stackTrace = String.join("\n", hostStackTrace);
+        Approvals.verify(
+                stackTrace,
+                new Options()
+                        .forFile()
+                        .withBaseName("MethodTooLargeTest.testBigFunc-stackTrace-indirect"));
+
         verifyClass(result.classBytes(), true);
     }
 

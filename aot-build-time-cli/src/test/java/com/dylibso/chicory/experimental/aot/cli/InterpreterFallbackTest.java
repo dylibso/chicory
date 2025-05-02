@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import org.approvaltests.Approvals;
+import org.approvaltests.core.Options;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
@@ -190,6 +191,17 @@ public class InterpreterFallbackTest {
 
         var stackTrace = String.join("\n", hostStackTrace);
         Approvals.verify(stackTrace);
+
+        hostStackTrace.clear();
+        assertEquals(35, instance.export("func_2").apply(1)[0]);
+
+        stackTrace = String.join("\n", hostStackTrace);
+        Approvals.verify(
+                stackTrace,
+                new Options()
+                        .forFile()
+                        .withBaseName(
+                                "InterpreterFallbackTest.testSilentInterpreterFallback-indirect"));
     }
 
     private Function<Instance, Machine> createMachineFactory(Class<?> machineClass) {

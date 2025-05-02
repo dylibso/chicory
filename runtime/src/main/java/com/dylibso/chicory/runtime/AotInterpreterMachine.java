@@ -52,4 +52,10 @@ public class AotInterpreterMachine extends InterpreterMachine {
             }
         }
     }
+
+    @Override
+    protected boolean useMachineCallForIndirectCall(
+            Instance instance, Instance refInstance, int funcId) {
+        return !refInstance.equals(instance) || !interpretedFuncIds.contains(funcId);
+    }
 }

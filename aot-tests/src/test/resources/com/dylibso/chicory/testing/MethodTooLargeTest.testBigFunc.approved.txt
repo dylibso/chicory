@@ -137,8 +137,6 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
 
   public static func_1(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     ILOAD 0
-    ICONST_0
-    IADD
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
     ALOAD 1
     ALOAD 2
@@ -199,8 +197,6 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
 
   public static func_3(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     ILOAD 0
-    ICONST_0
-    IADD
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
     ALOAD 1
     ALOAD 2

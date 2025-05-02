@@ -2029,7 +2029,7 @@ public class InterpreterMachine implements Machine {
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.params());
-        if (refInstance.equals(instance)) {
+        if (!useMachineCallForIndirectCall(instance, refInstance, funcId)) {
             call(stack, instance, callStack, funcId, args, type, false);
         } else {
             checkInterruption();
@@ -2042,6 +2042,11 @@ public class InterpreterMachine implements Machine {
                 }
             }
         }
+    }
+
+    protected boolean useMachineCallForIndirectCall(
+            Instance instance, Instance refInstance, int funcId) {
+        return !refInstance.equals(instance);
     }
 
     private static int numberOfParams(Instance instance, AnnotatedInstruction scope) {
