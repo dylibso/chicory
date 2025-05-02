@@ -31,31 +31,6 @@
       <groupId>com.github.javaparser</groupId>
       <artifactId>javaparser-core</artifactId>
     </dependency>
-    <dependency>
-      <groupId>com.approvaltests</groupId>
-      <artifactId>approvaltests</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wabt</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wasm-corpus</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
 </project>

@@ -1,4 +1,4 @@
-package com.dylibso.chicory.experimental.build.time.aot;
+package com.dylibso.chicory.testing;
 
 import static com.dylibso.chicory.corpus.WatGenerator.methodTooLarge;
 import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
@@ -9,6 +9,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.experimental.aot.InterpreterFallback;
+import com.dylibso.chicory.experimental.build.time.aot.Config;
+import com.dylibso.chicory.experimental.build.time.aot.Generator;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
@@ -73,7 +75,7 @@ public class InterpreterFallbackTest {
     public void testDefaultInterpreterFallback() throws IOException {
         var config =
                 defaultConfig()
-                        .withName("com.dylibso.chicory.experimental.build.time.aot.Test1")
+                        .withName("com.dylibso.chicory.testing.Test1")
                         // .withInterpreterFallback(InterpreterFallback.FAIL)
                         .build();
         var generator = new Generator(config);
@@ -97,7 +99,7 @@ public class InterpreterFallbackTest {
     public void testWarnInterpreterFallback() throws IOException {
         var config =
                 defaultConfig()
-                        .withName("com.dylibso.chicory.experimental.build.time.aot.Test2")
+                        .withName("com.dylibso.chicory.testing.Test2")
                         .withInterpreterFallback(InterpreterFallback.WARN)
                         .build();
         var generator = new Generator(config);
@@ -122,7 +124,7 @@ public class InterpreterFallbackTest {
     public void testSilentInterpreterFallback() throws IOException, ClassNotFoundException {
         var config =
                 defaultConfig()
-                        .withName("com.dylibso.chicory.experimental.build.time.aot.Test3")
+                        .withName("com.dylibso.chicory.testing.Test3")
                         .withInterpreterFallback(InterpreterFallback.SILENT)
                         .build();
         var generator = new Generator(config);
@@ -151,8 +153,7 @@ public class InterpreterFallbackTest {
 
         var url = classDir.toUri().toURL();
         var cl = new URLClassLoader(new URL[] {url});
-        var machineClass =
-                cl.loadClass("com.dylibso.chicory.experimental.build.time.aot.Test3Machine");
+        var machineClass = cl.loadClass("com.dylibso.chicory.testing.Test3Machine");
         Function<Instance, Machine> machineFactory = createMachineFactory(machineClass);
 
         var hostStackTrace = new ArrayList<String>();
