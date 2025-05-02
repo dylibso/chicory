@@ -96,7 +96,7 @@ public final class Config {
         private Path targetClassFolder;
         private Path targetSourceFolder;
         private Path targetWasmFolder;
-        private InterpreterFallback interpreterFallback;
+        private InterpreterFallback interpreterFallback = InterpreterFallback.FAIL;
 
         private Builder() {}
 

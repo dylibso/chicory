@@ -1,12 +1,14 @@
-package com.dylibso.chicory.experimental.aot.cli;
+package com.dylibso.chicory.experimental.build.time.aot;
 
 import static com.dylibso.chicory.corpus.WatGenerator.methodTooLarge;
 import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
 import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dylibso.chicory.experimental.aot.InterpreterFallback;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
@@ -21,7 +23,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -34,7 +35,6 @@ import org.approvaltests.Approvals;
 import org.approvaltests.core.Options;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import picocli.CommandLine;
 
 public class InterpreterFallbackTest {
 
@@ -55,57 +55,60 @@ public class InterpreterFallbackTest {
         Files.write(wasmFile, wasm);
     }
 
-    private String[] args(String... args) {
-        ArrayList<String> result = new ArrayList<>();
-        result.addAll(List.of(args));
-        result.addAll(
-                List.of(
-                        "--source-dir=" + classDir,
-                        "--wasm-dir=" + classDir,
-                        "--class-dir=" + classDir,
-                        wasmFile.toString()));
-        return result.toArray(new String[result.size()]);
+    private Config.Builder defaultConfig() {
+        return Config.builder()
+                .withWasmFile(wasmFile)
+                .withTargetSourceFolder(classDir)
+                .withTargetClassFolder(classDir)
+                .withTargetWasmFolder(classDir);
+    }
+
+    private void generateAll(Generator generator) throws IOException {
+        generator.generateSources();
+        generator.generateResources();
+        generator.generateMetaWasm();
     }
 
     @Test
     public void testDefaultInterpreterFallback() throws IOException {
+        var config =
+                defaultConfig()
+                        .withName("com.dylibso.chicory.experimental.build.time.aot.Test1")
+                        // .withInterpreterFallback(InterpreterFallback.FAIL)
+                        .build();
+        var generator = new Generator(config);
 
-        var cli = new Cli();
-        CommandLine cmd = new CommandLine(cli);
+        var exception = assertThrows(ChicoryException.class, () -> generateAll(generator));
 
-        ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
-        cmd.setErr(new PrintWriter(stdErr, true, UTF_8));
-        var exitCode = cmd.execute(args("--prefix=com.dylibso.chicory.experimental.aot.cli.Test1"));
-
-        assertEquals(1, exitCode);
         assertTrue(
-                stdErr.toString(UTF_8)
+                exception
+                        .getMessage()
                         .startsWith(
-                                "com.dylibso.chicory.wasm.ChicoryException: WASM function size"
-                                    + " exceeds the Java method size limits and cannot be compiled"
-                                    + " to Java bytecode. It can only be run in the interpreter."
-                                    + " Either reduce the size of the function or enable the"
-                                    + " interpreter fallback mode: WASM function index: 2"));
+                                "WASM function size"
+                                        + " exceeds the Java method size limits and cannot be"
+                                        + " compiled to Java bytecode. It can only be run in the"
+                                        + " interpreter. Either reduce the size of the function or"
+                                        + " enable the interpreter fallback mode: WASM function"
+                                        + " index: 2"),
+                exception.getMessage());
     }
 
     @Test
     public void testWarnInterpreterFallback() throws IOException {
-        var cli = new Cli();
-        CommandLine cmd = new CommandLine(cli);
+        var config =
+                defaultConfig()
+                        .withName("com.dylibso.chicory.experimental.build.time.aot.Test2")
+                        .withInterpreterFallback(InterpreterFallback.WARN)
+                        .build();
+        var generator = new Generator(config);
 
         var orignalErr = System.err;
         try {
             ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
             System.setErr(new PrintStream(stdErr, true, UTF_8));
-            cmd.setErr(new PrintWriter(stdErr, true, UTF_8));
 
-            var exitCode =
-                    cmd.execute(
-                            args(
-                                    "--interpreter-fallback=WARN",
-                                    "--prefix=com.dylibso.chicory.experimental.aot.cli.Test2"));
+            generateAll(generator);
 
-            assertEquals(0, exitCode);
             assertTrue(
                     stdErr.toString(UTF_8)
                             .startsWith(
@@ -117,27 +120,24 @@ public class InterpreterFallbackTest {
 
     @Test
     public void testSilentInterpreterFallback() throws IOException, ClassNotFoundException {
-        var cli = new Cli();
-        CommandLine cmd = new CommandLine(cli);
+        var config =
+                defaultConfig()
+                        .withName("com.dylibso.chicory.experimental.build.time.aot.Test3")
+                        .withInterpreterFallback(InterpreterFallback.SILENT)
+                        .build();
+        var generator = new Generator(config);
 
         var orignalStdErr = System.err;
         var orignalStdOut = System.out;
         try {
             ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
             System.setErr(new PrintStream(stdErr, true, UTF_8));
-            cmd.setErr(new PrintWriter(stdErr, true, UTF_8));
 
             ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
             System.setOut(new PrintStream(stdOut, true, UTF_8));
-            cmd.setOut(new PrintWriter(stdOut, true, UTF_8));
 
-            var exitCode =
-                    cmd.execute(
-                            args(
-                                    "--interpreter-fallback=SILENT",
-                                    "--prefix=com.dylibso.chicory.experimental.aot.cli.Test3"));
+            generateAll(generator);
 
-            assertEquals(0, exitCode);
             assertEquals("", stdErr.toString(UTF_8));
             assertEquals("", stdOut.toString(UTF_8));
         } finally {
@@ -151,7 +151,8 @@ public class InterpreterFallbackTest {
 
         var url = classDir.toUri().toURL();
         var cl = new URLClassLoader(new URL[] {url});
-        var machineClass = cl.loadClass("com.dylibso.chicory.experimental.aot.cli.Test3Machine");
+        var machineClass =
+                cl.loadClass("com.dylibso.chicory.experimental.build.time.aot.Test3Machine");
         Function<Instance, Machine> machineFactory = createMachineFactory(machineClass);
 
         var hostStackTrace = new ArrayList<String>();
