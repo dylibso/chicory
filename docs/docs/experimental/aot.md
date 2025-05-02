@@ -86,8 +86,8 @@ Example configuration of the Maven plug-in:
           <configuration>
             <!-- Translate the Wasm binary `add` into bytecode -->
             <wasmFile>src/main/resources/add.wasm</wasmFile>
-            <!-- Generate classes under the following prefix -->
-            <name>org.acme.wasm.Add</name>
+            <!-- Generate the module class -->
+            <moduleClass>org.acme.wasm.AddModule</moduleClass>
           </configuration>
         </execution>
       </executions>
@@ -103,6 +103,10 @@ In the codebase you can use the generated module by configuring appropriately th
 // mocking up the generated code
 class AddModule {
 
+    public static Instance.Builder builder() {
+      return Instance.builder(load()).withMachineFactory(AddModule::create);
+    }
+
     public static WasmModule load() {
       return Parser.parse(new File("your.wasm"));
     }
@@ -115,11 +119,11 @@ class AddModule {
 -->
 
 ```java
-// load the bundled module
-var module = AddModule.load();
+// Use the module class to explicitly configure the Instance builder
+var instance = Instance.builder(AddModule.load()).withMachineFactory(AddModule::create).build();
 
-// instantiate the module with the pre-compiled code
-var instance = Instance.builder(module).withMachineFactory(AddModule::create).build();
+// Or use the module class to create an instance builder:
+var instance2 = AddModule.builder().build();
 ```
 
 #### IDE shortcomings

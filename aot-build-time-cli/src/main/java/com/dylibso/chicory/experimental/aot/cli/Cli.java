@@ -27,9 +27,17 @@ public class Cli implements Runnable {
     @CommandLine.Option(
             order = 1,
             names = "--prefix",
-            description = "The prefix to be used to generate resources",
+            description =
+                    "The prefix to be used to generate resources (you should use --name instead)",
+            hidden = true,
             defaultValue = "com.dylibso.chicory.Wasm")
     String prefix;
+
+    @CommandLine.Option(
+            order = 1,
+            names = "--module-class",
+            description = "The name of the module class to generate")
+    String moduleClass;
 
     @CommandLine.Option(
             order = 2,
@@ -54,10 +62,15 @@ public class Cli implements Runnable {
 
     @Override
     public void run() {
+        Config.Builder builder = Config.builder();
+        if (moduleClass != null) {
+            builder.withModuleClass(moduleClass);
+        } else {
+            builder.withModuleClass(prefix + "Module");
+        }
+
         var config =
-                Config.builder()
-                        .withWasmFile(wasmFile)
-                        .withName(prefix)
+                builder.withWasmFile(wasmFile)
                         .withTargetClassFolder(targetClassFolder)
                         .withTargetSourceFolder(targetSourceFolder)
                         .withTargetWasmFolder(targetWasmFolder)

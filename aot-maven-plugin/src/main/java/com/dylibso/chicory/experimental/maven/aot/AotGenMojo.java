@@ -26,9 +26,15 @@ public class AotGenMojo extends AbstractMojo {
 
     /**
      * the base name to be used for the generated classes
+     *
+     * @deprecated use moduleClass instead
      */
-    @Parameter(required = true)
-    private String name;
+    @Parameter @Deprecated private String name;
+
+    /**
+     * the module class name that will be generated.
+     */
+    @Parameter private String moduleClass;
 
     /**
      * the target folder to generate classes
@@ -64,10 +70,15 @@ public class AotGenMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException {
         getLog().info("Generating AOT classes for " + name + " from " + wasmFile);
 
+        Config.Builder builder = Config.builder();
+        if (moduleClass != null) {
+            builder.withModuleClass(moduleClass);
+        } else {
+            builder.withModuleClass(name + "Module");
+        }
+
         var config =
-                Config.builder()
-                        .withWasmFile(wasmFile.toPath())
-                        .withName(name)
+                builder.withWasmFile(wasmFile.toPath())
                         .withTargetClassFolder(targetClassFolder.toPath())
                         .withTargetSourceFolder(targetSourceFolder.toPath())
                         .withTargetWasmFolder(targetWasmFolder.toPath())

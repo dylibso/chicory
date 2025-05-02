@@ -96,7 +96,16 @@ public final class Config {
             return this;
         }
 
+        /**
+         * @deprecated use {@link #withModuleClass(String)} instead
+         */
+        @Deprecated
+        @SuppressWarnings("InlineMeSuggester")
         public Builder withName(String name) {
+            return withModuleClass(name + "Module");
+        }
+
+        public Builder withModuleClass(String name) {
             this.name = name;
             return this;
         }

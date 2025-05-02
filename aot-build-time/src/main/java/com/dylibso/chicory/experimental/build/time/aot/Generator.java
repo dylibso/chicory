@@ -61,8 +61,7 @@ public class Generator {
 
         SourceRoot dest = new SourceRoot(finalSourceFolder);
 
-        var baseName = config.getBaseName();
-        var moduleName = baseName + "Module";
+        var moduleName = config.getBaseName();
 
         var cu = StaticJavaParser.parse(getClass().getResourceAsStream("Template.java"));
         var clazz = cu.getClassByName("Template").get();
@@ -117,7 +116,7 @@ public class Generator {
         var newWasmFile =
                 config.targetWasmFolder()
                         .resolve(config.getPackageName().replace('.', '/'))
-                        .resolve(config.getBaseName() + "Module.meta");
+                        .resolve(config.getBaseName() + ".meta");
         Files.createDirectories(newWasmFile.getParent());
         Files.write(newWasmFile, writer.bytes());
     }
