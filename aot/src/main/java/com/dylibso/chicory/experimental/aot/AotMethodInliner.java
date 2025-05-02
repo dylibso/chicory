@@ -33,16 +33,10 @@ final class AotMethodInliner {
                         super.visit(
                                 version,
                                 Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
-                                internalClassName(className + "$AotMethods"),
+                                internalClassName(className + "AotMethods"),
                                 null,
                                 superName,
                                 null);
-                    }
-
-                    @Override
-                    public void visitEnd() {
-                        visitNestHost(internalClassName(className));
-                        super.visitEnd();
                     }
                 };
 
@@ -53,7 +47,7 @@ final class AotMethodInliner {
     }
 
     public static ClassRemapper aotMethodsRemapper(ClassVisitor visitor, String className) {
-        String targetInternalName = internalClassName(className + "$AotMethods");
+        String targetInternalName = internalClassName(className + "AotMethods");
         String originalInternalName = internalClassName(AotMethods.class.getName());
         return new ClassRemapper(
                 visitor,

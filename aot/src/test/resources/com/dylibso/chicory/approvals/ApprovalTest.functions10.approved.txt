@@ -1,10 +1,5 @@
 public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylibso/chicory/runtime/Machine {
 
-  NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$AotMethods
-  NESTMEMBER com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0
-  NESTMEMBER com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1
-  NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$MachineCall
-
   private final Lcom/dylibso/chicory/runtime/Instance; instance
 
   public <init>(Lcom/dylibso/chicory/runtime/Instance;)V
@@ -24,14 +19,14 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.memory ()Lcom/dylibso/chicory/runtime/Memory;
     ILOAD 1
     ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$MachineCall.call (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;I[J)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMachineCall.call (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;I[J)[J
     ARETURN
    L1
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwCallStackExhausted (Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.throwCallStackExhausted (Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
     ATHROW
 
   public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.checkInterruption ()V
     ALOAD 4
     ILOAD 2
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
@@ -97,7 +92,7 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_9 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
    L12
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
     ATHROW
    L1
     ICONST_1
@@ -110,7 +105,7 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ICONST_0
     ILOAD 6
     ALOAD 7
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
     ICONST_0
     LALOAD
     L2I
@@ -147,7 +142,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ILOAD 0
     ICONST_2
     IADD
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.checkInterruption ()V
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
@@ -175,7 +170,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ILOAD 0
     ICONST_3
     IADD
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.checkInterruption ()V
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_1 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
@@ -203,7 +198,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ILOAD 0
     ICONST_4
     IADD
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.checkInterruption ()V
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_2 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
@@ -231,7 +226,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ILOAD 0
     ICONST_5
     IADD
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.checkInterruption ()V
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_3 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
@@ -262,7 +257,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1 {
     ILOAD 0
     BIPUSH 6
     IADD
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.checkInterruption ()V
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_4 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
@@ -290,7 +285,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1 {
     ILOAD 0
     BIPUSH 7
     IADD
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.checkInterruption ()V
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_5 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
@@ -318,7 +313,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1 {
     ILOAD 0
     BIPUSH 8
     IADD
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.checkInterruption ()V
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_6 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
@@ -346,7 +341,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1 {
     ILOAD 0
     BIPUSH 9
     IADD
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.checkInterruption ()V
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_7 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
@@ -374,7 +369,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1 {
     ILOAD 0
     BIPUSH 10
     IADD
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.checkInterruption ()V
     ALOAD 1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_8 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
@@ -399,9 +394,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1 {
     ARETURN
 }
 
-final class com/dylibso/chicory/$gen/CompiledMachine$MachineCall {
-
-  NESTHOST com/dylibso/chicory/$gen/CompiledMachine
+final class com/dylibso/chicory/$gen/CompiledMachineMachineCall {
 
   public <init>()V
     ALOAD 0
@@ -457,6 +450,6 @@ final class com/dylibso/chicory/$gen/CompiledMachine$MachineCall {
     ARETURN
    L10
     ILOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.throwUnknownFunction (I)Ljava/lang/RuntimeException;
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.throwUnknownFunction (I)Ljava/lang/RuntimeException;
     ATHROW
 }
