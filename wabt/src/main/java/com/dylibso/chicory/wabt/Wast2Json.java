@@ -6,10 +6,8 @@ import static java.nio.file.Files.createDirectories;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ImportValues;
-import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
-import com.dylibso.chicory.wasm.WasmModule;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.File;
@@ -30,7 +28,6 @@ public final class Wast2Json {
                     return false;
                 }
             };
-    private static final WasmModule MODULE = Wast2JsonModule.load();
 
     private final File input;
     private final File output;
@@ -83,10 +80,7 @@ public final class Wast2Json {
                 ImportValues imports =
                         ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
 
-                Instance.builder(MODULE)
-                        .withImportValues(imports)
-                        .withMachineFactory(Wast2JsonModule::create)
-                        .build();
+                Wast2JsonModule.builder().withImportValues(imports).build();
             }
 
             createDirectories(output.toPath().getParent());

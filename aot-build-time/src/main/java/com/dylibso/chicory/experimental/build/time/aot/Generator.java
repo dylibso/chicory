@@ -5,35 +5,21 @@ import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import static com.github.javaparser.StaticJavaParser.parseType;
 
 import com.dylibso.chicory.experimental.aot.AotCompiler;
-import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.WasmWriter;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.RawSection;
 import com.dylibso.chicory.wasm.types.SectionId;
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.NodeList;
-import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.ClassExpr;
-import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
-import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
-import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.ReturnStmt;
-import com.github.javaparser.ast.stmt.ThrowStmt;
-import com.github.javaparser.ast.stmt.TryStmt;
 import com.github.javaparser.utils.SourceRoot;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -77,19 +63,31 @@ public class Generator {
 
         var baseName = config.getBaseName();
         var moduleName = baseName + "Module";
-        var wasmName = baseName + ".meta";
 
-        var cu = new CompilationUnit(packageName);
+        var cu = StaticJavaParser.parse(getClass().getResourceAsStream("Template.java"));
+        var clazz = cu.getClassByName("Template").get();
+        clazz.setName(moduleName);
+        clazz.getConstructors().get(0).setName(moduleName);
 
-        var type = cu.addClass(moduleName, Modifier.Keyword.PUBLIC, Modifier.Keyword.FINAL);
+        generateCreateMethod(clazz.getMethodsByName("create").get(0).createBody(), machineName);
+        generateGetClass(clazz.getMethodsByName("moduleClass").get(0).createBody(), moduleName);
 
-        type.addConstructor(Modifier.Keyword.PRIVATE).createBody();
-
-        generateCreateMethod(cu, type, machineName);
-        generateLoadMethod(cu, type, moduleName, wasmName);
-
+        cu.setPackageDeclaration(packageName);
         dest.add(packageName, moduleName + ".java", cu);
         dest.saveAll();
+    }
+
+    private static void generateCreateMethod(BlockStmt method, String machineName) {
+        var constructorInvocation =
+                new ObjectCreationExpr(
+                        null,
+                        parseClassOrInterfaceType(machineName),
+                        NodeList.nodeList(new NameExpr("instance")));
+        method.addStatement(new ReturnStmt(constructorInvocation));
+    }
+
+    private static void generateGetClass(BlockStmt method, String moduleName) {
+        method.addStatement(new ReturnStmt(new ClassExpr(parseType(moduleName))));
     }
 
     public void generateMetaWasm() throws IOException {
@@ -119,7 +117,7 @@ public class Generator {
         var newWasmFile =
                 config.targetWasmFolder()
                         .resolve(config.getPackageName().replace('.', '/'))
-                        .resolve(config.getBaseName() + ".meta");
+                        .resolve(config.getBaseName() + "Module.meta");
         Files.createDirectories(newWasmFile.getParent());
         Files.write(newWasmFile, writer.bytes());
     }
@@ -129,77 +127,5 @@ public class Generator {
             filesFolder = filesFolder.resolve(split[i]);
         }
         Files.createDirectories(filesFolder);
-    }
-
-    private static void generateCreateMethod(
-            CompilationUnit cu, ClassOrInterfaceDeclaration type, String machineName) {
-
-        cu.addImport(Instance.class);
-        cu.addImport(Machine.class);
-
-        var method =
-                type.addMethod("create", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC)
-                        .addParameter(parseType("Instance"), "instance")
-                        .setType(Machine.class)
-                        .createBody();
-
-        var constructorInvocation =
-                new ObjectCreationExpr(
-                        null,
-                        parseClassOrInterfaceType(machineName),
-                        NodeList.nodeList(new NameExpr("instance")));
-        method.addStatement(new ReturnStmt(constructorInvocation));
-    }
-
-    private static void generateLoadMethod(
-            CompilationUnit cu,
-            ClassOrInterfaceDeclaration type,
-            String moduleName,
-            String wasmName) {
-
-        cu.addImport(IOException.class);
-        cu.addImport(UncheckedIOException.class);
-        cu.addImport(Parser.class);
-        cu.addImport(WasmModule.class);
-        cu.addImport(InputStream.class);
-
-        var method =
-                type.addMethod("load", Modifier.Keyword.PUBLIC, Modifier.Keyword.STATIC)
-                        .setType(WasmModule.class)
-                        .createBody();
-
-        var getResource =
-                new MethodCallExpr(
-                        new ClassExpr(parseType(moduleName)),
-                        "getResourceAsStream",
-                        new NodeList<>(new StringLiteralExpr(wasmName)));
-        var resourceVar =
-                new VariableDeclarationExpr(
-                        new VariableDeclarator(parseType("InputStream"), "in", getResource));
-
-        var returnStmt =
-                new ReturnStmt(
-                        new MethodCallExpr()
-                                .setScope(new NameExpr("Parser"))
-                                .setName("parse")
-                                .addArgument(new NameExpr("in")));
-
-        var newException =
-                new ObjectCreationExpr()
-                        .setType(parseClassOrInterfaceType("UncheckedIOException"))
-                        .addArgument(new StringLiteralExpr("Failed to load AOT WASM module"))
-                        .addArgument(new NameExpr("e"));
-        var catchIoException =
-                new CatchClause()
-                        .setParameter(
-                                new com.github.javaparser.ast.body.Parameter(
-                                        parseClassOrInterfaceType("IOException"), "e"))
-                        .setBody(new BlockStmt(new NodeList<>(new ThrowStmt(newException))));
-
-        method.addStatement(
-                new TryStmt()
-                        .setResources(new NodeList<>(resourceVar))
-                        .setTryBlock(new BlockStmt(new NodeList<>(returnStmt)))
-                        .setCatchClauses(new NodeList<>(catchIoException)));
     }
 }
