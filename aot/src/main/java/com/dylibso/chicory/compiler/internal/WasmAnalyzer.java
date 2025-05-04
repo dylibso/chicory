@@ -570,7 +570,7 @@ final class WasmAnalyzer {
                 break;
             case REF_NULL:
                 // [] -> [ref]
-                stack.push(ValType.refTypeForId(ins.operand(0)));
+                stack.push(new ValType(ValType.ID.RefNull, (int) ins.operand(0)));
                 break;
             case REF_IS_NULL:
                 // [ref] -> [I32]

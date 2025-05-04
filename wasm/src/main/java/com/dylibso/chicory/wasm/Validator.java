@@ -84,7 +84,6 @@ final class Validator {
         }
     }
 
-    private final List<ValType> valueTypeStack = new ArrayList<>();
     private final List<ValType> valTypeStack = new ArrayList<>();
     private final List<CtrlFrame> ctrlFrameStack = new ArrayList<>();
     private final List<Integer> initStack = new ArrayList<>();
@@ -248,8 +247,7 @@ final class Validator {
 
     private void pushCtrl(OpCode opCode, List<ValType> in, List<ValType> out) {
         var frame =
-                new CtrlFrame(
-                        opCode, in, out, valueTypeStack.size(), initStack.size(), false, false);
+                new CtrlFrame(opCode, in, out, valTypeStack.size(), initStack.size(), false, false);
         pushCtrl(frame);
         pushVals(in);
     }
@@ -663,7 +661,7 @@ final class Validator {
 
     @SuppressWarnings("UnnecessaryCodeBlock")
     void validateFunction(int funcIdx, FunctionBody body, FunctionType functionType) {
-        valueTypeStack.clear();
+        valTypeStack.clear();
         locals.clear();
         localsInitialized.clear();
 

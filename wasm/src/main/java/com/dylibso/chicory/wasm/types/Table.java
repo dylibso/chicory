@@ -6,6 +6,7 @@ import java.util.Objects;
 public class Table {
     private final ValType elementType;
     private final TableLimits limits;
+    private final List<Instruction> init;
 
     public Table(ValType elementType, TableLimits limits) {
         this(
