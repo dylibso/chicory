@@ -25,18 +25,22 @@ public final class MemCopyWorkaround {
     }
 
     static {
-        MemoryCopyFunc noop1 = (destination, offset, size, memory) -> {};
-        MemoryCopyFunc noop2 = (destination, offset, size, memory) -> {};
-        // Warm up the JIT... to make it see memoryCopyFunc.apply is megamorphic
-        for (int i = 0; i < 1000; i++) {
-            memoryCopyFunc = noop1;
-            MemCopyWorkaround.memoryCopy(0, 0, 0, null);
-            memoryCopyFunc = noop2;
-            MemCopyWorkaround.memoryCopy(0, 0, 0, null);
-        }
+        if (shouldUseMemWorkaround()) {
+            MemoryCopyFunc noop1 = (destination, offset, size, memory) -> {
+            };
+            MemoryCopyFunc noop2 = (destination, offset, size, memory) -> {
+            };
+            // Warm up the JIT... to make it see memoryCopyFunc.apply is megamorphic
+            for (int i = 0; i < 1000; i++) {
+                memoryCopyFunc = noop1;
+                MemCopyWorkaround.memoryCopy(0, 0, 0, null);
+                memoryCopyFunc = noop2;
+                MemCopyWorkaround.memoryCopy(0, 0, 0, null);
+            }
 
-        memoryCopyFunc =
-                (destination, offset, size, memory) -> memory.copy(destination, offset, size);
+            memoryCopyFunc =
+                    (destination, offset, size, memory) -> memory.copy(destination, offset, size);
+        }
     }
 
     static MemoryCopyFunc memoryCopyFunc;
