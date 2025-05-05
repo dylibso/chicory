@@ -45,13 +45,16 @@ public class Wat2WasmTest {
     public void shouldThrowMalformedException() throws Exception {
         var exitException =
                 assertThrows(
-                        WasiExitException.class,
+                        WatParseException.class,
                         () ->
                                 Wat2Wasm.parse(
                                         new File(
                                                 "src/test/resources/utf8-invalid-encoding-spec.0.wat")));
 
-        assertEquals(1, exitException.exitCode());
+        assertEquals(1, ((WasiExitException) exitException.getCause()).exitCode());
+        assertTrue(
+                exitException.getMessage().contains("invalid utf-8 encoding"),
+                "found: " + exitException.getMessage() + " doesn't contains the expected result");
     }
 
     @Test
