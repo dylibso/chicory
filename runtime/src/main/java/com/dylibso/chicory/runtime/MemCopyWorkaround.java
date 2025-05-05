@@ -22,7 +22,7 @@ public final class MemCopyWorkaround {
             MemoryCopyFunc noop1 = (destination, offset, size, memory) -> {};
             MemoryCopyFunc noop2 = (destination, offset, size, memory) -> {};
             // Warm up the JIT... to make it see memoryCopyFunc.apply is megamorphic
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 5000; i++) {
                 memoryCopyFunc = noop1;
                 MemCopyWorkaround.memoryCopy(0, 0, 0, null);
                 memoryCopyFunc = noop2;

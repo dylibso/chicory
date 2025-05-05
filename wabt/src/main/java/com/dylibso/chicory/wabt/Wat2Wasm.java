@@ -5,10 +5,8 @@ import static java.nio.file.Files.copy;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ImportValues;
-import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
-import com.dylibso.chicory.wasm.WasmModule;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
 import java.io.ByteArrayInputStream;
@@ -26,7 +24,6 @@ import java.util.List;
 
 public final class Wat2Wasm {
     private static final Logger logger = new SystemLogger();
-    private static final WasmModule MODULE = Wat2WasmModule.load();
 
     private Wat2Wasm() {}
 
@@ -75,10 +72,7 @@ public final class Wat2Wasm {
                         WasiPreview1.builder().withLogger(logger).withOptions(wasiOpts).build()) {
                     ImportValues imports =
                             ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
-                    Instance.builder(MODULE)
-                            .withMachineFactory(Wat2WasmModule::create)
-                            .withImportValues(imports)
-                            .build();
+                    Wat2WasmModule.builder().withImportValues(imports).build();
                 }
 
                 return stdoutStream.toByteArray();
