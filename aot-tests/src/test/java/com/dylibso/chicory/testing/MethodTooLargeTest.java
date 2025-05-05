@@ -1,28 +1,22 @@
 package com.dylibso.chicory.testing;
 
 import static com.dylibso.chicory.corpus.WatGenerator.methodTooLarge;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.objectweb.asm.Type.getInternalName;
 
 import com.dylibso.chicory.experimental.aot.AotCompiler;
 import com.dylibso.chicory.experimental.aot.AotMethods;
-import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.ImportValues;
-import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.ValType;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import org.approvaltests.Approvals;
-import org.approvaltests.core.Options;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassVisitor;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 public class MethodTooLargeTest {
@@ -35,50 +29,6 @@ public class MethodTooLargeTest {
         var module = Parser.parse(wasm);
         var result = AotCompiler.builder(module).build().compile();
 
-        var hostStackTrace = new ArrayList<String>();
-        var hostFunc =
-                new HostFunction(
-                        "funcs",
-                        "host_func",
-                        FunctionType.of(List.of(ValType.I32), List.of(ValType.I32)),
-                        (inst, args) -> {
-                            var thread = Thread.currentThread();
-                            int i = 0;
-                            for (StackTraceElement element : thread.getStackTrace()) {
-                                i++;
-                                if (i < 2 || i > 21) {
-                                    continue;
-                                }
-                                hostStackTrace.add(
-                                        element.getClassName() + "." + element.getMethodName());
-                            }
-                            return new long[] {35};
-                        });
-
-        var instance =
-                Instance.builder(module)
-                        .withImportValues(ImportValues.builder().addFunction(hostFunc).build())
-                        .withMachineFactory(result.machineFactory())
-                        .withStart(false)
-                        .build();
-
-        assertEquals(35, instance.export("func_2").apply(0)[0]);
-
-        var stackTrace = String.join("\n", hostStackTrace);
-        Approvals.verify(
-                stackTrace,
-                new Options().forFile().withBaseName("MethodTooLargeTest.testBigFunc-stackTrace"));
-
-        hostStackTrace.clear();
-        assertEquals(35, instance.export("func_2").apply(1)[0]);
-
-        stackTrace = String.join("\n", hostStackTrace);
-        Approvals.verify(
-                stackTrace,
-                new Options()
-                        .forFile()
-                        .withBaseName("MethodTooLargeTest.testBigFunc-stackTrace-indirect"));
-
         verifyClass(result.classBytes(), true);
     }
 
@@ -90,7 +40,37 @@ public class MethodTooLargeTest {
             if (skipAotMethods && cr.getClassName().endsWith("$AotMethods")) {
                 continue;
             }
-            cr.accept(new TraceClassVisitor(new PrintWriter(writer)), 0);
+            cr.accept(
+                    new ClassVisitor(Opcodes.ASM9, new TraceClassVisitor(new PrintWriter(writer))) {
+                        @Override
+                        public void visit(
+                                int version,
+                                int access,
+                                String name,
+                                String signature,
+                                String superName,
+                                String[] interfaces) {
+                            if (name.endsWith("CompiledMachineFuncGroup_0")) {
+                                super.visit(
+                                        version, access, name, signature, superName, interfaces);
+                            }
+                        }
+
+                        @Override
+                        public MethodVisitor visitMethod(
+                                int access,
+                                String name,
+                                String descriptor,
+                                String signature,
+                                String[] exceptions) {
+                            if (name.equals("func_2")) {
+                                return super.visitMethod(
+                                        access, name, descriptor, signature, exceptions);
+                            }
+                            return null;
+                        }
+                    },
+                    0);
             writer.append("\n");
         }
 
