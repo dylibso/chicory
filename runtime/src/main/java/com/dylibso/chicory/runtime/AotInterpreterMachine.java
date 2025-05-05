@@ -1,8 +1,5 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.wasm.types.ValType.sizeOf;
-
-import com.dylibso.chicory.wasm.types.OpCode;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,34 +25,24 @@ public class AotInterpreterMachine extends InterpreterMachine {
             // instance.
 
             var stack = stack();
-            var callStack = callStack();
-
             var typeId = instance.functionType(funcId);
             var type = instance.type(typeId);
             var args = extractArgsForParams(stack, type.params());
 
-            // This works like import func calls.
-            var stackFrame = new StackFrame(instance, funcId, args);
-            stackFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
-            callStack.push(stackFrame);
-            try {
-                var results = instance.getMachine().call(funcId, args);
-                // a host function can return null or an array of ints
-                // which we will push onto the stack
-                if (results != null) {
-                    for (var result : results) {
-                        stack.push(result);
-                    }
+            var results = instance.getMachine().call(funcId, args);
+            // a host function can return null or an array of ints
+            // which we will push onto the stack
+            if (results != null) {
+                for (var result : results) {
+                    stack.push(result);
                 }
-            } catch (WasmException e) {
-                THROW_REF(instance, instance.registerException(e), stack, stackFrame, callStack);
             }
         }
     }
 
     @Override
-    protected boolean useMachineCallForIndirectCall(
+    protected boolean skipMachineForIndirectCall(
             Instance instance, Instance refInstance, int funcId) {
-        return !refInstance.equals(instance) || !interpretedFuncIds.contains(funcId);
+        return refInstance.equals(instance) && interpretedFuncIds.contains(funcId);
     }
 }
