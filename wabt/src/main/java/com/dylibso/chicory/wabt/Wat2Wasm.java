@@ -82,7 +82,7 @@ public final class Wat2Wasm {
                             .build();
                 } catch (WasiExitException e) {
                     if (e.exitCode() != 0) {
-                        throw new RuntimeException(
+                        throw new WatParseException(
                                 stdoutStream.toString(StandardCharsets.UTF_8)
                                         + stderrStream.toString(StandardCharsets.UTF_8),
                                 e);

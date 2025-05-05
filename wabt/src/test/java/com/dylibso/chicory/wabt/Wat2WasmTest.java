@@ -45,7 +45,7 @@ public class Wat2WasmTest {
     public void shouldThrowMalformedException() throws Exception {
         var exitException =
                 assertThrows(
-                        RuntimeException.class,
+                        WatParseException.class,
                         () ->
                                 Wat2Wasm.parse(
                                         new File(
