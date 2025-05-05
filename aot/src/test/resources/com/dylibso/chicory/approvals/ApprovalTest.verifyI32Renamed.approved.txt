@@ -225,58 +225,6 @@ final class FOO$AotMethods {
     RETURN
    L2
 
-  public static shouldApplyMemWorkaround()Z
-   L0
-    LDC "java.version"
-    INVOKESTATIC java/lang/System.getProperty (Ljava/lang/String;)Ljava/lang/String;
-    ASTORE 0
-   L1
-    ALOAD 0
-    LDC "0"
-    INVOKEVIRTUAL java/lang/String.equals (Ljava/lang/Object;)Z
-    IFEQ L2
-   L3
-    ICONST_0
-    IRETURN
-   L2
-    ALOAD 0
-    LDC "1."
-    INVOKEVIRTUAL java/lang/String.startsWith (Ljava/lang/String;)Z
-    IFEQ L4
-   L5
-    ICONST_1
-    IRETURN
-   L4
-    ALOAD 0
-    LDC "."
-    INVOKEVIRTUAL java/lang/String.indexOf (Ljava/lang/String;)I
-    ISTORE 1
-   L6
-    ILOAD 1
-    ICONST_M1
-    IF_ICMPEQ L7
-    ALOAD 0
-    ICONST_0
-    ILOAD 1
-    INVOKEVIRTUAL java/lang/String.substring (II)Ljava/lang/String;
-    GOTO L8
-   L7
-    ALOAD 0
-   L8
-    ASTORE 2
-   L9
-    ALOAD 2
-    INVOKESTATIC java/lang/Integer.parseInt (Ljava/lang/String;)I
-    BIPUSH 17
-    IF_ICMPGT L10
-    ICONST_1
-    GOTO L11
-   L10
-    ICONST_0
-   L11
-    IRETURN
-   L12
-
   public static memoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
    L0
     GETSTATIC FOO$AotMethods.memCopyWorkaround : Z
@@ -592,7 +540,7 @@ final class FOO$AotMethods {
     PUTSTATIC FOO$AotMethods.memCopyWorkaround : Z
     GOTO L4
    L2
-    INVOKESTATIC FOO$AotMethods.shouldApplyMemWorkaround ()Z
+    INVOKESTATIC com/dylibso/chicory/runtime/MemCopyWorkaround.shouldUseMemWorkaround ()Z
     PUTSTATIC FOO$AotMethods.memCopyWorkaround : Z
    L4
     RETURN
