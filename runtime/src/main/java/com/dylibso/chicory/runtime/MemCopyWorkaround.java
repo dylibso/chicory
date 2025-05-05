@@ -9,26 +9,16 @@ public final class MemCopyWorkaround {
     }
 
     static {
-        String workaround = System.getProperty("chicory.enableMemCopyWorkaround");
-
-        boolean enableMemCopyWorkaround;
-        if (workaround != null) {
-            enableMemCopyWorkaround = Boolean.parseBoolean(workaround);
-        } else {
-            enableMemCopyWorkaround = Runtime.version().feature() < 21;
+        MemoryCopyFunc noop1 = (destination, offset, size, memory) -> {};
+        MemoryCopyFunc noop2 = (destination, offset, size, memory) -> {};
+        // Warm up the JIT... to make it see memoryCopyFunc.apply is megamorphic
+        for (int i = 0; i < 1000; i++) {
+            memoryCopyFunc = noop1;
+            MemCopyWorkaround.memoryCopy(0, 0, 0, null);
+            memoryCopyFunc = noop2;
+            MemCopyWorkaround.memoryCopy(0, 0, 0, null);
         }
 
-        if (enableMemCopyWorkaround) {
-            MemoryCopyFunc noop1 = (destination, offset, size, memory) -> {};
-            MemoryCopyFunc noop2 = (destination, offset, size, memory) -> {};
-            // Warm up the JIT... to make it see memoryCopyFunc.apply is megamorphic
-            for (int i = 0; i < 1000; i++) {
-                memoryCopyFunc = noop1;
-                MemCopyWorkaround.memoryCopy(0, 0, 0, null);
-                memoryCopyFunc = noop2;
-                MemCopyWorkaround.memoryCopy(0, 0, 0, null);
-            }
-        }
         memoryCopyFunc =
                 (destination, offset, size, memory) -> memory.copy(destination, offset, size);
     }
