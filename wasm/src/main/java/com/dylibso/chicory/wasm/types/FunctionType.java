@@ -47,45 +47,11 @@ public final class FunctionType {
     private static final FunctionType empty = new FunctionType(List.of(), List.of());
 
     public static FunctionType returning(ValType valType) {
-        switch (valType.opcode()) {
-            case ValType.ID.ExnRef:
-            case ValType.ID.V128:
-            case ValType.ID.F64:
-            case ValType.ID.F32:
-            case ValType.ID.I64:
-            case ValType.ID.I32:
-                return new FunctionType(List.of(), List.of(valType));
-            case ValType.ID.RefNull:
-                if (valType.equals(ValType.ExternRef)
-                        || valType.equals(ValType.FuncRef)
-                        || valType.equals(ValType.ExnRef)) {
-                    return new FunctionType(List.of(), List.of(valType));
-                }
-                // fallthrough
-            default:
-                throw new IllegalArgumentException("invalid ValType " + valType);
-        }
+        return new FunctionType(List.of(), List.of(valType));
     }
 
     public static FunctionType accepting(ValType valType) {
-        switch (valType.opcode()) {
-            case ValType.ID.ExnRef:
-            case ValType.ID.V128:
-            case ValType.ID.F64:
-            case ValType.ID.F32:
-            case ValType.ID.I64:
-            case ValType.ID.I32:
-                return new FunctionType(List.of(valType), List.of());
-            case ValType.ID.RefNull:
-                if (valType.equals(ValType.ExternRef)
-                        || valType.equals(ValType.FuncRef)
-                        || valType.equals(ValType.ExnRef)) {
-                    return new FunctionType(List.of(valType), List.of());
-                }
-                // fallthrough
-            default:
-                throw new IllegalArgumentException("invalid ValType " + valType);
-        }
+        return new FunctionType(List.of(valType), List.of());
     }
 
     public boolean typesMatch(FunctionType other) {

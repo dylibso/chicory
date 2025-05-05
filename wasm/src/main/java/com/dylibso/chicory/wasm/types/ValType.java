@@ -196,10 +196,19 @@ public final class ValType {
         return total;
     }
 
-    private static boolean eq_def(WasmModule context, int typeIdx1, int typeIdx2) {
-        var funcType1 = context.typeSection().getType(typeIdx1);
-        var funcType2 = context.typeSection().getType(typeIdx2);
+    private static boolean matchesResultType(
+            WasmModule context, ValType valType1, ValType valType2) {
+        if (valType1.equals(valType2) || valType1.equals(BOT)) {
+            return true;
+        }
+        if (valType1.isReference() && valType2.isReference()) {
+            return matchesRef(context, valType1, valType2);
+        }
+        return false;
+    }
 
+    private static boolean matchesFunc(
+            WasmModule context, FunctionType funcType1, FunctionType funcType2) {
         // substitute any type indexes when comparing equality
         if (funcType1.params().size() != funcType2.params().size()
                 || funcType1.returns().size() != funcType2.returns().size()) {
@@ -217,15 +226,7 @@ public final class ValType {
             var type1 = types1[i];
             var type2 = types2[i];
 
-            if (type1.isReference()
-                    && type2.isReference()
-                    && type1.typeIdx() >= 0
-                    && type2.typeIdx() >= 0) {
-                // both are defined function types, substitute again!
-                if (!eq_def(context, type1.typeIdx(), type2.typeIdx())) {
-                    return false;
-                }
-            } else if (!type1.equals(type2)) {
+            if (!matchesResultType(context, type1, type2)) {
                 return false;
             }
         }
@@ -237,26 +238,33 @@ public final class ValType {
         return null1 == null2 || null2;
     }
 
-    private static boolean matches_heap(WasmModule context, int heapType1, int heapType2) {
-        if (heapType1 >= 0 && heapType2 >= 0) {
-            return eq_def(context, heapType1, heapType2);
-        } else if (heapType1 >= 0 && heapType2 == TypeIdxCode.FUNC.code()) {
+    private static boolean matchesHeap(WasmModule context, Object heapType1, Object heapType2) {
+        if (heapType1.equals(TypeIdxCode.BOT.code()) || heapType1.equals(heapType2)) {
             return true;
-        } else if (heapType1 == TypeIdxCode.BOT.code()) {
+        } else if ((heapType1 instanceof FunctionType)
+                && heapType2.equals(TypeIdxCode.FUNC.code())) {
             return true;
-        } else {
-            return heapType1 == heapType2;
+        } else if ((heapType1 instanceof FunctionType) && (heapType2 instanceof FunctionType)) {
+            return matchesFunc(context, (FunctionType) heapType1, (FunctionType) heapType2);
+        } else if ((heapType1 instanceof Integer) && (Integer) heapType1 >= 0) {
+            return matchesHeap(
+                    context, context.typeSection().getType((Integer) heapType1), heapType2);
+        } else if ((heapType2 instanceof Integer) && (Integer) heapType2 >= 0) {
+            return matchesHeap(
+                    context, context.typeSection().getType((Integer) heapType2), heapType1);
         }
+
+        return false;
     }
 
-    public static boolean matches_ref(WasmModule context, ValType t1, ValType t2) {
-        return matches_heap(context, t1.typeIdx(), t2.typeIdx())
+    public static boolean matchesRef(WasmModule context, ValType t1, ValType t2) {
+        return matchesHeap(context, t1.typeIdx(), t2.typeIdx())
                 && matches_null(t1.isNullable(), t2.isNullable());
     }
 
     public static boolean matches(WasmModule context, ValType t1, ValType t2) {
         if (t1.isReference() && t2.isReference()) {
-            return matches_ref(context, t1, t2);
+            return matchesRef(context, t1, t2);
         } else if (t1.opcode() == ID.BOT) {
             return true;
         } else {

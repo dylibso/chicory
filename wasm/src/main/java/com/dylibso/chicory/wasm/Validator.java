@@ -844,7 +844,10 @@ final class Validator {
                                                     + n);
                                 }
                                 for (var t = 0; t < arity; t++) {
-                                    if (!labelTypes.get(t).equals(defaultBranchLabelTypes.get(t))) {
+                                    if (!ValType.matches(
+                                            module,
+                                            labelTypes.get(t),
+                                            defaultBranchLabelTypes.get(t))) {
                                         throw new InvalidException(
                                                 "type mismatch, br_table labels have inconsistent"
                                                         + " types: expected: "

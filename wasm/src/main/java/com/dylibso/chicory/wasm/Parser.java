@@ -280,9 +280,21 @@ public final class Parser {
 
             validator.validateSectionType(sectionId);
 
+            ByteBuffer sectionByteBuffer = buffer.asReadOnlyBuffer();
+            sectionByteBuffer.order(buffer.order());
+
+            // move buffer to next section
+            var sectionLimit = sectionByteBuffer.position() + (int) sectionSize;
+            if (buffer.capacity() < sectionLimit) {
+                throw new MalformedException("length out of bounds for section" + sectionId);
+            }
+            buffer.position(sectionLimit);
+
             if (shouldParseSection(sectionId)) {
+                sectionByteBuffer.limit(sectionLimit);
+
                 if (!decode) {
-                    listener.onSection(parseRawSection(buffer, sectionId, sectionSize));
+                    listener.onSection(parseRawSection(sectionByteBuffer, sectionId, sectionSize));
                     continue;
                 }
 
@@ -290,86 +302,88 @@ public final class Parser {
                 switch (sectionId) {
                     case SectionId.CUSTOM:
                         {
-                            var customSection = parseCustomSection(buffer, sectionSize, firstTime);
+                            var customSection =
+                                    parseCustomSection(sectionByteBuffer, sectionSize, firstTime);
                             firstTime = false;
                             listener.onSection(customSection);
                             break;
                         }
                     case SectionId.TYPE:
                         {
-                            var typeSection = parseTypeSection(buffer);
+                            var typeSection = parseTypeSection(sectionByteBuffer);
                             listener.onSection(typeSection);
                             break;
                         }
                     case SectionId.IMPORT:
                         {
-                            var importSection = parseImportSection(buffer);
+                            var importSection = parseImportSection(sectionByteBuffer);
                             listener.onSection(importSection);
                             break;
                         }
                     case SectionId.FUNCTION:
                         {
-                            var funcSection = parseFunctionSection(buffer);
+                            var funcSection = parseFunctionSection(sectionByteBuffer);
                             listener.onSection(funcSection);
                             break;
                         }
                     case SectionId.TABLE:
                         {
-                            var tableSection = parseTableSection(buffer);
+                            var tableSection = parseTableSection(sectionByteBuffer);
                             listener.onSection(tableSection);
                             break;
                         }
                     case SectionId.MEMORY:
                         {
-                            var memorySection = parseMemorySection(buffer);
+                            var memorySection = parseMemorySection(sectionByteBuffer);
                             listener.onSection(memorySection);
                             break;
                         }
                     case SectionId.TAG:
                         {
-                            var tagSection = parseTagSection(buffer);
+                            var tagSection = parseTagSection(sectionByteBuffer);
                             listener.onSection(tagSection);
                             break;
                         }
                     case SectionId.GLOBAL:
                         {
-                            var globalSection = parseGlobalSection(buffer);
+                            var globalSection = parseGlobalSection(sectionByteBuffer);
                             listener.onSection(globalSection);
                             break;
                         }
                     case SectionId.EXPORT:
                         {
-                            var exportSection = parseExportSection(buffer);
+                            var exportSection = parseExportSection(sectionByteBuffer);
                             listener.onSection(exportSection);
                             break;
                         }
                     case SectionId.START:
                         {
-                            var startSection = parseStartSection(buffer);
+                            var startSection = parseStartSection(sectionByteBuffer);
                             listener.onSection(startSection);
                             break;
                         }
                     case SectionId.ELEMENT:
                         {
-                            var elementSection = parseElementSection(buffer, sectionSize);
+                            var elementSection =
+                                    parseElementSection(sectionByteBuffer, sectionSize);
                             listener.onSection(elementSection);
                             break;
                         }
                     case SectionId.CODE:
                         {
-                            var codeSection = parseCodeSection(buffer);
+                            var codeSection = parseCodeSection(sectionByteBuffer);
                             listener.onSection(codeSection);
                             break;
                         }
                     case SectionId.DATA:
                         {
-                            var dataSection = parseDataSection(buffer);
+                            var dataSection = parseDataSection(sectionByteBuffer);
                             listener.onSection(dataSection);
                             break;
                         }
                     case SectionId.DATA_COUNT:
                         {
-                            var dataCountSection = parseDataCountSection(buffer);
+                            var dataCountSection = parseDataCountSection(sectionByteBuffer);
                             listener.onSection(dataCountSection);
                             break;
                         }
@@ -379,8 +393,10 @@ public final class Parser {
                                     "section size mismatch, malformed section id " + sectionId);
                         }
                 }
-            } else {
-                buffer.position((int) (buffer.position() + sectionSize));
+
+                if (sectionByteBuffer.hasRemaining()) {
+                    throw new MalformedException("section size mismatch");
+                }
             }
         }
     }
@@ -1276,13 +1292,14 @@ public final class Parser {
 
     private static Instruction[] parseExpression(ByteBuffer buffer) {
         var expr = new ArrayList<Instruction>();
-        while (true) {
+        while (buffer.hasRemaining()) {
             var i = parseInstruction(buffer);
             if (i.opcode() == OpCode.END) {
-                break;
+                return expr.toArray(new Instruction[0]);
             }
             expr.add(i);
         }
-        return expr.toArray(new Instruction[0]);
+
+        throw new MalformedException("illegal opcode: expected end opcode");
     }
 }
