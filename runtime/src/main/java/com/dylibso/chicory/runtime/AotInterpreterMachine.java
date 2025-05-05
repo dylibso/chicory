@@ -1,9 +1,24 @@
 package com.dylibso.chicory.runtime;
 
+import com.dylibso.chicory.wasm.ChicoryException;
+import com.dylibso.chicory.wasm.types.FunctionType;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AotInterpreterMachine extends InterpreterMachine {
+
+    private static final HashSet<Integer> usedInterpretedFunctions;
+
+    static {
+        if (Boolean.parseBoolean(
+                System.getProperty("chicory.compiler.printUseOfInterpretedFunctions"))) {
+            usedInterpretedFunctions = new HashSet<>();
+        } else {
+            usedInterpretedFunctions = null;
+        }
+    }
 
     Set<Integer> interpretedFuncIds;
 
@@ -11,6 +26,23 @@ public class AotInterpreterMachine extends InterpreterMachine {
         super(instance);
         this.interpretedFuncIds =
                 java.util.Arrays.stream(interpretedFuncIds).boxed().collect(Collectors.toSet());
+    }
+
+    @Override
+    protected long[] call(
+            MStack stack,
+            Instance instance,
+            Deque<StackFrame> callStack,
+            int funcId,
+            long[] args,
+            FunctionType callType,
+            boolean popResults)
+            throws ChicoryException {
+        if (usedInterpretedFunctions != null && !usedInterpretedFunctions.contains(funcId)) {
+            usedInterpretedFunctions.add(funcId);
+            System.err.println("Chicory: calling interpreted function " + funcId);
+        }
+        return super.call(stack, instance, callStack, funcId, args, callType, popResults);
     }
 
     @Override

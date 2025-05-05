@@ -54,7 +54,7 @@ public class InterpreterMachine implements Machine {
         return call(stack, instance, callStack, funcId, args, null, true);
     }
 
-    private long[] call(
+    protected long[] call(
             MStack stack,
             Instance instance,
             Deque<StackFrame> callStack,

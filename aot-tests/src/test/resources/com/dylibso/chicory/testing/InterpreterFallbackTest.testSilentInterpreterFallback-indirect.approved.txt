@@ -7,6 +7,7 @@ com.dylibso.chicory.testing.Test3Machine.call
 com.dylibso.chicory.runtime.InterpreterMachine.CALL_INDIRECT
 com.dylibso.chicory.runtime.InterpreterMachine.eval
 com.dylibso.chicory.runtime.InterpreterMachine.call
+com.dylibso.chicory.runtime.AotInterpreterMachine.call
 com.dylibso.chicory.runtime.InterpreterMachine.call
 com.dylibso.chicory.testing.Test3Machine.call
 com.dylibso.chicory.testing.Test3Machine$AotMethods.callIndirect
@@ -16,4 +17,3 @@ com.dylibso.chicory.testing.Test3MachineFuncGroup_0.call_3
 com.dylibso.chicory.testing.Test3Machine$MachineCall.call
 com.dylibso.chicory.testing.Test3Machine.call
 com.dylibso.chicory.runtime.Instance$Exports.lambda$function$0
-com.dylibso.chicory.testing.InterpreterFallbackTest.testSilentInterpreterFallback
