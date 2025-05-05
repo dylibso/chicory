@@ -56,7 +56,8 @@ public class Generator {
         var compiler =
                 AotCompiler.builder(module)
                         .withClassName(machineName)
-                        .withInterpreterFallback(config.interpreterFallback)
+                        .withInterpreterFallback(config.interpreterFallback())
+                        .withInterpretedFunctions(config.interpretedFunctions())
                         .build();
         var result = compiler.compile();
 

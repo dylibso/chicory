@@ -6,6 +6,7 @@ import com.dylibso.chicory.experimental.build.time.aot.Generator;
 import com.dylibso.chicory.wasm.Version;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Set;
 import picocli.CommandLine;
 
 @CommandLine.Command(
@@ -54,13 +55,21 @@ public class Cli implements Runnable {
     Path targetWasmFolder;
 
     @CommandLine.Option(
-            order = 4,
+            order = 5,
             names = "--interpreter-fallback",
             description =
                     "Action to take if the compiler needs to use the interpreter because a function"
                             + " is too big",
             defaultValue = "FAIL")
     InterpreterFallback interpreterFallback;
+
+    @CommandLine.Option(
+            order = 6,
+            names = "--interpreted-functions",
+            split = ",",
+            description =
+                    "The indexes of functions that should be interpreted, separated by commas")
+    Set<Integer> interpretedFunctions;
 
     @Override
     public void run() {
@@ -72,6 +81,7 @@ public class Cli implements Runnable {
                         .withTargetSourceFolder(targetSourceFolder)
                         .withTargetWasmFolder(targetWasmFolder)
                         .withInterpreterFallback(interpreterFallback)
+                        .withInterpretedFunctions(interpretedFunctions)
                         .build();
 
         var generator = new Generator(config);

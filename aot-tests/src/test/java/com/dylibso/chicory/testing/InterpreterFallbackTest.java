@@ -32,6 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 import org.approvaltests.Approvals;
 import org.approvaltests.core.Options;
@@ -104,20 +105,9 @@ public class InterpreterFallbackTest {
                         .build();
         var generator = new Generator(config);
 
-        var orignalErr = System.err;
-        try {
-            ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
-            System.setErr(new PrintStream(stdErr, true, UTF_8));
+        var output = captureOutput(() -> generateAll(generator));
 
-            generateAll(generator);
-
-            assertTrue(
-                    stdErr.toString(UTF_8)
-                            .startsWith(
-                                    "Warning: using interpreted mode for WASM function index: 2"));
-        } finally {
-            System.setErr(orignalErr);
-        }
+        assertTrue(output.startsWith("Warning: using interpreted mode for WASM function index: 2"));
     }
 
     @Test
@@ -129,23 +119,8 @@ public class InterpreterFallbackTest {
                         .build();
         var generator = new Generator(config);
 
-        var orignalStdErr = System.err;
-        var orignalStdOut = System.out;
-        try {
-            ByteArrayOutputStream stdErr = new ByteArrayOutputStream();
-            System.setErr(new PrintStream(stdErr, true, UTF_8));
-
-            ByteArrayOutputStream stdOut = new ByteArrayOutputStream();
-            System.setOut(new PrintStream(stdOut, true, UTF_8));
-
-            generateAll(generator);
-
-            assertEquals("", stdErr.toString(UTF_8));
-            assertEquals("", stdOut.toString(UTF_8));
-        } finally {
-            System.setErr(orignalStdErr);
-            System.setOut(orignalStdOut);
-        }
+        var output = captureOutput(() -> generateAll(generator));
+        assertEquals("", output);
 
         // Let's load what was just generated.  This lets us check that the generated module
         // metadata
@@ -157,24 +132,7 @@ public class InterpreterFallbackTest {
         Function<Instance, Machine> machineFactory = createMachineFactory(machineClass);
 
         var hostStackTrace = new ArrayList<String>();
-        var hostFunc =
-                new HostFunction(
-                        "funcs",
-                        "host_func",
-                        FunctionType.of(List.of(ValType.I32), List.of(ValType.I32)),
-                        (inst, args) -> {
-                            var thread = Thread.currentThread();
-                            int i = 0;
-                            for (StackTraceElement element : thread.getStackTrace()) {
-                                i++;
-                                if (i < 2 || i > 21) {
-                                    continue;
-                                }
-                                hostStackTrace.add(
-                                        element.getClassName() + "." + element.getMethodName());
-                            }
-                            return new long[] {35};
-                        });
+        var hostFunc = createHostFunc(hostStackTrace);
 
         WasmModule module;
         try (InputStream in = machineClass.getResourceAsStream("Test3.meta")) {
@@ -206,6 +164,62 @@ public class InterpreterFallbackTest {
                                 "InterpreterFallbackTest.testSilentInterpreterFallback-indirect"));
     }
 
+    @Test
+    public void testFailWithInterpretedFunctions() throws IOException {
+        var config =
+                defaultConfig()
+                        .withName("com.dylibso.chicory.testing.Test3")
+                        .withInterpretedFunctions(Set.of(1))
+                        .build();
+        var generator = new Generator(config);
+
+        var exception = assertThrows(ChicoryException.class, () -> generateAll(generator));
+
+        assertTrue(
+                exception
+                        .getMessage()
+                        .startsWith(
+                                "WASM function size"
+                                        + " exceeds the Java method size limits and cannot be"
+                                        + " compiled to Java bytecode. It can only be run in the"
+                                        + " interpreter. Either reduce the size of the function or"
+                                        + " enable the interpreter fallback mode: WASM function"
+                                        + " index: 2"),
+                exception.getMessage());
+    }
+
+    @Test
+    public void testWithInterpretedFunctionsOk() throws IOException {
+        var config =
+                defaultConfig()
+                        .withName("com.dylibso.chicory.testing.Test3")
+                        .withInterpretedFunctions(Set.of(1, 2))
+                        .build();
+        var generator = new Generator(config);
+
+        var output = captureOutput(() -> generateAll(generator));
+        assertEquals("", output);
+    }
+
+    private static HostFunction createHostFunc(List<String> hostStackTrace) {
+        return new HostFunction(
+                "funcs",
+                "host_func",
+                FunctionType.of(List.of(ValType.I32), List.of(ValType.I32)),
+                (inst, args) -> {
+                    var thread = Thread.currentThread();
+                    int i = 0;
+                    for (StackTraceElement element : thread.getStackTrace()) {
+                        i++;
+                        if (i < 3 || i > 21) {
+                            continue;
+                        }
+                        hostStackTrace.add(element.getClassName() + "." + element.getMethodName());
+                    }
+                    return new long[] {35};
+                });
+    }
+
     private Function<Instance, Machine> createMachineFactory(Class<?> machineClass) {
         try {
             var clazz = machineClass.asSubclass(Machine.class);
@@ -217,6 +231,29 @@ public class InterpreterFallbackTest {
             return function;
         } catch (ReflectiveOperationException e) {
             throw new ChicoryException(e);
+        }
+    }
+
+    public interface Failable {
+        void run() throws Exception;
+    }
+
+    @SuppressWarnings("checkstyle:IllegalCatch")
+    public String captureOutput(Failable r) {
+        var orignalStdErr = System.err;
+        var orignalStdOut = System.out;
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream p = new PrintStream(baos, true, UTF_8);
+            System.setErr(p);
+            System.setOut(p);
+            r.run();
+            return baos.toString(UTF_8);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            System.setErr(orignalStdErr);
+            System.setOut(orignalStdOut);
         }
     }
 }

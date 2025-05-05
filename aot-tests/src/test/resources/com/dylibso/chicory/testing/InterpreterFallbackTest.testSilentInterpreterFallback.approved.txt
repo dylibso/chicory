@@ -1,4 +1,3 @@
-com.dylibso.chicory.testing.InterpreterFallbackTest.lambda$testSilentInterpreterFallback$1
 com.dylibso.chicory.testing.Test3Machine$AotMethods.callHostFunction
 com.dylibso.chicory.testing.Test3MachineFuncGroup_0.func_0
 com.dylibso.chicory.testing.Test3MachineFuncGroup_0.func_1

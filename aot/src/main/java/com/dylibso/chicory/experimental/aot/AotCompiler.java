@@ -129,19 +129,36 @@ public final class AotCompiler {
     private final List<FunctionType> functionTypes;
     private final Map<String, byte[]> extraClasses = new LinkedHashMap<>();
     private int maxFunctionsPerClass;
-    private final HashSet<Integer> interpretedFunctions = new HashSet<>();
+    private final HashSet<Integer> interpretedFunctions;
 
     private AotCompiler(
             WasmModule module,
             String className,
             int maxFunctionsPerClass,
-            InterpreterFallback interpreterFallback) {
+            InterpreterFallback interpreterFallback,
+            Set<Integer> interpretedFunctions) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.analyzer = new AotAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
-        this.interpreterFallback =
-                requireNonNullElse(interpreterFallback, InterpreterFallback.WARN);
+
+        if (interpretedFunctions == null) {
+            this.interpretedFunctions = new HashSet<>();
+            this.interpreterFallback =
+                    requireNonNullElse(interpreterFallback, InterpreterFallback.WARN);
+        } else {
+            this.interpretedFunctions = new HashSet<>(interpretedFunctions);
+            // if we are being given a set of interpreted functions, then any unlisted
+            // function needs to trigger a failure.
+
+            // it's a dev error to mix these options.
+            assert interpreterFallback == InterpreterFallback.FAIL
+                    : "the InterpreterFallback must be set to FAIL if a set of interpreted"
+                            + " functions is provided";
+            // but he is not running /w -ea then behave as if it was set to FAIL
+            this.interpreterFallback = InterpreterFallback.FAIL;
+        }
+
         this.functionTypes = analyzer.functionTypes();
         this.maxFunctionsPerClass = maxFunctionsPerClass;
         compileExtraClasses();
@@ -156,6 +173,7 @@ public final class AotCompiler {
         private String className;
         private int maxFunctionsPerClass;
         private InterpreterFallback interpreterFallback;
+        private Set<Integer> interpretedFunctions;
 
         private Builder(WasmModule module) {
             this.module = module;
@@ -176,6 +194,11 @@ public final class AotCompiler {
             return this;
         }
 
+        public Builder withInterpretedFunctions(Set<Integer> interpretedFunctions) {
+            this.interpretedFunctions = interpretedFunctions;
+            return this;
+        }
+
         public AotCompiler build() {
             var className = this.className;
             if (className == null) {
@@ -186,7 +209,12 @@ public final class AotCompiler {
             if (maxFunctionsPerClass <= 0) {
                 maxFunctionsPerClass = DEFAULT_MAX_FUNCTIONS_PER_CLASS;
             }
-            return new AotCompiler(module, className, maxFunctionsPerClass, interpreterFallback);
+            return new AotCompiler(
+                    module,
+                    className,
+                    maxFunctionsPerClass,
+                    interpreterFallback,
+                    interpretedFunctions);
         }
     }
 
@@ -334,14 +362,14 @@ public final class AotCompiler {
 
     /**
      * Loads a chunked class based on the given size and chunk size.
-     *
+     * <p>
      * This method attempts to load a class in chunks to avoid MethodTooLargeException or ClassTooLargeException.
      * It dynamically adjusts the chunk size based on the size of the class to be loaded and the maximum size
      * that can be loaded without causing an exception. The method returns the final chunk size used for loading.
      *
-     * @param size The total size of the class to be loaded.
+     * @param size      The total size of the class to be loaded.
      * @param chunkSize The initial chunk size to use for loading.
-     * @param emitter The ChunkedClassEmitter that generates the class bytes for a given chunk.
+     * @param emitter   The ChunkedClassEmitter that generates the class bytes for a given chunk.
      * @return The final chunk size used for loading the class.
      */
     int loadChunkedClass(int size, int chunkSize, ChunkedClassEmitter emitter) {
