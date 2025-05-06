@@ -1,73 +1,27 @@
 ---
-sidebar_position: 3
-sidebar_label: AOT compilation
-title: AOT compilation
+sidebar_position: 4
+sidebar_label: AoT Compilation
+title: AoT Compilation
 ---
-## Runtime AOT
+## Overview
 
-<!--
-```java
-//DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
-//DEPS com.dylibso.chicory:aot-experimental:999-SNAPSHOT
-
-import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.wasm.WasmModule;
-import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Machine;
-import com.dylibso.chicory.runtime.InterpreterMachine;
-
-docs.FileOps.copyFromWasmCorpus("count_vowels.rs.wasm", "your.wasm");
-```
--->
-
-The Ahead-of-Time compiler backend is a drop-in replacement for the interpreter, and it passes 100% of the same
+The Ahead-of-Time (AoT) compiler backend is a drop-in replacement for the interpreter, and it passes 100% of the same 
 spec tests that the interpreter already supports.
 
-You can instantiate a module using the AoT by explicitly providing a `MachineFactory`.
-The default `Machine` implementation is the `InterpreterMachine`.
+This AoT compiler translates the WASM instructions to Java bytecode and stores them as `.class` files
+that you package in your application.  The resulting code is usually expected to evaluate (much) faster and 
+consume less memory than if it was interpreted.
 
-You can opt in to the AoT mode by writing:
+The AoT compiler has several advantages over the [Runtime Compiler](runtime-compiler.md) such as: 
 
-```java
-import com.dylibso.chicory.experimental.aot.AotMachine;
+- improved instance initialization time: the translation occurs at build time
+- no reflection needed: easier to use with `native-image`
+- fewer runtime dependencies: asm is only needed at build time
+- distribute Wasm modules as self-contained jars: making it a convenient way to distribute software that was not originally meant to run on the Java platform
 
-var module = Parser.parse(new File("your.wasm"));
-var instance = Instance.builder(module).withMachineFactory(AotMachine::new).build();
-```
+You can use the AoT compiler at build-time via Maven plug-in, Gradle plug-in, or plain CLI
 
-after you add the dependency:
-
-```xml
-<dependency>
-  <groupId>com.dylibso.chicory</groupId>
-  <artifactId>aot-experimental</artifactId>
-</dependency>
-```
-
-This will translate every module you instantiate into Java bytecode on-the-fly and in-memory.
-The resulting code is usually expected to evaluate (much)faster and consume less memory.
-
-Please note that compiling and executing AoT modules at runtime requires:
-- an external dependency on [ASM](https://asm.ow2.io/)
-- the usage of runtime reflection
-
-This is usually fine when running on a standard JVM, but it involve some additional configuration when using tools like `native-image`.
-
-## Build-time AOT
-
-You can use the AOT compiler at build-time by leveraging either a Maven or Gradle plug-in to overcome the usage 
-of reflection and external dependencies of the "Runtime AOT".
-
-This mode of execution reduces startup time and will remove the need for distributing
-the original Wasm binary.
-
-Key advantages are:
-
-- improved startup time because the translation occurs only once, when you are packaging your application
-- distribute Wasm modules as self-contained jars, making it a convenient way to distribute software that was not originally meant to run on the Java platform
-- same performance properties as the in-memory compiler (in fact, the compilation backend is the same)
-
-### Using Maven
+## Using Maven
 
 Example configuration of the Maven plug-in:
 
@@ -76,12 +30,12 @@ Example configuration of the Maven plug-in:
   <plugins>
     <plugin>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>aot-maven-plugin-experimental</artifactId>
+      <artifactId>AoT-maven-plugin-experimental</artifactId>
       <executions>
         <execution>
-          <id>aot-gen</id>
+          <id>AoT-gen</id>
           <goals>
-            <goal>wasm-aot-gen</goal>
+            <goal>wasm-AoT-gen</goal>
           </goals>
           <configuration>
             <!-- Translate the Wasm binary `add` into bytecode -->
@@ -100,6 +54,17 @@ In the codebase you can use the generated module by configuring appropriately th
 
 <!--
 ```java
+//DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
+//DEPS com.dylibso.chicory:runtime:999-SNAPSHOT
+
+import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.Machine;
+import com.dylibso.chicory.runtime.InterpreterMachine;
+
+docs.FileOps.copyFromWasmCorpus("count_vowels.rs.wasm", "your.wasm");
+
 // mocking up the generated code
 class AddModule {
 
@@ -115,11 +80,15 @@ class AddModule {
 -->
 
 ```java
+import com.dylibso.chicory.runtime.Instance;
+
 // load the bundled module
 var module = AddModule.load();
 
 // instantiate the module with the pre-compiled code
-var instance = Instance.builder(module).withMachineFactory(AddModule::create).build();
+var instance = Instance.builder(module).
+        withMachineFactory(AddModule::create).
+        build();
 ```
 
 #### IDE shortcomings
@@ -151,7 +120,7 @@ To overcome this limitation you can use an additional Maven Plugin for a smoothe
 ### Using Gradle [community]
 
 Gradle users can leverage the [wasm2class-gradle-plugin](https://github.com/illarionov/wasm2class-gradle-plugin),
-a third-party plugin that serves as an alternative to the Maven plugin, running the AOT compiler at build time
+a third-party plugin that serves as an alternative to the Maven plugin, running the AoT compiler at build time
 and enabling the use of pre-compiled Wasm code in Java, Kotlin, and Android projects.
 
 To set it up, make sure MavenCentral is listed as a repository in the `pluginManagement` block of your `settings.gradle.kts`:
@@ -188,8 +157,12 @@ wasm2class {
 This generates the class `org.acme.wasm.AddModule`, which you can use to instantiate the module just like shown earlier
 in the Maven example.
 
+### Using CLI
+
+Coming soon.
+
 <!--
 ```java
-docs.FileOps.writeResult("docs/experimental", "aot.md.result", "empty");
+docs.FileOps.writeResult("docs/experimental", "aot-compiler.md.result", "empty");
 ```
 -->
