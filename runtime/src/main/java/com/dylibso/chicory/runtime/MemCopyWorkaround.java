@@ -8,17 +8,24 @@ public final class MemCopyWorkaround {
         void apply(int destination, int offset, int size, Memory memory);
     }
 
-    static {
-        String workaround = System.getProperty("chicory.enableMemCopyWorkaround");
-
-        boolean enableMemCopyWorkaround;
-        if (workaround != null) {
-            enableMemCopyWorkaround = Boolean.parseBoolean(workaround);
+    public static boolean shouldUseMemWorkaround() {
+        String version = System.getProperty("java.version");
+        if (version == null || version.equals("0")) {
+            // Android https://developer.android.com/reference/java/lang/System#getProperties()
+            return false;
+        } else if (version.startsWith("1.")) {
+            // Java 8 or earlier: "1.8.0_231" → 8
+            return true;
         } else {
-            enableMemCopyWorkaround = Runtime.version().feature() < 21;
+            // Java 9 or later: "11.0.9" or "17.0.1"
+            int dotIndex = version.indexOf(".");
+            String majorStr = (dotIndex != -1) ? version.substring(0, dotIndex) : version;
+            return Integer.parseInt(majorStr) <= 17;
         }
+    }
 
-        if (enableMemCopyWorkaround) {
+    static {
+        if (shouldUseMemWorkaround()) {
             MemoryCopyFunc noop1 = (destination, offset, size, memory) -> {};
             MemoryCopyFunc noop2 = (destination, offset, size, memory) -> {};
             // Warm up the JIT... to make it see memoryCopyFunc.apply is megamorphic
@@ -28,9 +35,10 @@ public final class MemCopyWorkaround {
                 memoryCopyFunc = noop2;
                 MemCopyWorkaround.memoryCopy(0, 0, 0, null);
             }
+
+            memoryCopyFunc =
+                    (destination, offset, size, memory) -> memory.copy(destination, offset, size);
         }
-        memoryCopyFunc =
-                (destination, offset, size, memory) -> memory.copy(destination, offset, size);
     }
 
     static MemoryCopyFunc memoryCopyFunc;

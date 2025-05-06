@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.aot;
 
+import static com.dylibso.chicory.runtime.MemCopyWorkaround.shouldUseMemWorkaround;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.Instance;
@@ -73,7 +74,7 @@ public final class AotMethods {
         if (prop != null) {
             memCopyWorkaround = Boolean.valueOf(prop);
         } else {
-            memCopyWorkaround = Runtime.version().feature() <= 17;
+            memCopyWorkaround = shouldUseMemWorkaround();
         }
     }
 

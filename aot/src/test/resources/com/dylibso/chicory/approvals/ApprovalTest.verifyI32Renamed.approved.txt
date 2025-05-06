@@ -74,7 +74,6 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
 final class FOO$AotMethods {
 
   NESTHOST FOO
-  public final static INNERCLASS java/lang/Runtime$Version java/lang/Runtime Version
   public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
 
   private final static Z memCopyWorkaround
@@ -541,15 +540,7 @@ final class FOO$AotMethods {
     PUTSTATIC FOO$AotMethods.memCopyWorkaround : Z
     GOTO L4
    L2
-    INVOKESTATIC java/lang/Runtime.version ()Ljava/lang/Runtime$Version;
-    INVOKEVIRTUAL java/lang/Runtime$Version.feature ()I
-    BIPUSH 17
-    IF_ICMPGT L5
-    ICONST_1
-    GOTO L6
-   L5
-    ICONST_0
-   L6
+    INVOKESTATIC com/dylibso/chicory/runtime/MemCopyWorkaround.shouldUseMemWorkaround ()Z
     PUTSTATIC FOO$AotMethods.memCopyWorkaround : Z
    L4
     RETURN
