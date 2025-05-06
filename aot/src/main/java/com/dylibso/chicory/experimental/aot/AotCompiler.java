@@ -364,10 +364,6 @@ public final class AotCompiler {
 
         classWriter.visitSource("wasm", null);
 
-        for (String name : extraClasses.keySet()) {
-            classWriter.visitNestMember(internalClassName(name));
-        }
-
         classWriter.visitField(
                 Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
                 "instance",
@@ -504,9 +500,9 @@ public final class AotCompiler {
         asm.load(1, INT_TYPE);
         asm.load(2, OBJECT_TYPE);
 
-        // return $MachineCall.call(instance, memory, funcId, args);
+        // return MachineCall.call(instance, memory, funcId, args);
         asm.invokestatic(
-                internalClassName + "$MachineCall",
+                internalClassName + "MachineCall",
                 "call",
                 MACHINE_CALL_METHOD_TYPE.toMethodDescriptorString(),
                 false);
@@ -525,12 +521,10 @@ public final class AotCompiler {
         classWriter.visit(
                 Opcodes.V11,
                 Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
-                internalClassName(className + "$MachineCall"),
+                internalClassName(className + "MachineCall"),
                 null,
                 getInternalName(Object.class),
                 null);
-
-        classWriter.visitNestHost(internalClassName(className));
 
         // constructor
         emitFunction(

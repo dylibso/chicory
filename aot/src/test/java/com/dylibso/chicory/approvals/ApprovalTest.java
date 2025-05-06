@@ -99,7 +99,7 @@ public class ApprovalTest {
 
         for (byte[] bytes : classBytes.values()) {
             ClassReader cr = new ClassReader(bytes);
-            if (skipAotMethods && cr.getClassName().endsWith("$AotMethods")) {
+            if (skipAotMethods && cr.getClassName().endsWith("AotMethods")) {
                 continue;
             }
             cr.accept(new TraceClassVisitor(new PrintWriter(writer)), 0);
