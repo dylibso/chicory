@@ -13,9 +13,9 @@ import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
 
-public final class Methods {
+public final class GeneratedMethods {
 
-    private Methods() {}
+    private GeneratedMethods() {}
 
     public static long[] callIndirect(long[] args, int typeId, int funcId, Instance instance) {
         FunctionType expectedType = instance.type(typeId);

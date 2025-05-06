@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.objectweb.asm.Type.getInternalName;
 
 import com.dylibso.chicory.compiler.internal.Compiler;
-import com.dylibso.chicory.compiler.internal.Methods;
+import com.dylibso.chicory.compiler.internal.GeneratedMethods;
 import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasm.Parser;
 import java.io.PrintWriter;
@@ -86,7 +86,7 @@ public class MethodTooLargeTest {
         Approvals.verify(output);
 
         assertFalse(
-                output.contains(getInternalName(Methods.class)),
+                output.contains(getInternalName(GeneratedMethods.class)),
                 "Class contains non-inlined reference to AotMethods");
     }
 }

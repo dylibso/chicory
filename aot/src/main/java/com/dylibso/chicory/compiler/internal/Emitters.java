@@ -1,20 +1,20 @@
 package com.dylibso.chicory.compiler.internal;
 
-import static com.dylibso.chicory.compiler.internal.AotUtil.asmType;
-import static com.dylibso.chicory.compiler.internal.AotUtil.callIndirectMethodName;
-import static com.dylibso.chicory.compiler.internal.AotUtil.callIndirectMethodType;
-import static com.dylibso.chicory.compiler.internal.AotUtil.emitInvokeFunction;
-import static com.dylibso.chicory.compiler.internal.AotUtil.emitInvokeStatic;
-import static com.dylibso.chicory.compiler.internal.AotUtil.emitInvokeVirtual;
-import static com.dylibso.chicory.compiler.internal.AotUtil.emitJvmToLong;
-import static com.dylibso.chicory.compiler.internal.AotUtil.emitLongToJvm;
-import static com.dylibso.chicory.compiler.internal.AotUtil.emitPop;
-import static com.dylibso.chicory.compiler.internal.AotUtil.hasTooManyParameters;
-import static com.dylibso.chicory.compiler.internal.AotUtil.jvmReturnType;
-import static com.dylibso.chicory.compiler.internal.AotUtil.localType;
-import static com.dylibso.chicory.compiler.internal.AotUtil.slotCount;
-import static com.dylibso.chicory.compiler.internal.AotUtil.valueMethodName;
-import static com.dylibso.chicory.compiler.internal.AotUtil.valueMethodType;
+import static com.dylibso.chicory.compiler.internal.Util.asmType;
+import static com.dylibso.chicory.compiler.internal.Util.callIndirectMethodName;
+import static com.dylibso.chicory.compiler.internal.Util.callIndirectMethodType;
+import static com.dylibso.chicory.compiler.internal.Util.emitInvokeFunction;
+import static com.dylibso.chicory.compiler.internal.Util.emitInvokeStatic;
+import static com.dylibso.chicory.compiler.internal.Util.emitInvokeVirtual;
+import static com.dylibso.chicory.compiler.internal.Util.emitJvmToLong;
+import static com.dylibso.chicory.compiler.internal.Util.emitLongToJvm;
+import static com.dylibso.chicory.compiler.internal.Util.emitPop;
+import static com.dylibso.chicory.compiler.internal.Util.hasTooManyParameters;
+import static com.dylibso.chicory.compiler.internal.Util.jvmReturnType;
+import static com.dylibso.chicory.compiler.internal.Util.localType;
+import static com.dylibso.chicory.compiler.internal.Util.slotCount;
+import static com.dylibso.chicory.compiler.internal.Util.valueMethodName;
+import static com.dylibso.chicory.compiler.internal.Util.valueMethodType;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.lang.Double.longBitsToDouble;
 import static java.lang.Float.intBitsToFloat;
@@ -46,19 +46,20 @@ final class Emitters {
 
     static class Builder {
 
-        private final Map<OpCode, BytecodeEmitter> emitters = new EnumMap<>(OpCode.class);
+        private final Map<CompilerOpCode, BytecodeEmitter> emitters =
+                new EnumMap<>(CompilerOpCode.class);
 
-        public Builder intrinsic(OpCode opCode, BytecodeEmitter emitter) {
+        public Builder intrinsic(CompilerOpCode opCode, BytecodeEmitter emitter) {
             emitters.put(opCode, emitter);
             return this;
         }
 
-        public Builder shared(OpCode opCode, Class<?> staticHelpers) {
+        public Builder shared(CompilerOpCode opCode, Class<?> staticHelpers) {
             emitters.put(opCode, Emitters.intrinsify(opCode, staticHelpers));
             return this;
         }
 
-        public Map<OpCode, BytecodeEmitter> build() {
+        public Map<CompilerOpCode, BytecodeEmitter> build() {
             return Map.copyOf(emitters);
         }
     }
@@ -137,7 +138,7 @@ final class Emitters {
             Context ctx, InstructionAdapter asm, List<ValType> types) {
 
         // Store values from stack to locals in reverse order
-        int slot = ctx.tempSlot() + types.stream().mapToInt(AotUtil::slotCount).sum();
+        int slot = ctx.tempSlot() + types.stream().mapToInt(Util::slotCount).sum();
         for (int i = types.size() - 1; i >= 0; i--) {
             ValType valType = types.get(i);
             slot -= slotCount(valType);
@@ -639,7 +640,7 @@ final class Emitters {
      * @param staticHelpers the class containing the implementation
      * @return a BytecodeEmitter that will implement the opcode via a call to the shared implementation
      */
-    public static BytecodeEmitter intrinsify(OpCode opcode, Class<?> staticHelpers) {
+    public static BytecodeEmitter intrinsify(CompilerOpCode opcode, Class<?> staticHelpers) {
         for (var method : staticHelpers.getDeclaredMethods()) {
             if (Modifier.isStatic(method.getModifiers())
                     && method.isAnnotationPresent(OpCodeIdentifier.class)

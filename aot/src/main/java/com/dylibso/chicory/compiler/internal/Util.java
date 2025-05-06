@@ -25,9 +25,9 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-final class AotUtil {
+final class Util {
 
-    private AotUtil() {}
+    private Util() {}
 
     // The maximum number of wasm parameters that can be passed to a function before we box them
     // since Java
@@ -147,7 +147,7 @@ final class AotUtil {
     }
 
     public static boolean hasTooManyParameters(FunctionType type) {
-        return type.params().stream().mapToInt(AotUtil::slotCount).sum() > MAX_PARAMETER_COUNT;
+        return type.params().stream().mapToInt(Util::slotCount).sum() > MAX_PARAMETER_COUNT;
     }
 
     public static MethodType rawMethodTypeFor(FunctionType type) {
@@ -157,7 +157,7 @@ final class AotUtil {
     }
 
     public static Class<?>[] jvmTypes(List<ValType> types) {
-        return types.stream().map(AotUtil::jvmType).toArray(Class[]::new);
+        return types.stream().map(Util::jvmType).toArray(Class[]::new);
     }
 
     public static Class<?>[] jvmParameterTypes(FunctionType type) {

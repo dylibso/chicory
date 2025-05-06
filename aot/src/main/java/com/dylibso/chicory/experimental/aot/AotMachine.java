@@ -7,7 +7,7 @@ import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.ChicoryException;
 
 /**
- * Machine implementation that AOT compiles function bodies.
+ * Machine implementation that compiles function bodies.
  * All compilation is done in a single compile phase during instantiation.
  *
  * @deprecated This class is deprecated, use {@link CompilerMachine} instead.

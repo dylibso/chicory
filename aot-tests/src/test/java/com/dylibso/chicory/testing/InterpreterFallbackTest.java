@@ -147,7 +147,7 @@ public class InterpreterFallbackTest {
         // switch to interpreter and back on call
         assertTrue(
                 containsInOrder(
-                        List.of("AotInterpreterMachine.CALL", "Test3MachineFuncGroup_0.func"),
+                        List.of("CompilerInterpreterMachine.CALL", "Test3MachineFuncGroup_0.func"),
                         hostStackTrace));
 
         Approvals.verify(stackTrace);
