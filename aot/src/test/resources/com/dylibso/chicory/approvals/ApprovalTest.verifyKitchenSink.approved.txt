@@ -22,11 +22,11 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMachineCall.call (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;I[J)[J
     ARETURN
    L1
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.throwCallStackExhausted (Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.throwCallStackExhausted (Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
     ATHROW
 
   public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.checkInterruption ()V
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.checkInterruption ()V
     ALOAD 4
     ILOAD 2
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
@@ -56,7 +56,7 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
    L3
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
     ATHROW
    L1
     ICONST_1
@@ -69,11 +69,495 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     ICONST_0
     ILOAD 6
     ALOAD 7
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
     ICONST_0
     LALOAD
     L2I
     IRETURN
+}
+
+final class com/dylibso/chicory/$gen/CompiledMachineMethods {
+
+  public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
+
+  private final static Z memCopyWorkaround
+
+  private <init>()V
+   L0
+    ALOAD 0
+    INVOKESPECIAL java/lang/Object.<init> ()V
+    RETURN
+   L1
+
+  public static callIndirect([JIILcom/dylibso/chicory/runtime/Instance;)[J
+   L0
+    ALOAD 3
+    ILOAD 1
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.type (I)Lcom/dylibso/chicory/wasm/types/FunctionType;
+    ASTORE 4
+   L1
+    ALOAD 3
+    ALOAD 3
+    ILOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.functionType (I)I
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.type (I)Lcom/dylibso/chicory/wasm/types/FunctionType;
+    ASTORE 5
+   L2
+    ALOAD 5
+    ALOAD 4
+    INVOKEVIRTUAL com/dylibso/chicory/wasm/types/FunctionType.typesMatch (Lcom/dylibso/chicory/wasm/types/FunctionType;)Z
+    IFNE L3
+   L4
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
+    ATHROW
+   L3
+    ALOAD 3
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.getMachine ()Lcom/dylibso/chicory/runtime/Machine;
+    ILOAD 2
+    ALOAD 0
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Machine.call (I[J)[J (itf)
+    ARETURN
+   L5
+
+  public static callIndirect([JILcom/dylibso/chicory/runtime/Instance;)[J
+   L0
+    ALOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.getMachine ()Lcom/dylibso/chicory/runtime/Machine;
+    ILOAD 1
+    ALOAD 0
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Machine.call (I[J)[J (itf)
+    ARETURN
+   L1
+
+  public static callHostFunction(Lcom/dylibso/chicory/runtime/Instance;I[J)[J
+   L0
+    ALOAD 0
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.imports ()Lcom/dylibso/chicory/runtime/ImportValues;
+    ILOAD 1
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/ImportValues.function (I)Lcom/dylibso/chicory/runtime/ImportFunction;
+    ASTORE 3
+   L1
+    ALOAD 3
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/ImportFunction.handle ()Lcom/dylibso/chicory/runtime/WasmFunctionHandle;
+    ALOAD 0
+    ALOAD 2
+    INVOKEINTERFACE com/dylibso/chicory/runtime/WasmFunctionHandle.apply (Lcom/dylibso/chicory/runtime/Instance;[J)[J (itf)
+    ARETURN
+   L2
+
+  public static isRefNull(I)Z
+   L0
+    ILOAD 0
+    ICONST_M1
+    IF_ICMPNE L1
+    ICONST_1
+    GOTO L2
+   L1
+    ICONST_0
+   L2
+    IRETURN
+   L3
+
+  public static tableGet(IILcom/dylibso/chicory/runtime/Instance;)I
+   L0
+    ALOAD 2
+    ILOAD 1
+    ILOAD 0
+    INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.TABLE_GET (Lcom/dylibso/chicory/runtime/Instance;II)I
+    IRETURN
+   L1
+
+  public static tableSet(IIILcom/dylibso/chicory/runtime/Instance;)V
+   L0
+    ALOAD 3
+    ILOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
+    ILOAD 0
+    ILOAD 1
+    ALOAD 3
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.setRef (IILcom/dylibso/chicory/runtime/Instance;)V
+   L1
+    RETURN
+   L2
+
+  public static tableGrow(IIILcom/dylibso/chicory/runtime/Instance;)I
+   L0
+    ALOAD 3
+    ILOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
+    ILOAD 1
+    ILOAD 0
+    ALOAD 3
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.grow (IILcom/dylibso/chicory/runtime/Instance;)I
+    IRETURN
+   L1
+
+  public static tableSize(ILcom/dylibso/chicory/runtime/Instance;)I
+   L0
+    ALOAD 1
+    ILOAD 0
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.size ()I
+    IRETURN
+   L1
+
+  public static tableFill(IIIILcom/dylibso/chicory/runtime/Instance;)V
+   L0
+    ALOAD 4
+    ILOAD 3
+    ILOAD 2
+    ILOAD 1
+    ILOAD 0
+    INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.TABLE_FILL (Lcom/dylibso/chicory/runtime/Instance;IIII)V
+   L1
+    RETURN
+   L2
+
+  public static tableCopy(IIIIILcom/dylibso/chicory/runtime/Instance;)V
+   L0
+    ALOAD 5
+    ILOAD 4
+    ILOAD 3
+    ILOAD 2
+    ILOAD 1
+    ILOAD 0
+    INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.TABLE_COPY (Lcom/dylibso/chicory/runtime/Instance;IIIII)V
+   L1
+    RETURN
+   L2
+
+  public static tableInit(IIIIILcom/dylibso/chicory/runtime/Instance;)V
+   L0
+    ALOAD 5
+    ILOAD 4
+    ILOAD 3
+    ILOAD 2
+    ILOAD 1
+    ILOAD 0
+    INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.TABLE_INIT (Lcom/dylibso/chicory/runtime/Instance;IIIII)V
+   L1
+    RETURN
+   L2
+
+  public static memoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
+   L0
+    GETSTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.memCopyWorkaround : Z
+    IFEQ L1
+   L2
+    ILOAD 0
+    ILOAD 1
+    ILOAD 2
+    ALOAD 3
+    INVOKESTATIC com/dylibso/chicory/runtime/MemCopyWorkaround.memoryCopy (IIILcom/dylibso/chicory/runtime/Memory;)V
+    GOTO L3
+   L1
+    ALOAD 3
+    ILOAD 0
+    ILOAD 1
+    ILOAD 2
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.copy (III)V (itf)
+   L3
+    RETURN
+   L4
+
+  public static memoryFill(IBILcom/dylibso/chicory/runtime/Memory;)V
+   L0
+    ILOAD 2
+    ILOAD 0
+    IADD
+    ISTORE 4
+   L1
+    ALOAD 3
+    ILOAD 1
+    ILOAD 0
+    ILOAD 4
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.fill (BII)V (itf)
+   L2
+    RETURN
+   L3
+
+  public static memoryInit(IIIILcom/dylibso/chicory/runtime/Memory;)V
+   L0
+    ALOAD 4
+    ILOAD 3
+    ILOAD 0
+    ILOAD 1
+    ILOAD 2
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.initPassiveSegment (IIII)V (itf)
+   L1
+    RETURN
+   L2
+
+  public static memoryGrow(ILcom/dylibso/chicory/runtime/Memory;)I
+   L0
+    ALOAD 1
+    ILOAD 0
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.grow (I)I (itf)
+    IRETURN
+   L1
+
+  public static memoryDrop(ILcom/dylibso/chicory/runtime/Memory;)V
+   L0
+    ALOAD 1
+    ILOAD 0
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.drop (I)V (itf)
+   L1
+    RETURN
+   L2
+
+  public static memoryPages(Lcom/dylibso/chicory/runtime/Memory;)I
+   L0
+    ALOAD 0
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.pages ()I (itf)
+    IRETURN
+   L1
+
+  public static memoryReadByte(IILcom/dylibso/chicory/runtime/Memory;)B
+   L0
+    ALOAD 2
+    ILOAD 0
+    ILOAD 1
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.getAddr (II)I
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.read (I)B (itf)
+    IRETURN
+   L1
+
+  public static memoryReadShort(IILcom/dylibso/chicory/runtime/Memory;)S
+   L0
+    ALOAD 2
+    ILOAD 0
+    ILOAD 1
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.getAddr (II)I
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readShort (I)S (itf)
+    IRETURN
+   L1
+
+  public static memoryReadInt(IILcom/dylibso/chicory/runtime/Memory;)I
+   L0
+    ALOAD 2
+    ILOAD 0
+    ILOAD 1
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.getAddr (II)I
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readInt (I)I (itf)
+    IRETURN
+   L1
+
+  public static memoryReadLong(IILcom/dylibso/chicory/runtime/Memory;)J
+   L0
+    ALOAD 2
+    ILOAD 0
+    ILOAD 1
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.getAddr (II)I
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readLong (I)J (itf)
+    LRETURN
+   L1
+
+  public static memoryReadFloat(IILcom/dylibso/chicory/runtime/Memory;)F
+   L0
+    ALOAD 2
+    ILOAD 0
+    ILOAD 1
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.getAddr (II)I
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readFloat (I)F (itf)
+    FRETURN
+   L1
+
+  public static memoryReadDouble(IILcom/dylibso/chicory/runtime/Memory;)D
+   L0
+    ALOAD 2
+    ILOAD 0
+    ILOAD 1
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.getAddr (II)I
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readDouble (I)D (itf)
+    DRETURN
+   L1
+
+  public static memoryWriteByte(IBILcom/dylibso/chicory/runtime/Memory;)V
+   L0
+    ALOAD 3
+    ILOAD 0
+    ILOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.getAddr (II)I
+    ILOAD 1
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeByte (IB)V (itf)
+   L1
+    RETURN
+   L2
+
+  public static memoryWriteShort(ISILcom/dylibso/chicory/runtime/Memory;)V
+   L0
+    ALOAD 3
+    ILOAD 0
+    ILOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.getAddr (II)I
+    ILOAD 1
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeShort (IS)V (itf)
+   L1
+    RETURN
+   L2
+
+  public static memoryWriteInt(IIILcom/dylibso/chicory/runtime/Memory;)V
+   L0
+    ALOAD 3
+    ILOAD 0
+    ILOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.getAddr (II)I
+    ILOAD 1
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeI32 (II)V (itf)
+   L1
+    RETURN
+   L2
+
+  public static memoryWriteLong(IJILcom/dylibso/chicory/runtime/Memory;)V
+   L0
+    ALOAD 4
+    ILOAD 0
+    ILOAD 3
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.getAddr (II)I
+    LLOAD 1
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeLong (IJ)V (itf)
+   L1
+    RETURN
+   L2
+
+  public static memoryWriteFloat(IFILcom/dylibso/chicory/runtime/Memory;)V
+   L0
+    ALOAD 3
+    ILOAD 0
+    ILOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.getAddr (II)I
+    FLOAD 1
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeF32 (IF)V (itf)
+   L1
+    RETURN
+   L2
+
+  public static memoryWriteDouble(IDILcom/dylibso/chicory/runtime/Memory;)V
+   L0
+    ALOAD 4
+    ILOAD 0
+    ILOAD 3
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.getAddr (II)I
+    DLOAD 1
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeF64 (ID)V (itf)
+   L1
+    RETURN
+   L2
+
+  public static getAddr(II)I
+   L0
+    ILOAD 0
+    IFGE L1
+    ILOAD 0
+    GOTO L2
+   L1
+    ILOAD 0
+    ILOAD 1
+    IADD
+   L2
+    IRETURN
+   L3
+
+  public static throwCallStackExhausted(Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
+   L0
+    NEW com/dylibso/chicory/wasm/ChicoryException
+    DUP
+    LDC "call stack exhausted"
+    ALOAD 0
+    INVOKESPECIAL com/dylibso/chicory/wasm/ChicoryException.<init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+    ATHROW
+   L1
+
+  public static throwIndirectCallTypeMismatch()Ljava/lang/RuntimeException;
+   L0
+    NEW com/dylibso/chicory/wasm/ChicoryException
+    DUP
+    LDC "indirect call type mismatch"
+    INVOKESPECIAL com/dylibso/chicory/wasm/ChicoryException.<init> (Ljava/lang/String;)V
+    ARETURN
+
+  public static throwOutOfBoundsMemoryAccess()Ljava/lang/RuntimeException;
+   L0
+    NEW com/dylibso/chicory/runtime/WasmRuntimeException
+    DUP
+    LDC "out of bounds memory access"
+    INVOKESPECIAL com/dylibso/chicory/runtime/WasmRuntimeException.<init> (Ljava/lang/String;)V
+    ATHROW
+
+  public static throwTrapException()Ljava/lang/RuntimeException;
+   L0
+    NEW com/dylibso/chicory/runtime/TrapException
+    DUP
+    LDC "Trapped on unreachable instruction"
+    INVOKESPECIAL com/dylibso/chicory/runtime/TrapException.<init> (Ljava/lang/String;)V
+    ATHROW
+
+  public static throwUnknownFunction(I)Ljava/lang/RuntimeException;
+   L0
+    NEW com/dylibso/chicory/wasm/InvalidException
+    DUP
+    ILOAD 0
+    INVOKEDYNAMIC makeConcatWithConstants(I)Ljava/lang/String; [
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      "unknown function \u0001"
+    ]
+    INVOKESPECIAL com/dylibso/chicory/wasm/InvalidException.<init> (Ljava/lang/String;)V
+    ATHROW
+   L1
+
+  public static checkInterruption()V
+   L0
+    INVOKESTATIC java/lang/Thread.currentThread ()Ljava/lang/Thread;
+    INVOKEVIRTUAL java/lang/Thread.isInterrupted ()Z
+    IFEQ L1
+   L2
+    NEW com/dylibso/chicory/wasm/ChicoryException
+    DUP
+    LDC "Thread interrupted"
+    INVOKESPECIAL com/dylibso/chicory/wasm/ChicoryException.<init> (Ljava/lang/String;)V
+    ATHROW
+   L1
+    RETURN
+
+  public static readGlobal(ILcom/dylibso/chicory/runtime/Instance;)J
+   L0
+    ALOAD 1
+    ILOAD 0
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.global (I)Lcom/dylibso/chicory/runtime/GlobalInstance;
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/GlobalInstance.getValue ()J
+    LRETURN
+   L1
+
+  public static writeGlobal(JILcom/dylibso/chicory/runtime/Instance;)V
+   L0
+    ALOAD 3
+    ILOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.global (I)Lcom/dylibso/chicory/runtime/GlobalInstance;
+    LLOAD 0
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/GlobalInstance.setValue (J)V
+   L1
+    RETURN
+   L2
+
+  static <clinit>()V
+   L0
+    LDC "chicory.memCopyWorkaround"
+    INVOKESTATIC java/lang/System.getProperty (Ljava/lang/String;)Ljava/lang/String;
+    ASTORE 0
+   L1
+    ALOAD 0
+    IFNULL L2
+   L3
+    ALOAD 0
+    INVOKESTATIC java/lang/Boolean.valueOf (Ljava/lang/String;)Ljava/lang/Boolean;
+    INVOKEVIRTUAL java/lang/Boolean.booleanValue ()Z
+    PUTSTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.memCopyWorkaround : Z
+    GOTO L4
+   L2
+    INVOKESTATIC com/dylibso/chicory/runtime/MemCopyWorkaround.shouldUseMemWorkaround ()Z
+    PUTSTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.memCopyWorkaround : Z
+   L4
+    RETURN
 }
 
 final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
@@ -144,6 +628,6 @@ final class com/dylibso/chicory/$gen/CompiledMachineMachineCall {
     ARETURN
    L1
     ILOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.throwUnknownFunction (I)Ljava/lang/RuntimeException;
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.throwUnknownFunction (I)Ljava/lang/RuntimeException;
     ATHROW
 }

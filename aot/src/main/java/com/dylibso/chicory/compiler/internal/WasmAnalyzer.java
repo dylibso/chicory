@@ -1,7 +1,7 @@
 package com.dylibso.chicory.compiler.internal;
 
-import static com.dylibso.chicory.compiler.internal.AotUtil.localType;
 import static com.dylibso.chicory.compiler.internal.TypeStack.FUNCTION_SCOPE;
+import static com.dylibso.chicory.compiler.internal.Util.localType;
 import static java.util.Collections.reverse;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -15,6 +15,7 @@ import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.GlobalImport;
+import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.ValType;
@@ -80,19 +81,18 @@ final class WasmAnalyzer {
             AnnotatedInstruction ins = body.instructions().get(idx);
 
             if (labels.contains(idx)) {
-                result.add(new Instruction(OpCode.LABEL, idx));
+                result.add(new Instruction(CompilerOpCode.LABEL, idx));
             }
 
             // skip instructions after unconditional control transfer
             if (exitBlockDepth >= 0) {
                 if (ins.depth() > exitBlockDepth
-                        || (ins.opcode() != com.dylibso.chicory.wasm.types.OpCode.ELSE
-                                && ins.opcode() != com.dylibso.chicory.wasm.types.OpCode.END)) {
+                        || (ins.opcode() != OpCode.ELSE && ins.opcode() != OpCode.END)) {
                     continue;
                 }
 
                 exitBlockDepth = -1;
-                if (ins.opcode() == com.dylibso.chicory.wasm.types.OpCode.END) {
+                if (ins.opcode() == OpCode.END) {
                     stack.scopeRestore();
                 }
             }
@@ -102,7 +102,7 @@ final class WasmAnalyzer {
                     break;
                 case UNREACHABLE:
                     exitBlockDepth = ins.depth();
-                    result.add(new Instruction(OpCode.TRAP));
+                    result.add(new Instruction(CompilerOpCode.TRAP));
                     break;
                 case BLOCK:
                 case LOOP:
@@ -116,24 +116,21 @@ final class WasmAnalyzer {
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
-                    result.add(new Instruction(OpCode.RETURN, ids(functionType.returns())));
+                    result.add(new Instruction(CompilerOpCode.RETURN, ids(functionType.returns())));
                     break;
                 case RETURN_CALL:
                     // The JVM does not support proper tail calls, so we desugar RETURN_CALL
                     // into a CALL + RETURN.
 
                     // [p*] -> [r*]
-                    result.add(
-                            new Instruction(
-                                    OpCode.of(com.dylibso.chicory.wasm.types.OpCode.CALL),
-                                    ins.operands()));
+                    result.add(new Instruction(CompilerOpCode.of(OpCode.CALL), ins.operands()));
                     updateStack(stack, functionTypes.get((int) ins.operand(0)));
 
                     exitBlockDepth = ins.depth();
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
-                    result.add(new Instruction(OpCode.RETURN, ids(functionType.returns())));
+                    result.add(new Instruction(CompilerOpCode.RETURN, ids(functionType.returns())));
                     break;
 
                 case RETURN_CALL_INDIRECT:
@@ -145,46 +142,44 @@ final class WasmAnalyzer {
                     updateStack(stack, module.typeSection().getType((int) ins.operand(0)));
                     result.add(
                             new Instruction(
-                                    OpCode.of(com.dylibso.chicory.wasm.types.OpCode.CALL_INDIRECT),
-                                    ins.operands()));
+                                    CompilerOpCode.of(OpCode.CALL_INDIRECT), ins.operands()));
 
                     exitBlockDepth = ins.depth();
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
 
-                    result.add(new Instruction(OpCode.RETURN, ids(functionType.returns())));
+                    result.add(new Instruction(CompilerOpCode.RETURN, ids(functionType.returns())));
                     break;
 
                 case IF:
                     stack.pop(ValType.I32);
                     stack.enterScope(ins.scope(), blockType(ins));
                     // use the same starting stack sizes for both sides of the branch
-                    if (body.instructions().get(ins.labelFalse() - 1).opcode()
-                            == com.dylibso.chicory.wasm.types.OpCode.ELSE) {
+                    if (body.instructions().get(ins.labelFalse() - 1).opcode() == OpCode.ELSE) {
                         stack.pushTypes();
                     }
-                    result.add(new Instruction(OpCode.IFEQ, ins.labelFalse()));
+                    result.add(new Instruction(CompilerOpCode.IFEQ, ins.labelFalse()));
                     break;
                 case ELSE:
                     stack.popTypes();
-                    result.add(new Instruction(OpCode.GOTO, ins.labelTrue()));
+                    result.add(new Instruction(CompilerOpCode.GOTO, ins.labelTrue()));
                     break;
                 case BR:
                     exitBlockDepth = ins.depth();
                     unwindStack(functionType, body, ins, ins.labelTrue(), stack)
                             .ifPresent(result::add);
-                    result.add(new Instruction(OpCode.GOTO, ins.labelTrue()));
+                    result.add(new Instruction(CompilerOpCode.GOTO, ins.labelTrue()));
                     break;
                 case BR_IF:
                     stack.pop(ValType.I32);
                     var ifUnwind = unwindStack(functionType, body, ins, ins.labelTrue(), stack);
                     if (ifUnwind.isPresent()) {
-                        result.add(new Instruction(OpCode.IFEQ, ins.labelFalse()));
+                        result.add(new Instruction(CompilerOpCode.IFEQ, ins.labelFalse()));
                         result.add(ifUnwind.get());
-                        result.add(new Instruction(OpCode.GOTO, ins.labelTrue()));
+                        result.add(new Instruction(CompilerOpCode.GOTO, ins.labelTrue()));
                     } else {
-                        result.add(new Instruction(OpCode.IFNE, ins.labelTrue()));
+                        result.add(new Instruction(CompilerOpCode.IFNE, ins.labelTrue()));
                     }
                     break;
                 case BR_TABLE:
@@ -192,10 +187,10 @@ final class WasmAnalyzer {
                     stack.pop(ValType.I32);
                     // convert to jump if it only has a default
                     if (ins.labelTable().size() == 1) {
-                        result.add(new Instruction(OpCode.DROP, ValType.I32.id()));
+                        result.add(new Instruction(CompilerOpCode.DROP, ValType.I32.id()));
                         unwindStack(functionType, body, ins, ins.labelTable().get(0), stack)
                                 .ifPresent(result::add);
-                        result.add(new Instruction(OpCode.GOTO, ins.labelTable().get(0)));
+                        result.add(new Instruction(CompilerOpCode.GOTO, ins.labelTable().get(0)));
                         break;
                     }
                     // extract unique targets and generate unwind for each
@@ -208,15 +203,15 @@ final class WasmAnalyzer {
                             if (unwind.isPresent()) {
                                 label = nextLabel;
                                 nextLabel++;
-                                unwinds.add(new Instruction(OpCode.LABEL, label));
+                                unwinds.add(new Instruction(CompilerOpCode.LABEL, label));
                                 unwinds.add(unwind.get());
-                                unwinds.add(new Instruction(OpCode.GOTO, target));
+                                unwinds.add(new Instruction(CompilerOpCode.GOTO, target));
                             }
                             targets.put(target, label);
                         }
                     }
                     long[] operands = ins.labelTable().stream().mapToLong(targets::get).toArray();
-                    result.add(new Instruction(OpCode.SWITCH, operands));
+                    result.add(new Instruction(CompilerOpCode.SWITCH, operands));
                     result.addAll(unwinds);
                     break;
                 case SELECT:
@@ -227,13 +222,13 @@ final class WasmAnalyzer {
                     stack.pop(selectType);
                     stack.pop(selectType);
                     stack.push(selectType);
-                    result.add(new Instruction(OpCode.SELECT, selectType.id()));
+                    result.add(new Instruction(CompilerOpCode.SELECT, selectType.id()));
                     break;
                 case DROP:
                     // [t] -> []
                     var dropType = stack.peek();
                     stack.pop(dropType);
-                    result.add(new Instruction(OpCode.DROP, dropType.id()));
+                    result.add(new Instruction(CompilerOpCode.DROP, dropType.id()));
                     break;
                 case LOCAL_TEE:
                     // [t] -> [t]
@@ -241,7 +236,7 @@ final class WasmAnalyzer {
                     stack.pop(teeType);
                     stack.push(teeType);
                     long[] teeOperands = {ins.operand(0), teeType.id()};
-                    result.add(new Instruction(OpCode.LOCAL_TEE, teeOperands));
+                    result.add(new Instruction(CompilerOpCode.LOCAL_TEE, teeOperands));
                     break;
                 default:
                     analyzeSimple(result, stack, ins, functionType, body);
@@ -252,7 +247,7 @@ final class WasmAnalyzer {
         for (var type : reversed(functionType.returns())) {
             stack.pop(type);
         }
-        result.add(new Instruction(OpCode.RETURN, ids(functionType.returns())));
+        result.add(new Instruction(CompilerOpCode.RETURN, ids(functionType.returns())));
 
         stack.verifyEmpty();
         return result;
@@ -632,7 +627,7 @@ final class WasmAnalyzer {
             default:
                 throw new ChicoryException("Unhandled opcode: " + ins.opcode());
         }
-        out.add(new Instruction(OpCode.of(ins.opcode()), ins.operands()));
+        out.add(new Instruction(CompilerOpCode.of(ins.opcode()), ins.operands()));
     }
 
     private static void updateStack(TypeStack stack, FunctionType functionType) {
@@ -661,7 +656,7 @@ final class WasmAnalyzer {
         var scope = target.scope();
 
         FunctionType blockType;
-        if (scope.opcode() == com.dylibso.chicory.wasm.types.OpCode.END) {
+        if (scope.opcode() == OpCode.END) {
             // special scope for the function's implicit block
             scope = FUNCTION_SCOPE;
             blockType = functionType;
@@ -693,7 +688,7 @@ final class WasmAnalyzer {
         reverse(dropKeepTypes);
         dropKeepTypes.stream().mapToLong(ValType::id).forEach(operands::add);
 
-        return Optional.of(new Instruction(OpCode.DROP_KEEP, operands.build().toArray()));
+        return Optional.of(new Instruction(CompilerOpCode.DROP_KEEP, operands.build().toArray()));
     }
 
     private FunctionType blockType(com.dylibso.chicory.wasm.types.Instruction ins) {

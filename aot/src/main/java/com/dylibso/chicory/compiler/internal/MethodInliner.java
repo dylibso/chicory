@@ -1,6 +1,6 @@
 package com.dylibso.chicory.compiler.internal;
 
-import static com.dylibso.chicory.compiler.internal.AotUtil.internalClassName;
+import static com.dylibso.chicory.compiler.internal.Util.internalClassName;
 import static org.objectweb.asm.Type.getInternalName;
 
 import com.dylibso.chicory.wasm.ChicoryException;
@@ -16,7 +16,7 @@ final class MethodInliner {
 
     private MethodInliner() {}
 
-    public static byte[] createAotMethodsClass(String className) {
+    public static byte[] createMethodsClass(String className) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassVisitor visitor = aotMethodsRemapper(writer, className);
 
@@ -33,22 +33,22 @@ final class MethodInliner {
                         super.visit(
                                 version,
                                 Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
-                                internalClassName(className + "AotMethods"),
+                                internalClassName(className + "Methods"),
                                 null,
                                 superName,
                                 null);
                     }
                 };
 
-        ClassReader reader = new ClassReader(getBytecode(Methods.class));
+        ClassReader reader = new ClassReader(getBytecode(GeneratedMethods.class));
         reader.accept(visitor, ClassReader.SKIP_FRAMES);
 
         return writer.toByteArray();
     }
 
     public static ClassRemapper aotMethodsRemapper(ClassVisitor visitor, String className) {
-        String targetInternalName = internalClassName(className + "AotMethods");
-        String originalInternalName = internalClassName(Methods.class.getName());
+        String targetInternalName = internalClassName(className + "Methods");
+        String originalInternalName = internalClassName(GeneratedMethods.class.getName());
         return new ClassRemapper(
                 visitor,
                 new Remapper() {

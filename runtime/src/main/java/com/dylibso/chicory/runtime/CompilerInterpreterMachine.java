@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class AotInterpreterMachine extends InterpreterMachine {
+public class CompilerInterpreterMachine extends InterpreterMachine {
 
     private static final HashSet<Integer> usedInterpretedFunctions;
 
@@ -22,7 +22,7 @@ public class AotInterpreterMachine extends InterpreterMachine {
 
     Set<Integer> interpretedFuncIds;
 
-    public AotInterpreterMachine(Instance instance, int[] interpretedFuncIds) {
+    public CompilerInterpreterMachine(Instance instance, int[] interpretedFuncIds) {
         super(instance);
         this.interpretedFuncIds =
                 java.util.Arrays.stream(interpretedFuncIds).boxed().collect(Collectors.toSet());

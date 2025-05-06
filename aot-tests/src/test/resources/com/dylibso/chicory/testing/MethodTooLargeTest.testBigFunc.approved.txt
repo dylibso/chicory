@@ -1,6 +1,6 @@
 private final Lcom/dylibso/chicory/runtime/Instance; instance
 
-  private final Lcom/dylibso/chicory/runtime/AotInterpreterMachine; aotInterpreterMachine
+  private final Lcom/dylibso/chicory/runtime/CompilerInterpreterMachine; compilerInterpreterMachine
 }
 
   public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
@@ -20,7 +20,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     LASTORE
     ICONST_2
     ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.callIndirect ([JILcom/dylibso/chicory/runtime/Instance;)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.callIndirect ([JILcom/dylibso/chicory/runtime/Instance;)[J
     ICONST_0
     LALOAD
     L2I

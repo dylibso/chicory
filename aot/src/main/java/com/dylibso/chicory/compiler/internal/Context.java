@@ -1,7 +1,7 @@
 package com.dylibso.chicory.compiler.internal;
 
-import static com.dylibso.chicory.compiler.internal.AotUtil.hasTooManyParameters;
-import static com.dylibso.chicory.compiler.internal.AotUtil.slotCount;
+import static com.dylibso.chicory.compiler.internal.Util.hasTooManyParameters;
+import static com.dylibso.chicory.compiler.internal.Util.slotCount;
 
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;

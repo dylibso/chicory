@@ -1,31 +1,8 @@
 package com.dylibso.chicory.compiler.internal;
 
-import static com.dylibso.chicory.compiler.internal.AotUtil.asmType;
-import static com.dylibso.chicory.compiler.internal.AotUtil.callDispatchMethodName;
-import static com.dylibso.chicory.compiler.internal.AotUtil.callIndirectMethodName;
-import static com.dylibso.chicory.compiler.internal.AotUtil.callIndirectMethodType;
-import static com.dylibso.chicory.compiler.internal.AotUtil.callMethodName;
-import static com.dylibso.chicory.compiler.internal.AotUtil.classNameForCallIndirect;
-import static com.dylibso.chicory.compiler.internal.AotUtil.classNameForDispatch;
-import static com.dylibso.chicory.compiler.internal.AotUtil.defaultValue;
-import static com.dylibso.chicory.compiler.internal.AotUtil.emitInvokeFunction;
-import static com.dylibso.chicory.compiler.internal.AotUtil.emitInvokeStatic;
-import static com.dylibso.chicory.compiler.internal.AotUtil.emitInvokeVirtual;
-import static com.dylibso.chicory.compiler.internal.AotUtil.emitJvmToLong;
-import static com.dylibso.chicory.compiler.internal.AotUtil.emitLongToJvm;
-import static com.dylibso.chicory.compiler.internal.AotUtil.hasTooManyParameters;
-import static com.dylibso.chicory.compiler.internal.AotUtil.internalClassName;
-import static com.dylibso.chicory.compiler.internal.AotUtil.jvmReturnType;
-import static com.dylibso.chicory.compiler.internal.AotUtil.localType;
-import static com.dylibso.chicory.compiler.internal.AotUtil.methodNameForFunc;
-import static com.dylibso.chicory.compiler.internal.AotUtil.methodTypeFor;
-import static com.dylibso.chicory.compiler.internal.AotUtil.rawMethodTypeFor;
-import static com.dylibso.chicory.compiler.internal.AotUtil.slotCount;
-import static com.dylibso.chicory.compiler.internal.AotUtil.valueMethodName;
-import static com.dylibso.chicory.compiler.internal.AotUtil.valueMethodType;
 import static com.dylibso.chicory.compiler.internal.EmitterMap.EMITTERS;
 import static com.dylibso.chicory.compiler.internal.MethodInliner.aotMethodsRemapper;
-import static com.dylibso.chicory.compiler.internal.MethodInliner.createAotMethodsClass;
+import static com.dylibso.chicory.compiler.internal.MethodInliner.createMethodsClass;
 import static com.dylibso.chicory.compiler.internal.MethodRefs.AOT_INTERPRETER_MACHINE_CALL;
 import static com.dylibso.chicory.compiler.internal.MethodRefs.CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.compiler.internal.MethodRefs.CALL_INDIRECT;
@@ -38,6 +15,29 @@ import static com.dylibso.chicory.compiler.internal.MethodRefs.TABLE_REQUIRED_RE
 import static com.dylibso.chicory.compiler.internal.MethodRefs.THROW_CALL_STACK_EXHAUSTED;
 import static com.dylibso.chicory.compiler.internal.MethodRefs.THROW_INDIRECT_CALL_TYPE_MISMATCH;
 import static com.dylibso.chicory.compiler.internal.MethodRefs.THROW_UNKNOWN_FUNCTION;
+import static com.dylibso.chicory.compiler.internal.Util.asmType;
+import static com.dylibso.chicory.compiler.internal.Util.callDispatchMethodName;
+import static com.dylibso.chicory.compiler.internal.Util.callIndirectMethodName;
+import static com.dylibso.chicory.compiler.internal.Util.callIndirectMethodType;
+import static com.dylibso.chicory.compiler.internal.Util.callMethodName;
+import static com.dylibso.chicory.compiler.internal.Util.classNameForCallIndirect;
+import static com.dylibso.chicory.compiler.internal.Util.classNameForDispatch;
+import static com.dylibso.chicory.compiler.internal.Util.defaultValue;
+import static com.dylibso.chicory.compiler.internal.Util.emitInvokeFunction;
+import static com.dylibso.chicory.compiler.internal.Util.emitInvokeStatic;
+import static com.dylibso.chicory.compiler.internal.Util.emitInvokeVirtual;
+import static com.dylibso.chicory.compiler.internal.Util.emitJvmToLong;
+import static com.dylibso.chicory.compiler.internal.Util.emitLongToJvm;
+import static com.dylibso.chicory.compiler.internal.Util.hasTooManyParameters;
+import static com.dylibso.chicory.compiler.internal.Util.internalClassName;
+import static com.dylibso.chicory.compiler.internal.Util.jvmReturnType;
+import static com.dylibso.chicory.compiler.internal.Util.localType;
+import static com.dylibso.chicory.compiler.internal.Util.methodNameForFunc;
+import static com.dylibso.chicory.compiler.internal.Util.methodTypeFor;
+import static com.dylibso.chicory.compiler.internal.Util.rawMethodTypeFor;
+import static com.dylibso.chicory.compiler.internal.Util.slotCount;
+import static com.dylibso.chicory.compiler.internal.Util.valueMethodName;
+import static com.dylibso.chicory.compiler.internal.Util.valueMethodType;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
@@ -55,7 +55,7 @@ import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
-import com.dylibso.chicory.runtime.AotInterpreterMachine;
+import com.dylibso.chicory.runtime.CompilerInterpreterMachine;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
@@ -94,7 +94,7 @@ public final class Compiler {
     private static final Type LONG_ARRAY_TYPE = Type.getType(long[].class);
     private static final Type INT_ARRAY_TYPE = Type.getType(int[].class);
     private static final Type AOT_INTERPRETER_MACHINE_TYPE =
-            Type.getType(AotInterpreterMachine.class);
+            Type.getType(CompilerInterpreterMachine.class);
     private static final Type INSTANCE_TYPE = Type.getType(Instance.class);
 
     private static final MethodType CALL_METHOD_TYPE =
@@ -261,7 +261,7 @@ public final class Compiler {
     }
 
     private void compileExtraClasses() {
-        loadExtraClass(createAotMethodsClass(className));
+        loadExtraClass(createMethodsClass(className));
 
         int totalFunctions = functionImports + module.functionSection().functionCount();
 
@@ -464,8 +464,8 @@ public final class Compiler {
         if (!interpretedFunctions.isEmpty()) {
             classWriter.visitField(
                     Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
-                    "aotInterpreterMachine",
-                    getDescriptor(AotInterpreterMachine.class),
+                    "compilerInterpreterMachine",
+                    getDescriptor(CompilerInterpreterMachine.class),
                     null,
                     null);
         }
@@ -606,8 +606,8 @@ public final class Compiler {
                     false);
             asm.putfield(
                     internalClassName,
-                    "aotInterpreterMachine",
-                    getDescriptor(AotInterpreterMachine.class));
+                    "compilerInterpreterMachine",
+                    getDescriptor(CompilerInterpreterMachine.class));
         }
 
         asm.areturn(VOID_TYPE);
@@ -634,14 +634,14 @@ public final class Compiler {
             asm.lookupswitch(invalid, keys, labels);
             for (int i = 0; i < interpretedFunctions.size(); i++) {
                 // case 0:
-                //    return this.aotInterpreterMachine.call(var1, var2);
+                //    return this.compilerInterpreterMachine.call(var1, var2);
                 asm.mark(labels[i]);
 
                 asm.load(0, OBJECT_TYPE);
                 asm.getfield(
                         internalClassName,
-                        "aotInterpreterMachine",
-                        getDescriptor(AotInterpreterMachine.class));
+                        "compilerInterpreterMachine",
+                        getDescriptor(CompilerInterpreterMachine.class));
                 asm.load(1, INT_TYPE);
                 asm.load(2, OBJECT_TYPE);
 
@@ -881,7 +881,7 @@ public final class Compiler {
     private void compileCallIndirect(
             String internalClassName, int typeId, FunctionType type, InstructionAdapter asm) {
 
-        int slots = type.params().stream().mapToInt(AotUtil::slotCount).sum();
+        int slots = type.params().stream().mapToInt(Util::slotCount).sum();
         if (hasTooManyParameters(type)) {
             slots = 1; // for long[]
         }
@@ -1050,7 +1050,7 @@ public final class Compiler {
             int startFunc,
             int endFunc) {
 
-        int slots = type.params().stream().mapToInt(AotUtil::slotCount).sum();
+        int slots = type.params().stream().mapToInt(Util::slotCount).sum();
         if (hasTooManyParameters(type)) {
             slots = 1; // for long[]
         }
@@ -1104,7 +1104,7 @@ public final class Compiler {
     // public static <TypeR> func_xx(<TypeN> argN..., Memory memory, Instance instance)
     private static void compileHostFunction(int funcId, FunctionType type, InstructionAdapter asm) {
 
-        int slot = type.params().stream().mapToInt(AotUtil::slotCount).sum();
+        int slot = type.params().stream().mapToInt(Util::slotCount).sum();
 
         asm.load(slot + 1, OBJECT_TYPE); // instance
         asm.iconst(funcId);
@@ -1163,7 +1163,7 @@ public final class Compiler {
                 slots = 1;
             } else {
                 emitBoxArguments(asm, type.params());
-                slots = type.params().stream().mapToInt(AotUtil::slotCount).sum();
+                slots = type.params().stream().mapToInt(Util::slotCount).sum();
             }
 
             var refInstance = slots + 1;

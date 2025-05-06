@@ -1,6 +1,6 @@
 package com.dylibso.chicory.compiler.internal;
 
-import com.dylibso.chicory.runtime.AotInterpreterMachine;
+import com.dylibso.chicory.runtime.CompilerInterpreterMachine;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.TableInstance;
@@ -55,75 +55,84 @@ public final class MethodRefs {
 
     static {
         try {
-            CHECK_INTERRUPTION = Methods.class.getMethod("checkInterruption");
+            CHECK_INTERRUPTION = GeneratedMethods.class.getMethod("checkInterruption");
             CALL_INDIRECT =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "callIndirect", long[].class, int.class, int.class, Instance.class);
             CALL_INDIRECT_ON_INTERPRETER =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "callIndirect", long[].class, int.class, Instance.class);
             INSTANCE_MEMORY = Instance.class.getMethod("memory");
             CALL_HOST_FUNCTION =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "callHostFunction", Instance.class, int.class, long[].class);
-            READ_GLOBAL = Methods.class.getMethod("readGlobal", int.class, Instance.class);
+            READ_GLOBAL = GeneratedMethods.class.getMethod("readGlobal", int.class, Instance.class);
             WRITE_GLOBAL =
-                    Methods.class.getMethod("writeGlobal", long.class, int.class, Instance.class);
+                    GeneratedMethods.class.getMethod(
+                            "writeGlobal", long.class, int.class, Instance.class);
             INSTANCE_SET_ELEMENT = Instance.class.getMethod("setElement", int.class, Element.class);
             INSTANCE_TABLE = Instance.class.getMethod("table", int.class);
             MEMORY_COPY =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "memoryCopy", int.class, int.class, int.class, Memory.class);
             MEMORY_FILL =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "memoryFill", int.class, byte.class, int.class, Memory.class);
             MEMORY_INIT =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "memoryInit", int.class, int.class, int.class, int.class, Memory.class);
-            MEMORY_GROW = Methods.class.getMethod("memoryGrow", int.class, Memory.class);
-            MEMORY_DROP = Methods.class.getMethod("memoryDrop", int.class, Memory.class);
-            MEMORY_PAGES = Methods.class.getMethod("memoryPages", Memory.class);
+            MEMORY_GROW = GeneratedMethods.class.getMethod("memoryGrow", int.class, Memory.class);
+            MEMORY_DROP = GeneratedMethods.class.getMethod("memoryDrop", int.class, Memory.class);
+            MEMORY_PAGES = GeneratedMethods.class.getMethod("memoryPages", Memory.class);
             MEMORY_READ_BYTE =
-                    Methods.class.getMethod("memoryReadByte", int.class, int.class, Memory.class);
+                    GeneratedMethods.class.getMethod(
+                            "memoryReadByte", int.class, int.class, Memory.class);
             MEMORY_READ_SHORT =
-                    Methods.class.getMethod("memoryReadShort", int.class, int.class, Memory.class);
+                    GeneratedMethods.class.getMethod(
+                            "memoryReadShort", int.class, int.class, Memory.class);
             MEMORY_READ_INT =
-                    Methods.class.getMethod("memoryReadInt", int.class, int.class, Memory.class);
+                    GeneratedMethods.class.getMethod(
+                            "memoryReadInt", int.class, int.class, Memory.class);
             MEMORY_READ_LONG =
-                    Methods.class.getMethod("memoryReadLong", int.class, int.class, Memory.class);
+                    GeneratedMethods.class.getMethod(
+                            "memoryReadLong", int.class, int.class, Memory.class);
             MEMORY_READ_FLOAT =
-                    Methods.class.getMethod("memoryReadFloat", int.class, int.class, Memory.class);
+                    GeneratedMethods.class.getMethod(
+                            "memoryReadFloat", int.class, int.class, Memory.class);
             MEMORY_READ_DOUBLE =
-                    Methods.class.getMethod("memoryReadDouble", int.class, int.class, Memory.class);
+                    GeneratedMethods.class.getMethod(
+                            "memoryReadDouble", int.class, int.class, Memory.class);
             MEMORY_WRITE_BYTE =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "memoryWriteByte", int.class, byte.class, int.class, Memory.class);
             MEMORY_WRITE_SHORT =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "memoryWriteShort", int.class, short.class, int.class, Memory.class);
             MEMORY_WRITE_INT =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "memoryWriteInt", int.class, int.class, int.class, Memory.class);
             MEMORY_WRITE_LONG =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "memoryWriteLong", int.class, long.class, int.class, Memory.class);
             MEMORY_WRITE_FLOAT =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "memoryWriteFloat", int.class, float.class, int.class, Memory.class);
             MEMORY_WRITE_DOUBLE =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "memoryWriteDouble", int.class, double.class, int.class, Memory.class);
-            REF_IS_NULL = Methods.class.getMethod("isRefNull", int.class);
-            TABLE_GET = Methods.class.getMethod("tableGet", int.class, int.class, Instance.class);
+            REF_IS_NULL = GeneratedMethods.class.getMethod("isRefNull", int.class);
+            TABLE_GET =
+                    GeneratedMethods.class.getMethod(
+                            "tableGet", int.class, int.class, Instance.class);
             TABLE_SET =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "tableSet", int.class, int.class, int.class, Instance.class);
-            TABLE_SIZE = Methods.class.getMethod("tableSize", int.class, Instance.class);
+            TABLE_SIZE = GeneratedMethods.class.getMethod("tableSize", int.class, Instance.class);
             TABLE_GROW =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "tableGrow", int.class, int.class, int.class, Instance.class);
             TABLE_FILL =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "tableFill",
                             int.class,
                             int.class,
@@ -131,7 +140,7 @@ public final class MethodRefs {
                             int.class,
                             Instance.class);
             TABLE_COPY =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "tableCopy",
                             int.class,
                             int.class,
@@ -140,7 +149,7 @@ public final class MethodRefs {
                             int.class,
                             Instance.class);
             TABLE_INIT =
-                    Methods.class.getMethod(
+                    GeneratedMethods.class.getMethod(
                             "tableInit",
                             int.class,
                             int.class,
@@ -151,16 +160,18 @@ public final class MethodRefs {
             TABLE_REQUIRED_REF = TableInstance.class.getMethod("requiredRef", int.class);
             TABLE_INSTANCE = TableInstance.class.getMethod("instance", int.class);
             THROW_CALL_STACK_EXHAUSTED =
-                    Methods.class.getMethod("throwCallStackExhausted", StackOverflowError.class);
+                    GeneratedMethods.class.getMethod(
+                            "throwCallStackExhausted", StackOverflowError.class);
             THROW_INDIRECT_CALL_TYPE_MISMATCH =
-                    Methods.class.getMethod("throwIndirectCallTypeMismatch");
+                    GeneratedMethods.class.getMethod("throwIndirectCallTypeMismatch");
             THROW_OUT_OF_BOUNDS_MEMORY_ACCESS =
-                    Methods.class.getMethod("throwOutOfBoundsMemoryAccess");
-            THROW_TRAP_EXCEPTION = Methods.class.getMethod("throwTrapException");
-            THROW_UNKNOWN_FUNCTION = Methods.class.getMethod("throwUnknownFunction", int.class);
+                    GeneratedMethods.class.getMethod("throwOutOfBoundsMemoryAccess");
+            THROW_TRAP_EXCEPTION = GeneratedMethods.class.getMethod("throwTrapException");
+            THROW_UNKNOWN_FUNCTION =
+                    GeneratedMethods.class.getMethod("throwUnknownFunction", int.class);
 
             AOT_INTERPRETER_MACHINE_CALL =
-                    AotInterpreterMachine.class.getMethod("call", int.class, long[].class);
+                    CompilerInterpreterMachine.class.getMethod("call", int.class, long[].class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }
