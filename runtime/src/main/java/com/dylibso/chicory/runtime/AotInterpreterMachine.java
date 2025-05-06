@@ -53,6 +53,9 @@ public class AotInterpreterMachine extends InterpreterMachine {
             // continue interpreting for interpreted functions or imported functions
             super.CALL(operands);
         } else {
+            // We end up here after a function switched to interpreted mode,
+            // going back to Java bytecode.
+            //
             // Must be an AOT function: switch back the to the AOT machine that's assigned to the
             // instance.
 
@@ -73,8 +76,11 @@ public class AotInterpreterMachine extends InterpreterMachine {
     }
 
     @Override
-    protected boolean skipMachineForIndirectCall(
+    protected boolean useCurrentInstanceInterpreter(
             Instance instance, Instance refInstance, int funcId) {
+        // this function influence the behavior of CALL_INDIRECT without rewriting it
+        // if we are on the same instance and the next invoked function needs to stay
+        // in interpreted mode, alternatively go through `Machine::call`
         return refInstance.equals(instance) && interpretedFuncIds.contains(funcId);
     }
 }

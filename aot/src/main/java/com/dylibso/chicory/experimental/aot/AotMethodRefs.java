@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.aot;
 
+import com.dylibso.chicory.runtime.AotInterpreterMachine;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.TableInstance;
@@ -50,6 +51,7 @@ public final class AotMethodRefs {
     static final Method THROW_OUT_OF_BOUNDS_MEMORY_ACCESS;
     static final Method THROW_TRAP_EXCEPTION;
     static final Method THROW_UNKNOWN_FUNCTION;
+    static final Method AOT_INTERPRETER_MACHINE_CALL;
 
     static {
         try {
@@ -163,6 +165,9 @@ public final class AotMethodRefs {
                     AotMethods.class.getMethod("throwOutOfBoundsMemoryAccess");
             THROW_TRAP_EXCEPTION = AotMethods.class.getMethod("throwTrapException");
             THROW_UNKNOWN_FUNCTION = AotMethods.class.getMethod("throwUnknownFunction", int.class);
+
+            AOT_INTERPRETER_MACHINE_CALL =
+                    AotInterpreterMachine.class.getMethod("call", int.class, long[].class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }

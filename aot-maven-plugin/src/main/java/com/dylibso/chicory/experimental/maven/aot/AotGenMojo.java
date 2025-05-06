@@ -5,8 +5,7 @@ import com.dylibso.chicory.experimental.build.time.aot.Config;
 import com.dylibso.chicory.experimental.build.time.aot.Generator;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
+import java.util.Set;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -66,8 +65,8 @@ public class AotGenMojo extends AbstractMojo {
     /**
      * The indexes of functions that should be interpreted, separated by commas
      */
-    @Parameter(required = false)
-    List<Integer> interpretedFunctions;
+    @Parameter(required = false, defaultValue = "")
+    Set<Integer> interpretedFunctions;
 
     /**
      * The current Maven project.
@@ -78,9 +77,6 @@ public class AotGenMojo extends AbstractMojo {
     @Override
     public void execute() throws MojoExecutionException {
         getLog().info("Generating AOT classes for " + name + " from " + wasmFile);
-
-        var interpretedFunctions =
-                this.interpretedFunctions == null ? null : new HashSet<>(this.interpretedFunctions);
 
         var config =
                 Config.builder()
@@ -96,8 +92,8 @@ public class AotGenMojo extends AbstractMojo {
         var generator = new Generator(config);
 
         try {
-            generator.generateResources();
-            generator.generateMetaWasm();
+            var finalInterpretedFunctions = generator.generateResources();
+            generator.generateMetaWasm(finalInterpretedFunctions);
             generator.generateSources();
         } catch (IOException e) {
             throw new MojoExecutionException("Failed to generate resources", e);

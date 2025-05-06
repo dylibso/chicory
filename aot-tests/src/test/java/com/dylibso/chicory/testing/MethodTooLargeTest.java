@@ -29,6 +29,7 @@ public class MethodTooLargeTest {
         var module = Parser.parse(wasm);
         var result = AotCompiler.builder(module).build().compile();
 
+        // We only verify that the resulting class contains the fallback to interpreter
         verifyClass(result.classBytes(), true);
     }
 

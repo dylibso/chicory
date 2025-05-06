@@ -68,9 +68,11 @@ public class InterpreterFallbackTest {
 
     private void generateAll(Generator generator) throws IOException {
         generator.generateSources();
-        generator.generateResources();
-        generator.generateMetaWasm();
+        var interpretedFunctions = generator.generateResources();
+        generator.generateMetaWasm(interpretedFunctions);
     }
+
+    private String expectedMessageContent = "interpreter fallback mode: WASM function index: 2";
 
     @Test
     public void testDefaultInterpreterFallback() throws IOException {
@@ -84,16 +86,8 @@ public class InterpreterFallbackTest {
         var exception = assertThrows(ChicoryException.class, () -> generateAll(generator));
 
         assertTrue(
-                exception
-                        .getMessage()
-                        .startsWith(
-                                "WASM function size"
-                                        + " exceeds the Java method size limits and cannot be"
-                                        + " compiled to Java bytecode. It can only be run in the"
-                                        + " interpreter. Either reduce the size of the function or"
-                                        + " enable the interpreter fallback mode: WASM function"
-                                        + " index: 2"),
-                exception.getMessage());
+                exception.getMessage().contains(expectedMessageContent),
+                "Expected message content not found in: " + exception.getMessage());
     }
 
     @Test
@@ -150,18 +144,47 @@ public class InterpreterFallbackTest {
         assertEquals(35, instance.export("func_2").apply(0)[0]);
 
         var stackTrace = String.join("\n", hostStackTrace);
+        // switch to interpreter and back on call
+        assertTrue(
+                containsInOrder(
+                        List.of("AotInterpreterMachine.CALL", "Test3MachineFuncGroup_0.func"),
+                        hostStackTrace));
+
         Approvals.verify(stackTrace);
 
         hostStackTrace.clear();
         assertEquals(35, instance.export("func_2").apply(1)[0]);
 
         stackTrace = String.join("\n", hostStackTrace);
+        // switch to interpreter and back on call_indirect
+        assertTrue(
+                containsInOrder(
+                        List.of("InterpreterMachine.CALL_INDIRECT", "Test3MachineFuncGroup_0.func"),
+                        hostStackTrace));
+
         Approvals.verify(
                 stackTrace,
                 new Options()
                         .forFile()
                         .withBaseName(
                                 "InterpreterFallbackTest.testSilentInterpreterFallback-indirect"));
+    }
+
+    private boolean containsInOrder(List<String> expected, List<String> actual) {
+        var mutableExpected = new ArrayList<String>();
+        mutableExpected.addAll(expected);
+
+        var currentExpected = mutableExpected.remove(0);
+        for (var c : actual) {
+            if (c.contains(currentExpected)) {
+                if (mutableExpected.size() > 0) {
+                    currentExpected = mutableExpected.remove(0);
+                } else {
+                    return true;
+                }
+            }
+        }
+        return mutableExpected.isEmpty();
     }
 
     @Test
@@ -176,16 +199,8 @@ public class InterpreterFallbackTest {
         var exception = assertThrows(ChicoryException.class, () -> generateAll(generator));
 
         assertTrue(
-                exception
-                        .getMessage()
-                        .startsWith(
-                                "WASM function size"
-                                        + " exceeds the Java method size limits and cannot be"
-                                        + " compiled to Java bytecode. It can only be run in the"
-                                        + " interpreter. Either reduce the size of the function or"
-                                        + " enable the interpreter fallback mode: WASM function"
-                                        + " index: 2"),
-                exception.getMessage());
+                exception.getMessage().contains(expectedMessageContent),
+                "Expected message content not found in: " + exception.getMessage());
     }
 
     @Test

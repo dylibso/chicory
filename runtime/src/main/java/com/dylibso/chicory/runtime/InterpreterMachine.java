@@ -142,10 +142,6 @@ public class InterpreterMachine implements Machine {
         return stack;
     }
 
-    protected Deque<StackFrame> callStack() {
-        return callStack;
-    }
-
     protected void eval(MStack stack, Instance instance, Deque<StackFrame> callStack)
             throws ChicoryException {
         var frame = callStack.peek();
@@ -2029,7 +2025,7 @@ public class InterpreterMachine implements Machine {
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.params());
-        if (skipMachineForIndirectCall(instance, refInstance, funcId)) {
+        if (useCurrentInstanceInterpreter(instance, refInstance, funcId)) {
             call(stack, instance, callStack, funcId, args, type, false);
         } else {
             checkInterruption();
@@ -2044,7 +2040,7 @@ public class InterpreterMachine implements Machine {
         }
     }
 
-    protected boolean skipMachineForIndirectCall(
+    protected boolean useCurrentInstanceInterpreter(
             Instance instance, Instance refInstance, int funcId) {
         return refInstance.equals(instance);
     }
@@ -2078,7 +2074,7 @@ public class InterpreterMachine implements Machine {
         return sizeOf(instance.type(typeId).returns());
     }
 
-    protected static StackFrame THROW_REF(
+    private static StackFrame THROW_REF(
             Instance instance,
             int exceptionIdx,
             MStack stack,

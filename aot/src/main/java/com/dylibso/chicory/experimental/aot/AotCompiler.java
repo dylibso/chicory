@@ -3,6 +3,7 @@ package com.dylibso.chicory.experimental.aot;
 import static com.dylibso.chicory.experimental.aot.AotEmitterMap.EMITTERS;
 import static com.dylibso.chicory.experimental.aot.AotMethodInliner.aotMethodsRemapper;
 import static com.dylibso.chicory.experimental.aot.AotMethodInliner.createAotMethodsClass;
+import static com.dylibso.chicory.experimental.aot.AotMethodRefs.AOT_INTERPRETER_MACHINE_CALL;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_INDIRECT;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_INDIRECT_ON_INTERPRETER;
@@ -67,7 +68,6 @@ import com.dylibso.chicory.wasm.types.ValType;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.invoke.MethodType;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -103,17 +103,6 @@ public final class AotCompiler {
     private static final MethodType MACHINE_CALL_METHOD_TYPE =
             methodType(long[].class, Instance.class, Memory.class, int.class, long[].class);
 
-    static final Method AOT_INTERPRETER_MACHINE_CALL;
-
-    static {
-        try {
-            AOT_INTERPRETER_MACHINE_CALL =
-                    AotInterpreterMachine.class.getMethod("call", int.class, long[].class);
-        } catch (NoSuchMethodException e) {
-            throw new AssertionError(e);
-        }
-    }
-
     private static final int MAX_MACHINE_CALL_METHODS = 1024; // must be power of two
     // 1024*12 was empirically determined to work for the 50K small wasm functions.
     // So lets start there and halve it until we find a size that works.
@@ -142,20 +131,18 @@ public final class AotCompiler {
         this.analyzer = new AotAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
 
-        if (interpretedFunctions == null) {
+        if (interpretedFunctions == null || interpretedFunctions.isEmpty()) {
             this.interpretedFunctions = new HashSet<>();
             this.interpreterFallback =
                     requireNonNullElse(interpreterFallback, InterpreterFallback.WARN);
-        } else {
-            this.interpretedFunctions = new HashSet<>(interpretedFunctions);
+        } else if (interpreterFallback != InterpreterFallback.FAIL) {
             // if we are being given a set of interpreted functions, then any unlisted
             // function needs to trigger a failure.
-
-            // it's a dev error to mix these options.
-            assert interpreterFallback == InterpreterFallback.FAIL
-                    : "the InterpreterFallback must be set to FAIL if a set of interpreted"
-                            + " functions is provided";
-            // but he is not running /w -ea then behave as if it was set to FAIL
+            throw new IllegalArgumentException(
+                    "InterpreterFallback must be set to FAIL if a fixed set of interpreted"
+                            + " functions is provided");
+        } else {
+            this.interpretedFunctions = new HashSet<>(interpretedFunctions);
             this.interpreterFallback = InterpreterFallback.FAIL;
         }
 

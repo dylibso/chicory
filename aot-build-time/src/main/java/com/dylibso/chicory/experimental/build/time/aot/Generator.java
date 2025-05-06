@@ -44,13 +44,12 @@ import java.util.Set;
 public class Generator {
 
     private final Config config;
-    private Set<Integer> interpretedFunctions;
 
     public Generator(Config config) {
         this.config = config;
     }
 
-    public void generateResources() throws IOException {
+    public Set<Integer> generateResources() throws IOException {
         var module = Parser.parse(config.wasmFile());
         var machineName = config.name() + "Machine";
         var compiler =
@@ -61,8 +60,6 @@ public class Generator {
                         .build();
         var result = compiler.compile();
 
-        this.interpretedFunctions = result.interpretedFunctions();
-
         var finalFolder = config.targetClassFolder();
 
         createFolders(finalFolder, config.name().split("\\."));
@@ -72,6 +69,8 @@ public class Generator {
             var targetFile = config.targetClassFolder().resolve(binaryName);
             Files.write(targetFile, entry.getValue());
         }
+
+        return result.interpretedFunctions();
     }
 
     public void generateSources() throws IOException {
@@ -103,11 +102,7 @@ public class Generator {
         dest.saveAll();
     }
 
-    public void generateMetaWasm() throws IOException {
-        if (this.interpretedFunctions == null) {
-            throw new IllegalStateException("generateResources() must be called first");
-        }
-
+    public void generateMetaWasm(Set<Integer> interpretedFunctions) throws IOException {
         byte[] wasmBytes = Files.readAllBytes(config.wasmFile());
         var module = Parser.builder().includeSectionId(SectionId.CODE).build().parse(wasmBytes);
 
@@ -127,7 +122,7 @@ public class Generator {
                         assert count == actual;
                         for (int i = 0; i < count; i++) {
                             var funcId = importFuncs + i;
-                            if (this.interpretedFunctions.contains(funcId)) {
+                            if (interpretedFunctions.contains(funcId)) {
 
                                 // Copy over the original function body from the source
                                 var bodySize = (int) readVarUInt32(source);
