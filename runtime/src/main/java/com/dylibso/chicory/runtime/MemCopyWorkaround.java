@@ -10,7 +10,7 @@ public final class MemCopyWorkaround {
 
     public static boolean shouldUseMemWorkaround() {
         String version = System.getProperty("java.version");
-        if (version.equals("0")) {
+        if (version == null || version.equals("0")) {
             // Android https://developer.android.com/reference/java/lang/System#getProperties()
             return false;
         } else if (version.startsWith("1.")) {
