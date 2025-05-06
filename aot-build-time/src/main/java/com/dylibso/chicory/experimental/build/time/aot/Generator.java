@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.build.time.aot;
 
+import static com.dylibso.chicory.wasm.Encoding.readVarUInt32;
 import static com.dylibso.chicory.wasm.WasmWriter.writeVarUInt32;
 import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import static com.github.javaparser.StaticJavaParser.parseType;
@@ -34,9 +35,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Set;
 
 public class Generator {
 
@@ -46,10 +49,15 @@ public class Generator {
         this.config = config;
     }
 
-    public void generateResources() throws IOException {
+    public Set<Integer> generateResources() throws IOException {
         var module = Parser.parse(config.wasmFile());
         var machineName = config.name() + "Machine";
-        var compiler = AotCompiler.builder(module).withClassName(machineName).build();
+        var compiler =
+                AotCompiler.builder(module)
+                        .withClassName(machineName)
+                        .withInterpreterFallback(config.interpreterFallback())
+                        .withInterpretedFunctions(config.interpretedFunctions())
+                        .build();
         var result = compiler.compile();
 
         var finalFolder = config.targetClassFolder();
@@ -61,6 +69,8 @@ public class Generator {
             var targetFile = config.targetClassFolder().resolve(binaryName);
             Files.write(targetFile, entry.getValue());
         }
+
+        return result.interpretedFunctions();
     }
 
     public void generateSources() throws IOException {
@@ -92,7 +102,7 @@ public class Generator {
         dest.saveAll();
     }
 
-    public void generateMetaWasm() throws IOException {
+    public void generateMetaWasm(Set<Integer> interpretedFunctions) throws IOException {
         byte[] wasmBytes = Files.readAllBytes(config.wasmFile());
         var module = Parser.builder().includeSectionId(SectionId.CODE).build().parse(wasmBytes);
 
@@ -101,14 +111,44 @@ public class Generator {
                 wasmBytes,
                 section -> {
                     if (section.sectionId() == SectionId.CODE) {
+
+                        var source = ByteBuffer.wrap(((RawSection) section).contents());
+
                         var out = new ByteArrayOutputStream();
+                        var importFuncs = module.importSection().importCount();
                         int count = module.codeSection().functionBodyCount();
                         writeVarUInt32(out, count);
+                        var actual = readVarUInt32(source);
+                        assert count == actual;
                         for (int i = 0; i < count; i++) {
-                            writeVarUInt32(out, 3); // function size in bytes
-                            writeVarUInt32(out, 0); // locals count
-                            out.write(OpCode.UNREACHABLE.opcode());
-                            out.write(OpCode.END.opcode());
+                            var funcId = importFuncs + i;
+                            if (interpretedFunctions.contains(funcId)) {
+
+                                // Copy over the original function body from the source
+                                var bodySize = (int) readVarUInt32(source);
+                                writeVarUInt32(out, bodySize);
+                                var bodyBytes = new byte[bodySize];
+                                source.get(bodyBytes);
+                                try {
+                                    out.write(bodyBytes);
+                                } catch (IOException e) {
+                                    throw new UncheckedIOException(e);
+                                }
+
+                            } else {
+
+                                // Move the source position past the function body
+                                var bodySize = (int) readVarUInt32(source);
+                                source.position(source.position() + bodySize - 1);
+                                var end_op = source.get();
+                                assert end_op == OpCode.END.opcode();
+
+                                // Write an empty function body
+                                writeVarUInt32(out, 3); // function size in bytes
+                                writeVarUInt32(out, 0); // locals count
+                                out.write(OpCode.UNREACHABLE.opcode());
+                                out.write(OpCode.END.opcode());
+                            }
                         }
                         writer.writeSection(SectionId.CODE, out.toByteArray());
                     } else if (section.sectionId() != SectionId.CUSTOM) {

@@ -1,5 +1,6 @@
 package com.dylibso.chicory.experimental.aot;
 
+import com.dylibso.chicory.runtime.AotInterpreterMachine;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.TableInstance;
@@ -10,6 +11,7 @@ public final class AotMethodRefs {
 
     static final Method CHECK_INTERRUPTION;
     static final Method CALL_INDIRECT;
+    static final Method CALL_INDIRECT_ON_INTERPRETER;
     static final Method INSTANCE_MEMORY;
     static final Method CALL_HOST_FUNCTION;
     static final Method READ_GLOBAL;
@@ -49,6 +51,7 @@ public final class AotMethodRefs {
     static final Method THROW_OUT_OF_BOUNDS_MEMORY_ACCESS;
     static final Method THROW_TRAP_EXCEPTION;
     static final Method THROW_UNKNOWN_FUNCTION;
+    static final Method AOT_INTERPRETER_MACHINE_CALL;
 
     static {
         try {
@@ -56,6 +59,9 @@ public final class AotMethodRefs {
             CALL_INDIRECT =
                     AotMethods.class.getMethod(
                             "callIndirect", long[].class, int.class, int.class, Instance.class);
+            CALL_INDIRECT_ON_INTERPRETER =
+                    AotMethods.class.getMethod(
+                            "callIndirect", long[].class, int.class, Instance.class);
             INSTANCE_MEMORY = Instance.class.getMethod("memory");
             CALL_HOST_FUNCTION =
                     AotMethods.class.getMethod(
@@ -159,6 +165,9 @@ public final class AotMethodRefs {
                     AotMethods.class.getMethod("throwOutOfBoundsMemoryAccess");
             THROW_TRAP_EXCEPTION = AotMethods.class.getMethod("throwTrapException");
             THROW_UNKNOWN_FUNCTION = AotMethods.class.getMethod("throwUnknownFunction", int.class);
+
+            AOT_INTERPRETER_MACHINE_CALL =
+                    AotInterpreterMachine.class.getMethod("call", int.class, long[].class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }

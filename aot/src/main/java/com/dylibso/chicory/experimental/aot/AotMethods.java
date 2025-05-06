@@ -26,6 +26,10 @@ public final class AotMethods {
         return instance.getMachine().call(funcId, args);
     }
 
+    public static long[] callIndirect(long[] args, int funcId, Instance instance) {
+        return instance.getMachine().call(funcId, args);
+    }
+
     public static long[] callHostFunction(Instance instance, int funcId, long[] args) {
         var imprt = instance.imports().function(funcId);
         return imprt.handle().apply(instance, args);

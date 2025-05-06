@@ -16,6 +16,16 @@
 
   <dependencies>
     <dependency>
+      <groupId>com.approvaltests</groupId>
+      <artifactId>approvaltests</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>aot-build-time-experimental</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>aot-experimental</artifactId>
       <scope>test</scope>
@@ -50,7 +60,16 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
     </dependency>
-
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm-util</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -229,6 +248,16 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <systemPropertyVariables>
+            <chicory.compiler.printUseOfInterpretedFunctions>true</chicory.compiler.printUseOfInterpretedFunctions>
+          </systemPropertyVariables>
+        </configuration>
       </plugin>
     </plugins>
   </build>

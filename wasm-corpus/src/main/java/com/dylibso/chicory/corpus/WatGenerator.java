@@ -4,6 +4,7 @@ import java.io.StringWriter;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
@@ -16,31 +17,47 @@ public final class WatGenerator {
         // Prevent instantiation
     }
 
-    static final class Context {
-        public final ArrayList<Integer> functions = new ArrayList<>();
-        public final ArrayList<Integer> instructions = new ArrayList<>();
-    }
-
     public static String bigWat(int funcCount, int funcSize) {
-        var ctx = new Context();
+        ArrayList<Integer> functions = new ArrayList<>();
+        ArrayList<Integer> instructions = new ArrayList<>();
         for (int i = 0; i < funcCount; i++) {
-            ctx.functions.add(i + 1);
+            functions.add(i + 1);
         }
         for (int i = 0; i < funcSize; i++) {
-            ctx.instructions.add(i + 1);
+            instructions.add(i + 1);
         }
 
+        return render(
+                "/com/dylibso/chicory/corpus/big.wat",
+                Map.of(
+                        "functions", functions,
+                        "instructions", instructions));
+    }
+
+    public static String methodTooLarge(int funcSize) {
+        ArrayList<Integer> instructions = new ArrayList<>();
+        for (int i = 0; i < funcSize; i++) {
+            instructions.add(i + 1);
+        }
+
+        return render(
+                "/com/dylibso/chicory/corpus/method_too_large.wat",
+                Map.of("instructions", instructions));
+    }
+
+    private static String render(String template, Map<String, Object> map) {
         VelocityEngine velocityEngine = new VelocityEngine();
         velocityEngine.setProperty(RuntimeConstants.RESOURCE_LOADER, "classpath");
         velocityEngine.setProperty(
                 "classpath.resource.loader.class", ClasspathResourceLoader.class.getName());
         velocityEngine.init();
 
-        Template t = velocityEngine.getTemplate("/com/dylibso/chicory/corpus/big.wat");
+        Template t = velocityEngine.getTemplate(template);
 
         VelocityContext context = new VelocityContext();
-        context.put("functions", ctx.functions);
-        context.put("instructions", ctx.instructions);
+        for (var entry : map.entrySet()) {
+            context.put(entry.getKey(), entry.getValue());
+        }
 
         StringWriter writer = new StringWriter();
         t.merge(context, writer);

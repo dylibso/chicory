@@ -1,6 +1,8 @@
 package com.dylibso.chicory.experimental.build.time.aot;
 
+import com.dylibso.chicory.experimental.aot.InterpreterFallback;
 import java.nio.file.Path;
+import java.util.Set;
 import java.util.StringJoiner;
 
 public final class Config {
@@ -29,17 +31,31 @@ public final class Config {
      */
     private final Path targetWasmFolder;
 
+    /**
+     * the interpreter fallback to be used
+     */
+    public final InterpreterFallback interpreterFallback;
+
+    /**
+     * the set of interpreted functions
+     */
+    private final Set<Integer> interpretedFunctions;
+
     private Config(
             Path wasmFile,
             String name,
             Path targetClassFolder,
             Path targetSourceFolder,
-            Path targetWasmFolder) {
+            Path targetWasmFolder,
+            InterpreterFallback interpreterFallback,
+            Set<Integer> interpretedFunctions) {
         this.wasmFile = wasmFile;
         this.name = name;
         this.targetClassFolder = targetClassFolder;
         this.targetSourceFolder = targetSourceFolder;
         this.targetWasmFolder = targetWasmFolder;
+        this.interpreterFallback = interpreterFallback;
+        this.interpretedFunctions = interpretedFunctions;
     }
 
     public Path wasmFile() {
@@ -60,6 +76,14 @@ public final class Config {
 
     public Path targetWasmFolder() {
         return targetWasmFolder;
+    }
+
+    public InterpreterFallback interpreterFallback() {
+        return interpreterFallback;
+    }
+
+    public Set<Integer> interpretedFunctions() {
+        return interpretedFunctions;
     }
 
     public static Builder builder() {
@@ -88,6 +112,8 @@ public final class Config {
         private Path targetClassFolder;
         private Path targetSourceFolder;
         private Path targetWasmFolder;
+        private InterpreterFallback interpreterFallback = InterpreterFallback.FAIL;
+        private Set<Integer> interpretedFunctions;
 
         private Builder() {}
 
@@ -116,9 +142,25 @@ public final class Config {
             return this;
         }
 
+        public Builder withInterpreterFallback(InterpreterFallback interpreterFallback) {
+            this.interpreterFallback = interpreterFallback;
+            return this;
+        }
+
+        public Builder withInterpretedFunctions(Set<Integer> interpretedFunctions) {
+            this.interpretedFunctions = interpretedFunctions;
+            return this;
+        }
+
         public Config build() {
             return new Config(
-                    wasmFile, name, targetClassFolder, targetSourceFolder, targetWasmFolder);
+                    wasmFile,
+                    name,
+                    targetClassFolder,
+                    targetSourceFolder,
+                    targetWasmFolder,
+                    interpreterFallback,
+                    interpretedFunctions);
         }
     }
 }

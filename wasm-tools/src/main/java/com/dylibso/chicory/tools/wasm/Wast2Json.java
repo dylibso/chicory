@@ -9,7 +9,6 @@ import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
-import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
@@ -32,8 +31,7 @@ public final class Wast2Json {
                     return false;
                 }
             };
-    private static final WasmModule MODULE =
-            Parser.parse(Wast2Json.class.getResourceAsStream("/wasm-tools.wasm"));
+    private static final WasmModule MODULE = WasmToolsModule.load();
 
     private final File input;
     private final File output;
@@ -94,6 +92,7 @@ public final class Wast2Json {
                         ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
 
                 Instance.builder(MODULE)
+                        .withMachineFactory(WasmToolsModule::create)
                         .withMemoryFactory(ByteArrayMemory::new)
                         .withImportValues(imports)
                         .build();

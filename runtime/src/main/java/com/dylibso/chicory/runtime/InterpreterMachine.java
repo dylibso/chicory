@@ -54,7 +54,7 @@ public class InterpreterMachine implements Machine {
         return call(stack, instance, callStack, funcId, args, null, true);
     }
 
-    private long[] call(
+    protected long[] call(
             MStack stack,
             Instance instance,
             Deque<StackFrame> callStack,
@@ -132,6 +132,14 @@ public class InterpreterMachine implements Machine {
             results[i] = stack.pop();
         }
         return results;
+    }
+
+    protected Instance instance() {
+        return instance;
+    }
+
+    protected MStack stack() {
+        return stack;
     }
 
     protected void eval(MStack stack, Instance instance, Deque<StackFrame> callStack)
@@ -1661,7 +1669,7 @@ public class InterpreterMachine implements Machine {
         stack.push(Value.floatToLong(OpcodeImpl.F32_TRUNC(val)));
     }
 
-    private void CALL(Operands operands) {
+    protected void CALL(Operands operands) {
         var funcId = (int) operands.get(0);
         var typeId = instance.functionType(funcId);
         var type = instance.type(typeId);
@@ -2017,7 +2025,7 @@ public class InterpreterMachine implements Machine {
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.params());
-        if (refInstance.equals(instance)) {
+        if (useCurrentInstanceInterpreter(instance, refInstance, funcId)) {
             call(stack, instance, callStack, funcId, args, type, false);
         } else {
             checkInterruption();
@@ -2030,6 +2038,11 @@ public class InterpreterMachine implements Machine {
                 }
             }
         }
+    }
+
+    protected boolean useCurrentInstanceInterpreter(
+            Instance instance, Instance refInstance, int funcId) {
+        return refInstance.equals(instance);
     }
 
     private static int numberOfParams(Instance instance, AnnotatedInstruction scope) {

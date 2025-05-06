@@ -3,8 +3,10 @@ package com.dylibso.chicory.experimental.aot;
 import static com.dylibso.chicory.experimental.aot.AotEmitterMap.EMITTERS;
 import static com.dylibso.chicory.experimental.aot.AotMethodInliner.aotMethodsRemapper;
 import static com.dylibso.chicory.experimental.aot.AotMethodInliner.createAotMethodsClass;
+import static com.dylibso.chicory.experimental.aot.AotMethodRefs.AOT_INTERPRETER_MACHINE_CALL;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_INDIRECT;
+import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_INDIRECT_ON_INTERPRETER;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CHECK_INTERRUPTION;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.INSTANCE_MEMORY;
 import static com.dylibso.chicory.experimental.aot.AotMethodRefs.INSTANCE_TABLE;
@@ -42,6 +44,7 @@ import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
 import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.toSet;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
@@ -52,6 +55,7 @@ import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
+import com.dylibso.chicory.runtime.AotInterpreterMachine;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
@@ -88,6 +92,10 @@ public final class AotCompiler {
 
     public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.$gen.CompiledMachine";
     private static final Type LONG_ARRAY_TYPE = Type.getType(long[].class);
+    private static final Type INT_ARRAY_TYPE = Type.getType(int[].class);
+    private static final Type AOT_INTERPRETER_MACHINE_TYPE =
+            Type.getType(AotInterpreterMachine.class);
+    private static final Type INSTANCE_TYPE = Type.getType(Instance.class);
 
     private static final MethodType CALL_METHOD_TYPE =
             methodType(long[].class, Instance.class, Memory.class, long[].class);
@@ -106,15 +114,38 @@ public final class AotCompiler {
     private final WasmModule module;
     private final AotAnalyzer analyzer;
     private final int functionImports;
+    private final InterpreterFallback interpreterFallback;
     private final List<FunctionType> functionTypes;
     private final Map<String, byte[]> extraClasses = new LinkedHashMap<>();
     private int maxFunctionsPerClass;
+    private final HashSet<Integer> interpretedFunctions;
 
-    private AotCompiler(WasmModule module, String className, int maxFunctionsPerClass) {
+    private AotCompiler(
+            WasmModule module,
+            String className,
+            int maxFunctionsPerClass,
+            InterpreterFallback interpreterFallback,
+            Set<Integer> interpretedFunctions) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.analyzer = new AotAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
+
+        if (interpretedFunctions == null || interpretedFunctions.isEmpty()) {
+            this.interpretedFunctions = new HashSet<>();
+            this.interpreterFallback =
+                    requireNonNullElse(interpreterFallback, InterpreterFallback.WARN);
+        } else if (interpreterFallback != InterpreterFallback.FAIL) {
+            // if we are being given a set of interpreted functions, then any unlisted
+            // function needs to trigger a failure.
+            throw new IllegalArgumentException(
+                    "InterpreterFallback must be set to FAIL if a fixed set of interpreted"
+                            + " functions is provided");
+        } else {
+            this.interpretedFunctions = new HashSet<>(interpretedFunctions);
+            this.interpreterFallback = InterpreterFallback.FAIL;
+        }
+
         this.functionTypes = analyzer.functionTypes();
         this.maxFunctionsPerClass = maxFunctionsPerClass;
         compileExtraClasses();
@@ -128,6 +159,8 @@ public final class AotCompiler {
         private final WasmModule module;
         private String className;
         private int maxFunctionsPerClass;
+        private InterpreterFallback interpreterFallback;
+        private Set<Integer> interpretedFunctions;
 
         private Builder(WasmModule module) {
             this.module = module;
@@ -143,6 +176,16 @@ public final class AotCompiler {
             return this;
         }
 
+        public Builder withInterpreterFallback(InterpreterFallback interpreterFallback) {
+            this.interpreterFallback = interpreterFallback;
+            return this;
+        }
+
+        public Builder withInterpretedFunctions(Set<Integer> interpretedFunctions) {
+            this.interpretedFunctions = interpretedFunctions;
+            return this;
+        }
+
         public AotCompiler build() {
             var className = this.className;
             if (className == null) {
@@ -153,7 +196,12 @@ public final class AotCompiler {
             if (maxFunctionsPerClass <= 0) {
                 maxFunctionsPerClass = DEFAULT_MAX_FUNCTIONS_PER_CLASS;
             }
-            return new AotCompiler(module, className, maxFunctionsPerClass);
+            return new AotCompiler(
+                    module,
+                    className,
+                    maxFunctionsPerClass,
+                    interpreterFallback,
+                    interpretedFunctions);
         }
     }
 
@@ -164,7 +212,7 @@ public final class AotCompiler {
         Map<String, byte[]> classBytes = new LinkedHashMap<>();
         classBytes.put(className, bytes);
         classBytes.putAll(extraClasses);
-        return new CompilerResult(factory, classBytes);
+        return new CompilerResult(factory, classBytes, Set.copyOf(interpretedFunctions));
     }
 
     private Function<Instance, Machine> createMachineFactory(byte[] classBytes) {
@@ -182,6 +230,10 @@ public final class AotCompiler {
     }
 
     private Class<?> loadClass(byte[] classBytes) {
+        return loadClass(classLoader, classBytes);
+    }
+
+    private Class<?> loadClass(AotClassLoader classLoader, byte[] classBytes) {
         try {
             var clazz = classLoader.loadFromBytes(classBytes);
             // force initialization to run JVM verifier
@@ -231,15 +283,60 @@ public final class AotCompiler {
         // "${className}FuncGroup_0", "${className}FuncGroup_1", and  "${className}FuncGroup_2" with
         // each class holding up to 6k of the functions.
         //
-        maxFunctionsPerClass =
-                loadChunkedClass(
-                        totalFunctions,
-                        maxFunctionsPerClass,
-                        (start, end) ->
-                                compileExtraClass(
-                                        classNameForFuncGroup(start),
-                                        emitFunctionGroup(
-                                                start, end, internalClassName(className))));
+        var originalMaxFunctionsPerClass = maxFunctionsPerClass;
+        while (true) {
+            try {
+                maxFunctionsPerClass =
+                        loadChunkedClass(
+                                totalFunctions,
+                                maxFunctionsPerClass,
+                                (start, end, chunkSize) -> {
+                                    maxFunctionsPerClass = chunkSize;
+                                    String className = classNameForFuncGroup(start);
+                                    return compileExtraClass(
+                                            className,
+                                            emitFunctionGroup(
+                                                    start, end, internalClassName(this.className)));
+                                });
+                break;
+            } catch (MethodTooLargeException e) {
+                String methodName = e.getMethodName();
+                if (methodName.startsWith("func_")) {
+                    // Add the method to interpreted function list... and try again.
+                    var funcId = Integer.parseInt(methodName.substring("func_".length()));
+
+                    String functionDescription = "WASM function index: " + funcId;
+                    if (module.nameSection() != null) {
+                        String name = module.nameSection().nameOfFunction(funcId);
+                        if (name != null) {
+                            functionDescription += String.format(" (name: %s)", name);
+                        }
+                    }
+
+                    switch (interpreterFallback) {
+                        case SILENT:
+                            break;
+                        case WARN:
+                            System.err.println(
+                                    "Warning: using interpreted mode for " + functionDescription);
+                            break;
+                        case FAIL:
+                            throw new ChicoryException(
+                                    "WASM function size exceeds the Java method size limits and"
+                                        + " cannot be compiled to Java bytecode. It can only be run"
+                                        + " in the interpreter. Either reduce the size of the"
+                                        + " function or enable the interpreter fallback mode: "
+                                            + functionDescription,
+                                    e);
+                    }
+
+                    interpretedFunctions.add(funcId);
+                    maxFunctionsPerClass = originalMaxFunctionsPerClass;
+                } else {
+                    throw e;
+                }
+            }
+        }
 
         if (!functionTypes.isEmpty()) {
             loadExtraClass(compileMachineCallClass());
@@ -247,41 +344,47 @@ public final class AotCompiler {
     }
 
     interface ChunkedClassEmitter {
-        byte[] emit(int start, int end);
+        byte[] emit(int start, int end, int chunkSize);
     }
 
     /**
      * Loads a chunked class based on the given size and chunk size.
-     *
+     * <p>
      * This method attempts to load a class in chunks to avoid MethodTooLargeException or ClassTooLargeException.
      * It dynamically adjusts the chunk size based on the size of the class to be loaded and the maximum size
      * that can be loaded without causing an exception. The method returns the final chunk size used for loading.
      *
-     * @param size The total size of the class to be loaded.
+     * @param size      The total size of the class to be loaded.
      * @param chunkSize The initial chunk size to use for loading.
-     * @param emitter The ChunkedClassEmitter that generates the class bytes for a given chunk.
+     * @param emitter   The ChunkedClassEmitter that generates the class bytes for a given chunk.
      * @return The final chunk size used for loading the class.
      */
     int loadChunkedClass(int size, int chunkSize, ChunkedClassEmitter emitter) {
-        ArrayList<String> generated = new ArrayList<>();
+        ArrayList<byte[]> generated = new ArrayList<byte[]>();
+        AotClassLoader classLoader = new AotClassLoader();
         while (true) {
             try {
                 int chunks = (size / chunkSize) + (size % chunkSize == 0 ? 0 : 1);
                 for (int i = 0; i < chunks; i++) {
                     var start = i * chunkSize;
                     var end = min(start + chunkSize, size);
-                    generated.add(loadExtraClass(emitter.emit(start, end)));
+
+                    byte[] bytes = emitter.emit(start, end, chunkSize);
+                    loadClass(classLoader, bytes);
+                    generated.add(bytes);
                 }
                 break;
-            } catch (MethodTooLargeException | ClassTooLargeException e) {
-                for (var x : generated) {
-                    extraClasses.remove(x);
-                }
+            } catch (ClassTooLargeException e) {
                 chunkSize = chunkSize >> 1;
                 if (chunkSize == 0) {
                     throw e;
                 }
+                generated.clear();
+                classLoader = new AotClassLoader();
             }
+        }
+        for (var bytes : generated) {
+            loadExtraClass(bytes);
         }
         return chunkSize;
     }
@@ -310,6 +413,7 @@ public final class AotCompiler {
                     } else {
                         body = module.codeSection().getFunctionBody(i - functionImports);
                         var bodyCopy = body;
+
                         emitFunction(
                                 classWriter,
                                 methodNameForFunc(funcId),
@@ -328,21 +432,7 @@ public final class AotCompiler {
                                 asm -> compileCallFunction(funcId, type, asm));
                     }
                 } catch (MethodTooLargeException e) {
-                    String details = "WASM function index: " + i;
-                    if (module.nameSection() != null) {
-                        String name = module.nameSection().nameOfFunction(i);
-                        if (name != null) {
-                            details += String.format(", name: %s", name);
-                        }
-                    }
-                    if (body != null) {
-                        details +=
-                                String.format(
-                                        ", locals: %d, instructions: %d",
-                                        body.localTypes().size(), body.instructions().size());
-                    }
-                    e.addSuppressed(new ChicoryException(details));
-                    throw e;
+                    throw handleMethodTooLarge(e, module);
                 }
             }
         };
@@ -370,6 +460,15 @@ public final class AotCompiler {
                 getDescriptor(Instance.class),
                 null,
                 null);
+
+        if (!interpretedFunctions.isEmpty()) {
+            classWriter.visitField(
+                    Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL,
+                    "aotInterpreterMachine",
+                    getDescriptor(AotInterpreterMachine.class),
+                    null,
+                    null);
+        }
 
         // constructor
         emitFunction(
@@ -423,20 +522,25 @@ public final class AotCompiler {
         try {
             return binaryWriter.toByteArray();
         } catch (MethodTooLargeException e) {
-            String name = e.getMethodName();
-            if (name.startsWith("func_") && module.nameSection() != null) {
-                int funcId = Integer.parseInt(name.split("_", -1)[1]);
-                String function = module.nameSection().nameOfFunction(funcId);
-                if (function != null) {
-                    name += " (" + function + ")";
-                }
-            }
-            throw new ChicoryException(
-                    String.format(
-                            "JVM bytecode too large for WASM method: %s size=%d",
-                            name, e.getCodeSize()),
-                    e);
+            throw handleMethodTooLarge(e, module);
         }
+    }
+
+    private static RuntimeException handleMethodTooLarge(
+            MethodTooLargeException e, WasmModule module) {
+        String name = e.getMethodName();
+        if (name.startsWith("func_") && module.nameSection() != null) {
+            int funcId = Integer.parseInt(name.split("_", -1)[1]);
+            String function = module.nameSection().nameOfFunction(funcId);
+            if (function != null) {
+                name += " (" + function + ")";
+            }
+        }
+        return new ChicoryException(
+                String.format(
+                        "JVM bytecode too large for WASM method: %s size=%d",
+                        name, e.getCodeSize()),
+                e);
     }
 
     private static void emitFunction(
@@ -454,6 +558,9 @@ public final class AotCompiler {
                         null,
                         null);
 
+        // uncomment if you ever want to troubleshoot invalid bytecode generation
+        // methodWriter = new CheckMethodAdapter(methodWriter);
+
         methodWriter.visitCode();
         consumer.accept(new InstructionAdapter(methodWriter));
         methodWriter.visitMaxs(0, 0);
@@ -466,7 +573,7 @@ public final class AotCompiler {
                 OBJECT_TYPE.getInternalName(), "<init>", getMethodDescriptor(VOID_TYPE), false);
     }
 
-    private static void compileConstructor(InstructionAdapter asm, String internalClassName) {
+    private void compileConstructor(InstructionAdapter asm, String internalClassName) {
         emitCallSuper(asm);
 
         // this.instance = instance;
@@ -474,16 +581,79 @@ public final class AotCompiler {
         asm.load(1, OBJECT_TYPE);
         asm.putfield(internalClassName, "instance", getDescriptor(Instance.class));
 
+        if (!interpretedFunctions.isEmpty()) {
+
+            asm.load(0, OBJECT_TYPE);
+            asm.anew(AOT_INTERPRETER_MACHINE_TYPE);
+            asm.dup();
+            asm.load(1, OBJECT_TYPE);
+
+            // construct int[] with the interpreted function ids
+            var funcIds = new ArrayList<>(interpretedFunctions);
+            asm.iconst(funcIds.size());
+            asm.newarray(INT_TYPE);
+            for (int i = 0; i < funcIds.size(); i++) {
+                asm.dup();
+                asm.iconst(i);
+                asm.iconst(funcIds.get(i));
+                asm.astore(INT_TYPE);
+            }
+
+            asm.invokespecial(
+                    AOT_INTERPRETER_MACHINE_TYPE.getInternalName(),
+                    "<init>",
+                    getMethodDescriptor(VOID_TYPE, INSTANCE_TYPE, INT_ARRAY_TYPE),
+                    false);
+            asm.putfield(
+                    internalClassName,
+                    "aotInterpreterMachine",
+                    getDescriptor(AotInterpreterMachine.class));
+        }
+
         asm.areturn(VOID_TYPE);
     }
 
+    // implements the body of:
+    // public long[] call(int var1, long[] var2)
     private void compileMachineCall(String internalClassName, InstructionAdapter asm) {
+
         // handle modules with no functions
         if (functionTypes.isEmpty()) {
             asm.load(1, INT_TYPE);
             emitInvokeStatic(asm, THROW_UNKNOWN_FUNCTION);
             asm.athrow();
             return;
+        }
+
+        if (!interpretedFunctions.isEmpty()) {
+            Label invalid = new Label();
+            int[] keys = interpretedFunctions.stream().mapToInt(x -> x).sorted().toArray();
+            Label[] labels =
+                    interpretedFunctions.stream().map(x -> new Label()).toArray(Label[]::new);
+            asm.load(1, INT_TYPE);
+            asm.lookupswitch(invalid, keys, labels);
+            for (int i = 0; i < interpretedFunctions.size(); i++) {
+                // case 0:
+                //    return this.aotInterpreterMachine.call(var1, var2);
+                asm.mark(labels[i]);
+
+                asm.load(0, OBJECT_TYPE);
+                asm.getfield(
+                        internalClassName,
+                        "aotInterpreterMachine",
+                        getDescriptor(AotInterpreterMachine.class));
+                asm.load(1, INT_TYPE);
+                asm.load(2, OBJECT_TYPE);
+
+                asm.visitMethodInsn(
+                        Opcodes.INVOKEVIRTUAL,
+                        AOT_INTERPRETER_MACHINE_TYPE.getInternalName(),
+                        "call",
+                        getMethodDescriptor(AOT_INTERPRETER_MACHINE_CALL),
+                        false);
+                asm.areturn(OBJECT_TYPE);
+            }
+            asm.mark(invalid);
         }
 
         // try block
@@ -548,7 +718,7 @@ public final class AotCompiler {
                     loadChunkedClass(
                             functionTypes.size(),
                             maxMachineCallMethods,
-                            (start, end) ->
+                            (start, end, chunkSize) ->
                                     compileExtraClass(
                                             classNameForDispatch(start),
                                             (cw) ->
@@ -665,7 +835,10 @@ public final class AotCompiler {
         asm.athrow();
     }
 
+    // implements the body of:
+    // public static long[] call_xxx(Memory memory, Instance instance, long[] args)
     private void compileCallFunction(int funcId, FunctionType type, InstructionAdapter asm) {
+
         if (hasTooManyParameters(type)) {
             asm.load(2, LONG_ARRAY_TYPE);
         } else {
@@ -702,8 +875,12 @@ public final class AotCompiler {
         asm.areturn(OBJECT_TYPE);
     }
 
+    // implements the body of:
+    // public static <TypeR> call_indirect_xxx(<TypeN> argN...,
+    //      int funcTableIdx, int tableIdx, Memory memory, Instance instance)
     private void compileCallIndirect(
             String internalClassName, int typeId, FunctionType type, InstructionAdapter asm) {
+
         int slots = type.params().stream().mapToInt(AotUtil::slotCount).sum();
         if (hasTooManyParameters(type)) {
             slots = 1; // for long[]
@@ -804,7 +981,7 @@ public final class AotCompiler {
             loadChunkedClass(
                     functionTypes.size(),
                     maxMachineCallMethods,
-                    (start, end) ->
+                    (start, end, chunkSize) ->
                             compileExtraClass(
                                     classNameForCallIndirect(typeId, start),
                                     (cw) -> {
@@ -923,6 +1100,8 @@ public final class AotCompiler {
         asm.athrow();
     }
 
+    // implements the body of:
+    // public static <TypeR> func_xx(<TypeN> argN..., Memory memory, Instance instance)
     private static void compileHostFunction(int funcId, FunctionType type, InstructionAdapter asm) {
 
         int slot = type.params().stream().mapToInt(AotUtil::slotCount).sum();
@@ -967,6 +1146,8 @@ public final class AotCompiler {
         }
     }
 
+    // implements the body of:
+    // public static <TypeR> func_xxx(<TypeN> ArgN..., Memory memory, Instance instance)
     private void compileFunction(
             String internalClassName,
             int funcId,
@@ -974,7 +1155,26 @@ public final class AotCompiler {
             FunctionBody body,
             InstructionAdapter asm) {
 
-        // func_xxx() body impl
+        if (interpretedFunctions.contains(funcId)) {
+
+            var slots = 0;
+            if (hasTooManyParameters(type)) {
+                asm.load(0, LONG_ARRAY_TYPE);
+                slots = 1;
+            } else {
+                emitBoxArguments(asm, type.params());
+                slots = type.params().stream().mapToInt(AotUtil::slotCount).sum();
+            }
+
+            var refInstance = slots + 1;
+
+            asm.iconst(funcId);
+            asm.load(refInstance, OBJECT_TYPE);
+            emitInvokeStatic(asm, CALL_INDIRECT_ON_INTERPRETER);
+            emitUnboxResult(type, asm);
+            return;
+        }
+
         var ctx =
                 new AotContext(
                         internalClassName,
