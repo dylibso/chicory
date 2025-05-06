@@ -1,11 +1,11 @@
-package com.dylibso.chicory.experimental.aot;
+package com.dylibso.chicory.compiler.internal;
 
 import org.objectweb.asm.ClassReader;
 
-final class AotClassLoader extends ClassLoader {
+final class WasmClassLoader extends ClassLoader {
 
-    public AotClassLoader() {
-        super(AotClassLoader.class.getClassLoader());
+    public WasmClassLoader() {
+        super(WasmClassLoader.class.getClassLoader());
     }
 
     public Class<?> loadFromBytes(byte[] bytes) {

@@ -1,43 +1,43 @@
-package com.dylibso.chicory.experimental.aot;
+package com.dylibso.chicory.compiler.internal;
 
-import static com.dylibso.chicory.experimental.aot.AotEmitterMap.EMITTERS;
-import static com.dylibso.chicory.experimental.aot.AotMethodInliner.aotMethodsRemapper;
-import static com.dylibso.chicory.experimental.aot.AotMethodInliner.createAotMethodsClass;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.AOT_INTERPRETER_MACHINE_CALL;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_HOST_FUNCTION;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_INDIRECT;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CALL_INDIRECT_ON_INTERPRETER;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.CHECK_INTERRUPTION;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.INSTANCE_MEMORY;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.INSTANCE_TABLE;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.TABLE_INSTANCE;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.TABLE_REQUIRED_REF;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.THROW_CALL_STACK_EXHAUSTED;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.THROW_INDIRECT_CALL_TYPE_MISMATCH;
-import static com.dylibso.chicory.experimental.aot.AotMethodRefs.THROW_UNKNOWN_FUNCTION;
-import static com.dylibso.chicory.experimental.aot.AotUtil.asmType;
-import static com.dylibso.chicory.experimental.aot.AotUtil.callDispatchMethodName;
-import static com.dylibso.chicory.experimental.aot.AotUtil.callIndirectMethodName;
-import static com.dylibso.chicory.experimental.aot.AotUtil.callIndirectMethodType;
-import static com.dylibso.chicory.experimental.aot.AotUtil.callMethodName;
-import static com.dylibso.chicory.experimental.aot.AotUtil.classNameForCallIndirect;
-import static com.dylibso.chicory.experimental.aot.AotUtil.classNameForDispatch;
-import static com.dylibso.chicory.experimental.aot.AotUtil.defaultValue;
-import static com.dylibso.chicory.experimental.aot.AotUtil.emitInvokeFunction;
-import static com.dylibso.chicory.experimental.aot.AotUtil.emitInvokeStatic;
-import static com.dylibso.chicory.experimental.aot.AotUtil.emitInvokeVirtual;
-import static com.dylibso.chicory.experimental.aot.AotUtil.emitJvmToLong;
-import static com.dylibso.chicory.experimental.aot.AotUtil.emitLongToJvm;
-import static com.dylibso.chicory.experimental.aot.AotUtil.hasTooManyParameters;
-import static com.dylibso.chicory.experimental.aot.AotUtil.internalClassName;
-import static com.dylibso.chicory.experimental.aot.AotUtil.jvmReturnType;
-import static com.dylibso.chicory.experimental.aot.AotUtil.localType;
-import static com.dylibso.chicory.experimental.aot.AotUtil.methodNameForFunc;
-import static com.dylibso.chicory.experimental.aot.AotUtil.methodTypeFor;
-import static com.dylibso.chicory.experimental.aot.AotUtil.rawMethodTypeFor;
-import static com.dylibso.chicory.experimental.aot.AotUtil.slotCount;
-import static com.dylibso.chicory.experimental.aot.AotUtil.valueMethodName;
-import static com.dylibso.chicory.experimental.aot.AotUtil.valueMethodType;
+import static com.dylibso.chicory.compiler.internal.AotUtil.asmType;
+import static com.dylibso.chicory.compiler.internal.AotUtil.callDispatchMethodName;
+import static com.dylibso.chicory.compiler.internal.AotUtil.callIndirectMethodName;
+import static com.dylibso.chicory.compiler.internal.AotUtil.callIndirectMethodType;
+import static com.dylibso.chicory.compiler.internal.AotUtil.callMethodName;
+import static com.dylibso.chicory.compiler.internal.AotUtil.classNameForCallIndirect;
+import static com.dylibso.chicory.compiler.internal.AotUtil.classNameForDispatch;
+import static com.dylibso.chicory.compiler.internal.AotUtil.defaultValue;
+import static com.dylibso.chicory.compiler.internal.AotUtil.emitInvokeFunction;
+import static com.dylibso.chicory.compiler.internal.AotUtil.emitInvokeStatic;
+import static com.dylibso.chicory.compiler.internal.AotUtil.emitInvokeVirtual;
+import static com.dylibso.chicory.compiler.internal.AotUtil.emitJvmToLong;
+import static com.dylibso.chicory.compiler.internal.AotUtil.emitLongToJvm;
+import static com.dylibso.chicory.compiler.internal.AotUtil.hasTooManyParameters;
+import static com.dylibso.chicory.compiler.internal.AotUtil.internalClassName;
+import static com.dylibso.chicory.compiler.internal.AotUtil.jvmReturnType;
+import static com.dylibso.chicory.compiler.internal.AotUtil.localType;
+import static com.dylibso.chicory.compiler.internal.AotUtil.methodNameForFunc;
+import static com.dylibso.chicory.compiler.internal.AotUtil.methodTypeFor;
+import static com.dylibso.chicory.compiler.internal.AotUtil.rawMethodTypeFor;
+import static com.dylibso.chicory.compiler.internal.AotUtil.slotCount;
+import static com.dylibso.chicory.compiler.internal.AotUtil.valueMethodName;
+import static com.dylibso.chicory.compiler.internal.AotUtil.valueMethodType;
+import static com.dylibso.chicory.compiler.internal.EmitterMap.EMITTERS;
+import static com.dylibso.chicory.compiler.internal.MethodInliner.aotMethodsRemapper;
+import static com.dylibso.chicory.compiler.internal.MethodInliner.createAotMethodsClass;
+import static com.dylibso.chicory.compiler.internal.MethodRefs.AOT_INTERPRETER_MACHINE_CALL;
+import static com.dylibso.chicory.compiler.internal.MethodRefs.CALL_HOST_FUNCTION;
+import static com.dylibso.chicory.compiler.internal.MethodRefs.CALL_INDIRECT;
+import static com.dylibso.chicory.compiler.internal.MethodRefs.CALL_INDIRECT_ON_INTERPRETER;
+import static com.dylibso.chicory.compiler.internal.MethodRefs.CHECK_INTERRUPTION;
+import static com.dylibso.chicory.compiler.internal.MethodRefs.INSTANCE_MEMORY;
+import static com.dylibso.chicory.compiler.internal.MethodRefs.INSTANCE_TABLE;
+import static com.dylibso.chicory.compiler.internal.MethodRefs.TABLE_INSTANCE;
+import static com.dylibso.chicory.compiler.internal.MethodRefs.TABLE_REQUIRED_REF;
+import static com.dylibso.chicory.compiler.internal.MethodRefs.THROW_CALL_STACK_EXHAUSTED;
+import static com.dylibso.chicory.compiler.internal.MethodRefs.THROW_INDIRECT_CALL_TYPE_MISMATCH;
+import static com.dylibso.chicory.compiler.internal.MethodRefs.THROW_UNKNOWN_FUNCTION;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
@@ -88,7 +88,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.InstructionAdapter;
 import org.objectweb.asm.util.CheckClassAdapter;
 
-public final class AotCompiler {
+public final class Compiler {
 
     public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.$gen.CompiledMachine";
     private static final Type LONG_ARRAY_TYPE = Type.getType(long[].class);
@@ -109,10 +109,10 @@ public final class AotCompiler {
     // This should give us the biggest class size possible.
     private static final int DEFAULT_MAX_FUNCTIONS_PER_CLASS = 1024 * 12;
 
-    private final AotClassLoader classLoader = new AotClassLoader();
+    private final WasmClassLoader classLoader = new WasmClassLoader();
     private final String className;
     private final WasmModule module;
-    private final AotAnalyzer analyzer;
+    private final WasmAnalyzer analyzer;
     private final int functionImports;
     private final InterpreterFallback interpreterFallback;
     private final List<FunctionType> functionTypes;
@@ -120,7 +120,7 @@ public final class AotCompiler {
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions;
 
-    private AotCompiler(
+    private Compiler(
             WasmModule module,
             String className,
             int maxFunctionsPerClass,
@@ -128,7 +128,7 @@ public final class AotCompiler {
             Set<Integer> interpretedFunctions) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
-        this.analyzer = new AotAnalyzer(module);
+        this.analyzer = new WasmAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
 
         if (interpretedFunctions == null || interpretedFunctions.isEmpty()) {
@@ -186,7 +186,7 @@ public final class AotCompiler {
             return this;
         }
 
-        public AotCompiler build() {
+        public Compiler build() {
             var className = this.className;
             if (className == null) {
                 className = DEFAULT_CLASS_NAME;
@@ -196,7 +196,7 @@ public final class AotCompiler {
             if (maxFunctionsPerClass <= 0) {
                 maxFunctionsPerClass = DEFAULT_MAX_FUNCTIONS_PER_CLASS;
             }
-            return new AotCompiler(
+            return new Compiler(
                     module,
                     className,
                     maxFunctionsPerClass,
@@ -233,7 +233,7 @@ public final class AotCompiler {
         return loadClass(classLoader, classBytes);
     }
 
-    private Class<?> loadClass(AotClassLoader classLoader, byte[] classBytes) {
+    private Class<?> loadClass(WasmClassLoader classLoader, byte[] classBytes) {
         try {
             var clazz = classLoader.loadFromBytes(classBytes);
             // force initialization to run JVM verifier
@@ -361,7 +361,7 @@ public final class AotCompiler {
      */
     int loadChunkedClass(int size, int chunkSize, ChunkedClassEmitter emitter) {
         ArrayList<byte[]> generated = new ArrayList<byte[]>();
-        AotClassLoader classLoader = new AotClassLoader();
+        WasmClassLoader classLoader = new WasmClassLoader();
         while (true) {
             try {
                 int chunks = (size / chunkSize) + (size % chunkSize == 0 ? 0 : 1);
@@ -380,7 +380,7 @@ public final class AotCompiler {
                     throw e;
                 }
                 generated.clear();
-                classLoader = new AotClassLoader();
+                classLoader = new WasmClassLoader();
             }
         }
         for (var bytes : generated) {
@@ -1176,7 +1176,7 @@ public final class AotCompiler {
         }
 
         var ctx =
-                new AotContext(
+                new Context(
                         internalClassName,
                         maxFunctionsPerClass,
                         analyzer.globalTypes(),
@@ -1186,7 +1186,7 @@ public final class AotCompiler {
                         type,
                         body);
 
-        List<AotInstruction> instructions = analyzer.analyze(funcId);
+        List<Instruction> instructions = analyzer.analyze(funcId);
 
         int localsCount = type.params().size();
         if (hasTooManyParameters(type)) {
@@ -1223,7 +1223,7 @@ public final class AotCompiler {
         Set<Long> visitedTargets = new HashSet<>();
 
         // compile the function body
-        for (AotInstruction ins : instructions) {
+        for (Instruction ins : instructions) {
             switch (ins.opcode()) {
                 case LABEL:
                     Label label = labels.get(ins.operand(0));

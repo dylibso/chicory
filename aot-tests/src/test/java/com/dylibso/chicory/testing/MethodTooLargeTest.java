@@ -4,8 +4,8 @@ import static com.dylibso.chicory.corpus.WatGenerator.methodTooLarge;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.objectweb.asm.Type.getInternalName;
 
-import com.dylibso.chicory.experimental.aot.AotCompiler;
-import com.dylibso.chicory.experimental.aot.AotMethods;
+import com.dylibso.chicory.compiler.internal.Compiler;
+import com.dylibso.chicory.compiler.internal.Methods;
 import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasm.Parser;
 import java.io.PrintWriter;
@@ -27,7 +27,7 @@ public class MethodTooLargeTest {
         byte[] wasm = Wat2Wasm.parse(wat);
 
         var module = Parser.parse(wasm);
-        var result = AotCompiler.builder(module).build().compile();
+        var result = Compiler.builder(module).build().compile();
 
         // We only verify that the resulting class contains the fallback to interpreter
         verifyClass(result.classBytes(), true);
@@ -86,7 +86,7 @@ public class MethodTooLargeTest {
         Approvals.verify(output);
 
         assertFalse(
-                output.contains(getInternalName(AotMethods.class)),
+                output.contains(getInternalName(Methods.class)),
                 "Class contains non-inlined reference to AotMethods");
     }
 }

@@ -1,4 +1,4 @@
-package com.dylibso.chicory.experimental.aot;
+package com.dylibso.chicory.compiler.internal;
 
 /**
  * Enum representing the fallback behavior for when the Aot compiler needs to fallback to using

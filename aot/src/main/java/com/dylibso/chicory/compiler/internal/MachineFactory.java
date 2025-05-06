@@ -1,4 +1,4 @@
-package com.dylibso.chicory.experimental.aot;
+package com.dylibso.chicory.compiler.internal;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
@@ -10,14 +10,14 @@ import java.util.function.Function;
  * All compilation is done in a single compile phase during instantiation
  * and is reused for all created machine instances.
  */
-public final class AotMachineFactory implements Function<Instance, Machine> {
+public final class MachineFactory implements Function<Instance, Machine> {
 
     private final WasmModule module;
     private final Function<Instance, Machine> factory;
 
-    public AotMachineFactory(WasmModule module) {
+    public MachineFactory(WasmModule module) {
         this.module = module;
-        var compiler = AotCompiler.builder(module).build();
+        var compiler = Compiler.builder(module).build();
         var result = compiler.compile();
         this.factory = result.machineFactory();
     }

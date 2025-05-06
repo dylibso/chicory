@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.dylibso.chicory.experimental.aot.AotMachine;
+import com.dylibso.chicory.compiler.CompilerMachine;
 import com.dylibso.chicory.runtime.ImportTable;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
@@ -93,7 +93,7 @@ public final class MachinesTest {
 
         // and now runtime AOT
         moduleInstanceBuilder()
-                .withMachineFactory(AotMachine::new)
+                .withMachineFactory(CompilerMachine::new)
                 .withImportValues(store.toImportValues())
                 .build();
 
@@ -127,7 +127,7 @@ public final class MachinesTest {
 
         // and now runtime AOT
         moduleInstanceBuilder()
-                .withMachineFactory(AotMachine::new)
+                .withMachineFactory(CompilerMachine::new)
                 .withImportValues(store.toImportValues())
                 .build();
 
@@ -144,7 +144,7 @@ public final class MachinesTest {
         // using the runtime aot version of QuickJS
         var quickjs =
                 quickJsInstanceBuilder()
-                        .withMachineFactory(AotMachine::new)
+                        .withMachineFactory(CompilerMachine::new)
                         .withImportValues(
                                 ImportValues.builder().addFunction(wasi.toHostFunctions()).build())
                         .build();
@@ -238,7 +238,7 @@ public final class MachinesTest {
 
         Instance.builder(loadModule("compiled/call_indirect-import.wat.wasm"))
                 .withImportValues(store.toImportValues())
-                .withMachineFactory(AotMachine::new)
+                .withMachineFactory(CompilerMachine::new)
                 .build();
 
         assertEquals(42, instance.export("call-self").apply()[0]);
@@ -258,7 +258,7 @@ public final class MachinesTest {
         var instance =
                 Instance.builder(loadModule("compiled/call_indirect-export.wat.wasm"))
                         .withImportValues(store.toImportValues())
-                        .withMachineFactory(AotMachine::new)
+                        .withMachineFactory(CompilerMachine::new)
                         .build();
         store.register("test", instance);
 
