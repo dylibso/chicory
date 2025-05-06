@@ -5,7 +5,7 @@ import static com.dylibso.chicory.wasm.WasmWriter.writeVarUInt32;
 import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import static com.github.javaparser.StaticJavaParser.parseType;
 
-import com.dylibso.chicory.experimental.aot.AotCompiler;
+import com.dylibso.chicory.compiler.internal.Compiler;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.Parser;
@@ -53,7 +53,7 @@ public class Generator {
         var module = Parser.parse(config.wasmFile());
         var machineName = config.name() + "Machine";
         var compiler =
-                AotCompiler.builder(module)
+                Compiler.builder(module)
                         .withClassName(machineName)
                         .withInterpreterFallback(config.interpreterFallback())
                         .withInterpretedFunctions(config.interpretedFunctions())

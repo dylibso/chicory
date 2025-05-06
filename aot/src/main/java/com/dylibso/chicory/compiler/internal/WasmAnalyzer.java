@@ -1,7 +1,7 @@
-package com.dylibso.chicory.experimental.aot;
+package com.dylibso.chicory.compiler.internal;
 
-import static com.dylibso.chicory.experimental.aot.AotUtil.localType;
-import static com.dylibso.chicory.experimental.aot.TypeStack.FUNCTION_SCOPE;
+import static com.dylibso.chicory.compiler.internal.AotUtil.localType;
+import static com.dylibso.chicory.compiler.internal.TypeStack.FUNCTION_SCOPE;
 import static java.util.Collections.reverse;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -15,8 +15,6 @@ import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.GlobalImport;
-import com.dylibso.chicory.wasm.types.Instruction;
-import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.ValType;
@@ -31,7 +29,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-final class AotAnalyzer {
+final class WasmAnalyzer {
 
     private final WasmModule module;
     private final List<ValType> globalTypes;
@@ -39,7 +37,7 @@ final class AotAnalyzer {
     private final List<ValType> tableTypes;
     private final int functionImports;
 
-    public AotAnalyzer(WasmModule module) {
+    public WasmAnalyzer(WasmModule module) {
         this.module = module;
         this.globalTypes = getGlobalTypes(module);
         this.functionTypes = getFunctionTypes(module);
@@ -55,12 +53,12 @@ final class AotAnalyzer {
         return functionTypes;
     }
 
-    public List<AotInstruction> analyze(int funcId) {
+    public List<Instruction> analyze(int funcId) {
         var functionType = functionTypes.get(funcId);
         var body = module.codeSection().getFunctionBody(funcId - functionImports);
         var stack = new TypeStack();
         int nextLabel = body.instructions().size();
-        List<AotInstruction> result = new ArrayList<>();
+        List<Instruction> result = new ArrayList<>();
 
         // find label targets
         Set<Integer> labels = new HashSet<>();
@@ -82,18 +80,19 @@ final class AotAnalyzer {
             AnnotatedInstruction ins = body.instructions().get(idx);
 
             if (labels.contains(idx)) {
-                result.add(new AotInstruction(AotOpCode.LABEL, idx));
+                result.add(new Instruction(OpCode.LABEL, idx));
             }
 
             // skip instructions after unconditional control transfer
             if (exitBlockDepth >= 0) {
                 if (ins.depth() > exitBlockDepth
-                        || (ins.opcode() != OpCode.ELSE && ins.opcode() != OpCode.END)) {
+                        || (ins.opcode() != com.dylibso.chicory.wasm.types.OpCode.ELSE
+                                && ins.opcode() != com.dylibso.chicory.wasm.types.OpCode.END)) {
                     continue;
                 }
 
                 exitBlockDepth = -1;
-                if (ins.opcode() == OpCode.END) {
+                if (ins.opcode() == com.dylibso.chicory.wasm.types.OpCode.END) {
                     stack.scopeRestore();
                 }
             }
@@ -103,7 +102,7 @@ final class AotAnalyzer {
                     break;
                 case UNREACHABLE:
                     exitBlockDepth = ins.depth();
-                    result.add(new AotInstruction(AotOpCode.TRAP));
+                    result.add(new Instruction(OpCode.TRAP));
                     break;
                 case BLOCK:
                 case LOOP:
@@ -117,21 +116,24 @@ final class AotAnalyzer {
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
-                    result.add(new AotInstruction(AotOpCode.RETURN, ids(functionType.returns())));
+                    result.add(new Instruction(OpCode.RETURN, ids(functionType.returns())));
                     break;
                 case RETURN_CALL:
                     // The JVM does not support proper tail calls, so we desugar RETURN_CALL
                     // into a CALL + RETURN.
 
                     // [p*] -> [r*]
-                    result.add(new AotInstruction(AotOpCode.of(OpCode.CALL), ins.operands()));
+                    result.add(
+                            new Instruction(
+                                    OpCode.of(com.dylibso.chicory.wasm.types.OpCode.CALL),
+                                    ins.operands()));
                     updateStack(stack, functionTypes.get((int) ins.operand(0)));
 
                     exitBlockDepth = ins.depth();
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
-                    result.add(new AotInstruction(AotOpCode.RETURN, ids(functionType.returns())));
+                    result.add(new Instruction(OpCode.RETURN, ids(functionType.returns())));
                     break;
 
                 case RETURN_CALL_INDIRECT:
@@ -142,44 +144,47 @@ final class AotAnalyzer {
                     stack.pop(ValType.I32);
                     updateStack(stack, module.typeSection().getType((int) ins.operand(0)));
                     result.add(
-                            new AotInstruction(AotOpCode.of(OpCode.CALL_INDIRECT), ins.operands()));
+                            new Instruction(
+                                    OpCode.of(com.dylibso.chicory.wasm.types.OpCode.CALL_INDIRECT),
+                                    ins.operands()));
 
                     exitBlockDepth = ins.depth();
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
 
-                    result.add(new AotInstruction(AotOpCode.RETURN, ids(functionType.returns())));
+                    result.add(new Instruction(OpCode.RETURN, ids(functionType.returns())));
                     break;
 
                 case IF:
                     stack.pop(ValType.I32);
                     stack.enterScope(ins.scope(), blockType(ins));
                     // use the same starting stack sizes for both sides of the branch
-                    if (body.instructions().get(ins.labelFalse() - 1).opcode() == OpCode.ELSE) {
+                    if (body.instructions().get(ins.labelFalse() - 1).opcode()
+                            == com.dylibso.chicory.wasm.types.OpCode.ELSE) {
                         stack.pushTypes();
                     }
-                    result.add(new AotInstruction(AotOpCode.IFEQ, ins.labelFalse()));
+                    result.add(new Instruction(OpCode.IFEQ, ins.labelFalse()));
                     break;
                 case ELSE:
                     stack.popTypes();
-                    result.add(new AotInstruction(AotOpCode.GOTO, ins.labelTrue()));
+                    result.add(new Instruction(OpCode.GOTO, ins.labelTrue()));
                     break;
                 case BR:
                     exitBlockDepth = ins.depth();
                     unwindStack(functionType, body, ins, ins.labelTrue(), stack)
                             .ifPresent(result::add);
-                    result.add(new AotInstruction(AotOpCode.GOTO, ins.labelTrue()));
+                    result.add(new Instruction(OpCode.GOTO, ins.labelTrue()));
                     break;
                 case BR_IF:
                     stack.pop(ValType.I32);
                     var ifUnwind = unwindStack(functionType, body, ins, ins.labelTrue(), stack);
                     if (ifUnwind.isPresent()) {
-                        result.add(new AotInstruction(AotOpCode.IFEQ, ins.labelFalse()));
+                        result.add(new Instruction(OpCode.IFEQ, ins.labelFalse()));
                         result.add(ifUnwind.get());
-                        result.add(new AotInstruction(AotOpCode.GOTO, ins.labelTrue()));
+                        result.add(new Instruction(OpCode.GOTO, ins.labelTrue()));
                     } else {
-                        result.add(new AotInstruction(AotOpCode.IFNE, ins.labelTrue()));
+                        result.add(new Instruction(OpCode.IFNE, ins.labelTrue()));
                     }
                     break;
                 case BR_TABLE:
@@ -187,14 +192,14 @@ final class AotAnalyzer {
                     stack.pop(ValType.I32);
                     // convert to jump if it only has a default
                     if (ins.labelTable().size() == 1) {
-                        result.add(new AotInstruction(AotOpCode.DROP, ValType.I32.id()));
+                        result.add(new Instruction(OpCode.DROP, ValType.I32.id()));
                         unwindStack(functionType, body, ins, ins.labelTable().get(0), stack)
                                 .ifPresent(result::add);
-                        result.add(new AotInstruction(AotOpCode.GOTO, ins.labelTable().get(0)));
+                        result.add(new Instruction(OpCode.GOTO, ins.labelTable().get(0)));
                         break;
                     }
                     // extract unique targets and generate unwind for each
-                    List<AotInstruction> unwinds = new ArrayList<>();
+                    List<Instruction> unwinds = new ArrayList<>();
                     Map<Integer, Integer> targets = new HashMap<>();
                     for (var target : ins.labelTable()) {
                         if (!targets.containsKey(target)) {
@@ -203,15 +208,15 @@ final class AotAnalyzer {
                             if (unwind.isPresent()) {
                                 label = nextLabel;
                                 nextLabel++;
-                                unwinds.add(new AotInstruction(AotOpCode.LABEL, label));
+                                unwinds.add(new Instruction(OpCode.LABEL, label));
                                 unwinds.add(unwind.get());
-                                unwinds.add(new AotInstruction(AotOpCode.GOTO, target));
+                                unwinds.add(new Instruction(OpCode.GOTO, target));
                             }
                             targets.put(target, label);
                         }
                     }
                     long[] operands = ins.labelTable().stream().mapToLong(targets::get).toArray();
-                    result.add(new AotInstruction(AotOpCode.SWITCH, operands));
+                    result.add(new Instruction(OpCode.SWITCH, operands));
                     result.addAll(unwinds);
                     break;
                 case SELECT:
@@ -222,13 +227,13 @@ final class AotAnalyzer {
                     stack.pop(selectType);
                     stack.pop(selectType);
                     stack.push(selectType);
-                    result.add(new AotInstruction(AotOpCode.SELECT, selectType.id()));
+                    result.add(new Instruction(OpCode.SELECT, selectType.id()));
                     break;
                 case DROP:
                     // [t] -> []
                     var dropType = stack.peek();
                     stack.pop(dropType);
-                    result.add(new AotInstruction(AotOpCode.DROP, dropType.id()));
+                    result.add(new Instruction(OpCode.DROP, dropType.id()));
                     break;
                 case LOCAL_TEE:
                     // [t] -> [t]
@@ -236,7 +241,7 @@ final class AotAnalyzer {
                     stack.pop(teeType);
                     stack.push(teeType);
                     long[] teeOperands = {ins.operand(0), teeType.id()};
-                    result.add(new AotInstruction(AotOpCode.LOCAL_TEE, teeOperands));
+                    result.add(new Instruction(OpCode.LOCAL_TEE, teeOperands));
                     break;
                 default:
                     analyzeSimple(result, stack, ins, functionType, body);
@@ -247,16 +252,16 @@ final class AotAnalyzer {
         for (var type : reversed(functionType.returns())) {
             stack.pop(type);
         }
-        result.add(new AotInstruction(AotOpCode.RETURN, ids(functionType.returns())));
+        result.add(new Instruction(OpCode.RETURN, ids(functionType.returns())));
 
         stack.verifyEmpty();
         return result;
     }
 
     private void analyzeSimple(
-            List<AotInstruction> out,
+            List<Instruction> out,
             TypeStack stack,
-            Instruction ins,
+            com.dylibso.chicory.wasm.types.Instruction ins,
             FunctionType functionType,
             FunctionBody body) {
         switch (ins.opcode()) {
@@ -627,7 +632,7 @@ final class AotAnalyzer {
             default:
                 throw new ChicoryException("Unhandled opcode: " + ins.opcode());
         }
-        out.add(new AotInstruction(AotOpCode.of(ins.opcode()), ins.operands()));
+        out.add(new Instruction(OpCode.of(ins.opcode()), ins.operands()));
     }
 
     private static void updateStack(TypeStack stack, FunctionType functionType) {
@@ -639,7 +644,7 @@ final class AotAnalyzer {
         }
     }
 
-    private Optional<AotInstruction> unwindStack(
+    private Optional<Instruction> unwindStack(
             FunctionType functionType,
             FunctionBody body,
             AnnotatedInstruction ins,
@@ -656,7 +661,7 @@ final class AotAnalyzer {
         var scope = target.scope();
 
         FunctionType blockType;
-        if (scope.opcode() == OpCode.END) {
+        if (scope.opcode() == com.dylibso.chicory.wasm.types.OpCode.END) {
             // special scope for the function's implicit block
             scope = FUNCTION_SCOPE;
             blockType = functionType;
@@ -688,10 +693,10 @@ final class AotAnalyzer {
         reverse(dropKeepTypes);
         dropKeepTypes.stream().mapToLong(ValType::id).forEach(operands::add);
 
-        return Optional.of(new AotInstruction(AotOpCode.DROP_KEEP, operands.build().toArray()));
+        return Optional.of(new Instruction(OpCode.DROP_KEEP, operands.build().toArray()));
     }
 
-    private FunctionType blockType(Instruction ins) {
+    private FunctionType blockType(com.dylibso.chicory.wasm.types.Instruction ins) {
         var typeId = ins.operand(0);
         if (typeId == 0x40) {
             return FunctionType.empty();

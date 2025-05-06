@@ -1,12 +1,13 @@
-package com.dylibso.chicory.experimental.aot;
+package com.dylibso.chicory.compiler.internal;
 
-import static com.dylibso.chicory.experimental.aot.AotUtil.methodNameForFunc;
+import static com.dylibso.chicory.compiler.internal.AotUtil.methodNameForFunc;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dylibso.chicory.compiler.CompilerMachine;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.Parser;
@@ -21,7 +22,7 @@ public class InterruptionTest {
                 Parser.parse(
                         InterruptionTest.class.getResourceAsStream(
                                 "/compiled/infinite-loop.c.wasm"));
-        var instance = Instance.builder(module).withMachineFactory(AotMachine::new).build();
+        var instance = Instance.builder(module).withMachineFactory(CompilerMachine::new).build();
 
         var function = instance.export("run");
         assertInterruption(function::apply, functionIdx(module, "run"));
@@ -31,7 +32,7 @@ public class InterruptionTest {
     public void shouldInterruptCall() throws InterruptedException {
         var module =
                 Parser.parse(InterruptionTest.class.getResourceAsStream("/compiled/power.c.wasm"));
-        var instance = Instance.builder(module).withMachineFactory(AotMachine::new).build();
+        var instance = Instance.builder(module).withMachineFactory(CompilerMachine::new).build();
         var function = instance.export("run");
         assertInterruption(() -> function.apply(100), functionIdx(module, "run"));
     }
@@ -78,7 +79,7 @@ public class InterruptionTest {
             for (StackTraceElement element : thread.getStackTrace()) {
                 var className = element.getClassName();
                 var methodName = element.getMethodName();
-                if (className.startsWith(AotCompiler.DEFAULT_CLASS_NAME + "FuncGroup_")
+                if (className.startsWith(Compiler.DEFAULT_CLASS_NAME + "FuncGroup_")
                         && methodName.equals(methodNameForFunc(funcIdx))) {
                     return;
                 }

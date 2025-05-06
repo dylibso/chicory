@@ -1,6 +1,6 @@
 package com.dylibso.chicory.experimental.build.time.aot;
 
-import com.dylibso.chicory.experimental.aot.InterpreterFallback;
+import com.dylibso.chicory.compiler.internal.InterpreterFallback;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.StringJoiner;
