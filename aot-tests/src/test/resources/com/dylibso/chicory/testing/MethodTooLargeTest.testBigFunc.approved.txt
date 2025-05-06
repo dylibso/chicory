@@ -1,10 +1,11 @@
-NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$AotMethods
-  NESTMEMBER com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0
-  NESTMEMBER com/dylibso/chicory/$gen/CompiledMachine$MachineCall
-
-  private final Lcom/dylibso/chicory/runtime/Instance; instance
+private final Lcom/dylibso/chicory/runtime/Instance; instance
 
   private final Lcom/dylibso/chicory/runtime/AotInterpreterMachine; aotInterpreterMachine
+}
+
+  public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
+
+  private final static Z memCopyWorkaround
 }
 
 final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
@@ -19,12 +20,11 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     LASTORE
     ICONST_2
     ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachine$AotMethods.callIndirect ([JILcom/dylibso/chicory/runtime/Instance;)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.callIndirect ([JILcom/dylibso/chicory/runtime/Instance;)[J
     ICONST_0
     LALOAD
     L2I
     IRETURN
 }
 
-  NESTHOST com/dylibso/chicory/$gen/CompiledMachine
 }
