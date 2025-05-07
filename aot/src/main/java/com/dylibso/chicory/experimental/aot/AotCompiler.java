@@ -810,7 +810,7 @@ public final class AotCompiler {
         for (int id = max(start, functionImports); id < end; id++) {
             asm.mark(labels[id - start]);
             asm.invokestatic(
-                    internalClassName(className + classNameForFuncGroup(start)),
+                    internalClassName(className + classNameForFuncGroup(id)),
                     callMethodName(id),
                     CALL_METHOD_TYPE.toMethodDescriptorString(),
                     false);

@@ -434,19 +434,19 @@ final class com/dylibso/chicory/$gen/CompiledMachineMachineCall {
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.call_4 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ARETURN
    L5
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.call_5 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.call_5 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ARETURN
    L6
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.call_6 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.call_6 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ARETURN
    L7
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.call_7 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.call_7 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ARETURN
    L8
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.call_8 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.call_8 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ARETURN
    L9
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.call_9 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.call_9 (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
     ARETURN
    L10
     ILOAD 2
