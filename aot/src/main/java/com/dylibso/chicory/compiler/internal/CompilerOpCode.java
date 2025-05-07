@@ -1,11 +1,11 @@
-package com.dylibso.chicory.experimental.aot;
+package com.dylibso.chicory.compiler.internal;
 
 import com.dylibso.chicory.wasm.types.OpCode;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Optional;
 
-enum AotOpCode {
+enum CompilerOpCode {
     LABEL,
     DROP_KEEP,
     TRAP,
@@ -207,19 +207,19 @@ enum AotOpCode {
 
     private final Optional<OpCode> opcode;
 
-    private static final Map<OpCode, AotOpCode> OPCODES = new EnumMap<>(OpCode.class);
+    private static final Map<OpCode, CompilerOpCode> OPCODES = new EnumMap<>(OpCode.class);
 
     static {
-        for (AotOpCode aot : values()) {
+        for (CompilerOpCode aot : values()) {
             aot.opcode.ifPresent(opcode -> OPCODES.put(opcode, aot));
         }
     }
 
-    AotOpCode() {
+    CompilerOpCode() {
         this.opcode = Optional.empty();
     }
 
-    AotOpCode(OpCode opcode) {
+    CompilerOpCode(OpCode opcode) {
         this.opcode = Optional.of(opcode);
     }
 
@@ -227,8 +227,8 @@ enum AotOpCode {
         return opcode.orElseThrow(() -> new IllegalStateException("No opcode for " + this));
     }
 
-    public static AotOpCode of(OpCode opcode) {
-        AotOpCode value = OPCODES.get(opcode);
+    public static CompilerOpCode of(OpCode opcode) {
+        CompilerOpCode value = OPCODES.get(opcode);
         if (value == null) {
             throw new IllegalArgumentException("No AOT opcode for " + opcode);
         }

@@ -1,4 +1,4 @@
-package com.dylibso.chicory.experimental.aot;
+package com.dylibso.chicory.compiler.internal;
 
 import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
 
