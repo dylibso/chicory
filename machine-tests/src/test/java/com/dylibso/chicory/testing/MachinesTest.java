@@ -137,7 +137,7 @@ public final class MachinesTest {
     // quickjs -> runtime aot
     // module -> pre-compiled aot / interpreter
     @Test
-    public void shouldRunQuickJsRuntimeAot() {
+    public void shouldRunQuickJsRuntimeCompiled() {
         var stderr = new ByteArrayOutputStream();
 
         var wasi = setupWasi(stderr);

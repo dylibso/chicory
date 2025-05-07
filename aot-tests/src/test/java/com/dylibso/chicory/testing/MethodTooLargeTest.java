@@ -33,12 +33,12 @@ public class MethodTooLargeTest {
         verifyClass(result.classBytes(), true);
     }
 
-    private static void verifyClass(Map<String, byte[]> classBytes, boolean skipAotMethods) {
+    private static void verifyClass(Map<String, byte[]> classBytes, boolean skipMethodsClss) {
         var writer = new StringWriter();
 
         for (byte[] bytes : classBytes.values()) {
             ClassReader cr = new ClassReader(bytes);
-            if (skipAotMethods && cr.getClassName().endsWith("$AotMethods")) {
+            if (skipMethodsClss && cr.getClassName().endsWith("Methods")) {
                 continue;
             }
             cr.accept(
@@ -87,6 +87,6 @@ public class MethodTooLargeTest {
 
         assertFalse(
                 output.contains(getInternalName(GeneratedMethods.class)),
-                "Class contains non-inlined reference to AotMethods");
+                "Class contains non-inlined reference to Methods");
     }
 }
