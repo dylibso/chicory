@@ -88,6 +88,7 @@
     <maven-install-plugin.version>3.1.4</maven-install-plugin.version>
     <maven-jar-plugin.version>3.4.2</maven-jar-plugin.version>
     <maven-javadoc-plugin.version>3.11.2</maven-javadoc-plugin.version>
+    <maven-build-helper-maven-plugin>3.6.0</maven-build-helper-maven-plugin>
     <maven-plugin-plugin.version>3.15.1</maven-plugin-plugin.version>
     <maven-resources-plugin.version>3.3.1</maven-resources-plugin.version>
     <maven-shade-plugin.version>3.6.0</maven-shade-plugin.version>
@@ -649,14 +650,14 @@
             <arg>-XDcompilePolicy=simple</arg>
             <arg>--should-stop=ifError=FLOW</arg>
             <arg>-Xplugin:ErrorProne \
-              -Xep:MissingCasesInEnumSwitch:OFF \
-              -Xep:MissingOverride:ERROR \
-              -Xep:MissingSummary:OFF \
-              -Xep:NonOverridingEquals:OFF \
-              -Xep:OperatorPrecedence:OFF \
-              -Xep:ReferenceEquality:OFF \
-              -Xep:UnnecessaryParentheses:OFF \
-              -XepExcludedPaths:.*/target/generated-(|test-)sources/.*</arg>
+                            -Xep:MissingCasesInEnumSwitch:OFF \
+                            -Xep:MissingOverride:ERROR \
+                            -Xep:MissingSummary:OFF \
+                            -Xep:NonOverridingEquals:OFF \
+                            -Xep:OperatorPrecedence:OFF \
+                            -Xep:ReferenceEquality:OFF \
+                            -Xep:UnnecessaryParentheses:OFF \
+                            -XepExcludedPaths:.*/target/generated-(|test-)sources/.*</arg>
           </compilerArgs>
           <annotationProcessorPaths>
             <path>
@@ -720,28 +721,6 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <version>${maven-javadoc-plugin.version}</version>
-        <configuration>
-          <doclint>none</doclint>
-          <source>11</source>
-        </configuration>
-        <executions>
-          <execution>
-            <id>attach-javadocs</id>
-            <goals>
-              <goal>jar</goal>
-            </goals>
-            <configuration>
-              <doclint>all,-missing</doclint>
-              <release>${maven.compiler.release}</release>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
         <version>${maven-source-plugin.version}</version>
         <executions>
@@ -768,6 +747,76 @@
   </build>
 
   <profiles>
+
+    <profile>
+      <id>package-prebuilt-javadoc</id>
+      <activation>
+        <file>
+          <exists>${project.basedir}/src/main/javadoc/javadoc.jar</exists>
+        </file>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>build-helper-maven-plugin</artifactId>
+            <version>${maven-build-helper-maven-plugin}</version>
+            <executions>
+              <execution>
+                <id>attach-prebuilt-javadoc</id>
+                <goals>
+                  <goal>attach-artifact</goal>
+                </goals>
+                <phase>package</phase>
+                <configuration>
+                  <artifacts>
+                    <artifact>
+                      <file>${project.basedir}/src/main/javadoc/javadoc.jar</file>
+                      <classifier>javadoc</classifier>
+                    </artifact>
+                  </artifacts>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>package-standard-javadocs</id>
+      <activation>
+        <file>
+          <missing>${project.basedir}/src/main/javadoc/javadoc.jar</missing>
+        </file>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>${maven-javadoc-plugin.version}</version>
+            <configuration>
+              <!--<doclint>none</doclint>-->
+              <doclint>all,-missing</doclint>
+              <source>11</source>
+              <release>${maven.compiler.release}</release>
+              <sourceFileExcludes>
+                <sourceFileExclude>**/internal/**</sourceFileExclude>
+              </sourceFileExcludes>
+            </configuration>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+
     <profile>
       <!-- Disable strict checks during development -->
       <id>dev</id>
