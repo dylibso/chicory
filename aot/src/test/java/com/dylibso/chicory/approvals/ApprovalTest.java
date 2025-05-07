@@ -94,12 +94,12 @@ public class ApprovalTest {
         verifyClass(result.classBytes(), true);
     }
 
-    private static void verifyClass(Map<String, byte[]> classBytes, boolean skipAotMethods) {
+    private static void verifyClass(Map<String, byte[]> classBytes, boolean skipMethodsClass) {
         var writer = new StringWriter();
 
         for (byte[] bytes : classBytes.values()) {
             ClassReader cr = new ClassReader(bytes);
-            if (skipAotMethods && cr.getClassName().endsWith("AotMethods")) {
+            if (skipMethodsClass && cr.getClassName().endsWith("Methods")) {
                 continue;
             }
             cr.accept(new TraceClassVisitor(new PrintWriter(writer)), 0);
@@ -118,6 +118,6 @@ public class ApprovalTest {
 
         assertFalse(
                 output.contains(getInternalName(GeneratedMethods.class)),
-                "Class contains non-inlined reference to AotMethods");
+                "Class contains non-inlined reference to Methods");
     }
 }

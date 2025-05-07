@@ -33,18 +33,18 @@ public class BenchmarkFactorialExecution {
     private int input;
 
     ExportFunction iterFactInt;
-    ExportFunction iterFactAot;
+    ExportFunction iterFactCompiled;
 
     @Setup
     public void setup() {
         var factorialInt = Instance.builder(Parser.parse(ITERFACT)).build();
         iterFactInt = factorialInt.export("iterFact");
 
-        var factorialAot =
+        var factorialCompiled =
                 Instance.builder(Parser.parse(ITERFACT))
                         .withMachineFactory(CompilerMachine::new)
                         .build();
-        iterFactAot = factorialAot.export("iterFact");
+        iterFactCompiled = factorialCompiled.export("iterFact");
     }
 
     @Benchmark
@@ -55,7 +55,7 @@ public class BenchmarkFactorialExecution {
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
-    public void benchmarkAot(Blackhole bh) {
-        bh.consume(iterFactAot.apply(input));
+    public void benchmarkCompiled(Blackhole bh) {
+        bh.consume(iterFactCompiled.apply(input));
     }
 }
