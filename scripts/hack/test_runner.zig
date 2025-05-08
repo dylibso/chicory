@@ -215,22 +215,25 @@ fn mainTerminal() void {
         std.debug.print("{d}/{d} {s}...", .{ i + 1, test_fn_list.len, test_fn.name });
         // }
         is_fuzz_test = false;
+        // if (
+        //     // 572/2803 tar.test.create file and symlink...FAIL
+        //     ((i + 1) == 572) or
+        //     // 1109/2803 fs.test.test.statFile on dangling symlink -> hangs trying to remove a folder
+        //     ((i + 1) == 1109) or
+        //     // 1123/2803 fs.test.test.deleteTree does not follow symlinks...FAIL (AccessDenied)
+        //     ((i + 1) == 1123) or
+        //     // 1130/2803 fs.test.test.makepath through existing valid symlink...FAIL (FileSystem)
+        //     ((i + 1) == 1130) or
+        //     // 1131/2803 fs.test.test.makepath through existing valid symlink...FAIL (FileSystem)
+        //     ((i + 1) == 1131) or
+        //     // 1158/2803 fs.test.test.invalid UTF-8/WTF-8 paths...expected error.InvalidUtf8, found error.FileNotFound FAIL (TestUnexpectedError)
+        //     ((i + 1) == 1158) or
+        //     // 2803 fs.test.test.Dir.readLink...FAIL (FileSystem)
+        //     ((i + 1) == 2803)
+        // ) {
         if (
-            // 572/2803 tar.test.create file and symlink...FAIL
-            ((i + 1) == 572) or
-            // 1109/2803 fs.test.test.statFile on dangling symlink -> hangs trying to remove a folder
-            ((i + 1) == 1109) or
-            // 1123/2803 fs.test.test.deleteTree does not follow symlinks...FAIL (AccessDenied)
-            ((i + 1) == 1123) or
-            // 1130/2803 fs.test.test.makepath through existing valid symlink...FAIL (FileSystem)
-            ((i + 1) == 1130) or
-            // 1131/2803 fs.test.test.makepath through existing valid symlink...FAIL (FileSystem)
-            ((i + 1) == 1131) or
-            // 1158/2803 fs.test.test.invalid UTF-8/WTF-8 paths...expected error.InvalidUtf8, found error.FileNotFound FAIL (TestUnexpectedError)
-            ((i + 1) == 1158) or
-            // 2803 fs.test.test.Dir.readLink...FAIL (FileSystem)
-            ((i + 1) == 2803)
-        ) {
+        // 1109/2803 fs.test.test.statFile on dangling symlink -> hangs trying to remove a folder
+        ((i + 1) == 1109)) {
             skip_count += 1;
             std.debug.print("{d}/{d} {s}...FORCED SKIP\n", .{ i + 1, test_fn_list.len, test_fn.name });
             test_node.end();

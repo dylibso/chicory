@@ -36,8 +36,8 @@ PATH=${PWD}/${ZIG_INSTALL}:${PWD}/${BINARYEN_INSTALL}/bin:$PATH
 # --test-no-exec allows building of the test Wasm binary without executing command.
 (
     cd ${ZIG_SOURCE} && \
-        rm ${ZIG_SOURCE}/lib/compiler/test_runner.zig && \
-        cp ${SCRIPT_DIR}/hack/test_runner.zig ${ZIG_SOURCE}/lib/compiler/test_runner.zig && \
+        rm lib/compiler/test_runner.zig && \
+        cp ${SCRIPT_DIR}/hack/test_runner.zig lib/compiler/test_runner.zig && \
         zig test --test-no-exec -target wasm32-wasi --zig-lib-dir ./lib ./lib/std/std.zig
 )
 
