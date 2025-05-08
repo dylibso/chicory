@@ -1,6 +1,8 @@
 #! /bin/bash
 set -x
 
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 ZIG_INSTALL="zig-install"
 ZIG_VERSION="0.14.0" # TODO: update me
 
@@ -17,6 +19,8 @@ PATH=${PWD}/${ZIG_INSTALL}:${PWD}/${BINARYEN_INSTALL}/bin:$PATH
 (
     cd ${ZIG_SOURCE} && \
         rm -rf .zig-cache && \
+        rm lib/compiler/test_runner.zig && \
+        cp ${SCRIPT_DIR}/hack/test_runner.zig lib/compiler/test_runner.zig && \
         zig test --test-no-exec -target wasm32-wasi --zig-lib-dir ./lib ./lib/std/std.zig
 )
 
