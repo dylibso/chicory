@@ -1042,7 +1042,54 @@ public final class WasiPreview1 implements Closeable {
         logger.tracef(
                 "path_link: [%s, %s, \"%s\", %s, \"%s\"]",
                 oldFd, oldFlags, rawOldPath, newFd, rawNewPath);
-        throw new WasmRuntimeException("We don't yet support this WASI call: path_link");
+        // TODO: oldFlags is not handled, fix it!
+        var oldDescriptor = descriptors.get(oldFd);
+        if (oldDescriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        if (!(oldDescriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path oldDirectory = ((Directory) oldDescriptor).path();
+
+        var newDescriptor = descriptors.get(newFd);
+        if (newDescriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        if (!(newDescriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path newDirectory = ((Directory) newDescriptor).path();
+
+        Path oldPath = resolvePath(oldDirectory, rawOldPath);
+        if (oldPath == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        Path newPath = resolvePath(newDirectory, rawNewPath);
+        if (newPath == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        if (Files.isDirectory(oldPath) && Files.isRegularFile(newPath, LinkOption.NOFOLLOW_LINKS)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        if (Files.isRegularFile(oldPath, LinkOption.NOFOLLOW_LINKS) && Files.isDirectory(newPath)) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+
+        try {
+            Files.createLink(newPath, oldPath);
+        } catch (UnsupportedOperationException | AtomicMoveNotSupportedException e) {
+            return wasiResult(WasiErrno.ENOTSUP);
+        } catch (NoSuchFileException e) {
+            return wasiResult(WasiErrno.ENOENT);
+        } catch (DirectoryNotEmptyException e) {
+            return wasiResult(WasiErrno.ENOTEMPTY);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+        return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport
@@ -1296,7 +1343,46 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int pathSymlink(@Buffer String oldRawPath, int dirFd, @Buffer String newRawPath) {
         logger.tracef("path_symlink: [\"%s\", %s, \"%s\"]", oldRawPath, dirFd, newRawPath);
-        throw new WasmRuntimeException("We don't yet support this WASI call: path_symlink");
+        var descriptor = descriptors.get(dirFd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        if (!(descriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path directory = ((Directory) descriptor).path();
+
+        Path oldPath = resolvePath(directory, oldRawPath);
+        if (oldPath == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        Path newPath = resolvePath(directory, newRawPath);
+        if (newPath == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        if (Files.isDirectory(oldPath) && Files.isRegularFile(newPath, LinkOption.NOFOLLOW_LINKS)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        if (Files.isRegularFile(oldPath, LinkOption.NOFOLLOW_LINKS) && Files.isDirectory(newPath)) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+
+        try {
+            // isn't is the opposite?
+            // Files.createSymbolicLink(newPath, oldPath);
+            Files.createSymbolicLink(oldPath, newPath);
+        } catch (UnsupportedOperationException | AtomicMoveNotSupportedException e) {
+            return wasiResult(WasiErrno.ENOTSUP);
+        } catch (NoSuchFileException e) {
+            return wasiResult(WasiErrno.ENOENT);
+        } catch (DirectoryNotEmptyException e) {
+            return wasiResult(WasiErrno.ENOTEMPTY);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+        return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport

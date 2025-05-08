@@ -1,0 +1,29 @@
+#! /bin/bash
+set -x
+
+ZIG_INSTALL="zig-install"
+ZIG_VERSION="0.14.0" # TODO: update me
+
+ZIG_SOURCE="zig-source"
+
+BINARYEN_VERSION="123"
+BINARYEN_INSTALL="binaryen-install"
+
+ZIG_TESTSUITE="zig-testsuite"
+
+PATH=${PWD}/${ZIG_INSTALL}:${PWD}/${BINARYEN_INSTALL}/bin:$PATH
+
+# --test-no-exec allows building of the test Wasm binary without executing command.
+(
+    cd ${ZIG_SOURCE} && \
+        rm -rf .zig-cache && \
+        zig test --test-no-exec -target wasm32-wasi --zig-lib-dir ./lib ./lib/std/std.zig
+)
+
+mkdir -p ${ZIG_TESTSUITE}
+# We use find because the test.wasm will be something like ./zig-cache/o/dd6df1361b2134adc5eee9d027495436/test.wasm
+cp $(find ${PWD}/${ZIG_SOURCE} -name test.wasm) ${PWD}/${ZIG_TESTSUITE}/test.wasm
+
+# The generated test binary is large and produces skewed results in favor of the optimized compiler.
+# We also generate a stripped, optimized binary with wasm-opt.
+wasm-opt ${PWD}/${ZIG_TESTSUITE}/test.wasm -O3 --strip-dwarf -o ${PWD}/${ZIG_TESTSUITE}/test-opt.wasm
