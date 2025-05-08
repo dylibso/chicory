@@ -1,0 +1,34 @@
+name: Zig Testsuite
+
+on:
+  # TODO: finalize with this:
+  # schedule:
+  #  - cron: "0 0 * * *" # everyday
+  push:
+
+permissions:
+  pull-requests: write
+
+jobs:
+  fuzz:
+    name: Fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: maven
+      - name: Compile the Zig testsuite
+        # if: github.repository_owner == 'dylibso'
+        run: ./scripts/build-zig-testsuite.sh
+      - name: Nightly Test
+        # if: github.repository_owner == 'dylibso'
+        run: |
+          # Build everything
+          mvn -B -Dquickly
+          # Run only the ZigTestsuite
+          mvn -B compile test -f nightly-testsuite/pom.xml

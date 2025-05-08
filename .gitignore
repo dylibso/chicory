@@ -22,3 +22,8 @@ scripts/jmh-tmp
 /local-repo
 
 /wasm-tools/*.tar.gz
+
+/binaryen-install
+/zig-install
+/zig-source
+/zig-testsuite
