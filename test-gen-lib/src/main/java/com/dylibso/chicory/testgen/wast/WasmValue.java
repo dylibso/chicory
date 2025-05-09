@@ -2,6 +2,7 @@ package com.dylibso.chicory.testgen.wast;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.github.javaparser.ast.expr.NameExpr;
 
 public class WasmValue {
 
@@ -36,6 +37,7 @@ public class WasmValue {
             case EXTERN_REF:
             case EXN_REF:
             case FUNC_REF:
+            case REF_NULL:
                 if (result.equals("null")) {
                     return "Value.REF_NULL_VALUE";
                 }
@@ -118,6 +120,31 @@ public class WasmValue {
             default:
                 throw new IllegalArgumentException("Type not recognized " + type);
         }
+    }
+
+    public NameExpr toAssertion(String resultVar) {
+        if (value == null) {
+            // according to
+            // https://github.com/WebAssembly/spec/blob/05949f507908aac3ad2a21661b5c39fa013da950/interpreter/script/js.ml#L150
+            // ref.func should check that its a function, and ref.extern should check the returned
+            // reference is not null
+            switch (type) {
+                case FUNC_REF:
+                    return new NameExpr("assert " + resultVar + " >= 0");
+                case EXTERN_REF:
+                    return new NameExpr(
+                            "assertNotEquals(" + resultVar + ", " + "REF_NULL_VALUE" + ")");
+                case REF_NULL:
+                    return new NameExpr(
+                            "assertEquals(" + resultVar + ", " + "REF_NULL_VALUE" + ")");
+                default:
+                    throw new IllegalArgumentException(
+                            "cannot generate assertion for WasmValue: " + this);
+            }
+        }
+
+        var expectedVar = toExpectedValue();
+        return new NameExpr("assertEquals(" + expectedVar + ", " + resultVar + ")");
     }
 
     public String toExpectedValue() {
