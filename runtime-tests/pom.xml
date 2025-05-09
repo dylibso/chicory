@@ -398,6 +398,7 @@
                 <wast>simd_load_extend.wast</wast>
                 <wast>simd_load_splat.wast</wast>
                 <wast>simd_load_zero.wast</wast>
+                <wast>simd_select.wast</wast>
                 <wast>simd_splat.wast</wast>
                 <wast>simd_store.wast</wast>
                 <wast>simd_store16_lane.wast</wast>
