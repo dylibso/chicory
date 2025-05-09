@@ -1267,6 +1267,27 @@ final class Validator {
                         popVal(ValType.I32);
                         var t1 = popVal();
                         var t2 = popVal();
+
+                        // HACK: SELECT_T can handle V128 so we convert to it to avoid keeping a
+                        // side table
+                        // NOTE: this doesn't work when validation is skipped, we should either:
+                        // - make it mandatory
+                        // - have a separate step to perform those kind of transformations before
+                        // execution
+                        if (t1.opcode() == ValType.ID.V128 && t2.opcode() == ValType.ID.V128) {
+                            var annotInstr =
+                                    AnnotatedInstruction.builder()
+                                            .from(
+                                                    new Instruction(
+                                                            op.address(),
+                                                            OpCode.SELECT_T,
+                                                            new long[] {ValType.ID.V128}))
+                                            .build();
+                            body.instructions().set(i, annotInstr);
+                            pushVal(ValType.V128);
+                            break;
+                        }
+
                         if (!(isNum(t1) && isNum(t2))) {
                             throw new InvalidException(
                                     "type mismatch: select should have numeric arguments but they"
