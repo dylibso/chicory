@@ -245,6 +245,7 @@ public class InterpreterMachine implements Machine {
                     CALL_INDIRECT(stack, instance, callStack, operands);
                     break;
                 case DROP:
+                    // TODO: this doesn't correctly handle V128 at runtime
                     stack.pop();
                     break;
                 case SELECT:
