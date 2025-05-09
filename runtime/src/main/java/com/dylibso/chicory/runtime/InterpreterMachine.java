@@ -251,7 +251,7 @@ public class InterpreterMachine implements Machine {
                     SELECT(stack);
                     break;
                 case SELECT_T:
-                    SELECT_T(stack);
+                    SELECT_T(stack, operands);
                     break;
                 case LOCAL_GET:
                     LOCAL_GET(stack, operands, frame);
@@ -1874,14 +1874,30 @@ public class InterpreterMachine implements Machine {
         }
     }
 
-    private static void SELECT_T(MStack stack) {
+    private static void SELECT_T(MStack stack, Operands operands) {
         var pred = (int) stack.pop();
-        var b = stack.pop();
-        var a = stack.pop();
-        if (pred == 0) {
-            stack.push(b);
+        var type = ValType.forId(operands.get(0));
+
+        if (type.opcode() == ValType.ID.V128) {
+            var b1 = stack.pop();
+            var b2 = stack.pop();
+            var a1 = stack.pop();
+            var a2 = stack.pop();
+            if (pred == 0) {
+                stack.push(b2);
+                stack.push(b1);
+            } else {
+                stack.push(a2);
+                stack.push(a1);
+            }
         } else {
-            stack.push(a);
+            var b = stack.pop();
+            var a = stack.pop();
+            if (pred == 0) {
+                stack.push(b);
+            } else {
+                stack.push(a);
+            }
         }
     }
 

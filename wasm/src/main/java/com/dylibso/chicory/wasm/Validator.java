@@ -1269,7 +1269,11 @@ final class Validator {
                         var t2 = popVal();
                         if (!(isNum(t1) && isNum(t2))) {
                             throw new InvalidException(
-                                    "type mismatch: select should have numeric arguments");
+                                    "type mismatch: select should have numeric arguments but they"
+                                            + " are "
+                                            + t1
+                                            + " "
+                                            + t2);
                         }
                         if (!t1.equals(t2)
                                 && !t1.equals(ValType.UNKNOWN)
