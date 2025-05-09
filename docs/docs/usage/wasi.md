@@ -73,7 +73,7 @@ var logger = new SystemLogger();
 // let's just use the default options for now
 var options = WasiOptions.builder().build();
 // create our instance of wasip1
-var wasi = WasiPreview1.builder().withOptions(WasiOptions.builder().build()).build();
+var wasi = WasiPreview1.builder().withOptions(options).build();
 // create the module and connect the host functions
 var store = new Store().addFunction(wasi.toHostFunctions());
 // instantiate and execute the main entry point
