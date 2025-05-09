@@ -153,7 +153,10 @@ public final class Encoding {
             if ((b & 0x80) == 0) {
                 break;
             }
-            if (i >= maxVarInt) {
+
+            // provare ancora a vedere se riesco due -128 e risultato a zero!
+            boolean isContinuation = (b == -128);
+            if (i >= maxVarInt || (isContinuation && byteBuffer.remaining() <= 0)) {
                 throw new MalformedException("integer representation too long");
             }
 
