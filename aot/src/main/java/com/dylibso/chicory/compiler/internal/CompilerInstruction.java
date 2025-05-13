@@ -3,21 +3,21 @@ package com.dylibso.chicory.compiler.internal;
 import java.util.Arrays;
 import java.util.stream.LongStream;
 
-final class Instruction {
+final class CompilerInstruction {
     public static final long[] EMPTY = new long[0];
 
     private final CompilerOpCode opcode;
     private final long[] operands;
 
-    public Instruction(CompilerOpCode opcode) {
+    public CompilerInstruction(CompilerOpCode opcode) {
         this(opcode, EMPTY);
     }
 
-    public Instruction(CompilerOpCode opcode, long operand) {
+    public CompilerInstruction(CompilerOpCode opcode, long operand) {
         this(opcode, new long[] {operand});
     }
 
-    public Instruction(CompilerOpCode opcode, long[] operands) {
+    public CompilerInstruction(CompilerOpCode opcode, long[] operands) {
         this.opcode = opcode;
         this.operands = operands;
     }

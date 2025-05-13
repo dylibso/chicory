@@ -41,7 +41,7 @@ final class Emitters {
 
     @FunctionalInterface
     interface BytecodeEmitter {
-        void emit(Context context, Instruction ins, InstructionAdapter asm);
+        void emit(Context context, CompilerInstruction ins, InstructionAdapter asm);
     }
 
     static class Builder {
@@ -68,12 +68,12 @@ final class Emitters {
         return new Builder();
     }
 
-    public static void TRAP(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void TRAP(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         emitInvokeStatic(asm, MethodRefs.THROW_TRAP_EXCEPTION);
         asm.athrow();
     }
 
-    public static void DROP_KEEP(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void DROP_KEEP(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         int keepStart = (int) ins.operand(0) + 1;
 
         // save result values
@@ -97,7 +97,7 @@ final class Emitters {
         }
     }
 
-    public static void RETURN(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void RETURN(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         if (ctx.getType().returns().size() > 1) {
             asm.invokestatic(
                     ctx.internalClassName(),
@@ -108,11 +108,11 @@ final class Emitters {
         asm.areturn(getType(jvmReturnType(ctx.getType())));
     }
 
-    public static void DROP(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void DROP(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         emitPop(asm, ValType.forId(ins.operand(0)));
     }
 
-    public static void ELEM_DROP(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void ELEM_DROP(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         int index = (int) ins.operand(0);
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         asm.iconst(index);
@@ -120,7 +120,7 @@ final class Emitters {
         emitInvokeVirtual(asm, MethodRefs.INSTANCE_SET_ELEMENT);
     }
 
-    public static void SELECT(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void SELECT(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         var type = ValType.forId(ins.operand(0));
         var endLabel = new Label();
         asm.ifne(endLabel);
@@ -163,7 +163,7 @@ final class Emitters {
         }
     }
 
-    public static void CALL(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void CALL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         int funcId = (int) ins.operand(0);
         FunctionType functionType = ctx.functionTypes().get(funcId);
 
@@ -185,7 +185,7 @@ final class Emitters {
         }
     }
 
-    public static void CALL_INDIRECT(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void CALL_INDIRECT(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         int typeId = (int) ins.operand(0);
         int tableIdx = (int) ins.operand(1);
         FunctionType functionType = ctx.types()[typeId];
@@ -210,31 +210,31 @@ final class Emitters {
         }
     }
 
-    public static void REF_FUNC(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void REF_FUNC(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
     }
 
-    public static void REF_NULL(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void REF_NULL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst(REF_NULL_VALUE);
     }
 
-    public static void REF_IS_NULL(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void REF_IS_NULL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         emitInvokeStatic(asm, MethodRefs.REF_IS_NULL);
     }
 
-    public static void LOCAL_GET(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void LOCAL_GET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         var loadIndex = (int) ins.operand(0);
         var localType = localType(ctx.getType(), ctx.getBody(), loadIndex);
         asm.load(ctx.localSlotIndex(loadIndex), asmType(localType));
     }
 
-    public static void LOCAL_SET(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void LOCAL_SET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         int index = (int) ins.operand(0);
         var localType = localType(ctx.getType(), ctx.getBody(), index);
         asm.store(ctx.localSlotIndex(index), asmType(localType));
     }
 
-    public static void LOCAL_TEE(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void LOCAL_TEE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         if (slotCount(ValType.forId(ins.operand(1))) == 1) {
             asm.dup();
         } else {
@@ -244,7 +244,7 @@ final class Emitters {
         LOCAL_SET(ctx, ins, asm);
     }
 
-    public static void GLOBAL_GET(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void GLOBAL_GET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         int globalIndex = (int) ins.operand(0);
 
         asm.iconst(globalIndex);
@@ -254,7 +254,7 @@ final class Emitters {
         emitLongToJvm(asm, ctx.globalTypes().get(globalIndex));
     }
 
-    public static void GLOBAL_SET(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void GLOBAL_SET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         int globalIndex = (int) ins.operand(0);
 
         emitJvmToLong(asm, ctx.globalTypes().get(globalIndex));
@@ -263,340 +263,340 @@ final class Emitters {
         emitInvokeStatic(asm, MethodRefs.WRITE_GLOBAL);
     }
 
-    public static void TABLE_GET(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void TABLE_GET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, MethodRefs.TABLE_GET);
     }
 
-    public static void TABLE_SET(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void TABLE_SET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, MethodRefs.TABLE_SET);
     }
 
-    public static void TABLE_SIZE(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void TABLE_SIZE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, MethodRefs.TABLE_SIZE);
     }
 
-    public static void TABLE_GROW(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void TABLE_GROW(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, MethodRefs.TABLE_GROW);
     }
 
-    public static void TABLE_FILL(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void TABLE_FILL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, MethodRefs.TABLE_FILL);
     }
 
-    public static void TABLE_COPY(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void TABLE_COPY(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.iconst((int) ins.operand(1));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, MethodRefs.TABLE_COPY);
     }
 
-    public static void TABLE_INIT(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void TABLE_INIT(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.iconst((int) ins.operand(1));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, MethodRefs.TABLE_INIT);
     }
 
-    public static void MEMORY_INIT(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void MEMORY_INIT(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, MethodRefs.MEMORY_INIT);
     }
 
-    public static void MEMORY_COPY(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void MEMORY_COPY(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, MethodRefs.MEMORY_COPY);
     }
 
-    public static void MEMORY_FILL(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void MEMORY_FILL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, MethodRefs.MEMORY_FILL);
     }
 
-    public static void MEMORY_GROW(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void MEMORY_GROW(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, MethodRefs.MEMORY_GROW);
     }
 
-    public static void MEMORY_SIZE(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void MEMORY_SIZE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, MethodRefs.MEMORY_PAGES);
     }
 
-    public static void DATA_DROP(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void DATA_DROP(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
         emitInvokeStatic(asm, MethodRefs.MEMORY_DROP);
     }
 
-    public static void I32_ADD(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I32_ADD(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.IADD);
     }
 
-    public static void I32_AND(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I32_AND(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.IAND);
     }
 
-    public static void I32_CONST(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I32_CONST(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
     }
 
-    public static void I32_MUL(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I32_MUL(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.IMUL);
     }
 
-    public static void I32_OR(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I32_OR(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.IOR);
     }
 
-    public static void I32_SHL(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I32_SHL(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.ISHL);
     }
 
-    public static void I32_SHR_S(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I32_SHR_S(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.ISHR);
     }
 
-    public static void I32_SHR_U(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I32_SHR_U(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.IUSHR);
     }
 
-    public static void I32_SUB(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I32_SUB(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.ISUB);
     }
 
-    public static void I32_WRAP_I64(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I32_WRAP_I64(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.L2I);
     }
 
-    public static void I32_XOR(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I32_XOR(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.IXOR);
     }
 
-    public static void I64_ADD(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I64_ADD(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.LADD);
     }
 
-    public static void I64_AND(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I64_AND(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.LAND);
     }
 
-    public static void I64_CONST(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I64_CONST(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.lconst(ins.operand(0));
     }
 
-    public static void I64_EXTEND_I32_S(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I64_EXTEND_I32_S(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.I2L);
     }
 
-    public static void I64_MUL(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I64_MUL(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.LMUL);
     }
 
-    public static void I64_OR(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I64_OR(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.LOR);
     }
 
-    public static void I64_SHL(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I64_SHL(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.L2I);
         asm.visitInsn(Opcodes.LSHL);
     }
 
-    public static void I64_SHR_S(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I64_SHR_S(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.L2I);
         asm.visitInsn(Opcodes.LSHR);
     }
 
-    public static void I64_SHR_U(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I64_SHR_U(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.L2I);
         asm.visitInsn(Opcodes.LUSHR);
     }
 
-    public static void I64_SUB(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I64_SUB(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.LSUB);
     }
 
-    public static void I64_XOR(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void I64_XOR(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.LXOR);
     }
 
-    public static void F32_ADD(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void F32_ADD(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.FADD);
     }
 
-    public static void F32_CONST(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void F32_CONST(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.fconst(intBitsToFloat((int) ins.operand(0)));
     }
 
-    public static void F32_DEMOTE_F64(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void F32_DEMOTE_F64(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.D2F);
     }
 
-    public static void F32_DIV(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void F32_DIV(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.FDIV);
     }
 
-    public static void F32_MUL(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void F32_MUL(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.FMUL);
     }
 
-    public static void F32_NEG(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void F32_NEG(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.FNEG);
     }
 
-    public static void F32_SUB(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void F32_SUB(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.FSUB);
     }
 
-    public static void F64_ADD(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void F64_ADD(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.DADD);
     }
 
-    public static void F64_CONST(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void F64_CONST(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.dconst(longBitsToDouble(ins.operand(0)));
     }
 
-    public static void F64_DIV(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void F64_DIV(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.DDIV);
     }
 
-    public static void F64_MUL(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void F64_MUL(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.DMUL);
     }
 
-    public static void F64_NEG(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void F64_NEG(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.DNEG);
     }
 
-    public static void F64_PROMOTE_F32(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void F64_PROMOTE_F32(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.F2D);
     }
 
-    public static void F64_SUB(Context ctx, Instruction ins, MethodVisitor asm) {
+    public static void F64_SUB(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.DSUB);
     }
 
-    public static void I32_LOAD(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I32_LOAD(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_READ_INT);
     }
 
-    public static void I32_LOAD8_S(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I32_LOAD8_S(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_READ_BYTE);
     }
 
-    public static void I32_LOAD8_U(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I32_LOAD8_U(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         I32_LOAD8_S(ctx, ins, asm);
         asm.iconst(0xFF);
         asm.visitInsn(Opcodes.IAND);
     }
 
-    public static void I32_LOAD16_S(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I32_LOAD16_S(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_READ_SHORT);
     }
 
-    public static void I32_LOAD16_U(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I32_LOAD16_U(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         I32_LOAD16_S(ctx, ins, asm);
         asm.iconst(0xFFFF);
         asm.visitInsn(Opcodes.IAND);
     }
 
-    public static void F32_LOAD(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void F32_LOAD(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_READ_FLOAT);
     }
 
-    public static void I64_LOAD(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I64_LOAD(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_READ_LONG);
     }
 
-    public static void I64_LOAD8_S(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I64_LOAD8_S(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         I32_LOAD8_S(ctx, ins, asm);
         asm.visitInsn(Opcodes.I2L);
     }
 
-    public static void I64_LOAD8_U(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I64_LOAD8_U(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         I32_LOAD8_U(ctx, ins, asm);
         asm.visitInsn(Opcodes.I2L);
     }
 
-    public static void I64_LOAD16_S(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I64_LOAD16_S(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         I32_LOAD16_S(ctx, ins, asm);
         asm.visitInsn(Opcodes.I2L);
     }
 
-    public static void I64_LOAD16_U(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I64_LOAD16_U(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         I32_LOAD16_U(ctx, ins, asm);
         asm.visitInsn(Opcodes.I2L);
     }
 
-    public static void I64_LOAD32_S(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I64_LOAD32_S(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         I32_LOAD(ctx, ins, asm);
         asm.visitInsn(Opcodes.I2L);
     }
 
-    public static void I64_LOAD32_U(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I64_LOAD32_U(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         I32_LOAD(ctx, ins, asm);
         asm.visitInsn(Opcodes.I2L);
         asm.lconst(0xFFFF_FFFFL);
         asm.visitInsn(Opcodes.LAND);
     }
 
-    public static void F64_LOAD(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void F64_LOAD(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_READ_DOUBLE);
     }
 
-    public static void I32_STORE(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I32_STORE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_INT);
     }
 
-    public static void I32_STORE8(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I32_STORE8(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.visitInsn(Opcodes.I2B);
         emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_BYTE);
     }
 
-    public static void I32_STORE16(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I32_STORE16(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.visitInsn(Opcodes.I2S);
         emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_SHORT);
     }
 
-    public static void F32_STORE(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void F32_STORE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_FLOAT);
     }
 
-    public static void I64_STORE8(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I64_STORE8(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.visitInsn(Opcodes.L2I);
         I32_STORE8(ctx, ins, asm);
     }
 
-    public static void I64_STORE16(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I64_STORE16(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.visitInsn(Opcodes.L2I);
         I32_STORE16(ctx, ins, asm);
     }
 
-    public static void I64_STORE32(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I64_STORE32(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.visitInsn(Opcodes.L2I);
         emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_INT);
     }
 
-    public static void I64_STORE(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void I64_STORE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_LONG);
     }
 
-    public static void F64_STORE(Context ctx, Instruction ins, InstructionAdapter asm) {
+    public static void F64_STORE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_DOUBLE);
     }
 
     private static void emitLoadOrStore(
-            Context ctx, Instruction ins, InstructionAdapter asm, Method method) {
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm, Method method) {
         long offset = ins.operand(1);
 
         if (offset < 0 || offset >= Integer.MAX_VALUE) {

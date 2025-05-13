@@ -1,9 +1,9 @@
 package com.dylibso.chicory.compiler.internal;
 
-import com.dylibso.chicory.runtime.CompilerInterpreterMachine;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.TableInstance;
+import com.dylibso.chicory.runtime.internal.CompilerInterpreterMachine;
 import com.dylibso.chicory.wasm.types.Element;
 import java.lang.reflect.Method;
 

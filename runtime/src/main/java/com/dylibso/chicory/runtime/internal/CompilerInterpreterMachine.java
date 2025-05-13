@@ -1,5 +1,9 @@
-package com.dylibso.chicory.runtime;
+package com.dylibso.chicory.runtime.internal;
 
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.InterpreterMachine;
+import com.dylibso.chicory.runtime.MStack;
+import com.dylibso.chicory.runtime.StackFrame;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import java.util.Deque;
@@ -7,6 +11,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * This class is used by compiler generated classes. It MUST remain backwards compatible
+ * so that older generated code can run on newer versions of the library.
+ */
 public class CompilerInterpreterMachine extends InterpreterMachine {
 
     private static final HashSet<Integer> usedInterpretedFunctions;

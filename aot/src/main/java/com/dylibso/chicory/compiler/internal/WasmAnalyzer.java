@@ -54,12 +54,12 @@ final class WasmAnalyzer {
         return functionTypes;
     }
 
-    public List<Instruction> analyze(int funcId) {
+    public List<CompilerInstruction> analyze(int funcId) {
         var functionType = functionTypes.get(funcId);
         var body = module.codeSection().getFunctionBody(funcId - functionImports);
         var stack = new TypeStack();
         int nextLabel = body.instructions().size();
-        List<Instruction> result = new ArrayList<>();
+        List<CompilerInstruction> result = new ArrayList<>();
 
         // find label targets
         Set<Integer> labels = new HashSet<>();
@@ -81,7 +81,7 @@ final class WasmAnalyzer {
             AnnotatedInstruction ins = body.instructions().get(idx);
 
             if (labels.contains(idx)) {
-                result.add(new Instruction(CompilerOpCode.LABEL, idx));
+                result.add(new CompilerInstruction(CompilerOpCode.LABEL, idx));
             }
 
             // skip instructions after unconditional control transfer
@@ -102,7 +102,7 @@ final class WasmAnalyzer {
                     break;
                 case UNREACHABLE:
                     exitBlockDepth = ins.depth();
-                    result.add(new Instruction(CompilerOpCode.TRAP));
+                    result.add(new CompilerInstruction(CompilerOpCode.TRAP));
                     break;
                 case BLOCK:
                 case LOOP:
@@ -116,21 +116,27 @@ final class WasmAnalyzer {
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
-                    result.add(new Instruction(CompilerOpCode.RETURN, ids(functionType.returns())));
+                    result.add(
+                            new CompilerInstruction(
+                                    CompilerOpCode.RETURN, ids(functionType.returns())));
                     break;
                 case RETURN_CALL:
                     // The JVM does not support proper tail calls, so we desugar RETURN_CALL
                     // into a CALL + RETURN.
 
                     // [p*] -> [r*]
-                    result.add(new Instruction(CompilerOpCode.of(OpCode.CALL), ins.operands()));
+                    result.add(
+                            new CompilerInstruction(
+                                    CompilerOpCode.of(OpCode.CALL), ins.operands()));
                     updateStack(stack, functionTypes.get((int) ins.operand(0)));
 
                     exitBlockDepth = ins.depth();
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
-                    result.add(new Instruction(CompilerOpCode.RETURN, ids(functionType.returns())));
+                    result.add(
+                            new CompilerInstruction(
+                                    CompilerOpCode.RETURN, ids(functionType.returns())));
                     break;
 
                 case RETURN_CALL_INDIRECT:
@@ -141,7 +147,7 @@ final class WasmAnalyzer {
                     stack.pop(ValType.I32);
                     updateStack(stack, module.typeSection().getType((int) ins.operand(0)));
                     result.add(
-                            new Instruction(
+                            new CompilerInstruction(
                                     CompilerOpCode.of(OpCode.CALL_INDIRECT), ins.operands()));
 
                     exitBlockDepth = ins.depth();
@@ -149,7 +155,9 @@ final class WasmAnalyzer {
                         stack.pop(type);
                     }
 
-                    result.add(new Instruction(CompilerOpCode.RETURN, ids(functionType.returns())));
+                    result.add(
+                            new CompilerInstruction(
+                                    CompilerOpCode.RETURN, ids(functionType.returns())));
                     break;
 
                 case IF:
@@ -159,27 +167,27 @@ final class WasmAnalyzer {
                     if (body.instructions().get(ins.labelFalse() - 1).opcode() == OpCode.ELSE) {
                         stack.pushTypes();
                     }
-                    result.add(new Instruction(CompilerOpCode.IFEQ, ins.labelFalse()));
+                    result.add(new CompilerInstruction(CompilerOpCode.IFEQ, ins.labelFalse()));
                     break;
                 case ELSE:
                     stack.popTypes();
-                    result.add(new Instruction(CompilerOpCode.GOTO, ins.labelTrue()));
+                    result.add(new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
                     break;
                 case BR:
                     exitBlockDepth = ins.depth();
                     unwindStack(functionType, body, ins, ins.labelTrue(), stack)
                             .ifPresent(result::add);
-                    result.add(new Instruction(CompilerOpCode.GOTO, ins.labelTrue()));
+                    result.add(new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
                     break;
                 case BR_IF:
                     stack.pop(ValType.I32);
                     var ifUnwind = unwindStack(functionType, body, ins, ins.labelTrue(), stack);
                     if (ifUnwind.isPresent()) {
-                        result.add(new Instruction(CompilerOpCode.IFEQ, ins.labelFalse()));
+                        result.add(new CompilerInstruction(CompilerOpCode.IFEQ, ins.labelFalse()));
                         result.add(ifUnwind.get());
-                        result.add(new Instruction(CompilerOpCode.GOTO, ins.labelTrue()));
+                        result.add(new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
                     } else {
-                        result.add(new Instruction(CompilerOpCode.IFNE, ins.labelTrue()));
+                        result.add(new CompilerInstruction(CompilerOpCode.IFNE, ins.labelTrue()));
                     }
                     break;
                 case BR_TABLE:
@@ -187,14 +195,16 @@ final class WasmAnalyzer {
                     stack.pop(ValType.I32);
                     // convert to jump if it only has a default
                     if (ins.labelTable().size() == 1) {
-                        result.add(new Instruction(CompilerOpCode.DROP, ValType.I32.id()));
+                        result.add(new CompilerInstruction(CompilerOpCode.DROP, ValType.I32.id()));
                         unwindStack(functionType, body, ins, ins.labelTable().get(0), stack)
                                 .ifPresent(result::add);
-                        result.add(new Instruction(CompilerOpCode.GOTO, ins.labelTable().get(0)));
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.GOTO, ins.labelTable().get(0)));
                         break;
                     }
                     // extract unique targets and generate unwind for each
-                    List<Instruction> unwinds = new ArrayList<>();
+                    List<CompilerInstruction> unwinds = new ArrayList<>();
                     Map<Integer, Integer> targets = new HashMap<>();
                     for (var target : ins.labelTable()) {
                         if (!targets.containsKey(target)) {
@@ -203,15 +213,15 @@ final class WasmAnalyzer {
                             if (unwind.isPresent()) {
                                 label = nextLabel;
                                 nextLabel++;
-                                unwinds.add(new Instruction(CompilerOpCode.LABEL, label));
+                                unwinds.add(new CompilerInstruction(CompilerOpCode.LABEL, label));
                                 unwinds.add(unwind.get());
-                                unwinds.add(new Instruction(CompilerOpCode.GOTO, target));
+                                unwinds.add(new CompilerInstruction(CompilerOpCode.GOTO, target));
                             }
                             targets.put(target, label);
                         }
                     }
                     long[] operands = ins.labelTable().stream().mapToLong(targets::get).toArray();
-                    result.add(new Instruction(CompilerOpCode.SWITCH, operands));
+                    result.add(new CompilerInstruction(CompilerOpCode.SWITCH, operands));
                     result.addAll(unwinds);
                     break;
                 case SELECT:
@@ -222,13 +232,13 @@ final class WasmAnalyzer {
                     stack.pop(selectType);
                     stack.pop(selectType);
                     stack.push(selectType);
-                    result.add(new Instruction(CompilerOpCode.SELECT, selectType.id()));
+                    result.add(new CompilerInstruction(CompilerOpCode.SELECT, selectType.id()));
                     break;
                 case DROP:
                     // [t] -> []
                     var dropType = stack.peek();
                     stack.pop(dropType);
-                    result.add(new Instruction(CompilerOpCode.DROP, dropType.id()));
+                    result.add(new CompilerInstruction(CompilerOpCode.DROP, dropType.id()));
                     break;
                 case LOCAL_TEE:
                     // [t] -> [t]
@@ -236,7 +246,7 @@ final class WasmAnalyzer {
                     stack.pop(teeType);
                     stack.push(teeType);
                     long[] teeOperands = {ins.operand(0), teeType.id()};
-                    result.add(new Instruction(CompilerOpCode.LOCAL_TEE, teeOperands));
+                    result.add(new CompilerInstruction(CompilerOpCode.LOCAL_TEE, teeOperands));
                     break;
                 default:
                     analyzeSimple(result, stack, ins, functionType, body);
@@ -247,14 +257,14 @@ final class WasmAnalyzer {
         for (var type : reversed(functionType.returns())) {
             stack.pop(type);
         }
-        result.add(new Instruction(CompilerOpCode.RETURN, ids(functionType.returns())));
+        result.add(new CompilerInstruction(CompilerOpCode.RETURN, ids(functionType.returns())));
 
         stack.verifyEmpty();
         return result;
     }
 
     private void analyzeSimple(
-            List<Instruction> out,
+            List<CompilerInstruction> out,
             TypeStack stack,
             com.dylibso.chicory.wasm.types.Instruction ins,
             FunctionType functionType,
@@ -627,7 +637,7 @@ final class WasmAnalyzer {
             default:
                 throw new ChicoryException("Unhandled opcode: " + ins.opcode());
         }
-        out.add(new Instruction(CompilerOpCode.of(ins.opcode()), ins.operands()));
+        out.add(new CompilerInstruction(CompilerOpCode.of(ins.opcode()), ins.operands()));
     }
 
     private static void updateStack(TypeStack stack, FunctionType functionType) {
@@ -639,7 +649,7 @@ final class WasmAnalyzer {
         }
     }
 
-    private Optional<Instruction> unwindStack(
+    private Optional<CompilerInstruction> unwindStack(
             FunctionType functionType,
             FunctionBody body,
             AnnotatedInstruction ins,
@@ -688,7 +698,8 @@ final class WasmAnalyzer {
         reverse(dropKeepTypes);
         dropKeepTypes.stream().mapToLong(ValType::id).forEach(operands::add);
 
-        return Optional.of(new Instruction(CompilerOpCode.DROP_KEEP, operands.build().toArray()));
+        return Optional.of(
+                new CompilerInstruction(CompilerOpCode.DROP_KEEP, operands.build().toArray()));
     }
 
     private FunctionType blockType(com.dylibso.chicory.wasm.types.Instruction ins) {

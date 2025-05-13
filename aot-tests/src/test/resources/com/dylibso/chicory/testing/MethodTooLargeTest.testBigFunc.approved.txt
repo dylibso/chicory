@@ -1,6 +1,6 @@
 private final Lcom/dylibso/chicory/runtime/Instance; instance
 
-  private final Lcom/dylibso/chicory/runtime/CompilerInterpreterMachine; compilerInterpreterMachine
+  private final Lcom/dylibso/chicory/runtime/internal/CompilerInterpreterMachine; compilerInterpreterMachine
 }
 
 final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {

@@ -55,10 +55,10 @@ import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
-import com.dylibso.chicory.runtime.CompilerInterpreterMachine;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
+import com.dylibso.chicory.runtime.internal.CompilerInterpreterMachine;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -1186,7 +1186,7 @@ public final class Compiler {
                         type,
                         body);
 
-        List<Instruction> instructions = analyzer.analyze(funcId);
+        List<CompilerInstruction> instructions = analyzer.analyze(funcId);
 
         int localsCount = type.params().size();
         if (hasTooManyParameters(type)) {
@@ -1223,7 +1223,7 @@ public final class Compiler {
         Set<Long> visitedTargets = new HashSet<>();
 
         // compile the function body
-        for (Instruction ins : instructions) {
+        for (CompilerInstruction ins : instructions) {
             switch (ins.opcode()) {
                 case LABEL:
                     Label label = labels.get(ins.operand(0));

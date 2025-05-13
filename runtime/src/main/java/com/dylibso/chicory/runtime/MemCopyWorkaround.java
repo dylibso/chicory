@@ -1,5 +1,9 @@
 package com.dylibso.chicory.runtime;
 
+//
+// This class is used by compiler generated classes. It MUST remain backwards compatible
+// so that older generated code can run on newer versions of the library.
+//
 // This is an ugly hack to work around a bug on some JVMs (Temurin 17-)
 public final class MemCopyWorkaround {
     private MemCopyWorkaround() {}

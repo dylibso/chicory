@@ -1,18 +1,14 @@
 package com.dylibso.chicory.experimental.aot;
 
-import com.dylibso.chicory.compiler.CompilerMachine;
 import com.dylibso.chicory.compiler.internal.MachineFactory;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.ChicoryException;
 
 /**
- * Machine implementation that compiles function bodies.
+ * Machine implementation that compiles WASM function bodies to JVM byte code.
  * All compilation is done in a single compile phase during instantiation.
- *
- * @deprecated This class is deprecated, use {@link CompilerMachine} instead.
  */
-@Deprecated
 public final class AotMachine implements Machine {
 
     private final Machine machine;
