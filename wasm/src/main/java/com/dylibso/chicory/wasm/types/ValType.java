@@ -1,7 +1,9 @@
 package com.dylibso.chicory.wasm.types;
 
 import com.dylibso.chicory.wasm.MalformedException;
+import com.dylibso.chicory.wasm.WasmModule;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * The possible WASM value types.
@@ -11,7 +13,7 @@ public final class ValType {
     private static final long OPCODE_MASK = 0xFFFFFFFFL;
     private static final long TYPEIDX_SHIFT = 32;
 
-    public static ValType UNKNOWN = new ValType(ID.UNKNOWN);
+    public static ValType BOT = new ValType(ID.BOT);
     public static ValType F64 = new ValType(ID.F64);
 
     public static ValType F32 = new ValType(ID.F32);
@@ -39,6 +41,9 @@ public final class ValType {
             opcode = ID.RefNull;
         } else if (opcode == ID.ExternRef) {
             typeIdx = TypeIdxCode.EXTERN.code();
+            opcode = ID.RefNull;
+        } else if (opcode == ID.ExnRef) {
+            typeIdx = TypeIdxCode.EXN.code();
             opcode = ID.RefNull;
         }
 
@@ -191,6 +196,94 @@ public final class ValType {
         return total;
     }
 
+    private static boolean matchesResultType(
+            WasmModule context, ValType valType1, ValType valType2) {
+        if (valType1.equals(valType2) || valType1.equals(BOT)) {
+            return true;
+        }
+        if (valType1.isReference() && valType2.isReference()) {
+            return matchesRef(context, valType1, valType2);
+        }
+        return false;
+    }
+
+    private static boolean matchesFunc(
+            WasmModule context, FunctionType funcType1, FunctionType funcType2) {
+        // substitute any type indexes when comparing equality
+        if (funcType1.params().size() != funcType2.params().size()
+                || funcType1.returns().size() != funcType2.returns().size()) {
+            return false;
+        }
+
+        ValType[] types1 =
+                Stream.concat(funcType1.params().stream(), funcType1.returns().stream())
+                        .toArray(ValType[]::new);
+        ValType[] types2 =
+                Stream.concat(funcType2.params().stream(), funcType2.returns().stream())
+                        .toArray(ValType[]::new);
+
+        for (int i = 0; i < types1.length; i++) {
+            var type1 = types1[i];
+            var type2 = types2[i];
+
+            if (!matchesResultType(context, type1, type2)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean matches_null(boolean null1, boolean null2) {
+        return null1 == null2 || null2;
+    }
+
+    private static boolean matchesHeap(WasmModule context, Object heapType1, Object heapType2) {
+        if (heapType1.equals(TypeIdxCode.BOT.code()) || heapType1.equals(heapType2)) {
+            return true;
+        } else if ((heapType1 instanceof FunctionType)
+                && heapType2.equals(TypeIdxCode.FUNC.code())) {
+            return true;
+        } else if ((heapType1 instanceof FunctionType) && (heapType2 instanceof FunctionType)) {
+            return matchesFunc(context, (FunctionType) heapType1, (FunctionType) heapType2);
+        } else if ((heapType1 instanceof Integer) && (Integer) heapType1 >= 0) {
+            return matchesHeap(
+                    context, context.typeSection().getType((Integer) heapType1), heapType2);
+        } else if ((heapType2 instanceof Integer) && (Integer) heapType2 >= 0) {
+            return matchesHeap(
+                    context, context.typeSection().getType((Integer) heapType2), heapType1);
+        }
+
+        return false;
+    }
+
+    public static boolean matchesRef(WasmModule context, ValType t1, ValType t2) {
+        return matchesHeap(context, t1.typeIdx(), t2.typeIdx())
+                && matches_null(t1.isNullable(), t2.isNullable());
+    }
+
+    public static boolean matches(WasmModule context, ValType t1, ValType t2) {
+        if (t1.isReference() && t2.isReference()) {
+            return matchesRef(context, t1, t2);
+        } else if (t1.opcode() == ID.BOT) {
+            return true;
+        } else {
+            return t1.id() == t2.id();
+        }
+    }
+
+    public boolean isNullable() {
+        switch (opcode()) {
+            case ID.Ref:
+                return false;
+            case ID.RefNull:
+                return true;
+            default:
+                throw new IllegalArgumentException(
+                        "got non-reference type to isNullable(): " + this);
+        }
+    }
+
     public int typeIdx() {
         return (int) (id >>> TYPEIDX_SHIFT);
     }
@@ -229,8 +322,10 @@ public final class ValType {
 
     public enum TypeIdxCode {
         // heap type
-        EXTERN(0x6F),
-        FUNC(0x70);
+        EXTERN(-17), // 0x6F
+        FUNC(-16), // 0x70
+        EXN(-23), // 0x69
+        BOT(-1);
 
         private final int code;
 
@@ -243,10 +338,15 @@ public final class ValType {
         }
     }
 
+    /**
+     * A separate holder class for ID constants.
+     * This is necessary because enum constants are initialized before normal fields, so any reference to an ID constant
+     * in the same class would be considered an invalid forward reference.
+     */
     public static final class ID {
         private ID() {}
 
-        public static final int UNKNOWN = -1;
+        public static final int BOT = -1;
         public static final int RefNull = 0x63;
         public static final int Ref = 0x64;
         public static final int ExternRef = 0x6f;
@@ -261,8 +361,8 @@ public final class ValType {
 
         public static String toName(int opcode) {
             switch (opcode) {
-                case UNKNOWN:
-                    return "Unknown";
+                case BOT:
+                    return "Bot";
                 case RefNull:
                     return "RefNull";
                 case Ref:
@@ -281,7 +381,7 @@ public final class ValType {
                     return "I32";
             }
 
-            throw new IllegalArgumentException("got invalid opcode in ValType.toName: " + opcode);
+            throw new IllegalArgumentException("got invalid opcode in ValueType.toName: " + opcode);
         }
 
         public static boolean isValidOpcode(int opcode) {

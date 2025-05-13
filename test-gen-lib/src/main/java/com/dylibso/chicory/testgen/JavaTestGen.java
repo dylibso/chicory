@@ -73,6 +73,7 @@ public class JavaTestGen {
         cu.addImport("org.junit.jupiter.api.TestInstance");
         cu.addImport("org.junit.jupiter.api.Assertions.assertArrayEquals", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertEquals", true, false);
+        cu.addImport("org.junit.jupiter.api.Assertions.assertNotEquals", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertThrows", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertTrue", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertDoesNotThrow", true, false);
@@ -94,6 +95,7 @@ public class JavaTestGen {
         cu.addImport("com.dylibso.chicory.wasm.UnlinkableException");
         cu.addImport("com.dylibso.chicory.wasm.types.Value");
 
+        cu.addImport("com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE", true, false);
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo8", true, false);
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo16", true, false);
         cu.addImport("com.dylibso.chicory.wasm.types.Value.vecTo32", true, false);
@@ -417,7 +419,6 @@ public class JavaTestGen {
 
             for (int i = 0; i < cmd.expected().length; i++) {
                 var expected = cmd.expected()[i];
-                var expectedVar = expected.toExpectedValue();
                 var resultVar =
                         (cmd.action().type() == ActionType.INVOKE)
                                 ? expected.toResultValue(resVarName + "[" + i + "]")
@@ -448,7 +449,7 @@ public class JavaTestGen {
                     }
 
                 } else {
-                    exprs.add(new NameExpr("assertEquals(" + expectedVar + ", " + resultVar + ")"));
+                    exprs.add(expected.toAssertion(resultVar));
                 }
             }
 

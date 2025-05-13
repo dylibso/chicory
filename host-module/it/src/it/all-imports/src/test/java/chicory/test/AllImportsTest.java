@@ -1,5 +1,6 @@
 package chicory.test;
 
+import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -91,7 +92,7 @@ class AllImportsTest {
 
         @Override
         public TableInstance table() {
-            return new TableInstance(table);
+            return new TableInstance(table, REF_NULL_VALUE);
         }
 
         @Override

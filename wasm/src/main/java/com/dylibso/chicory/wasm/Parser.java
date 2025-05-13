@@ -280,9 +280,21 @@ public final class Parser {
 
             validator.validateSectionType(sectionId);
 
+            ByteBuffer sectionByteBuffer = buffer.asReadOnlyBuffer();
+            sectionByteBuffer.order(buffer.order());
+
+            // move buffer to next section
+            var sectionLimit = sectionByteBuffer.position() + (int) sectionSize;
+            if (buffer.capacity() < sectionLimit) {
+                throw new MalformedException("length out of bounds for section" + sectionId);
+            }
+            buffer.position(sectionLimit);
+
             if (shouldParseSection(sectionId)) {
+                sectionByteBuffer.limit(sectionLimit);
+
                 if (!decode) {
-                    listener.onSection(parseRawSection(buffer, sectionId, sectionSize));
+                    listener.onSection(parseRawSection(sectionByteBuffer, sectionId, sectionSize));
                     continue;
                 }
 
@@ -290,86 +302,88 @@ public final class Parser {
                 switch (sectionId) {
                     case SectionId.CUSTOM:
                         {
-                            var customSection = parseCustomSection(buffer, sectionSize, firstTime);
+                            var customSection =
+                                    parseCustomSection(sectionByteBuffer, sectionSize, firstTime);
                             firstTime = false;
                             listener.onSection(customSection);
                             break;
                         }
                     case SectionId.TYPE:
                         {
-                            var typeSection = parseTypeSection(buffer);
+                            var typeSection = parseTypeSection(sectionByteBuffer);
                             listener.onSection(typeSection);
                             break;
                         }
                     case SectionId.IMPORT:
                         {
-                            var importSection = parseImportSection(buffer);
+                            var importSection = parseImportSection(sectionByteBuffer);
                             listener.onSection(importSection);
                             break;
                         }
                     case SectionId.FUNCTION:
                         {
-                            var funcSection = parseFunctionSection(buffer);
+                            var funcSection = parseFunctionSection(sectionByteBuffer);
                             listener.onSection(funcSection);
                             break;
                         }
                     case SectionId.TABLE:
                         {
-                            var tableSection = parseTableSection(buffer);
+                            var tableSection = parseTableSection(sectionByteBuffer);
                             listener.onSection(tableSection);
                             break;
                         }
                     case SectionId.MEMORY:
                         {
-                            var memorySection = parseMemorySection(buffer);
+                            var memorySection = parseMemorySection(sectionByteBuffer);
                             listener.onSection(memorySection);
                             break;
                         }
                     case SectionId.TAG:
                         {
-                            var tagSection = parseTagSection(buffer);
+                            var tagSection = parseTagSection(sectionByteBuffer);
                             listener.onSection(tagSection);
                             break;
                         }
                     case SectionId.GLOBAL:
                         {
-                            var globalSection = parseGlobalSection(buffer);
+                            var globalSection = parseGlobalSection(sectionByteBuffer);
                             listener.onSection(globalSection);
                             break;
                         }
                     case SectionId.EXPORT:
                         {
-                            var exportSection = parseExportSection(buffer);
+                            var exportSection = parseExportSection(sectionByteBuffer);
                             listener.onSection(exportSection);
                             break;
                         }
                     case SectionId.START:
                         {
-                            var startSection = parseStartSection(buffer);
+                            var startSection = parseStartSection(sectionByteBuffer);
                             listener.onSection(startSection);
                             break;
                         }
                     case SectionId.ELEMENT:
                         {
-                            var elementSection = parseElementSection(buffer, sectionSize);
+                            var elementSection =
+                                    parseElementSection(sectionByteBuffer, sectionSize);
                             listener.onSection(elementSection);
                             break;
                         }
                     case SectionId.CODE:
                         {
-                            var codeSection = parseCodeSection(buffer);
+                            var codeSection = parseCodeSection(sectionByteBuffer);
                             listener.onSection(codeSection);
                             break;
                         }
                     case SectionId.DATA:
                         {
-                            var dataSection = parseDataSection(buffer);
+                            var dataSection = parseDataSection(sectionByteBuffer);
                             listener.onSection(dataSection);
                             break;
                         }
                     case SectionId.DATA_COUNT:
                         {
-                            var dataCountSection = parseDataCountSection(buffer);
+                            var dataCountSection = parseDataCountSection(sectionByteBuffer);
                             listener.onSection(dataCountSection);
                             break;
                         }
@@ -379,8 +393,10 @@ public final class Parser {
                                     "section size mismatch, malformed section id " + sectionId);
                         }
                 }
-            } else {
-                buffer.position((int) (buffer.position() + sectionSize));
+
+                if (sectionByteBuffer.hasRemaining()) {
+                    throw new MalformedException("section size mismatch");
+                }
             }
         }
     }
@@ -520,10 +536,7 @@ public final class Parser {
                     }
                 case TABLE:
                     {
-                        var rawTableType = readVarUInt32(buffer);
-                        assert rawTableType == 0x70 || rawTableType == 0x6F;
-                        var tableType =
-                                (rawTableType == 0x70) ? ValType.FuncRef : ValType.ExternRef;
+                        var rawTableType = readValueType(buffer);
 
                         var limitType = readByte(buffer);
                         assert limitType == 0x00 || limitType == 0x01;
@@ -534,7 +547,7 @@ public final class Parser {
                                         : new TableLimits(min);
 
                         importSection.addImport(
-                                new TableImport(moduleName, importName, tableType, limits));
+                                new TableImport(moduleName, importName, rawTableType, limits));
                         break;
                     }
                 case MEMORY:
@@ -593,6 +606,17 @@ public final class Parser {
         return functionSection.build();
     }
 
+    private static TableLimits readTableLimits(ByteBuffer buffer) {
+        var limitType = readByte(buffer);
+        if (!(limitType == 0x00 || limitType == 0x01)) {
+            throw new MalformedException("integer representation too long, integer too large");
+        }
+        var min = readVarUInt32(buffer);
+        var limits =
+                limitType > 0 ? new TableLimits(min, readVarUInt32(buffer)) : new TableLimits(min);
+        return limits;
+    }
+
     private static TableSection parseTableSection(ByteBuffer buffer) {
 
         var tableCount = readVarUInt32(buffer);
@@ -600,17 +624,19 @@ public final class Parser {
 
         // Parse individual tables in the tables section
         for (int i = 0; i < tableCount; i++) {
-            var tableType = readValueType(buffer);
-            var limitType = readByte(buffer);
-            if (!(limitType == 0x00 || limitType == 0x01)) {
-                throw new MalformedException("integer representation too long, integer too large");
+            var firstByte = (int) readVarUInt32(buffer);
+            if (firstByte == 0x40) {
+                var secondByte = readVarUInt32(buffer);
+                assert secondByte == 0x00;
+                var tableType = readValueType(buffer);
+                var limits = readTableLimits(buffer);
+                var init = parseExpression(buffer);
+                tableSection.addTable(new Table(tableType, limits, List.of(init)));
+            } else {
+                var tableType = readValueTypeFromOpCode(buffer, firstByte);
+                var limits = readTableLimits(buffer);
+                tableSection.addTable(new Table(tableType, limits));
             }
-            var min = readVarUInt32(buffer);
-            var limits =
-                    limitType > 0
-                            ? new TableLimits(min, readVarUInt32(buffer))
-                            : new TableLimits(min);
-            tableSection.addTable(new Table(tableType, limits));
         }
 
         return tableSection.build();
@@ -736,17 +762,25 @@ public final class Parser {
         // common path
         ValType type;
         if (alwaysFuncRef) {
-            type = ValType.FuncRef;
+            if (exprInit) {
+                type = ValType.FuncRef;
+            } else {
+                type = new ValType(ValType.ID.Ref, ValType.TypeIdxCode.FUNC.code());
+            }
         } else if (hasElemKind) {
             int ek = (int) readVarUInt32(buffer);
             if (ek == 0x00) {
-                type = ValType.FuncRef;
+                type = new ValType(ValType.ID.Ref, ValType.TypeIdxCode.FUNC.code());
             } else {
                 throw new ChicoryException("Invalid element kind");
             }
         } else {
             assert hasRefType;
-            type = ValType.refTypeForId(readValueType(buffer).id());
+            type = readValueType(buffer);
+            if (!type.isReference()) {
+                throw new MalformedException(
+                        "malformed reference type: element section has non-reference type");
+            }
         }
         int initCnt = Math.toIntExact(readVarUInt32(buffer));
         List<List<Instruction>> inits = new ArrayList<>(initCnt);
@@ -889,6 +923,8 @@ public final class Parser {
                             break;
                         }
                     case BR_IF:
+                    case BR_ON_NULL:
+                    case BR_ON_NON_NULL:
                         {
                             instruction.withLabelFalse(instructions.size() + 1);
                         }
@@ -1249,13 +1285,14 @@ public final class Parser {
 
     private static Instruction[] parseExpression(ByteBuffer buffer) {
         var expr = new ArrayList<Instruction>();
-        while (true) {
+        while (buffer.hasRemaining()) {
             var i = parseInstruction(buffer);
             if (i.opcode() == OpCode.END) {
-                break;
+                return expr.toArray(new Instruction[0]);
             }
             expr.add(i);
         }
-        return expr.toArray(new Instruction[0]);
+
+        throw new MalformedException("illegal opcode: expected end opcode");
     }
 }

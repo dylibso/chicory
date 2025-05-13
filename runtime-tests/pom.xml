@@ -120,6 +120,32 @@
             <wast>proposals/exception-handling/throw.wast</wast>
             <wast>proposals/exception-handling/throw_ref.wast</wast>
             <wast>proposals/exception-handling/try_table.wast</wast>
+            <wast>proposals/function-references/binary.wast</wast>
+            <wast>proposals/function-references/br_on_non_null.wast</wast>
+            <wast>proposals/function-references/br_on_null.wast</wast>
+            <wast>proposals/function-references/br_table.wast</wast>
+            <wast>proposals/function-references/call_ref.wast</wast>
+            <wast>proposals/function-references/data.wast</wast>
+            <wast>proposals/function-references/elem.wast</wast>
+            <wast>proposals/function-references/func.wast</wast>
+            <wast>proposals/function-references/global.wast</wast>
+            <wast>proposals/function-references/if.wast</wast>
+            <wast>proposals/function-references/linking.wast</wast>
+            <wast>proposals/function-references/local_get.wast</wast>
+            <wast>proposals/function-references/local_init.wast</wast>
+            <wast>proposals/function-references/ref.wast</wast>
+            <wast>proposals/function-references/ref_as_non_null.wast</wast>
+            <wast>proposals/function-references/ref_is_null.wast</wast>
+            <wast>proposals/function-references/ref_null.wast</wast>
+            <wast>proposals/function-references/return_call.wast</wast>
+            <wast>proposals/function-references/return_call_indirect.wast</wast>
+            <wast>proposals/function-references/return_call_ref.wast</wast>
+            <wast>proposals/function-references/select.wast</wast>
+            <wast>proposals/function-references/table-sub.wast</wast>
+            <wast>proposals/function-references/table.wast</wast>
+            <wast>proposals/function-references/type-equivalence.wast</wast>
+            <wast>proposals/function-references/unreached-invalid.wast</wast>
+            <wast>proposals/function-references/unreached-valid.wast</wast>
             <wast>proposals/tail-call/return_call.wast</wast>
             <wast>proposals/tail-call/return_call_indirect.wast</wast>
             <wast>ref_func.wast</wast>
