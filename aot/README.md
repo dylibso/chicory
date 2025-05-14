@@ -1,4 +1,4 @@
-# Chicory AOT
+# Chicory WASM to Bytecode Compiler
 
 Experimental Wasm -> JVM bytecode compiler.
 
