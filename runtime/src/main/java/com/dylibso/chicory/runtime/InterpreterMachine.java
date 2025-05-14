@@ -245,10 +245,7 @@ public class InterpreterMachine implements Machine {
                     CALL_INDIRECT(stack, instance, callStack, operands);
                     break;
                 case DROP:
-                    if (operands.get(0) == ValType.ID.V128) {
-                        stack.pop();
-                    }
-                    stack.pop();
+                    DROP(stack, operands);
                     break;
                 case SELECT:
                     SELECT(stack, operands);
@@ -1864,6 +1861,13 @@ public class InterpreterMachine implements Machine {
         if (instance.global(idx).getType().equals(ValType.V128)) {
             stack.push(instance.global(idx).getValueHigh());
         }
+    }
+
+    private static void DROP(MStack stack, Operands operands) {
+        if (operands.get(0) == ValType.ID.V128) {
+            stack.pop();
+        }
+        stack.pop();
     }
 
     private static void SELECT(MStack stack, Operands operands) {
