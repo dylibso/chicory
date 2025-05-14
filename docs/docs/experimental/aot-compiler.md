@@ -75,6 +75,7 @@ class AddModule {
     public static Machine create(Instance instance) {
         return new InterpreterMachine(instance);
     }
+
 }
 ```
 -->
