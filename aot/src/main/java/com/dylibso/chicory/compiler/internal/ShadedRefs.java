@@ -7,7 +7,7 @@ import com.dylibso.chicory.runtime.internal.CompilerInterpreterMachine;
 import com.dylibso.chicory.wasm.types.Element;
 import java.lang.reflect.Method;
 
-public final class MethodRefs {
+public final class ShadedRefs {
 
     static final Method CHECK_INTERRUPTION;
     static final Method CALL_INDIRECT;
@@ -55,84 +55,74 @@ public final class MethodRefs {
 
     static {
         try {
-            CHECK_INTERRUPTION = GeneratedMethods.class.getMethod("checkInterruption");
+            CHECK_INTERRUPTION = Shaded.class.getMethod("checkInterruption");
             CALL_INDIRECT =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "callIndirect", long[].class, int.class, int.class, Instance.class);
             CALL_INDIRECT_ON_INTERPRETER =
-                    GeneratedMethods.class.getMethod(
-                            "callIndirect", long[].class, int.class, Instance.class);
+                    Shaded.class.getMethod("callIndirect", long[].class, int.class, Instance.class);
             INSTANCE_MEMORY = Instance.class.getMethod("memory");
             CALL_HOST_FUNCTION =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "callHostFunction", Instance.class, int.class, long[].class);
-            READ_GLOBAL = GeneratedMethods.class.getMethod("readGlobal", int.class, Instance.class);
+            READ_GLOBAL = Shaded.class.getMethod("readGlobal", int.class, Instance.class);
             WRITE_GLOBAL =
-                    GeneratedMethods.class.getMethod(
-                            "writeGlobal", long.class, int.class, Instance.class);
+                    Shaded.class.getMethod("writeGlobal", long.class, int.class, Instance.class);
             INSTANCE_SET_ELEMENT = Instance.class.getMethod("setElement", int.class, Element.class);
             INSTANCE_TABLE = Instance.class.getMethod("table", int.class);
             MEMORY_COPY =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "memoryCopy", int.class, int.class, int.class, Memory.class);
             MEMORY_FILL =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "memoryFill", int.class, byte.class, int.class, Memory.class);
             MEMORY_INIT =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "memoryInit", int.class, int.class, int.class, int.class, Memory.class);
-            MEMORY_GROW = GeneratedMethods.class.getMethod("memoryGrow", int.class, Memory.class);
-            MEMORY_DROP = GeneratedMethods.class.getMethod("memoryDrop", int.class, Memory.class);
-            MEMORY_PAGES = GeneratedMethods.class.getMethod("memoryPages", Memory.class);
+            MEMORY_GROW = Shaded.class.getMethod("memoryGrow", int.class, Memory.class);
+            MEMORY_DROP = Shaded.class.getMethod("memoryDrop", int.class, Memory.class);
+            MEMORY_PAGES = Shaded.class.getMethod("memoryPages", Memory.class);
             MEMORY_READ_BYTE =
-                    GeneratedMethods.class.getMethod(
-                            "memoryReadByte", int.class, int.class, Memory.class);
+                    Shaded.class.getMethod("memoryReadByte", int.class, int.class, Memory.class);
             MEMORY_READ_SHORT =
-                    GeneratedMethods.class.getMethod(
-                            "memoryReadShort", int.class, int.class, Memory.class);
+                    Shaded.class.getMethod("memoryReadShort", int.class, int.class, Memory.class);
             MEMORY_READ_INT =
-                    GeneratedMethods.class.getMethod(
-                            "memoryReadInt", int.class, int.class, Memory.class);
+                    Shaded.class.getMethod("memoryReadInt", int.class, int.class, Memory.class);
             MEMORY_READ_LONG =
-                    GeneratedMethods.class.getMethod(
-                            "memoryReadLong", int.class, int.class, Memory.class);
+                    Shaded.class.getMethod("memoryReadLong", int.class, int.class, Memory.class);
             MEMORY_READ_FLOAT =
-                    GeneratedMethods.class.getMethod(
-                            "memoryReadFloat", int.class, int.class, Memory.class);
+                    Shaded.class.getMethod("memoryReadFloat", int.class, int.class, Memory.class);
             MEMORY_READ_DOUBLE =
-                    GeneratedMethods.class.getMethod(
-                            "memoryReadDouble", int.class, int.class, Memory.class);
+                    Shaded.class.getMethod("memoryReadDouble", int.class, int.class, Memory.class);
             MEMORY_WRITE_BYTE =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "memoryWriteByte", int.class, byte.class, int.class, Memory.class);
             MEMORY_WRITE_SHORT =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "memoryWriteShort", int.class, short.class, int.class, Memory.class);
             MEMORY_WRITE_INT =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "memoryWriteInt", int.class, int.class, int.class, Memory.class);
             MEMORY_WRITE_LONG =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "memoryWriteLong", int.class, long.class, int.class, Memory.class);
             MEMORY_WRITE_FLOAT =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "memoryWriteFloat", int.class, float.class, int.class, Memory.class);
             MEMORY_WRITE_DOUBLE =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "memoryWriteDouble", int.class, double.class, int.class, Memory.class);
-            REF_IS_NULL = GeneratedMethods.class.getMethod("isRefNull", int.class);
-            TABLE_GET =
-                    GeneratedMethods.class.getMethod(
-                            "tableGet", int.class, int.class, Instance.class);
+            REF_IS_NULL = Shaded.class.getMethod("isRefNull", int.class);
+            TABLE_GET = Shaded.class.getMethod("tableGet", int.class, int.class, Instance.class);
             TABLE_SET =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "tableSet", int.class, int.class, int.class, Instance.class);
-            TABLE_SIZE = GeneratedMethods.class.getMethod("tableSize", int.class, Instance.class);
+            TABLE_SIZE = Shaded.class.getMethod("tableSize", int.class, Instance.class);
             TABLE_GROW =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "tableGrow", int.class, int.class, int.class, Instance.class);
             TABLE_FILL =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "tableFill",
                             int.class,
                             int.class,
@@ -140,7 +130,7 @@ public final class MethodRefs {
                             int.class,
                             Instance.class);
             TABLE_COPY =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "tableCopy",
                             int.class,
                             int.class,
@@ -149,7 +139,7 @@ public final class MethodRefs {
                             int.class,
                             Instance.class);
             TABLE_INIT =
-                    GeneratedMethods.class.getMethod(
+                    Shaded.class.getMethod(
                             "tableInit",
                             int.class,
                             int.class,
@@ -160,15 +150,13 @@ public final class MethodRefs {
             TABLE_REQUIRED_REF = TableInstance.class.getMethod("requiredRef", int.class);
             TABLE_INSTANCE = TableInstance.class.getMethod("instance", int.class);
             THROW_CALL_STACK_EXHAUSTED =
-                    GeneratedMethods.class.getMethod(
-                            "throwCallStackExhausted", StackOverflowError.class);
+                    Shaded.class.getMethod("throwCallStackExhausted", StackOverflowError.class);
             THROW_INDIRECT_CALL_TYPE_MISMATCH =
-                    GeneratedMethods.class.getMethod("throwIndirectCallTypeMismatch");
+                    Shaded.class.getMethod("throwIndirectCallTypeMismatch");
             THROW_OUT_OF_BOUNDS_MEMORY_ACCESS =
-                    GeneratedMethods.class.getMethod("throwOutOfBoundsMemoryAccess");
-            THROW_TRAP_EXCEPTION = GeneratedMethods.class.getMethod("throwTrapException");
-            THROW_UNKNOWN_FUNCTION =
-                    GeneratedMethods.class.getMethod("throwUnknownFunction", int.class);
+                    Shaded.class.getMethod("throwOutOfBoundsMemoryAccess");
+            THROW_TRAP_EXCEPTION = Shaded.class.getMethod("throwTrapException");
+            THROW_UNKNOWN_FUNCTION = Shaded.class.getMethod("throwUnknownFunction", int.class);
 
             AOT_INTERPRETER_MACHINE_CALL =
                     CompilerInterpreterMachine.class.getMethod("call", int.class, long[].class);
@@ -177,5 +165,5 @@ public final class MethodRefs {
         }
     }
 
-    private MethodRefs() {}
+    private ShadedRefs() {}
 }

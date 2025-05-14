@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.objectweb.asm.Type.getInternalName;
 
 import com.dylibso.chicory.compiler.internal.Compiler;
-import com.dylibso.chicory.compiler.internal.GeneratedMethods;
+import com.dylibso.chicory.compiler.internal.Shaded;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
@@ -117,7 +117,7 @@ public class ApprovalTest {
         Approvals.verify(output);
 
         assertFalse(
-                output.contains(getInternalName(GeneratedMethods.class)),
-                "Class contains non-inlined reference to Methods");
+                output.contains(getInternalName(Shaded.class)),
+                "Class contains non-inlined reference to " + Shaded.class.getName());
     }
 }

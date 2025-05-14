@@ -1,20 +1,20 @@
 package com.dylibso.chicory.compiler.internal;
 
-import static com.dylibso.chicory.compiler.internal.Util.asmType;
-import static com.dylibso.chicory.compiler.internal.Util.callIndirectMethodName;
-import static com.dylibso.chicory.compiler.internal.Util.callIndirectMethodType;
-import static com.dylibso.chicory.compiler.internal.Util.emitInvokeFunction;
-import static com.dylibso.chicory.compiler.internal.Util.emitInvokeStatic;
-import static com.dylibso.chicory.compiler.internal.Util.emitInvokeVirtual;
-import static com.dylibso.chicory.compiler.internal.Util.emitJvmToLong;
-import static com.dylibso.chicory.compiler.internal.Util.emitLongToJvm;
-import static com.dylibso.chicory.compiler.internal.Util.emitPop;
-import static com.dylibso.chicory.compiler.internal.Util.hasTooManyParameters;
-import static com.dylibso.chicory.compiler.internal.Util.jvmReturnType;
-import static com.dylibso.chicory.compiler.internal.Util.localType;
-import static com.dylibso.chicory.compiler.internal.Util.slotCount;
-import static com.dylibso.chicory.compiler.internal.Util.valueMethodName;
-import static com.dylibso.chicory.compiler.internal.Util.valueMethodType;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.asmType;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.callIndirectMethodName;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.callIndirectMethodType;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.emitInvokeFunction;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.emitInvokeStatic;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.emitInvokeVirtual;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.emitJvmToLong;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.emitLongToJvm;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.emitPop;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.hasTooManyParameters;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.jvmReturnType;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.localType;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.slotCount;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.valueMethodName;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.valueMethodType;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.lang.Double.longBitsToDouble;
 import static java.lang.Float.intBitsToFloat;
@@ -69,7 +69,7 @@ final class Emitters {
     }
 
     public static void TRAP(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitInvokeStatic(asm, MethodRefs.THROW_TRAP_EXCEPTION);
+        emitInvokeStatic(asm, ShadedRefs.THROW_TRAP_EXCEPTION);
         asm.athrow();
     }
 
@@ -117,7 +117,7 @@ final class Emitters {
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         asm.iconst(index);
         asm.aconst(null);
-        emitInvokeVirtual(asm, MethodRefs.INSTANCE_SET_ELEMENT);
+        emitInvokeVirtual(asm, ShadedRefs.INSTANCE_SET_ELEMENT);
     }
 
     public static void SELECT(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
@@ -138,7 +138,7 @@ final class Emitters {
             Context ctx, InstructionAdapter asm, List<ValType> types) {
 
         // Store values from stack to locals in reverse order
-        int slot = ctx.tempSlot() + types.stream().mapToInt(Util::slotCount).sum();
+        int slot = ctx.tempSlot() + types.stream().mapToInt(CompilerUtil::slotCount).sum();
         for (int i = types.size() - 1; i >= 0; i--) {
             ValType valType = types.get(i);
             slot -= slotCount(valType);
@@ -167,7 +167,7 @@ final class Emitters {
         int funcId = (int) ins.operand(0);
         FunctionType functionType = ctx.functionTypes().get(funcId);
 
-        emitInvokeStatic(asm, MethodRefs.CHECK_INTERRUPTION);
+        emitInvokeStatic(asm, ShadedRefs.CHECK_INTERRUPTION);
         if (hasTooManyParameters(functionType)) {
             emitBoxValuesOnStack(ctx, asm, functionType.params());
         }
@@ -219,7 +219,7 @@ final class Emitters {
     }
 
     public static void REF_IS_NULL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitInvokeStatic(asm, MethodRefs.REF_IS_NULL);
+        emitInvokeStatic(asm, ShadedRefs.REF_IS_NULL);
     }
 
     public static void LOCAL_GET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
@@ -249,7 +249,7 @@ final class Emitters {
 
         asm.iconst(globalIndex);
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.READ_GLOBAL);
+        emitInvokeStatic(asm, ShadedRefs.READ_GLOBAL);
 
         emitLongToJvm(asm, ctx.globalTypes().get(globalIndex));
     }
@@ -260,83 +260,83 @@ final class Emitters {
         emitJvmToLong(asm, ctx.globalTypes().get(globalIndex));
         asm.iconst(globalIndex);
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.WRITE_GLOBAL);
+        emitInvokeStatic(asm, ShadedRefs.WRITE_GLOBAL);
     }
 
     public static void TABLE_GET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.TABLE_GET);
+        emitInvokeStatic(asm, ShadedRefs.TABLE_GET);
     }
 
     public static void TABLE_SET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.TABLE_SET);
+        emitInvokeStatic(asm, ShadedRefs.TABLE_SET);
     }
 
     public static void TABLE_SIZE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.TABLE_SIZE);
+        emitInvokeStatic(asm, ShadedRefs.TABLE_SIZE);
     }
 
     public static void TABLE_GROW(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.TABLE_GROW);
+        emitInvokeStatic(asm, ShadedRefs.TABLE_GROW);
     }
 
     public static void TABLE_FILL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.TABLE_FILL);
+        emitInvokeStatic(asm, ShadedRefs.TABLE_FILL);
     }
 
     public static void TABLE_COPY(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.iconst((int) ins.operand(1));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.TABLE_COPY);
+        emitInvokeStatic(asm, ShadedRefs.TABLE_COPY);
     }
 
     public static void TABLE_INIT(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.iconst((int) ins.operand(1));
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.TABLE_INIT);
+        emitInvokeStatic(asm, ShadedRefs.TABLE_INIT);
     }
 
     public static void MEMORY_INIT(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.MEMORY_INIT);
+        emitInvokeStatic(asm, ShadedRefs.MEMORY_INIT);
     }
 
     public static void MEMORY_COPY(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.MEMORY_COPY);
+        emitInvokeStatic(asm, ShadedRefs.MEMORY_COPY);
     }
 
     public static void MEMORY_FILL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.MEMORY_FILL);
+        emitInvokeStatic(asm, ShadedRefs.MEMORY_FILL);
     }
 
     public static void MEMORY_GROW(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.MEMORY_GROW);
+        emitInvokeStatic(asm, ShadedRefs.MEMORY_GROW);
     }
 
     public static void MEMORY_SIZE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.MEMORY_PAGES);
+        emitInvokeStatic(asm, ShadedRefs.MEMORY_PAGES);
     }
 
     public static void DATA_DROP(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
         asm.load(ctx.memorySlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, MethodRefs.MEMORY_DROP);
+        emitInvokeStatic(asm, ShadedRefs.MEMORY_DROP);
     }
 
     public static void I32_ADD(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
@@ -487,11 +487,11 @@ final class Emitters {
     }
 
     public static void I32_LOAD(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_READ_INT);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_READ_INT);
     }
 
     public static void I32_LOAD8_S(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_READ_BYTE);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_READ_BYTE);
     }
 
     public static void I32_LOAD8_U(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
@@ -501,7 +501,7 @@ final class Emitters {
     }
 
     public static void I32_LOAD16_S(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_READ_SHORT);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_READ_SHORT);
     }
 
     public static void I32_LOAD16_U(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
@@ -511,11 +511,11 @@ final class Emitters {
     }
 
     public static void F32_LOAD(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_READ_FLOAT);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_READ_FLOAT);
     }
 
     public static void I64_LOAD(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_READ_LONG);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_READ_LONG);
     }
 
     public static void I64_LOAD8_S(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
@@ -551,25 +551,25 @@ final class Emitters {
     }
 
     public static void F64_LOAD(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_READ_DOUBLE);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_READ_DOUBLE);
     }
 
     public static void I32_STORE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_INT);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_WRITE_INT);
     }
 
     public static void I32_STORE8(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.visitInsn(Opcodes.I2B);
-        emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_BYTE);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_WRITE_BYTE);
     }
 
     public static void I32_STORE16(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.visitInsn(Opcodes.I2S);
-        emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_SHORT);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_WRITE_SHORT);
     }
 
     public static void F32_STORE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_FLOAT);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_WRITE_FLOAT);
     }
 
     public static void I64_STORE8(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
@@ -584,15 +584,15 @@ final class Emitters {
 
     public static void I64_STORE32(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.visitInsn(Opcodes.L2I);
-        emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_INT);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_WRITE_INT);
     }
 
     public static void I64_STORE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_LONG);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_WRITE_LONG);
     }
 
     public static void F64_STORE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitLoadOrStore(ctx, ins, asm, MethodRefs.MEMORY_WRITE_DOUBLE);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_WRITE_DOUBLE);
     }
 
     private static void emitLoadOrStore(
@@ -600,7 +600,7 @@ final class Emitters {
         long offset = ins.operand(1);
 
         if (offset < 0 || offset >= Integer.MAX_VALUE) {
-            emitInvokeStatic(asm, MethodRefs.THROW_OUT_OF_BOUNDS_MEMORY_ACCESS);
+            emitInvokeStatic(asm, ShadedRefs.THROW_OUT_OF_BOUNDS_MEMORY_ACCESS);
             asm.athrow();
         }
 

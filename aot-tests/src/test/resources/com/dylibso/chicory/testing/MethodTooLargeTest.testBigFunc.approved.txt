@@ -15,7 +15,7 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     LASTORE
     ICONST_2
     ALOAD 2
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineMethods.callIndirect ([JILcom/dylibso/chicory/runtime/Instance;)[J
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineAotMethods.callIndirect ([JILcom/dylibso/chicory/runtime/Instance;)[J
     ICONST_0
     LALOAD
     L2I

@@ -13,9 +13,12 @@ import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
 
-public final class GeneratedMethods {
+/**
+ * This class will get shaded into the compiled code.
+ */
+public final class Shaded {
 
-    private GeneratedMethods() {}
+    private Shaded() {}
 
     public static long[] callIndirect(long[] args, int typeId, int funcId, Instance instance) {
         FunctionType expectedType = instance.type(typeId);

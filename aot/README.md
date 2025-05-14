@@ -19,11 +19,7 @@ import com.dylibso.chicory.experimental.aot.AotMachine;
 
 // ...
 var is = ClassLoader.getSystemClassLoader().getResourceAsStream("compiled/basic.c.wasm");
-Instance.
-
-        builder(Parser.parse(is)).
-
+var instance = Instance.builder(Parser.parse(is)).
         withMachineFactory(AotMachine::new).
-
         build();
 ```

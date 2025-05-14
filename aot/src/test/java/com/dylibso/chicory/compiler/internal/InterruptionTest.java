@@ -1,6 +1,6 @@
 package com.dylibso.chicory.compiler.internal;
 
-import static com.dylibso.chicory.compiler.internal.Util.methodNameForFunc;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.methodNameForFunc;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -1,7 +1,7 @@
 package com.dylibso.chicory.compiler.internal;
 
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.localType;
 import static com.dylibso.chicory.compiler.internal.TypeStack.FUNCTION_SCOPE;
-import static com.dylibso.chicory.compiler.internal.Util.localType;
 import static java.util.Collections.reverse;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -15,6 +15,7 @@ import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.GlobalImport;
+import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
@@ -266,7 +267,7 @@ final class WasmAnalyzer {
     private void analyzeSimple(
             List<CompilerInstruction> out,
             TypeStack stack,
-            com.dylibso.chicory.wasm.types.Instruction ins,
+            Instruction ins,
             FunctionType functionType,
             FunctionBody body) {
         switch (ins.opcode()) {
@@ -702,7 +703,7 @@ final class WasmAnalyzer {
                 new CompilerInstruction(CompilerOpCode.DROP_KEEP, operands.build().toArray()));
     }
 
-    private FunctionType blockType(com.dylibso.chicory.wasm.types.Instruction ins) {
+    private FunctionType blockType(Instruction ins) {
         var typeId = ins.operand(0);
         if (typeId == 0x40) {
             return FunctionType.empty();
