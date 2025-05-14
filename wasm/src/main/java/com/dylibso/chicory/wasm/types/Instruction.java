@@ -36,6 +36,12 @@ public class Instruction {
         return operands[index];
     }
 
+    // this is effectively internal API used to infer some operation's
+    // polymorphic type at validation time.
+    public void setOperand(int index, long value) {
+        operands[index] = value;
+    }
+
     @Override
     public String toString() {
         var result = String.format("0x%08X", address) + ": ";

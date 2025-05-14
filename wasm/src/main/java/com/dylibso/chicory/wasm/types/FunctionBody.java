@@ -1,6 +1,5 @@
 package com.dylibso.chicory.wasm.types;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -10,8 +9,7 @@ public final class FunctionBody {
 
     public FunctionBody(List<ValType> locals, List<AnnotatedInstruction> instructions) {
         this.locals = List.copyOf(locals);
-        this.instructions = new ArrayList();
-        this.instructions.addAll(instructions);
+        this.instructions = List.copyOf(instructions);
     }
 
     public List<ValType> localTypes() {

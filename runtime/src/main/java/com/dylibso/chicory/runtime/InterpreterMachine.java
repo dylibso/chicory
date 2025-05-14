@@ -245,11 +245,13 @@ public class InterpreterMachine implements Machine {
                     CALL_INDIRECT(stack, instance, callStack, operands);
                     break;
                 case DROP:
-                    // TODO: this doesn't correctly handle V128 at runtime
+                    if (operands.get(0) == ValType.ID.V128) {
+                        stack.pop();
+                    }
                     stack.pop();
                     break;
                 case SELECT:
-                    SELECT(stack);
+                    SELECT(stack, operands);
                     break;
                 case SELECT_T:
                     SELECT_T(stack, operands);
@@ -1864,14 +1866,28 @@ public class InterpreterMachine implements Machine {
         }
     }
 
-    private static void SELECT(MStack stack) {
+    private static void SELECT(MStack stack, Operands operands) {
         var pred = (int) stack.pop();
-        var b = stack.pop();
-        var a = stack.pop();
-        if (pred == 0) {
-            stack.push(b);
+        if (operands.get(0) == ValType.ID.V128) {
+            var b1 = stack.pop();
+            var b2 = stack.pop();
+            var a1 = stack.pop();
+            var a2 = stack.pop();
+            if (pred == 0) {
+                stack.push(b2);
+                stack.push(b1);
+            } else {
+                stack.push(a2);
+                stack.push(a1);
+            }
         } else {
-            stack.push(a);
+            var b = stack.pop();
+            var a = stack.pop();
+            if (pred == 0) {
+                stack.push(b);
+            } else {
+                stack.push(a);
+            }
         }
     }
 

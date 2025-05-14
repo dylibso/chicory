@@ -1067,6 +1067,13 @@ public final class Parser {
                 break;
         }
 
+        // reserving an operand in those two operations to inject
+        // a ValType hint at validation time
+        switch (op) {
+            case DROP:
+            case SELECT:
+                return new Instruction(address, op, new long[] {0});
+        }
         if (signature.isEmpty()) {
             return new Instruction(address, op, EMPTY_OPERANDS);
         }

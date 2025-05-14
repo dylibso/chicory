@@ -858,7 +858,13 @@ final class Validator {
                     }
                 case DROP:
                     {
-                        popVal();
+                        var t = popVal();
+
+                        // setting the type hint
+                        if (t.opcode() == ValType.ID.V128) {
+                            op.setOperand(0, ValType.ID.V128);
+                        }
+
                         break;
                     }
                 case I32_STORE:
@@ -1268,22 +1274,13 @@ final class Validator {
                         var t1 = popVal();
                         var t2 = popVal();
 
-                        // HACK: SELECT_T can handle V128 so we convert to it to avoid keeping a
-                        // side table
-                        // NOTE: this doesn't work when validation is skipped, we should either:
-                        // - make it mandatory
-                        // - have a separate step to perform those kind of transformations before
-                        // execution
-                        if (t1.opcode() == ValType.ID.V128 && t2.opcode() == ValType.ID.V128) {
-                            var annotInstr =
-                                    AnnotatedInstruction.builder()
-                                            .from(
-                                                    new Instruction(
-                                                            op.address(),
-                                                            OpCode.SELECT_T,
-                                                            new long[] {ValType.ID.V128}))
-                                            .build();
-                            body.instructions().set(i, annotInstr);
+                        // setting the type hint
+                        if ((t1.opcode() == ValType.ID.V128 && t2.opcode() == ValType.ID.V128)
+                                || (t1.opcode() == ValType.ID.V128
+                                        && t2.opcode() == ValType.ID.UNKNOWN)
+                                || (t1.opcode() == ValType.ID.UNKNOWN
+                                        && t2.opcode() == ValType.ID.V128)) {
+                            op.setOperand(0, ValType.ID.V128);
                             pushVal(ValType.V128);
                             break;
                         }

@@ -46,6 +46,8 @@ var module = Parser.parse(new File("your.wasm"));
 var instance = Instance.builder(module).withMachineFactory(SimdInterpreterMachine::new).build();
 ```
 
+> **_NOTE:_**  Modules loaded without validation enabled are **NOT** supported (i.e. no:`WasmModule.builder().withValidation(false)`).
+
 <!--
 ```java
 //DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
