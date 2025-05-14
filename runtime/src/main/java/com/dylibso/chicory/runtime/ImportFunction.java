@@ -39,7 +39,7 @@ public class ImportFunction implements ImportValue {
         this.handle = handle;
     }
 
-    @Deprecated(since = "23/05/2025", forRemoval = true)
+    @Deprecated(since = "23/05/2025")
     public ImportFunction(
             String module,
             String name,
