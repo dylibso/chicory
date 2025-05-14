@@ -22,6 +22,11 @@ public final class MachineFactory implements Function<Instance, Machine> {
         this.factory = result.machineFactory();
     }
 
+    public MachineFactory(WasmModule module, Function<Instance, Machine> factory) {
+        this.module = module;
+        this.factory = factory;
+    }
+
     @Override
     public Machine apply(Instance instance) {
         if (instance.module() != module) {

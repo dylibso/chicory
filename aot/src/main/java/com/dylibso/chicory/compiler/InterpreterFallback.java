@@ -1,4 +1,4 @@
-package com.dylibso.chicory.compiler.internal;
+package com.dylibso.chicory.compiler;
 
 /**
  * Enum representing the fallback behavior for when the compiler needs to fallback to using
