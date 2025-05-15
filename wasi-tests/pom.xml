@@ -75,17 +75,10 @@
               <exclude>tests/rust/testsuite/fd_flags_set.wasm</exclude>
               <!-- Linux and Jimfs always append with APPEND -->
               <exclude>tests/c/testsuite/pwrite-with-append.wasm</exclude>
-              <!-- path_symlink is not implemented -->
+              <!-- dangling symlinks are not supported -->
               <exclude>tests/rust/testsuite/dangling_symlink.wasm</exclude>
-              <exclude>tests/rust/testsuite/nofollow_errors.wasm</exclude>
-              <exclude>tests/rust/testsuite/path_exists.wasm</exclude>
-              <exclude>tests/rust/testsuite/path_symlink_trailing_slashes.wasm</exclude>
-              <exclude>tests/rust/testsuite/readlink.wasm</exclude>
-              <exclude>tests/rust/testsuite/symlink_create.wasm</exclude>
+              <!-- symlinks filestat is not supported -->
               <exclude>tests/rust/testsuite/symlink_filestat.wasm</exclude>
-              <exclude>tests/rust/testsuite/symlink_loop.wasm</exclude>
-              <!-- path_link is not implemented -->
-              <exclude>tests/rust/testsuite/path_link.wasm</exclude>
               <!-- fd_fdstat_set_rights is not implemented -->
               <exclude>tests/rust/testsuite/fd_fdstat_set_rights.wasm</exclude>
               <exclude>tests/rust/testsuite/truncation_rights.wasm</exclude>
