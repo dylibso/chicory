@@ -8,11 +8,11 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * Compiles WASM function bodies to JVM byte code to create Machine implementations.
+ * Compiles WASM function bodies to JVM byte code that can be used as an {@link Instance}'s machine factory.
  */
-public final class RuntimeCompiler {
+public final class MachineFactoryCompiler {
 
-    private RuntimeCompiler() {
+    private MachineFactoryCompiler() {
         // no instances
     }
 
@@ -20,7 +20,7 @@ public final class RuntimeCompiler {
      * The compile method reference can be used as machine factory in instance builders.
      * <code>
      * var instance = Instance.builder(Parser.parse(is)).
-     *         withMachineFactory(RuntimeCompiler::compile).
+     *         withMachineFactory(MachineFactoryCompiler::compile).
      *         build();
      * </code>
      * <p>
@@ -40,7 +40,7 @@ public final class RuntimeCompiler {
      * <p>
      * <code>
      * var module  = Parser.parse(is);
-     * var builder = Instance.builder(module).withMachineFactory(RuntimeCompiler.compile(module));
+     * var builder = Instance.builder(module).withMachineFactory(MachineFactoryCompiler.compile(module));
      * var instance1 = builder.build();
      * var instance2 = builder.build();
      * </code>
@@ -58,7 +58,7 @@ public final class RuntimeCompiler {
      * <code>
      * var module  = Parser.parse(is);
      * var builder = Instance.builder(module).withMachineFactory(
-     *      RuntimeCompiler.builder(module).withInterpreterFallback(InterpreterFallback.FAIL).compile()
+     *      MachineFactoryCompiler.builder(module).withInterpreterFallback(InterpreterFallback.FAIL).compile()
      * );
      * var instance1 = builder.build();
      * var instance2 = builder.build();
