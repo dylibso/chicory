@@ -18,11 +18,11 @@ public final class MachineFactoryCompiler {
 
     /**
      * The compile method reference can be used as machine factory in instance builders.
-     * <code>
-     * var instance = Instance.builder(Parser.parse(is)).
-     *         withMachineFactory(MachineFactoryCompiler::compile).
-     *         build();
-     * </code>
+     * <pre>
+     * var instance = Instance.builder(Parser.parse(is))
+     *         .withMachineFactory(MachineFactoryCompiler::compile)
+     *         .build();
+     * </pre>
      * <p>
      * Every instance created by the builder will pay the cost of compiling the module.
      * </p>
@@ -38,12 +38,13 @@ public final class MachineFactoryCompiler {
      * The module is only compiled once and the machine factory is reused for every
      * instance created by the builder.
      * <p>
-     * <code>
+     * <pre>
      * var module  = Parser.parse(is);
-     * var builder = Instance.builder(module).withMachineFactory(MachineFactoryCompiler.compile(module));
+     * var builder = Instance.builder(module)
+     *         .withMachineFactory(MachineFactoryCompiler.compile(module));
      * var instance1 = builder.build();
      * var instance2 = builder.build();
-     * </code>
+     * </pre>
      */
     public static Function<Instance, Machine> compile(WasmModule module) {
         return new MachineFactory(module);
@@ -55,14 +56,17 @@ public final class MachineFactoryCompiler {
      * byte code.
      * This should be used when you want to create multiple instances of the same module.
      * <p>
-     * <code>
+     * <pre>
      * var module  = Parser.parse(is);
-     * var builder = Instance.builder(module).withMachineFactory(
-     *      MachineFactoryCompiler.builder(module).withInterpreterFallback(InterpreterFallback.FAIL).compile()
-     * );
+     * var builder = Instance.builder(module)
+     *         .withMachineFactory(
+     *             MachineFactoryCompiler.builder(module)
+     *                 .withInterpreterFallback(InterpreterFallback.FAIL)
+     *                 .compile()
+     *         );
      * var instance1 = builder.build();
      * var instance2 = builder.build();
-     * </code>
+     * </pre>
      */
     public static Builder builder(WasmModule module) {
         return new Builder(module);
