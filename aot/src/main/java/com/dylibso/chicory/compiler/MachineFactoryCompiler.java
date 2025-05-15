@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 /**
- * Compiles WASM function bodies to JVM byte code that can be used as an {@link Instance}'s machine factory.
+ * Compiles WASM function bodies to JVM byte code that can be used as a machine factory for {@link Instance}'s.
  */
 public final class MachineFactoryCompiler {
 
