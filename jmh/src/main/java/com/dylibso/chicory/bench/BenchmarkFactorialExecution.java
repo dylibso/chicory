@@ -1,6 +1,6 @@
 package com.dylibso.chicory.bench;
 
-import com.dylibso.chicory.experimental.aot.AotMachine;
+import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
@@ -42,7 +42,7 @@ public class BenchmarkFactorialExecution {
 
         var factorialCompiled =
                 Instance.builder(Parser.parse(ITERFACT))
-                        .withMachineFactory(AotMachine::new)
+                        .withMachineFactory(MachineFactoryCompiler::compile)
                         .build();
         iterFactCompiled = factorialCompiled.export("iterFact");
     }

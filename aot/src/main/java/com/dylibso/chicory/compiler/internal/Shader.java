@@ -36,7 +36,7 @@ final class Shader {
                         super.visit(
                                 version,
                                 Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
-                                internalClassName(className + "AotMethods"),
+                                internalClassName(className + "Shaded"),
                                 null,
                                 superName,
                                 null);
@@ -50,7 +50,7 @@ final class Shader {
     }
 
     public static ClassRemapper shadedClassRemapper(ClassVisitor visitor, String className) {
-        String targetInternalName = internalClassName(className + "AotMethods");
+        String targetInternalName = internalClassName(className + "Shaded");
         String originalInternalName = internalClassName(Shaded.class.getName());
         return new ClassRemapper(
                 visitor,
