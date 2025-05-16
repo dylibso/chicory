@@ -858,7 +858,13 @@ final class Validator {
                     }
                 case DROP:
                     {
-                        popVal();
+                        var t = popVal();
+
+                        // setting the type hint
+                        if (t.opcode() == ValType.ID.V128) {
+                            op.setOperand(0, ValType.ID.V128);
+                        }
+
                         break;
                     }
                 case I32_STORE:
@@ -1267,9 +1273,25 @@ final class Validator {
                         popVal(ValType.I32);
                         var t1 = popVal();
                         var t2 = popVal();
+
+                        // setting the type hint
+                        if ((t1.opcode() == ValType.ID.V128 && t2.opcode() == ValType.ID.V128)
+                                || (t1.opcode() == ValType.ID.V128
+                                        && t2.opcode() == ValType.ID.UNKNOWN)
+                                || (t1.opcode() == ValType.ID.UNKNOWN
+                                        && t2.opcode() == ValType.ID.V128)) {
+                            op.setOperand(0, ValType.ID.V128);
+                            pushVal(ValType.V128);
+                            break;
+                        }
+
                         if (!(isNum(t1) && isNum(t2))) {
                             throw new InvalidException(
-                                    "type mismatch: select should have numeric arguments");
+                                    "type mismatch: select should have numeric arguments but they"
+                                            + " are "
+                                            + t1
+                                            + " "
+                                            + t2);
                         }
                         if (!t1.equals(t2)
                                 && !t1.equals(ValType.UNKNOWN)

@@ -46,6 +46,8 @@ var module = Parser.parse(new File("your.wasm"));
 var instance = Instance.builder(module).withMachineFactory(SimdInterpreterMachine::new).build();
 ```
 
+> **_NOTE:_**  SIMD support **REQUIRES** validation. Disabling validation  (`WasmModule.builder().withValidation(false)`) is likely to produce incorrect results.
+
 <!--
 ```java
 //DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
