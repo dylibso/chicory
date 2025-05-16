@@ -3,7 +3,7 @@ package com.dylibso.chicory.testing;
 import static com.dylibso.chicory.corpus.WatGenerator.bigWat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.dylibso.chicory.experimental.aot.AotMachine;
+import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 import com.dylibso.chicory.runtime.ExportFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wabt.Wat2Wasm;
@@ -18,7 +18,7 @@ public class ClassTooLargeTest {
         byte[] wasm = Wat2Wasm.parse(bigWat(funcCount, 0));
         var instance =
                 Instance.builder(Parser.parse(wasm))
-                        .withMachineFactory(AotMachine::new)
+                        .withMachineFactory(MachineFactoryCompiler::compile)
                         .withStart(false)
                         .build();
 
@@ -37,7 +37,7 @@ public class ClassTooLargeTest {
         byte[] wasm = Wat2Wasm.parse(bigWat(funcCount, 15_000));
         var instance =
                 Instance.builder(Parser.parse(wasm))
-                        .withMachineFactory(AotMachine::new)
+                        .withMachineFactory(MachineFactoryCompiler::compile)
                         .withStart(false)
                         .build();
 

@@ -46,13 +46,13 @@ docs.FileOps.copyFromWasmCorpus("count_vowels.rs.wasm", "your.wasm");
 -->
 
 ```java
-import com.dylibso.chicory.experimental.aot.AotMachine;
+import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 
 var module = Parser.parse(new File("your.wasm"));
 var instance = Instance.builder(module).
-        withMachineFactory(AotMachine::new).
+        withMachineFactory(MachineFactoryCompiler::compile).
         build();
 ```
 

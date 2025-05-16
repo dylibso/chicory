@@ -15,11 +15,11 @@ To enable use the compiler Machine factory when building the module:
 // ...
 
 import com.dylibso.chicory.wasm.Parser;
-import com.dylibso.chicory.experimental.aot.AotMachine;
+import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 
 // ...
 var is = ClassLoader.getSystemClassLoader().getResourceAsStream("compiled/basic.c.wasm");
-var instance = Instance.builder(Parser.parse(is)).
-        withMachineFactory(AotMachine::new).
-        build();
+        var instance = Instance.builder(Parser.parse(is)).
+                withMachineFactory(MachineFactoryCompiler::compile).
+                build();
 ```
