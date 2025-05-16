@@ -1,28 +1,28 @@
-package com.dylibso.chicory.experimental.aot;
+package com.dylibso.chicory.compiler.internal;
 
 import java.util.Arrays;
 import java.util.stream.LongStream;
 
-final class AotInstruction {
+final class CompilerInstruction {
     public static final long[] EMPTY = new long[0];
 
-    private final AotOpCode opcode;
+    private final CompilerOpCode opcode;
     private final long[] operands;
 
-    public AotInstruction(AotOpCode opcode) {
+    public CompilerInstruction(CompilerOpCode opcode) {
         this(opcode, EMPTY);
     }
 
-    public AotInstruction(AotOpCode opcode, long operand) {
+    public CompilerInstruction(CompilerOpCode opcode, long operand) {
         this(opcode, new long[] {operand});
     }
 
-    public AotInstruction(AotOpCode opcode, long[] operands) {
+    public CompilerInstruction(CompilerOpCode opcode, long[] operands) {
         this.opcode = opcode;
         this.operands = operands;
     }
 
-    public AotOpCode opcode() {
+    public CompilerOpCode opcode() {
         return opcode;
     }
 

@@ -1,4 +1,4 @@
-package com.dylibso.chicory.experimental.aot;
+package com.dylibso.chicory.compiler.internal;
 
 import static com.dylibso.chicory.runtime.MemCopyWorkaround.shouldUseMemWorkaround;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
@@ -13,9 +13,12 @@ import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
 
-public final class AotMethods {
+/**
+ * This class will get shaded into the compiled code.
+ */
+public final class Shaded {
 
-    private AotMethods() {}
+    private Shaded() {}
 
     public static long[] callIndirect(long[] args, int typeId, int funcId, Instance instance) {
         FunctionType expectedType = instance.type(typeId);

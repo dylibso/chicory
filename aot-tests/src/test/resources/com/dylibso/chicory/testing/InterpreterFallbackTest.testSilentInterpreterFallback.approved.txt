@@ -4,10 +4,10 @@ com.dylibso.chicory.testing.Test3MachineFuncGroup_0.func_1
 com.dylibso.chicory.testing.Test3MachineFuncGroup_0.call_1
 com.dylibso.chicory.testing.Test3MachineMachineCall.call
 com.dylibso.chicory.testing.Test3Machine.call
-com.dylibso.chicory.runtime.AotInterpreterMachine.CALL
+com.dylibso.chicory.runtime.internal.CompilerInterpreterMachine.CALL
 com.dylibso.chicory.runtime.InterpreterMachine.eval
 com.dylibso.chicory.runtime.InterpreterMachine.call
-com.dylibso.chicory.runtime.AotInterpreterMachine.call
+com.dylibso.chicory.runtime.internal.CompilerInterpreterMachine.call
 com.dylibso.chicory.runtime.InterpreterMachine.call
 com.dylibso.chicory.testing.Test3Machine.call
 com.dylibso.chicory.testing.Test3MachineAotMethods.callIndirect

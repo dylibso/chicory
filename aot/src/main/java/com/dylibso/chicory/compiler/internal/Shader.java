@@ -1,6 +1,6 @@
-package com.dylibso.chicory.experimental.aot;
+package com.dylibso.chicory.compiler.internal;
 
-import static com.dylibso.chicory.experimental.aot.AotUtil.internalClassName;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.internalClassName;
 import static org.objectweb.asm.Type.getInternalName;
 
 import com.dylibso.chicory.wasm.ChicoryException;
@@ -12,13 +12,16 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
 
-final class AotMethodInliner {
+/**
+ * The Shader class is responsible for creating a shaded version of the Shaded class.
+ */
+final class Shader {
 
-    private AotMethodInliner() {}
+    private Shader() {}
 
-    public static byte[] createAotMethodsClass(String className) {
+    public static byte[] createShadedClass(String className) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        ClassVisitor visitor = aotMethodsRemapper(writer, className);
+        ClassVisitor visitor = shadedClassRemapper(writer, className);
 
         visitor =
                 new ClassVisitor(Opcodes.ASM9, visitor) {
@@ -40,15 +43,15 @@ final class AotMethodInliner {
                     }
                 };
 
-        ClassReader reader = new ClassReader(getBytecode(AotMethods.class));
+        ClassReader reader = new ClassReader(getBytecode(Shaded.class));
         reader.accept(visitor, ClassReader.SKIP_FRAMES);
 
         return writer.toByteArray();
     }
 
-    public static ClassRemapper aotMethodsRemapper(ClassVisitor visitor, String className) {
+    public static ClassRemapper shadedClassRemapper(ClassVisitor visitor, String className) {
         String targetInternalName = internalClassName(className + "AotMethods");
-        String originalInternalName = internalClassName(AotMethods.class.getName());
+        String originalInternalName = internalClassName(Shaded.class.getName());
         return new ClassRemapper(
                 visitor,
                 new Remapper() {

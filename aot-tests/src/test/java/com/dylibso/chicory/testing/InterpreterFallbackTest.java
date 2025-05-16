@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.dylibso.chicory.experimental.aot.InterpreterFallback;
+import com.dylibso.chicory.compiler.InterpreterFallback;
 import com.dylibso.chicory.experimental.build.time.aot.Config;
 import com.dylibso.chicory.experimental.build.time.aot.Generator;
 import com.dylibso.chicory.runtime.HostFunction;
@@ -147,7 +147,7 @@ public class InterpreterFallbackTest {
         // switch to interpreter and back on call
         assertTrue(
                 containsInOrder(
-                        List.of("AotInterpreterMachine.CALL", "Test3MachineFuncGroup_0.func"),
+                        List.of("CompilerInterpreterMachine.CALL", "Test3MachineFuncGroup_0.func"),
                         hostStackTrace));
 
         Approvals.verify(stackTrace);

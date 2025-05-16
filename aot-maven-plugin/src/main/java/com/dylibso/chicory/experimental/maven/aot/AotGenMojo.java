@@ -1,6 +1,6 @@
 package com.dylibso.chicory.experimental.maven.aot;
 
-import com.dylibso.chicory.experimental.aot.InterpreterFallback;
+import com.dylibso.chicory.compiler.InterpreterFallback;
 import com.dylibso.chicory.experimental.build.time.aot.Config;
 import com.dylibso.chicory.experimental.build.time.aot.Generator;
 import java.io.File;

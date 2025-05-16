@@ -1,7 +1,7 @@
-package com.dylibso.chicory.experimental.aot;
+package com.dylibso.chicory.compiler.internal;
 
-import static com.dylibso.chicory.experimental.aot.AotUtil.hasTooManyParameters;
-import static com.dylibso.chicory.experimental.aot.AotUtil.slotCount;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.hasTooManyParameters;
+import static com.dylibso.chicory.compiler.internal.CompilerUtil.slotCount;
 
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Class for tracking context relevant to compiling a single function
  */
-final class AotContext {
+final class Context {
 
     private final String internalClassName;
     private final int maxFunctionsPerClass;
@@ -27,7 +27,7 @@ final class AotContext {
     private final int instanceSlot;
     private final int tempSlot;
 
-    public AotContext(
+    public Context(
             String internalClassName,
             int maxFunctionsPerClass,
             List<ValType> globalTypes,

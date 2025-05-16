@@ -1,6 +1,6 @@
 package com.dylibso.chicory.experimental.aot.cli;
 
-import com.dylibso.chicory.experimental.aot.InterpreterFallback;
+import com.dylibso.chicory.compiler.InterpreterFallback;
 import com.dylibso.chicory.experimental.build.time.aot.Config;
 import com.dylibso.chicory.experimental.build.time.aot.Generator;
 import com.dylibso.chicory.wasm.Version;

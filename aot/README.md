@@ -1,8 +1,8 @@
-# Chicory AOT
+# Chicory WASM to Bytecode Compiler
 
-Experimental Wasm -> JVM bytecode AOT engine.
+Experimental Wasm -> JVM bytecode compiler.
 
-To enable use the AotMachine factory when building the module:
+To enable use the compiler Machine factory when building the module:
 
 <!--
 ```java
@@ -16,7 +16,10 @@ To enable use the AotMachine factory when building the module:
 
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.experimental.aot.AotMachine;
+
 // ...
 var is = ClassLoader.getSystemClassLoader().getResourceAsStream("compiled/basic.c.wasm");
-Instance.builder(Parser.parse(is)).withMachineFactory(AotMachine::new).build();
+var instance = Instance.builder(Parser.parse(is)).
+        withMachineFactory(AotMachine::new).
+        build();
 ```

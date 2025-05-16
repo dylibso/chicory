@@ -5,8 +5,8 @@ import static java.lang.ClassLoader.getSystemClassLoader;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.objectweb.asm.Type.getInternalName;
 
-import com.dylibso.chicory.experimental.aot.AotCompiler;
-import com.dylibso.chicory.experimental.aot.AotMethods;
+import com.dylibso.chicory.compiler.internal.Compiler;
+import com.dylibso.chicory.compiler.internal.Shaded;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
@@ -51,7 +51,7 @@ public class ApprovalTest {
     @Test
     public void verifyI32Renamed() {
         var module = parse(getSystemClassLoader().getResourceAsStream("compiled/i32.wat.wasm"));
-        var result = AotCompiler.builder(module).withClassName("FOO").build().compile();
+        var result = Compiler.builder(module).withClassName("FOO").build().compile();
         verifyClass(result.classBytes(), false);
     }
 
@@ -84,22 +84,22 @@ public class ApprovalTest {
     public void functions10() {
         var module =
                 parse(getSystemClassLoader().getResourceAsStream("compiled/functions_10.wat.wasm"));
-        var result = AotCompiler.builder(module).withMaxFunctionsPerClass(5).build().compile();
+        var result = Compiler.builder(module).withMaxFunctionsPerClass(5).build().compile();
         verifyClass(result.classBytes(), true);
     }
 
     private static void verifyGeneratedBytecode(String name) {
         var module = parse(getSystemClassLoader().getResourceAsStream("compiled/" + name));
-        var result = AotCompiler.builder(module).build().compile();
+        var result = Compiler.builder(module).build().compile();
         verifyClass(result.classBytes(), true);
     }
 
-    private static void verifyClass(Map<String, byte[]> classBytes, boolean skipAotMethods) {
+    private static void verifyClass(Map<String, byte[]> classBytes, boolean skipMethodsClass) {
         var writer = new StringWriter();
 
         for (byte[] bytes : classBytes.values()) {
             ClassReader cr = new ClassReader(bytes);
-            if (skipAotMethods && cr.getClassName().endsWith("AotMethods")) {
+            if (skipMethodsClass && cr.getClassName().endsWith("Methods")) {
                 continue;
             }
             cr.accept(new TraceClassVisitor(new PrintWriter(writer)), 0);
@@ -117,7 +117,7 @@ public class ApprovalTest {
         Approvals.verify(output);
 
         assertFalse(
-                output.contains(getInternalName(AotMethods.class)),
-                "Class contains non-inlined reference to AotMethods");
+                output.contains(getInternalName(Shaded.class)),
+                "Class contains non-inlined reference to " + Shaded.class.getName());
     }
 }
