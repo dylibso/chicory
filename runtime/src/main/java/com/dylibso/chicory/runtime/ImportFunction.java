@@ -13,7 +13,7 @@ public class ImportFunction implements ImportValue {
     private final List<ValType> returnTypes;
     private final WasmFunctionHandle handle;
 
-    @Deprecated(since = "23/05/2025")
+    @Deprecated(since = "1.3.0")
     protected static List<ValType> convert(List objs) {
         var result = new ArrayList<ValType>(objs.size());
         for (var v : objs) {
@@ -39,7 +39,7 @@ public class ImportFunction implements ImportValue {
         this.handle = handle;
     }
 
-    @Deprecated(since = "23/05/2025")
+    @Deprecated(since = "1.3.0")
     public ImportFunction(
             String module,
             String name,

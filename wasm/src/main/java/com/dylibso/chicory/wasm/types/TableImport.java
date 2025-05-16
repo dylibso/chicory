@@ -26,7 +26,7 @@ public final class TableImport extends Import {
     /**
      * @deprecated use {@link #TableImport(String, String, ValType, TableLimits)}
      */
-    @Deprecated(since = "23/05/2025")
+    @Deprecated(since = "1.3.0")
     public TableImport(String moduleName, String name, ValueType entryType, TableLimits limits) {
         super(moduleName, name);
         this.entryType = Objects.requireNonNull(entryType, "entryType").toValType();
