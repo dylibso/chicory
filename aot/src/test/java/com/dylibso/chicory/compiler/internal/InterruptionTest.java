@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.dylibso.chicory.experimental.aot.AotMachine;
+import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.Parser;
@@ -22,7 +22,10 @@ public class InterruptionTest {
                 Parser.parse(
                         InterruptionTest.class.getResourceAsStream(
                                 "/compiled/infinite-loop.c.wasm"));
-        var instance = Instance.builder(module).withMachineFactory(AotMachine::new).build();
+        var instance =
+                Instance.builder(module)
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .build();
 
         var function = instance.export("run");
         assertInterruption(function::apply, functionIdx(module, "run"));
@@ -32,7 +35,10 @@ public class InterruptionTest {
     public void shouldInterruptCall() throws InterruptedException {
         var module =
                 Parser.parse(InterruptionTest.class.getResourceAsStream("/compiled/power.c.wasm"));
-        var instance = Instance.builder(module).withMachineFactory(AotMachine::new).build();
+        var instance =
+                Instance.builder(module)
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .build();
         var function = instance.export("run");
         assertInterruption(() -> function.apply(100), functionIdx(module, "run"));
     }

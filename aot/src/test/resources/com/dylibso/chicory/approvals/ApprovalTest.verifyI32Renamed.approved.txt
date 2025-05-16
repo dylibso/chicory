@@ -22,11 +22,11 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
     INVOKESTATIC FOOMachineCall.call (Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;I[J)[J
     ARETURN
    L1
-    INVOKESTATIC FOOAotMethods.throwCallStackExhausted (Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
+    INVOKESTATIC FOOShaded.throwCallStackExhausted (Ljava/lang/StackOverflowError;)Ljava/lang/RuntimeException;
     ATHROW
 
   public static call_indirect_0(IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    INVOKESTATIC FOOAotMethods.checkInterruption ()V
+    INVOKESTATIC FOOShaded.checkInterruption ()V
     ALOAD 3
     ILOAD 1
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
@@ -55,7 +55,7 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
     INVOKESTATIC FOOFuncGroup_0.func_0 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     RETURN
    L3
-    INVOKESTATIC FOOAotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
+    INVOKESTATIC FOOShaded.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
     ATHROW
    L1
     ICONST_0
@@ -63,11 +63,11 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
     ICONST_0
     ILOAD 5
     ALOAD 6
-    INVOKESTATIC FOOAotMethods.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
+    INVOKESTATIC FOOShaded.callIndirect ([JIILcom/dylibso/chicory/runtime/Instance;)[J
     RETURN
 }
 
-final class FOOAotMethods {
+final class FOOShaded {
 
   private final static Z memCopyWorkaround
 
@@ -97,7 +97,7 @@ final class FOOAotMethods {
     INVOKEVIRTUAL com/dylibso/chicory/wasm/types/FunctionType.typesMatch (Lcom/dylibso/chicory/wasm/types/FunctionType;)Z
     IFNE L3
    L4
-    INVOKESTATIC FOOAotMethods.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
+    INVOKESTATIC FOOShaded.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
     ATHROW
    L3
     ALOAD 3
@@ -230,7 +230,7 @@ final class FOOAotMethods {
 
   public static memoryCopy(IIILcom/dylibso/chicory/runtime/Memory;)V
    L0
-    GETSTATIC FOOAotMethods.memCopyWorkaround : Z
+    GETSTATIC FOOShaded.memCopyWorkaround : Z
     IFEQ L1
    L2
     ILOAD 0
@@ -306,7 +306,7 @@ final class FOOAotMethods {
     ALOAD 2
     ILOAD 0
     ILOAD 1
-    INVOKESTATIC FOOAotMethods.getAddr (II)I
+    INVOKESTATIC FOOShaded.getAddr (II)I
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.read (I)B (itf)
     IRETURN
    L1
@@ -316,7 +316,7 @@ final class FOOAotMethods {
     ALOAD 2
     ILOAD 0
     ILOAD 1
-    INVOKESTATIC FOOAotMethods.getAddr (II)I
+    INVOKESTATIC FOOShaded.getAddr (II)I
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readShort (I)S (itf)
     IRETURN
    L1
@@ -326,7 +326,7 @@ final class FOOAotMethods {
     ALOAD 2
     ILOAD 0
     ILOAD 1
-    INVOKESTATIC FOOAotMethods.getAddr (II)I
+    INVOKESTATIC FOOShaded.getAddr (II)I
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readInt (I)I (itf)
     IRETURN
    L1
@@ -336,7 +336,7 @@ final class FOOAotMethods {
     ALOAD 2
     ILOAD 0
     ILOAD 1
-    INVOKESTATIC FOOAotMethods.getAddr (II)I
+    INVOKESTATIC FOOShaded.getAddr (II)I
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readLong (I)J (itf)
     LRETURN
    L1
@@ -346,7 +346,7 @@ final class FOOAotMethods {
     ALOAD 2
     ILOAD 0
     ILOAD 1
-    INVOKESTATIC FOOAotMethods.getAddr (II)I
+    INVOKESTATIC FOOShaded.getAddr (II)I
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readFloat (I)F (itf)
     FRETURN
    L1
@@ -356,7 +356,7 @@ final class FOOAotMethods {
     ALOAD 2
     ILOAD 0
     ILOAD 1
-    INVOKESTATIC FOOAotMethods.getAddr (II)I
+    INVOKESTATIC FOOShaded.getAddr (II)I
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.readDouble (I)D (itf)
     DRETURN
    L1
@@ -366,7 +366,7 @@ final class FOOAotMethods {
     ALOAD 3
     ILOAD 0
     ILOAD 2
-    INVOKESTATIC FOOAotMethods.getAddr (II)I
+    INVOKESTATIC FOOShaded.getAddr (II)I
     ILOAD 1
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeByte (IB)V (itf)
    L1
@@ -378,7 +378,7 @@ final class FOOAotMethods {
     ALOAD 3
     ILOAD 0
     ILOAD 2
-    INVOKESTATIC FOOAotMethods.getAddr (II)I
+    INVOKESTATIC FOOShaded.getAddr (II)I
     ILOAD 1
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeShort (IS)V (itf)
    L1
@@ -390,7 +390,7 @@ final class FOOAotMethods {
     ALOAD 3
     ILOAD 0
     ILOAD 2
-    INVOKESTATIC FOOAotMethods.getAddr (II)I
+    INVOKESTATIC FOOShaded.getAddr (II)I
     ILOAD 1
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeI32 (II)V (itf)
    L1
@@ -402,7 +402,7 @@ final class FOOAotMethods {
     ALOAD 4
     ILOAD 0
     ILOAD 3
-    INVOKESTATIC FOOAotMethods.getAddr (II)I
+    INVOKESTATIC FOOShaded.getAddr (II)I
     LLOAD 1
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeLong (IJ)V (itf)
    L1
@@ -414,7 +414,7 @@ final class FOOAotMethods {
     ALOAD 3
     ILOAD 0
     ILOAD 2
-    INVOKESTATIC FOOAotMethods.getAddr (II)I
+    INVOKESTATIC FOOShaded.getAddr (II)I
     FLOAD 1
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeF32 (IF)V (itf)
    L1
@@ -426,7 +426,7 @@ final class FOOAotMethods {
     ALOAD 4
     ILOAD 0
     ILOAD 3
-    INVOKESTATIC FOOAotMethods.getAddr (II)I
+    INVOKESTATIC FOOShaded.getAddr (II)I
     DLOAD 1
     INVOKEINTERFACE com/dylibso/chicory/runtime/Memory.writeF64 (ID)V (itf)
    L1
@@ -544,11 +544,11 @@ final class FOOAotMethods {
     ALOAD 0
     INVOKESTATIC java/lang/Boolean.valueOf (Ljava/lang/String;)Ljava/lang/Boolean;
     INVOKEVIRTUAL java/lang/Boolean.booleanValue ()Z
-    PUTSTATIC FOOAotMethods.memCopyWorkaround : Z
+    PUTSTATIC FOOShaded.memCopyWorkaround : Z
     GOTO L4
    L2
     INVOKESTATIC com/dylibso/chicory/runtime/MemCopyWorkaround.shouldUseMemWorkaround ()Z
-    PUTSTATIC FOOAotMethods.memCopyWorkaround : Z
+    PUTSTATIC FOOShaded.memCopyWorkaround : Z
    L4
     RETURN
 }
@@ -614,6 +614,6 @@ final class FOOMachineCall {
     ARETURN
    L1
     ILOAD 2
-    INVOKESTATIC FOOAotMethods.throwUnknownFunction (I)Ljava/lang/RuntimeException;
+    INVOKESTATIC FOOShaded.throwUnknownFunction (I)Ljava/lang/RuntimeException;
     ATHROW
 }
