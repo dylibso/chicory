@@ -6,7 +6,7 @@ import java.util.List;
 /**
  * @deprecated use {@link com.dylibso.chicory.wasm.types.ValType}
  */
-@Deprecated(since = "23/05/2025")
+@Deprecated(since = "1.3.0")
 public enum ValueType {
     UNKNOWN(-1),
     F64(ID.F64),

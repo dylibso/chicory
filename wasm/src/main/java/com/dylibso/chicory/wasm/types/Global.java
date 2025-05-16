@@ -20,7 +20,7 @@ public final class Global {
     /**
      * @deprecated use {@link #Global(ValType, MutabilityType, List)}
      */
-    @Deprecated(since = "23/05/2025")
+    @Deprecated(since = "1.3.0")
     public Global(ValueType valueType, MutabilityType mutabilityType, List<Instruction> init) {
         this.valType = valueType.toValType();
         this.mutabilityType = mutabilityType;
