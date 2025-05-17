@@ -229,12 +229,12 @@ For the most up-to-date info, and to see what specific functions we support, see
 | path_create_directory   | ✅         |                                                                           |
 | path_filestat_get       | ✅         |                                                                           |
 | path_filestat_set_times | ✅         |                                                                           |
-| path_link               | ❌         |                                                                           |
+| path_link               | ✅         |                                                                           |
 | path_open               | ✅         |                                                                           |
 | path_readlink           | ✅         |                                                                           |
 | path_remove_directory   | ✅         |                                                                           |
 | path_rename             | ✅         |                                                                           |
-| path_symlink            | ❌         |                                                                           |
+| path_symlink            | 🟡         | Dangling symlinks are not supported.                                      |
 | path_unlink_file        | ✅         |                                                                           |
 | poll_oneoff             | ✅         |                                                                           |
 | proc_exit               | ✅         |                                                                           |
