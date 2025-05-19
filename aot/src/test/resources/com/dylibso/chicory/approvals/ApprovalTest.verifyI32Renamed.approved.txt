@@ -502,10 +502,10 @@ final class FOOAotMethods {
     INVOKEVIRTUAL java/lang/Thread.isInterrupted ()Z
     IFEQ L1
    L2
-    NEW com/dylibso/chicory/wasm/ChicoryException
+    NEW com/dylibso/chicory/runtime/ChicoryInterruptedException
     DUP
     LDC "Thread interrupted"
-    INVOKESPECIAL com/dylibso/chicory/wasm/ChicoryException.<init> (Ljava/lang/String;)V
+    INVOKESPECIAL com/dylibso/chicory/runtime/ChicoryInterruptedException.<init> (Ljava/lang/String;)V
     ATHROW
    L1
     RETURN

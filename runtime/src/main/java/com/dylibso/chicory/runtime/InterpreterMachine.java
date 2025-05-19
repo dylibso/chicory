@@ -2293,7 +2293,7 @@ public class InterpreterMachine implements Machine {
      */
     private static void checkInterruption() {
         if (Thread.currentThread().isInterrupted()) {
-            throw new ChicoryException("Thread interrupted");
+            throw new ChicoryInterruptedException("Thread interrupted");
         }
     }
 }
