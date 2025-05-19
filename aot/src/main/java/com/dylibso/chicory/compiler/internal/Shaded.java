@@ -3,6 +3,7 @@ package com.dylibso.chicory.compiler.internal;
 import static com.dylibso.chicory.runtime.MemCopyWorkaround.shouldUseMemWorkaround;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
+import com.dylibso.chicory.runtime.ChicoryInterruptedException;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.MemCopyWorkaround;
 import com.dylibso.chicory.runtime.Memory;
@@ -192,7 +193,7 @@ public final class Shaded {
 
     public static void checkInterruption() {
         if (Thread.currentThread().isInterrupted()) {
-            throw new ChicoryException("Thread interrupted");
+            throw new ChicoryInterruptedException("Thread interrupted");
         }
     }
 
