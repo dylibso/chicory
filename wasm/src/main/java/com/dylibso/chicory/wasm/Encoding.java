@@ -153,7 +153,8 @@ public final class Encoding {
             if ((b & 0x80) == 0) {
                 break;
             }
-            if (i >= maxVarInt) {
+
+            if (i >= maxVarInt || byteBuffer.remaining() == 0) {
                 throw new MalformedException("integer representation too long");
             }
 
