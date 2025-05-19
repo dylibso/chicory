@@ -12,7 +12,7 @@ import com.dylibso.chicory.wasm.ChicoryException;
  * This class is deprecated and will be removed in a future version. Please use
  * the {@link com.dylibso.chicory.compiler.MachineFactoryCompiler} instead.
  */
-@Deprecated(since = "1.4.0", forRemoval = true)
+@Deprecated(since = "1.4.0")
 public final class AotMachine implements Machine {
 
     private final Machine machine;
@@ -24,7 +24,7 @@ public final class AotMachine implements Machine {
      *
      * @param instance the instance to use for the machine
      */
-    @Deprecated(since = "1.4.0", forRemoval = true)
+    @Deprecated(since = "1.4.0")
     public AotMachine(Instance instance) {
         this.machine = new MachineFactory(instance.module()).apply(instance);
     }
