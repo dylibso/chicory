@@ -188,7 +188,7 @@ public final class Shaded {
     }
 
     public static RuntimeException throwUnknownFunction(int index) {
-        throw new InvalidException("unknown function " + index);
+        throw new InvalidException(String.format("unknown function %d", index));
     }
 
     public static void checkInterruption() {

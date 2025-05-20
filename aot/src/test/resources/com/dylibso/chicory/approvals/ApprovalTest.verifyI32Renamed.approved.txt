@@ -69,8 +69,6 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
 
 final class FOOAotMethods {
 
-  public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
-
   private final static Z memCopyWorkaround
 
   private <init>()V
@@ -487,11 +485,15 @@ final class FOOAotMethods {
    L0
     NEW com/dylibso/chicory/wasm/InvalidException
     DUP
+    LDC "unknown function %d"
+    ICONST_1
+    ANEWARRAY java/lang/Object
+    DUP
+    ICONST_0
     ILOAD 0
-    INVOKEDYNAMIC makeConcatWithConstants(I)Ljava/lang/String; [
-      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
-      "unknown function \u0001"
-    ]
+    INVOKESTATIC java/lang/Integer.valueOf (I)Ljava/lang/Integer;
+    AASTORE
+    INVOKESTATIC java/lang/String.format (Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
     INVOKESPECIAL com/dylibso/chicory/wasm/InvalidException.<init> (Ljava/lang/String;)V
     ATHROW
    L1
