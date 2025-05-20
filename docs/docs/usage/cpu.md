@@ -59,8 +59,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 ExecutorService service = Executors.newSingleThreadExecutor();
-service.submit(() -> function.apply());
-service.awaitTermination(200, TimeUnit.MILLISECONDS);
+var future = service.submit(() -> function.apply());
+try {
+  future.get(100, TimeUnit.MILLISECONDS);
+} catch (TimeoutException e) {
+    // handle the failure
+}
 ```
 
 ## [unsafe] Execution Listener

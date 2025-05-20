@@ -20,6 +20,10 @@ import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -548,5 +552,14 @@ public class WasmModuleTest {
         assertEquals(2, result.size());
         assertEquals(0, result.get(0));
         assertEquals(0, result.get(1));
+    }
+
+    @Test
+    public void timeoutExecution() throws Exception {
+        var instance = Instance.builder(loadModule("compiled/infinite-loop.c.wasm")).build();
+        var function = instance.exports().function("run");
+        ExecutorService service = Executors.newSingleThreadExecutor();
+        var future = service.submit(() -> function.apply());
+        assertThrows(TimeoutException.class, () -> future.get(100, TimeUnit.MILLISECONDS));
     }
 }
