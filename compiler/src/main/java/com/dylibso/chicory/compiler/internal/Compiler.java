@@ -29,6 +29,7 @@ import static com.dylibso.chicory.compiler.internal.ShadedRefs.CALL_HOST_FUNCTIO
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.CALL_INDIRECT;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.CALL_INDIRECT_ON_INTERPRETER;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.CHECK_INTERRUPTION;
+import static com.dylibso.chicory.compiler.internal.ShadedRefs.EXCEPTION_MATCHES;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.INSTANCE_MEMORY;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.INSTANCE_TABLE;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.TABLE_INSTANCE;
@@ -59,9 +60,12 @@ import com.dylibso.chicory.compiler.InterpreterFallback;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
+import com.dylibso.chicory.runtime.WasmException;
 import com.dylibso.chicory.runtime.internal.CompilerInterpreterMachine;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.types.CatchOpCode;
+import com.dylibso.chicory.wasm.types.CatchOpCode.Catch;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -1116,7 +1120,7 @@ public final class Compiler {
         emitUnboxResult(type, asm);
     }
 
-    private static void emitBoxArguments(InstructionAdapter asm, List<ValType> types) {
+    static void emitBoxArguments(InstructionAdapter asm, List<ValType> types) {
         int slot = 0;
         // box the arguments into long[]
         asm.iconst(types.size());
@@ -1166,7 +1170,6 @@ public final class Compiler {
                 emitBoxArguments(asm, type.params());
                 slots = type.params().stream().mapToInt(CompilerUtil::slotCount).sum();
             }
-
             var refInstance = slots + 1;
 
             asm.iconst(funcId);
@@ -1178,11 +1181,11 @@ public final class Compiler {
 
         var ctx =
                 new Context(
+                        module,
                         internalClassName,
                         maxFunctionsPerClass,
                         analyzer.globalTypes(),
                         functionTypes,
-                        module.typeSection().types(),
                         funcId,
                         type,
                         body);
@@ -1217,6 +1220,17 @@ public final class Compiler {
         for (var ins : instructions) {
             for (long target : ins.labelTargets()) {
                 labels.put(target, new Label());
+            }
+        }
+
+        // Emit visitTryCatchBlock before it's labels
+        for (CompilerInstruction ins : instructions) {
+            if (ins.opcode() == CompilerOpCode.TRY_TABLE) {
+                var tryStart = labels.get(ins.operand(0)); // Try start label
+                var tryEnd = labels.get(ins.operand(1)); // Try end label
+                var catchHandler = labels.get(ins.operand(2)); // Catch handler label
+                asm.visitTryCatchBlock(
+                        tryStart, tryEnd, catchHandler, getInternalName(WasmException.class));
             }
         }
 
@@ -1257,6 +1271,116 @@ public final class Compiler {
                         asm.ifne(labels.get(ins.operand(0)));
                     }
                     break;
+                case NOP:
+                    asm.nop();
+                    break;
+                case TRY_TABLE:
+                    {
+                        var handlerCount = ins.operands().skip(3).findFirst().getAsLong();
+                        var handlerOffset = 4;
+                        List<Catch> catches =
+                                CatchOpCode.decode(
+                                        ins.operands()
+                                                .skip(handlerOffset + handlerCount)
+                                                .toArray());
+
+                        // This instruction only executes when an exception is caught
+                        // (not during normal execution flow)
+                        var exceptionSlot = ctx.tempSlot();
+                        asm.store(exceptionSlot, OBJECT_TYPE);
+
+                        if (!catches.isEmpty()) {
+                            for (int catchIdx = 0; catchIdx < catches.size(); catchIdx++) {
+                                var currentCatch = catches.get(catchIdx);
+                                Label nextCheck = new Label();
+                                CatchOpCode catchOpCode = currentCatch.opcode();
+
+                                switch (catchOpCode) {
+                                    case CATCH:
+                                    case CATCH_REF:
+                                        // Compare tag
+                                        asm.load(exceptionSlot, OBJECT_TYPE);
+                                        asm.iconst(currentCatch.tag());
+                                        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+                                        emitInvokeStatic(asm, EXCEPTION_MATCHES);
+                                        asm.ifeq(nextCheck);
+
+                                        // Get the tag type to know what parameter types to unbox
+                                        var tagFuncType =
+                                                ctx.getTagFunctionType(currentCatch.tag());
+                                        if (!tagFuncType.params().isEmpty()) {
+                                            // unbox the exception args
+                                            asm.load(exceptionSlot, OBJECT_TYPE);
+                                            asm.invokevirtual(
+                                                    getInternalName(WasmException.class),
+                                                    "args",
+                                                    getMethodDescriptor(getType(long[].class)),
+                                                    false);
+
+                                            // Store the array in a local variable
+                                            var argsSlot = ctx.tempSlot() + 1;
+                                            asm.store(argsSlot, OBJECT_TYPE);
+
+                                            // Unbox each argument from the long[] array and push
+                                            // onto stack
+                                            for (int i = 0; i < tagFuncType.params().size(); i++) {
+                                                var param = tagFuncType.params().get(i);
+                                                asm.load(argsSlot, OBJECT_TYPE); // load the array
+                                                asm.iconst(i); // array index
+                                                asm.aload(LONG_TYPE); // load long value from array
+                                                emitLongToJvm(
+                                                        asm,
+                                                        param); // convert long to proper JVM type
+                                            }
+                                        }
+
+                                        if (catchOpCode == CatchOpCode.CATCH_REF) {
+                                            // Register exception and push its index
+                                            asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+                                            asm.load(exceptionSlot, OBJECT_TYPE);
+                                            asm.invokevirtual(
+                                                    getInternalName(Instance.class),
+                                                    "registerException",
+                                                    getMethodDescriptor(
+                                                            INT_TYPE, getType(WasmException.class)),
+                                                    false);
+                                        }
+                                        // Note: operand index is offset by 3 since first 3 operands
+                                        // are internal labels
+                                        asm.goTo(labels.get(ins.operand(handlerOffset + catchIdx)));
+
+                                        break;
+
+                                    case CATCH_ALL:
+                                        // Always matches, no tag comparison needed
+                                        asm.goTo(labels.get(ins.operand(handlerOffset + catchIdx)));
+                                        break;
+
+                                    case CATCH_ALL_REF:
+                                        // Always matches, register exception and push its index
+                                        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+                                        asm.load(exceptionSlot, OBJECT_TYPE);
+                                        asm.invokevirtual(
+                                                getInternalName(Instance.class),
+                                                "registerException",
+                                                getMethodDescriptor(
+                                                        INT_TYPE, getType(WasmException.class)),
+                                                false);
+                                        asm.goTo(labels.get(ins.operand(handlerOffset + catchIdx)));
+                                        break;
+                                }
+
+                                // Mark the label for next check
+                                asm.mark(nextCheck);
+                            }
+                        }
+
+                        // Default case: re-throw the exception
+                        asm.load(exceptionSlot, OBJECT_TYPE);
+                        asm.athrow();
+                        break;
+                    }
+
                 case SWITCH:
                     if (ins.operands().anyMatch(visitedTargets::contains)) {
                         emitInvokeStatic(asm, CHECK_INTERRUPTION);

@@ -658,4 +658,27 @@ final class Emitters {
                         + " does not provide an implementation of opcode "
                         + opcode.name());
     }
+
+    public static void THROW(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+
+        int tagNumber = (int) ins.operand(0);
+        var type = ctx.getTagFunctionType(tagNumber);
+
+        // emmit:
+        // call createWasmException(long[] args, int tagNumber, Instance instance)
+        emitBoxValuesOnStack(ctx, asm, type.params());
+        asm.iconst(tagNumber);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.CREATE_WASM_EXCEPTION);
+        asm.athrow();
+    }
+
+    public static void THROW_REF(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // The exception reference is already on the stack as an integer
+        // Get the instance and retrieve the exception
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        asm.swap(); // Swap instance and exception reference
+        emitInvokeVirtual(asm, ShadedRefs.INSTANCE_GET_EXCEPTION);
+        asm.athrow();
+    }
 }
