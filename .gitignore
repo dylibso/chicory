@@ -15,6 +15,9 @@ dependency-reduced-pom.xml
 jmh-result.json
 scripts/jmh-tmp
 /main/
+/.cursor/
+/.cursorrules
+/.vscode
 
 /*.wasm
 .approval_tests_temp/

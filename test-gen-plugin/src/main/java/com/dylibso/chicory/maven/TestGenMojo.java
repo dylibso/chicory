@@ -5,6 +5,7 @@ import static org.apache.maven.plugins.annotations.LifecyclePhase.GENERATE_TEST_
 import com.dylibso.chicory.testgen.TestGen;
 import java.io.File;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -101,6 +102,9 @@ public class TestGenMojo extends AbstractMojo {
         }
 
         JavaParserMavenUtils.makeJavaParserLogToMavenOutput(getLog());
+
+        var excludedTests =
+                this.excludedTests.stream().map(String::trim).collect(Collectors.toList());
 
         try {
             TestGen.execute(

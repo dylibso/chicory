@@ -1,0 +1,110 @@
+final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
+
+  public static func_0(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    TRYCATCHBLOCK L0 L1 L2 com/dylibso/chicory/runtime/WasmException
+    TRYCATCHBLOCK L3 L4 L2 com/dylibso/chicory/runtime/WasmException
+    TRYCATCHBLOCK L5 L6 L2 com/dylibso/chicory/runtime/WasmException
+    TRYCATCHBLOCK L0 L1 L7 com/dylibso/chicory/runtime/WasmException
+    TRYCATCHBLOCK L3 L4 L7 com/dylibso/chicory/runtime/WasmException
+    TRYCATCHBLOCK L5 L6 L7 com/dylibso/chicory/runtime/WasmException
+    TRYCATCHBLOCK L2 L8 L7 com/dylibso/chicory/runtime/WasmException
+    TRYCATCHBLOCK L9 L10 L7 com/dylibso/chicory/runtime/WasmException
+   L0
+    ILOAD 0
+    INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.I32_EQZ (I)I
+    IFEQ L3
+    ICONST_0
+    NEWARRAY T_LONG
+    ICONST_0
+    ALOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.createWasmException ([JILcom/dylibso/chicory/runtime/Instance;)Lcom/dylibso/chicory/runtime/WasmException;
+    ATHROW
+   L1
+    NOP
+    NOP
+    ATHROW
+   L3
+    ILOAD 0
+    ICONST_1
+    INVOKESTATIC com/dylibso/chicory/runtime/OpcodeImpl.I32_EQ (II)I
+    IFEQ L5
+    ICONST_0
+    NEWARRAY T_LONG
+    ICONST_1
+    ALOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.createWasmException ([JILcom/dylibso/chicory/runtime/Instance;)Lcom/dylibso/chicory/runtime/WasmException;
+    ATHROW
+   L4
+    NOP
+    NOP
+    ATHROW
+   L5
+    ICONST_0
+    NEWARRAY T_LONG
+    ICONST_2
+    ALOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.createWasmException ([JILcom/dylibso/chicory/runtime/Instance;)Lcom/dylibso/chicory/runtime/WasmException;
+    ATHROW
+   L6
+    NOP
+    ATHROW
+   L11
+    NOP
+    NOP
+    ATHROW
+   L2
+    ASTORE 3
+    ALOAD 3
+    ICONST_0
+    ALOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.exceptionMatches (Lcom/dylibso/chicory/runtime/WasmException;ILcom/dylibso/chicory/runtime/Instance;)Z
+    IFEQ L12
+    GOTO L9
+   L12
+    ALOAD 3
+    ATHROW
+   L8
+    NOP
+    NOP
+    ATHROW
+   L9
+    ICONST_3
+   L13
+    NOP
+   L10
+    GOTO L14
+   L7
+    ASTORE 3
+    ALOAD 3
+    ICONST_1
+    ALOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.exceptionMatches (Lcom/dylibso/chicory/runtime/WasmException;ILcom/dylibso/chicory/runtime/Instance;)Z
+    IFEQ L15
+    GOTO L16
+   L15
+    ALOAD 3
+    ATHROW
+   L14
+    IRETURN
+   L16
+    ICONST_4
+    IRETURN
+
+  public static call_0(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ALOAD 2
+    ICONST_0
+    LALOAD
+    L2I
+    ALOAD 1
+    ALOAD 0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    I2L
+    LSTORE 3
+    ICONST_1
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    LLOAD 3
+    LASTORE
+    ARETURN
+}

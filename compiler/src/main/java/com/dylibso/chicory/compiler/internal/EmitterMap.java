@@ -19,6 +19,10 @@ final class EmitterMap {
                     .intrinsic(CompilerOpCode.CALL, Emitters::CALL)
                     .intrinsic(CompilerOpCode.CALL_INDIRECT, Emitters::CALL_INDIRECT)
 
+                    // ====== Exception Handling ======
+                    .intrinsic(CompilerOpCode.THROW, Emitters::THROW)
+                    .intrinsic(CompilerOpCode.THROW_REF, Emitters::THROW_REF)
+
                     // ====== References ======
                     .intrinsic(CompilerOpCode.REF_FUNC, Emitters::REF_FUNC)
                     .intrinsic(CompilerOpCode.REF_NULL, Emitters::REF_NULL)

@@ -34,7 +34,7 @@ final class TypeStack {
 
     public void pop(ValType expected) {
         var actual = types().pop();
-        if (!expected.equals(actual)) {
+        if (!ValType.matches(actual, expected)) {
             throw new IllegalArgumentException("Expected type " + expected + " <> " + actual);
         }
     }

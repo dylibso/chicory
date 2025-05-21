@@ -54,6 +54,7 @@ final class CompilerInstruction {
             case GOTO:
             case IFEQ:
             case IFNE:
+            case TRY_TABLE:
             case SWITCH:
                 return operands;
             default:
