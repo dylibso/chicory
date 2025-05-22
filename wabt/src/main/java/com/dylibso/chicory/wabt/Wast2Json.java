@@ -10,8 +10,8 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.WasmModule;
-import com.google.common.jimfs.Configuration;
-import com.google.common.jimfs.Jimfs;
+import io.roastedroot.zerofs.Configuration;
+import io.roastedroot.zerofs.ZeroFs;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -49,7 +49,7 @@ public final class Wast2Json {
     public void process() {
         try (FileInputStream fis = new FileInputStream(input);
                 FileSystem fs =
-                        Jimfs.newFileSystem(
+                        ZeroFs.newFileSystem(
                                 Configuration.unix().toBuilder()
                                         .setAttributeViews("unix")
                                         .build())) {
