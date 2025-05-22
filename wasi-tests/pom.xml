@@ -40,8 +40,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.google.jimfs</groupId>
-      <artifactId>jimfs</artifactId>
+      <groupId>io.roastedroot</groupId>
+      <artifactId>zerofs</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

@@ -20,8 +20,8 @@ import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
-import com.google.common.jimfs.Configuration;
-import com.google.common.jimfs.Jimfs;
+import io.roastedroot.zerofs.Configuration;
+import io.roastedroot.zerofs.ZeroFs;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -252,7 +252,7 @@ public class WasiPreview1Test {
 
     @Test
     public void wasiPositionedWriteWithAppendShouldFail() throws IOException {
-        try (var fs = newJimfs()) {
+        try (var fs = newZeroFs()) {
             var dir = "fs-tests.dir";
             Path source = new File("../wasi-testsuite/tests/c/testsuite").toPath().resolve(dir);
             Path target = fs.getPath(dir);
@@ -286,7 +286,7 @@ public class WasiPreview1Test {
 
     @Test
     public void wasiReadLink() throws IOException {
-        try (var fs = newJimfs()) {
+        try (var fs = newZeroFs()) {
             Path root = fs.getPath("test");
             createDirectory(root);
             createSymbolicLink(root.resolve("abc"), fs.getPath("xyz"));
@@ -367,7 +367,7 @@ public class WasiPreview1Test {
 
     @Test
     public void wasiPollOneoffRegularFile() {
-        try (var fs = newJimfs()) {
+        try (var fs = newZeroFs()) {
             Path root = fs.getPath("test");
             createDirectory(root);
             var file = root.resolve("hello.txt");
@@ -434,8 +434,8 @@ public class WasiPreview1Test {
         assertTrue(System.nanoTime() >= deadline);
     }
 
-    private static FileSystem newJimfs() {
-        return Jimfs.newFileSystem(
+    private static FileSystem newZeroFs() {
+        return ZeroFs.newFileSystem(
                 Configuration.unix().toBuilder().setAttributeViews("unix").build());
     }
 

@@ -101,9 +101,8 @@
     <templating-maven-plugin.version>3.0.0</templating-maven-plugin.version>
     <maven-file-management.version>3.2.0</maven-file-management.version>
     <google-compile-testing.version>0.21.0</google-compile-testing.version>
-    <guava.version>33.4.8-jre</guava.version>
     <wagon-maven-plugin.version>2.0.2</wagon-maven-plugin.version>
-    <jimfs.version>1.3.0</jimfs.version>
+    <zerofs.version>0.0.1</zerofs.version>
   </properties>
 
   <dependencyManagement>
@@ -216,20 +215,6 @@
         <version>${error-prone.version}</version>
       </dependency>
 
-      <!-- Use latest Guava -->
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>${guava.version}</version>
-      </dependency>
-
-      <!-- Used for WASI tests -->
-      <dependency>
-        <groupId>com.google.jimfs</groupId>
-        <artifactId>jimfs</artifactId>
-        <version>${jimfs.version}</version>
-      </dependency>
-
       <!-- Commons-io -->
       <dependency>
         <groupId>commons-io</groupId>
@@ -242,6 +227,13 @@
         <groupId>info.picocli</groupId>
         <artifactId>picocli</artifactId>
         <version>${picocli.version}</version>
+      </dependency>
+
+      <!-- Used for WASI tests -->
+      <dependency>
+        <groupId>io.roastedroot</groupId>
+        <artifactId>zerofs</artifactId>
+        <version>${zerofs.version}</version>
       </dependency>
 
       <!-- Zip4J -->
@@ -699,12 +691,7 @@
           <failFast>false</failFast>
           <rules>
             <banDuplicatePomDependencyVersions/>
-            <requireUpperBoundDeps>
-              <excludes>
-                <!-- Need an update of Jimfs + Guava: https://github.com/google/jimfs/issues/394 -->
-                <exclude>org.checkerframework:checker-qual</exclude>
-              </excludes>
-            </requireUpperBoundDeps>
+            <requireUpperBoundDeps/>
           </rules>
         </configuration>
         <executions>
