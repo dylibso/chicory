@@ -2366,7 +2366,6 @@ public class InterpreterMachine implements Machine {
         }
     }
 
-    static long[] extractArgsForParams(MStack stack, List<ValType> params) {
     protected static long[] extractArgsForParams(MStack stack, List<ValType> params) {
         if (params == null) {
             return Value.EMPTY_VALUES;

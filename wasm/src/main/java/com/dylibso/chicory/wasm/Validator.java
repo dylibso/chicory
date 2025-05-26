@@ -1433,9 +1433,8 @@ final class Validator {
 
                         // setting the type hint
                         if ((t1.opcode() == ValType.ID.V128 && t2.opcode() == ValType.ID.V128)
-                                || (t1.opcode() == ValType.ID.V128
-                                        && t2.opcode() == ValType.ID.UNKNOWN)
-                                || (t1.opcode() == ValType.ID.UNKNOWN
+                                || (t1.opcode() == ValType.ID.V128 && t2.opcode() == ValType.ID.BOT)
+                                || (t1.opcode() == ValType.ID.BOT
                                         && t2.opcode() == ValType.ID.V128)) {
                             op.setOperand(0, ValType.ID.V128);
                             pushVal(ValType.V128);
