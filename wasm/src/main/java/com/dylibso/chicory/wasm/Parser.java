@@ -1185,10 +1185,6 @@ public final class Parser {
                         operands.add((long) operand);
                     }
                     break;
-                case VALUE_TYPE:
-                    var valueType = readValueType(buffer);
-                    operands.add(valueType.id());
-                    break;
                 case VEC_VALUE_TYPE:
                     var vcount = (int) readVarUInt32(buffer);
                     for (var j = 0; j < vcount; j++) {
