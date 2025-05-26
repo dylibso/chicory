@@ -145,7 +145,8 @@ public final class Encoding {
         while (true) {
             i++;
             if (byteBuffer.remaining() == 0) {
-                throw new MalformedException("length out of bounds");
+                throw new MalformedException(
+                        "integer representation too long, length out of bounds");
             }
             byte b = byteBuffer.get();
             result |= (long) (b & 0x7F) << shift;
@@ -176,7 +177,8 @@ public final class Encoding {
         do {
             i++;
             if (byteBuffer.remaining() == 0) {
-                throw new MalformedException("length out of bounds");
+                throw new MalformedException(
+                        "integer representation too long, length out of bounds");
             }
 
             currentByte = byteBuffer.get();
@@ -205,7 +207,8 @@ public final class Encoding {
         do {
             i++;
             if (byteBuffer.remaining() == 0) {
-                throw new MalformedException("length out of bounds");
+                throw new MalformedException(
+                        "integer representation too long, length out of bounds");
             }
 
             currentByte = byteBuffer.get();

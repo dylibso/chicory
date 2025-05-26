@@ -150,7 +150,7 @@ public class Instance {
                     new GlobalInstance(
                             values[0],
                             (values.length > 1) ? values[1] : 0,
-                            g.valueType(),
+                            g.valueType().substitute(module),
                             g.mutabilityType());
             globals[i].setInstance(this);
         }
@@ -183,7 +183,7 @@ public class Instance {
     }
 
     public FunctionType exportType(String name) {
-        return type(functionType(exports.get(name).index()));
+        return type(functionType(exports.get(name).index())).substitute(module);
     }
 
     public static final class Exports {
@@ -411,39 +411,14 @@ public class Instance {
         }
 
         private void validateExternalFunctionSignature(FunctionImport imprt, ImportFunction f) {
-            // TODO: not too sure how defined function types across modules are checked.
-            // are they substitued until we get an exact type?
             var expectedType = module.typeSection().getType(imprt.typeIndex());
-            if (expectedType.params().size() != f.paramTypes().size()
-                    || expectedType.returns().size() != f.returnTypes().size()) {
+
+            if (!FunctionType.equals(module, f.functionType(), expectedType)) {
                 throw new UnlinkableException(
                         "incompatible import type for host function "
                                 + f.module()
                                 + "."
                                 + f.name());
-            }
-            for (int i = 0; i < expectedType.params().size(); i++) {
-                var expected = expectedType.params().get(i);
-                var got = f.paramTypes().get(i);
-                if (!ValType.matches(module, got, expected)) {
-                    throw new UnlinkableException(
-                            "incompatible import type for host function "
-                                    + f.module()
-                                    + "."
-                                    + f.name());
-                }
-            }
-            for (int i = 0; i < expectedType.returns().size(); i++) {
-                var expected = expectedType.returns().get(i);
-                var got = f.returnTypes().get(i);
-                // TODO: runtime subtype check?
-                if (!ValType.matches(module, expected, got)) {
-                    throw new UnlinkableException(
-                            "incompatible import type for host function "
-                                    + f.module()
-                                    + "."
-                                    + f.name());
-                }
             }
         }
 
@@ -461,7 +436,7 @@ public class Instance {
 
             if (i.mutabilityType() == MutabilityType.Var) {
                 // for mutable globals, types must match exactly
-                typesMatch = i.type().equals(g.instance().getType());
+                typesMatch = ValType.equals(module, i.type(), g.instance().getType());
             } else if (i.mutabilityType() == MutabilityType.Const) {
                 // for const, subtyping is allowed
                 typesMatch = ValType.matches(module, g.instance().getType(), i.type());
@@ -525,7 +500,7 @@ public class Instance {
             var maxExpected = t.table().limits().max();
             var minCurrent = i.limits().min();
             var maxCurrent = i.limits().max();
-            if (!i.entryType().equals(t.table().elementType())) {
+            if (!ValType.equals(module, i.entryType(), t.table().elementType())) {
                 throw new UnlinkableException("incompatible import type");
             } else if (minExpected < minCurrent || maxExpected > maxCurrent) {
                 throw new UnlinkableException(
@@ -818,7 +793,7 @@ public class Instance {
             var tableLength = module.tableSection().tableCount();
             Table[] tables = new Table[tableLength];
             for (int i = 0; i < tableLength; i++) {
-                tables[i] = module.tableSection().getTable(i);
+                tables[i] = module.tableSection().getTable(i).substitute(module);
             }
 
             Element[] elements = module.elementSection().elements();

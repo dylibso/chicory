@@ -1,7 +1,9 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.WasmModule;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public final class FunctionType {
     private final List<ValType> params;
@@ -37,6 +39,24 @@ public final class FunctionType {
 
     public boolean equals(FunctionType other) {
         return hashCode == other.hashCode && paramsMatch(other) && returnsMatch(other);
+    }
+
+    public static boolean equals(WasmModule context, FunctionType t1, FunctionType t2) {
+        var params1 =
+                t1.params.stream().map(t -> t.substitute(context)).collect(Collectors.toList());
+        var params2 =
+                t2.params.stream().map(t -> t.substitute(context)).collect(Collectors.toList());
+
+        if (!params1.equals(params2)) {
+            return false;
+        }
+
+        var returns1 =
+                t1.returns.stream().map(t -> t.substitute(context)).collect(Collectors.toList());
+        var returns2 =
+                t2.returns.stream().map(t -> t.substitute(context)).collect(Collectors.toList());
+
+        return returns1.equals(returns2);
     }
 
     @Override
@@ -80,6 +100,12 @@ public final class FunctionType {
 
     public static FunctionType empty() {
         return empty;
+    }
+
+    public FunctionType substitute(WasmModule context) {
+        return of(
+                params.stream().map(t -> t.substitute(context)).collect(Collectors.toList()),
+                returns.stream().map(t -> t.substitute(context)).collect(Collectors.toList()));
     }
 
     @Override

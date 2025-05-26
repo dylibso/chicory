@@ -3,7 +3,7 @@ package com.dylibso.chicory.wasm.types;
 import com.dylibso.chicory.wasm.MalformedException;
 import com.dylibso.chicory.wasm.WasmModule;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.Objects;
 
 /**
  * The possible WASM value types.
@@ -28,6 +28,11 @@ public final class ValType {
 
     private final long id;
 
+    // defined function type. This is not representable in the binary or textual representation
+    // of WASM. This is instead used after substitution to represent closed ValType.
+    // This is useful when validating import function values.
+    private FunctionType definedType = FunctionType.empty();
+
     public ValType(int opcode) {
         this(opcode, NULL_TYPEIDX);
     }
@@ -49,6 +54,12 @@ public final class ValType {
 
         long id = ((long) typeIdx) << TYPEIDX_SHIFT | (opcode & OPCODE_MASK);
         this.id = id;
+    }
+
+    private ValType(int opcode, FunctionType definedType) {
+        Objects.requireNonNull(definedType);
+        this.definedType = definedType;
+        this.id = ((long) TypeIdxCode.DEFINED.code()) << TYPEIDX_SHIFT | (opcode & OPCODE_MASK);
     }
 
     private ValType(long id) {
@@ -196,70 +207,45 @@ public final class ValType {
         return total;
     }
 
-    private static boolean matchesResultType(
-            WasmModule context, ValType valType1, ValType valType2) {
-        if (valType1.equals(valType2) || valType1.equals(BOT)) {
-            return true;
+    public ValType substitute(WasmModule context) {
+        if (this.isReference() && this.typeIdx() >= 0) {
+            var funcType = context.typeSection().getType(this.typeIdx());
+            var params =
+                    funcType.params().stream()
+                            .map(t -> t.substitute(context))
+                            .toArray(ValType[]::new);
+            var returns =
+                    funcType.returns().stream()
+                            .map(t -> t.substitute(context))
+                            .toArray(ValType[]::new);
+            return new ValType(this.opcode(), FunctionType.of(params, returns));
         }
-        if (valType1.isReference() && valType2.isReference()) {
-            return matchesRef(context, valType1, valType2);
-        }
-        return false;
+
+        return this;
     }
 
-    private static boolean matchesFunc(
-            WasmModule context, FunctionType funcType1, FunctionType funcType2) {
-        // substitute any type indexes when comparing equality
-        if (funcType1.params().size() != funcType2.params().size()
-                || funcType1.returns().size() != funcType2.returns().size()) {
-            return false;
-        }
-
-        ValType[] types1 =
-                Stream.concat(funcType1.params().stream(), funcType1.returns().stream())
-                        .toArray(ValType[]::new);
-        ValType[] types2 =
-                Stream.concat(funcType2.params().stream(), funcType2.returns().stream())
-                        .toArray(ValType[]::new);
-
-        for (int i = 0; i < types1.length; i++) {
-            var type1 = types1[i];
-            var type2 = types2[i];
-
-            if (!matchesResultType(context, type1, type2)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private static boolean matches_null(boolean null1, boolean null2) {
+    private static boolean matchesNull(boolean null1, boolean null2) {
         return null1 == null2 || null2;
     }
 
-    private static boolean matchesHeap(WasmModule context, Object heapType1, Object heapType2) {
-        if (heapType1.equals(TypeIdxCode.BOT.code()) || heapType1.equals(heapType2)) {
-            return true;
-        } else if ((heapType1 instanceof FunctionType)
-                && heapType2.equals(TypeIdxCode.FUNC.code())) {
-            return true;
-        } else if ((heapType1 instanceof FunctionType) && (heapType2 instanceof FunctionType)) {
-            return matchesFunc(context, (FunctionType) heapType1, (FunctionType) heapType2);
-        } else if ((heapType1 instanceof Integer) && (Integer) heapType1 >= 0) {
-            return matchesHeap(
-                    context, context.typeSection().getType((Integer) heapType1), heapType2);
-        } else if ((heapType2 instanceof Integer) && (Integer) heapType2 >= 0) {
-            return matchesHeap(
-                    context, context.typeSection().getType((Integer) heapType2), heapType1);
+    public static boolean matchesRef(WasmModule context, ValType t1, ValType t2) {
+        var matchesNull = matchesNull(t1.isNullable(), t2.isNullable());
+        if (!matchesNull) {
+            return false;
         }
 
-        return false;
-    }
+        t1 = t1.substitute(context);
+        t2 = t2.substitute(context);
 
-    public static boolean matchesRef(WasmModule context, ValType t1, ValType t2) {
-        return matchesHeap(context, t1.typeIdx(), t2.typeIdx())
-                && matches_null(t1.isNullable(), t2.isNullable());
+        if (t1.typeIdx() == TypeIdxCode.DEFINED.code() && t2.typeIdx() == TypeIdxCode.FUNC.code()) {
+            return true;
+        } else if (t1.typeIdx() == TypeIdxCode.DEFINED.code()
+                && t2.typeIdx() == TypeIdxCode.DEFINED.code()) {
+            return t1.definedType.equals(t2.definedType);
+        } else if (t1.typeIdx() == TypeIdxCode.BOT.code()) {
+            return true;
+        }
+        return t1.typeIdx() == t2.typeIdx();
     }
 
     public static boolean matches(WasmModule context, ValType t1, ValType t2) {
@@ -299,7 +285,14 @@ public final class ValType {
             return false;
         }
         ValType that = (ValType) other;
-        return this.id == that.id;
+        return this.id == that.id && this.definedType.equals(that.definedType);
+    }
+
+    public static boolean equals(WasmModule context, ValType t1, ValType t2) {
+        t1 = t1.substitute(context);
+        t2 = t2.substitute(context);
+
+        return t1.equals(t2);
     }
 
     @Override
@@ -325,7 +318,9 @@ public final class ValType {
         EXTERN(-17), // 0x6F
         FUNC(-16), // 0x70
         EXN(-23), // 0x69
-        BOT(-1);
+        BOT(-1),
+        // definedType
+        DEFINED(-2);
 
         private final int code;
 
