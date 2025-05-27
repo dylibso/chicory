@@ -4,7 +4,7 @@ set -e
 
 compileWat() {
   filename=$(basename "$1")
-  (set -x; wat2wasm $1 -o "./compiled/$filename.wasm")
+  (set -x; wasm-tools parse $1 -o "./compiled/$filename.wasm")
 }
 
 compileRust() {
