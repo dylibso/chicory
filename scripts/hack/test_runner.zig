@@ -233,9 +233,6 @@ fn mainTerminal() void {
             // 1671/2803 posix.test.test.readlinkat...
             ((i + 1) == 1671))
         {
-            // if (
-            // // 1109/2803 fs.test.test.statFile on dangling symlink -> hangs trying to remove a folder
-            // ((i + 1) == 1109)) {
             skip_count += 1;
             std.debug.print("{d}/{d} {s}...FORCED SKIP\n", .{ i + 1, test_fn_list.len, test_fn.name });
             test_node.end();

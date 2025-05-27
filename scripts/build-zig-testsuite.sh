@@ -4,7 +4,7 @@ set -x
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 ZIG_INSTALL="zig-install"
-ZIG_VERSION="0.14.0" # TODO: update me
+ZIG_VERSION="0.14.0"
 
 ZIG_SOURCE="zig-source"
 
@@ -36,8 +36,7 @@ PATH=${PWD}/${ZIG_INSTALL}:${PWD}/${BINARYEN_INSTALL}/bin:$PATH
 # --test-no-exec allows building of the test Wasm binary without executing command.
 (
     cd ${ZIG_SOURCE} && \
-        rm lib/compiler/test_runner.zig && \
-        cp ${SCRIPT_DIR}/hack/test_runner.zig lib/compiler/test_runner.zig && \
+        patch --fuzz=0 --batch ./lib/compiler/test_runner.zig < ${SCRIPT_DIR}/patch/test_runner.patch && \
         zig test --test-no-exec -target wasm32-wasi --zig-lib-dir ./lib ./lib/std/std.zig
 )
 

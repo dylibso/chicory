@@ -31,4 +31,4 @@ jobs:
           # Build everything
           mvn -B -Dquickly
           # Run only the ZigTestsuite
-          mvn -B compile test -f nightly-testsuite/pom.xml
+          mvn -B test -f nightly-testsuite/pom.xml
