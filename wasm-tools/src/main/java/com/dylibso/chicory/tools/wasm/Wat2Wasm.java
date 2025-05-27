@@ -10,8 +10,8 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.WasmModule;
-import com.google.common.jimfs.Configuration;
-import com.google.common.jimfs.Jimfs;
+import io.roastedroot.zerofs.Configuration;
+import io.roastedroot.zerofs.ZeroFs;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -55,7 +55,7 @@ public final class Wat2Wasm {
 
     private static byte[] parse(InputStream is, String fileName) {
         try (FileSystem fs =
-                Jimfs.newFileSystem(
+                ZeroFs.newFileSystem(
                         Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
 
             Path target = fs.getPath("tmp");

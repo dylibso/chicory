@@ -10,8 +10,8 @@ import com.dylibso.chicory.wasi.WasiExitException;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.WasmModule;
-import com.google.common.jimfs.Configuration;
-import com.google.common.jimfs.Jimfs;
+import io.roastedroot.zerofs.Configuration;
+import io.roastedroot.zerofs.ZeroFs;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -56,7 +56,7 @@ public final class Wat2Wasm {
                 ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
 
             try (FileSystem fs =
-                    Jimfs.newFileSystem(
+                    ZeroFs.newFileSystem(
                             Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
 
                 Path target = fs.getPath("tmp");

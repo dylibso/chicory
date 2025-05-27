@@ -7,8 +7,8 @@ import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
-import com.google.common.jimfs.Configuration;
-import com.google.common.jimfs.Jimfs;
+import io.roastedroot.zerofs.Configuration;
+import io.roastedroot.zerofs.ZeroFs;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -33,7 +33,7 @@ public final class WasiTestRunner {
             Optional<String> stdout) {
 
         try (FileSystem fs =
-                Jimfs.newFileSystem(
+                ZeroFs.newFileSystem(
                         Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
 
             var stdoutStream = new MockPrintStream();

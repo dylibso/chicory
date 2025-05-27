@@ -35,8 +35,8 @@
       <artifactId>wasm</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.google.jimfs</groupId>
-      <artifactId>jimfs</artifactId>
+      <groupId>io.roastedroot</groupId>
+      <artifactId>zerofs</artifactId>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

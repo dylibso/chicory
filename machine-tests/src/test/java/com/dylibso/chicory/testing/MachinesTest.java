@@ -25,8 +25,8 @@ import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.ValType;
-import com.google.common.jimfs.Configuration;
-import com.google.common.jimfs.Jimfs;
+import io.roastedroot.zerofs.Configuration;
+import io.roastedroot.zerofs.ZeroFs;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -173,7 +173,7 @@ public final class MachinesTest {
         var watFile = new File("../wasm-corpus/src/main/resources/wat/iterfact.wat");
 
         try (FileSystem fs =
-                Jimfs.newFileSystem(
+                ZeroFs.newFileSystem(
                         Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
 
             Path target = fs.getPath("tmp");
