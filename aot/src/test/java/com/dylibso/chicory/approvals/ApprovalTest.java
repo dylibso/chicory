@@ -9,7 +9,16 @@ import com.dylibso.chicory.compiler.internal.Compiler;
 import com.dylibso.chicory.compiler.internal.Shaded;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
+import java.util.stream.IntStream;
+import org.apache.velocity.Template;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.runtime.RuntimeConstants;
+import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.approvaltests.Approvals;
 import org.junit.jupiter.api.Test;
 import org.objectweb.asm.ClassReader;
@@ -29,7 +38,15 @@ public class ApprovalTest {
     }
 
     @Test
-    public void verifyLotsOfArgs() {
+    public void verifyLotsOfArgs() throws Exception {
+        var destPath =
+                Path.of(
+                        "src/test/resources/com/dylibso/chicory/approvals/ApprovalTest.verifyLotsOfArgs.approved.txt");
+
+        if (!Files.exists(destPath)) {
+            Files.writeString(destPath, renderLotsOfArgs(), StandardOpenOption.CREATE_NEW);
+        }
+
         verifyGeneratedBytecode("lots-of-args.wat.wasm");
     }
 
@@ -119,5 +136,28 @@ public class ApprovalTest {
         assertFalse(
                 output.contains(getInternalName(Shaded.class)),
                 "Class contains non-inlined reference to " + Shaded.class.getName());
+    }
+
+    private static String renderLotsOfArgs() {
+        VelocityEngine velocityEngine = new VelocityEngine();
+        velocityEngine.setProperty(RuntimeConstants.RESOURCE_LOADER, "classpath");
+        velocityEngine.setProperty(
+                "classpath.resource.loader.class", ClasspathResourceLoader.class.getName());
+        velocityEngine.init();
+
+        Template t = velocityEngine.getTemplate("ApprovalTest.verifyLotsOfArgs.approved.template");
+
+        VelocityContext context = new VelocityContext();
+        context.put("iconst", IntStream.range(0, 293).toArray());
+        context.put("istore", IntStream.range(0, 296).toArray());
+        context.put("splats1", IntStream.range(6, 128).toArray());
+        context.put("splats2", IntStream.range(128, 300).toArray());
+        context.put("splats3", IntStream.range(6, 128).toArray());
+        context.put("splats4", IntStream.range(128, 300).toArray());
+
+        StringWriter writer = new StringWriter();
+        t.merge(context, writer);
+        writer.flush();
+        return writer.toString();
     }
 }
