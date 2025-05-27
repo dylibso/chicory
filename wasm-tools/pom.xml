@@ -57,7 +57,7 @@
               <goal>wasm-aot-gen</goal>
             </goals>
             <configuration>
-              <name>com.dylibso.chicory.tools.wasm.WasmTools</name>
+              <name>com.dylibso.chicory.tools.wasm.WasmToolsModule</name>
               <wasmFile>${project.basedir}/target/wasm-tools.wasm</wasmFile>
               <interpretedFunctions>
                 <function>3938</function>
