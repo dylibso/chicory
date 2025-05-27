@@ -988,6 +988,14 @@ public final class WasiPreview1 implements Closeable {
 
         Map<String, Object> attributes;
         try {
+            if (flagSet(lookupFlags, WasiLookupFlags.SYMLINK_FOLLOW)) {
+                var resolved = resolveSymlinks(path);
+                if (resolved.isError()) {
+                    return resolved.error();
+                } else {
+                    path = resolved.resolved();
+                }
+            }
             attributes = Files.readAttributes(path, "unix:*", linkOptions);
         } catch (UnsupportedOperationException e) {
             return wasiResult(WasiErrno.ENOTSUP);
@@ -1032,6 +1040,52 @@ public final class WasiPreview1 implements Closeable {
         return wasiResult(setFileTimes(path, modifiedTime, accessTime, fstFlags));
     }
 
+    private static final class ResolvedSymlink {
+        private final Path resolved;
+        private final int errorcode;
+
+        ResolvedSymlink(Path resolved) {
+            this.resolved = resolved;
+            this.errorcode = 0;
+        }
+
+        ResolvedSymlink(int errcode) {
+            this.resolved = null;
+            this.errorcode = errcode;
+        }
+
+        public boolean isError() {
+            return (this.resolved == null);
+        }
+
+        public int error() {
+            return errorcode;
+        }
+
+        public Path resolved() {
+            return resolved;
+        }
+    }
+
+    private ResolvedSymlink resolveSymlinks(Path path) {
+        List<Path> visited = new ArrayList<>();
+        while (Files.isSymbolicLink(path)) {
+            if (visited.contains(path)) {
+                return new ResolvedSymlink(wasiResult(WasiErrno.ELOOP));
+            } else {
+                visited.add(path);
+            }
+
+            try {
+                path = Files.readSymbolicLink(path);
+            } catch (IOException e) {
+                return new ResolvedSymlink(wasiResult(WasiErrno.EIO));
+            }
+        }
+
+        return new ResolvedSymlink(path);
+    }
+
     @WasmExport
     public int pathLink(
             int oldFd,
@@ -1042,7 +1096,70 @@ public final class WasiPreview1 implements Closeable {
         logger.tracef(
                 "path_link: [%s, %s, \"%s\", %s, \"%s\"]",
                 oldFd, oldFlags, rawOldPath, newFd, rawNewPath);
-        throw new WasmRuntimeException("We don't yet support this WASI call: path_link");
+        var oldDescriptor = descriptors.get(oldFd);
+        if (oldDescriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        if (!(oldDescriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path oldDirectory = ((Directory) oldDescriptor).path();
+
+        var newDescriptor = descriptors.get(newFd);
+        if (newDescriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        if (!(newDescriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path newDirectory = ((Directory) newDescriptor).path();
+
+        Path oldPath = resolvePath(oldDirectory, rawOldPath);
+        if (oldPath == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        if (rawNewPath.endsWith("/")) {
+            return wasiResult(WasiErrno.ENOENT);
+        }
+        Path newPath = resolvePath(newDirectory, rawNewPath);
+        if (newPath == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+        if (Files.exists(newPath)) {
+            return wasiResult(WasiErrno.EEXIST);
+        }
+        if (Files.isDirectory(oldPath)) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        if (Files.isDirectory(oldPath) && Files.isRegularFile(newPath, LinkOption.NOFOLLOW_LINKS)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        if (Files.isRegularFile(oldPath, LinkOption.NOFOLLOW_LINKS) && Files.isDirectory(newPath)) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+
+        try {
+            if (flagSet(oldFlags, WasiLookupFlags.SYMLINK_FOLLOW)) {
+                var resolved = resolveSymlinks(oldPath);
+                if (resolved.isError()) {
+                    return resolved.error();
+                } else {
+                    oldPath = resolved.resolved();
+                }
+            }
+            Files.createLink(newPath, oldPath);
+        } catch (UnsupportedOperationException | AtomicMoveNotSupportedException e) {
+            return wasiResult(WasiErrno.ENOTSUP);
+        } catch (NoSuchFileException e) {
+            return wasiResult(WasiErrno.ENOENT);
+        } catch (DirectoryNotEmptyException e) {
+            return wasiResult(WasiErrno.ENOTEMPTY);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+        return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport
@@ -1085,9 +1202,26 @@ public final class WasiPreview1 implements Closeable {
             return wasiResult(WasiErrno.EPERM);
         }
 
-        LinkOption[] linkOptions = toLinkOptions(lookupFlags);
+        if (flagSet(openFlags, WasiOpenFlags.DIRECTORY)
+                && !flagSet(lookupFlags, WasiLookupFlags.SYMLINK_FOLLOW)
+                && Files.isSymbolicLink(path)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
 
-        if (Files.isDirectory(path, linkOptions)) {
+        if (!flagSet(lookupFlags, WasiLookupFlags.SYMLINK_FOLLOW) && Files.isSymbolicLink(path)) {
+            return wasiResult(WasiErrno.ELOOP);
+        }
+
+        if (flagSet(lookupFlags, WasiLookupFlags.SYMLINK_FOLLOW)) {
+            var resolved = resolveSymlinks(path);
+            if (resolved.isError()) {
+                return resolved.error();
+            } else {
+                path = resolved.resolved();
+            }
+        }
+
+        if (Files.isDirectory(path)) {
             if (flagSet(rightsBase, WasiRights.FD_WRITE)) {
                 return wasiResult(WasiErrno.EISDIR);
             }
@@ -1099,11 +1233,11 @@ public final class WasiPreview1 implements Closeable {
         if (rawPath.endsWith("/")) {
             return wasiResult(WasiErrno.ENOTDIR);
         }
-        if (flagSet(openFlags, WasiOpenFlags.DIRECTORY) && Files.exists(path, linkOptions)) {
+        if (flagSet(openFlags, WasiOpenFlags.DIRECTORY) && Files.exists(path)) {
             return wasiResult(WasiErrno.ENOTDIR);
         }
 
-        Set<OpenOption> openOptions = new HashSet<>(Arrays.asList(linkOptions));
+        Set<OpenOption> openOptions = new HashSet<>(Arrays.asList());
 
         boolean append = flagSet(fdFlags, WasiFdFlags.APPEND);
         boolean truncate = flagSet(openFlags, WasiOpenFlags.TRUNC);
@@ -1190,7 +1324,7 @@ public final class WasiPreview1 implements Closeable {
             return wasiResult(WasiErrno.EIO);
         }
 
-        byte[] name = link.toString().getBytes(UTF_8);
+        byte[] name = link.getFileName().toString().getBytes(UTF_8);
         int used = min(name.length, bufLen);
         memory.write(buf, name, 0, used);
         memory.writeI32(bufUsedPtr, used);
@@ -1296,7 +1430,52 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public int pathSymlink(@Buffer String oldRawPath, int dirFd, @Buffer String newRawPath) {
         logger.tracef("path_symlink: [\"%s\", %s, \"%s\"]", oldRawPath, dirFd, newRawPath);
-        throw new WasmRuntimeException("We don't yet support this WASI call: path_symlink");
+        var descriptor = descriptors.get(dirFd);
+        if (descriptor == null) {
+            return wasiResult(WasiErrno.EBADF);
+        }
+        if (!(descriptor instanceof Directory)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        Path directory = ((Directory) descriptor).path();
+
+        Path oldPath = resolvePath(directory, oldRawPath);
+        if (oldPath == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        if (newRawPath.endsWith("/")) {
+            return wasiResult(WasiErrno.EEXIST);
+        }
+
+        Path newPath = resolvePath(directory, newRawPath);
+        if (newPath == null) {
+            return wasiResult(WasiErrno.EACCES);
+        }
+
+        if (Files.exists(newPath)) {
+            return wasiResult(WasiErrno.EEXIST);
+        }
+
+        if (Files.isDirectory(oldPath) && Files.isRegularFile(newPath, LinkOption.NOFOLLOW_LINKS)) {
+            return wasiResult(WasiErrno.ENOTDIR);
+        }
+        if (Files.isRegularFile(oldPath, LinkOption.NOFOLLOW_LINKS) && Files.isDirectory(newPath)) {
+            return wasiResult(WasiErrno.EISDIR);
+        }
+
+        try {
+            Files.createSymbolicLink(newPath, oldPath);
+        } catch (UnsupportedOperationException | AtomicMoveNotSupportedException e) {
+            return wasiResult(WasiErrno.ENOTSUP);
+        } catch (NoSuchFileException e) {
+            return wasiResult(WasiErrno.ENOENT);
+        } catch (DirectoryNotEmptyException e) {
+            return wasiResult(WasiErrno.ENOTEMPTY);
+        } catch (IOException e) {
+            return wasiResult(WasiErrno.EIO);
+        }
+        return wasiResult(WasiErrno.ESUCCESS);
     }
 
     @WasmExport

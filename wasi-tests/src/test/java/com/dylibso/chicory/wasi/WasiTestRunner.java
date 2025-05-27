@@ -50,6 +50,10 @@ public final class WasiTestRunner {
                             .withArguments(allArgs);
 
             env.forEach(options::withEnvironment);
+            // TODO: dangling filesystem is not supported
+            if (!test.getName().contains("environ")) {
+                options.withEnvironment("NO_DANGLING_FILESYSTEM", "true");
+            }
 
             for (String dir : dirs) {
                 Path source = test.getParentFile().toPath().resolve(dir);
