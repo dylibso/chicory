@@ -6,8 +6,8 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiExitException;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
-import com.google.common.jimfs.Configuration;
-import com.google.common.jimfs.Jimfs;
+import io.roastedroot.zerofs.Configuration;
+import io.roastedroot.zerofs.ZeroFs;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.List;
@@ -18,7 +18,7 @@ public class ZigTestsuiteTest {
     @Test
     public void shouldRunZigStdlibTestsuite() throws Exception {
         try (FileSystem fs =
-                Jimfs.newFileSystem(
+                ZeroFs.newFileSystem(
                         Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
             Path target = fs.getPath(".");
 

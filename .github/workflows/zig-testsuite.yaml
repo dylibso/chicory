@@ -1,8 +1,9 @@
 name: Zig Testsuite
 
 on:
-  schedule:
-   - cron: "0 0 * * *" # everyday
+  push:
+  # schedule:
+  #  - cron: "0 0 * * *" # everyday
 
 permissions:
   contents: read
