@@ -22,10 +22,10 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Compile the Zig testsuite
-        if: github.repository_owner == 'dylibso'
+        # if: github.repository_owner == 'dylibso'
         run: ./scripts/build-zig-testsuite.sh
       - name: Nightly Test
-        if: github.repository_owner == 'dylibso'
+        # if: github.repository_owner == 'dylibso'
         run: |
           # Build everything
           mvn -B -Dquickly
