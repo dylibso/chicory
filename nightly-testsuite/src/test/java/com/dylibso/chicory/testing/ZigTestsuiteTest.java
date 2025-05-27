@@ -21,9 +21,6 @@ public class ZigTestsuiteTest {
                 Jimfs.newFileSystem(
                         Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
             Path target = fs.getPath(".");
-            // TODO: changed sources to monitor the progress
-            // TODO: seems broken - skipped changing sources 1109/2803 fs.test.test.statFile on
-            // dangling symlink...
 
             var wasiOpts =
                     WasiOptions.builder()
@@ -49,7 +46,7 @@ public class ZigTestsuiteTest {
                 instance.build(); // call start
             } catch (WasiExitException e) {
                 if (e.exitCode() != 0) {
-                    throw new RuntimeException("exit with errors");
+                    throw new RuntimeException("exit with errors: " + e.exitCode());
                 }
                 System.out.println("Success!!!");
             }
