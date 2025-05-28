@@ -353,7 +353,7 @@ public final class ValType {
                     return "I32";
             }
 
-            throw new IllegalArgumentException("got invalid opcode in ValueType.toName: " + opcode);
+            throw new IllegalArgumentException("got invalid opcode in ValType.toName: " + opcode);
         }
 
         public static boolean isValidOpcode(int opcode) {
