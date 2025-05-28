@@ -33,6 +33,10 @@ public final class TypeSection extends Section {
 
         private Builder() {}
 
+        public List<FunctionType> getTypes() {
+            return types;
+        }
+
         /**
          * Add a function type definition to this section.
          *

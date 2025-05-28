@@ -570,7 +570,9 @@ final class WasmAnalyzer {
                 break;
             case REF_NULL:
                 // [] -> [ref]
-                stack.push(new ValType(ValType.ID.RefNull, (int) ins.operand(0)));
+                stack.push(
+                        new ValType.Builder(ValType.ID.RefNull, (int) ins.operand(0))
+                                .build(module.typeSection()::getType));
                 break;
             case REF_IS_NULL:
                 // [ref] -> [I32]
@@ -709,7 +711,8 @@ final class WasmAnalyzer {
             return FunctionType.empty();
         }
         if (ValType.isValid(typeId)) {
-            return FunctionType.returning(ValType.forId(typeId));
+            return FunctionType.returning(
+                    new ValType.Builder(typeId).build(module.typeSection()::getType));
         }
         return module.typeSection().getType((int) typeId);
     }

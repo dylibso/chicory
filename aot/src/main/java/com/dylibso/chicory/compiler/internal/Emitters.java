@@ -73,25 +73,29 @@ final class Emitters {
         asm.athrow();
     }
 
+    public static ValType valType(long id, Context ctx) {
+        return new ValType.Builder(id).build(ctx::type);
+    }
+
     public static void DROP_KEEP(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         int keepStart = (int) ins.operand(0) + 1;
 
         // save result values
         int slot = ctx.tempSlot();
         for (int i = ins.operandCount() - 1; i >= keepStart; i--) {
-            var type = ValType.forId(ins.operand(i));
+            var type = valType(ins.operand(i), ctx);
             asm.store(slot, asmType(type));
             slot += slotCount(type);
         }
 
         // drop intervening values
         for (int i = keepStart - 1; i >= 1; i--) {
-            emitPop(asm, ValType.forId(ins.operand(i)));
+            emitPop(asm, valType(ins.operand(i), ctx));
         }
 
         // restore result values
         for (int i = keepStart; i < ins.operandCount(); i++) {
-            var type = ValType.forId(ins.operand(i));
+            var type = valType(ins.operand(i), ctx);
             slot -= slotCount(type);
             asm.load(slot, asmType(type));
         }
@@ -109,7 +113,7 @@ final class Emitters {
     }
 
     public static void DROP(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        emitPop(asm, ValType.forId(ins.operand(0)));
+        emitPop(asm, valType(ins.operand(0), ctx));
     }
 
     public static void ELEM_DROP(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
@@ -121,7 +125,7 @@ final class Emitters {
     }
 
     public static void SELECT(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        var type = ValType.forId(ins.operand(0));
+        var type = valType(ins.operand(0), ctx);
         var endLabel = new Label();
         asm.ifne(endLabel);
         if (slotCount(type) == 1) {
@@ -235,7 +239,7 @@ final class Emitters {
     }
 
     public static void LOCAL_TEE(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
-        if (slotCount(ValType.forId(ins.operand(1))) == 1) {
+        if (slotCount(valType(ins.operand(1), ctx)) == 1) {
             asm.dup();
         } else {
             asm.dup2();

@@ -150,7 +150,7 @@ public class Instance {
                     new GlobalInstance(
                             values[0],
                             (values.length > 1) ? values[1] : 0,
-                            g.valueType().substitute(module),
+                            g.valueType(),
                             g.mutabilityType());
             globals[i].setInstance(this);
         }
@@ -183,7 +183,7 @@ public class Instance {
     }
 
     public FunctionType exportType(String name) {
-        return type(functionType(exports.get(name).index())).substitute(module);
+        return type(functionType(exports.get(name).index()));
     }
 
     public static final class Exports {
@@ -413,7 +413,7 @@ public class Instance {
         private void validateExternalFunctionSignature(FunctionImport imprt, ImportFunction f) {
             var expectedType = module.typeSection().getType(imprt.typeIndex());
 
-            if (!FunctionType.equals(module, f.functionType(), expectedType)) {
+            if (!f.functionType().equals(expectedType)) {
                 throw new UnlinkableException(
                         "incompatible import type for host function "
                                 + f.module()
@@ -436,10 +436,10 @@ public class Instance {
 
             if (i.mutabilityType() == MutabilityType.Var) {
                 // for mutable globals, types must match exactly
-                typesMatch = ValType.equals(module, i.type(), g.instance().getType());
+                typesMatch = i.type().equals(g.instance().getType());
             } else if (i.mutabilityType() == MutabilityType.Const) {
                 // for const, subtyping is allowed
-                typesMatch = ValType.matches(module, g.instance().getType(), i.type());
+                typesMatch = ValType.matches(g.instance().getType(), i.type());
             } else {
                 throw new ChicoryException(
                         "internal error: mutability type is not var or const: "
@@ -500,7 +500,7 @@ public class Instance {
             var maxExpected = t.table().limits().max();
             var minCurrent = i.limits().min();
             var maxCurrent = i.limits().max();
-            if (!ValType.equals(module, i.entryType(), t.table().elementType())) {
+            if (!i.entryType().equals(t.table().elementType())) {
                 throw new UnlinkableException("incompatible import type");
             } else if (minExpected < minCurrent || maxExpected > maxCurrent) {
                 throw new UnlinkableException(
@@ -793,7 +793,7 @@ public class Instance {
             var tableLength = module.tableSection().tableCount();
             Table[] tables = new Table[tableLength];
             for (int i = 0; i < tableLength; i++) {
-                tables[i] = module.tableSection().getTable(i).substitute(module);
+                tables[i] = module.tableSection().getTable(i);
             }
 
             Element[] elements = module.elementSection().elements();

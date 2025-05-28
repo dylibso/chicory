@@ -1,9 +1,10 @@
 package com.dylibso.chicory.wasm.types;
 
-import com.dylibso.chicory.wasm.MalformedException;
-import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.ChicoryException;
+import com.dylibso.chicory.wasm.InvalidException;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * The possible WASM value types.
@@ -26,18 +27,24 @@ public final class ValType {
     public static ValType ExnRef = new ValType(ID.ExnRef);
     public static ValType ExternRef = new ValType(ID.ExternRef);
 
+    public static ValType RefBot = new ValType(ValType.ID.Ref, ValType.TypeIdxCode.BOT.code());
+
     private final long id;
 
     // defined function type. This is not representable in the binary or textual representation
     // of WASM. This is instead used after substitution to represent closed ValType.
     // This is useful when validating import function values.
-    private FunctionType definedType = FunctionType.empty();
+    private final FunctionType resolvedFunctionType;
 
-    public ValType(int opcode) {
-        this(opcode, NULL_TYPEIDX);
+    private ValType(int opcode) {
+        this(opcode, NULL_TYPEIDX, null);
     }
 
-    public ValType(int opcode, int typeIdx) {
+    private ValType(int opcode, int typeIdx) {
+        this(opcode, typeIdx, null);
+    }
+
+    private ValType(int opcode, int typeIdx, FunctionType resolvedFunctionType) {
         // Conveniently, all value types we want to represent can fit inside a Java long.
         // We store the typeIdx (of reference types) in the upper 4 bytes and the opcode in the
         // lower 4 bytes.
@@ -50,20 +57,16 @@ public final class ValType {
         } else if (opcode == ID.ExnRef) {
             typeIdx = TypeIdxCode.EXN.code();
             opcode = ID.RefNull;
+        } else if ((opcode == ID.RefNull || opcode == ID.Ref) && typeIdx >= 0) {
+            Objects.requireNonNull(resolvedFunctionType);
         }
+        this.resolvedFunctionType = resolvedFunctionType;
 
-        long id = ((long) typeIdx) << TYPEIDX_SHIFT | (opcode & OPCODE_MASK);
-        this.id = id;
+        this.id = createId(opcode, typeIdx);
     }
 
-    private ValType(int opcode, FunctionType definedType) {
-        Objects.requireNonNull(definedType);
-        this.definedType = definedType;
-        this.id = ((long) TypeIdxCode.DEFINED.code()) << TYPEIDX_SHIFT | (opcode & OPCODE_MASK);
-    }
-
-    private ValType(long id) {
-        this.id = id;
+    private static long createId(int opcode, int typeIdx) {
+        return ((long) typeIdx) << TYPEIDX_SHIFT | (opcode & OPCODE_MASK);
     }
 
     /**
@@ -73,8 +76,20 @@ public final class ValType {
         return this.id;
     }
 
-    public int opcode() {
+    private static int opcode(long id) {
         return (int) (id & OPCODE_MASK);
+    }
+
+    public int opcode() {
+        return opcode(id);
+    }
+
+    private static int typeIdx(long id) {
+        return (int) (id >>> TYPEIDX_SHIFT);
+    }
+
+    public int typeIdx() {
+        return typeIdx(id);
     }
 
     /**
@@ -140,8 +155,8 @@ public final class ValType {
     /**
      * @return {@code true} if the type is a reference type, or {@code false} otherwise
      */
-    public boolean isReference() {
-        switch (this.opcode()) {
+    private static boolean isReference(int opcode) {
+        switch (opcode) {
             case ID.Ref:
             case ID.ExnRef:
             case ID.RefNull:
@@ -151,12 +166,15 @@ public final class ValType {
         }
     }
 
+    public boolean isReference() {
+        return isReference(this.opcode());
+    }
+
     /**
      * @return {@code true} if the given type ID is a valid value type ID, or {@code false} if it is not
      */
-    public static boolean isValid(long typeId) {
-        ValType res = forId(typeId);
-        switch (res.opcode()) {
+    private static boolean isValidOpcode(int opcode) {
+        switch (opcode) {
             case ID.RefNull:
             case ID.Ref:
             case ID.ExnRef:
@@ -165,34 +183,16 @@ public final class ValType {
             case ID.I64:
             case ID.F32:
             case ID.F64:
+            case ID.FuncRef:
+            case ID.ExternRef:
                 return true;
             default:
                 return false;
         }
     }
 
-    /**
-     * @return the {@code ValType} for the given ID value
-     * @throws IllegalArgumentException if the ID value does not correspond to a valid value type
-     */
-    public static ValType forId(long id) {
-        return new ValType(id);
-    }
-
-    /**
-     * @return the reference-typed {@code ValType} for the given ID value
-     * @throws IllegalArgumentException if the ID value does not correspond to a valid reference type
-     */
-    public static ValType refTypeForId(long id) {
-        ValType res = forId(id);
-        switch (res.opcode()) {
-            case ID.RefNull:
-            case ID.Ref:
-            case ID.ExnRef:
-                return res;
-            default:
-                throw new MalformedException("malformed reference type " + id);
-        }
+    public static boolean isValid(long id) {
+        return isValidOpcode(opcode(id));
     }
 
     public static int sizeOf(List<ValType> args) {
@@ -207,50 +207,29 @@ public final class ValType {
         return total;
     }
 
-    public ValType substitute(WasmModule context) {
-        if (this.isReference() && this.typeIdx() >= 0) {
-            var funcType = context.typeSection().getType(this.typeIdx());
-            var params =
-                    funcType.params().stream()
-                            .map(t -> t.substitute(context))
-                            .toArray(ValType[]::new);
-            var returns =
-                    funcType.returns().stream()
-                            .map(t -> t.substitute(context))
-                            .toArray(ValType[]::new);
-            return new ValType(this.opcode(), FunctionType.of(params, returns));
-        }
-
-        return this;
-    }
-
     private static boolean matchesNull(boolean null1, boolean null2) {
         return null1 == null2 || null2;
     }
 
-    public static boolean matchesRef(WasmModule context, ValType t1, ValType t2) {
+    public static boolean matchesRef(ValType t1, ValType t2) {
         var matchesNull = matchesNull(t1.isNullable(), t2.isNullable());
         if (!matchesNull) {
             return false;
         }
 
-        t1 = t1.substitute(context);
-        t2 = t2.substitute(context);
-
-        if (t1.typeIdx() == TypeIdxCode.DEFINED.code() && t2.typeIdx() == TypeIdxCode.FUNC.code()) {
+        if (t1.typeIdx() >= 0 && t2.typeIdx() == TypeIdxCode.FUNC.code()) {
             return true;
-        } else if (t1.typeIdx() == TypeIdxCode.DEFINED.code()
-                && t2.typeIdx() == TypeIdxCode.DEFINED.code()) {
-            return t1.definedType.equals(t2.definedType);
+        } else if (t1.typeIdx() >= 0 && t2.typeIdx() >= 0) {
+            return t1.resolvedFunctionType.equals(t2.resolvedFunctionType);
         } else if (t1.typeIdx() == TypeIdxCode.BOT.code()) {
             return true;
         }
         return t1.typeIdx() == t2.typeIdx();
     }
 
-    public static boolean matches(WasmModule context, ValType t1, ValType t2) {
+    public static boolean matches(ValType t1, ValType t2) {
         if (t1.isReference() && t2.isReference()) {
-            return matchesRef(context, t1, t2);
+            return matchesRef(t1, t2);
         } else if (t1.opcode() == ID.BOT) {
             return true;
         } else {
@@ -270,12 +249,11 @@ public final class ValType {
         }
     }
 
-    public int typeIdx() {
-        return (int) (id >>> TYPEIDX_SHIFT);
-    }
-
     @Override
     public int hashCode() {
+        if (this.resolvedFunctionType != null) {
+            return resolvedFunctionType.hashCode();
+        }
         return Long.hashCode(id);
     }
 
@@ -285,14 +263,15 @@ public final class ValType {
             return false;
         }
         ValType that = (ValType) other;
-        return this.id == that.id && this.definedType.equals(that.definedType);
-    }
 
-    public static boolean equals(WasmModule context, ValType t1, ValType t2) {
-        t1 = t1.substitute(context);
-        t2 = t2.substitute(context);
-
-        return t1.equals(t2);
+        if (this.resolvedFunctionType != null && that.resolvedFunctionType != null) {
+            return opcode(this.id) == opcode(that.id)
+                    && this.resolvedFunctionType.equals(that.resolvedFunctionType);
+        } else if (this.resolvedFunctionType == null && that.resolvedFunctionType == null) {
+            return this.id == that.id;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -318,9 +297,7 @@ public final class ValType {
         EXTERN(-17), // 0x6F
         FUNC(-16), // 0x70
         EXN(-23), // 0x69
-        BOT(-1),
-        // definedType
-        DEFINED(-2);
+        BOT(-1);
 
         private final int code;
 
@@ -390,6 +367,67 @@ public final class ValType {
                     || opcode == F32
                     || opcode == I64
                     || opcode == I32);
+        }
+    }
+
+    public static class Builder {
+        private final int opcode;
+        private final int typeIdx;
+
+        public Builder(int opcode) {
+            this(opcode, NULL_TYPEIDX);
+        }
+
+        public Builder(int opcode, int typeIdx) {
+            this.opcode = opcode;
+            this.typeIdx = typeIdx;
+        }
+
+        public Builder(long id) {
+            this.opcode = opcode(id);
+            this.typeIdx = ValType.typeIdx(id);
+        }
+
+        public long id() {
+            return createId(opcode, typeIdx);
+        }
+
+        public int typeIdx() {
+            return typeIdx;
+        }
+
+        public boolean isReference() {
+            return ValType.isReference(opcode);
+        }
+
+        public ValType buildWithEmptyContext() {
+            return build(
+                    (i) -> {
+                        throw new ChicoryException("build with empty context tried resolving " + i);
+                    });
+        }
+
+        public ValType build(Function<Integer, FunctionType> context) {
+            if (!isValidOpcode(opcode)) {
+                throw new ChicoryException("Invalid type opcode: " + opcode);
+            }
+
+            var resolvedFunctionType = substitute(opcode, typeIdx, context);
+            return new ValType(opcode, typeIdx, resolvedFunctionType);
+        }
+
+        public FunctionType substitute(
+                int opcode, int typeIdx, Function<Integer, FunctionType> context) {
+            if (ValType.isReference(opcode) && typeIdx >= 0) {
+                // no need to recursively substitute because all ValType are fully resolved
+                try {
+                    return context.apply(typeIdx);
+                } catch (IndexOutOfBoundsException e) {
+                    throw new InvalidException("unknown type: " + typeIdx);
+                }
+            }
+
+            return null;
         }
     }
 }

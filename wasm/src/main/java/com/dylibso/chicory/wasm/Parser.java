@@ -78,6 +78,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Parser for Web Assembly binaries.
@@ -91,6 +92,8 @@ public final class Parser {
     private final Map<String, Function<byte[], CustomSection>> customParsers;
     private final BitSet includeSections;
 
+    private TypeSection typeSection;
+
     private static final Map<String, Function<byte[], CustomSection>> DEFAULT_CUSTOM_PARSERS =
             Map.of("name", NameCustomSection::parse);
 
@@ -102,6 +105,7 @@ public final class Parser {
             BitSet includeSections, Map<String, Function<byte[], CustomSection>> customParsers) {
         this.includeSections = includeSections;
         this.customParsers = Map.copyOf(customParsers);
+        this.typeSection = TypeSection.builder().build();
     }
 
     private static ByteBuffer readByteBuffer(InputStream is) {
@@ -311,12 +315,13 @@ public final class Parser {
                     case SectionId.TYPE:
                         {
                             var typeSection = parseTypeSection(sectionByteBuffer);
+                            this.typeSection = typeSection;
                             listener.onSection(typeSection);
                             break;
                         }
                     case SectionId.IMPORT:
                         {
-                            var importSection = parseImportSection(sectionByteBuffer);
+                            var importSection = parseImportSection(sectionByteBuffer, typeSection);
                             listener.onSection(importSection);
                             break;
                         }
@@ -328,7 +333,7 @@ public final class Parser {
                         }
                     case SectionId.TABLE:
                         {
-                            var tableSection = parseTableSection(sectionByteBuffer);
+                            var tableSection = parseTableSection(sectionByteBuffer, typeSection);
                             listener.onSection(tableSection);
                             break;
                         }
@@ -346,7 +351,7 @@ public final class Parser {
                         }
                     case SectionId.GLOBAL:
                         {
-                            var globalSection = parseGlobalSection(sectionByteBuffer);
+                            var globalSection = parseGlobalSection(sectionByteBuffer, typeSection);
                             listener.onSection(globalSection);
                             break;
                         }
@@ -365,13 +370,14 @@ public final class Parser {
                     case SectionId.ELEMENT:
                         {
                             var elementSection =
-                                    parseElementSection(sectionByteBuffer, sectionSize);
+                                    parseElementSection(
+                                            sectionByteBuffer, sectionSize, typeSection);
                             listener.onSection(elementSection);
                             break;
                         }
                     case SectionId.CODE:
                         {
-                            var codeSection = parseCodeSection(sectionByteBuffer);
+                            var codeSection = parseCodeSection(sectionByteBuffer, typeSection);
                             listener.onSection(codeSection);
                             break;
                         }
@@ -487,20 +493,40 @@ public final class Parser {
 
             // Parse function types (form = 0x60)
             var paramCount = (int) readVarUInt32(buffer);
-            var params = new ValType[paramCount];
+            var paramsBuilder = new ValType.Builder[paramCount];
 
             // Parse parameter types
             for (int j = 0; j < paramCount; j++) {
-                params[j] = readValueType(buffer);
+                paramsBuilder[j] = readValueTypeBuilder(buffer);
             }
 
             var returnCount = (int) readVarUInt32(buffer);
-            var returns = new ValType[returnCount];
+            var returnsBuilder = new ValType.Builder[returnCount];
 
             // Parse return types
             for (int j = 0; j < returnCount; j++) {
-                returns[j] = readValueType(buffer);
+                returnsBuilder[j] = readValueTypeBuilder(buffer);
             }
+
+            // a type can only refer to types with idx less than it
+            var maxTypeIdx = i - 1;
+            Stream.concat(Arrays.stream(paramsBuilder), Arrays.stream(returnsBuilder))
+                    .forEach(
+                            v -> {
+                                if (v.isReference()) {
+                                    var typeIdx = v.typeIdx();
+                                    if (typeIdx > maxTypeIdx) {
+                                        throw new InvalidException(
+                                                "unknown type: recursive type, type mismatch");
+                                    }
+                                }
+                            });
+
+            Function<ValType.Builder, ValType> build =
+                    (ValType.Builder builder) -> builder.build(typeSection.getTypes()::get);
+
+            var params = Arrays.stream(paramsBuilder).map(build).toArray(ValType[]::new);
+            var returns = Arrays.stream(returnsBuilder).map(build).toArray(ValType[]::new);
 
             typeSection.addFunctionType(FunctionType.of(params, returns));
         }
@@ -508,7 +534,7 @@ public final class Parser {
         return typeSection.build();
     }
 
-    private static ImportSection parseImportSection(ByteBuffer buffer) {
+    private static ImportSection parseImportSection(ByteBuffer buffer, TypeSection typeSection) {
 
         var importCount = readVarUInt32(buffer);
         ImportSection.Builder importSection = ImportSection.builder();
@@ -536,7 +562,7 @@ public final class Parser {
                     }
                 case TABLE:
                     {
-                        var rawTableType = readValueType(buffer);
+                        var rawTableType = readValueType(buffer, typeSection);
 
                         var limitType = readByte(buffer);
                         assert limitType == 0x00 || limitType == 0x01;
@@ -569,7 +595,7 @@ public final class Parser {
                         break;
                     }
                 case GLOBAL:
-                    var globalValType = readValueType(buffer);
+                    var globalValType = readValueType(buffer, typeSection);
                     var globalMut = MutabilityType.forId(readByte(buffer));
                     importSection.addImport(
                             new GlobalImport(moduleName, importName, globalMut, globalValType));
@@ -617,7 +643,7 @@ public final class Parser {
         return limits;
     }
 
-    private static TableSection parseTableSection(ByteBuffer buffer) {
+    private static TableSection parseTableSection(ByteBuffer buffer, TypeSection typeSection) {
 
         var tableCount = readVarUInt32(buffer);
         TableSection.Builder tableSection = TableSection.builder();
@@ -628,12 +654,12 @@ public final class Parser {
             if (firstByte == 0x40) {
                 var secondByte = readVarUInt32(buffer);
                 assert secondByte == 0x00;
-                var tableType = readValueType(buffer);
+                var tableType = readValueType(buffer, typeSection);
                 var limits = readTableLimits(buffer);
                 var init = parseExpression(buffer);
                 tableSection.addTable(new Table(tableType, limits, List.of(init)));
             } else {
-                var tableType = readValueTypeFromOpCode(buffer, firstByte);
+                var tableType = readValueTypeFromOpCode(buffer, firstByte, typeSection);
                 var limits = readTableLimits(buffer);
                 tableSection.addTable(new Table(tableType, limits));
             }
@@ -672,14 +698,14 @@ public final class Parser {
         return new MemoryLimits(initial, maximum);
     }
 
-    private static GlobalSection parseGlobalSection(ByteBuffer buffer) {
+    private static GlobalSection parseGlobalSection(ByteBuffer buffer, TypeSection typeSection) {
 
         var globalCount = readVarUInt32(buffer);
         GlobalSection.Builder globalSection = GlobalSection.builder();
 
         // Parse individual globals
         for (int i = 0; i < globalCount; i++) {
-            var valueType = readValueType(buffer);
+            var valueType = readValueType(buffer, typeSection);
             var mutabilityType = MutabilityType.forId(readByte(buffer));
             var init = parseExpression(buffer);
             globalSection.addGlobal(new Global(valueType, mutabilityType, List.of(init)));
@@ -708,14 +734,15 @@ public final class Parser {
         return StartSection.builder().setStartIndex(readVarUInt32(buffer)).build();
     }
 
-    private static ElementSection parseElementSection(ByteBuffer buffer, long sectionSize) {
+    private static ElementSection parseElementSection(
+            ByteBuffer buffer, long sectionSize, TypeSection typeSection) {
         var initialPosition = buffer.position();
 
         var elementCount = readVarUInt32(buffer);
         ElementSection.Builder elementSection = ElementSection.builder();
 
         for (var i = 0; i < elementCount; i++) {
-            elementSection.addElement(parseSingleElement(buffer));
+            elementSection.addElement(parseSingleElement(buffer, typeSection));
         }
         if (buffer.position() != initialPosition + sectionSize) {
             throw new MalformedException("section size mismatch");
@@ -724,7 +751,7 @@ public final class Parser {
         return elementSection.build();
     }
 
-    private static Element parseSingleElement(ByteBuffer buffer) {
+    private static Element parseSingleElement(ByteBuffer buffer, TypeSection typeSection) {
         // Elements are actually fairly complex to parse.
         // See https://webassembly.github.io/spec/core/binary/modules.html#element-section
 
@@ -765,18 +792,22 @@ public final class Parser {
             if (exprInit) {
                 type = ValType.FuncRef;
             } else {
-                type = new ValType(ValType.ID.Ref, ValType.TypeIdxCode.FUNC.code());
+                type =
+                        new ValType.Builder(ValType.ID.Ref, ValType.TypeIdxCode.FUNC.code())
+                                .buildWithEmptyContext();
             }
         } else if (hasElemKind) {
             int ek = (int) readVarUInt32(buffer);
             if (ek == 0x00) {
-                type = new ValType(ValType.ID.Ref, ValType.TypeIdxCode.FUNC.code());
+                type =
+                        new ValType.Builder(ValType.ID.Ref, ValType.TypeIdxCode.FUNC.code())
+                                .buildWithEmptyContext();
             } else {
                 throw new ChicoryException("Invalid element kind");
             }
         } else {
             assert hasRefType;
-            type = readValueType(buffer);
+            type = readValueType(buffer, typeSection);
             if (!type.isReference()) {
                 throw new MalformedException(
                         "malformed reference type: element section has non-reference type");
@@ -809,7 +840,8 @@ public final class Parser {
         return new ActiveElement(type, inits, tableIdx, offset);
     }
 
-    private static List<ValType> parseCodeSectionLocalTypes(ByteBuffer buffer) {
+    private static List<ValType> parseCodeSectionLocalTypes(
+            ByteBuffer buffer, TypeSection typeSection) {
         var distinctTypesCount = readVarUInt32(buffer);
         var locals = new ArrayList<ValType>();
 
@@ -818,7 +850,7 @@ public final class Parser {
             if (numberOfLocals > MAX_FUNCTION_LOCALS) {
                 throw new MalformedException("too many locals");
             }
-            var type = readValueType(buffer);
+            var type = readValueType(buffer, typeSection);
             for (int j = 0; j < numberOfLocals; j++) {
                 locals.add(type);
             }
@@ -827,7 +859,7 @@ public final class Parser {
         return locals;
     }
 
-    private static CodeSection parseCodeSection(ByteBuffer buffer) {
+    private static CodeSection parseCodeSection(ByteBuffer buffer, TypeSection typeSection) {
         var funcBodyCount = readVarUInt32(buffer);
 
         var root = new ControlTree();
@@ -838,7 +870,7 @@ public final class Parser {
             var blockScope = new ArrayDeque<Instruction>();
             var depth = 0;
             var funcEndPoint = readVarUInt32(buffer) + buffer.position();
-            var locals = parseCodeSectionLocalTypes(buffer);
+            var locals = parseCodeSectionLocalTypes(buffer, typeSection);
             var instructions = new ArrayList<AnnotatedInstruction.Builder>();
             var lastInstruction = false;
             ControlTree currentControlFlow = null;
@@ -1179,7 +1211,7 @@ public final class Parser {
                     var operand = (int) readVarUInt32(buffer);
                     if (ValType.ID.isValidOpcode(operand)) {
                         // is value type
-                        ValType v = readValueTypeFromOpCode(buffer, operand);
+                        ValType.Builder v = readValueTypeBuilderFromOpCode(buffer, operand);
                         operands.add(v.id());
                     } else {
                         operands.add((long) operand);
@@ -1188,7 +1220,7 @@ public final class Parser {
                 case VEC_VALUE_TYPE:
                     var vcount = (int) readVarUInt32(buffer);
                     for (var j = 0; j < vcount; j++) {
-                        operands.add(readValueType(buffer).id());
+                        operands.add(readValueTypeBuilder(buffer).id());
                     }
                     break;
             }
@@ -1272,18 +1304,28 @@ public final class Parser {
         }
     }
 
-    private static ValType readValueTypeFromOpCode(ByteBuffer buffer, int valueTypeOpCode) {
+    private static ValType.Builder readValueTypeBuilderFromOpCode(
+            ByteBuffer buffer, int valueTypeOpCode) {
         if (valueTypeOpCode == ValType.ID.Ref || valueTypeOpCode == ValType.ID.RefNull) {
-            return new ValType(valueTypeOpCode, (int) readVarSInt32(buffer));
+            return new ValType.Builder(valueTypeOpCode, (int) readVarSInt32(buffer));
         } else {
-            return new ValType(valueTypeOpCode);
+            return new ValType.Builder(valueTypeOpCode);
         }
     }
 
-    private static ValType readValueType(ByteBuffer buffer) {
+    private static ValType.Builder readValueTypeBuilder(ByteBuffer buffer) {
         var valueTypeOpCode = (int) readVarUInt32(buffer);
 
-        return readValueTypeFromOpCode(buffer, valueTypeOpCode);
+        return readValueTypeBuilderFromOpCode(buffer, valueTypeOpCode);
+    }
+
+    private static ValType readValueTypeFromOpCode(
+            ByteBuffer buffer, int valueTypeOpCode, TypeSection typeSection) {
+        return readValueTypeBuilderFromOpCode(buffer, valueTypeOpCode).build(typeSection::getType);
+    }
+
+    private static ValType readValueType(ByteBuffer buffer, TypeSection typeSection) {
+        return readValueTypeBuilder(buffer).build(typeSection::getType);
     }
 
     private static Instruction[] parseExpression(ByteBuffer buffer) {

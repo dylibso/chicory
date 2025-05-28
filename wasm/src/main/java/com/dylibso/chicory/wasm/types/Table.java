@@ -1,6 +1,5 @@
 package com.dylibso.chicory.wasm.types;
 
-import com.dylibso.chicory.wasm.WasmModule;
 import java.util.List;
 import java.util.Objects;
 
@@ -38,10 +37,6 @@ public class Table {
         }
         this.limits = Objects.requireNonNull(limits, "limits");
         this.init = init;
-    }
-
-    public Table substitute(WasmModule context) {
-        return new Table(elementType.substitute(context), limits, init);
     }
 
     public ValType elementType() {

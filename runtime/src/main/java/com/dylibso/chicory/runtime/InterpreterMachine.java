@@ -5,7 +5,6 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.wasm.ChicoryException;
-import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -70,7 +69,7 @@ public class InterpreterMachine implements Machine {
         var type = instance.type(typeId);
 
         if (callType != null) {
-            verifyIndirectCall(instance.module(), type, callType);
+            verifyIndirectCall(type, callType);
         }
 
         var func = instance.function(funcId);
@@ -1935,9 +1934,9 @@ public class InterpreterMachine implements Machine {
 
     private static void SELECT_T(MStack stack, Operands operands) {
         var pred = (int) stack.pop();
-        var type = ValType.forId(operands.get(0));
+        var typeId = operands.get(0);
 
-        if (type.opcode() == ValType.ID.V128) {
+        if (typeId == ValType.V128.id()) {
             var b1 = stack.pop();
             var b2 = stack.pop();
             var a1 = stack.pop();
@@ -2049,7 +2048,7 @@ public class InterpreterMachine implements Machine {
         var type = refInstance.type(typeId);
 
         var callType = refInstance.type(refInstance.functionType(funcId));
-        verifyIndirectCall(instance.module(), callType, type);
+        verifyIndirectCall(callType, type);
 
         var refMachine = refInstance.getMachine().getClass();
         if (!refInstance.equals(instance) && !refMachine.equals(instance.getMachine().getClass())) {
@@ -2145,7 +2144,7 @@ public class InterpreterMachine implements Machine {
         } else {
             checkInterruption();
             var callType = refInstance.type(refInstance.functionType(funcId));
-            verifyIndirectCall(instance.module(), callType, type);
+            verifyIndirectCall(callType, type);
             var results = refInstance.getMachine().call(funcId, args);
             if (results != null) {
                 for (var result : results) {
@@ -2180,7 +2179,7 @@ public class InterpreterMachine implements Machine {
             return 0;
         }
         if (ValType.isValid(typeId)) {
-            if (ValType.forId(typeId).equals(ValType.V128)) {
+            if (typeId == ValType.V128.id()) {
                 return 2;
             } else {
                 return 1;
@@ -2377,8 +2376,7 @@ public class InterpreterMachine implements Machine {
         return args;
     }
 
-    private static boolean functionTypeMatch(
-            WasmModule context, FunctionType actual, FunctionType expected) {
+    private static boolean functionTypeMatch(FunctionType actual, FunctionType expected) {
         if (actual.params().size() != expected.params().size()
                 || actual.returns().size() != expected.returns().size()) {
             return false;
@@ -2388,7 +2386,7 @@ public class InterpreterMachine implements Machine {
             var actualParam = actual.params().get(i);
             var expectedParam = expected.params().get(i);
 
-            if (!ValType.matches(context, actualParam, expectedParam)) {
+            if (!ValType.matches(actualParam, expectedParam)) {
                 return false;
             }
         }
@@ -2397,7 +2395,7 @@ public class InterpreterMachine implements Machine {
             var actualReturn = actual.returns().get(i);
             var expectedReturn = expected.returns().get(i);
 
-            if (!ValType.matches(context, expectedReturn, actualReturn)) {
+            if (!ValType.matches(expectedReturn, actualReturn)) {
                 return false;
             }
         }
@@ -2405,10 +2403,9 @@ public class InterpreterMachine implements Machine {
         return true;
     }
 
-    protected static void verifyIndirectCall(
-            WasmModule context, FunctionType actual, FunctionType expected)
+    protected static void verifyIndirectCall(FunctionType actual, FunctionType expected)
             throws ChicoryException {
-        if (!functionTypeMatch(context, actual, expected)) {
+        if (!functionTypeMatch(actual, expected)) {
             throw new ChicoryException("indirect call type mismatch");
         }
     }

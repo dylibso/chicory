@@ -174,7 +174,7 @@ final class Validator {
 
     private ValType popVal(ValType expected) {
         var actual = popVal();
-        if (!ValType.matches(module, actual, expected)
+        if (!ValType.matches(actual, expected)
                 && !actual.equals(ValType.BOT)
                 && !expected.equals(ValType.BOT)) {
             errors.add(
@@ -198,7 +198,7 @@ final class Validator {
                                     + actual));
         }
         if (actual.equals(ValType.BOT)) {
-            return new ValType(ValType.ID.Ref, ValType.TypeIdxCode.BOT.code());
+            return ValType.RefBot;
         }
 
         return actual;
@@ -312,13 +312,21 @@ final class Validator {
         }
     }
 
+    private ValType valType(long id) {
+        return new ValType.Builder(id).build(module.typeSection()::getType);
+    }
+
+    private ValType valType(int opcode, int typeIdx) {
+        return new ValType.Builder(opcode, typeIdx).build(module.typeSection()::getType);
+    }
+
     private List<ValType> getReturns(AnnotatedInstruction op) {
         var typeId = op.operand(0);
         if (typeId == 0x40) { // epsilon
             return List.of();
         }
         if (ValType.isValid(typeId)) {
-            return List.of(ValType.forId(typeId));
+            return List.of(valType(typeId));
         }
         return getType((int) typeId).returns();
     }
@@ -441,19 +449,6 @@ final class Validator {
             var t = types[i];
             t.params().forEach(this::validateValueType);
             t.returns().forEach(this::validateValueType);
-
-            // a type can only refer to types with idx less than it
-            var maxTypeIdx = i - 1;
-            Stream.concat(t.params().stream(), t.returns().stream())
-                    .forEach(
-                            v -> {
-                                if (v.isReference()) {
-                                    var typeIdx = v.typeIdx();
-                                    if (typeIdx > maxTypeIdx) {
-                                        throw new InvalidException("unknown type: recursive type");
-                                    }
-                                }
-                            });
         }
     }
 
@@ -484,7 +479,7 @@ final class Validator {
             validateValueType(el.type());
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
-                if (!ValType.matches(module, ae.type(), getTableType(ae.tableIndex()))) {
+                if (!ValType.matches(ae.type(), getTableType(ae.tableIndex()))) {
                     throw new InvalidException(
                             "type mismatch, active element doesn't match table type");
                 }
@@ -558,17 +553,15 @@ final class Validator {
                 case REF_NULL:
                     {
                         int operand = (int) instruction.operand(0);
-                        exprType = new ValType(ValType.ID.RefNull, operand);
+                        exprType = valType(ValType.ID.RefNull, operand);
                         constInstrCount++;
                         break;
                     }
                 case REF_FUNC:
                     {
-                        exprType = ValType.FuncRef;
                         constInstrCount++;
                         int idx = (int) instruction.operand(0);
-                        exprType = new ValType(ValType.ID.Ref, getFunctionType(idx));
-
+                        exprType = valType(ValType.ID.Ref, getFunctionType(idx));
                         if (idx < 0 || idx > allFuncCount) {
                             throw new InvalidException("unknown function " + idx);
                         }
@@ -605,8 +598,7 @@ final class Validator {
                                     + instruction);
             }
 
-            if (exprType != null && !ValType.matches(module, exprType, expectedType)) {
-                ValType.matches(module, exprType, expectedType);
+            if (exprType != null && !ValType.matches(exprType, expectedType)) {
                 throw new InvalidException("type mismatch");
             }
 
@@ -855,14 +847,14 @@ final class Validator {
                         var labelTypes = labelTypes(getCtrl(n));
                         popVals(labelTypes);
                         pushVals(labelTypes);
-                        pushVal(new ValType(ValType.ID.Ref, rt.typeIdx()));
+                        pushVal(valType(ValType.ID.Ref, rt.typeIdx()));
                         break;
                     }
                 case BR_ON_NON_NULL:
                     {
                         var n = (int) op.operand(0);
                         var rt = popRef();
-                        pushVal(new ValType(ValType.ID.Ref, rt.typeIdx()));
+                        pushVal(valType(ValType.ID.Ref, rt.typeIdx()));
                         var labelTypes = labelTypes(getCtrl(n));
                         popVals(labelTypes);
                         pushVals(labelTypes);
@@ -1362,7 +1354,7 @@ final class Validator {
                         ValType actualType = popVal();
                         setLocal(index);
                         ValType localType = getLocalType(index);
-                        if (!ValType.matches(module, actualType, localType)) {
+                        if (!ValType.matches(actualType, localType)) {
                             throw new InvalidException(
                                     "type mismatch: local_tee: " + actualType + " " + localType);
                         }
@@ -1399,7 +1391,7 @@ final class Validator {
                 case REF_NULL:
                     {
                         int operand = (int) op.operand(0);
-                        ValType type = new ValType(ValType.ID.RefNull, operand);
+                        ValType type = valType(ValType.ID.RefNull, operand);
                         pushVal(type);
                         break;
                     }
@@ -1412,7 +1404,7 @@ final class Validator {
                 case REF_AS_NON_NULL:
                     {
                         var rt = popRef();
-                        pushVal(new ValType(ValType.ID.Ref, rt.typeIdx()));
+                        pushVal(valType(ValType.ID.Ref, rt.typeIdx()));
                         break;
                     }
                 case REF_FUNC:
@@ -1422,7 +1414,7 @@ final class Validator {
                                 && !declaredFunctions.contains(idx)) {
                             throw new InvalidException("undeclared function reference");
                         }
-                        pushVal(new ValType(ValType.ID.Ref, getFunctionType(idx)));
+                        pushVal(valType(ValType.ID.Ref, getFunctionType(idx)));
                         break;
                     }
                 case SELECT:
@@ -1466,7 +1458,7 @@ final class Validator {
                         if (op.operands().length <= 0 || op.operands().length > 1) {
                             throw new InvalidException("invalid result arity");
                         }
-                        var t = ValType.forId(op.operand(0));
+                        var t = valType(op.operand(0));
                         validateValueType(t);
                         popVal(t);
                         popVal(t);
@@ -1478,7 +1470,7 @@ final class Validator {
                         var table1 = getTableType((int) op.operand(1));
                         var table2 = getTableType((int) op.operand(0));
 
-                        if (!ValType.matches(module, table1, table2)) {
+                        if (!ValType.matches(table1, table2)) {
                             throw new InvalidException(
                                     "type mismatch, table 1 type: "
                                             + table1
@@ -1497,7 +1489,7 @@ final class Validator {
                         var elemIdx = (int) op.operand(0);
                         var elem = getElement(elemIdx);
 
-                        if (!ValType.matches(module, elem.type(), table)) {
+                        if (!ValType.matches(elem.type(), table)) {
                             throw new InvalidException(
                                     "type mismatch, table type: "
                                             + table
@@ -1915,7 +1907,7 @@ final class Validator {
         }
 
         for (int i = 0; i < funcReturnType.size(); i++) {
-            if (!ValType.matches(module, funcReturnType.get(i), expected.get(i))) {
+            if (!ValType.matches(funcReturnType.get(i), expected.get(i))) {
                 throw new InvalidException(
                         "type mismatch: tail call doesn't match frame type at index " + i);
             }

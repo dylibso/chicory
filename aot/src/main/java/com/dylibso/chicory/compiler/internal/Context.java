@@ -95,6 +95,10 @@ final class Context {
         return functionTypes;
     }
 
+    public FunctionType type(int idx) {
+        return types[idx];
+    }
+
     public FunctionType[] types() {
         return types;
     }
