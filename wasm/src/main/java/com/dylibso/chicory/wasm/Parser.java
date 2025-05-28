@@ -793,15 +793,19 @@ public final class Parser {
                 type = ValType.FuncRef;
             } else {
                 type =
-                        new ValType.Builder(ValType.ID.Ref, ValType.TypeIdxCode.FUNC.code())
-                                .buildWithEmptyContext();
+                        ValType.builder()
+                                .withOpcode(ValType.ID.Ref)
+                                .withTypeIdx(ValType.TypeIdxCode.FUNC.code())
+                                .build();
             }
         } else if (hasElemKind) {
             int ek = (int) readVarUInt32(buffer);
             if (ek == 0x00) {
                 type =
-                        new ValType.Builder(ValType.ID.Ref, ValType.TypeIdxCode.FUNC.code())
-                                .buildWithEmptyContext();
+                        ValType.builder()
+                                .withOpcode(ValType.ID.Ref)
+                                .withTypeIdx(ValType.TypeIdxCode.FUNC.code())
+                                .build();
             } else {
                 throw new ChicoryException("Invalid element kind");
             }
@@ -1306,10 +1310,11 @@ public final class Parser {
 
     private static ValType.Builder readValueTypeBuilderFromOpCode(
             ByteBuffer buffer, int valueTypeOpCode) {
+        var builder = ValType.builder().withOpcode(valueTypeOpCode);
         if (valueTypeOpCode == ValType.ID.Ref || valueTypeOpCode == ValType.ID.RefNull) {
-            return new ValType.Builder(valueTypeOpCode, (int) readVarSInt32(buffer));
+            return builder.withTypeIdx((int) readVarSInt32(buffer));
         } else {
-            return new ValType.Builder(valueTypeOpCode);
+            return builder;
         }
     }
 
