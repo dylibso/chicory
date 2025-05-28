@@ -17,6 +17,8 @@ when you need to add support for wasi preview 1(typically when using CLIs) you c
 rustc --target=wasm32-wasi --crate-type=bin
 ```
 
+> **NOTE:** For production usage, make sure to produce an optimized Wasm module by using the standard compiler options `-C opt-level = 3`(speed) or `-C opt-level = "z"`(size)
+
 ## Using in Chicory
 
 <!--
