@@ -20,7 +20,7 @@
 
 Chicory is a JVM native WebAssembly runtime. It allows you to run WebAssembly programs with
 zero native dependencies or JNI. Chicory can run Wasm anywhere that the JVM can go. It is designed with
-simplicity and safety in mind. See the [development section](#development) for a better idea of what we are trying to achieve and why.
+simplicity and safety in mind.
 
 > *Reach out to us*: let us know what you are building with Chicory.
 > [Join our team Zulip chat with this invite link](https://chicory.zulipchat.com/join/g4gqsxoys6orfxlrk6hn4cyp/).
@@ -91,13 +91,16 @@ If you have an interest in working on any of these please reach out in Zulip!
 * [x] SIMD Support
   * in the interpreter
 * [x] Tail Call
+  * in the interpreter(and compiler**)
+* [x] Compiler out of experimental
+* [x] Exception Handling
   * in the interpreter
+* [ ] GC Support
+  * in progress
 
 ### Proposals and Specs
 
-* [ ] Exception Handling
 * [ ] Multi-Memory Support
-* [ ] GC Support
 * [ ] Threads Support
 
 ## On the press
@@ -109,6 +112,7 @@ If you have an interest in working on any of these please reach out in Zulip!
 - [WebAssembly, the Safer Alternative to Integrating Native Code in Java](https://www.infoq.com/articles/sqlite-java-integration-webassembly/) on [InfoQ](https://www.infoq.com)
 - [Chicory: Creating a Language-Native Wasm Runtime by Benjamin Eckel / Andrea Peruffo](https://www.youtube.com/watch?v=00LYdZS0YlI) (Wasm I/O 2024)
 - [Chicory, a JVM Native WebAssembly Runtime by Benjamin Eckel](https://youtu.be/acF_cJ70n04?si=jpMAfAmjl5UaEWWa) (Dylibso Insiders)
+- [WebAssembly the ace up the sleeve of your Java and Quarkus apps](https://www.youtube.com/live/YY5he2pdv8Q?si=tJCXJbfLXDtRxbh-) (Quarkus Insights 206)
 
 ## Prior Art
 
@@ -122,3 +126,6 @@ If you have an interest in working on any of these please reach out in Zulip!
 * [Debezium - Pluggable Go Single Message Transformations](https://github.com/debezium/debezium)
 * [OPA - Open Policy Agent - WebAssembly Java SDK](https://github.com/StyraInc/opa-java-wasm)
 * [Trino - Python user-defined functions](https://trino.io/docs/current/udf/python.html) [(Trino plugin source)](https://github.com/trinodb/trino/tree/master/plugin/trino-functions-python) [(Python host source)](https://github.com/trinodb/trino-wasm-python)
+* [Proxy-Wasm - Java Host](https://github.com/roastedroot/proxy-wasm-java-host)
+* [Quickjs4J - Sandboxed runtime for JavaScript](https://github.com/roastedroot/quickjs4j)
+* [WildFly - AI Feature Pack](https://github.com/wildfly-extras/wildfly-ai-feature-pack)
