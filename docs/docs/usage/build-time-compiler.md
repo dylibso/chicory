@@ -1,25 +1,25 @@
 ---
-sidebar_position: 4
-sidebar_label: AoT Compilation
-title: AoT Compilation
+sidebar_position: 130
+sidebar_label: Build time Compilation
+title: Build Time Compilation
 ---
 ## Overview
 
-The Ahead-of-Time (AoT) compiler backend is a drop-in replacement for the interpreter, and it passes 100% of the same 
+The build time compiler backend is a drop-in replacement for the interpreter, and it passes 100% of the same 
 spec tests that the interpreter already supports.
 
-This AoT compiler translates the WASM instructions to Java bytecode and stores them as `.class` files
+This compiler translates the WASM instructions to Java bytecode and stores them as `.class` files
 that you package in your application.  The resulting code is usually expected to evaluate (much) faster and 
 consume less memory than if it was interpreted.
 
-The AoT compiler has several advantages over the [Runtime Compiler](runtime-compiler.md) such as: 
+The build time compiler has several advantages over the [Runtime Compiler](runtime-compiler.md) such as: 
 
 - improved instance initialization time: the translation occurs at build time
 - no reflection needed: easier to use with `native-image`
 - fewer runtime dependencies: asm is only needed at build time
 - distribute Wasm modules as self-contained jars: making it a convenient way to distribute software that was not originally meant to run on the Java platform
 
-You can use the AoT compiler at build-time via Maven plug-in, Gradle plug-in, or plain CLI
+You can use the compiler at build-time via Maven plug-in, Gradle plug-in, or plain CLI
 
 ## Using Maven
 
@@ -158,12 +158,8 @@ wasm2class {
 This generates the class `org.acme.wasm.AddModule`, which you can use to instantiate the module just like shown earlier
 in the Maven example.
 
-### Using CLI
-
-Coming soon.
-
 <!--
 ```java
-docs.FileOps.writeResult("docs/experimental", "aot-compiler.md.result", "empty");
+docs.FileOps.writeResult("docs/usage", "build-time-compiler.md.result", "empty");
 ```
 -->

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 3
+sidebar_position: 120
 sidebar_label: Runtime Compilation
 title: Runtime Compilation
 ---
@@ -14,7 +14,7 @@ was interpreted.
 
 At the current time, the compiler will eagerly compile all WASM instructions to Java bytecode.  You end up
 paying a small performance penalty at Instance initialization, but the execution speedup
-is usually worth it.  Use [AoT Compilation ](./aot-compiler.md) if you want to avoid the penalty.
+is usually worth it.  Use [Build Time Compilation](./build-time-compiler.md) if you want to avoid the penalty.
 
 ## Using
 
@@ -31,7 +31,7 @@ Add the following dependency:
 
 ### Code Changes
 
-You enable the JIT by configuring the instance to use `CompilerMachine::new` as the machine factory instead 
+You enable the runtime compiler by configuring the instance to use `CompilerMachine::new` as the machine factory instead 
 of the default `InterpreterMachine`.
 
 <!--
@@ -58,7 +58,7 @@ var instance = Instance.builder(module).
 
 ### Caveats 
 
-Please note that compiling and executing AoT modules at runtime requires:
+Please note that compiling and executing Wasm modules at runtime requires:
 - an external dependency on [ASM](https://asm.ow2.io/)
 - the usage of runtime reflection
 
@@ -66,6 +66,6 @@ This is usually fine when running on a standard JVM, but it involves some additi
 
 <!--
 ```java
-docs.FileOps.writeResult("docs/experimental", "runtime-compiler.md.result", "empty");
+docs.FileOps.writeResult("docs/usage", "runtime-compiler.md.result", "empty");
 ```
 -->
