@@ -370,22 +370,30 @@ public final class ValType {
         }
     }
 
-    public static class Builder {
-        private final int opcode;
-        private final int typeIdx;
+    public static Builder builder() {
+        return new Builder();
+    }
 
-        public Builder(int opcode) {
-            this(opcode, NULL_TYPEIDX);
-        }
+    public static final class Builder {
+        private int opcode;
+        private int typeIdx = NULL_TYPEIDX;
 
-        public Builder(int opcode, int typeIdx) {
+        private Builder() {}
+
+        public Builder withOpcode(int opcode) {
             this.opcode = opcode;
-            this.typeIdx = typeIdx;
+            return this;
         }
 
-        public Builder(long id) {
+        public Builder withTypeIdx(int typeIdx) {
+            this.typeIdx = typeIdx;
+            return this;
+        }
+
+        public Builder fromId(long id) {
             this.opcode = opcode(id);
             this.typeIdx = ValType.typeIdx(id);
+            return this;
         }
 
         public long id() {
@@ -400,7 +408,7 @@ public final class ValType {
             return ValType.isReference(opcode);
         }
 
-        public ValType buildWithEmptyContext() {
+        public ValType build() {
             return build(
                     (i) -> {
                         throw new ChicoryException("build with empty context tried resolving " + i);

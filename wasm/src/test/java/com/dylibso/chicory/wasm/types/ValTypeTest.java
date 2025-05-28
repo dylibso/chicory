@@ -18,16 +18,23 @@ public class ValTypeTest {
                     ValType.V128,
                     ValType.FuncRef,
                     ValType.ExternRef,
-                    new ValType.Builder(ValType.ID.RefNull, ValType.TypeIdxCode.FUNC.code())
+                    ValType.builder()
+                            .withOpcode(ValType.ID.RefNull)
+                            .withTypeIdx(ValType.TypeIdxCode.FUNC.code())
                             .build(this::context),
-                    new ValType.Builder(ValType.ID.Ref, ValType.TypeIdxCode.EXTERN.code())
+                    ValType.builder()
+                            .withOpcode(ValType.ID.Ref)
+                            .withTypeIdx(ValType.TypeIdxCode.EXTERN.code())
                             .build(this::context),
-                    new ValType.Builder(ValType.ID.Ref, 16).build(this::context),
+                    ValType.builder()
+                            .withOpcode(ValType.ID.Ref)
+                            .withTypeIdx(16)
+                            .build(this::context),
                 };
 
         for (var vt : cases) {
             long id = vt.id();
-            ValType roundTrip = new ValType.Builder(id).build(this::context);
+            ValType roundTrip = ValType.builder().fromId(id).build(this::context);
             assert vt.equals(roundTrip) : "Failed to roundtrip: " + vt;
         }
     }
