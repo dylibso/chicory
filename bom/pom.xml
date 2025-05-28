@@ -81,6 +81,11 @@
         <artifactId>wasm</artifactId>
         <version>${project.version}</version>
       </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wasm-tools</artifactId>
+        <version>${project.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
