@@ -3,6 +3,10 @@ package com.dylibso.chicory.wasm.types;
 import org.junit.jupiter.api.Test;
 
 public class ValTypeTest {
+    private FunctionType context(int idx) {
+        return FunctionType.returning(ValType.FuncRef);
+    }
+
     @Test
     public void roundtrip() {
         var cases =
@@ -14,13 +18,24 @@ public class ValTypeTest {
                     ValType.V128,
                     ValType.FuncRef,
                     ValType.ExternRef,
-                    new ValType(ValType.ID.RefNull, ValType.TypeIdxCode.FUNC.code()),
-                    new ValType(ValType.ID.Ref, ValType.TypeIdxCode.EXTERN.code()),
-                    new ValType(ValType.ID.Ref, 16),
+                    ValType.builder()
+                            .withOpcode(ValType.ID.RefNull)
+                            .withTypeIdx(ValType.TypeIdxCode.FUNC.code())
+                            .build(this::context),
+                    ValType.builder()
+                            .withOpcode(ValType.ID.Ref)
+                            .withTypeIdx(ValType.TypeIdxCode.EXTERN.code())
+                            .build(this::context),
+                    ValType.builder()
+                            .withOpcode(ValType.ID.Ref)
+                            .withTypeIdx(16)
+                            .build(this::context),
                 };
 
         for (var vt : cases) {
-            assert vt.equals(ValType.forId(vt.id())) : "Failed to roundtrip: " + vt;
+            long id = vt.id();
+            ValType roundTrip = ValType.builder().fromId(id).build(this::context);
+            assert vt.equals(roundTrip) : "Failed to roundtrip: " + vt;
         }
     }
 }

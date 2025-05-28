@@ -79,4 +79,8 @@ public class ImportFunction implements ImportValue {
     public List<ValType> returnTypes() {
         return returnTypes;
     }
+
+    public FunctionType functionType() {
+        return FunctionType.of(paramTypes, returnTypes);
+    }
 }

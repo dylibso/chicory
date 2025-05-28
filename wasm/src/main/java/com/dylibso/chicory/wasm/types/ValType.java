@@ -1,7 +1,10 @@
 package com.dylibso.chicory.wasm.types;
 
-import com.dylibso.chicory.wasm.MalformedException;
+import com.dylibso.chicory.wasm.ChicoryException;
+import com.dylibso.chicory.wasm.InvalidException;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * The possible WASM value types.
@@ -11,7 +14,7 @@ public final class ValType {
     private static final long OPCODE_MASK = 0xFFFFFFFFL;
     private static final long TYPEIDX_SHIFT = 32;
 
-    public static ValType UNKNOWN = new ValType(ID.UNKNOWN);
+    public static ValType BOT = new ValType(ID.BOT);
     public static ValType F64 = new ValType(ID.F64);
 
     public static ValType F32 = new ValType(ID.F32);
@@ -24,13 +27,24 @@ public final class ValType {
     public static ValType ExnRef = new ValType(ID.ExnRef);
     public static ValType ExternRef = new ValType(ID.ExternRef);
 
+    public static ValType RefBot = new ValType(ValType.ID.Ref, ValType.TypeIdxCode.BOT.code());
+
     private final long id;
 
-    public ValType(int opcode) {
-        this(opcode, NULL_TYPEIDX);
+    // defined function type. This is not representable in the binary or textual representation
+    // of WASM. This is instead used after substitution to represent closed ValType.
+    // This is useful when validating import function values.
+    private final FunctionType resolvedFunctionType;
+
+    private ValType(int opcode) {
+        this(opcode, NULL_TYPEIDX, null);
     }
 
-    public ValType(int opcode, int typeIdx) {
+    private ValType(int opcode, int typeIdx) {
+        this(opcode, typeIdx, null);
+    }
+
+    private ValType(int opcode, int typeIdx, FunctionType resolvedFunctionType) {
         // Conveniently, all value types we want to represent can fit inside a Java long.
         // We store the typeIdx (of reference types) in the upper 4 bytes and the opcode in the
         // lower 4 bytes.
@@ -40,14 +54,19 @@ public final class ValType {
         } else if (opcode == ID.ExternRef) {
             typeIdx = TypeIdxCode.EXTERN.code();
             opcode = ID.RefNull;
+        } else if (opcode == ID.ExnRef) {
+            typeIdx = TypeIdxCode.EXN.code();
+            opcode = ID.RefNull;
+        } else if ((opcode == ID.RefNull || opcode == ID.Ref) && typeIdx >= 0) {
+            Objects.requireNonNull(resolvedFunctionType);
         }
+        this.resolvedFunctionType = resolvedFunctionType;
 
-        long id = ((long) typeIdx) << TYPEIDX_SHIFT | (opcode & OPCODE_MASK);
-        this.id = id;
+        this.id = createId(opcode, typeIdx);
     }
 
-    private ValType(long id) {
-        this.id = id;
+    private static long createId(int opcode, int typeIdx) {
+        return ((long) typeIdx) << TYPEIDX_SHIFT | (opcode & OPCODE_MASK);
     }
 
     /**
@@ -57,8 +76,20 @@ public final class ValType {
         return this.id;
     }
 
-    public int opcode() {
+    private static int opcode(long id) {
         return (int) (id & OPCODE_MASK);
+    }
+
+    public int opcode() {
+        return opcode(id);
+    }
+
+    private static int typeIdx(long id) {
+        return (int) (id >>> TYPEIDX_SHIFT);
+    }
+
+    public int typeIdx() {
+        return typeIdx(id);
     }
 
     /**
@@ -124,8 +155,8 @@ public final class ValType {
     /**
      * @return {@code true} if the type is a reference type, or {@code false} otherwise
      */
-    public boolean isReference() {
-        switch (this.opcode()) {
+    private static boolean isReference(int opcode) {
+        switch (opcode) {
             case ID.Ref:
             case ID.ExnRef:
             case ID.RefNull:
@@ -135,12 +166,15 @@ public final class ValType {
         }
     }
 
+    public boolean isReference() {
+        return isReference(this.opcode());
+    }
+
     /**
      * @return {@code true} if the given type ID is a valid value type ID, or {@code false} if it is not
      */
-    public static boolean isValid(long typeId) {
-        ValType res = forId(typeId);
-        switch (res.opcode()) {
+    private static boolean isValidOpcode(int opcode) {
+        switch (opcode) {
             case ID.RefNull:
             case ID.Ref:
             case ID.ExnRef:
@@ -149,34 +183,16 @@ public final class ValType {
             case ID.I64:
             case ID.F32:
             case ID.F64:
+            case ID.FuncRef:
+            case ID.ExternRef:
                 return true;
             default:
                 return false;
         }
     }
 
-    /**
-     * @return the {@code ValType} for the given ID value
-     * @throws IllegalArgumentException if the ID value does not correspond to a valid value type
-     */
-    public static ValType forId(long id) {
-        return new ValType(id);
-    }
-
-    /**
-     * @return the reference-typed {@code ValType} for the given ID value
-     * @throws IllegalArgumentException if the ID value does not correspond to a valid reference type
-     */
-    public static ValType refTypeForId(long id) {
-        ValType res = forId(id);
-        switch (res.opcode()) {
-            case ID.RefNull:
-            case ID.Ref:
-            case ID.ExnRef:
-                return res;
-            default:
-                throw new MalformedException("malformed reference type " + id);
-        }
+    public static boolean isValid(long id) {
+        return isValidOpcode(opcode(id));
     }
 
     public static int sizeOf(List<ValType> args) {
@@ -191,12 +207,53 @@ public final class ValType {
         return total;
     }
 
-    public int typeIdx() {
-        return (int) (id >>> TYPEIDX_SHIFT);
+    private static boolean matchesNull(boolean null1, boolean null2) {
+        return null1 == null2 || null2;
+    }
+
+    public static boolean matchesRef(ValType t1, ValType t2) {
+        var matchesNull = matchesNull(t1.isNullable(), t2.isNullable());
+        if (!matchesNull) {
+            return false;
+        }
+
+        if (t1.typeIdx() >= 0 && t2.typeIdx() == TypeIdxCode.FUNC.code()) {
+            return true;
+        } else if (t1.typeIdx() >= 0 && t2.typeIdx() >= 0) {
+            return t1.resolvedFunctionType.equals(t2.resolvedFunctionType);
+        } else if (t1.typeIdx() == TypeIdxCode.BOT.code()) {
+            return true;
+        }
+        return t1.typeIdx() == t2.typeIdx();
+    }
+
+    public static boolean matches(ValType t1, ValType t2) {
+        if (t1.isReference() && t2.isReference()) {
+            return matchesRef(t1, t2);
+        } else if (t1.opcode() == ID.BOT) {
+            return true;
+        } else {
+            return t1.id() == t2.id();
+        }
+    }
+
+    public boolean isNullable() {
+        switch (opcode()) {
+            case ID.Ref:
+                return false;
+            case ID.RefNull:
+                return true;
+            default:
+                throw new IllegalArgumentException(
+                        "got non-reference type to isNullable(): " + this);
+        }
     }
 
     @Override
     public int hashCode() {
+        if (this.resolvedFunctionType != null) {
+            return resolvedFunctionType.hashCode();
+        }
         return Long.hashCode(id);
     }
 
@@ -206,7 +263,15 @@ public final class ValType {
             return false;
         }
         ValType that = (ValType) other;
-        return this.id == that.id;
+
+        if (this.resolvedFunctionType != null && that.resolvedFunctionType != null) {
+            return opcode(this.id) == opcode(that.id)
+                    && this.resolvedFunctionType.equals(that.resolvedFunctionType);
+        } else if (this.resolvedFunctionType == null && that.resolvedFunctionType == null) {
+            return this.id == that.id;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -229,8 +294,10 @@ public final class ValType {
 
     public enum TypeIdxCode {
         // heap type
-        EXTERN(0x6F),
-        FUNC(0x70);
+        EXTERN(-17), // 0x6F
+        FUNC(-16), // 0x70
+        EXN(-23), // 0x69
+        BOT(-1);
 
         private final int code;
 
@@ -243,10 +310,15 @@ public final class ValType {
         }
     }
 
+    /**
+     * A separate holder class for ID constants.
+     * This is necessary because enum constants are initialized before normal fields, so any reference to an ID constant
+     * in the same class would be considered an invalid forward reference.
+     */
     public static final class ID {
         private ID() {}
 
-        public static final int UNKNOWN = -1;
+        public static final int BOT = -1;
         public static final int RefNull = 0x63;
         public static final int Ref = 0x64;
         public static final int ExternRef = 0x6f;
@@ -261,8 +333,8 @@ public final class ValType {
 
         public static String toName(int opcode) {
             switch (opcode) {
-                case UNKNOWN:
-                    return "Unknown";
+                case BOT:
+                    return "Bot";
                 case RefNull:
                     return "RefNull";
                 case Ref:
@@ -295,6 +367,75 @@ public final class ValType {
                     || opcode == F32
                     || opcode == I64
                     || opcode == I32);
+        }
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private int opcode;
+        private int typeIdx = NULL_TYPEIDX;
+
+        private Builder() {}
+
+        public Builder withOpcode(int opcode) {
+            this.opcode = opcode;
+            return this;
+        }
+
+        public Builder withTypeIdx(int typeIdx) {
+            this.typeIdx = typeIdx;
+            return this;
+        }
+
+        public Builder fromId(long id) {
+            this.opcode = opcode(id);
+            this.typeIdx = ValType.typeIdx(id);
+            return this;
+        }
+
+        public long id() {
+            return createId(opcode, typeIdx);
+        }
+
+        public int typeIdx() {
+            return typeIdx;
+        }
+
+        public boolean isReference() {
+            return ValType.isReference(opcode);
+        }
+
+        public ValType build() {
+            return build(
+                    (i) -> {
+                        throw new ChicoryException("build with empty context tried resolving " + i);
+                    });
+        }
+
+        public ValType build(Function<Integer, FunctionType> context) {
+            if (!isValidOpcode(opcode)) {
+                throw new ChicoryException("Invalid type opcode: " + opcode);
+            }
+
+            var resolvedFunctionType = substitute(opcode, typeIdx, context);
+            return new ValType(opcode, typeIdx, resolvedFunctionType);
+        }
+
+        public FunctionType substitute(
+                int opcode, int typeIdx, Function<Integer, FunctionType> context) {
+            if (ValType.isReference(opcode) && typeIdx >= 0) {
+                // no need to recursively substitute because all ValType are fully resolved
+                try {
+                    return context.apply(typeIdx);
+                } catch (IndexOutOfBoundsException e) {
+                    throw new InvalidException("unknown type: " + typeIdx);
+                }
+            }
+
+            return null;
         }
     }
 }
