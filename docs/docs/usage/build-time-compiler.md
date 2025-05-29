@@ -31,7 +31,7 @@ Since interpreted functions have worse performance, we want to make sure you are
 WASM function size exceeds the Java method size limits and cannot be compiled to Java bytecode. It can only be run in the interpreter. Either reduce the size of the function or enable the interpreter fallback mode: WASM function index: 3938
 ```
 
-If this happens you can configure your build tool, to just issue warning messages, or to be silent.  Another way to silence the message is to configure the build too with an explicit list of functions that should be interpreted. 
+If this happens you can configure your build tool, to just issue warning messages, or to be silent.  Another way to silence the message is to configure the build too with an explicit list of functions that should be interpreted. Typically, you obtain the list of the functions by running the compiler once with `interpreterFallback` set to `WARN`
 
 ## Using Maven
 

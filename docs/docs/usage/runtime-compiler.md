@@ -58,9 +58,9 @@ var instance = Instance.builder(module).
 
 ### Interpreter Fall Back
 
-The WASM to bytecode compiler translates each WASM function into JVM method.  Occasionally you will find WASM module where functions are bigger than the maximum method size allowed by the JVM.  In these rare cases, we fall back to executing these large functions in the interpreter.  
+The WASM to bytecode compiler translates each WASM function into JVM method.  Occasionally you will find WASM module where functions are bigger than the maximum method size allowed by the JVM. In these rare cases, we fall back to executing large functions in the interpreter.  
 
-Since interpreted functions have worse performance, we want to make sure you are aware this is happening so the runtime compiler will log messages to std error like: 
+Since interpreted functions have worse performance, we want to make sure you are aware this is happening so the runtime compiler will log messages to standard error like: 
 
 ```text
 Warning: using interpreted mode for WASM function index: 232
@@ -107,6 +107,8 @@ var instance = Instance.builder(module).
         ).
         build();
 ```
+
+Typically, you can obtain the list of the functions by running the compiler once with `InterpreterFallback.WARN`
 
 ### Caveats 
 
