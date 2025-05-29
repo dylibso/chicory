@@ -25,7 +25,7 @@ Add the following dependency:
 ```xml
 <dependency>
   <groupId>com.dylibso.chicory</groupId>
-  <artifactId>aot-experimental</artifactId>
+  <artifactId>compiler</artifactId>
 </dependency>
 ```
 
@@ -37,7 +37,7 @@ of the default `InterpreterMachine`.
 <!--
 ```java
 //DEPS com.dylibso.chicory:docs-lib:999-SNAPSHOT
-//DEPS com.dylibso.chicory:aot-experimental:999-SNAPSHOT
+//DEPS com.dylibso.chicory:compiler:999-SNAPSHOT
 
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.runtime.Instance;

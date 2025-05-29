@@ -33,14 +33,14 @@ Example configuration of the Maven plug-in:
       <artifactId>chicory-compiler-maven-plugin</artifactId>
       <executions>
         <execution>
-          <id>aot-gen</id>
+          <id>compiler-gen</id>
           <goals>
             <goal>chicory-compiler-gen</goal>
           </goals>
           <configuration>
             <!-- Translate the Wasm binary `add` into bytecode -->
             <wasmFile>src/main/resources/add.wasm</wasmFile>
-            <!-- Generate classes under the following prefix -->
+            <!-- Name of the generated class to be used -->
             <name>org.acme.wasm.Add</name>
           </configuration>
         </execution>
@@ -66,7 +66,7 @@ import com.dylibso.chicory.runtime.InterpreterMachine;
 docs.FileOps.copyFromWasmCorpus("count_vowels.rs.wasm", "your.wasm");
 
 // mocking up the generated code
-class AddModule {
+class Add {
 
     public static WasmModule load() {
       return Parser.parse(new File("your.wasm"));
@@ -84,11 +84,11 @@ class AddModule {
 import com.dylibso.chicory.runtime.Instance;
 
 // load the bundled module
-var module = AddModule.load();
+var module = Add.load();
 
 // instantiate the module with the pre-compiled code
 var instance = Instance.builder(module).
-        withMachineFactory(AddModule::create).
+        withMachineFactory(Add::create).
         build();
 ```
 
@@ -110,7 +110,7 @@ To overcome this limitation you can use an additional Maven Plugin for a smoothe
         </goals>
         <configuration>
             <sources>
-                <source>${project.build.directory}/generated-sources/chicory-aot</source>
+                <source>${project.build.directory}/generated-sources/chicory-compiler</source>
             </sources>
         </configuration>
         </execution>
@@ -155,7 +155,7 @@ wasm2class {
 }
 ```
 
-This generates the class `org.acme.wasm.AddModule`, which you can use to instantiate the module just like shown earlier
+This generates the class `org.acme.wasm.Add`, which you can use to instantiate the module just like shown earlier
 in the Maven example.
 
 <!--

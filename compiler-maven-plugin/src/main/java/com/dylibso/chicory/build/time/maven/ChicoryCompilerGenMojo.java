@@ -40,7 +40,7 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
      */
     @Parameter(
             required = true,
-            defaultValue = "${project.build.directory}/generated-resources/chicory-aot")
+            defaultValue = "${project.build.directory}/generated-resources/chicory-compiler")
     private File targetClassFolder;
 
     /**
@@ -48,7 +48,7 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
      */
     @Parameter(
             required = true,
-            defaultValue = "${project.build.directory}/generated-sources/chicory-aot")
+            defaultValue = "${project.build.directory}/generated-sources/chicory-compiler")
     private File targetSourceFolder;
 
     /**
@@ -56,7 +56,7 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
      */
     @Parameter(
             required = true,
-            defaultValue = "${project.build.directory}/generated-resources/chicory-aot")
+            defaultValue = "${project.build.directory}/generated-resources/chicory-compiler")
     private File targetWasmFolder;
 
     /**

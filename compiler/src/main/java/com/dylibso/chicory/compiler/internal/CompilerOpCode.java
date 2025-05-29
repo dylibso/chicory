@@ -210,8 +210,8 @@ enum CompilerOpCode {
     private static final Map<OpCode, CompilerOpCode> OPCODES = new EnumMap<>(OpCode.class);
 
     static {
-        for (CompilerOpCode aot : values()) {
-            aot.opcode.ifPresent(opcode -> OPCODES.put(opcode, aot));
+        for (CompilerOpCode v : values()) {
+            v.opcode.ifPresent(opcode -> OPCODES.put(opcode, v));
         }
     }
 

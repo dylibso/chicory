@@ -10,7 +10,7 @@ import java.util.Set;
 import picocli.CommandLine;
 
 @CommandLine.Command(
-        name = "chicory-aot",
+        name = "chicory-compiler",
         versionProvider = Cli.VersionProvider.class,
         mixinStandardHelpOptions = true,
         helpCommand = true,
