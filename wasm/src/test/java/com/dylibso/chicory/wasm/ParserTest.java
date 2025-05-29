@@ -226,4 +226,11 @@ public class ParserTest {
             return files;
         }
     }
+
+    @Test
+    public void shouldParseOnlyImportedTags() throws IOException {
+        try (InputStream is = getClass().getResourceAsStream("/compiled/issue_906.wat.wasm")) {
+            Parser.parse(is);
+        }
+    }
 }

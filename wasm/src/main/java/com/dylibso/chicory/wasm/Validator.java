@@ -393,7 +393,8 @@ final class Validator {
     }
 
     private TagType getTagType(int idx) {
-        if (idx < 0 || idx >= tagImports.size() + module.tagSection().get().tagCount()) {
+        var tagCount = module.tagSection().map(ts -> ts.tagCount()).orElse(0);
+        if (idx < 0 || idx >= tagImports.size() + tagCount) {
             throw new InvalidException("unknown tag " + idx);
         }
         if (idx < tagImports.size()) {
