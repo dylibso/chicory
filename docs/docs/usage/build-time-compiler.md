@@ -21,6 +21,18 @@ The build time compiler has several advantages over the [Runtime Compiler](runti
 
 You can use the compiler at build-time via Maven plug-in, Gradle plug-in, or plain CLI
 
+### Interpreter Fall Back
+
+The WASM to bytecode compiler translates each WASM function into JVM method.  Occasionally you will find WASM module where functions are bigger than the maximum method size allowed by the JVM.  In these rare cases, we fall back to executing these large functions in the interpreter.  
+
+Since interpreted functions have worse performance, we want to make sure you are aware this is happening so the build time compiler will FAIL if it finds any functions that are too large.  The build tool will produce a message that contains text like:
+
+```text
+WASM function size exceeds the Java method size limits and cannot be compiled to Java bytecode. It can only be run in the interpreter. Either reduce the size of the function or enable the interpreter fallback mode: WASM function index: 3938
+```
+
+If this happens you can configure your build tool, to just issue warning messages, or to be silent.  Another way to silence the message is to configure the build too with an explicit list of functions that should be interpreted. 
+
 ## Using Maven
 
 Example configuration of the Maven plug-in:
@@ -91,6 +103,67 @@ var instance = Instance.builder(module).
         withMachineFactory(Add::create).
         build();
 ```
+### wasm-aot-gen Goal Configuration Parameters
+
+<table>
+<thead>
+<tr>
+    <th>Name</th>
+    <th>Type</th>
+    <th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <td>wasmFile</td>
+    <td>`String`</td>
+    <td>Path to the Wasm binary file to translate into Java bytecode.</td>
+</tr><tr>
+    <td>name</td>
+    <td>`String`</td>
+    <td>The name for the generated class that you will use .</td>
+</tr><tr>
+    <td>interpreterFallback</td>
+    <td>`boolean`</td>
+    <td>
+        The action to take if the compiler needs to use the interpreter because a function is too big.
+        <br/>**options:** SILENT | WARN | FAIL 
+        <br/>**default:** <code>FAIL</code>.
+    </td>
+</tr><tr>
+    <td>interpretedFunctions</td>
+    <td>`List<String>`</td>
+    <td>
+        A list of functions that should be interpreted.  Example usage:
+```xml
+<configuration>
+    ...
+    <interpretedFunctions>
+        <function>3938</function>
+        <function>4116</function>
+    </interpretedFunctions>
+    ...
+</configuration>
+```
+    </td>
+</tr><tr>
+    <td>targetClassFolder</td>
+    <td>`String`</td>
+    <td>The target folder to generate classes. 
+    <br/>**default** `${project.build.directory}/generated-resources/chicory-aot`.</td>
+</tr><tr>
+    <td>targetSourceFolder</td>
+    <td>`String`</td>
+    <td>The target source folder to generate the Machine implementation. 
+    <br/>**default:** `${project.build.director}/generated-sources/chicory-aot`.</td>
+</tr><tr>
+    <td>targetWasmFolder</td>
+    <td>`String`</td>
+    <td>The target wasm folder to generate the stripped meta wasm module. 
+    <br/>**default:** `${project.build.directory}/generated-resources/chicory-aot`.</td>
+</tr>
+</tbody>
+</table>
 
 #### IDE shortcomings
 
