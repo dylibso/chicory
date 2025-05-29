@@ -86,7 +86,7 @@ public class Generator {
         SourceRoot dest = new SourceRoot(finalSourceFolder);
 
         var baseName = config.getBaseName();
-        var moduleName = baseName + "Module";
+        var moduleName = baseName;
         var wasmName = baseName + ".meta";
 
         var cu = new CompilationUnit(packageName);

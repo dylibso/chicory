@@ -15,9 +15,9 @@ import com.dylibso.chicory.runtime.InterpreterMachine;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.runtime.TableInstance;
 import com.dylibso.chicory.runtime.TrapException;
-import com.dylibso.chicory.testing.gen.DynamicHelloJSModule;
-import com.dylibso.chicory.testing.gen.QuickJSModule;
-import com.dylibso.chicory.wabt.Wat2WasmModule;
+import com.dylibso.chicory.testing.gen.DynamicHelloJS;
+import com.dylibso.chicory.testing.gen.QuickJS;
+import com.dylibso.chicory.wabt.Wat2Wasm;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.Parser;
@@ -79,7 +79,7 @@ public final class MachinesTest {
         // using the pre-compiled version of QuickJS
         var quickjs =
                 quickJsInstanceBuilder()
-                        .withMachineFactory(QuickJSModule::create)
+                        .withMachineFactory(QuickJS::create)
                         .withImportValues(
                                 ImportValues.builder().addFunction(wasi.toHostFunctions()).build())
                         .build();
@@ -119,7 +119,7 @@ public final class MachinesTest {
 
         // the module is going to use the pre compiled aot
         moduleInstanceBuilder()
-                .withMachineFactory(DynamicHelloJSModule::create)
+                .withMachineFactory(DynamicHelloJS::create)
                 .withImportValues(store.toImportValues())
                 .build();
 
@@ -154,7 +154,7 @@ public final class MachinesTest {
 
         // the module is going to use the pre compiled aot
         moduleInstanceBuilder()
-                .withMachineFactory(DynamicHelloJSModule::create)
+                .withMachineFactory(DynamicHelloJS::create)
                 .withImportValues(store.toImportValues())
                 .build();
 
@@ -207,7 +207,7 @@ public final class MachinesTest {
                 Instance.builder(Parser.parse(new File("../wabt/src/main/resources/wat2wasm")))
                         .withMachineFactory(
                                 (inst) -> {
-                                    var machine = Wat2WasmModule.create(inst);
+                                    var machine = Wat2Wasm.create(inst);
                                     return (funcId, args) -> {
                                         assertEquals(startFunctionIndex.get(), funcId);
                                         return machine.call(funcId, args);

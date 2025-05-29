@@ -59,7 +59,7 @@
               <goal>wasm-aot-gen</goal>
             </goals>
             <configuration>
-              <name>com.dylibso.chicory.wabt.Wast2Json</name>
+              <name>com.dylibso.chicory.wabt.Wast2JsonModule</name>
               <wasmFile>src/main/resources/wast2json</wasmFile>
             </configuration>
           </execution>
@@ -69,7 +69,7 @@
               <goal>wasm-aot-gen</goal>
             </goals>
             <configuration>
-              <name>com.dylibso.chicory.wabt.Wat2Wasm</name>
+              <name>com.dylibso.chicory.wabt.Wat2WasmModule</name>
               <wasmFile>src/main/resources/wat2wasm</wasmFile>
             </configuration>
           </execution>
