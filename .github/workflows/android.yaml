@@ -38,14 +38,14 @@ jobs:
         sudo udevadm control --reload-rules
         sudo udevadm trigger --name-match=kvm
     # Reload AVD from the cache, if available.
-    - name: AVD cache
-      uses: actions/cache@v4
-      id: avd-cache
-      with:
-        path: |
-          ~/.android/avd/*
-          ~/.android/adb*
-        key: avd-${{ matrix.api-level }}
+    # - name: AVD cache
+    #   uses: actions/cache@v4
+    #   id: avd-cache
+    #   with:
+    #     path: |
+    #       ~/.android/avd/*
+    #       ~/.android/adb*
+    #     key: avd-${{ matrix.api-level }}
     # create AVD if cache failed.
     - name: create AVD and generate snapshot for caching
       if: steps.avd-cache.outputs.cache-hit != 'true'
