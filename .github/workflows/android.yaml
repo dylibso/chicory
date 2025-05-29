@@ -38,18 +38,18 @@ jobs:
         sudo udevadm control --reload-rules
         sudo udevadm trigger --name-match=kvm
     # Reload AVD from the cache, if available.
-    - name: AVD cache
-      uses: actions/cache@v4
-      id: avd-cache
-      with:
-        path: |
-          ~/.android/avd/*
-          ~/.android/adb*
-        key: avd-${{ matrix.api-level }}
+    # - name: AVD cache
+    #   uses: actions/cache@v4
+    #   id: avd-cache
+    #   with:
+    #     path: |
+    #       ~/.android/avd/*
+    #       ~/.android/adb*
+    #     key: avd-${{ matrix.api-level }}
     # create AVD if cache failed.
     - name: create AVD and generate snapshot for caching
       if: steps.avd-cache.outputs.cache-hit != 'true'
-      uses: reactivecircus/android-emulator-runner@v2
+      uses: reactivecircus/android-emulator-runner@v2.33.0
       with:
         api-level: ${{ matrix.api-level }}
         target: google_apis
@@ -58,7 +58,7 @@ jobs:
         emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
         script: echo "Generated AVD snapshot for caching."
     - name: Run tests
-      uses: reactivecircus/android-emulator-runner@v2
+      uses: reactivecircus/android-emulator-runner@v2.33.0
       with:
         api-level: ${{ matrix.api-level }}
         target: google_apis
