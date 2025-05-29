@@ -113,12 +113,12 @@ In order to use host modules, you need to import the relevant annotations, e.g. 
 ```xml
 <dependency>
   <groupId>com.dylibso.chicory</groupId>
-  <artifactId>host-module-annotations-experimental</artifactId>
+  <artifactId>host-annotations</artifactId>
   <version>latest-release</version>
 </dependency>
 ```
 
-and configure the Java compiler to include the Chicory `host-module-processor-experimental` as an annotation processor.
+and configure the Java compiler to include the Chicory `host-annotations-processor` as an annotation processor.
 Exactly how this is done depends on the build system you are using, for instance, with Maven:
 
 ```xml
@@ -129,7 +129,7 @@ Exactly how this is done depends on the build system you are using, for instance
     <annotationProcessorPaths>
       <path>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>host-module-processor-experimental</artifactId>
+        <artifactId>host-annotations-processor</artifactId>
         <version>latest-release</version>
       </path>
     </annotationProcessorPaths>

@@ -16,23 +16,17 @@
     <dependencies>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>aot-build-time-cli-experimental</artifactId>
+        <artifactId>build-time-compiler</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>aot-build-time-experimental</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <!-- Experimental -->
-      <dependency>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>aot-experimental</artifactId>
+        <artifactId>build-time-compiler-cli-experimental</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>aot-maven-plugin-experimental</artifactId>
+        <artifactId>chicory-compiler-maven-plugin</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -42,12 +36,17 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>host-module-annotations-experimental</artifactId>
+        <artifactId>compiler</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>host-module-processor-experimental</artifactId>
+        <artifactId>host-annotations</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>host-annotations-processor</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -75,7 +74,6 @@
         <artifactId>wasi</artifactId>
         <version>${project.version}</version>
       </dependency>
-      <!-- Stable -->
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>wasm</artifactId>

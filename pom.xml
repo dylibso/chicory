@@ -119,14 +119,7 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>aot-build-time-experimental</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <!-- Chicory project modules -->
-      <dependency>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>aot-experimental</artifactId>
+        <artifactId>build-time-compiler</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -134,14 +127,21 @@
         <artifactId>cli-experimental</artifactId>
         <version>${project.version}</version>
       </dependency>
+
+      <!-- Chicory project modules -->
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>host-module-annotations-experimental</artifactId>
+        <artifactId>compiler</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>host-module-processor-experimental</artifactId>
+        <artifactId>host-annotations</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>host-annotations-processor</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -362,7 +362,7 @@
         </plugin>
         <plugin>
           <groupId>com.dylibso.chicory</groupId>
-          <artifactId>aot-maven-plugin-experimental</artifactId>
+          <artifactId>chicory-compiler-maven-plugin</artifactId>
           <version>${project.version}</version>
         </plugin>
         <plugin>
@@ -858,18 +858,18 @@
         </property>
       </activation>
       <modules>
-        <module>aot</module>
-        <module>aot-build-time</module>
-        <module>aot-build-time-cli</module>
-        <module>aot-maven-plugin</module>
-        <module>aot-tests</module>
         <module>bom</module>
+        <module>build-time-compiler</module>
+        <module>build-time-compiler-cli</module>
         <module>cli</module>
+        <module>compiler</module>
+        <module>compiler-maven-plugin</module>
+        <module>compiler-tests</module>
         <module>docs-lib</module>
         <module>fuzz</module>
-        <module>host-module/annotations</module>
-        <module>host-module/it</module>
-        <module>host-module/processor</module>
+        <module>host-annotations/annotations</module>
+        <module>host-annotations/it</module>
+        <module>host-annotations/processor</module>
         <module>jmh</module>
         <module>log</module>
         <module>machine-tests</module>
@@ -895,14 +895,14 @@
         </property>
       </activation>
       <modules>
-        <module>aot</module>
-        <module>aot-build-time</module>
-        <module>aot-build-time-cli</module>
-        <module>aot-maven-plugin</module>
         <module>bom</module>
+        <module>build-time-compiler</module>
+        <module>build-time-compiler-cli</module>
         <module>cli</module>
-        <module>host-module/annotations</module>
-        <module>host-module/processor</module>
+        <module>compiler</module>
+        <module>compiler-maven-plugin</module>
+        <module>host-annotations/annotations</module>
+        <module>host-annotations/processor</module>
         <module>log</module>
         <module>runtime</module>
         <module>wabt</module>

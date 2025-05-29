@@ -51,12 +51,12 @@
     <plugins>
       <plugin>
         <groupId>com.dylibso.chicory</groupId>
-        <artifactId>aot-maven-plugin-experimental</artifactId>
+        <artifactId>chicory-compiler-maven-plugin</artifactId>
         <executions>
           <execution>
             <id>wast2json</id>
             <goals>
-              <goal>wasm-aot-gen</goal>
+              <goal>chicory-compiler-gen</goal>
             </goals>
             <configuration>
               <name>com.dylibso.chicory.wabt.Wast2JsonModule</name>
@@ -66,7 +66,7 @@
           <execution>
             <id>wat2wasm</id>
             <goals>
-              <goal>wasm-aot-gen</goal>
+              <goal>chicory-compiler-gen</goal>
             </goals>
             <configuration>
               <name>com.dylibso.chicory.wabt.Wat2WasmModule</name>

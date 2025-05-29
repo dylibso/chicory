@@ -101,7 +101,7 @@
           <annotationProcessorPaths combine.children="append">
             <path>
               <groupId>com.dylibso.chicory</groupId>
-              <artifactId>host-module-processor-experimental</artifactId>
+              <artifactId>host-annotations-processor</artifactId>
               <version>${project.version}</version>
             </path>
           </annotationProcessorPaths>
@@ -113,7 +113,7 @@
         <artifactId>maven-dependency-plugin</artifactId>
         <configuration>
           <ignoredUnusedDeclaredDependencies combine.children="append">
-            <dependency>com.dylibso.chicory:host-module-processor-experimental</dependency>
+            <dependency>com.dylibso.chicory:host-annotations-processor</dependency>
           </ignoredUnusedDeclaredDependencies>
         </configuration>
       </plugin>

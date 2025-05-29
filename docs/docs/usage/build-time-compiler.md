@@ -30,12 +30,12 @@ Example configuration of the Maven plug-in:
   <plugins>
     <plugin>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>aot-maven-plugin-experimental</artifactId>
+      <artifactId>chicory-compiler-maven-plugin</artifactId>
       <executions>
         <execution>
           <id>aot-gen</id>
           <goals>
-            <goal>wasm-aot-gen</goal>
+            <goal>chicory-compiler-gen</goal>
           </goals>
           <configuration>
             <!-- Translate the Wasm binary `add` into bytecode -->
