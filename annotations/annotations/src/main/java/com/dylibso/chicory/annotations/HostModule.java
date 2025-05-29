@@ -1,4 +1,4 @@
-package com.dylibso.chicory.host.annotations;
+package com.dylibso.chicory.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

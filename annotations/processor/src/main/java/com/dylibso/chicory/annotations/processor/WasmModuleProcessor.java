@@ -1,4 +1,4 @@
-package com.dylibso.chicory.host.annotations.processor;
+package com.dylibso.chicory.annotations.processor;
 
 import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import static com.github.javaparser.StaticJavaParser.parseType;
@@ -6,7 +6,7 @@ import static java.lang.String.format;
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.Diagnostic.Kind.NOTE;
 
-import com.dylibso.chicory.host.annotations.WasmModuleInterface;
+import com.dylibso.chicory.annotations.WasmModuleInterface;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;

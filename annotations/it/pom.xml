@@ -14,10 +14,14 @@
   <description>Integration tests for the Chicory annotations</description>
 
   <dependencies>
-    <!-- Dummy dependency to force the order -->
+    <!-- Dummy dependencies to force the order -->
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>annotations-processor</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasi</artifactId>
     </dependency>
   </dependencies>
 
@@ -30,6 +34,7 @@
         <configuration>
           <ignoredUnusedDeclaredDependencies combine.children="append">
             <dependency>com.dylibso.chicory:annotations-processor</dependency>
+            <dependency>com.dylibso.chicory:wasi</dependency>
           </ignoredUnusedDeclaredDependencies>
         </configuration>
       </plugin>

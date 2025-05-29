@@ -1,14 +1,14 @@
-package com.dylibso.chicory.host.annotations.processor;
+package com.dylibso.chicory.annotations.processor;
 
 import static com.github.javaparser.StaticJavaParser.parseType;
 import static java.lang.String.format;
 import static javax.tools.Diagnostic.Kind.ERROR;
 import static javax.tools.Diagnostic.Kind.NOTE;
 
-import com.dylibso.chicory.host.annotations.Buffer;
-import com.dylibso.chicory.host.annotations.CString;
-import com.dylibso.chicory.host.annotations.HostModule;
-import com.dylibso.chicory.host.annotations.WasmExport;
+import com.dylibso.chicory.annotations.Buffer;
+import com.dylibso.chicory.annotations.CString;
+import com.dylibso.chicory.annotations.HostModule;
+import com.dylibso.chicory.annotations.WasmExport;
 import com.github.javaparser.ast.ArrayCreationLevel;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.NodeList;

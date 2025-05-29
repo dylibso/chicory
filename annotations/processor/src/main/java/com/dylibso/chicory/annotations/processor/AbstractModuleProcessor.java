@@ -1,4 +1,4 @@
-package com.dylibso.chicory.host.annotations.processor;
+package com.dylibso.chicory.annotations.processor;
 
 import static com.github.javaparser.printer.configuration.DefaultPrinterConfiguration.ConfigOption.COLUMN_ALIGN_PARAMETERS;
 
