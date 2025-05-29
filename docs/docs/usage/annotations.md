@@ -1,9 +1,9 @@
 ---
-sidebar_position: 2
+sidebar_position: 100
 sidebar_label: Annotations
 title: Annotations
 ---
-# Host Modules
+## Host Modules
 
 Instead of writing host functions by hand, you can write a class containing annotated methods
 and let the Chicory annotation processor generate the host functions for you. This is especially
@@ -85,7 +85,7 @@ The following conversions are supported:
 | `float`           | `f32`      |
 | `double`          | `f64`      |
 
-# WasmModuleInterface
+## WasmModuleInterface
 
 If you already have a Wasm module and want to generate scaffolded Java code to interact with it, you can use the `@WasmModuleInterface` annotation.
 
@@ -97,7 +97,7 @@ public final class Demo {}
 The annotation accepts a single argument, which can be either:
 
 - The location of the Wasm module on the current classpath (transitive references are not supported).
-- An absolute URI pointing to the Wasm module, in the form of file://....
+- An absolute URI pointing to the Wasm module, in the form of `file://....`
 
 This annotation generates several things, depending on the provided module:
 
@@ -139,6 +139,6 @@ Exactly how this is done depends on the build system you are using, for instance
 
 <!--
 ```java
-docs.FileOps.writeResult("docs/experimental", "host-modules.md.result", "empty");
+docs.FileOps.writeResult("docs/usage", "annotations.md.result", "empty");
 ```
 -->

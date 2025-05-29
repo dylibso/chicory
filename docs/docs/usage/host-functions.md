@@ -120,4 +120,4 @@ logIt.apply();
 // should print "Hello, World!" 10 times
 ```
 
-> **_NOTE:_** For an easier way to write host function, see [Host Modules Annotations](../experimental/host-modules.md).
+> **_NOTE:_** For an easier way to write host function and interact with a wasm module, see [Annotations](../usage/annotations.md).
