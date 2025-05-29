@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.dylibso.chicory</groupId>
 
-  <artifactId>colliding-imports-chicory-it</artifactId>
+  <artifactId>mixed-imports-chicory-it</artifactId>
   <version>0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
@@ -15,7 +15,7 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>host-annotations</artifactId>
+      <artifactId>annotations</artifactId>
       <version>@project.version@</version>
     </dependency>
     <dependency>
@@ -25,12 +25,7 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wasi</artifactId>
-      <version>@project.version@</version>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
-      <artifactId>host-annotations-processor</artifactId>
+      <artifactId>annotations-processor</artifactId>
       <version>@project.version@</version>
       <scope>provided</scope>
     </dependency>
@@ -67,7 +62,7 @@
           <annotationProcessorPaths>
             <path>
               <groupId>com.dylibso.chicory</groupId>
-              <artifactId>host-annotations-processor</artifactId>
+              <artifactId>annotations-processor</artifactId>
               <version>@project.version@</version>
             </path>
           </annotationProcessorPaths>
@@ -89,7 +84,7 @@
                 <resource>
                   <directory>@basedir@/../../wasm-corpus/src/main/resources/compiled</directory>
                   <includes>
-                    <include>colliding-exports.wat.wasm</include>
+                    <include>mixed-imports.wat.wasm</include>
                   </includes>
                 </resource>
               </resources>

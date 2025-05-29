@@ -8,15 +8,15 @@
     <version>999-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <artifactId>host-annotations-processor</artifactId>
+  <artifactId>annotations-processor</artifactId>
   <packaging>jar</packaging>
-  <name>Chicory - Host Annotations Processor</name>
+  <name>Chicory - Annotations Processor</name>
   <description>Annotation processors for easy interoperability with Wasm modules</description>
 
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>host-annotations</artifactId>
+      <artifactId>annotations</artifactId>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>

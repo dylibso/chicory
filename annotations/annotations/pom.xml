@@ -8,9 +8,9 @@
     <version>999-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <artifactId>host-annotations</artifactId>
+  <artifactId>annotations</artifactId>
   <packaging>jar</packaging>
-  <name>Chicory - Host Annotations</name>
+  <name>Chicory - Annotations</name>
   <description>Annotations for easy interoperability with Wasm modules</description>
 
 </project>

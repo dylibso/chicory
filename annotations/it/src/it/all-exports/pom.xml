@@ -15,7 +15,7 @@
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>host-annotations</artifactId>
+      <artifactId>annotations</artifactId>
       <version>@project.version@</version>
     </dependency>
     <dependency>
@@ -25,7 +25,7 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>host-annotations-processor</artifactId>
+      <artifactId>annotations-processor</artifactId>
       <version>@project.version@</version>
       <scope>provided</scope>
     </dependency>
@@ -62,7 +62,7 @@
           <annotationProcessorPaths>
             <path>
               <groupId>com.dylibso.chicory</groupId>
-              <artifactId>host-annotations-processor</artifactId>
+              <artifactId>annotations-processor</artifactId>
               <version>@project.version@</version>
             </path>
           </annotationProcessorPaths>

@@ -16,6 +16,16 @@
     <dependencies>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
+        <artifactId>annotations</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>annotations-processor</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
         <artifactId>build-time-compiler</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -37,16 +47,6 @@
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>compiler</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>host-annotations</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>host-annotations-processor</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>

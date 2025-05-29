@@ -119,6 +119,16 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
+        <artifactId>annotations</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>annotations-processor</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
         <artifactId>build-time-compiler</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -132,16 +142,6 @@
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>compiler</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>host-annotations</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>host-annotations-processor</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -858,6 +858,9 @@
         </property>
       </activation>
       <modules>
+        <module>annotations/annotations</module>
+        <module>annotations/it</module>
+        <module>annotations/processor</module>
         <module>bom</module>
         <module>build-time-compiler</module>
         <module>build-time-compiler-cli</module>
@@ -867,9 +870,6 @@
         <module>compiler-tests</module>
         <module>docs-lib</module>
         <module>fuzz</module>
-        <module>host-annotations/annotations</module>
-        <module>host-annotations/it</module>
-        <module>host-annotations/processor</module>
         <module>jmh</module>
         <module>log</module>
         <module>machine-tests</module>
@@ -895,14 +895,14 @@
         </property>
       </activation>
       <modules>
+        <module>annotations/annotations</module>
+        <module>annotations/processor</module>
         <module>bom</module>
         <module>build-time-compiler</module>
         <module>build-time-compiler-cli</module>
         <module>cli</module>
         <module>compiler</module>
         <module>compiler-maven-plugin</module>
-        <module>host-annotations/annotations</module>
-        <module>host-annotations/processor</module>
         <module>log</module>
         <module>runtime</module>
         <module>wabt</module>

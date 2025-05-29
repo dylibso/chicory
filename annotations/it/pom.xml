@@ -8,16 +8,16 @@
     <version>999-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
-  <artifactId>host-annotations-it</artifactId>
+  <artifactId>annotations-it</artifactId>
   <packaging>jar</packaging>
-  <name>Chicory - Host Annotations - IT</name>
+  <name>Chicory - Annotations - IT</name>
   <description>Integration tests for the Chicory annotations</description>
 
   <dependencies>
     <!-- Dummy dependency to force the order -->
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>host-annotations-processor</artifactId>
+      <artifactId>annotations-processor</artifactId>
     </dependency>
   </dependencies>
 
@@ -29,7 +29,7 @@
         <artifactId>maven-dependency-plugin</artifactId>
         <configuration>
           <ignoredUnusedDeclaredDependencies combine.children="append">
-            <dependency>com.dylibso.chicory:host-annotations-processor</dependency>
+            <dependency>com.dylibso.chicory:annotations-processor</dependency>
           </ignoredUnusedDeclaredDependencies>
         </configuration>
       </plugin>
