@@ -908,6 +908,7 @@
         <module>wabt</module>
         <module>wasi</module>
         <module>wasm</module>
+        <module>wasm-tools</module>
       </modules>
       <distributionManagement>
         <snapshotRepository>
