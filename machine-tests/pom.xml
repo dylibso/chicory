@@ -57,7 +57,7 @@
           <execution>
             <id>compile-quickjs</id>
             <goals>
-              <goal>chicory-compiler-gen</goal>
+              <goal>compile</goal>
             </goals>
             <configuration>
               <name>com.dylibso.chicory.testing.gen.QuickJS</name>
@@ -67,7 +67,7 @@
           <execution>
             <id>compile-dynamic-js</id>
             <goals>
-              <goal>chicory-compiler-gen</goal>
+              <goal>compile</goal>
             </goals>
             <configuration>
               <name>com.dylibso.chicory.testing.gen.DynamicHelloJS</name>
@@ -77,7 +77,7 @@
           <execution>
             <id>wat2wasm</id>
             <goals>
-              <goal>chicory-compiler-gen</goal>
+              <goal>compile</goal>
             </goals>
             <configuration>
               <name>com.dylibso.chicory.wabt.Wat2Wasm</name>

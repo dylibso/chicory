@@ -47,7 +47,7 @@ Example configuration of the Maven plug-in:
         <execution>
           <id>compiler-gen</id>
           <goals>
-            <goal>chicory-compiler-gen</goal>
+            <goal>compile</goal>
           </goals>
           <configuration>
             <!-- Translate the Wasm binary `add` into bytecode -->
@@ -103,67 +103,52 @@ var instance = Instance.builder(module).
         withMachineFactory(Add::create).
         build();
 ```
-### wasm-aot-gen Goal Configuration Parameters
+### The `compile` Goal
 
-<table>
-<thead>
-<tr>
-    <th>Name</th>
-    <th>Type</th>
-    <th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-    <td>wasmFile</td>
-    <td>`String`</td>
-    <td>Path to the Wasm binary file to translate into Java bytecode.</td>
-</tr><tr>
-    <td>name</td>
-    <td>`String`</td>
-    <td>The name for the generated class that you will use .</td>
-</tr><tr>
-    <td>interpreterFallback</td>
-    <td>`boolean`</td>
-    <td>
-        The action to take if the compiler needs to use the interpreter because a function is too big.
-        <br/>**options:** SILENT | WARN | FAIL 
-        <br/>**default:** <code>FAIL</code>.
-    </td>
-</tr><tr>
-    <td>interpretedFunctions</td>
-    <td>`List<String>`</td>
-    <td>
-        A list of functions that should be interpreted.  Example usage:
-```xml
-<configuration>
-    ...
-    <interpretedFunctions>
-        <function>3938</function>
-        <function>4116</function>
-    </interpretedFunctions>
-    ...
-</configuration>
+You can obtain the full description of the Maven Plugin with a command like:
+`mvn help:describe -DgroupId=com.dylibso.chicory -DartifactId=chicory-compiler-maven-plugin -Dversion=999-SNAPSHOT -Ddetail`
+
 ```
-    </td>
-</tr><tr>
-    <td>targetClassFolder</td>
-    <td>`String`</td>
-    <td>The target folder to generate classes. 
-    <br/>**default** `${project.build.directory}/generated-resources/chicory-aot`.</td>
-</tr><tr>
-    <td>targetSourceFolder</td>
-    <td>`String`</td>
-    <td>The target source folder to generate the Machine implementation. 
-    <br/>**default:** `${project.build.director}/generated-sources/chicory-aot`.</td>
-</tr><tr>
-    <td>targetWasmFolder</td>
-    <td>`String`</td>
-    <td>The target wasm folder to generate the stripped meta wasm module. 
-    <br/>**default:** `${project.build.directory}/generated-resources/chicory-aot`.</td>
-</tr>
-</tbody>
-</table>
+chicory:compile
+  Description: This plugin generates an invokable library from the compiled
+    Wasm
+  Implementation: com.dylibso.chicory.build.time.maven.ChicoryCompilerGenMojo
+  Language: java
+  Bound to phase: generate-sources
+
+  Available parameters:
+
+    interpretedFunctions
+      The indexes of functions that should be interpreted, separated by commas
+
+    interpreterFallback (Default: FAIL)
+      Required: true
+      the action to take if the compiler needs to use the interpreter because a
+      function is too big
+
+    name
+      Required: true
+      the base name to be used for the generated classes
+
+    targetClassFolder (Default:
+    ${project.build.directory}/generated-resources/chicory-compiler)
+      Required: true
+      the target folder to generate classes
+
+    targetSourceFolder (Default:
+    ${project.build.directory}/generated-sources/chicory-compiler)
+      Required: true
+      the target source folder to generate the Machine implementation
+
+    targetWasmFolder (Default:
+    ${project.build.directory}/generated-resources/chicory-compiler)
+      Required: true
+      the target wasm folder to generate the stripped meta wasm module
+
+    wasmFile
+      Required: true
+      the wasm module to be used
+```
 
 #### IDE shortcomings
 

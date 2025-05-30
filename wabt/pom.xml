@@ -56,7 +56,7 @@
           <execution>
             <id>wast2json</id>
             <goals>
-              <goal>chicory-compiler-gen</goal>
+              <goal>compile</goal>
             </goals>
             <configuration>
               <name>com.dylibso.chicory.wabt.Wast2JsonModule</name>
@@ -66,7 +66,7 @@
           <execution>
             <id>wat2wasm</id>
             <goals>
-              <goal>chicory-compiler-gen</goal>
+              <goal>compile</goal>
             </goals>
             <configuration>
               <name>com.dylibso.chicory.wabt.Wat2WasmModule</name>

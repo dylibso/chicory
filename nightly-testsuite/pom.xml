@@ -57,7 +57,7 @@
           <execution>
             <id>zig-testsuite</id>
             <goals>
-              <goal>chicory-compiler-gen</goal>
+              <goal>compile</goal>
             </goals>
             <configuration>
               <name>com.dylibso.chicory.testing.Zig</name>
