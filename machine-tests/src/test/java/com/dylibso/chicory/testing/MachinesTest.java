@@ -69,8 +69,8 @@ public final class MachinesTest {
 
     private static final String expectedOutput = "Hello world dynamic Javy!\n";
 
-    // quickjs -> pre-compiled aot
-    // module -> interpreter / runtime aot
+    // quickjs -> build time compiled
+    // module -> interpreter / runtime compiled
     @Test
     public void shouldRunQuickJsPrecompiled() {
         var stderr = new ByteArrayOutputStream();
@@ -102,7 +102,7 @@ public final class MachinesTest {
     }
 
     // quickjs -> interpreter
-    // module -> pre-compiled aot / runtime aot
+    // module -> build time compiler / runtime compiler
     @Test
     public void shouldRunQuickJsInterpreted() {
         var stderr = new ByteArrayOutputStream();
@@ -117,7 +117,7 @@ public final class MachinesTest {
 
         var store = new Store().register("javy_quickjs_provider_v1", quickjs);
 
-        // the module is going to use the pre compiled aot
+        // the module is going to use the build time compiled
         moduleInstanceBuilder()
                 .withMachineFactory(DynamicHelloJS::create)
                 .withImportValues(store.toImportValues())
@@ -126,7 +126,7 @@ public final class MachinesTest {
         // stderr?
         assertEquals(expectedOutput, stderr.toString(UTF_8));
 
-        // and now runtime AOT
+        // and now runtime compiler
         moduleInstanceBuilder()
                 .withMachineFactory(MachineFactoryCompiler::compile)
                 .withImportValues(store.toImportValues())
@@ -135,14 +135,14 @@ public final class MachinesTest {
         assertEquals(expectedOutput + expectedOutput, stderr.toString(UTF_8));
     }
 
-    // quickjs -> runtime aot
-    // module -> pre-compiled aot / interpreter
+    // quickjs -> runtime compiler
+    // module -> build time compiler / interpreter
     @Test
     public void shouldRunQuickJsRuntimeCompiled() {
         var stderr = new ByteArrayOutputStream();
 
         var wasi = setupWasi(stderr);
-        // using the runtime aot version of QuickJS
+        // using the runtime compiled version of QuickJS
         var quickjs =
                 quickJsInstanceBuilder()
                         .withMachineFactory(MachineFactoryCompiler::compile)
@@ -152,7 +152,7 @@ public final class MachinesTest {
 
         var store = new Store().register("javy_quickjs_provider_v1", quickjs);
 
-        // the module is going to use the pre compiled aot
+        // the module is going to use the build time compiled
         moduleInstanceBuilder()
                 .withMachineFactory(DynamicHelloJS::create)
                 .withImportValues(store.toImportValues())

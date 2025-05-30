@@ -82,7 +82,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        folder: [runtime-tests, aot-tests, wasi-tests]
+        folder: [runtime-tests, compiler-tests, wasi-tests]
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -115,9 +115,9 @@ jobs:
               echo "NAME=Interpreter" >> $GITHUB_ENV
               echo "BADGE_NAME=interpreter" >> $GITHUB_ENV
               ;;
-            aot-tests)
-              echo "NAME=AOT" >> $GITHUB_ENV
-              echo "BADGE_NAME=aot" >> $GITHUB_ENV
+            compiler-tests)
+              echo "NAME=Compiler" >> $GITHUB_ENV
+              echo "BADGE_NAME=compiler" >> $GITHUB_ENV
               ;;
             wasi-tests)
               echo "NAME=WASI" >> $GITHUB_ENV
