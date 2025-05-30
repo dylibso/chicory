@@ -21,6 +21,18 @@ The build time compiler has several advantages over the [Runtime Compiler](runti
 
 You can use the compiler at build-time via Maven plug-in, Gradle plug-in, or plain CLI
 
+### Interpreter Fall Back
+
+The WASM to bytecode compiler translates each WASM function into JVM method.  Occasionally you will find WASM module where functions are bigger than the maximum method size allowed by the JVM.  In these rare cases, we fall back to executing these large functions in the interpreter.  
+
+Since interpreted functions have worse performance, we want to make sure you are aware this is happening so the build time compiler will FAIL if it finds any functions that are too large.  The build tool will produce a message that contains text like:
+
+```text
+WASM function size exceeds the Java method size limits and cannot be compiled to Java bytecode. It can only be run in the interpreter. Either reduce the size of the function or enable the interpreter fallback mode: WASM function index: 3938
+```
+
+If this happens you can configure your build tool, to just issue warning messages, or to be silent.  Another way to silence the message is to configure the build too with an explicit list of functions that should be interpreted. Typically, you obtain the list of the functions by running the compiler once with `interpreterFallback` set to `WARN`
+
 ## Using Maven
 
 Example configuration of the Maven plug-in:
@@ -35,7 +47,7 @@ Example configuration of the Maven plug-in:
         <execution>
           <id>compiler-gen</id>
           <goals>
-            <goal>chicory-compiler-gen</goal>
+            <goal>compile</goal>
           </goals>
           <configuration>
             <!-- Translate the Wasm binary `add` into bytecode -->
@@ -90,6 +102,52 @@ var module = Add.load();
 var instance = Instance.builder(module).
         withMachineFactory(Add::create).
         build();
+```
+### The `compile` Goal
+
+You can obtain the full description of the Maven Plugin with a command like:
+`mvn help:describe -DgroupId=com.dylibso.chicory -DartifactId=chicory-compiler-maven-plugin -Dversion=999-SNAPSHOT -Ddetail`
+
+```
+chicory:compile
+  Description: This plugin generates an invokable library from the compiled
+    Wasm
+  Implementation: com.dylibso.chicory.build.time.maven.ChicoryCompilerGenMojo
+  Language: java
+  Bound to phase: generate-sources
+
+  Available parameters:
+
+    interpretedFunctions
+      The indexes of functions that should be interpreted, separated by commas
+
+    interpreterFallback (Default: FAIL)
+      Required: true
+      the action to take if the compiler needs to use the interpreter because a
+      function is too big
+
+    name
+      Required: true
+      the base name to be used for the generated classes
+
+    targetClassFolder (Default:
+    ${project.build.directory}/generated-resources/chicory-compiler)
+      Required: true
+      the target folder to generate classes
+
+    targetSourceFolder (Default:
+    ${project.build.directory}/generated-sources/chicory-compiler)
+      Required: true
+      the target source folder to generate the Machine implementation
+
+    targetWasmFolder (Default:
+    ${project.build.directory}/generated-resources/chicory-compiler)
+      Required: true
+      the target wasm folder to generate the stripped meta wasm module
+
+    wasmFile
+      Required: true
+      the wasm module to be used
 ```
 
 #### IDE shortcomings

@@ -17,10 +17,7 @@ import org.apache.maven.project.MavenProject;
 /**
  * This plugin generates an invokable library from the compiled Wasm
  */
-@Mojo(
-        name = "chicory-compiler-gen",
-        defaultPhase = LifecyclePhase.GENERATE_SOURCES,
-        threadSafe = true)
+@Mojo(name = "compile", defaultPhase = LifecyclePhase.GENERATE_SOURCES, threadSafe = true)
 public class ChicoryCompilerGenMojo extends AbstractMojo {
 
     /**

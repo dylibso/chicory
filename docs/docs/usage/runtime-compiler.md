@@ -56,6 +56,60 @@ var instance = Instance.builder(module).
         build();
 ```
 
+### Interpreter Fall Back
+
+The WASM to bytecode compiler translates each WASM function into JVM method.  Occasionally you will find WASM module where functions are bigger than the maximum method size allowed by the JVM. In these rare cases, we fall back to executing large functions in the interpreter.  
+
+Since interpreted functions have worse performance, we want to make sure you are aware this is happening so the runtime compiler will log messages to standard error like: 
+
+```text
+Warning: using interpreted mode for WASM function index: 232
+```
+
+By default, the compiler uses `InterpreterFallback.WARN` behavior, which logs warning messages when falling back to the interpreter. If you are happy with these methods being interpreted, you can configure the compiler with `InterpreterFallback.SILENT` to silence those messages:
+
+```java
+import com.dylibso.chicory.compiler.MachineFactoryCompiler;
+import com.dylibso.chicory.compiler.InterpreterFallback;
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
+
+var module = Parser.parse(new File("your.wasm"));
+var instance = Instance.builder(module).
+        withMachineFactory(
+                MachineFactoryCompiler.builder(module)
+                .withInterpreterFallback(InterpreterFallback.SILENT)
+                .compile()
+        ).
+        build();
+```
+
+If you want to ensure the functions are never interpreted, you can modify the above to use `InterpreterFallback.FAIL` instead. This will throw an exception if any function is too large to compile.
+
+An even better way to silence the use of interpreted functions (this will speed up your compile times) is to explicitly list the function indexes that should be interpreted:
+
+```java
+import com.dylibso.chicory.compiler.MachineFactoryCompiler;
+import com.dylibso.chicory.compiler.InterpreterFallback;
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.wasm.Parser;
+import com.dylibso.chicory.wasm.WasmModule;
+import java.io.File;
+import java.util.Set;
+
+var module = Parser.parse(new File("your.wasm"));
+var instance = Instance.builder(module).
+        withMachineFactory(
+                MachineFactoryCompiler.builder(module)
+                .withInterpretedFunctions(Set.of(232, 251))
+                .compile()
+        ).
+        build();
+```
+
+Typically, you can obtain the list of the functions by running the compiler once with `InterpreterFallback.WARN`
+
 ### Caveats 
 
 Please note that compiling and executing Wasm modules at runtime requires:
