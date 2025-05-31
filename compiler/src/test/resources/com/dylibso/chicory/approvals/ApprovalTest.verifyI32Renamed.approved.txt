@@ -532,6 +532,85 @@ final class FOOShaded {
     RETURN
    L2
 
+  public static createWasmException([JILcom/dylibso/chicory/runtime/Instance;)Lcom/dylibso/chicory/runtime/WasmException;
+   L0
+    ALOAD 0
+    IFNONNULL L1
+   L2
+    ICONST_0
+    NEWARRAY T_LONG
+    ASTORE 0
+   L1
+    NEW com/dylibso/chicory/runtime/WasmException
+    DUP
+    ALOAD 2
+    ILOAD 1
+    ALOAD 0
+    INVOKESPECIAL com/dylibso/chicory/runtime/WasmException.<init> (Lcom/dylibso/chicory/runtime/Instance;I[J)V
+    ASTORE 3
+   L3
+    ALOAD 2
+    ALOAD 3
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.registerException (Lcom/dylibso/chicory/runtime/WasmException;)I
+    POP
+   L4
+    ALOAD 3
+    ARETURN
+   L5
+
+  public static exceptionMatches(Lcom/dylibso/chicory/runtime/WasmException;ILcom/dylibso/chicory/runtime/Instance;)Z
+   L0
+    ALOAD 0
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/WasmException.instance ()Lcom/dylibso/chicory/runtime/Instance;
+    ALOAD 2
+    IF_ACMPNE L1
+    ALOAD 0
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/WasmException.tagIdx ()I
+    ILOAD 1
+    IF_ICMPNE L1
+   L2
+    ICONST_1
+    IRETURN
+   L1
+    ALOAD 2
+    ILOAD 1
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.tag (I)Lcom/dylibso/chicory/runtime/TagInstance;
+    ASTORE 3
+   L3
+    ALOAD 0
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/WasmException.instance ()Lcom/dylibso/chicory/runtime/Instance;
+    ALOAD 0
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/WasmException.tagIdx ()I
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.tag (I)Lcom/dylibso/chicory/runtime/TagInstance;
+    ASTORE 4
+   L4
+    ILOAD 1
+    ALOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.imports ()Lcom/dylibso/chicory/runtime/ImportValues;
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/ImportValues.tagCount ()I
+    IF_ICMPGE L5
+    ALOAD 3
+   L6
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TagInstance.type ()Lcom/dylibso/chicory/wasm/types/FunctionType;
+    ALOAD 4
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TagInstance.type ()Lcom/dylibso/chicory/wasm/types/FunctionType;
+    INVOKEVIRTUAL com/dylibso/chicory/wasm/types/FunctionType.paramsMatch (Lcom/dylibso/chicory/wasm/types/FunctionType;)Z
+    IFEQ L5
+    ALOAD 3
+   L7
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TagInstance.type ()Lcom/dylibso/chicory/wasm/types/FunctionType;
+    ALOAD 4
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/TagInstance.type ()Lcom/dylibso/chicory/wasm/types/FunctionType;
+    INVOKEVIRTUAL com/dylibso/chicory/wasm/types/FunctionType.returnsMatch (Lcom/dylibso/chicory/wasm/types/FunctionType;)Z
+    IFEQ L5
+    ICONST_1
+    GOTO L8
+   L5
+    ICONST_0
+   L8
+    IRETURN
+   L9
+
   static <clinit>()V
    L0
     LDC "chicory.memCopyWorkaround"

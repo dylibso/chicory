@@ -3,6 +3,7 @@ package com.dylibso.chicory.compiler.internal;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.TableInstance;
+import com.dylibso.chicory.runtime.WasmException;
 import com.dylibso.chicory.runtime.internal.CompilerInterpreterMachine;
 import com.dylibso.chicory.wasm.types.Element;
 import java.lang.reflect.Method;
@@ -52,6 +53,11 @@ public final class ShadedRefs {
     static final Method THROW_TRAP_EXCEPTION;
     static final Method THROW_UNKNOWN_FUNCTION;
     static final Method AOT_INTERPRETER_MACHINE_CALL;
+
+    // Exception handling methods
+    static final Method CREATE_WASM_EXCEPTION;
+    static final Method INSTANCE_GET_EXCEPTION;
+    static final Method EXCEPTION_MATCHES;
 
     static {
         try {
@@ -160,6 +166,16 @@ public final class ShadedRefs {
 
             AOT_INTERPRETER_MACHINE_CALL =
                     CompilerInterpreterMachine.class.getMethod("call", int.class, long[].class);
+
+            // Exception handling methods
+            CREATE_WASM_EXCEPTION =
+                    Shaded.class.getMethod(
+                            "createWasmException", long[].class, int.class, Instance.class);
+            INSTANCE_GET_EXCEPTION = Instance.class.getMethod("exn", int.class);
+            EXCEPTION_MATCHES =
+                    Shaded.class.getMethod(
+                            "exceptionMatches", WasmException.class, int.class, Instance.class);
+
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }

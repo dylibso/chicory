@@ -56,6 +56,7 @@ final class CompilerUtil {
             case ValType.ID.I32:
             case ValType.ID.Ref:
             case ValType.ID.RefNull:
+            case ValType.ID.ExnRef:
                 return int.class;
             case ValType.ID.I64:
                 return long.class;
@@ -73,6 +74,7 @@ final class CompilerUtil {
             case ValType.ID.I32:
             case ValType.ID.Ref:
             case ValType.ID.RefNull:
+            case ValType.ID.ExnRef:
                 return INT_TYPE;
             case ValType.ID.I64:
                 return LONG_TYPE;
@@ -98,6 +100,7 @@ final class CompilerUtil {
             case ValType.ID.I32:
             case ValType.ID.Ref:
             case ValType.ID.RefNull:
+            case ValType.ID.ExnRef:
                 asm.visitInsn(Opcodes.L2I);
                 return;
             case ValType.ID.I64:
@@ -118,6 +121,7 @@ final class CompilerUtil {
             case ValType.ID.I32:
             case ValType.ID.Ref:
             case ValType.ID.RefNull:
+            case ValType.ID.ExnRef:
                 asm.visitInsn(Opcodes.I2L);
                 return;
             case ValType.ID.I64:
@@ -187,6 +191,7 @@ final class CompilerUtil {
                 return 0.0d;
             case ValType.ID.Ref:
             case ValType.ID.RefNull:
+            case ValType.ID.ExnRef:
                 return REF_NULL_VALUE;
             default:
                 throw new IllegalArgumentException("Unsupported ValType: " + type);
@@ -199,6 +204,7 @@ final class CompilerUtil {
             case ValType.ID.F32:
             case ValType.ID.Ref:
             case ValType.ID.RefNull:
+            case ValType.ID.ExnRef:
                 return 1;
             case ValType.ID.I64:
             case ValType.ID.F64:
