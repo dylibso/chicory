@@ -4,11 +4,9 @@ import static com.dylibso.chicory.compiler.internal.CompilerUtil.localType;
 import static com.dylibso.chicory.compiler.internal.TypeStack.FUNCTION_SCOPE;
 import static java.util.Collections.reverse;
 import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 import com.dylibso.chicory.wasm.ChicoryException;
-import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -21,8 +19,6 @@ import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
-import com.dylibso.chicory.wasm.types.TagImport;
-import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -42,7 +38,6 @@ final class WasmAnalyzer {
     private final List<FunctionType> functionTypes;
     private final List<ValType> tableTypes;
     private final int functionImports;
-    private final List<TagType> tagImports;
 
     public WasmAnalyzer(WasmModule module) {
         this.module = module;
@@ -50,12 +45,6 @@ final class WasmAnalyzer {
         this.functionTypes = getFunctionTypes(module);
         this.tableTypes = getTableTypes(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
-        this.tagImports =
-                module.importSection().stream()
-                        .filter(TagImport.class::isInstance)
-                        .map(TagImport.class::cast)
-                        .map(TagImport::tagType)
-                        .collect(toList());
     }
 
     public List<ValType> globalTypes() {
@@ -307,58 +296,24 @@ final class WasmAnalyzer {
                     }
                 case THROW:
                     {
-                        var tagNumber = (int) ins.operand(0);
-                        var type = module.typeSection().getType(getTagType(tagNumber).typeIdx());
-
-                        if (stack.types().size() >= type.params().size()) {
-                            // Only pop if we have enough elements
-                            for (var param : type.params()) {
-                                stack.pop(param);
-                            }
-                        }
-
                         // Add the THROW instruction
                         result.add(
                                 new CompilerInstruction(
                                         CompilerOpCode.of(OpCode.THROW), ins.operands()));
 
-                        // Add the control flow instruction to jump to the handler if it exists
-                        if (ins.labelTrue() != AnnotatedInstruction.UNDEFINED_LABEL) {
-                            // This means there's a matching TRY block that handles this THROW
-                            // Generate a goto instruction to the handler
-                            result.add(
-                                    new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
-                        }
-
                         // Mark as "unreachable" by emptying the stack for this block
                         exitBlockDepth = ins.depth();
-
                         break;
                     }
                 case THROW_REF:
                     {
-                        // Check if we're already in an unreachable state
-                        if (!stack.types().isEmpty()) {
-                            // Only pop if we have enough elements
-                            stack.pop(ValType.ExnRef);
-                        }
-
                         // Add instruction for THROW_REF
                         result.add(
                                 new CompilerInstruction(
                                         CompilerOpCode.of(OpCode.THROW_REF), ins.operands()));
 
-                        // Add the control flow instruction to jump to the handler if it exists
-                        if (ins.labelTrue() != AnnotatedInstruction.UNDEFINED_LABEL) {
-                            // This means there's a matching TRY block that handles this THROW_REF
-                            // Generate a goto instruction to the handler
-                            result.add(
-                                    new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
-                        }
-
                         // Mark as "unreachable" by emptying the stack for this block
                         exitBlockDepth = ins.depth();
-
                         break;
                     }
 
@@ -799,17 +754,10 @@ final class WasmAnalyzer {
             TypeStack stack) {
 
         boolean forward = true;
-        // Check if the label is valid
-        if (label < 0 || label >= body.instructions().size()) {
-            return Optional.empty();
-        }
 
         var target = body.instructions().get(label);
         if (target.address() <= ins.address()) {
-            // the loop block is the instruction before the target
-            if (label > 0) {
-                target = body.instructions().get(label - 1);
-            }
+            target = body.instructions().get(label - 1);
             forward = false;
         }
         var scope = target.scope();
@@ -921,15 +869,5 @@ final class WasmAnalyzer {
 
     private static long[] ids(List<ValType> types) {
         return types.stream().mapToLong(ValType::id).toArray();
-    }
-
-    private TagType getTagType(int idx) {
-        if (idx < 0 || idx >= tagImports.size() + module.tagSection().get().tagCount()) {
-            throw new InvalidException("unknown tag " + idx);
-        }
-        if (idx < tagImports.size()) {
-            return tagImports.get(idx);
-        }
-        return module.tagSection().get().getTag(idx - tagImports.size());
     }
 }
