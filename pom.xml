@@ -744,7 +744,7 @@
   <profiles>
 
     <profile>
-      <id>package-prebuilt-javadoc</id>
+      <id>package-javadoc-readme</id>
       <activation>
         <file>
           <exists>${project.basedir}/src/main/javadoc/README.md</exists>
@@ -759,15 +759,16 @@
             <version>${maven-jar-plugin.version}</version>
             <executions>
               <execution>
-                <id>fake-javadoc-jar</id>
+                <id>package-javadoc-readme</id>
                 <goals>
                   <goal>jar</goal>
                 </goals>
                 <phase>package</phase>
                 <configuration>
                   <classifier>javadoc</classifier>
+                  <classesDirectory>${project.basedir}/src/main/javadoc</classesDirectory>
                   <includes>
-                    <include>${project.basedir}/src/main/javadoc/README.md</include>
+                    <include>**/*</include>
                   </includes>
                   <archive>
                     <manifest>
