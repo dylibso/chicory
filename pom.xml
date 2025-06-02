@@ -512,11 +512,18 @@
               <formatJavadoc>false</formatJavadoc>
             </googleJavaFormat>
             <importOrder/>
-            <replaceRegex>
-              <name>Remove wildcard imports</name>
-              <searchRegex>import\s+(?:static\s+)?[^\*\s]+\*;(\r\n|\r|\n)</searchRegex>
-              <replacement>$1</replacement>
-            </replaceRegex>
+            <jsr223>
+              <name>Wildcard Imports Not Allowed</name>
+              <dependency>org.apache.groovy:groovy-jsr223:4.0.27</dependency>
+              <engine>groovy</engine>
+              <script>def pattern = ~/import\s+(?:static\s+)?[^\*\s]+\*;(\r\n|\r|\n)/
+                def matcher = pattern.matcher(source)
+                if (matcher.find()) {
+                   def importText = matcher.group().trim()
+                   throw new Exception("Wildcard imports not allowed:\n\n    " + importText + "\n\nPlease fully expand the imports.\n")
+                }
+                source</script>
+            </jsr223>
             <removeUnusedImports/>
           </java>
           <pom>
