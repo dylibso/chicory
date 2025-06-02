@@ -55,6 +55,7 @@ final class WasmAnalyzer {
         return functionTypes;
     }
 
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public List<CompilerInstruction> analyze(int funcId) {
         var functionType = functionTypes.get(funcId);
         var body = module.codeSection().getFunctionBody(funcId - functionImports);
@@ -119,9 +120,6 @@ final class WasmAnalyzer {
                         var operands = tryTableOperands.remove(tryTableIns.address());
                         // Werid: sometimes we see END occur multiple times for the same try table.
                         if (operands != null) {
-
-                            // add a NOOP just in case the it's an empty try block.
-                            result.add(new CompilerInstruction(CompilerOpCode.NOP));
 
                             var tryEndLabel = nextLabel++;
                             result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryEndLabel));
@@ -267,6 +265,12 @@ final class WasmAnalyzer {
                     break;
                 case TRY_TABLE:
                     {
+                        // Is this an empty TRY_TABLE?
+                        if (body.instructions().get(idx + 1).opcode() == OpCode.END) {
+                            idx++; // skip the END instruction too
+                            break;
+                        }
+
                         stack.enterScope(ins.scope(), blockType(ins));
 
                         // create the operands of the TRY_TABLE....

@@ -46,7 +46,6 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.createWasmException ([JILcom/dylibso/chicory/runtime/Instance;)Lcom/dylibso/chicory/runtime/WasmException;
     ATHROW
    L6
-    NOP
     ATHROW
    L11
     NOP
@@ -69,24 +68,22 @@ final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
     ATHROW
    L9
     ICONST_3
-   L13
-    NOP
    L10
-    GOTO L14
+    GOTO L13
    L7
     ASTORE 3
     ALOAD 3
     ICONST_1
     ALOAD 2
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.exceptionMatches (Lcom/dylibso/chicory/runtime/WasmException;ILcom/dylibso/chicory/runtime/Instance;)Z
-    IFEQ L15
-    GOTO L16
-   L15
+    IFEQ L14
+    GOTO L15
+   L14
     ALOAD 3
     ATHROW
-   L14
+   L13
     IRETURN
-   L16
+   L15
     ICONST_4
     IRETURN
 
