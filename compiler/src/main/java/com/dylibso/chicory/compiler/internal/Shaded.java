@@ -226,7 +226,7 @@ public final class Shaded {
         var currentCatchTag = instance.tag(tag);
         var exceptionTag = exception.instance().tag(exception.tagIdx());
         return tag < instance.imports().tagCount()
-                && currentCatchTag.type().paramsMatch(exceptionTag.type())
+                && currentCatchTag.type().typesMatch(exceptionTag.type())
                 && currentCatchTag.type().returnsMatch(exceptionTag.type());
     }
 }

@@ -70,7 +70,7 @@ public class ApprovalTest {
     public void verifyI32Renamed() {
         var module = parse(getSystemClassLoader().getResourceAsStream("compiled/i32.wat.wasm"));
         var result = Compiler.builder(module).withClassName("FOO").build().compile();
-        verifyClass(result.classBytes(), (name) -> false);
+        verifyClass(result.classBytes(), (name) -> !name.equals("FOO"));
     }
 
     @Test

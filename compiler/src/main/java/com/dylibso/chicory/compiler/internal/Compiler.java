@@ -1120,7 +1120,7 @@ public final class Compiler {
         emitUnboxResult(type, asm);
     }
 
-    static void emitBoxArguments(InstructionAdapter asm, List<ValType> types) {
+    private static void emitBoxArguments(InstructionAdapter asm, List<ValType> types) {
         int slot = 0;
         // box the arguments into long[]
         asm.iconst(types.size());
