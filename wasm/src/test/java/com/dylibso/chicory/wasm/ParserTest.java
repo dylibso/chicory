@@ -208,7 +208,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseSIMD() throws IOException {
-        try (InputStream is = getClass().getResourceAsStream("/wasm/simd_load.0.wasm")) {
+        try (InputStream is = ParserTest.class.getResourceAsStream("/wasm/simd_load.0.wasm")) {
             Parser.parse(is);
         }
     }
@@ -229,7 +229,8 @@ public class ParserTest {
 
     @Test
     public void shouldParseOnlyImportedTags() throws IOException {
-        try (InputStream is = getClass().getResourceAsStream("/compiled/issue_906.wat.wasm")) {
+        try (InputStream is =
+                ParserTest.class.getResourceAsStream("/compiled/issue_906.wat.wasm")) {
             Parser.parse(is);
         }
     }

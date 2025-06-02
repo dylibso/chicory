@@ -16,6 +16,7 @@ public final class AnnotatedInstruction extends Instruction {
     private final int labelTrue;
     private final int labelFalse;
     private final List<Integer> labelTable;
+    private final List<CatchOpCode.Catch> catches;
     private final Instruction scope;
 
     private AnnotatedInstruction(
@@ -26,12 +27,14 @@ public final class AnnotatedInstruction extends Instruction {
             int labelTrue,
             int labelFalse,
             List<Integer> labelTable,
+            List<CatchOpCode.Catch> catches,
             Instruction scope) {
         super(address, opcode, operands);
         this.depth = depth;
         this.labelTrue = labelTrue;
         this.labelFalse = labelFalse;
         this.labelTable = labelTable;
+        this.catches = catches;
         this.scope = scope;
     }
 
@@ -45,6 +48,10 @@ public final class AnnotatedInstruction extends Instruction {
 
     public List<Integer> labelTable() {
         return labelTable;
+    }
+
+    public List<CatchOpCode.Catch> catches() {
+        return catches;
     }
 
     public int depth() {
@@ -68,6 +75,8 @@ public final class AnnotatedInstruction extends Instruction {
                 + labelFalse
                 + ", labelTable="
                 + labelTable
+                + ", catches="
+                + catches
                 + ", scope="
                 + scope
                 + '}';
@@ -83,6 +92,7 @@ public final class AnnotatedInstruction extends Instruction {
         private Optional<Integer> labelTrue = Optional.empty();
         private Optional<Integer> labelFalse = Optional.empty();
         private Optional<List<Integer>> labelTable = Optional.empty();
+        private Optional<List<CatchOpCode.Catch>> catches = Optional.empty();
         private Optional<Instruction> scope = Optional.empty();
 
         private Builder() {}
@@ -127,6 +137,11 @@ public final class AnnotatedInstruction extends Instruction {
             return this;
         }
 
+        public Builder withCatches(List<CatchOpCode.Catch> catches) {
+            this.catches = Optional.of(catches);
+            return this;
+        }
+
         public Builder withScope(Instruction scope) {
             this.scope = Optional.of(scope);
             return this;
@@ -167,13 +182,22 @@ public final class AnnotatedInstruction extends Instruction {
             }
             switch (base.opcode()) {
                 case BR_TABLE:
-                case TRY_TABLE:
                     if (labelTable.isEmpty()) {
-                        throw new InvalidException("unknown label table" + base);
+                        throw new InvalidException("unknown label table " + base);
                     }
                     break;
                 default:
                     assert (labelTable.isEmpty());
+                    break;
+            }
+            switch (base.opcode()) {
+                case TRY_TABLE:
+                    if (catches.isEmpty()) {
+                        throw new InvalidException("unknown catches " + base);
+                    }
+                    break;
+                default:
+                    assert (catches.isEmpty());
                     break;
             }
 
@@ -185,6 +209,7 @@ public final class AnnotatedInstruction extends Instruction {
                     labelTrue.orElse(UNDEFINED_LABEL),
                     labelFalse.orElse(UNDEFINED_LABEL),
                     labelTable.orElse(List.of()),
+                    catches.orElse(null),
                     scope.orElse(null));
         }
     }
@@ -202,11 +227,12 @@ public final class AnnotatedInstruction extends Instruction {
                 && labelTrue == that.labelTrue
                 && labelFalse == that.labelFalse
                 && Objects.equals(labelTable, that.labelTable)
+                && Objects.equals(catches, that.catches)
                 && Objects.equals(scope, that.scope);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(depth, labelTrue, labelFalse, labelTable, scope);
+        return Objects.hash(depth, labelTrue, labelFalse, labelTable, catches, scope);
     }
 }

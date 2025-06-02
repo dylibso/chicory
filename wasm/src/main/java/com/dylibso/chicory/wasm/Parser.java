@@ -1003,10 +1003,9 @@ public final class Parser {
                     case TRY_TABLE:
                         {
                             // labels computation
+                            var catches = CatchOpCode.decode(baseInstruction.operands());
                             var allLabels = CatchOpCode.allLabels(baseInstruction.operands());
-                            var labelTable = new ArrayList<Integer>();
                             for (var idx = 0; idx < allLabels.size(); idx++) {
-                                labelTable.add(null);
                                 var offset = allLabels.get(idx);
                                 ControlTree reference = currentControlFlow;
                                 while (offset > 0) {
@@ -1017,9 +1016,10 @@ public final class Parser {
                                     offset--;
                                 }
                                 int finalIdx = idx;
-                                reference.addCallback(end -> labelTable.set(finalIdx, end));
+                                reference.addCallback(
+                                        end -> catches.get(finalIdx).resolvedLabel(end));
                             }
-                            instruction.withLabelTable(labelTable);
+                            instruction.withCatches(catches);
 
                             // block start
                             currentControlFlow =

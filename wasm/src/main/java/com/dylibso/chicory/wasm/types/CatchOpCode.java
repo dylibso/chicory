@@ -39,6 +39,7 @@ public enum CatchOpCode {
         private final CatchOpCode opcode;
         private final int tag;
         private final int label;
+        private int resolvedLabel;
 
         private Catch(CatchOpCode opcode, int label) {
             this(opcode, -1, label);
@@ -62,6 +63,14 @@ public enum CatchOpCode {
 
         public int label() {
             return label;
+        }
+
+        public void resolvedLabel(int label) {
+            resolvedLabel = label;
+        }
+
+        public int resolvedLabel() {
+            return resolvedLabel;
         }
     }
 
