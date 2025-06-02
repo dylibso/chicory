@@ -60,7 +60,7 @@
               <goal>compile</goal>
             </goals>
             <configuration>
-              <name>com.dylibso.chicory.testing.Zig</name>
+              <name>com.dylibso.chicory.testing.ZigModule</name>
               <wasmFile>${project.basedir}/../zig-testsuite/test-opt.wasm</wasmFile>
               <!-- <interpreterFallback>WARN</interpreterFallback> -->
               <interpretedFunctions>
