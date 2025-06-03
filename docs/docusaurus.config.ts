@@ -29,6 +29,23 @@ const config: Config = {
     locales: ['en'],
   },
 
+  plugins: [
+    [
+      '@docusaurus/plugin-client-redirects',
+      {
+        redirects: [
+          {
+            to: '/docs/usage/annotations',
+            from: ['/docs/experimental/host-modules'],
+          },
+          {
+            to: '/docs/usage/runtime-compiler',
+            from: ['/docs/experimental/aot'],
+          },
+        ],
+      },
+    ],
+  ],
   presets: [
     [
       'classic',
