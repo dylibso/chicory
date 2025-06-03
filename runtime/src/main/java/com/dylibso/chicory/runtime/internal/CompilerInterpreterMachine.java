@@ -4,6 +4,7 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.InterpreterMachine;
 import com.dylibso.chicory.runtime.MStack;
 import com.dylibso.chicory.runtime.StackFrame;
+import com.dylibso.chicory.runtime.WasmException;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import java.util.Deque;
@@ -72,13 +73,20 @@ public class CompilerInterpreterMachine extends InterpreterMachine {
             var type = instance.type(typeId);
             var args = extractArgsForParams(stack, type.params());
 
-            var results = instance.getMachine().call(funcId, args);
-            // a host function can return null or an array of ints
-            // which we will push onto the stack
-            if (results != null) {
-                for (var result : results) {
-                    stack.push(result);
+            try {
+                var results = instance.getMachine().call(funcId, args);
+                // a host function can return null or an array of ints
+                // which we will push onto the stack
+                if (results != null) {
+                    for (var result : results) {
+                        stack.push(result);
+                    }
                 }
+            } catch (WasmException e) {
+                // we need at least an empty frame
+                var stackFrame = new StackFrame(instance, funcId, args);
+                THROW_REF(
+                        instance, instance.registerException(e), stack, stackFrame, getCallStack());
             }
         }
     }
