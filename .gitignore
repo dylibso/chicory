@@ -1,13 +1,16 @@
-# IntelliJ IDEA files
+# IDE files
 .idea
 *.iml
+.classpath
+.project
+.settings
+.vscode
+.cursorrules
+.cursor
 
 target/
 testsuite/
 wasi-testsuite/
-.classpath
-.project
-.settings
 dependency-reduced-pom.xml
 jmh-result.json
 scripts/jmh-tmp
