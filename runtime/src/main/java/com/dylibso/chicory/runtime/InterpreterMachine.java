@@ -2206,7 +2206,7 @@ public class InterpreterMachine implements Machine {
                 frame.jumpTo(ctrlFrame.pc);
                 var tryInst = frame.loadCurrentInstruction();
 
-                var catches = CatchOpCode.decode(tryInst.operands());
+                var catches = tryInst.catches();
                 for (int i = 0; i < catches.size() && !found; i++) {
                     var currentCatch = catches.get(i);
 
@@ -2256,10 +2256,9 @@ public class InterpreterMachine implements Machine {
                     }
 
                     if (found) {
-                        var resolvedLabel = tryInst.labelTable().get(i);
                         // BR l
                         ctrlJump(frame, stack, currentCatch.label());
-                        frame.jumpTo(resolvedLabel);
+                        frame.jumpTo(currentCatch.resolvedLabel());
                         return frame;
                     }
                 }
