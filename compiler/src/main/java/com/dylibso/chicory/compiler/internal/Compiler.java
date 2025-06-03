@@ -140,7 +140,7 @@ public final class Compiler {
             this.interpretedFunctions = new HashSet<>();
             this.interpreterFallback =
                     requireNonNullElse(interpreterFallback, InterpreterFallback.WARN);
-        } else if (interpreterFallback != InterpreterFallback.FAIL) {
+        } else if (interpreterFallback != null && interpreterFallback != InterpreterFallback.FAIL) {
             // if we are being given a set of interpreted functions, then any unlisted
             // function needs to trigger a failure.
             throw new IllegalArgumentException(
