@@ -12,3 +12,8 @@ dylibso:
   label: Dylibso
   permalink: /dylibso
   description: Dylibso
+
+release:
+  label: Release
+  permalink: /release
+  description: Release tag description
