@@ -1,29 +1,48 @@
 package com.dylibso.chicory.compiler.internal;
 
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.LongStream;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.commons.InstructionAdapter;
 
 final class CompilerInstruction {
+
+    interface Emitter {
+        // We should modify this method signature as needed so we can supply impls the data they
+        // need to emit the instruction.
+        void emmit(Context ctx, InstructionAdapter asm, Map<Long, Label> labels);
+    }
+
     public static final long[] EMPTY = new long[0];
 
     private final CompilerOpCode opcode;
     private final long[] operands;
+    private final Emitter emitter;
 
     public CompilerInstruction(CompilerOpCode opcode) {
         this(opcode, EMPTY);
     }
 
-    public CompilerInstruction(CompilerOpCode opcode, long operand) {
-        this(opcode, new long[] {operand});
-    }
-
-    public CompilerInstruction(CompilerOpCode opcode, long[] operands) {
+    public CompilerInstruction(CompilerOpCode opcode, long... operands) {
         this.opcode = opcode;
         this.operands = operands;
+        this.emitter = null;
+    }
+
+    public CompilerInstruction(long[] operands, Emitter emmitter) {
+        this.opcode = CompilerOpCode.EMITTER;
+        this.operands = operands;
+        this.emitter = Objects.requireNonNull(emmitter);
     }
 
     public CompilerOpCode opcode() {
         return opcode;
+    }
+
+    public Emitter emitter() {
+        return emitter;
     }
 
     public LongStream operands() {
@@ -54,7 +73,7 @@ final class CompilerInstruction {
             case GOTO:
             case IFEQ:
             case IFNE:
-            case TRY_TABLE:
+            case EMITTER:
             case SWITCH:
                 return operands;
             default:
