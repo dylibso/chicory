@@ -47,7 +47,7 @@ jobs:
           java-version: '${{ matrix.version }}'
           cache: maven
       - name: Test Java and Check Style
-        run: mvn -B clean install spotless:check
+        run: mvn -B spotless:check clean install
         env:
           MAVEN_OPTS: "-ea"
 
