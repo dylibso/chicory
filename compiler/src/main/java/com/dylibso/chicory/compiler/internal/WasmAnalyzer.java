@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -74,6 +75,14 @@ final class WasmAnalyzer {
                 labels.add(ins.labelFalse());
             }
             labels.addAll(ins.labelTable());
+            labels.addAll(
+                    Optional.ofNullable(ins.catches())
+                            .map(
+                                    catches ->
+                                            catches.stream()
+                                                    .map(c -> c.resolvedLabel())
+                                                    .collect(Collectors.toList()))
+                            .orElse(List.of()));
         }
 
         // implicit block for the function
@@ -284,9 +293,9 @@ final class WasmAnalyzer {
                         ops.add(-1L); // reserve for the catchtart
 
                         // add the branch labels
-                        ops.add((long) ins.labelTable().size());
-                        for (var l : ins.labelTable()) {
-                            ops.add((long) l);
+                        ops.add((long) ins.catches().size());
+                        for (var l : ins.catches()) {
+                            ops.add((long) l.resolvedLabel());
                         }
 
                         // add the catch info
