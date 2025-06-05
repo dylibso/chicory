@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -284,16 +285,10 @@ public final class MachinesTest {
         assertTrue(className.contains("wasm-interpreted-module"), className);
     }
 
-    private String readStackTrace(Throwable exception) throws IOException {
-        try (var baos = new ByteArrayOutputStream();
-                var osw = new OutputStreamWriter(baos, UTF_8);
-                var pw = new PrintWriter(osw)) {
-            exception.printStackTrace(pw);
-            pw.flush();
-            pw.close();
-
-            return baos.toString(UTF_8);
-        }
+    private String readStackTrace(Throwable t) {
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
     }
 
     @Test
