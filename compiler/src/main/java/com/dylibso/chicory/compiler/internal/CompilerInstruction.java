@@ -22,13 +22,7 @@ final class CompilerInstruction {
         this.emitter = null;
     }
 
-    public CompilerInstruction(Emitters.Emitter emitter) {
-        this.opcode = CompilerOpCode.EMITTER;
-        this.operands = EMPTY;
-        this.emitter = Objects.requireNonNull(emitter);
-    }
-
-    public CompilerInstruction(long[] labelTargets, Emitters.Emitter emitter) {
+    public CompilerInstruction(Emitters.Emitter emitter, long... labelTargets) {
         this.opcode = CompilerOpCode.EMITTER;
         this.operands = labelTargets;
         this.emitter = Objects.requireNonNull(emitter);

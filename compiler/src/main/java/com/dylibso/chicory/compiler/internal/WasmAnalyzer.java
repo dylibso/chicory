@@ -24,7 +24,6 @@ import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.ValType;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -73,10 +72,8 @@ final class WasmAnalyzer {
         Set<Integer> labels = new HashSet<>();
 
         HashMap<Integer, TryCatchBlock> tryCatchBlocks = new HashMap<>();
-        ArrayDeque<TryCatchBlock> tryCatchBlocksStack = new ArrayDeque<>();
-        HashMap<Integer, AnnotatedInstruction> tryTables = new HashMap<>();
 
-        for (int idx = 0; idx < body.instructions().size(); idx++) {
+        for (int idx = body.instructions().size() - 1; idx >= 0; idx--) {
             AnnotatedInstruction ins = body.instructions().get(idx);
 
             if (ins.labelTrue() != AnnotatedInstruction.UNDEFINED_LABEL) {
@@ -97,20 +94,17 @@ final class WasmAnalyzer {
 
             if (ins.opcode() == OpCode.TRY_TABLE
                     && body.instructions().get(idx + 1).opcode() != OpCode.END) {
-                var block = new TryCatchBlock(nextLabel++, nextLabel++, nextLabel++, nextLabel++);
-                tryCatchBlocksStack.push(block);
+                var block =
+                        new TryCatchBlock(ins, nextLabel++, nextLabel++, nextLabel++, nextLabel++);
                 tryCatchBlocks.put(ins.address(), block);
-                tryTables.put(ins.address(), ins);
+                result.add(
+                        new CompilerInstruction(
+                                TRY_CATCH_BLOCK(block),
+                                block.start,
+                                block.end,
+                                block.handler,
+                                block.after));
             }
-        }
-
-        // The TRY_CATCH_BLOCKs need to be added in reverse order
-        while (!tryCatchBlocksStack.isEmpty()) {
-            var ins = tryCatchBlocksStack.pop();
-            result.add(
-                    new CompilerInstruction(
-                            new long[] {ins.start, ins.end, ins.handler, ins.after},
-                            TRY_CATCH_BLOCK(ins)));
         }
 
         // implicit block for the function
@@ -281,16 +275,12 @@ final class WasmAnalyzer {
                 case END:
                     // Check if this is the end of a TRY_TABLE block
                     if (ins.scope().opcode() == OpCode.TRY_TABLE) {
-                        var tryTableIns = tryTables.remove(ins.scope().address());
+                        var tryCatchBlock = tryCatchBlocks.remove(ins.scope().address());
 
                         // Weird: sometimes we see END occur multiple times for
-                        if (tryTableIns != null) {
-                            // the same try table.
-                            var tryCatchBlock = tryCatchBlocks.remove(tryTableIns.address());
+                        if (tryCatchBlock != null) {
 
-                            nextLabel =
-                                    analyzeTryCatchEnd(
-                                            result, nextLabel, tryTableIns, tryCatchBlock);
+                            nextLabel = analyzeTryCatchEnd(result, nextLabel, tryCatchBlock);
                         }
                     }
                     stack.exitScope(ins.scope());
@@ -359,10 +349,7 @@ final class WasmAnalyzer {
     }
 
     private static int analyzeTryCatchEnd(
-            List<CompilerInstruction> result,
-            int nextLabel,
-            AnnotatedInstruction ins,
-            TryCatchBlock tryCatchBlock) {
+            List<CompilerInstruction> result, int nextLabel, TryCatchBlock tryCatchBlock) {
 
         // Mark the end of the try block
         result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.end));
@@ -378,20 +365,21 @@ final class WasmAnalyzer {
         result.add(new CompilerInstruction((ctx) -> ctx.asm().store(ctx.tempSlot(), OBJECT_TYPE)));
 
         // create labels for after each catch block
-        var afterCatchLabels = new long[ins.catches().size()];
-        for (int i = 0; i < ins.catches().size(); i++) {
+        var afterCatchLabels = new long[tryCatchBlock.ins.catches().size()];
+        for (int i = 0; i < tryCatchBlock.ins.catches().size(); i++) {
             afterCatchLabels[i] = nextLabel++;
         }
 
-        for (int i = 0; i < ins.catches().size(); i++) {
-            var catchCondition = ins.catches().get(i);
+        for (int i = 0; i < tryCatchBlock.ins.catches().size(); i++) {
+            var catchCondition = tryCatchBlock.ins.catches().get(i);
             long afterCatchLabel = afterCatchLabels[i];
 
             // Emmit an instruction for each catch condition
             result.add(
                     new CompilerInstruction(
-                            new long[] {catchCondition.resolvedLabel(), afterCatchLabel},
-                            Emitters.CATCH_CONDITION(catchCondition, afterCatchLabel)));
+                            Emitters.CATCH_CONDITION(catchCondition, afterCatchLabel),
+                            catchCondition.resolvedLabel(),
+                            afterCatchLabel));
         }
 
         // Default case: re-throw the exception

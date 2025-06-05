@@ -29,6 +29,7 @@ import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.OpCodeIdentifier;
 import com.dylibso.chicory.runtime.WasmException;
+import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.ValType;
@@ -693,12 +694,15 @@ final class Emitters {
     public interface Emitter extends Consumer<Context> {}
 
     public static class TryCatchBlock {
+        final AnnotatedInstruction ins;
         final long start;
         final long end;
         final long handler;
         final long after;
 
-        public TryCatchBlock(long start, long end, long handler, long after) {
+        public TryCatchBlock(
+                AnnotatedInstruction ins, long start, long end, long handler, long after) {
+            this.ins = ins;
             this.start = start;
             this.end = end;
             this.handler = handler;
