@@ -40,11 +40,6 @@
       <version>2.13.0</version>
     </dependency>
     <dependency>
-      <groupId>com.approvaltests</groupId>
-      <artifactId>approvaltests</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm-corpus</artifactId>
       <scope>test</scope>
@@ -53,16 +48,6 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.ow2.asm</groupId>
-      <artifactId>asm</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.ow2.asm</groupId>
-      <artifactId>asm-util</artifactId>
       <scope>test</scope>
     </dependency>
 
