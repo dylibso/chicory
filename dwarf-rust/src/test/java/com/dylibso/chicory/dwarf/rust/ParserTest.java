@@ -11,7 +11,7 @@ public class ParserTest {
     @Test
     public void shouldParseCountVowels() throws Exception {
         var result =
-                Parser.parse(
+                RustParser.parse(
                         ParserTest.class.getResourceAsStream("/compiled/count_vowels.rs.wasm"));
         assertNotNull(result);
         assertEquals(21813, result.entries().size());
@@ -29,7 +29,7 @@ public class ParserTest {
     @Test
     public void shouldParseWasmSourceInfo() throws Exception {
         // this file does not contain debug info
-        var result = Parser.parse(new File("./src/main/wasm/wasm-source-map.wasm"));
+        var result = RustParser.parse(new File("./src/main/wasm/wasm-source-map.wasm"));
         assertNotNull(result);
         assertEquals(0, result.entries().size());
     }

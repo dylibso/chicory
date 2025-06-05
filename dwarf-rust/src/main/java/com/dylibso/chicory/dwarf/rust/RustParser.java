@@ -11,6 +11,8 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.WasmWriter;
+import com.dylibso.chicory.wasm.types.UnknownCustomSection;
 import com.google.gson.Gson;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -22,15 +24,11 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
-public final class Parser implements com.dylibso.chicory.dwarf.Parser {
+public final class RustParser {
     private static final Logger logger = new SystemLogger();
     private static final WasmModule MODULE = Wasm.load();
-
-    @Override
-    public DebugInfo apply(InputStream inputStream) {
-        return parse(inputStream);
-    }
 
     private static final class SourceResult {
         String error;
@@ -54,7 +52,35 @@ public final class Parser implements com.dylibso.chicory.dwarf.Parser {
         ArrayList<long[]> lines;
     }
 
-    private Parser() {}
+    private RustParser() {}
+
+    public static byte[] toBytes(WasmModule module) {
+        var writer = new WasmWriter();
+        var keepers =
+                Set.of(
+                        ".debug_info",
+                        ".debug_line",
+                        ".debug_str",
+                        ".debug_aranges",
+                        ".debug_pubnames",
+                        ".debug_loc",
+                        ".debug_ranges",
+                        ".debug_abbrev",
+                        ".debug_pubtypes");
+        for (var section : module.customSections()) {
+            if (section instanceof UnknownCustomSection) {
+                if (keepers.contains(section.name())) {
+                    writer.writeSection((UnknownCustomSection) section);
+                }
+            }
+        }
+        writer.writeEmptyCodeSection();
+        return writer.bytes();
+    }
+
+    public static DebugInfo parse(WasmModule module) throws ParserException {
+        return parse(toBytes(module));
+    }
 
     public static DebugInfo parse(File file) throws ParserException {
         try (InputStream is = new FileInputStream(file)) {

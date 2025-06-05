@@ -6,6 +6,7 @@ import static java.util.Collections.reverse;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+import com.dylibso.chicory.compiler.internal.smap.MappedLine;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
@@ -55,7 +56,7 @@ final class WasmAnalyzer {
         return functionTypes;
     }
 
-    public List<CompilerInstruction> analyze(int funcId) {
+    public List<CompilerInstruction> analyze(int funcId, Compiler.DebugContext debugContext) {
         var functionType = functionTypes.get(funcId);
         var body = module.codeSection().getFunctionBody(funcId - functionImports);
         var stack = new TypeStack();
@@ -78,10 +79,37 @@ final class WasmAnalyzer {
         stack.enterScope(FUNCTION_SCOPE, FunctionType.of(List.of(), functionType.returns()));
 
         int exitBlockDepth = -1;
+
+        int lastSourceMapIndex = -1;
+
         for (int idx = 0; idx < body.instructions().size(); idx++) {
             AnnotatedInstruction ins = body.instructions().get(idx);
 
-            if (labels.contains(idx)) {
+            // get the sourceMapIndex for the current instruction:
+            int sourceMapIndex = -1;
+            if (lastSourceMapIndex == -1) {
+                // this does a binary search...
+                sourceMapIndex = debugContext.info.entryIndex(ins.address());
+            } else {
+                // once we have starting point, we can use it to more efficiently find the next
+                // entry
+                var t = debugContext.info.entryAt(lastSourceMapIndex + 1);
+                if (t.address() == ins.address()) {
+                    sourceMapIndex = lastSourceMapIndex + 1;
+                }
+            }
+
+            if (sourceMapIndex != -1) {
+                var entry = debugContext.info.entryAt(sourceMapIndex);
+                lastSourceMapIndex = sourceMapIndex;
+                var lineNo = debugContext.nextLineNo++;
+                labels.add(idx);
+                result.add(new CompilerInstruction(CompilerOpCode.LABEL, idx));
+                result.add(
+                        new CompilerInstruction(
+                                CompilerOpCode.LINE_NUMBER, new long[] {lineNo, idx}));
+                debugContext.mappedLines.add(new MappedLine(lineNo, entry));
+            } else if (labels.contains(idx)) {
                 result.add(new CompilerInstruction(CompilerOpCode.LABEL, idx));
             }
 

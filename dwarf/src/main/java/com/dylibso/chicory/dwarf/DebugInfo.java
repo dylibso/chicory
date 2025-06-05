@@ -111,23 +111,10 @@ public final class DebugInfo {
         public int line() {
             return line;
         }
-    }
 
-    public static class MappedLine {
-        final int line;
-        final DebugInfo.Entry entry;
-
-        MappedLine(int line, DebugInfo.Entry entry) {
-            this.line = line;
-            this.entry = entry;
-        }
-
-        public int line() {
-            return line;
-        }
-
-        public DebugInfo.Entry entry() {
-            return entry;
+        @Override
+        public String toString() {
+            return address + "@ " + path + ':' + line;
         }
     }
 

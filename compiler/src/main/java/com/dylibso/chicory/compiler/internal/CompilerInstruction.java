@@ -56,6 +56,8 @@ final class CompilerInstruction {
             case IFNE:
             case SWITCH:
                 return operands;
+            case LINE_NUMBER:
+                return new long[] {operands[1]};
             default:
                 return EMPTY;
         }
