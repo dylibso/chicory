@@ -23,7 +23,6 @@ import static com.dylibso.chicory.compiler.internal.CompilerUtil.rawMethodTypeFo
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.slotCount;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.valueMethodName;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.valueMethodType;
-import static com.dylibso.chicory.compiler.internal.EmitterMap.EMITTERS;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.AOT_INTERPRETER_MACHINE_CALL;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.CALL_HOST_FUNCTION;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.CALL_INDIRECT;
@@ -1186,8 +1185,6 @@ public final class Compiler {
                         body,
                         asm);
 
-        List<CompilerInstruction> instructions = analyzer.analyze(funcId);
-
         int localsCount = type.params().size();
         if (hasTooManyParameters(type)) {
             // unbox the arguments from long[]
@@ -1211,73 +1208,12 @@ public final class Compiler {
             asm.store(ctx.localSlotIndex(i), asmType(localType));
         }
 
-        // allocate labels for all label targets
-        var labels = ctx.labels();
-        for (var ins : instructions) {
-            for (long target : ins.labelTargets()) {
-                labels.put(target, new Label());
-            }
-        }
-
-        // track targets to detect backward jumps
-        Set<Long> visitedTargets = new HashSet<>();
+        List<Emitter> emitters = new ArrayList<>();
+        analyzer.analyze(funcId, emitters::add);
 
         // compile the function body
-        for (CompilerInstruction ins : instructions) {
-            switch (ins.opcode()) {
-                case LABEL:
-                    Label label = labels.get(ins.operand(0));
-                    if (label != null) {
-                        asm.mark(label);
-                        visitedTargets.add(ins.operand(0));
-                    }
-                    break;
-                case GOTO:
-                    if (visitedTargets.contains(ins.operand(0))) {
-                        emitInvokeStatic(asm, CHECK_INTERRUPTION);
-                    }
-                    asm.goTo(labels.get(ins.operand(0)));
-                    break;
-                case IFEQ:
-                    if (visitedTargets.contains(ins.operand(0))) {
-                        throw new ChicoryException("Unexpected backward jump");
-                    }
-                    asm.ifeq(labels.get(ins.operand(0)));
-                    break;
-                case IFNE:
-                    if (visitedTargets.contains(ins.operand(0))) {
-                        Label skip = new Label();
-                        asm.ifeq(skip);
-                        emitInvokeStatic(asm, CHECK_INTERRUPTION);
-                        asm.goTo(labels.get(ins.operand(0)));
-                        asm.mark(skip);
-
-                    } else {
-                        asm.ifne(labels.get(ins.operand(0)));
-                    }
-                    break;
-                case SWITCH:
-                    if (ins.operands().anyMatch(visitedTargets::contains)) {
-                        emitInvokeStatic(asm, CHECK_INTERRUPTION);
-                    }
-                    // table switch using the last entry of the table as the default
-                    Label[] table = new Label[ins.operandCount() - 1];
-                    for (int i = 0; i < table.length; i++) {
-                        table[i] = labels.get(ins.operand(i));
-                    }
-                    Label defaultLabel = labels.get(ins.operand(table.length));
-                    asm.tableswitch(0, table.length - 1, defaultLabel, table);
-                    break;
-                case EMITTER:
-                    ins.emitter().accept(ctx);
-                    break;
-                default:
-                    var emitter = EMITTERS.get(ins.opcode());
-                    if (emitter == null) {
-                        throw new ChicoryException("Unhandled opcode: " + ins.opcode());
-                    }
-                    emitter.emit(ctx, ins, asm);
-            }
+        for (var emitter : emitters) {
+            emitter.emit(ctx);
         }
     }
 }

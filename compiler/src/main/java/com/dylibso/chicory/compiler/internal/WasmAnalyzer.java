@@ -1,6 +1,12 @@
 package com.dylibso.chicory.compiler.internal;
 
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.localType;
+import static com.dylibso.chicory.compiler.internal.Emitters.DROP_KEEP;
+import static com.dylibso.chicory.compiler.internal.Emitters.GOTO;
+import static com.dylibso.chicory.compiler.internal.Emitters.IFEQ;
+import static com.dylibso.chicory.compiler.internal.Emitters.IFNE;
+import static com.dylibso.chicory.compiler.internal.Emitters.LABEL;
+import static com.dylibso.chicory.compiler.internal.Emitters.SWITCH;
 import static com.dylibso.chicory.compiler.internal.Emitters.TRY_CATCH_BLOCK;
 import static com.dylibso.chicory.compiler.internal.TypeStack.FUNCTION_SCOPE;
 import static java.util.Collections.reverse;
@@ -26,15 +32,15 @@ import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
+import org.objectweb.asm.Label;
 
 final class WasmAnalyzer {
 
@@ -61,15 +67,14 @@ final class WasmAnalyzer {
     }
 
     @SuppressWarnings("checkstyle:modifiedcontrolvariable")
-    public List<CompilerInstruction> analyze(int funcId) {
+    public void analyze(int funcId, Consumer<Emitter> result) {
         var functionType = functionTypes.get(funcId);
         var body = module.codeSection().getFunctionBody(funcId - functionImports);
         var stack = new TypeStack();
         int nextLabel = body.instructions().size();
-        List<CompilerInstruction> result = new ArrayList<>();
 
         // find label targets
-        Set<Integer> labels = new HashSet<>();
+        Map<Integer, Label> labels = new HashMap<>();
 
         HashMap<Integer, TryCatchBlock> tryCatchBlocks = new HashMap<>();
 
@@ -77,33 +82,34 @@ final class WasmAnalyzer {
             AnnotatedInstruction ins = body.instructions().get(idx);
 
             if (ins.labelTrue() != AnnotatedInstruction.UNDEFINED_LABEL) {
-                labels.add(ins.labelTrue());
+                labels.put(ins.labelTrue(), new Label());
             }
             if (ins.labelFalse() != AnnotatedInstruction.UNDEFINED_LABEL) {
-                labels.add(ins.labelFalse());
+                labels.put(ins.labelFalse(), new Label());
             }
-            labels.addAll(ins.labelTable());
-            labels.addAll(
+            for (int label : ins.labelTable()) {
+                labels.put(label, new Label());
+            }
+            for (int label :
                     Optional.ofNullable(ins.catches())
                             .map(
                                     catches ->
                                             catches.stream()
                                                     .map(CatchOpCode.Catch::resolvedLabel)
                                                     .collect(Collectors.toList()))
-                            .orElse(List.of()));
+                            .orElse(List.of())) {
+                labels.put(label, new Label());
+            }
 
             if (ins.opcode() == OpCode.TRY_TABLE
                     && body.instructions().get(idx + 1).opcode() != OpCode.END) {
-                var block =
-                        new TryCatchBlock(ins, nextLabel++, nextLabel++, nextLabel++, nextLabel++);
+                var block = new TryCatchBlock(ins);
+                labels.put(idx, block.start);
+                labels.put(nextLabel++, block.end);
+                labels.put(nextLabel++, block.handler);
+                labels.put(nextLabel++, block.after);
+                result.accept(TRY_CATCH_BLOCK(block.start, block.end, block.handler));
                 tryCatchBlocks.put(ins.address(), block);
-                result.add(
-                        new CompilerInstruction(
-                                TRY_CATCH_BLOCK(block),
-                                block.start,
-                                block.end,
-                                block.handler,
-                                block.after));
             }
         }
 
@@ -114,8 +120,9 @@ final class WasmAnalyzer {
         for (int idx = 0; idx < body.instructions().size(); idx++) {
             AnnotatedInstruction ins = body.instructions().get(idx);
 
-            if (labels.contains(idx)) {
-                result.add(new CompilerInstruction(CompilerOpCode.LABEL, idx));
+            Label insLabel = labels.get(idx);
+            if (insLabel != null) {
+                result.accept(LABEL(insLabel));
             }
 
             // skip instructions after unconditional control transfer
@@ -136,7 +143,7 @@ final class WasmAnalyzer {
                     break;
                 case UNREACHABLE:
                     exitBlockDepth = ins.depth();
-                    result.add(new CompilerInstruction(CompilerOpCode.TRAP));
+                    result.accept(Emitters::TRAP);
                     break;
                 case BLOCK:
                 case LOOP:
@@ -147,27 +154,21 @@ final class WasmAnalyzer {
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
-                    result.add(
-                            new CompilerInstruction(
-                                    CompilerOpCode.RETURN, ids(functionType.returns())));
+                    result.accept(Emitters.create(OpCode.RETURN, ids(functionType.returns())));
                     break;
                 case RETURN_CALL:
                     // The JVM does not support proper tail calls, so we desugar RETURN_CALL
                     // into a CALL + RETURN.
 
                     // [p*] -> [r*]
-                    result.add(
-                            new CompilerInstruction(
-                                    CompilerOpCode.of(OpCode.CALL), ins.operands()));
+                    result.accept(Emitters.create(OpCode.CALL, ins.operands()));
                     updateStack(stack, functionTypes.get((int) ins.operand(0)));
 
                     exitBlockDepth = ins.depth();
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
-                    result.add(
-                            new CompilerInstruction(
-                                    CompilerOpCode.RETURN, ids(functionType.returns())));
+                    result.accept(Emitters.create(OpCode.RETURN, ids(functionType.returns())));
                     break;
 
                 case RETURN_CALL_INDIRECT:
@@ -177,18 +178,14 @@ final class WasmAnalyzer {
                     // [p* I32] -> [r*]
                     stack.pop(ValType.I32);
                     updateStack(stack, module.typeSection().getType((int) ins.operand(0)));
-                    result.add(
-                            new CompilerInstruction(
-                                    CompilerOpCode.of(OpCode.CALL_INDIRECT), ins.operands()));
+                    result.accept(Emitters.create(OpCode.CALL_INDIRECT, ins.operands()));
 
                     exitBlockDepth = ins.depth();
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
 
-                    result.add(
-                            new CompilerInstruction(
-                                    CompilerOpCode.RETURN, ids(functionType.returns())));
+                    result.accept(Emitters.create(OpCode.RETURN, ids(functionType.returns())));
                     break;
 
                 case IF:
@@ -198,27 +195,26 @@ final class WasmAnalyzer {
                     if (body.instructions().get(ins.labelFalse() - 1).opcode() == OpCode.ELSE) {
                         stack.pushTypes();
                     }
-                    result.add(new CompilerInstruction(CompilerOpCode.IFEQ, ins.labelFalse()));
+                    result.accept(IFEQ(labels.get(ins.labelFalse())));
                     break;
                 case ELSE:
                     stack.popTypes();
-                    result.add(new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
+                    result.accept(GOTO(labels.get(ins.labelTrue())));
                     break;
                 case BR:
                     exitBlockDepth = ins.depth();
-                    unwindStack(functionType, body, ins, ins.labelTrue(), stack)
-                            .ifPresent(result::add);
-                    result.add(new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
+                    unwindStack(functionType, body, ins, ins.labelTrue(), stack).ifPresent(result);
+                    result.accept(GOTO(labels.get(ins.labelTrue())));
                     break;
                 case BR_IF:
                     stack.pop(ValType.I32);
                     var ifUnwind = unwindStack(functionType, body, ins, ins.labelTrue(), stack);
                     if (ifUnwind.isPresent()) {
-                        result.add(new CompilerInstruction(CompilerOpCode.IFEQ, ins.labelFalse()));
-                        result.add(ifUnwind.get());
-                        result.add(new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
+                        result.accept(IFEQ(labels.get(ins.labelFalse())));
+                        result.accept(ifUnwind.get());
+                        result.accept(GOTO(labels.get(ins.labelTrue())));
                     } else {
-                        result.add(new CompilerInstruction(CompilerOpCode.IFNE, ins.labelTrue()));
+                        result.accept(IFNE(labels.get(ins.labelTrue())));
                     }
                     break;
                 case BR_TABLE:
@@ -226,34 +222,35 @@ final class WasmAnalyzer {
                     stack.pop(ValType.I32);
                     // convert to jump if it only has a default
                     if (ins.labelTable().size() == 1) {
-                        result.add(new CompilerInstruction(CompilerOpCode.DROP, ValType.I32.id()));
+
+                        result.accept(Emitters.create(OpCode.DROP, ValType.I32.id()));
                         unwindStack(functionType, body, ins, ins.labelTable().get(0), stack)
-                                .ifPresent(result::add);
-                        result.add(
-                                new CompilerInstruction(
-                                        CompilerOpCode.GOTO, ins.labelTable().get(0)));
+                                .ifPresent(result);
+                        result.accept(GOTO(labels.get(ins.labelTable().get(0))));
                         break;
                     }
                     // extract unique targets and generate unwind for each
-                    List<CompilerInstruction> unwinds = new ArrayList<>();
-                    Map<Integer, Integer> targets = new HashMap<>();
+                    List<Emitter> unwinds = new ArrayList<>();
+                    Map<Integer, Label> targets = new HashMap<>();
                     for (var target : ins.labelTable()) {
                         if (!targets.containsKey(target)) {
-                            int label = target;
+                            var label = labels.get(target);
                             var unwind = unwindStack(functionType, body, ins, target, stack);
                             if (unwind.isPresent()) {
-                                label = nextLabel;
+                                label = new Label();
+                                labels.put(nextLabel, label);
                                 nextLabel++;
-                                unwinds.add(new CompilerInstruction(CompilerOpCode.LABEL, label));
+                                unwinds.add(LABEL(label));
                                 unwinds.add(unwind.get());
-                                unwinds.add(new CompilerInstruction(CompilerOpCode.GOTO, target));
+                                unwinds.add(GOTO(labels.get(target)));
                             }
                             targets.put(target, label);
                         }
                     }
-                    long[] operands = ins.labelTable().stream().mapToLong(targets::get).toArray();
-                    result.add(new CompilerInstruction(CompilerOpCode.SWITCH, operands));
-                    result.addAll(unwinds);
+                    Label[] operands =
+                            ins.labelTable().stream().map(targets::get).toArray(Label[]::new);
+                    result.accept(SWITCH(operands));
+                    unwinds.forEach(result);
                     break;
 
                 case TRY_TABLE:
@@ -266,8 +263,7 @@ final class WasmAnalyzer {
 
                         stack.enterScope(ins.scope(), blockType(ins));
                         var tryCatchBlock = tryCatchBlocks.get(ins.address());
-                        result.add(
-                                new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.start));
+                        result.accept(LABEL(tryCatchBlock.start));
 
                         break;
                     }
@@ -280,7 +276,8 @@ final class WasmAnalyzer {
                         // Weird: sometimes we see END occur multiple times for
                         if (tryCatchBlock != null) {
 
-                            nextLabel = analyzeTryCatchEnd(result, nextLabel, tryCatchBlock);
+                            nextLabel =
+                                    analyzeTryCatchEnd(labels, result, nextLabel, tryCatchBlock);
                         }
                     }
                     stack.exitScope(ins.scope());
@@ -289,9 +286,7 @@ final class WasmAnalyzer {
                 case THROW:
                     {
                         // Add the THROW instruction
-                        result.add(
-                                new CompilerInstruction(
-                                        CompilerOpCode.of(OpCode.THROW), ins.operands()));
+                        result.accept(Emitters.create(OpCode.THROW, ins.operands()));
 
                         // Mark as "unreachable" by emptying the stack for this block
                         exitBlockDepth = ins.depth();
@@ -300,9 +295,7 @@ final class WasmAnalyzer {
                 case THROW_REF:
                     {
                         // Add instruction for THROW_REF
-                        result.add(
-                                new CompilerInstruction(
-                                        CompilerOpCode.of(OpCode.THROW_REF), ins.operands()));
+                        result.accept(Emitters.create(OpCode.THROW_REF, ins.operands()));
 
                         // Mark as "unreachable" by emptying the stack for this block
                         exitBlockDepth = ins.depth();
@@ -317,13 +310,13 @@ final class WasmAnalyzer {
                     stack.pop(selectType);
                     stack.pop(selectType);
                     stack.push(selectType);
-                    result.add(new CompilerInstruction(CompilerOpCode.SELECT, selectType.id()));
+                    result.accept(Emitters.create(OpCode.SELECT, selectType.id()));
                     break;
                 case DROP:
                     // [t] -> []
                     var dropType = stack.peek();
                     stack.pop(dropType);
-                    result.add(new CompilerInstruction(CompilerOpCode.DROP, dropType.id()));
+                    result.accept(Emitters.create(OpCode.DROP, dropType.id()));
                     break;
                 case LOCAL_TEE:
                     // [t] -> [t]
@@ -331,7 +324,7 @@ final class WasmAnalyzer {
                     stack.pop(teeType);
                     stack.push(teeType);
                     long[] teeOperands = {ins.operand(0), teeType.id()};
-                    result.add(new CompilerInstruction(CompilerOpCode.LOCAL_TEE, teeOperands));
+                    result.accept(Emitters.create(OpCode.LOCAL_TEE, teeOperands));
                     break;
                 default:
                     analyzeSimple(result, stack, ins, functionType, body);
@@ -342,61 +335,59 @@ final class WasmAnalyzer {
         for (var type : reversed(functionType.returns())) {
             stack.pop(type);
         }
-        result.add(new CompilerInstruction(CompilerOpCode.RETURN, ids(functionType.returns())));
+        result.accept(Emitters.create(OpCode.RETURN, ids(functionType.returns())));
 
         stack.verifyEmpty();
-        return result;
     }
 
     private static int analyzeTryCatchEnd(
-            List<CompilerInstruction> result, int nextLabel, TryCatchBlock tryCatchBlock) {
+            Map<Integer, Label> labels,
+            Consumer<Emitter> result,
+            int nextLabel,
+            TryCatchBlock tryCatchBlock) {
 
         // Mark the end of the try block
-        result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.end));
+        result.accept(LABEL(tryCatchBlock.end));
 
         // Jump over the exception handler if since no exception was thrown
-        var afterHandlerLabel = nextLabel++;
-        result.add(new CompilerInstruction(CompilerOpCode.GOTO, afterHandlerLabel));
+        var afterHandlerLabel = tryCatchBlock.after;
+        result.accept(GOTO(afterHandlerLabel));
 
         // Mark the start of the exception handler
-        result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.handler));
+        result.accept(LABEL(tryCatchBlock.handler));
 
         // store the exception in a temporary slot
-        result.add(new CompilerInstruction((ctx) -> ctx.asm().store(ctx.tempSlot(), OBJECT_TYPE)));
+        result.accept((c) -> c.asm().store(c.tempSlot(), OBJECT_TYPE));
 
         // create labels for after each catch block
-        var afterCatchLabels = new long[tryCatchBlock.ins.catches().size()];
-        for (int i = 0; i < tryCatchBlock.ins.catches().size(); i++) {
-            afterCatchLabels[i] = nextLabel++;
-        }
-
         for (int i = 0; i < tryCatchBlock.ins.catches().size(); i++) {
             var catchCondition = tryCatchBlock.ins.catches().get(i);
-            long afterCatchLabel = afterCatchLabels[i];
+            var afterCatchLabel = new Label();
+            labels.put(nextLabel++, afterCatchLabel);
 
             // Emmit an instruction for each catch condition
-            result.add(
-                    new CompilerInstruction(
-                            Emitters.CATCH_CONDITION(catchCondition, afterCatchLabel),
-                            catchCondition.resolvedLabel(),
+            result.accept(
+                    Emitters.CATCH_CONDITION(
+                            catchCondition,
+                            labels.get(catchCondition.resolvedLabel()),
                             afterCatchLabel));
         }
 
         // Default case: re-throw the exception
-        result.add(
-                new CompilerInstruction(
-                        (ctx) -> {
-                            ctx.asm().load(ctx.tempSlot(), OBJECT_TYPE);
-                            ctx.asm().athrow();
-                        }));
+        result.accept(
+                c -> {
+                    var asm = c.asm();
+                    asm.load(c.tempSlot(), OBJECT_TYPE);
+                    asm.athrow();
+                });
 
         // Mark the end of exception handler
-        result.add(new CompilerInstruction(CompilerOpCode.LABEL, afterHandlerLabel));
+        result.accept(LABEL(afterHandlerLabel));
         return nextLabel;
     }
 
     private void analyzeSimple(
-            List<CompilerInstruction> out,
+            Consumer<Emitter> out,
             TypeStack stack,
             Instruction ins,
             FunctionType functionType,
@@ -773,7 +764,7 @@ final class WasmAnalyzer {
             default:
                 throw new ChicoryException("Unhandled opcode: " + ins.opcode());
         }
-        out.add(new CompilerInstruction(CompilerOpCode.of(ins.opcode()), ins.operands()));
+        out.accept(Emitters.create(ins.opcode(), ins.operands()));
     }
 
     private static void updateStack(TypeStack stack, FunctionType functionType) {
@@ -785,7 +776,7 @@ final class WasmAnalyzer {
         }
     }
 
-    private Optional<CompilerInstruction> unwindStack(
+    private Optional<Emitter> unwindStack(
             FunctionType functionType,
             FunctionBody body,
             AnnotatedInstruction ins,
@@ -834,8 +825,7 @@ final class WasmAnalyzer {
         reverse(dropKeepTypes);
         dropKeepTypes.stream().mapToLong(ValType::id).forEach(operands::add);
 
-        return Optional.of(
-                new CompilerInstruction(CompilerOpCode.DROP_KEEP, operands.build().toArray()));
+        return Optional.of(DROP_KEEP(operands.build().toArray()));
     }
 
     private FunctionType blockType(Instruction ins) {

@@ -10,11 +10,8 @@ import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.TagImport;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
-import org.objectweb.asm.Label;
 import org.objectweb.asm.commons.InstructionAdapter;
 
 /**
@@ -35,7 +32,6 @@ final class Context {
     private final int instanceSlot;
     private final int tempSlot;
     private final InstructionAdapter asm;
-    private final Map<Long, Label> labels = new HashMap<>();
 
     public Context(
             WasmModule module,
@@ -97,10 +93,6 @@ final class Context {
 
     public InstructionAdapter asm() {
         return asm;
-    }
-
-    public Map<Long, Label> labels() {
-        return labels;
     }
 
     public String internalClassName() {
