@@ -143,6 +143,31 @@ public final class WasmModule {
         return ignoredSections;
     }
 
+    // Helper functions
+    public Optional<String> functionName(int idx) {
+        if (idx < importSection.importCount()) {
+            return Optional.of(importSection.getImport(idx).name());
+        } else {
+            var customSection = customSections.get("name");
+            if (customSection != null && customSection instanceof NameCustomSection) {
+                var nameCustomSection = (NameCustomSection) customSection;
+                var originalName = nameCustomSection.nameOfFunction(idx);
+                return Optional.ofNullable(originalName);
+            }
+            return Optional.empty();
+        }
+    }
+
+    public Optional<String> moduleName() {
+        var customSection = customSections.get("name");
+        if (customSection != null && customSection instanceof NameCustomSection) {
+            var nameCustomSection = (NameCustomSection) customSection;
+            return nameCustomSection.moduleName();
+        } else {
+            return Optional.empty();
+        }
+    }
+
     public static Builder builder() {
         return new Builder();
     }

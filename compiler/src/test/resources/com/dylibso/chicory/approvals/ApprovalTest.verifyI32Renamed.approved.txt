@@ -505,11 +505,11 @@ final class FOOShaded {
     INVOKEDYNAMIC apply(Lcom/dylibso/chicory/runtime/Instance;)Ljava/util/function/Function; [
       java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
       (Ljava/lang/Object;)Ljava/lang/Object;, 
-      FOOShaded.lambda$throwTrapException$1(Lcom/dylibso/chicory/runtime/Instance;Ljava/lang/StackTraceElement;)Ljava/lang/StackTraceElement;, 
-      (Ljava/lang/StackTraceElement;)Ljava/lang/StackTraceElement;
+      FOOShaded.lambda$throwTrapException$1(Lcom/dylibso/chicory/runtime/Instance;Ljava/lang/StackTraceElement;)Ljava/util/stream/Stream;, 
+      (Ljava/lang/StackTraceElement;)Ljava/util/stream/Stream;
     ]
    L5
-    INVOKEINTERFACE java/util/stream/Stream.map (Ljava/util/function/Function;)Ljava/util/stream/Stream; (itf)
+    INVOKEINTERFACE java/util/stream/Stream.flatMap (Ljava/util/function/Function;)Ljava/util/stream/Stream; (itf)
     INVOKEDYNAMIC apply()Ljava/util/function/IntFunction; [
       java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
       (I)Ljava/lang/Object;, 
@@ -591,7 +591,7 @@ final class FOOShaded {
     ARETURN
    L1
 
-  private static synthetic lambda$throwTrapException$1(Lcom/dylibso/chicory/runtime/Instance;Ljava/lang/StackTraceElement;)Ljava/lang/StackTraceElement;
+  private static synthetic lambda$throwTrapException$1(Lcom/dylibso/chicory/runtime/Instance;Ljava/lang/StackTraceElement;)Ljava/util/stream/Stream;
    L0
     ALOAD 1
    L1
@@ -606,23 +606,10 @@ final class FOOShaded {
    L4
     ALOAD 0
     ILOAD 2
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.functionName (I)Ljava/lang/String;
-    ASTORE 3
-   L5
-    ALOAD 0
-    LDC "wasm-compiled-module"
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.moduleName (Ljava/lang/String;)Ljava/lang/String;
-    ASTORE 4
-   L6
-    NEW java/lang/StackTraceElement
-    DUP
-    ALOAD 4
-    ALOAD 3
-    ACONST_NULL
-    ICONST_M1
-    INVOKESPECIAL java/lang/StackTraceElement.<init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.computeStackFrame (I)Ljava/util/List;
+    INVOKEINTERFACE java/util/List.stream ()Ljava/util/stream/Stream; (itf)
     ARETURN
-   L7
+   L5
 
   private static synthetic lambda$throwTrapException$0(Ljava/lang/String;Ljava/lang/StackTraceElement;)Z
    L0

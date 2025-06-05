@@ -171,26 +171,13 @@ public class InterpreterMachine implements Machine {
                 case UNREACHABLE:
                     {
                         List<StackTraceElement> elements = new ArrayList<>();
+                        int last = -1;
                         while (frame != null) {
                             while (frame != null && frame.ctrlStackSize() > 0) {
-                                var funcName = instance.functionName(frame.funcId());
-                                var moduleName = instance.moduleName("wasm-interpreted-module");
-
-                                var skip = false;
-                                if (elements.size() > 0) {
-                                    var last = elements.get(elements.size() - 1);
-
-                                    if (last.getClassName().equals(moduleName)
-                                            && last.getMethodName().equals(funcName)) {
-                                        skip = true;
-                                    }
+                                if (frame.funcId() != last) {
+                                    elements.addAll(instance.computeStackFrame(frame.funcId()));
+                                    last = frame.funcId();
                                 }
-
-                                if (!skip) {
-                                    elements.add(
-                                            new StackTraceElement(moduleName, funcName, null, -1));
-                                }
-
                                 frame = callStack.isEmpty() ? null : callStack.pop();
                             }
                         }

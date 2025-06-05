@@ -198,7 +198,7 @@ public final class Shaded {
                                                 && stackTraceElement
                                                         .getMethodName()
                                                         .startsWith("func_"))
-                        .map(
+                        .flatMap(
                                 stackTraceElement -> {
                                     var funcId =
                                             Integer.parseInt(
@@ -206,10 +206,7 @@ public final class Shaded {
                                                             .getMethodName()
                                                             .replace("func_", ""));
 
-                                    var funcName = instance.functionName(funcId);
-                                    var moduleName = instance.moduleName("wasm-compiled-module");
-
-                                    return new StackTraceElement(moduleName, funcName, null, -1);
+                                    return instance.computeStackFrame(funcId).stream();
                                 })
                         .toArray(StackTraceElement[]::new);
 

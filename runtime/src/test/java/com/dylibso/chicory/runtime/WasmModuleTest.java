@@ -576,10 +576,15 @@ public class WasmModuleTest {
 
     @Test
     public void shouldEmitUnderstandableStackTraces() throws Exception {
-        var instance = Instance.builder(loadModule("compiled/count_vowels.rs.wasm")).build();
+        var instance =
+                Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
+                        .withDefaultExceptionConverter()
+                        .build();
         var countVowels = instance.export("count_vowels");
         var exception = assertThrows(TrapException.class, () -> countVowels.apply(0, -1));
         var exceptionTxt = readStackTrace(exception);
+
+        System.out.println();
 
         assertTrue(exceptionTxt.contains("count_vowels.wasm.count_vowels"));
         assertTrue(exceptionTxt.contains("rust_panic"));

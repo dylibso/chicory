@@ -33,7 +33,6 @@ import com.dylibso.chicory.wasm.types.MemoryImport;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.MutabilityType;
-import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TagImport;
@@ -46,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -69,7 +69,8 @@ public class Instance {
     private final ExecutionListener listener;
     private final Exports fluentExports;
 
-    private final Optional<Function<String, String>> demangler;
+    private final Optional<BiFunction<Instance, Integer, List<StackTraceElement>>>
+            exceptionConverter;
 
     private final Map<Integer, WasmException> exnRefs;
 
@@ -90,9 +91,9 @@ public class Instance {
             boolean initialize,
             boolean start,
             ExecutionListener listener,
-            Optional<Function<String, String>> demangler) {
+            Optional<BiFunction<Instance, Integer, List<StackTraceElement>>> exceptionConverter) {
         this.module = module;
-        this.demangler = demangler;
+        this.exceptionConverter = exceptionConverter;
         this.globalInitializers = globalInitializers.clone();
         this.globals = new GlobalInstance[globalInitializers.length];
         this.memory = memory;
@@ -340,34 +341,11 @@ public class Instance {
         return exnRefs.get(idx);
     }
 
-    public String demangle(String str) {
-        return demangler.map(d -> d.apply(str)).orElse(str);
-    }
-
-    public String functionName(int idx) {
-        if (idx < imports.functionCount()) {
-            return imports.function(idx).name();
+    public List<StackTraceElement> computeStackFrame(int funcIdx) {
+        if (exceptionConverter.isPresent()) {
+            return exceptionConverter.get().apply(this, funcIdx);
         } else {
-            var customSection = module.customSection("name");
-            String funcName = "function[" + idx + "]"; // fallback
-            if (customSection != null && customSection instanceof NameCustomSection) {
-                var nameCustomSection = (NameCustomSection) customSection;
-                var originalName = nameCustomSection.nameOfFunction(idx);
-                if (originalName != null) {
-                    funcName = demangle(originalName);
-                }
-            }
-            return funcName;
-        }
-    }
-
-    public String moduleName(String fallback) {
-        var customSection = module.customSection("name");
-        if (customSection != null && customSection instanceof NameCustomSection) {
-            var nameCustomSection = (NameCustomSection) customSection;
-            return nameCustomSection.moduleName().map(n -> demangle(n)).orElse(fallback);
-        } else {
-            return fallback;
+            return List.of();
         }
     }
 
@@ -395,7 +373,7 @@ public class Instance {
         private ExecutionListener listener;
         private ImportValues importValues;
         private Function<Instance, Machine> machineFactory;
-        private Function<String, String> demangler;
+        private BiFunction<Instance, Integer, List<StackTraceElement>> exceptionConverter;
 
         private Builder(WasmModule module) {
             this.module = Objects.requireNonNull(module);
@@ -439,8 +417,23 @@ public class Instance {
             return this;
         }
 
-        public Builder withDemangler(Function<String, String> demangler) {
-            this.demangler = demangler;
+        public Builder withExceptionConverter(
+                BiFunction<Instance, Integer, List<StackTraceElement>> exceptionConverter) {
+            this.exceptionConverter = exceptionConverter;
+            return this;
+        }
+
+        public Builder withDefaultExceptionConverter() {
+            this.exceptionConverter =
+                    (inst, funcIdx) -> {
+                        var funcName =
+                                inst.module()
+                                        .functionName(funcIdx)
+                                        .orElse("function[" + funcIdx + "]");
+                        var moduleName = inst.module().moduleName().orElse("wasm-module");
+
+                        return List.of(new StackTraceElement(moduleName, funcName, null, -1));
+                    };
             return this;
         }
 
@@ -928,7 +921,7 @@ public class Instance {
                     initialize,
                     start,
                     listener,
-                    Optional.ofNullable(demangler));
+                    Optional.ofNullable(exceptionConverter));
         }
     }
 }

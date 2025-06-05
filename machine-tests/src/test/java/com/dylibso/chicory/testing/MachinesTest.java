@@ -40,6 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import org.junit.jupiter.api.Test;
 
 public final class MachinesTest {
@@ -245,6 +246,7 @@ public final class MachinesTest {
         Instance.builder(loadModule("compiled/call_indirect-import.wat.wasm"))
                 .withImportValues(store.toImportValues())
                 .withMachineFactory(MachineFactoryCompiler::compile)
+                .withExceptionConverter(demanglerExceptionConverter("wasm-compiled-module"))
                 .build();
 
         assertEquals(42, instance.export("call-self").apply()[0]);
@@ -273,6 +275,7 @@ public final class MachinesTest {
         Instance.builder(loadModule("compiled/call_indirect-import.wat.wasm"))
                 .withImportValues(store.toImportValues())
                 .withMachineFactory(InterpreterMachine::new)
+                .withExceptionConverter(demanglerExceptionConverter("wasm-interpreted-module"))
                 .build();
 
         assertEquals(42, instance.export("call-self").apply()[0]);
@@ -289,11 +292,42 @@ public final class MachinesTest {
         return sw.toString();
     }
 
+    private static List<StackTraceElement> demanglerExceptionConverter(
+            Instance instance, int funcIdx) {
+        return demanglerExceptionConverter("wasm-module").apply(instance, funcIdx);
+    }
+
+    private static BiFunction<Instance, Integer, List<StackTraceElement>>
+            demanglerExceptionConverter(String fallbackModuleName) {
+        return (instance, funcIdx) -> {
+            var moduleName = instance.module().moduleName().orElse(fallbackModuleName);
+            var funcName =
+                    instance.module()
+                            .functionName(funcIdx)
+                            .map(str -> Demangler.demangle(str))
+                            .orElse("function[" + funcIdx + "]");
+            return List.of(new StackTraceElement(moduleName, funcName, null, -1));
+        };
+    }
+
+    private static BiFunction<Instance, Integer, List<StackTraceElement>>
+            demanglerExceptionConverter(WasmModule debugModule) {
+        return (instance, funcIdx) -> {
+            var moduleName = debugModule.moduleName().orElse("wasm-module");
+            var funcName =
+                    debugModule
+                            .functionName(funcIdx)
+                            .map(str -> Demangler.demangle(str))
+                            .orElse("function[" + funcIdx + "]");
+            return List.of(new StackTraceElement(moduleName, funcName, null, -1));
+        };
+    }
+
     @Test
     public void shouldEmitUnderstandableStackTracesWithInterpreter() throws Exception {
         var instance =
                 Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
-                        .withDemangler(Demangler::demangle)
+                        .withExceptionConverter(MachinesTest::demanglerExceptionConverter)
                         .build();
         var countVowels = instance.export("count_vowels");
         var exception = assertThrows(TrapException.class, () -> countVowels.apply(0, -1));
@@ -308,7 +342,7 @@ public final class MachinesTest {
         var instance =
                 Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
                         .withMachineFactory(MachineFactoryCompiler::compile)
-                        .withDemangler(Demangler::demangle)
+                        .withExceptionConverter(MachinesTest::demanglerExceptionConverter)
                         .build();
         var countVowels = instance.export("count_vowels");
         var exception = assertThrows(TrapException.class, () -> countVowels.apply(0, -1));
@@ -320,13 +354,11 @@ public final class MachinesTest {
 
     @Test
     public void shouldEmitUnderstandableStackTracesBuildTimeCompiled() throws Exception {
+        var debugModule = loadModule("compiled/count_vowels.rs.wasm");
         var instance =
-                // NOTE: we cannot use CountVowels.load() as the name custom section is removed
-                // TODO: should we make the lookup injectable to be able to resolve from another
-                // file?
-                Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
+                Instance.builder(CountVowels.load())
                         .withMachineFactory(CountVowels::create)
-                        .withDemangler(Demangler::demangle)
+                        .withExceptionConverter(demanglerExceptionConverter(debugModule))
                         .build();
         var countVowels = instance.export("count_vowels");
         var exception = assertThrows(TrapException.class, () -> countVowels.apply(0, -1));
