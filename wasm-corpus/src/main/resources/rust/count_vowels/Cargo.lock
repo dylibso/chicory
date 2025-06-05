@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "greet-wasi"
+name = "count_vowels"
 version = "0.0.1"

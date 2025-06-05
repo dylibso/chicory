@@ -1,3 +1,3 @@
 [package]
-name = "greet-wasi"
+name = "hello-wasi"
 version = "0.0.1"
