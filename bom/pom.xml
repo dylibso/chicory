@@ -61,6 +61,11 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
+        <artifactId>rustc-demangle</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
         <artifactId>simd</artifactId>
         <version>${project.version}</version>
       </dependency>

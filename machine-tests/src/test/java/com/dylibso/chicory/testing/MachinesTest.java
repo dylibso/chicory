@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
+import com.dylibso.chicory.demangle.Demangler;
 import com.dylibso.chicory.runtime.ImportTable;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
@@ -31,7 +32,10 @@ import io.roastedroot.zerofs.ZeroFs;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -225,7 +229,7 @@ public final class MachinesTest {
     }
 
     @Test
-    public void shouldCallIndirectInterpreterToAot() {
+    public void shouldCallIndirectInterpreterToCompiler() {
         var store = new Store();
         var table =
                 new TableInstance(
@@ -249,11 +253,11 @@ public final class MachinesTest {
 
         var ex = assertThrows(TrapException.class, instance.export("call-other-fail")::apply);
         var className = ex.getStackTrace()[0].getClassName();
-        assertTrue(className.contains("CompiledMachine"), className);
+        assertTrue(className.contains("wasm-compiled-module"), className);
     }
 
     @Test
-    public void shouldCallIndirectAotToInterpreter() {
+    public void shouldCallIndirectCompilerToInterpreter() {
         var store = new Store();
         var table =
                 new TableInstance(
@@ -277,6 +281,65 @@ public final class MachinesTest {
 
         var ex = assertThrows(TrapException.class, instance.export("call-other-fail")::apply);
         var className = ex.getStackTrace()[0].getClassName();
-        assertTrue(className.contains("InterpreterMachine"), className);
+        assertTrue(className.contains("wasm-interpreted-module"), className);
+    }
+
+    private String readStackTrace(Throwable exception) throws IOException {
+        try (var baos = new ByteArrayOutputStream();
+                var osw = new OutputStreamWriter(baos, UTF_8);
+                var pw = new PrintWriter(osw)) {
+            exception.printStackTrace(pw);
+            pw.flush();
+            pw.close();
+
+            return baos.toString(UTF_8);
+        }
+    }
+
+    @Test
+    public void shouldEmitUnderstandableStackTracesWithInterpreter() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
+                        .withDemangler(Demangler::demangle)
+                        .build();
+        var countVowels = instance.export("count_vowels");
+        var exception = assertThrows(TrapException.class, () -> countVowels.apply(0, -1));
+        var exceptionTxt = readStackTrace(exception);
+
+        assertTrue(exceptionTxt.contains("count_vowels.wasm.count_vowels"));
+        assertTrue(exceptionTxt.contains("count_vowels.wasm.std::panicking::rust_panic_with_hook"));
+    }
+
+    @Test
+    public void shouldEmitUnderstandableStackTracesRuntimeCompiled() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .withDemangler(Demangler::demangle)
+                        .build();
+        var countVowels = instance.export("count_vowels");
+        var exception = assertThrows(TrapException.class, () -> countVowels.apply(0, -1));
+        var exceptionTxt = readStackTrace(exception);
+
+        assertTrue(exceptionTxt.contains("count_vowels.wasm.count_vowels"));
+        assertTrue(exceptionTxt.contains("count_vowels.wasm.std::panicking::rust_panic_with_hook"));
+    }
+
+    @Test
+    public void shouldEmitUnderstandableStackTracesBuildTimeCompiled() throws Exception {
+        var instance =
+                // NOTE: we cannot use CountVowels.load() as the name custom section is removed
+                // TODO: should we make the lookup injectable to be able to resolve from another
+                // file?
+                Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
+                        .withMachineFactory(CountVowels::create)
+                        .withDemangler(Demangler::demangle)
+                        .build();
+        var countVowels = instance.export("count_vowels");
+        var exception = assertThrows(TrapException.class, () -> countVowels.apply(0, -1));
+        var exceptionTxt = readStackTrace(exception);
+
+        assertTrue(exceptionTxt.contains("count_vowels.wasm.count_vowels"));
+        assertTrue(exceptionTxt.contains("count_vowels.wasm.std::panicking::rust_panic_with_hook"));
     }
 }

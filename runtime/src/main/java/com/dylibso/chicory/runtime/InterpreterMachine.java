@@ -13,6 +13,7 @@ import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
@@ -168,7 +169,36 @@ public class InterpreterMachine implements Machine {
             instance.onExecution(instruction, stack);
             switch (opcode) {
                 case UNREACHABLE:
-                    throw new TrapException("Trapped on unreachable instruction");
+                    {
+                        List<StackTraceElement> elements = new ArrayList<>();
+                        while (frame != null) {
+                            while (frame != null && frame.ctrlStackSize() > 0) {
+                                var funcName = instance.functionName(frame.funcId());
+                                var moduleName = instance.moduleName("wasm-interpreted-module");
+
+                                var skip = false;
+                                if (elements.size() > 0) {
+                                    var last = elements.get(elements.size() - 1);
+
+                                    if (last.getClassName().equals(moduleName)
+                                            && last.getMethodName().equals(funcName)) {
+                                        skip = true;
+                                    }
+                                }
+
+                                if (!skip) {
+                                    elements.add(
+                                            new StackTraceElement(moduleName, funcName, null, -1));
+                                }
+
+                                frame = callStack.isEmpty() ? null : callStack.pop();
+                            }
+                        }
+
+                        throw new TrapException(
+                                "Trapped on unreachable instruction in InterpreterMachine",
+                                elements.toArray(StackTraceElement[]::new));
+                    }
                 case NOP:
                     break;
                 case LOOP:

@@ -6,4 +6,9 @@ public class TrapException extends ChicoryException {
     public TrapException(String msg) {
         super(msg);
     }
+
+    public TrapException(String msg, StackTraceElement[] elements) {
+        super(msg);
+        setStackTrace(elements);
+    }
 }

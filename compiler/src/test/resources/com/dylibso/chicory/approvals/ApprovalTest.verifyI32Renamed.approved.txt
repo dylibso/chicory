@@ -69,6 +69,8 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
 
 final class FOOShaded {
 
+  public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
+
   private final static Z memCopyWorkaround
 
   private <init>()V
@@ -473,13 +475,63 @@ final class FOOShaded {
     INVOKESPECIAL com/dylibso/chicory/runtime/WasmRuntimeException.<init> (Ljava/lang/String;)V
     ATHROW
 
-  public static throwTrapException()Ljava/lang/RuntimeException;
+  public static throwTrapException(Lcom/dylibso/chicory/runtime/Instance;Ljava/lang/String;)Ljava/lang/RuntimeException;
    L0
+    NEW java/lang/Throwable
+    DUP
+    INVOKESPECIAL java/lang/Throwable.<init> ()V
+    INVOKEVIRTUAL java/lang/Throwable.getStackTrace ()[Ljava/lang/StackTraceElement;
+    ASTORE 2
+   L1
+    ALOAD 1
+    BIPUSH 47
+    BIPUSH 46
+    INVOKEVIRTUAL java/lang/String.replace (CC)Ljava/lang/String;
+    ASTORE 3
+   L2
+    ALOAD 2
+   L3
+    INVOKESTATIC java/util/Arrays.stream ([Ljava/lang/Object;)Ljava/util/stream/Stream;
+    ALOAD 3
+    INVOKEDYNAMIC test(Ljava/lang/String;)Ljava/util/function/Predicate; [
+      java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
+      (Ljava/lang/Object;)Z, 
+      FOOShaded.lambda$throwTrapException$0(Ljava/lang/String;Ljava/lang/StackTraceElement;)Z, 
+      (Ljava/lang/StackTraceElement;)Z
+    ]
+   L4
+    INVOKEINTERFACE java/util/stream/Stream.filter (Ljava/util/function/Predicate;)Ljava/util/stream/Stream; (itf)
+    ALOAD 0
+    INVOKEDYNAMIC apply(Lcom/dylibso/chicory/runtime/Instance;)Ljava/util/function/Function; [
+      java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
+      (Ljava/lang/Object;)Ljava/lang/Object;, 
+      FOOShaded.lambda$throwTrapException$1(Lcom/dylibso/chicory/runtime/Instance;Ljava/lang/StackTraceElement;)Ljava/lang/StackTraceElement;, 
+      (Ljava/lang/StackTraceElement;)Ljava/lang/StackTraceElement;
+    ]
+   L5
+    INVOKEINTERFACE java/util/stream/Stream.map (Ljava/util/function/Function;)Ljava/util/stream/Stream; (itf)
+    INVOKEDYNAMIC apply()Ljava/util/function/IntFunction; [
+      java/lang/invoke/LambdaMetafactory.metafactory(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodType;Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;)Ljava/lang/invoke/CallSite;
+      (I)Ljava/lang/Object;, 
+      FOOShaded.lambda$throwTrapException$2(I)[Ljava/lang/StackTraceElement;, 
+      (I)[Ljava/lang/StackTraceElement;
+    ]
+   L6
+    INVOKEINTERFACE java/util/stream/Stream.toArray (Ljava/util/function/IntFunction;)[Ljava/lang/Object; (itf)
+    CHECKCAST [Ljava/lang/StackTraceElement;
+    ASTORE 4
+   L7
     NEW com/dylibso/chicory/runtime/TrapException
     DUP
-    LDC "Trapped on unreachable instruction"
-    INVOKESPECIAL com/dylibso/chicory/runtime/TrapException.<init> (Ljava/lang/String;)V
+    ALOAD 3
+    INVOKEDYNAMIC makeConcatWithConstants(Ljava/lang/String;)Ljava/lang/String; [
+      java/lang/invoke/StringConcatFactory.makeConcatWithConstants(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;
+      "Trapped on unreachable instruction in: \u0001"
+    ]
+    ALOAD 4
+    INVOKESPECIAL com/dylibso/chicory/runtime/TrapException.<init> (Ljava/lang/String;[Ljava/lang/StackTraceElement;)V
     ATHROW
+   L8
 
   public static throwUnknownFunction(I)Ljava/lang/RuntimeException;
    L0
@@ -531,6 +583,70 @@ final class FOOShaded {
    L1
     RETURN
    L2
+
+  private static synthetic lambda$throwTrapException$2(I)[Ljava/lang/StackTraceElement;
+   L0
+    ILOAD 0
+    ANEWARRAY java/lang/StackTraceElement
+    ARETURN
+   L1
+
+  private static synthetic lambda$throwTrapException$1(Lcom/dylibso/chicory/runtime/Instance;Ljava/lang/StackTraceElement;)Ljava/lang/StackTraceElement;
+   L0
+    ALOAD 1
+   L1
+    INVOKEVIRTUAL java/lang/StackTraceElement.getMethodName ()Ljava/lang/String;
+    LDC "func_"
+    LDC ""
+   L2
+    INVOKEVIRTUAL java/lang/String.replace (Ljava/lang/CharSequence;Ljava/lang/CharSequence;)Ljava/lang/String;
+   L3
+    INVOKESTATIC java/lang/Integer.parseInt (Ljava/lang/String;)I
+    ISTORE 2
+   L4
+    ALOAD 0
+    ILOAD 2
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.functionName (I)Ljava/lang/String;
+    ASTORE 3
+   L5
+    ALOAD 0
+    LDC "wasm-compiled-module"
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.moduleName (Ljava/lang/String;)Ljava/lang/String;
+    ASTORE 4
+   L6
+    NEW java/lang/StackTraceElement
+    DUP
+    ALOAD 4
+    ALOAD 3
+    ACONST_NULL
+    ICONST_M1
+    INVOKESPECIAL java/lang/StackTraceElement.<init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V
+    ARETURN
+   L7
+
+  private static synthetic lambda$throwTrapException$0(Ljava/lang/String;Ljava/lang/StackTraceElement;)Z
+   L0
+    ALOAD 1
+   L1
+    INVOKEVIRTUAL java/lang/StackTraceElement.getClassName ()Ljava/lang/String;
+    ALOAD 0
+   L2
+    INVOKEVIRTUAL java/lang/String.startsWith (Ljava/lang/String;)Z
+    IFEQ L3
+    ALOAD 1
+   L4
+    INVOKEVIRTUAL java/lang/StackTraceElement.getMethodName ()Ljava/lang/String;
+    LDC "func_"
+   L5
+    INVOKEVIRTUAL java/lang/String.startsWith (Ljava/lang/String;)Z
+    IFEQ L3
+    ICONST_1
+    GOTO L6
+   L3
+    ICONST_0
+   L6
+    IRETURN
+   L7
 
   static <clinit>()V
    L0

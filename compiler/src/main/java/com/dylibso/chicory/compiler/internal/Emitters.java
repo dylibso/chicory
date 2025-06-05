@@ -69,6 +69,8 @@ final class Emitters {
     }
 
     public static void TRAP(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        asm.visitLdcInsn(ctx.internalClassName());
         emitInvokeStatic(asm, ShadedRefs.THROW_TRAP_EXCEPTION);
         asm.athrow();
     }

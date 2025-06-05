@@ -13,6 +13,7 @@ import com.dylibso.chicory.runtime.WasmRuntimeException;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import java.util.Arrays;
 
 /**
  * This class will get shaded into the compiled code.
@@ -183,8 +184,37 @@ public final class Shaded {
         throw new WasmRuntimeException("out of bounds memory access");
     }
 
-    public static RuntimeException throwTrapException() {
-        throw new TrapException("Trapped on unreachable instruction");
+    public static RuntimeException throwTrapException(Instance instance, String internalClassName) {
+        StackTraceElement[] trace = new Throwable().getStackTrace();
+        var originalClassName = internalClassName.replace('/', '.');
+
+        StackTraceElement[] filtered =
+                Arrays.stream(trace)
+                        .filter(
+                                stackTraceElement ->
+                                        stackTraceElement
+                                                        .getClassName()
+                                                        .startsWith(originalClassName)
+                                                && stackTraceElement
+                                                        .getMethodName()
+                                                        .startsWith("func_"))
+                        .map(
+                                stackTraceElement -> {
+                                    var funcId =
+                                            Integer.parseInt(
+                                                    stackTraceElement
+                                                            .getMethodName()
+                                                            .replace("func_", ""));
+
+                                    var funcName = instance.functionName(funcId);
+                                    var moduleName = instance.moduleName("wasm-compiled-module");
+
+                                    return new StackTraceElement(moduleName, funcName, null, -1);
+                                })
+                        .toArray(StackTraceElement[]::new);
+
+        throw new TrapException(
+                "Trapped on unreachable instruction in: " + originalClassName, filtered);
     }
 
     public static RuntimeException throwUnknownFunction(int index) {

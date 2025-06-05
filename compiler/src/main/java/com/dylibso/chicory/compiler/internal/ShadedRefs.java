@@ -155,7 +155,8 @@ public final class ShadedRefs {
                     Shaded.class.getMethod("throwIndirectCallTypeMismatch");
             THROW_OUT_OF_BOUNDS_MEMORY_ACCESS =
                     Shaded.class.getMethod("throwOutOfBoundsMemoryAccess");
-            THROW_TRAP_EXCEPTION = Shaded.class.getMethod("throwTrapException");
+            THROW_TRAP_EXCEPTION =
+                    Shaded.class.getMethod("throwTrapException", Instance.class, String.class);
             THROW_UNKNOWN_FUNCTION = Shaded.class.getMethod("throwUnknownFunction", int.class);
 
             AOT_INTERPRETER_MACHINE_CALL =

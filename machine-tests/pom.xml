@@ -28,6 +28,11 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
+      <artifactId>rustc-demangle</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasi</artifactId>
       <scope>test</scope>
     </dependency>
@@ -82,6 +87,16 @@
             <configuration>
               <name>com.dylibso.chicory.wabt.Wat2Wasm</name>
               <wasmFile>${project.basedir}/../wabt/src/main/resources/wat2wasm</wasmFile>
+            </configuration>
+          </execution>
+          <execution>
+            <id>count_vowels</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <name>com.dylibso.chicory.testing.CountVowels</name>
+              <wasmFile>${project.basedir}/../wasm-corpus/src/main/resources/compiled/count_vowels.rs.wasm</wasmFile>
             </configuration>
           </execution>
         </executions>
