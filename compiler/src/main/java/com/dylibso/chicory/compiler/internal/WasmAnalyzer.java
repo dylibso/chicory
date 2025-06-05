@@ -1,22 +1,14 @@
 package com.dylibso.chicory.compiler.internal;
 
-import static com.dylibso.chicory.compiler.internal.CompilerUtil.emitInvokeStatic;
-import static com.dylibso.chicory.compiler.internal.CompilerUtil.emitLongToJvm;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.localType;
-import static com.dylibso.chicory.compiler.internal.ShadedRefs.EXCEPTION_MATCHES;
+import static com.dylibso.chicory.compiler.internal.Emitters.TRY_CATCH_BLOCK;
 import static com.dylibso.chicory.compiler.internal.TypeStack.FUNCTION_SCOPE;
 import static java.util.Collections.reverse;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static org.objectweb.asm.Type.INT_TYPE;
-import static org.objectweb.asm.Type.LONG_TYPE;
-import static org.objectweb.asm.Type.getInternalName;
-import static org.objectweb.asm.Type.getMethodDescriptor;
-import static org.objectweb.asm.Type.getType;
 import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
-import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.WasmException;
+import com.dylibso.chicory.compiler.internal.Emitters.TryCatchBlock;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
@@ -44,7 +36,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
-import org.objectweb.asm.Label;
 
 final class WasmAnalyzer {
 
@@ -53,18 +44,6 @@ final class WasmAnalyzer {
     private final List<FunctionType> functionTypes;
     private final List<ValType> tableTypes;
     private final int functionImports;
-
-    private static class TryCatchBlock {
-        final long start;
-        final long end;
-        final long handler;
-
-        public TryCatchBlock(long start, long end, long handler) {
-            this.start = start;
-            this.end = end;
-            this.handler = handler;
-        }
-    }
 
     public WasmAnalyzer(WasmModule module) {
         this.module = module;
@@ -94,7 +73,7 @@ final class WasmAnalyzer {
         Set<Integer> labels = new HashSet<>();
 
         HashMap<Integer, TryCatchBlock> tryCatchBlocks = new HashMap<>();
-        ArrayDeque<TryCatchBlock> tryCatchBlocksStack = new ArrayDeque<TryCatchBlock>();
+        ArrayDeque<TryCatchBlock> tryCatchBlocksStack = new ArrayDeque<>();
         HashMap<Integer, AnnotatedInstruction> tryTables = new HashMap<>();
 
         for (int idx = 0; idx < body.instructions().size(); idx++) {
@@ -118,7 +97,7 @@ final class WasmAnalyzer {
 
             if (ins.opcode() == OpCode.TRY_TABLE
                     && body.instructions().get(idx + 1).opcode() != OpCode.END) {
-                var block = new TryCatchBlock(nextLabel++, nextLabel++, nextLabel++);
+                var block = new TryCatchBlock(nextLabel++, nextLabel++, nextLabel++, nextLabel++);
                 tryCatchBlocksStack.push(block);
                 tryCatchBlocks.put(ins.address(), block);
                 tryTables.put(ins.address(), ins);
@@ -130,17 +109,8 @@ final class WasmAnalyzer {
             var ins = tryCatchBlocksStack.pop();
             result.add(
                     new CompilerInstruction(
-                            new long[] {ins.start, ins.end, ins.handler},
-                            (ctx, asm, asmLabels) -> {
-                                Label start = asmLabels.get(ins.start);
-                                Label endLabel = asmLabels.get(ins.end);
-                                Label handlerLabel = asmLabels.get(ins.handler);
-                                asm.visitTryCatchBlock(
-                                        start,
-                                        endLabel,
-                                        handlerLabel,
-                                        getInternalName(WasmException.class));
-                            }));
+                            new long[] {ins.start, ins.end, ins.handler, ins.after},
+                            TRY_CATCH_BLOCK(ins)));
         }
 
         // implicit block for the function
@@ -312,193 +282,15 @@ final class WasmAnalyzer {
                     // Check if this is the end of a TRY_TABLE block
                     if (ins.scope().opcode() == OpCode.TRY_TABLE) {
                         var tryTableIns = tryTables.remove(ins.scope().address());
-                        if (tryTableIns
-                                != null) { // Weird: sometimes we see END occur multiple times for
+
+                        // Weird: sometimes we see END occur multiple times for
+                        if (tryTableIns != null) {
                             // the same try table.
                             var tryCatchBlock = tryCatchBlocks.remove(tryTableIns.address());
 
-                            result.add(
-                                    new CompilerInstruction(
-                                            CompilerOpCode.LABEL, tryCatchBlock.end));
-
-                            // Jump over the exception handler during normal execution
-                            var afterHandlerLabel = nextLabel++;
-                            result.add(
-                                    new CompilerInstruction(
-                                            CompilerOpCode.GOTO, afterHandlerLabel));
-
-                            // Exception handler starts here
-                            result.add(
-                                    new CompilerInstruction(
-                                            CompilerOpCode.LABEL, tryCatchBlock.handler));
-
-                            // Emit the exception handler logic directly
-                            long[] labelTargets =
-                                    tryTableIns.catches().stream()
-                                            .mapToLong(CatchOpCode.Catch::resolvedLabel)
-                                            .toArray();
-
-                            result.add(
-                                    new CompilerInstruction(
-                                            labelTargets,
-                                            (ctx, asm, asmLabels) -> {
-
-                                                // store the exception in a temporary slot
-                                                var exceptionSlot = ctx.tempSlot();
-                                                asm.store(exceptionSlot, OBJECT_TYPE);
-
-                                                var catches = tryTableIns.catches();
-                                                for (var catchCondition : catches) {
-                                                    Label nextCheck = new Label();
-
-                                                    switch (catchCondition.opcode()) {
-                                                        case CATCH:
-                                                        case CATCH_REF:
-                                                            // Compare tag
-                                                            asm.load(exceptionSlot, OBJECT_TYPE);
-                                                            asm.iconst(catchCondition.tag());
-                                                            asm.load(
-                                                                    ctx.instanceSlot(),
-                                                                    OBJECT_TYPE);
-                                                            emitInvokeStatic(
-                                                                    asm, EXCEPTION_MATCHES);
-                                                            asm.ifeq(nextCheck);
-
-                                                            // Get the tag type to know what
-                                                            // parameter types to unbox
-                                                            var tagFuncType =
-                                                                    ctx.getTagFunctionType(
-                                                                            catchCondition.tag());
-                                                            if (!tagFuncType.params().isEmpty()) {
-                                                                // unbox the exception args
-                                                                asm.load(
-                                                                        exceptionSlot, OBJECT_TYPE);
-                                                                asm.invokevirtual(
-                                                                        getInternalName(
-                                                                                WasmException
-                                                                                        .class),
-                                                                        "args",
-                                                                        getMethodDescriptor(
-                                                                                getType(
-                                                                                        long[]
-                                                                                                .class)),
-                                                                        false);
-
-                                                                // Store the array in a local
-                                                                // variable
-                                                                var argsSlot = ctx.tempSlot() + 1;
-                                                                asm.store(argsSlot, OBJECT_TYPE);
-
-                                                                // Unbox each argument from the
-                                                                // long[] array and push
-                                                                // onto stack
-                                                                for (int i = 0;
-                                                                        i
-                                                                                < tagFuncType
-                                                                                        .params()
-                                                                                        .size();
-                                                                        i++) {
-                                                                    var param =
-                                                                            tagFuncType
-                                                                                    .params()
-                                                                                    .get(i);
-                                                                    asm.load(
-                                                                            argsSlot,
-                                                                            OBJECT_TYPE); // load
-                                                                    // the
-                                                                    // array
-                                                                    asm.iconst(i); // array index
-                                                                    asm.aload(
-                                                                            LONG_TYPE); // load long
-                                                                    // value
-                                                                    // from
-                                                                    // array
-                                                                    emitLongToJvm(
-                                                                            asm,
-                                                                            param); // convert long
-                                                                    // to proper JVM
-                                                                    // type
-                                                                }
-                                                            }
-
-                                                            if (catchCondition.opcode()
-                                                                    == CatchOpCode.CATCH_REF) {
-                                                                // Register exception and push its
-                                                                // index
-                                                                asm.load(
-                                                                        ctx.instanceSlot(),
-                                                                        OBJECT_TYPE);
-                                                                asm.load(
-                                                                        exceptionSlot, OBJECT_TYPE);
-                                                                asm.invokevirtual(
-                                                                        getInternalName(
-                                                                                Instance.class),
-                                                                        "registerException",
-                                                                        getMethodDescriptor(
-                                                                                INT_TYPE,
-                                                                                getType(
-                                                                                        WasmException
-                                                                                                .class)),
-                                                                        false);
-                                                            }
-                                                            // Note: operand index is offset by 3
-                                                            // since first 3 operands
-                                                            // are internal labels
-                                                            asm.goTo(
-                                                                    asmLabels.get(
-                                                                            (long)
-                                                                                    catchCondition
-                                                                                            .resolvedLabel()));
-
-                                                            break;
-
-                                                        case CATCH_ALL:
-                                                            // Always matches, no tag comparison
-                                                            // needed
-                                                            asm.goTo(
-                                                                    asmLabels.get(
-                                                                            (long)
-                                                                                    catchCondition
-                                                                                            .resolvedLabel()));
-                                                            break;
-
-                                                        case CATCH_ALL_REF:
-                                                            // Always matches, register exception
-                                                            // and push its index
-                                                            asm.load(
-                                                                    ctx.instanceSlot(),
-                                                                    OBJECT_TYPE);
-                                                            asm.load(exceptionSlot, OBJECT_TYPE);
-                                                            asm.invokevirtual(
-                                                                    getInternalName(Instance.class),
-                                                                    "registerException",
-                                                                    getMethodDescriptor(
-                                                                            INT_TYPE,
-                                                                            getType(
-                                                                                    WasmException
-                                                                                            .class)),
-                                                                    false);
-                                                            asm.goTo(
-                                                                    asmLabels.get(
-                                                                            (long)
-                                                                                    catchCondition
-                                                                                            .resolvedLabel()));
-                                                            break;
-                                                    }
-
-                                                    // Mark the label for next check
-                                                    asm.mark(nextCheck);
-                                                }
-
-                                                // Default case: re-throw the exception
-                                                asm.load(exceptionSlot, OBJECT_TYPE);
-                                                asm.athrow();
-                                            }));
-
-                            // Mark the end of exception handler
-                            result.add(
-                                    new CompilerInstruction(
-                                            CompilerOpCode.LABEL, afterHandlerLabel));
+                            nextLabel =
+                                    analyzeTryCatchEnd(
+                                            result, nextLabel, tryTableIns, tryCatchBlock);
                         }
                     }
                     stack.exitScope(ins.scope());
@@ -564,6 +356,55 @@ final class WasmAnalyzer {
 
         stack.verifyEmpty();
         return result;
+    }
+
+    private static int analyzeTryCatchEnd(
+            List<CompilerInstruction> result,
+            int nextLabel,
+            AnnotatedInstruction ins,
+            TryCatchBlock tryCatchBlock) {
+
+        // Mark the end of the try block
+        result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.end));
+
+        // Jump over the exception handler if since no exception was thrown
+        var afterHandlerLabel = nextLabel++;
+        result.add(new CompilerInstruction(CompilerOpCode.GOTO, afterHandlerLabel));
+
+        // Mark the start of the exception handler
+        result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.handler));
+
+        // store the exception in a temporary slot
+        result.add(new CompilerInstruction((ctx) -> ctx.asm().store(ctx.tempSlot(), OBJECT_TYPE)));
+
+        // create labels for after each catch block
+        var afterCatchLabels = new long[ins.catches().size()];
+        for (int i = 0; i < ins.catches().size(); i++) {
+            afterCatchLabels[i] = nextLabel++;
+        }
+
+        for (int i = 0; i < ins.catches().size(); i++) {
+            var catchCondition = ins.catches().get(i);
+            long afterCatchLabel = afterCatchLabels[i];
+
+            // Emmit an instruction for each catch condition
+            result.add(
+                    new CompilerInstruction(
+                            new long[] {catchCondition.resolvedLabel(), afterCatchLabel},
+                            Emitters.CATCH_CONDITION(catchCondition, afterCatchLabel)));
+        }
+
+        // Default case: re-throw the exception
+        result.add(
+                new CompilerInstruction(
+                        (ctx) -> {
+                            ctx.asm().load(ctx.tempSlot(), OBJECT_TYPE);
+                            ctx.asm().athrow();
+                        }));
+
+        // Mark the end of exception handler
+        result.add(new CompilerInstruction(CompilerOpCode.LABEL, afterHandlerLabel));
+        return nextLabel;
     }
 
     private void analyzeSimple(

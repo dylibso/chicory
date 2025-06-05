@@ -15,14 +15,21 @@ import static com.dylibso.chicory.compiler.internal.CompilerUtil.localType;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.slotCount;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.valueMethodName;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.valueMethodType;
+import static com.dylibso.chicory.compiler.internal.ShadedRefs.EXCEPTION_MATCHES;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.lang.Double.longBitsToDouble;
 import static java.lang.Float.intBitsToFloat;
+import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
+import static org.objectweb.asm.Type.getInternalName;
+import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
+import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.OpCodeIdentifier;
+import com.dylibso.chicory.runtime.WasmException;
+import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.lang.reflect.Method;
@@ -30,6 +37,7 @@ import java.lang.reflect.Modifier;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -680,5 +688,118 @@ final class Emitters {
         asm.swap(); // Swap instance and exception reference
         emitInvokeVirtual(asm, ShadedRefs.INSTANCE_GET_EXCEPTION);
         asm.athrow();
+    }
+
+    public interface Emitter extends Consumer<Context> {}
+
+    public static class TryCatchBlock {
+        final long start;
+        final long end;
+        final long handler;
+        final long after;
+
+        public TryCatchBlock(long start, long end, long handler, long after) {
+            this.start = start;
+            this.end = end;
+            this.handler = handler;
+            this.after = after;
+        }
+    }
+
+    public static Emitter TRY_CATCH_BLOCK(TryCatchBlock ins) {
+        return (ctx) -> {
+            var labels = ctx.labels();
+            Label start = labels.get(ins.start);
+            Label endLabel = labels.get(ins.end);
+            Label handlerLabel = labels.get(ins.handler);
+            ctx.asm()
+                    .visitTryCatchBlock(
+                            start, endLabel, handlerLabel, getInternalName(WasmException.class));
+        };
+    }
+
+    public static Emitter CATCH_CONDITION(CatchOpCode.Catch catchCondition, long afterCatchLabel) {
+        return (ctx) -> {
+            var asm = ctx.asm();
+            var labels = ctx.labels();
+            switch (catchCondition.opcode()) {
+                case CATCH:
+                case CATCH_REF:
+                    // Compare tag
+                    asm.load(ctx.tempSlot(), OBJECT_TYPE);
+                    asm.iconst(catchCondition.tag());
+                    asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+                    emitInvokeStatic(asm, EXCEPTION_MATCHES);
+                    asm.ifeq(ctx.labels().get(afterCatchLabel));
+
+                    // Get the tag type to know what
+                    // parameter types to unbox
+                    var tagFuncType = ctx.getTagFunctionType(catchCondition.tag());
+                    if (!tagFuncType.params().isEmpty()) {
+                        // unbox the exception args
+                        asm.load(ctx.tempSlot(), OBJECT_TYPE);
+                        asm.invokevirtual(
+                                getInternalName(WasmException.class),
+                                "args",
+                                getMethodDescriptor(getType(long[].class)),
+                                false);
+
+                        // Store the array in a local
+                        // variable
+                        var argsSlot = ctx.tempSlot() + 1;
+                        asm.store(argsSlot, OBJECT_TYPE);
+
+                        // Unbox each argument from the
+                        // long[] array and push onto stack
+                        for (int j = 0; j < tagFuncType.params().size(); j++) {
+                            var param = tagFuncType.params().get(j);
+                            asm.load(argsSlot, OBJECT_TYPE);
+                            asm.iconst(j);
+                            asm.aload(LONG_TYPE);
+                            emitLongToJvm(asm, param);
+                        }
+                    }
+
+                    if (catchCondition.opcode() == CatchOpCode.CATCH_REF) {
+                        // Register exception and push its
+                        // index
+                        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+                        asm.load(ctx.tempSlot(), OBJECT_TYPE);
+                        asm.invokevirtual(
+                                getInternalName(Instance.class),
+                                "registerException",
+                                getMethodDescriptor(INT_TYPE, getType(WasmException.class)),
+                                false);
+                    }
+                    // Note: operand index is offset by 3
+                    // since first 3 operands
+                    // are internal labels
+                    asm.goTo(labels.get((long) catchCondition.resolvedLabel()));
+
+                    break;
+
+                case CATCH_ALL:
+                    // Always matches, no tag comparison
+                    // needed
+                    asm.goTo(labels.get((long) catchCondition.resolvedLabel()));
+                    break;
+
+                case CATCH_ALL_REF:
+                    // Always matches, register exception
+                    // and push its index
+                    asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+                    asm.load(ctx.tempSlot(), OBJECT_TYPE);
+                    asm.invokevirtual(
+                            getInternalName(Instance.class),
+                            "registerException",
+                            getMethodDescriptor(INT_TYPE, getType(WasmException.class)),
+                            false);
+                    asm.goTo(labels.get((long) catchCondition.resolvedLabel()));
+                    break;
+            }
+
+            // Mark the label for next check
+            asm.mark(ctx.labels().get(afterCatchLabel));
+        };
     }
 }

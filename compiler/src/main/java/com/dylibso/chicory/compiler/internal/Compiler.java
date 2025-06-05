@@ -70,7 +70,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1184,7 +1183,8 @@ public final class Compiler {
                         functionTypes,
                         funcId,
                         type,
-                        body);
+                        body,
+                        asm);
 
         List<CompilerInstruction> instructions = analyzer.analyze(funcId);
 
@@ -1212,7 +1212,7 @@ public final class Compiler {
         }
 
         // allocate labels for all label targets
-        Map<Long, Label> labels = new HashMap<>();
+        var labels = ctx.labels();
         for (var ins : instructions) {
             for (long target : ins.labelTargets()) {
                 labels.put(target, new Label());
@@ -1269,7 +1269,7 @@ public final class Compiler {
                     asm.tableswitch(0, table.length - 1, defaultLabel, table);
                     break;
                 case EMITTER:
-                    ins.emitter().emmit(ctx, asm, labels);
+                    ins.emitter().accept(ctx);
                     break;
                 default:
                     var emitter = EMITTERS.get(ins.opcode());
