@@ -1,14 +1,18 @@
 package com.dylibso.chicory.compiler.internal;
 
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.localType;
+import static com.dylibso.chicory.compiler.internal.Emitters.TRY_CATCH_BLOCK;
 import static com.dylibso.chicory.compiler.internal.TypeStack.FUNCTION_SCOPE;
 import static java.util.Collections.reverse;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
+import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
+import com.dylibso.chicory.compiler.internal.Emitters.TryCatchBlock;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
+import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
@@ -27,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -55,6 +60,7 @@ final class WasmAnalyzer {
         return functionTypes;
     }
 
+    @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public List<CompilerInstruction> analyze(int funcId) {
         var functionType = functionTypes.get(funcId);
         var body = module.codeSection().getFunctionBody(funcId - functionImports);
@@ -64,7 +70,12 @@ final class WasmAnalyzer {
 
         // find label targets
         Set<Integer> labels = new HashSet<>();
-        for (AnnotatedInstruction ins : body.instructions()) {
+
+        HashMap<Integer, TryCatchBlock> tryCatchBlocks = new HashMap<>();
+
+        for (int idx = body.instructions().size() - 1; idx >= 0; idx--) {
+            AnnotatedInstruction ins = body.instructions().get(idx);
+
             if (ins.labelTrue() != AnnotatedInstruction.UNDEFINED_LABEL) {
                 labels.add(ins.labelTrue());
             }
@@ -72,6 +83,28 @@ final class WasmAnalyzer {
                 labels.add(ins.labelFalse());
             }
             labels.addAll(ins.labelTable());
+            labels.addAll(
+                    Optional.ofNullable(ins.catches())
+                            .map(
+                                    catches ->
+                                            catches.stream()
+                                                    .map(CatchOpCode.Catch::resolvedLabel)
+                                                    .collect(Collectors.toList()))
+                            .orElse(List.of()));
+
+            if (ins.opcode() == OpCode.TRY_TABLE
+                    && body.instructions().get(idx + 1).opcode() != OpCode.END) {
+                var block =
+                        new TryCatchBlock(ins, nextLabel++, nextLabel++, nextLabel++, nextLabel++);
+                tryCatchBlocks.put(ins.address(), block);
+                result.add(
+                        new CompilerInstruction(
+                                TRY_CATCH_BLOCK(block),
+                                block.start,
+                                block.end,
+                                block.handler,
+                                block.after));
+            }
         }
 
         // implicit block for the function
@@ -108,9 +141,6 @@ final class WasmAnalyzer {
                 case BLOCK:
                 case LOOP:
                     stack.enterScope(ins.scope(), blockType(ins));
-                    break;
-                case END:
-                    stack.exitScope(ins.scope());
                     break;
                 case RETURN:
                     exitBlockDepth = ins.depth();
@@ -225,6 +255,60 @@ final class WasmAnalyzer {
                     result.add(new CompilerInstruction(CompilerOpCode.SWITCH, operands));
                     result.addAll(unwinds);
                     break;
+
+                case TRY_TABLE:
+                    {
+                        // Is this an empty TRY_TABLE?
+                        if (body.instructions().get(idx + 1).opcode() == OpCode.END) {
+                            idx++; // skip the END instruction too
+                            break;
+                        }
+
+                        stack.enterScope(ins.scope(), blockType(ins));
+                        var tryCatchBlock = tryCatchBlocks.get(ins.address());
+                        result.add(
+                                new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.start));
+
+                        break;
+                    }
+
+                case END:
+                    // Check if this is the end of a TRY_TABLE block
+                    if (ins.scope().opcode() == OpCode.TRY_TABLE) {
+                        var tryCatchBlock = tryCatchBlocks.remove(ins.scope().address());
+
+                        // Weird: sometimes we see END occur multiple times for
+                        if (tryCatchBlock != null) {
+
+                            nextLabel = analyzeTryCatchEnd(result, nextLabel, tryCatchBlock);
+                        }
+                    }
+                    stack.exitScope(ins.scope());
+                    break;
+
+                case THROW:
+                    {
+                        // Add the THROW instruction
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.of(OpCode.THROW), ins.operands()));
+
+                        // Mark as "unreachable" by emptying the stack for this block
+                        exitBlockDepth = ins.depth();
+                        break;
+                    }
+                case THROW_REF:
+                    {
+                        // Add instruction for THROW_REF
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.of(OpCode.THROW_REF), ins.operands()));
+
+                        // Mark as "unreachable" by emptying the stack for this block
+                        exitBlockDepth = ins.depth();
+                        break;
+                    }
+
                 case SELECT:
                 case SELECT_T:
                     // [t t I32] -> [t]
@@ -262,6 +346,53 @@ final class WasmAnalyzer {
 
         stack.verifyEmpty();
         return result;
+    }
+
+    private static int analyzeTryCatchEnd(
+            List<CompilerInstruction> result, int nextLabel, TryCatchBlock tryCatchBlock) {
+
+        // Mark the end of the try block
+        result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.end));
+
+        // Jump over the exception handler if since no exception was thrown
+        var afterHandlerLabel = nextLabel++;
+        result.add(new CompilerInstruction(CompilerOpCode.GOTO, afterHandlerLabel));
+
+        // Mark the start of the exception handler
+        result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.handler));
+
+        // store the exception in a temporary slot
+        result.add(new CompilerInstruction((ctx) -> ctx.asm().store(ctx.tempSlot(), OBJECT_TYPE)));
+
+        // create labels for after each catch block
+        var afterCatchLabels = new long[tryCatchBlock.ins.catches().size()];
+        for (int i = 0; i < tryCatchBlock.ins.catches().size(); i++) {
+            afterCatchLabels[i] = nextLabel++;
+        }
+
+        for (int i = 0; i < tryCatchBlock.ins.catches().size(); i++) {
+            var catchCondition = tryCatchBlock.ins.catches().get(i);
+            long afterCatchLabel = afterCatchLabels[i];
+
+            // Emmit an instruction for each catch condition
+            result.add(
+                    new CompilerInstruction(
+                            Emitters.CATCH_CONDITION(catchCondition, afterCatchLabel),
+                            catchCondition.resolvedLabel(),
+                            afterCatchLabel));
+        }
+
+        // Default case: re-throw the exception
+        result.add(
+                new CompilerInstruction(
+                        (ctx) -> {
+                            ctx.asm().load(ctx.tempSlot(), OBJECT_TYPE);
+                            ctx.asm().athrow();
+                        }));
+
+        // Mark the end of exception handler
+        result.add(new CompilerInstruction(CompilerOpCode.LABEL, afterHandlerLabel));
+        return nextLabel;
     }
 
     private void analyzeSimple(
@@ -662,9 +793,9 @@ final class WasmAnalyzer {
             TypeStack stack) {
 
         boolean forward = true;
+
         var target = body.instructions().get(label);
         if (target.address() <= ins.address()) {
-            // the loop block is the instruction before the target
             target = body.instructions().get(label - 1);
             forward = false;
         }

@@ -38,6 +38,10 @@ public class InterpreterMachine implements Machine {
         long get(int index);
     }
 
+    public Deque<StackFrame> getCallStack() {
+        return callStack;
+    }
+
     @SuppressWarnings("DoNotCallSuggester")
     protected void evalDefault(
             MStack stack,
@@ -2188,7 +2192,7 @@ public class InterpreterMachine implements Machine {
         return sizeOf(instance.type(typeId).returns());
     }
 
-    private static StackFrame THROW_REF(
+    protected static StackFrame THROW_REF(
             Instance instance,
             int exceptionIdx,
             MStack stack,

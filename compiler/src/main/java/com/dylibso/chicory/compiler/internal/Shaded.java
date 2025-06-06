@@ -9,6 +9,7 @@ import com.dylibso.chicory.runtime.MemCopyWorkaround;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.TrapException;
+import com.dylibso.chicory.runtime.WasmException;
 import com.dylibso.chicory.runtime.WasmRuntimeException;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
@@ -203,5 +204,29 @@ public final class Shaded {
 
     public static void writeGlobal(long value, int index, Instance instance) {
         instance.global(index).setValue(value);
+    }
+
+    /**
+     * Creates a WasmException for the given tag and arguments
+     */
+    public static WasmException createWasmException(long[] args, int tagNumber, Instance instance) {
+        if (args == null) {
+            args = new long[0];
+        }
+        WasmException e = new WasmException(instance, tagNumber, args);
+        instance.registerException(e);
+        return e;
+    }
+
+    public static boolean exceptionMatches(WasmException exception, int tag, Instance instance) {
+        if (exception.instance() == instance && exception.tagIdx() == tag) {
+            return true;
+        }
+
+        var currentCatchTag = instance.tag(tag);
+        var exceptionTag = exception.instance().tag(exception.tagIdx());
+        return tag < instance.imports().tagCount()
+                && currentCatchTag.type().typesMatch(exceptionTag.type())
+                && currentCatchTag.type().returnsMatch(exceptionTag.type());
     }
 }

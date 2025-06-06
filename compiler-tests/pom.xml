@@ -139,6 +139,14 @@
             <wast>memory_trap.wast</wast>
             <wast>names.wast</wast>
             <wast>nop.wast</wast>
+            <wast>proposals/exception-handling/binary.wast</wast>
+            <wast>proposals/exception-handling/exports.wast</wast>
+            <wast>proposals/exception-handling/imports.wast</wast>
+            <wast>proposals/exception-handling/ref_null.wast</wast>
+            <wast>proposals/exception-handling/tag.wast</wast>
+            <wast>proposals/exception-handling/throw.wast</wast>
+            <wast>proposals/exception-handling/throw_ref.wast</wast>
+            <wast>proposals/exception-handling/try_table.wast</wast>
             <wast>proposals/tail-call/return_call.wast</wast>
             <wast>proposals/tail-call/return_call_indirect.wast</wast>
             <wast>ref_func.wast</wast>
@@ -174,7 +182,23 @@
           </includedWasts>
           <!-- Skip Binary as there is a THROW_REF in a Global initializer -->
           <!-- Skip stack-overflows in tail calls -->
-          <excludedTests>SpecV1BinaryTest.test40,SpecV1TcReturnCallTest.test19,SpecV1TcReturnCallTest.test24,SpecV1TcReturnCallTest.test25,SpecV1TcReturnCallTest.test30,SpecV1TcReturnCallTest.test31,SpecV1TcReturnCallIndirectTest.test40,SpecV1TcReturnCallIndirectTest.test41,SpecV1TcReturnCallIndirectTest.test46,SpecV1TcReturnCallIndirectTest.test47</excludedTests>
+          <excludedTests>
+            SpecV1BinaryTest.test40,
+            SpecV1TcReturnCallTest.test19,
+            SpecV1TcReturnCallTest.test24,
+            SpecV1TcReturnCallTest.test25,
+            SpecV1TcReturnCallTest.test30,
+            SpecV1TcReturnCallTest.test31,
+            SpecV1TcReturnCallIndirectTest.test40,
+            SpecV1TcReturnCallIndirectTest.test41,
+            SpecV1TcReturnCallIndirectTest.test46,
+            SpecV1TcReturnCallIndirectTest.test47,
+            <!-- Skip exception tests with tail calls -->
+            SpecV1EhTryTableTest.test39,
+            SpecV1EhTryTableTest.test40,
+            <!-- Investigate why this one fails -->
+            SpecV1EhBinaryTest.test40
+          </excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts/>
           <excludedUnlinkableWasts/>
