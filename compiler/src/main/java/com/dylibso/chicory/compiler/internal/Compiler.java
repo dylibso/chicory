@@ -1208,12 +1208,6 @@ public final class Compiler {
             asm.store(ctx.localSlotIndex(i), asmType(localType));
         }
 
-        List<Emitter> emitters = new ArrayList<>();
-        analyzer.analyze(funcId, emitters::add);
-
-        // compile the function body
-        for (var emitter : emitters) {
-            emitter.emit(ctx);
-        }
+        analyzer.analyze(funcId, (emiter) -> emiter.emit(ctx));
     }
 }
