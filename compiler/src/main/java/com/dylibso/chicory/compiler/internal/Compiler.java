@@ -45,6 +45,7 @@ import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
+import static java.util.Objects.requireNonNullElseGet;
 import static java.util.stream.Collectors.toSet;
 import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
@@ -56,6 +57,9 @@ import static org.objectweb.asm.Type.getType;
 import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
 import com.dylibso.chicory.compiler.InterpreterFallback;
+import com.dylibso.chicory.compiler.internal.smap.MappedLine;
+import com.dylibso.chicory.compiler.internal.smap.Smap;
+import com.dylibso.chicory.dwarf.DebugInfo;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
@@ -121,16 +125,37 @@ public final class Compiler {
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions;
 
+    private final DebugContext debugContext;
+
+    // Debug information
+    static final class DebugContext {
+        final DebugInfo info;
+        final ArrayList<MappedLine> mappedLines = new ArrayList<>();
+        int nextLineNo = 1;
+
+        DebugContext(DebugInfo debugInfo) {
+            this.info = requireNonNull(debugInfo, "debugInfo");
+        }
+
+        void reset() {
+            mappedLines.clear();
+            nextLineNo = 1;
+        }
+    }
+
     private Compiler(
             WasmModule module,
             String className,
             int maxFunctionsPerClass,
             InterpreterFallback interpreterFallback,
-            Set<Integer> interpretedFunctions) {
+            Set<Integer> interpretedFunctions,
+            DebugInfo debugInfo) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.analyzer = new WasmAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
+        this.debugContext =
+                new DebugContext(requireNonNullElseGet(debugInfo, () -> new DebugInfo(List.of())));
 
         if (interpretedFunctions == null || interpretedFunctions.isEmpty()) {
             this.interpretedFunctions = new HashSet<>();
@@ -162,6 +187,7 @@ public final class Compiler {
         private int maxFunctionsPerClass;
         private InterpreterFallback interpreterFallback;
         private Set<Integer> interpretedFunctions;
+        private Function<WasmModule, DebugInfo> debugParser;
 
         private Builder(WasmModule module) {
             this.module = module;
@@ -169,6 +195,11 @@ public final class Compiler {
 
         public Builder withClassName(String className) {
             this.className = className;
+            return this;
+        }
+
+        public Builder withDebugParser(Function<WasmModule, DebugInfo> debugParser) {
+            this.debugParser = debugParser;
             return this;
         }
 
@@ -197,12 +228,19 @@ public final class Compiler {
             if (maxFunctionsPerClass <= 0) {
                 maxFunctionsPerClass = DEFAULT_MAX_FUNCTIONS_PER_CLASS;
             }
+
+            DebugInfo debugInfo = null;
+            if (debugParser != null) {
+                debugInfo = debugParser.apply(module);
+            }
+
             return new Compiler(
                     module,
                     className,
                     maxFunctionsPerClass,
                     interpreterFallback,
-                    interpretedFunctions);
+                    interpretedFunctions,
+                    debugInfo);
         }
     }
 
@@ -396,6 +434,7 @@ public final class Compiler {
 
     private Consumer<ClassVisitor> emitFunctionGroup(int start, int end, String internalClassName) {
         return (classWriter) -> {
+            debugContext.reset();
             for (int i = start; i < end; i++) {
                 FunctionBody body = null;
                 try {
@@ -435,6 +474,12 @@ public final class Compiler {
                 } catch (MethodTooLargeException e) {
                     throw handleMethodTooLarge(e, module);
                 }
+            }
+            if (!debugContext.mappedLines.isEmpty()) {
+                // add the source map entries to the class
+                var sourceFile = internalClassName + ".java";
+                String smap = Smap.generate(sourceFile, debugContext.mappedLines);
+                classWriter.visitSource(internalClassName, smap);
             }
         };
     }
@@ -1187,7 +1232,7 @@ public final class Compiler {
                         type,
                         body);
 
-        List<CompilerInstruction> instructions = analyzer.analyze(funcId);
+        List<CompilerInstruction> instructions = analyzer.analyze(funcId, debugContext);
 
         int localsCount = type.params().size();
         if (hasTooManyParameters(type)) {
@@ -1225,6 +1270,7 @@ public final class Compiler {
 
         // compile the function body
         for (CompilerInstruction ins : instructions) {
+
             switch (ins.opcode()) {
                 case LABEL:
                     Label label = labels.get(ins.operand(0));
@@ -1232,6 +1278,12 @@ public final class Compiler {
                         asm.mark(label);
                         visitedTargets.add(ins.operand(0));
                     }
+
+                    break;
+                case LINE_NUMBER:
+                    int line = (int) ins.operand(0);
+                    label = labels.get(ins.operand(1));
+                    asm.visitLineNumber(line, label);
                     break;
                 case GOTO:
                     if (visitedTargets.contains(ins.operand(0))) {

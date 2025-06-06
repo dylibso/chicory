@@ -3,6 +3,7 @@ package com.dylibso.chicory.compiler.internal;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.hasTooManyParameters;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.slotCount;
 
+import com.dylibso.chicory.compiler.internal.smap.MappedLine;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.ValType;
@@ -26,6 +27,8 @@ final class Context {
     private final int memorySlot;
     private final int instanceSlot;
     private final int tempSlot;
+    final ArrayList<MappedLine> mappedLines = new ArrayList<>();
+    int nextLineNo = 1;
 
     public Context(
             String internalClassName,
