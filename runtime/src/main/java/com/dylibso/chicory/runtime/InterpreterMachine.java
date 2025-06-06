@@ -13,6 +13,7 @@ import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 
@@ -168,7 +169,23 @@ public class InterpreterMachine implements Machine {
             instance.onExecution(instruction, stack);
             switch (opcode) {
                 case UNREACHABLE:
-                    throw new TrapException("Trapped on unreachable instruction");
+                    {
+                        List<StackTraceElement> elements = new ArrayList<>();
+                        int last = -1;
+                        while (frame != null) {
+                            while (frame != null && frame.ctrlStackSize() > 0) {
+                                if (frame.funcId() != last) {
+                                    elements.addAll(instance.computeStackFrame(frame.funcId()));
+                                    last = frame.funcId();
+                                }
+                                frame = callStack.isEmpty() ? null : callStack.pop();
+                            }
+                        }
+
+                        throw new TrapException(
+                                "Trapped on unreachable instruction in InterpreterMachine",
+                                elements.toArray(StackTraceElement[]::new));
+                    }
                 case NOP:
                     break;
                 case LOOP:

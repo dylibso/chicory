@@ -44,6 +44,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -67,6 +69,9 @@ public class Instance {
     private final ExecutionListener listener;
     private final Exports fluentExports;
 
+    private final Optional<BiFunction<Instance, Integer, List<StackTraceElement>>>
+            exceptionConverter;
+
     private final Map<Integer, WasmException> exnRefs;
 
     Instance(
@@ -85,8 +90,10 @@ public class Instance {
             Function<Instance, Machine> machineFactory,
             boolean initialize,
             boolean start,
-            ExecutionListener listener) {
+            ExecutionListener listener,
+            Optional<BiFunction<Instance, Integer, List<StackTraceElement>>> exceptionConverter) {
         this.module = module;
+        this.exceptionConverter = exceptionConverter;
         this.globalInitializers = globalInitializers.clone();
         this.globals = new GlobalInstance[globalInitializers.length];
         this.memory = memory;
@@ -334,6 +341,14 @@ public class Instance {
         return exnRefs.get(idx);
     }
 
+    public List<StackTraceElement> computeStackFrame(int funcIdx) {
+        if (exceptionConverter.isPresent()) {
+            return exceptionConverter.get().apply(this, funcIdx);
+        } else {
+            return List.of();
+        }
+    }
+
     public Machine getMachine() {
         return machine;
     }
@@ -358,6 +373,7 @@ public class Instance {
         private ExecutionListener listener;
         private ImportValues importValues;
         private Function<Instance, Machine> machineFactory;
+        private BiFunction<Instance, Integer, List<StackTraceElement>> exceptionConverter;
 
         private Builder(WasmModule module) {
             this.module = Objects.requireNonNull(module);
@@ -398,6 +414,26 @@ public class Instance {
 
         public Builder withMachineFactory(Function<Instance, Machine> machineFactory) {
             this.machineFactory = machineFactory;
+            return this;
+        }
+
+        public Builder withExceptionConverter(
+                BiFunction<Instance, Integer, List<StackTraceElement>> exceptionConverter) {
+            this.exceptionConverter = exceptionConverter;
+            return this;
+        }
+
+        public Builder withDefaultExceptionConverter() {
+            this.exceptionConverter =
+                    (inst, funcIdx) -> {
+                        var funcName =
+                                inst.module()
+                                        .functionName(funcIdx)
+                                        .orElse("function[" + funcIdx + "]");
+                        var moduleName = inst.module().moduleName().orElse("wasm-module");
+
+                        return List.of(new StackTraceElement(moduleName, funcName, null, -1));
+                    };
             return this;
         }
 
@@ -884,7 +920,8 @@ public class Instance {
                     machineFactory,
                     initialize,
                     start,
-                    listener);
+                    listener,
+                    Optional.ofNullable(exceptionConverter));
         }
     }
 }

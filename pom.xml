@@ -156,6 +156,11 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
+        <artifactId>rustc-demangle</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
         <artifactId>simd</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -882,6 +887,7 @@
         <module>machine-tests</module>
         <module>runtime</module>
         <module>runtime-tests</module>
+        <module>rustc-demangle</module>
         <module>test-gen-lib</module>
         <module>test-gen-plugin</module>
         <module>wabt</module>
@@ -912,6 +918,7 @@
         <module>compiler-maven-plugin</module>
         <module>log</module>
         <module>runtime</module>
+        <module>rustc-demangle</module>
         <module>wabt</module>
         <module>wasi</module>
         <module>wasm</module>

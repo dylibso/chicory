@@ -20,6 +20,8 @@ import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -564,5 +566,27 @@ public class WasmModuleTest {
         ExecutorService service = Executors.newSingleThreadExecutor();
         var future = service.submit(() -> function.apply());
         assertThrows(TimeoutException.class, () -> future.get(100, TimeUnit.MILLISECONDS));
+    }
+
+    private String readStackTrace(Throwable t) {
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
+    }
+
+    @Test
+    public void shouldEmitUnderstandableStackTraces() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
+                        .withDefaultExceptionConverter()
+                        .build();
+        var countVowels = instance.export("count_vowels");
+        var exception = assertThrows(TrapException.class, () -> countVowels.apply(0, -1));
+        var exceptionTxt = readStackTrace(exception);
+
+        System.out.println();
+
+        assertTrue(exceptionTxt.contains("count_vowels.wasm.count_vowels"));
+        assertTrue(exceptionTxt.contains("rust_panic"));
     }
 }
