@@ -78,7 +78,9 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
 final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
 
   public static func_0(Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
-    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.throwTrapException ()Ljava/lang/RuntimeException;
+    ALOAD 1
+    LDC "com/dylibso/chicory/$gen/CompiledMachine"
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.throwTrapException (Lcom/dylibso/chicory/runtime/Instance;Ljava/lang/String;)Ljava/lang/RuntimeException;
     ATHROW
    L0
     ATHROW
