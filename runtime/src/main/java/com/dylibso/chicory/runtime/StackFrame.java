@@ -33,7 +33,7 @@ public class StackFrame {
 
     private final List<CtrlFrame> ctrlStack = new ArrayList<>();
 
-    StackFrame(Instance instance, int funcId, long[] args) {
+    public StackFrame(Instance instance, int funcId, long[] args) {
         this(
                 instance,
                 funcId,

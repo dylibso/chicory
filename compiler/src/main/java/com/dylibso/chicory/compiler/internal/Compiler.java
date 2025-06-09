@@ -70,7 +70,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -136,7 +135,7 @@ public final class Compiler {
             this.interpretedFunctions = new HashSet<>();
             this.interpreterFallback =
                     requireNonNullElse(interpreterFallback, InterpreterFallback.WARN);
-        } else if (interpreterFallback != InterpreterFallback.FAIL) {
+        } else if (interpreterFallback != null && interpreterFallback != InterpreterFallback.FAIL) {
             // if we are being given a set of interpreted functions, then any unlisted
             // function needs to trigger a failure.
             throw new IllegalArgumentException(
@@ -1166,7 +1165,6 @@ public final class Compiler {
                 emitBoxArguments(asm, type.params());
                 slots = type.params().stream().mapToInt(CompilerUtil::slotCount).sum();
             }
-
             var refInstance = slots + 1;
 
             asm.iconst(funcId);
@@ -1178,14 +1176,15 @@ public final class Compiler {
 
         var ctx =
                 new Context(
+                        module,
                         internalClassName,
                         maxFunctionsPerClass,
                         analyzer.globalTypes(),
                         functionTypes,
-                        module.typeSection().types(),
                         funcId,
                         type,
-                        body);
+                        body,
+                        asm);
 
         List<CompilerInstruction> instructions = analyzer.analyze(funcId);
 
@@ -1213,7 +1212,7 @@ public final class Compiler {
         }
 
         // allocate labels for all label targets
-        Map<Long, Label> labels = new HashMap<>();
+        var labels = ctx.labels();
         for (var ins : instructions) {
             for (long target : ins.labelTargets()) {
                 labels.put(target, new Label());
@@ -1268,6 +1267,9 @@ public final class Compiler {
                     }
                     Label defaultLabel = labels.get(ins.operand(table.length));
                     asm.tableswitch(0, table.length - 1, defaultLabel, table);
+                    break;
+                case EMITTER:
+                    ins.emitter().accept(ctx);
                     break;
                 default:
                     var emitter = EMITTERS.get(ins.opcode());
