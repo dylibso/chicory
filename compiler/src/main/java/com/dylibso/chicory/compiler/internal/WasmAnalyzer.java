@@ -78,13 +78,16 @@ final class WasmAnalyzer {
         // implicit block for the function
         stack.enterScope(FUNCTION_SCOPE, FunctionType.of(List.of(), functionType.returns()));
 
+        var codeSectionAddress = module.codeSection().address();
+
         int exitBlockDepth = -1;
         LineMapping lastLineMapping = null;
         for (int idx = 0; idx < body.instructions().size(); idx++) {
             AnnotatedInstruction ins = body.instructions().get(idx);
 
             // get the sourceMapIndex for the current instruction:
-            var lineMapping = debugContext.inputStratum.getLineMapping(ins.address());
+            var lineMapping =
+                    debugContext.inputStratum.getLineMapping(ins.address() - codeSectionAddress);
             if (lineMapping != null && lineMapping != lastLineMapping) {
                 var outputLineNo = debugContext.nextOutputLineNo++;
 

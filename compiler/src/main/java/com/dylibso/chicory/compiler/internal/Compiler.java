@@ -29,7 +29,7 @@ import static com.dylibso.chicory.compiler.internal.ShadedRefs.CALL_HOST_FUNCTIO
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.CALL_INDIRECT;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.CALL_INDIRECT_ON_INTERPRETER;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.CHECK_INTERRUPTION;
-import static com.dylibso.chicory.compiler.internal.ShadedRefs.ENHANCE_STACK_TRACE;
+import static com.dylibso.chicory.compiler.internal.ShadedRefs.INIT;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.INSTANCE_MEMORY;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.INSTANCE_TABLE;
 import static com.dylibso.chicory.compiler.internal.ShadedRefs.TABLE_INSTANCE;
@@ -551,14 +551,6 @@ public final class Compiler {
                     methodType(void.class),
                     true,
                     asm -> compileStaticInitializer(asm, internalClassName));
-
-            // emit: enhanceStackTrace method
-            emitFunction(
-                    classWriter,
-                    "enhanceStackTrace",
-                    methodType(void.class, Throwable.class),
-                    true,
-                    asm -> compileEnhanceStackTrace(asm, internalClassName));
         }
 
         // constructor
@@ -665,7 +657,6 @@ public final class Compiler {
     }
 
     private void compileStaticInitializer(InstructionAdapter asm, String internalClassName) {
-
         asm.iconst(funcGroupCount);
         asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(String.class));
         for (int i = 0; i < funcGroupCount; i++) {
@@ -677,18 +668,9 @@ public final class Compiler {
                     getDescriptor(String.class));
             asm.astore(OBJECT_TYPE);
         }
-
-        asm.putstatic(internalClassName, "SMAPS", getDescriptor(String[].class));
-        asm.areturn(VOID_TYPE);
-    }
-
-    private void compileEnhanceStackTrace(InstructionAdapter asm, String internalClassName) {
-        // return Shaded.enhanceStackTrace(e, SMAPS, internalClassName+"FuncGroup_");
-        asm.load(0, OBJECT_TYPE); // elements parameter
-        asm.getstatic(internalClassName, "SMAPS", getDescriptor(String[].class));
         var classNamePrefix = internalClassName.replaceAll("/", ".") + "FuncGroup_";
         asm.aconst(classNamePrefix);
-        emitInvokeStatic(asm, ENHANCE_STACK_TRACE);
+        emitInvokeStatic(asm, INIT);
         asm.areturn(VOID_TYPE);
     }
 

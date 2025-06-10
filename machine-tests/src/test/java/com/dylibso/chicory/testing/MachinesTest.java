@@ -40,7 +40,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public final class MachinesTest {
@@ -352,16 +351,37 @@ public final class MachinesTest {
     }
 
     @Test
-    @Disabled("wip")
     public void shouldEmitUnderstandableStackTracesCompiled() throws Exception {
+        WasmModule module = loadModule("compiled/count_vowels.rs.wasm");
         var instance =
-                Instance.builder(loadModule("compiled/count_vowels.rs.wasm"))
+                Instance.builder(module)
                         .withDebugParser(DebugParser::parse)
-                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .withMachineFactory(
+                                MachineFactoryCompiler.builder(module)
+                                        .withDebugParser(DebugParser::parse)
+                                        .compile())
                         .build();
         var countVowels = instance.export("count_vowels");
         var exception = assertThrows(TrapException.class, () -> countVowels.apply(0, -1));
         var exceptionTxt = readStackTrace(exception);
-        System.out.println(exceptionTxt);
+
+        assertTrue(
+                exceptionTxt.contains(
+                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_86(library/std/src/panicking.rs:697)"));
+        assertTrue(
+                exceptionTxt.contains(
+                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_118(library/core/src/panicking.rs:117)"));
+        assertTrue(
+                exceptionTxt.contains(
+                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_119(library/core/src/panicking.rs:218)"));
+        assertTrue(
+                exceptionTxt.contains(
+                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_30(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:68)"));
+        assertTrue(
+                exceptionTxt.contains(
+                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_54(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:75)"));
+        assertTrue(
+                exceptionTxt.contains(
+                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_11(src/lib.rs:22)"));
     }
 }

@@ -15,7 +15,6 @@ import com.dylibso.chicory.runtime.internal.smap.Stratum;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import java.util.HashMap;
 
 /**
  * This class will get shaded into the compiled code.
@@ -175,23 +174,33 @@ public final class Shaded {
     }
 
     public static RuntimeException throwCallStackExhausted(StackOverflowError e) {
-        throw new ChicoryException("call stack exhausted", e);
+        ChicoryException error = new ChicoryException("call stack exhausted", e);
+        enhanceStackTrace(error);
+        throw error;
     }
 
     public static RuntimeException throwIndirectCallTypeMismatch() {
-        return new ChicoryException("indirect call type mismatch");
+        ChicoryException error = new ChicoryException("indirect call type mismatch");
+        enhanceStackTrace(error);
+        return error;
     }
 
     public static RuntimeException throwOutOfBoundsMemoryAccess() {
-        throw new WasmRuntimeException("out of bounds memory access");
+        WasmRuntimeException error = new WasmRuntimeException("out of bounds memory access");
+        enhanceStackTrace(error);
+        throw error;
     }
 
     public static RuntimeException throwTrapException() {
-        throw new TrapException("Trapped on unreachable instruction");
+        TrapException error = new TrapException("Trapped on unreachable instruction");
+        enhanceStackTrace(error);
+        throw error;
     }
 
     public static RuntimeException throwUnknownFunction(int index) {
-        throw new InvalidException(String.format("unknown function %d", index));
+        InvalidException error = new InvalidException(String.format("unknown function %d", index));
+        enhanceStackTrace(error);
+        throw error;
     }
 
     public static void checkInterruption() {
@@ -208,16 +217,23 @@ public final class Shaded {
         instance.global(index).setValue(value);
     }
 
-    private static final HashMap<Integer, Stratum> STRATA_BY_FUNC_GROUP = new HashMap<>();
+    private static Stratum[] STRATA_BY_FUNC_GROUP;
+    private static String funcGroupClassPrefix;
 
-    private static Stratum getStratum(int group, String smap) {
-        synchronized (STRATA_BY_FUNC_GROUP) {
-            return STRATA_BY_FUNC_GROUP.computeIfAbsent(
-                    group, (x) -> SmapParser.parse(smap).getDefaultStratum().optimizeForLookups());
+    public static void init(String[] smaps, String funcGroupClassPrefix) {
+        Shaded.funcGroupClassPrefix = funcGroupClassPrefix;
+        STRATA_BY_FUNC_GROUP = new Stratum[smaps.length];
+        for (int i = 0; i < smaps.length; i++) {
+            STRATA_BY_FUNC_GROUP[i] =
+                    SmapParser.parse(smaps[i]).getDefaultStratum().optimizeForLookups();
         }
     }
 
-    public static void enhanceStackTrace(Throwable e, String[] smaps, String funcGroupClassPrefix) {
+    private static void enhanceStackTrace(Throwable e) {
+        if (STRATA_BY_FUNC_GROUP == null) {
+            return;
+        }
+
         var elements = e.getStackTrace();
         for (int i = 0; i < elements.length; i++) {
             var element = elements[i];
@@ -225,16 +241,12 @@ public final class Shaded {
 
                 String suffix = element.getClassName().substring(funcGroupClassPrefix.length());
                 var group = Integer.parseInt(suffix);
-                if (group < smaps.length) {
-
-                    var line = element.getLineNumber();
-
-                    var stratum = getStratum(group, smaps[group]);
-                    var lineMapping = stratum.getLineMapping(line);
-                    var path = stratum.getPath(lineMapping.lineFileID());
-
-                    // Find what it maps to.
+                if (group < STRATA_BY_FUNC_GROUP.length) {
+                    var stratum = STRATA_BY_FUNC_GROUP[group];
+                    var lineMapping = stratum.getLineMapping(element.getLineNumber());
                     if (lineMapping != null) {
+
+                        var path = stratum.getPath(lineMapping.lineFileID());
                         elements[i] =
                                 new StackTraceElement(
                                         element.getClassName(),

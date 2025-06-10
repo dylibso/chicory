@@ -3,6 +3,7 @@ package com.dylibso.chicory.compiler;
 import com.dylibso.chicory.compiler.internal.MachineFactory;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
+import com.dylibso.chicory.runtime.internal.smap.Stratum;
 import com.dylibso.chicory.wasm.WasmModule;
 import java.util.Set;
 import java.util.function.Function;
@@ -95,6 +96,11 @@ public final class MachineFactoryCompiler {
 
         public Builder withInterpretedFunctions(Set<Integer> interpretedFunctions) {
             compilerBuilder.withInterpretedFunctions(interpretedFunctions);
+            return this;
+        }
+
+        public Builder withDebugParser(Function<WasmModule, Stratum> debugParser) {
+            compilerBuilder.withDebugParser(debugParser);
             return this;
         }
 

@@ -52,7 +52,7 @@ public final class ShadedRefs {
     static final Method THROW_TRAP_EXCEPTION;
     static final Method THROW_UNKNOWN_FUNCTION;
     static final Method AOT_INTERPRETER_MACHINE_CALL;
-    static final Method ENHANCE_STACK_TRACE;
+    static final Method INIT;
 
     static {
         try {
@@ -161,9 +161,7 @@ public final class ShadedRefs {
 
             AOT_INTERPRETER_MACHINE_CALL =
                     CompilerInterpreterMachine.class.getMethod("call", int.class, long[].class);
-            ENHANCE_STACK_TRACE =
-                    Shaded.class.getMethod(
-                            "enhanceStackTrace", Throwable.class, String[].class, String.class);
+            INIT = Shaded.class.getMethod("init", String[].class, String.class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }
