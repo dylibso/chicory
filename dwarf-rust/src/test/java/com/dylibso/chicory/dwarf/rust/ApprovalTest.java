@@ -14,6 +14,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 // To approve everything use the env var: `APPROVAL_TESTS_USE_REPORTER=AutoApproveReporter`
 public class ApprovalTest {
+    public static final String CLASS_NAME = "com.dylibso.chicory.$gen.CompiledMachine";
 
     @Test
     public void verifyCountVowels() {
@@ -32,6 +33,7 @@ public class ApprovalTest {
         var module = Parser.parse(getSystemClassLoader().getResourceAsStream("compiled/" + name));
         var result =
                 Compiler.builder(module)
+                        .withClassName(CLASS_NAME)
                         .withDebugParser(
                                 (x) ->
                                         DebugParser.parse(

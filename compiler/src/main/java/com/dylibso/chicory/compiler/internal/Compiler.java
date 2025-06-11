@@ -80,6 +80,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.objectweb.asm.ClassReader;
@@ -95,7 +96,8 @@ import org.objectweb.asm.util.CheckClassAdapter;
 
 public final class Compiler {
 
-    public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.$gen.CompiledMachine";
+    public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.$gen%d.CompiledMachine";
+    public static final AtomicInteger CLASS_COUNTER = new AtomicInteger(0);
     private static final Type LONG_ARRAY_TYPE = Type.getType(long[].class);
     private static final Type INT_ARRAY_TYPE = Type.getType(int[].class);
     private static final Type AOT_INTERPRETER_MACHINE_TYPE =
@@ -222,7 +224,7 @@ public final class Compiler {
         public Compiler build() {
             var className = this.className;
             if (className == null) {
-                className = DEFAULT_CLASS_NAME;
+                className = String.format(DEFAULT_CLASS_NAME, CLASS_COUNTER.getAndIncrement());
             }
 
             int maxFunctionsPerClass = this.maxFunctionsPerClass;

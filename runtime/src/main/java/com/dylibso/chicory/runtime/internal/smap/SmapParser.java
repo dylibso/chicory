@@ -81,7 +81,7 @@ public final class SmapParser {
                 lineIndex = parseStratumSection(lines, lineIndex, generator);
             } else if (line.startsWith("*V")) {
                 // Vendor section - skip for now
-                lineIndex = skipVendorSection(lines, lineIndex);
+                lineIndex = parseVendorSection(lines, lineIndex, generator);
             } else if (line.startsWith("*")) {
                 // Unknown section - skip
                 lineIndex = skipUnknownSection(lines, lineIndex);
@@ -159,9 +159,6 @@ public final class SmapParser {
                 lineIndex++;
                 lineIndex = parseLineSection(lines, lineIndex, stratum, fileIdToPath, fileIdToName);
                 hasLineSection = true;
-            } else if (line.startsWith("*V")) {
-                // Vendor section - skip
-                lineIndex = skipVendorSection(lines, lineIndex);
             } else if (line.startsWith("*")) {
                 // End of this stratum section
                 break;
@@ -339,23 +336,51 @@ public final class SmapParser {
         return lineIndex;
     }
 
-    private static int skipVendorSection(String[] lines, int lineIndex) {
+    private static int parseVendorSection(String[] lines, int lineIndex, Smap generator) {
         lineIndex++; // Skip *V line
 
-        while (lineIndex < lines.length) {
-            String line = lines[lineIndex].trim();
-            if (line.startsWith("*")) {
-                break;
-            }
-            lineIndex++;
+        if (lineIndex >= lines.length) {
+            return lineIndex; // No more lines to process
         }
+        String vendor = lines[lineIndex].trim();
+        if (vendor.equals(Stratum.FUNCTIONS_VENDOR_ID)) {
+            lineIndex++;
+            while (lineIndex < lines.length) {
+                String line = lines[lineIndex].trim();
+                // parse the line. it should be in %d,%d=%s format
+                String[] parts = line.split("=", 2);
+                if (parts.length == 2) {
+                    String[] keys = parts[0].split(",", 2);
+                    if (keys.length == 2) {
+                        try {
+                            long start = Long.parseLong(keys[0]);
+                            long end = Long.parseLong(keys[1]);
+                            String functionName = parts[1];
+                            generator
+                                    .getDefaultStratum()
+                                    .addFunctionMapping(functionName, start, end);
 
+                        } catch (NumberFormatException e) {
+                            continue;
+                        }
+                    }
+                }
+
+                lineIndex++;
+            }
+        } else {
+            lineIndex = skipTillSectionEnd(lines, lineIndex);
+        }
         return lineIndex;
     }
 
     private static int skipUnknownSection(String[] lines, int lineIndex) {
         lineIndex++; // Skip section marker line
 
+        return skipTillSectionEnd(lines, lineIndex);
+    }
+
+    private static int skipTillSectionEnd(String[] lines, int lineIndex) {
         while (lineIndex < lines.length) {
             String line = lines[lineIndex].trim();
             if (line.startsWith("*")) {
@@ -363,7 +388,6 @@ public final class SmapParser {
             }
             lineIndex++;
         }
-
         return lineIndex;
     }
 }

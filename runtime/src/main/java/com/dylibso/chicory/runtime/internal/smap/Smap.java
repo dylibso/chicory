@@ -124,6 +124,10 @@ public class Smap {
             out.append(s.toString());
         }
 
+        if (!getDefaultStratum().functionData().isEmpty()) {
+            out.append(getDefaultStratum().toVendorString());
+        }
+
         // end the SMAP
         out.append("*E\n");
 

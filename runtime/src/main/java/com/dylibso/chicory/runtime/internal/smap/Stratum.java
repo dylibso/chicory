@@ -27,6 +27,7 @@ import java.util.List;
  * Represents the line and file mappings associated with a JSR-045 "stratum".
  */
 public class Stratum {
+    public static final String FUNCTIONS_VENDOR_ID = "com.dylibso.chicory.functions";
 
     /**
      * Long implementation of LineInfo for very large files
@@ -194,11 +195,36 @@ public class Stratum {
         }
     }
 
+    public static final class FunctionMapping {
+        private final String functionName;
+        private final long startLine;
+        private final long endLine;
+
+        public FunctionMapping(String functionName, long startLine, long endLine) {
+            this.functionName = functionName;
+            this.startLine = startLine;
+            this.endLine = endLine;
+        }
+
+        public String getFunctionName() {
+            return functionName;
+        }
+
+        public long getStartLine() {
+            return startLine;
+        }
+
+        public long getEndLine() {
+            return endLine;
+        }
+    }
+
     private final String stratumName;
     private final List<String> fileNameList = new ArrayList<>();
     private final List<String> filePathList = new ArrayList<>();
     private final HashMap<String, Integer> filePathIdx = new HashMap<>();
     private final List<LineMapping> lineData = new ArrayList<>();
+    private final List<FunctionMapping> functionData = new ArrayList<>();
 
     /**
      * Constructs a new SmapStratum object for the given stratum name
@@ -231,6 +257,10 @@ public class Stratum {
 
     // *********************************************************************
     // Methods to add mapping information
+
+    public void addFunctionMapping(String functionName, long startLine, long endLine) {
+        functionData.add(new FunctionMapping(functionName, startLine, endLine));
+    }
 
     /**
      * Adds record of a new file, by filename and path.  The path
@@ -426,6 +456,7 @@ public class Stratum {
     public Stratum optimizeForLookups() {
         // sort the lineData by outputStartLine
         lineData.sort((a, b) -> Long.compare(a.outputStartLine(), b.outputStartLine()));
+        functionData.sort((a, b) -> Long.compare(a.getStartLine(), b.getStartLine()));
         return this;
     }
 
@@ -455,6 +486,27 @@ public class Stratum {
             }
         }
 
+        return null;
+    }
+
+    public String getFunctionMapping(int outputLine) {
+        // do a ranged binary search on functionData to find the FunctionMapping that contains the
+        // outputLine
+        int left = 0;
+        int right = functionData.size() - 1;
+
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            FunctionMapping midInfo = functionData.get(mid);
+
+            if (outputLine >= midInfo.getStartLine() && outputLine <= midInfo.getEndLine()) {
+                return midInfo.getFunctionName();
+            } else if (outputLine < midInfo.getStartLine()) {
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+        }
         return null;
     }
 
@@ -507,7 +559,30 @@ public class Stratum {
         return out.toString();
     }
 
+    public String toVendorString() {
+        StringBuilder out = new StringBuilder();
+
+        // print StratumSection
+
+        out.append("*V\n").append(FUNCTIONS_VENDOR_ID).append("\n");
+
+        for (FunctionMapping fm : functionData) {
+            String escapedFunctionName = fm.getFunctionName().replace('\n', '_');
+            out.append(fm.getStartLine())
+                    .append(",")
+                    .append(fm.getEndLine())
+                    .append("=")
+                    .append(escapedFunctionName)
+                    .append("\n");
+        }
+        return out.toString();
+    }
+
     public List<LineMapping> lineData() {
         return this.lineData;
+    }
+
+    public List<FunctionMapping> functionData() {
+        return functionData;
     }
 }

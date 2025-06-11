@@ -82,6 +82,9 @@ final class WasmAnalyzer {
 
         int exitBlockDepth = -1;
         LineMapping lastLineMapping = null;
+        int startLineNo = -1;
+        String debugFunctionName = null;
+
         for (int idx = 0; idx < body.instructions().size(); idx++) {
             AnnotatedInstruction ins = body.instructions().get(idx);
 
@@ -89,7 +92,16 @@ final class WasmAnalyzer {
             var lineMapping =
                     debugContext.inputStratum.getLineMapping(ins.address() - codeSectionAddress);
             if (lineMapping != null && lineMapping != lastLineMapping) {
+                if (debugFunctionName == null) {
+                    debugFunctionName =
+                            debugContext.inputStratum.getFunctionMapping(
+                                    ins.address() - codeSectionAddress);
+                }
+
                 var outputLineNo = debugContext.nextOutputLineNo++;
+                if (startLineNo < 0) {
+                    startLineNo = outputLineNo;
+                }
 
                 String file = debugContext.inputStratum.getFile(lineMapping.lineFileID());
                 String path = debugContext.inputStratum.getPath(lineMapping.lineFileID());
@@ -283,6 +295,18 @@ final class WasmAnalyzer {
         // implicit return at end of function
         for (var type : reversed(functionType.returns())) {
             stack.pop(type);
+        }
+
+        if (debugFunctionName != null && startLineNo >= 0) {
+            var endLineNo = debugContext.nextOutputLineNo++;
+            debugContext.outputStratum.addFunctionMapping(
+                    debugFunctionName, startLineNo, endLineNo);
+
+            var idx = body.instructions().size();
+            result.add(new CompilerInstruction(CompilerOpCode.LABEL, idx));
+            result.add(
+                    new CompilerInstruction(
+                            CompilerOpCode.LINE_NUMBER, new long[] {endLineNo, idx}));
         }
         result.add(new CompilerInstruction(CompilerOpCode.RETURN, ids(functionType.returns())));
 

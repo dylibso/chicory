@@ -247,11 +247,14 @@ public final class Shaded {
                     if (lineMapping != null) {
 
                         var path = stratum.getPath(lineMapping.lineFileID());
+                        String functionName = stratum.getFunctionMapping(element.getLineNumber());
+                        if (functionName == null) {
+                            functionName = element.getMethodName();
+                        }
                         elements[i] =
                                 new StackTraceElement(
                                         element.getClassName(),
-                                        element.getMethodName(), // todo: can we get the wasm
-                                        // function name?
+                                        functionName,
                                         path,
                                         (int) lineMapping.inputStartLine());
                     }

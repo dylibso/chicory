@@ -33,6 +33,7 @@ public final class DebugParser {
         String error;
         ArrayList<SourceUnit> units;
         ArrayList<long[]> lines;
+        HashMap<String, long[]> functions;
     }
 
     private static final class SourceUnit {
@@ -149,6 +150,20 @@ public final class DebugParser {
             var file = sourceFilesByID.get(fileID);
             stratum.addLineData(file.file, file.path, line, 1, address, outputLineCount);
         }
+
+        if (result.functions != null) {
+            for (var entry : result.functions.entrySet()) {
+                String functionName = entry.getKey();
+                long[] locations = entry.getValue();
+                if (locations.length < 2) {
+                    continue; // Invalid function data
+                }
+                long startAddress = locations[0];
+                long endAddress = locations[1];
+                stratum.addFunctionMapping(functionName, startAddress, endAddress);
+            }
+        }
+
         return stratum.optimizeForLookups();
     }
 

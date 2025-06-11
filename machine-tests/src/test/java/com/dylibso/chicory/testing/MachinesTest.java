@@ -326,28 +326,30 @@ public final class MachinesTest {
         //             at ./src/lib.rs:40:9
 
         // It's not exactly 1-to-1, but it's close enough.
+
         assertTrue(
                 exceptionTxt.contains(
-                        "at chicory interpreter 0x00627d:"
-                                + " func.86(library/std/src/panicking.rs:697)"));
+                        "at 0x00627d: chicory"
+                            + " interpreter.begin_panic_handler(library/std/src/panicking.rs:697)"));
         assertTrue(
                 exceptionTxt.contains(
-                        "at chicory interpreter 0x007e74:"
-                                + " func.118(library/core/src/panicking.rs:117)"));
+                        "at 0x007e74: chicory"
+                            + " interpreter.panic_nounwind_fmt(library/core/src/panicking.rs:117)"));
         assertTrue(
                 exceptionTxt.contains(
-                        "at chicory interpreter 0x007ec8:"
-                                + " func.119(library/core/src/panicking.rs:218)"));
+                        "at 0x007ec8: chicory"
+                            + " interpreter.panic_nounwind(library/core/src/panicking.rs:218)"));
         assertTrue(
                 exceptionTxt.contains(
-                        "at chicory interpreter 0x001cf6:"
-                            + " func.30(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:68)"));
+                        "at 0x001cf6: chicory"
+                            + " interpreter.func_30(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:68)"));
         assertTrue(
                 exceptionTxt.contains(
-                        "at chicory interpreter 0x003948:"
-                            + " func.54(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:75)"));
+                        "at 0x003948: chicory"
+                            + " interpreter.from_raw_parts<u8>(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:75)"));
         assertTrue(
-                exceptionTxt.contains("at chicory interpreter 0x000d7f: func.11(src/lib.rs:23)"));
+                exceptionTxt.contains(
+                        "at 0x000d7f: chicory interpreter.count_vowels(src/lib.rs:23)"));
     }
 
     @Test
@@ -358,6 +360,7 @@ public final class MachinesTest {
                         .withDebugParser(DebugParser::parse)
                         .withMachineFactory(
                                 MachineFactoryCompiler.builder(module)
+                                        .withClassName("com.dylibso.chicory.$gen.CompiledMachine")
                                         .withDebugParser(DebugParser::parse)
                                         .compile())
                         .build();
@@ -367,21 +370,21 @@ public final class MachinesTest {
 
         assertTrue(
                 exceptionTxt.contains(
-                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_86(library/std/src/panicking.rs:697)"));
+                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.begin_panic_handler(library/std/src/panicking.rs:697)"));
         assertTrue(
                 exceptionTxt.contains(
-                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_118(library/core/src/panicking.rs:117)"));
+                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.panic_nounwind_fmt(library/core/src/panicking.rs:117)"));
         assertTrue(
                 exceptionTxt.contains(
-                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_119(library/core/src/panicking.rs:218)"));
+                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.panic_nounwind(library/core/src/panicking.rs:218)"));
         assertTrue(
                 exceptionTxt.contains(
                         "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_30(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:68)"));
         assertTrue(
                 exceptionTxt.contains(
-                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_54(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:75)"));
+                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.from_raw_parts<u8>(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:75)"));
         assertTrue(
                 exceptionTxt.contains(
-                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.func_11(src/lib.rs:22)"));
+                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.count_vowels(src/lib.rs:22)"));
     }
 }

@@ -670,19 +670,30 @@ final class FOOShaded {
     INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/Stratum.getPath (I)Ljava/lang/String;
     ASTORE 8
    L16
+    ALOAD 6
+    ALOAD 3
+    INVOKEVIRTUAL java/lang/StackTraceElement.getLineNumber ()I
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/Stratum.getFunctionMapping (I)Ljava/lang/String;
+    ASTORE 9
+   L17
+    ALOAD 9
+    IFNONNULL L18
+   L19
+    ALOAD 3
+    INVOKEVIRTUAL java/lang/StackTraceElement.getMethodName ()Ljava/lang/String;
+    ASTORE 9
+   L18
     ALOAD 1
     ILOAD 2
     NEW java/lang/StackTraceElement
     DUP
     ALOAD 3
-   L17
+   L20
     INVOKEVIRTUAL java/lang/StackTraceElement.getClassName ()Ljava/lang/String;
-    ALOAD 3
-   L18
-    INVOKEVIRTUAL java/lang/StackTraceElement.getMethodName ()Ljava/lang/String;
+    ALOAD 9
     ALOAD 8
     ALOAD 7
-   L19
+   L21
     INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/LineMapping.inputStartLine ()J
     L2I
     INVOKESPECIAL java/lang/StackTraceElement.<init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V
@@ -694,9 +705,9 @@ final class FOOShaded {
     ALOAD 0
     ALOAD 1
     INVOKEVIRTUAL java/lang/Throwable.setStackTrace ([Ljava/lang/StackTraceElement;)V
-   L20
+   L22
     RETURN
-   L21
+   L23
 
   static <clinit>()V
    L0

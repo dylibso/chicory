@@ -15151,5 +15151,339 @@
       145,
       178
     ]
-  ]
+  ],
+  "functions": {
+    "{closure#0}": [
+      23169,
+      23365
+    ],
+    "__rg_oom": [
+      26040,
+      26080
+    ],
+    "take_box": [
+      25552,
+      25640
+    ],
+    "__rdl_alloc": [
+      23497,
+      23528
+    ],
+    "dealloc": [
+      2873,
+      2994
+    ],
+    "deallocate": [
+      12175,
+      12389
+    ],
+    "free\u003cdlmalloc::sys::System\u003e": [
+      16955,
+      17785
+    ],
+    "write_fmt\u003calloc::string::String\u003e": [
+      14875,
+      14893
+    ],
+    "allocate_zeroed": [
+      12391,
+      12522
+    ],
+    "__rust_start_panic": [
+      26081,
+      26084
+    ],
+    "fmt": [
+      25675,
+      25695
+    ],
+    "panic_nounwind_fmt": [
+      31875,
+      31987
+    ],
+    "begin_panic_handler": [
+      24772,
+      24828
+    ],
+    "rust_panic_with_hook": [
+      25697,
+      26010
+    ],
+    "from_raw_parts\u003cu8\u003e": [
+      14215,
+      14312
+    ],
+    "pad": [
+      26638,
+      27327
+    ],
+    "write_prefix": [
+      32949,
+      33022
+    ],
+    "write": [
+      27530,
+      28186
+    ],
+    "do_reserve_and_handle\u003calloc::alloc::Global\u003e": [
+      14592,
+      14874
+    ],
+    "as_str": [
+      25662,
+      25674
+    ],
+    "drop_in_place\u003calloc::vec::Vec\u003cu8, alloc::alloc::Global\u003e\u003e": [
+      5045,
+      5119
+    ],
+    "fmt\u003ccore::option::Option\u003cu8\u003e\u003e": [
+      13405,
+      13502
+    ],
+    "next_code_point\u003ccore::slice::iter::Iter\u003cu8\u003e\u003e": [
+      3951,
+      4984
+    ],
+    "handle_alloc_error": [
+      26623,
+      26636
+    ],
+    "write_fmt\u003ccore::fmt::builders::PadAdapter\u003e": [
+      32930,
+      32948
+    ],
+    "finish_grow\u003calloc::alloc::Global\u003e": [
+      26433,
+      26622
+    ],
+    "pad_integral": [
+      28597,
+      29420
+    ],
+    "from_utf8": [
+      30306,
+      31058
+    ],
+    "insert_large_chunk\u003cdlmalloc::sys::System\u003e": [
+      16618,
+      16953
+    ],
+    "next\u003cu8\u003e": [
+      10044,
+      10325
+    ],
+    "unwrap_failed": [
+      31692,
+      31835
+    ],
+    "default_alloc_error_hook": [
+      23367,
+      23496
+    ],
+    "__rust_end_short_backtrace\u003cstd::panicking::begin_panic_handler::{closure_env#0}, !\u003e": [
+      23156,
+      23167
+    ],
+    "drop_in_place\u003calloc::raw_vec::RawVec\u003cu8, alloc::alloc::Global\u003e\u003e": [
+      5254,
+      5320
+    ],
+    "panic": [
+      27328,
+      27405
+    ],
+    "capacity_overflow": [
+      26143,
+      26210
+    ],
+    "panic_const_add_overflow": [
+      34148,
+      34215
+    ],
+    "allocate": [
+      12524,
+      12655
+    ],
+    "field": [
+      31060,
+      31491
+    ],
+    "is_size_align_valid": [
+      33835,
+      33856
+    ],
+    "malloc\u003cdlmalloc::sys::System\u003e": [
+      17787,
+      22774
+    ],
+    "rust_panic": [
+      26011,
+      26039
+    ],
+    "fmt\u003cu8\u003e": [
+      13504,
+      13764
+    ],
+    "write_char": [
+      15020,
+      15390
+    ],
+    "panic_fmt": [
+      27474,
+      27528
+    ],
+    "do_count_chars": [
+      29422,
+      30304
+    ],
+    "type_id\u003calloc::string::String\u003e": [
+      14557,
+      14590
+    ],
+    "alloc": [
+      26085,
+      26142
+    ],
+    "into_iter\u003ccore::str::iter::Chars\u003e": [
+      11113,
+      11165
+    ],
+    "next": [
+      14030,
+      14214
+    ],
+    "count_vowels": [
+      2996,
+      3658
+    ],
+    "fmt\u003cstr\u003e": [
+      31854,
+      31874
+    ],
+    "fold\u003cchar, bool, core::slice::cmp::{impl#47}::slice_contains::{closure_env#0}\u003e": [
+      9488,
+      10042
+    ],
+    "dispose_chunk\u003cdlmalloc::sys::System\u003e": [
+      16072,
+      16616
+    ],
+    "chunks_exact\u003cchar\u003e": [
+      12657,
+      13033
+    ],
+    "precondition_check": [
+      14313,
+      14427
+    ],
+    "__rdl_realloc": [
+      23643,
+      24598
+    ],
+    "get": [
+      25641,
+      25661
+    ],
+    "drop_in_place\u003cstd::panicking::begin_panic_handler::FormatStringPayload\u003e": [
+      14963,
+      15008
+    ],
+    "debug_struct_field2_finish": [
+      33055,
+      33301
+    ],
+    "_fmt": [
+      28188,
+      28595
+    ],
+    "split_at_unchecked\u003cchar\u003e": [
+      13035,
+      13304
+    ],
+    "write_str": [
+      32247,
+      32832
+    ],
+    "__rdl_alloc_zeroed": [
+      24599,
+      24676
+    ],
+    "debug_tuple_field1_finish": [
+      33303,
+      33688
+    ],
+    "drop\u003cu8, alloc::alloc::Global\u003e": [
+      5121,
+      5253
+    ],
+    "type_id\u003c\u0026str\u003e": [
+      14522,
+      14556
+    ],
+    "next\u003cchar\u003e": [
+      10610,
+      11112
+    ],
+    "unlink_chunk\u003cdlmalloc::sys::System\u003e": [
+      15668,
+      16070
+    ],
+    "grow_one\u003cu8, alloc::alloc::Global\u003e": [
+      26212,
+      26400
+    ],
+    "increase": [
+      24677,
+      24771
+    ],
+    "memalign\u003cdlmalloc::sys::System\u003e": [
+      22776,
+      23155
+    ],
+    "slice_contains": [
+      1333,
+      2117
+    ],
+    "contains\u003cchar\u003e": [
+      13305,
+      13404
+    ],
+    "panic_nounwind": [
+      31988,
+      32071
+    ],
+    "drop_in_place\u003ccore::option::Option\u003calloc::vec::Vec\u003cu8, alloc::alloc::Global\u003e\u003e\u003e": [
+      14927,
+      14962
+    ],
+    "alloc_zeroed": [
+      11167,
+      11380
+    ],
+    "__rdl_dealloc": [
+      23529,
+      23641
+    ],
+    "panic_const_div_by_zero": [
+      27406,
+      27473
+    ],
+    "as_str\u003cstd::panicking::begin_panic_handler::FormatStringPayload\u003e": [
+      15009,
+      15018
+    ],
+    "forget\u003calloc::vec::Vec\u003cu8, alloc::alloc::Global\u003e\u003e": [
+      6304,
+      6307
+    ],
+    "chars": [
+      4985,
+      5044
+    ],
+    "panic_const_rem_by_zero": [
+      34216,
+      34283
+    ]
+  }
 }

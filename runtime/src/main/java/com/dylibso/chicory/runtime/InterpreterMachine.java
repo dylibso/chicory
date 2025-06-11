@@ -2243,6 +2243,7 @@ public class InterpreterMachine implements Machine {
             var address = te.getCallStackAddresses()[i];
             var funcId = te.getCallStackFunctionIds()[i];
 
+            var functionName = stratum.getFunctionMapping(address - codeSectionAddress);
             var lineMapping = stratum.getLineMapping(address - codeSectionAddress);
             String fileName = null;
             int line = 0;
@@ -2254,10 +2255,11 @@ public class InterpreterMachine implements Machine {
                 line = address;
             }
 
-            String className = String.format("chicory interpreter 0x%06x: func", address);
-            ;
-            String methodName = String.format("%d", funcId);
-            traces.add(new StackTraceElement(className, methodName, fileName, line));
+            String className = String.format("0x%06x: chicory interpreter", address);
+            if (functionName == null) {
+                functionName = String.format("func_%d", funcId);
+            }
+            traces.add(new StackTraceElement(className, functionName, fileName, line));
         }
         Collections.reverse(traces);
 
