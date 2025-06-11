@@ -44,12 +44,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Instance {
     public static final String START_FUNCTION_NAME = "_start";
+    private static final AtomicLong NEXT_INSTANCE_ID = new AtomicLong(1);
 
+    private final long id = NEXT_INSTANCE_ID.getAndIncrement();
     private final WasmModule module;
     private final Machine machine;
     private final FunctionBody[] functions;
@@ -68,6 +71,7 @@ public class Instance {
     private final Exports fluentExports;
 
     private final Map<Integer, WasmException> exnRefs;
+    private final Function<Instance, Machine> machineFactory;
 
     Instance(
             WasmModule module,
@@ -95,6 +99,7 @@ public class Instance {
         this.types = types.clone();
         this.functionTypes = functionTypes.clone();
         this.imports = imports;
+        this.machineFactory = machineFactory;
         this.machine = machineFactory.apply(this);
         this.tables = new TableInstance[tables.length];
         this.elements = elements.clone();
@@ -117,6 +122,103 @@ public class Instance {
         if (initialize) {
             initialize(start);
         }
+    }
+
+    private Instance(Instance original, CopyOptions copyOptions) {
+
+        this.imports = copyOptions.imports != null ? copyOptions.imports : original.imports.copy();
+        this.listener = copyOptions.listener != null ? copyOptions.listener : original.listener;
+
+        this.module = original.module;
+        this.globalInitializers = original.globalInitializers.clone();
+        this.functions = original.functions.clone();
+        this.memory = (original.memory != null) ? original.memory.copy() : null;
+        this.dataSegments = original.dataSegments.clone();
+        this.types = original.types.clone();
+        this.functionTypes = original.functionTypes.clone();
+        this.elements = original.elements.clone();
+        this.exports = original.exports;
+        this.fluentExports = new Exports(this);
+
+        // Copy the current state of tags
+        this.tags = new TagInstance[original.tags.length];
+        for (int i = 0; i < original.tags.length; i++) {
+            TagType type = original.tags[i].tagType();
+            this.tags[i] = new TagInstance(type);
+            this.tags[i].setType(types[(type.typeIdx())]);
+        }
+
+        // Copy the current state of globals
+        this.globals = new GlobalInstance[original.globals.length];
+        for (int i = 0; i < original.globals.length; i++) {
+            if (original.globals[i] != null) {
+                this.globals[i] = original.globals[i].copy();
+                this.globals[i].setInstance(this);
+            }
+        }
+
+        // Copy the current state of tables and update instance references
+        this.tables = new TableInstance[original.tables.length];
+        for (int i = 0; i < original.tables.length; i++) {
+            if (original.tables[i] != null) {
+                this.tables[i] = original.tables[i].copy();
+                // Update Instance references in the table to point to the copied instance
+                for (int j = 0; j < this.tables[i].size(); j++) {
+                    if (this.tables[i].instance(j) == original) {
+                        this.tables[i].setRef(j, this.tables[i].ref(j), this);
+                    }
+                }
+            }
+        }
+
+        // Copy the current state of tags
+        for (int i = 0; i < original.tags.length; i++) {
+            if (original.tags[i] != null) {
+                this.tags[i] = original.tags[i].copy();
+            }
+        }
+
+        // Copy exception references
+        this.exnRefs = new HashMap<>();
+        for (var entry : original.exnRefs.entrySet()) {
+            WasmException value = entry.getValue();
+            if (value.instance() == original) {
+                // If the exception is from the original instance, copy it
+                value = new WasmException(this, value.tagIdx(), value.args());
+            }
+            this.exnRefs.put(entry.getKey(), value);
+        }
+
+        // Create a new machine instance using the original's machine factory
+        this.machineFactory = original.machineFactory;
+        this.machine = this.machineFactory.apply(this);
+    }
+
+    public class CopyOptions {
+        private ExecutionListener listener;
+        private ImportValues imports;
+
+        public CopyOptions withListener(ExecutionListener listener) {
+            this.listener = listener;
+            return this;
+        }
+
+        public CopyOptions withImports(ImportValues imports) {
+            this.imports = imports;
+            return this;
+        }
+
+        public Instance copy() {
+            return new Instance(Instance.this, this);
+        }
+    }
+
+    public CopyOptions copyWithOptions() {
+        return new CopyOptions();
+    }
+
+    public Instance copy() {
+        return copyWithOptions().copy();
     }
 
     public Instance initialize(boolean start) {
@@ -180,6 +282,10 @@ public class Instance {
         }
 
         return this;
+    }
+
+    public long id() {
+        return id;
     }
 
     public FunctionType exportType(String name) {
@@ -384,7 +490,8 @@ public class Instance {
         }
 
         /*
-         * This method is experimental and might be dropped without notice in future releases.
+         * This method is experimental and might be dropped without notice in future
+         * releases.
          */
         public Builder withUnsafeExecutionListener(ExecutionListener listener) {
             this.listener = listener;
@@ -527,7 +634,8 @@ public class Instance {
                             ? Memory.RUNTIME_MAX_PAGES
                             : i.limits().maximumPages();
 
-            // HostMem bounds [x,y] must be within the import bounds [a, b]; i.e., a <= x, y >= b.
+            // HostMem bounds [x,y] must be within the import bounds [a, b]; i.e., a <= x, y
+            // >= b.
             // In other words, the bounds are not valid when:
             // - HostMem current number of pages cannot be less than the import lower bound.
             // - HostMem upper bound cannot be larger than the given upper bound.

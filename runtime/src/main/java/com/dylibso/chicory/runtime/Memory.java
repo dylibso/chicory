@@ -140,5 +140,7 @@ public interface Memory {
         write(dest, readBytes(src, size));
     }
 
+    Memory copy();
+
     void drop(int segment);
 }
