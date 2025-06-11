@@ -2015,8 +2015,12 @@ public class InterpreterMachine implements Machine {
             currentStackFrame.pushCtrl(ctrlFrame);
             return currentStackFrame;
         } else {
-            var ctrlFrame = callStack.pop();
-            StackFrame.doControlTransfer(ctrlFrame.popCtrlTillCall(), stack);
+            var fromCallStack = !callStack.isEmpty();
+            var ctrlFrame =
+                    (fromCallStack)
+                            ? callStack.pop().popCtrlTillCall()
+                            : currentStackFrame.popCtrlTillCall();
+            StackFrame.doControlTransfer(ctrlFrame, stack);
             var newFrame =
                     new StackFrame(
                             instance,
@@ -2026,7 +2030,9 @@ public class InterpreterMachine implements Machine {
                             func.localTypes(),
                             func.instructions());
             newFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
-            callStack.push(newFrame);
+            if (fromCallStack) {
+                callStack.push(newFrame);
+            }
             return newFrame;
         }
     }
@@ -2068,8 +2074,12 @@ public class InterpreterMachine implements Machine {
             return currentStackFrame;
         } else {
             var func = instance.function(funcId);
-            var ctrlFrame = callStack.pop();
-            StackFrame.doControlTransfer(ctrlFrame.popCtrlTillCall(), stack);
+            var fromCallStack = !callStack.isEmpty();
+            var ctrlFrame =
+                    (fromCallStack)
+                            ? callStack.pop().popCtrlTillCall()
+                            : currentStackFrame.popCtrlTillCall();
+            StackFrame.doControlTransfer(ctrlFrame, stack);
             var newFrame =
                     new StackFrame(
                             instance,
@@ -2079,7 +2089,9 @@ public class InterpreterMachine implements Machine {
                             func.localTypes(),
                             func.instructions());
             newFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
-            callStack.push(newFrame);
+            if (fromCallStack) {
+                callStack.push(newFrame);
+            }
             return newFrame;
         }
     }
