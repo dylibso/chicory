@@ -3,6 +3,7 @@ package com.dylibso.chicory.runtime.internal.smap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.dylibso.chicory.wasm.io.InputStreams;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.UnifiedDiffUtils;
 import com.github.difflib.patch.Patch;
@@ -54,7 +55,8 @@ public class SmapParserTest {
         // Read the example.smap file from test resources
         try (var inputStream = getClass().getResourceAsStream("/example.smap")) {
             assertNotNull(inputStream, "example.smap resource not found");
-            String actual = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+            String actual =
+                    new String(InputStreams.readAllBytes(inputStream), StandardCharsets.UTF_8);
 
             Smap generator = SmapParser.parse(actual);
             assertNotNull(generator);
