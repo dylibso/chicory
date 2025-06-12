@@ -3,7 +3,8 @@ package com.dylibso.chicory.dwarf.rust;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.google.gson.GsonBuilder;
+import com.dylibso.chicory.wasm.Parser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.StringWriter;
 import org.approvaltests.Approvals;
@@ -13,9 +14,10 @@ public class RustParserTest {
 
     @Test
     public void shouldParseCountVowels() throws Exception {
-        var result =
-                DebugParser.parse(
+        var module =
+                Parser.parse(
                         RustParserTest.class.getResourceAsStream("/compiled/count_vowels.rs.wasm"));
+        var result = DebugParser.parse(module);
         assertNotNull(result);
 
         // Just want peek at an entry and make sure it values look like
@@ -36,14 +38,17 @@ public class RustParserTest {
                 DebugParser.getSourceResult(
                         RustParserTest.class.getResourceAsStream("/compiled/count_vowels.rs.wasm"));
         assertNotNull(result);
-        var gson = new GsonBuilder().setPrettyPrinting().create();
-        Approvals.verify(gson.toJson(result));
+        var mapper = new ObjectMapper();
+        Approvals.verify(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(result));
     }
 
     @Test
     public void shouldParseWasmSourceInfo() throws Exception {
+
         // this file does not contain debug info
-        var result = DebugParser.parse(new File("./src/main/wasm/wasm-source-map.wasm"));
+        var module = Parser.parse(new File("./src/main/wasm/wasm-source-map.wasm"));
+
+        var result = DebugParser.parse(module);
         assertNotNull(result);
         assertEquals(0, result.lineData().size());
     }

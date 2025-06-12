@@ -34,11 +34,7 @@ public class ApprovalTest {
         var result =
                 Compiler.builder(module)
                         .withClassName(CLASS_NAME)
-                        .withDebugParser(
-                                (x) ->
-                                        DebugParser.parse(
-                                                getSystemClassLoader()
-                                                        .getResourceAsStream("compiled/" + name)))
+                        .withDebugParser(DebugParser::parse)
                         .build()
                         .compile();
 

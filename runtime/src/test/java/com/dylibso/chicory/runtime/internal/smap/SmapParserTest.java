@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class SmapParserTest {
@@ -47,7 +46,6 @@ public class SmapParserTest {
     }
 
     @Test
-    @Disabled("works on my machine.. not others :( ")
     public void testParseExampleSmap() throws ParserException, IOException {
         // Read the example.smap file from test resources
         try (var inputStream = getClass().getResourceAsStream("/example.smap")) {

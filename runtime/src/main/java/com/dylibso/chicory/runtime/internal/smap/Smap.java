@@ -146,29 +146,4 @@ public class Smap {
     public List<Stratum> getStrata() {
         return strata;
     }
-
-    // *********************************************************************
-    // For testing (and as an example of use)...
-
-    public static void main(String[] args) {
-        Smap g = new Smap();
-        g.withOutputFileName("foo.java");
-        Stratum s = new Stratum("JSP");
-        s.addLineData("foo.jsp", 1, 1, 1, 1);
-        s.addLineData("foo.jsp", 2, 1, 6, 1);
-        s.addLineData("foo.jsp", 3, 2, 10, 5);
-        s.addLineData("/foo/foo/bar.jsp", 20, 1, 30, 1);
-        g.withStratum(s, true);
-        System.out.print(g);
-
-        System.out.println("---");
-
-        Smap embedded = new Smap();
-        embedded.withOutputFileName("blargh.tier2");
-        s = new Stratum("Tier2");
-        s.addLineData("1.tier2", 1, 1, 1, 1);
-        embedded.withStratum(s, true);
-        g.addSmap(embedded.toString(), "JSP");
-        System.out.println(g);
-    }
 }

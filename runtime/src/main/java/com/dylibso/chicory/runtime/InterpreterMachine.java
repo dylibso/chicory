@@ -2240,11 +2240,31 @@ public class InterpreterMachine implements Machine {
         var codeSectionAddress = instance.module().codeSection().address();
         // add back the wasm debug info.
         for (int i = te.getCallStackAddresses().length - 1; i >= 0; i--) {
-            var address = te.getCallStackAddresses()[i];
+
             var funcId = te.getCallStackFunctionIds()[i];
 
-            var functionName = stratum.getFunctionMapping(address - codeSectionAddress);
-            var lineMapping = stratum.getLineMapping(address - codeSectionAddress);
+            // A Stratum contains line and function mappings for the code section.
+            // A function mapping is:
+            //
+            //    [ start_address, end_address, function_name ]
+            //
+            // A line mapping is:
+            //
+            //    [ inputLineStart, inputLineCount, inputFileID, outputLineStart, outputLineCount ]
+            //
+            // where and addresses and outputLineStart is the WASM instruction address relative to
+            // the
+            // start of the code section address.
+
+            // This address is relative to the start of the wasm module.  We display this as
+            // it will match the output of `wasm-tools dump` and other tools.
+            var address = te.getCallStackAddresses()[i];
+
+            // Convert to an address relative to the start of code section.
+            int addressRelativeToCodeSection = address - codeSectionAddress;
+            var functionName = stratum.getFunctionMapping(addressRelativeToCodeSection);
+            var lineMapping = stratum.getLineMapping(addressRelativeToCodeSection);
+
             String fileName = null;
             int line = 0;
             if (lineMapping != null) {
