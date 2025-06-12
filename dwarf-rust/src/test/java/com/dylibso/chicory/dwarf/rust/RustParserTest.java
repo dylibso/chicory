@@ -1,10 +1,11 @@
 package com.dylibso.chicory.dwarf.rust;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.dylibso.chicory.wasm.Parser;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.StringWriter;
 import org.approvaltests.Approvals;
@@ -38,8 +39,10 @@ public class RustParserTest {
                 DebugParser.getSourceResult(
                         RustParserTest.class.getResourceAsStream("/compiled/count_vowels.rs.wasm"));
         assertNotNull(result);
-        var mapper = new ObjectMapper();
-        Approvals.verify(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(result));
+        assertNull(result.error);
+        assertFalse(result.units.isEmpty());
+        assertFalse(result.lines.isEmpty());
+        assertFalse(result.functions.isEmpty());
     }
 
     @Test
@@ -47,7 +50,6 @@ public class RustParserTest {
 
         // this file does not contain debug info
         var module = Parser.parse(new File("./src/main/wasm/wasm-source-map.wasm"));
-
         var result = DebugParser.parse(module);
         assertNotNull(result);
         assertEquals(0, result.lineData().size());

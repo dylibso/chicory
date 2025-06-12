@@ -1,3 +1,0 @@
-input file=/rustc/4d91de4e48198da2e33413efdcd9cd2cc0c46688/library/core/src/alloc/layout.rs
-input line=148
-output line=4028

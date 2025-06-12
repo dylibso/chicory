@@ -28,14 +28,14 @@ public final class DebugParser {
     private static final Logger logger = new SystemLogger();
     private static final WasmModule MODULE = Wasm.load();
 
-    private static final class SourceResult {
+    static final class SourceResult {
         public String error;
         public List<SourceUnit> units;
         public List<long[]> lines;
         public Map<String, long[]> functions;
     }
 
-    private static final class SourceUnit {
+    static final class SourceUnit {
         @SuppressWarnings("unused")
         public String name;
 
@@ -45,7 +45,7 @@ public final class DebugParser {
         public List<SourceFile> files;
     }
 
-    private static final class SourceFile {
+    static final class SourceFile {
         public int id;
         public String directory;
         public String file;
@@ -160,7 +160,7 @@ public final class DebugParser {
         return stratum.optimizeForLookups();
     }
 
-    public static SourceResult getSourceResult(InputStream is) {
+    static SourceResult getSourceResult(InputStream is) {
         SourceResult result = null;
         try (var stdoutStream = new ByteArrayOutputStream();
                 var stderrStream = new ByteArrayOutputStream()) {

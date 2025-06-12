@@ -3,8 +3,12 @@ package com.dylibso.chicory.runtime.internal.smap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.github.difflib.DiffUtils;
+import com.github.difflib.UnifiedDiffUtils;
+import com.github.difflib.patch.Patch;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class SmapParserTest {
@@ -57,7 +61,21 @@ public class SmapParserTest {
 
             String regenerated = generator.toString();
             assertNotNull(regenerated);
-            assertEquals(actual, regenerated);
+
+            assertEquals(actual, regenerated, () -> diff(actual, regenerated));
         }
+    }
+
+    private String diff(String expected, String actual) {
+        var expectedLines = List.of(expected.split("\n"));
+        var actualLines = List.of(actual.split("\n"));
+        Patch<String> patch = DiffUtils.diff(expectedLines, actualLines);
+
+        var x = UnifiedDiffUtils.generateUnifiedDiff("x", "x", expectedLines, patch, 3);
+        return "diff of expected vs actual: "
+                + "========================================================\n"
+                + String.join("\n", x)
+                + "\n"
+                + "========================================================\n";
     }
 }
