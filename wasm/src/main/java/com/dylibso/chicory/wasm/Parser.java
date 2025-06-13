@@ -283,7 +283,7 @@ public final class Parser {
             var sectionSize = readVarUInt32(buffer);
 
             validator.validateSectionType(sectionId);
-
+            var sectionAddress = buffer.position();
             ByteBuffer sectionByteBuffer = buffer.asReadOnlyBuffer();
             sectionByteBuffer.order(buffer.order());
 
@@ -377,7 +377,9 @@ public final class Parser {
                         }
                     case SectionId.CODE:
                         {
-                            var codeSection = parseCodeSection(sectionByteBuffer, typeSection);
+                            var codeSection =
+                                    parseCodeSection(
+                                            sectionByteBuffer, typeSection, sectionAddress);
                             listener.onSection(codeSection);
                             break;
                         }
@@ -863,11 +865,12 @@ public final class Parser {
         return locals;
     }
 
-    private static CodeSection parseCodeSection(ByteBuffer buffer, TypeSection typeSection) {
+    private static CodeSection parseCodeSection(
+            ByteBuffer buffer, TypeSection typeSection, int sectionAddress) {
         var funcBodyCount = readVarUInt32(buffer);
 
         var root = new ControlTree();
-        var codeSection = CodeSection.builder();
+        var codeSection = CodeSection.builder().withSectionAddress(sectionAddress);
 
         // Parse individual function bodies in the code section
         for (int i = 0; i < funcBodyCount; i++) {

@@ -55,6 +55,7 @@ public class Generator {
         var compiler =
                 Compiler.builder(module)
                         .withClassName(machineName)
+                        .withDebugParser(config.debugParser())
                         .withInterpreterFallback(config.interpreterFallback())
                         .withInterpretedFunctions(config.interpretedFunctions())
                         .build();
