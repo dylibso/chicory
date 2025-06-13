@@ -113,10 +113,35 @@ Instance instance = Instance.builder(module)
 
 > Note: The `withDebugParser` hook accepts any implementation of `Function<WasmModule, Stratum>`, so you can plug in your own debug symbol parser if desired.
 
+### Build Time Compiler
+
+To enable the Debug parser in the build time compiler, add
+the `dwarf-rust-experimental` maven module as a dependency of
+the `chicory-compiler-maven-plugin`.
+
+```xml
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>chicory-compiler-maven-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>com.dylibso.chicory</groupId>
+            <artifactId>dwarf-rust-experimental</artifactId>
+            <version>${project.version}</version>
+          </dependency>
+        </dependencies>
+        ...
+      </plugin>
+    </plugins>
+  </build>
+```
+
 # Limitations
 
 * **Experimental** – APIs and behaviour may change without notice.
-* WASM has NOT standardized on Dwarf for debug symbols.  
+* WASM has NOT standardized on Dwarf for debug symbols.  This may not work for all WASM modules.
 * The WebAssembly module must be compiled *with* debug info.
 * Performance impact is negligible at runtime, but there is a one-off cost during module loading while the DWARF sections are parsed.
 

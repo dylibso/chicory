@@ -10,8 +10,8 @@
   <artifactId>dwarf-rust-experimental</artifactId>
   <packaging>jar</packaging>
 
-  <name>Chicory - dwarf-rust</name>
-  <description>the source-map tool extract debug source maps from wasm files</description>
+  <name>Chicory - Dwarf Debug Parser</name>
+  <description>Parse dwarf debug symbols from wasm modules</description>
 
   <dependencies>
     <dependency>
