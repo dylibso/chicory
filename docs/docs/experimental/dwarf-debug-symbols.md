@@ -4,7 +4,7 @@ sidebar_label: Dwarf Debug Symbols
 title: Dwarf Debug Symbols
 ---
 
-# Overview
+# Dwarf Debug Symbols
 
 > Experimental – subject to change in future releases.
 
