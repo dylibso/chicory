@@ -352,4 +352,15 @@ public final class ByteArrayMemory implements Memory {
     public void drop(int segment) {
         dataSegments[segment] = PassiveDataSegment.EMPTY;
     }
+
+    @Override
+    public ByteArrayMemory copy() {
+        ByteArrayMemory copy = new ByteArrayMemory(this.limits, this.allocStrategy);
+        copy.nPages = this.nPages;
+        copy.buffer = this.buffer.clone();
+        if (this.dataSegments != null) {
+            copy.dataSegments = this.dataSegments.clone();
+        }
+        return copy;
+    }
 }
