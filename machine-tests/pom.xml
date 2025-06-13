@@ -28,7 +28,7 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>dwarf-rust</artifactId>
+      <artifactId>dwarf-rust-experimental</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

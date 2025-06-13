@@ -7,7 +7,7 @@
     <artifactId>chicory</artifactId>
     <version>999-SNAPSHOT</version>
   </parent>
-  <artifactId>dwarf-rust</artifactId>
+  <artifactId>dwarf-rust-experimental</artifactId>
   <packaging>jar</packaging>
 
   <name>Chicory - dwarf-rust</name>
