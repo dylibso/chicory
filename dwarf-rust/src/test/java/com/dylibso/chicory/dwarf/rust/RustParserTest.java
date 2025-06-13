@@ -49,7 +49,7 @@ public class RustParserTest {
     public void shouldParseWasmSourceInfo() throws Exception {
 
         // this file does not contain debug info
-        var module = Parser.parse(new File("./src/main/wasm/wasm-source-map.wasm"));
+        var module = Parser.parse(new File("./rust/target/wasm32-wasip1/release/dwarf-rust.wasm"));
         var result = DebugParser.parse(module);
         assertNotNull(result);
         assertEquals(0, result.lineData().size());

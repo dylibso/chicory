@@ -64,13 +64,49 @@
             <goals>
               <goal>compile</goal>
             </goals>
+            <phase>process-sources</phase>
             <configuration>
               <name>com.dylibso.chicory.dwarf.rust.internal.Wasm</name>
-              <wasmFile>src/main/wasm/wasm-source-map.wasm</wasmFile>
+              <wasmFile>${project.basedir}/rust/target/wasm32-wasip1/release/dwarf-rust.wasm</wasmFile>
             </configuration>
           </execution>
         </executions>
       </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>build-rust</id>
+      <activation>
+        <property>
+          <name>build-rust</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.1.0</version>
+            <executions>
+              <execution>
+                <id>run-build-sh</id>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <phase>generate-sources</phase>
+                <configuration>
+                  <executable>sh</executable>
+                  <arguments>
+                    <argument>./build.sh</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
