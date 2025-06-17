@@ -2021,19 +2021,45 @@ public class InterpreterMachine implements Machine {
                             ? callStack.pop().popCtrlTillCall()
                             : currentStackFrame.popCtrlTillCall();
             StackFrame.doControlTransfer(ctrlFrame, stack);
-            var newFrame =
-                    new StackFrame(
-                            instance,
-                            funcId,
-                            args,
-                            type.params(),
-                            func.localTypes(),
-                            func.instructions());
-            newFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
-            if (fromCallStack) {
+
+            if (func != null) {
+                var newFrame =
+                        new StackFrame(
+                                instance,
+                                funcId,
+                                args,
+                                type.params(),
+                                func.localTypes(),
+                                func.instructions());
+                newFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
+                if (fromCallStack) {
+                    callStack.push(newFrame);
+                }
+                return newFrame;
+            } else {
+                var newFrame = new StackFrame(instance, funcId, args);
+                newFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
                 callStack.push(newFrame);
+
+                var imprt = instance.imports().function(funcId);
+
+                try {
+                    var results = imprt.handle().apply(instance, args);
+                    // a host function can return null or an array of ints
+                    // which we will push onto the stack
+                    if (results != null) {
+                        for (var result : results) {
+                            stack.push(result);
+                        }
+                    }
+                } catch (WasmException e) {
+                    THROW_REF(instance, instance.registerException(e), stack, newFrame, callStack);
+                }
+                if (fromCallStack) {
+                    callStack.push(newFrame);
+                }
+                return newFrame;
             }
-            return newFrame;
         }
     }
 
@@ -2075,24 +2101,50 @@ public class InterpreterMachine implements Machine {
         } else {
             var func = instance.function(funcId);
             var fromCallStack = !callStack.isEmpty();
-            var ctrlFrame =
-                    (fromCallStack)
-                            ? callStack.pop().popCtrlTillCall()
-                            : currentStackFrame.popCtrlTillCall();
-            StackFrame.doControlTransfer(ctrlFrame, stack);
-            var newFrame =
-                    new StackFrame(
-                            instance,
-                            funcId,
-                            args,
-                            type.params(),
-                            func.localTypes(),
-                            func.instructions());
-            newFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
-            if (fromCallStack) {
+
+            if (func != null) {
+                var ctrlFrame =
+                        (fromCallStack)
+                                ? callStack.pop().popCtrlTillCall()
+                                : currentStackFrame.popCtrlTillCall();
+                StackFrame.doControlTransfer(ctrlFrame, stack);
+                var newFrame =
+                        new StackFrame(
+                                instance,
+                                funcId,
+                                args,
+                                type.params(),
+                                func.localTypes(),
+                                func.instructions());
+                newFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
+                if (fromCallStack) {
+                    callStack.push(newFrame);
+                }
+                return newFrame;
+            } else {
+                var newFrame = new StackFrame(instance, funcId, args);
+                newFrame.pushCtrl(OpCode.CALL, 0, sizeOf(type.returns()), stack.size());
                 callStack.push(newFrame);
+
+                var imprt = instance.imports().function(funcId);
+
+                try {
+                    var results = imprt.handle().apply(instance, args);
+                    // a host function can return null or an array of ints
+                    // which we will push onto the stack
+                    if (results != null) {
+                        for (var result : results) {
+                            stack.push(result);
+                        }
+                    }
+                } catch (WasmException e) {
+                    THROW_REF(instance, instance.registerException(e), stack, newFrame, callStack);
+                }
+                if (fromCallStack) {
+                    callStack.push(newFrame);
+                }
+                return newFrame;
             }
-            return newFrame;
         }
     }
 
