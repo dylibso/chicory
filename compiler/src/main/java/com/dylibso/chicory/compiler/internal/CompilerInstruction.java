@@ -1,16 +1,13 @@
 package com.dylibso.chicory.compiler.internal;
 
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.stream.LongStream;
 
 final class CompilerInstruction {
-
     public static final long[] EMPTY = new long[0];
 
     private final CompilerOpCode opcode;
     private final long[] operands;
-    private final Emitters.Emitter emitter;
 
     public CompilerInstruction(CompilerOpCode opcode) {
         this(opcode, EMPTY);
@@ -19,21 +16,10 @@ final class CompilerInstruction {
     public CompilerInstruction(CompilerOpCode opcode, long... operands) {
         this.opcode = opcode;
         this.operands = operands;
-        this.emitter = null;
-    }
-
-    public CompilerInstruction(Emitters.Emitter emitter, long... labelTargets) {
-        this.opcode = CompilerOpCode.EMITTER;
-        this.operands = labelTargets;
-        this.emitter = Objects.requireNonNull(emitter);
     }
 
     public CompilerOpCode opcode() {
         return opcode;
-    }
-
-    public Emitters.Emitter emitter() {
-        return emitter;
     }
 
     public LongStream operands() {
@@ -64,8 +50,8 @@ final class CompilerInstruction {
             case GOTO:
             case IFEQ:
             case IFNE:
-            case EMITTER:
             case SWITCH:
+            case TRY_CATCH_BLOCK:
                 return operands;
             default:
                 return EMPTY;

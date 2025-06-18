@@ -10,12 +10,8 @@ import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.TagImport;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.commons.InstructionAdapter;
 
 /**
  * Class for tracking context relevant to compiling a single function
@@ -34,8 +30,7 @@ final class Context {
     private final int memorySlot;
     private final int instanceSlot;
     private final int tempSlot;
-    private final InstructionAdapter asm;
-    private final Map<Long, Label> labels = new HashMap<>();
+    private final List<TagImport> tagImports;
 
     public Context(
             WasmModule module,
@@ -45,8 +40,7 @@ final class Context {
             List<FunctionType> functionTypes,
             int funcId,
             FunctionType type,
-            FunctionBody body,
-            InstructionAdapter asm) {
+            FunctionBody body) {
         this.module = module;
         this.internalClassName = internalClassName;
         this.maxFunctionsPerClass = maxFunctionsPerClass;
@@ -55,7 +49,6 @@ final class Context {
         this.funcId = funcId;
         this.type = type;
         this.body = body;
-        this.asm = asm;
 
         // compute JVM slot indices for WASM locals
         List<Integer> slots = new ArrayList<>(type.params().size() + body.localTypes().size());
@@ -93,14 +86,12 @@ final class Context {
 
         this.slots = List.copyOf(slots);
         this.tempSlot = slot;
-    }
 
-    public InstructionAdapter asm() {
-        return asm;
-    }
-
-    public Map<Long, Label> labels() {
-        return labels;
+        this.tagImports =
+                module.importSection().stream()
+                        .filter((x) -> x.importType() == ExternalType.TAG)
+                        .map((x) -> (TagImport) x)
+                        .collect(Collectors.toList());
     }
 
     public String internalClassName() {
@@ -155,14 +146,7 @@ final class Context {
         return "FuncGroup_" + (funcId / maxFunctionsPerClass);
     }
 
-    public FunctionType getTagFunctionType(int tagId) {
-        var tagSection = module.tagSection();
-        var tagImports =
-                module.importSection().stream()
-                        .filter((x) -> x.importType() == ExternalType.TAG)
-                        .map((x) -> (TagImport) x)
-                        .collect(Collectors.toList());
-
+    public FunctionType tagFunctionType(int tagId) {
         if (tagId < 0) {
             throw new IllegalArgumentException("Tag ID must be non-negative");
         }
@@ -171,10 +155,10 @@ final class Context {
             var tag = tagImports.get(tagId);
             idx = tag.tagType().typeIdx();
         } else {
-            if (tagSection.isEmpty()) {
+            if (module.tagSection().isEmpty()) {
                 throw new IllegalStateException("No tag section available");
             }
-            idx = tagSection.get().getTag(tagId - tagImports.size()).typeIdx();
+            idx = module.tagSection().get().getTag(tagId - tagImports.size()).typeIdx();
         }
         return type(idx);
     }

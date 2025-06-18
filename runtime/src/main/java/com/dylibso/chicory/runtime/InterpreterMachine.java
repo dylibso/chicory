@@ -23,7 +23,7 @@ public class InterpreterMachine implements Machine {
 
     private final MStack stack;
 
-    private final Deque<StackFrame> callStack;
+    protected final Deque<StackFrame> callStack;
 
     private final Instance instance;
 
@@ -36,10 +36,6 @@ public class InterpreterMachine implements Machine {
     @FunctionalInterface
     protected interface Operands {
         long get(int index);
-    }
-
-    public Deque<StackFrame> getCallStack() {
-        return callStack;
     }
 
     @SuppressWarnings("DoNotCallSuggester")
