@@ -88,7 +88,7 @@
     <maven-source-plugin.version>3.3.1</maven-source-plugin.version>
     <maven-surefire-plugin.version>3.5.3</maven-surefire-plugin.version>
     <maven-invoker-plugin.version>3.9.0</maven-invoker-plugin.version>
-    <central-publishing-maven-plugin.version>0.7.0</central-publishing-maven-plugin.version>
+    <central-publishing-maven-plugin.version>0.8.0</central-publishing-maven-plugin.version>
     <exec-maven-plugin.version>3.5.1</exec-maven-plugin.version>
     <spotless-maven-plugin.version>2.44.5</spotless-maven-plugin.version>
     <templating-maven-plugin.version>3.0.0</templating-maven-plugin.version>
