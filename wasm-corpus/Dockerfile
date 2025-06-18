@@ -60,5 +60,3 @@ RUN curl -L -O https://github.com/tinygo-org/tinygo/releases/download/v0.30.0/ti
 ENV PATH="/opt/wabt/bin:${PATH}"
 
 WORKDIR /usr/code
-
-ENTRYPOINT ["./compile.sh"]

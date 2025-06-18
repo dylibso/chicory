@@ -71,6 +71,10 @@ final class FOOShaded {
 
   private final static Z memCopyWorkaround
 
+  private static [Lcom/dylibso/chicory/runtime/internal/smap/Stratum; STRATA_BY_FUNC_GROUP
+
+  private static Ljava/lang/String; funcGroupClassPrefix
+
   private <init>()V
    L0
     ALOAD 0
@@ -454,8 +458,14 @@ final class FOOShaded {
     LDC "call stack exhausted"
     ALOAD 0
     INVOKESPECIAL com/dylibso/chicory/wasm/ChicoryException.<init> (Ljava/lang/String;Ljava/lang/Throwable;)V
-    ATHROW
+    ASTORE 1
    L1
+    ALOAD 1
+    INVOKESTATIC FOOShaded.enhanceStackTrace (Ljava/lang/Throwable;)V
+   L2
+    ALOAD 1
+    ATHROW
+   L3
 
   public static throwIndirectCallTypeMismatch()Ljava/lang/RuntimeException;
    L0
@@ -463,7 +473,14 @@ final class FOOShaded {
     DUP
     LDC "indirect call type mismatch"
     INVOKESPECIAL com/dylibso/chicory/wasm/ChicoryException.<init> (Ljava/lang/String;)V
+    ASTORE 0
+   L1
+    ALOAD 0
+    INVOKESTATIC FOOShaded.enhanceStackTrace (Ljava/lang/Throwable;)V
+   L2
+    ALOAD 0
     ARETURN
+   L3
 
   public static throwOutOfBoundsMemoryAccess()Ljava/lang/RuntimeException;
    L0
@@ -471,7 +488,14 @@ final class FOOShaded {
     DUP
     LDC "out of bounds memory access"
     INVOKESPECIAL com/dylibso/chicory/runtime/WasmRuntimeException.<init> (Ljava/lang/String;)V
+    ASTORE 0
+   L1
+    ALOAD 0
+    INVOKESTATIC FOOShaded.enhanceStackTrace (Ljava/lang/Throwable;)V
+   L2
+    ALOAD 0
     ATHROW
+   L3
 
   public static throwTrapException()Ljava/lang/RuntimeException;
    L0
@@ -479,7 +503,14 @@ final class FOOShaded {
     DUP
     LDC "Trapped on unreachable instruction"
     INVOKESPECIAL com/dylibso/chicory/runtime/TrapException.<init> (Ljava/lang/String;)V
+    ASTORE 0
+   L1
+    ALOAD 0
+    INVOKESTATIC FOOShaded.enhanceStackTrace (Ljava/lang/Throwable;)V
+   L2
+    ALOAD 0
     ATHROW
+   L3
 
   public static throwUnknownFunction(I)Ljava/lang/RuntimeException;
    L0
@@ -495,8 +526,14 @@ final class FOOShaded {
     AASTORE
     INVOKESTATIC java/lang/String.format (Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/String;
     INVOKESPECIAL com/dylibso/chicory/wasm/InvalidException.<init> (Ljava/lang/String;)V
-    ATHROW
+    ASTORE 1
    L1
+    ALOAD 1
+    INVOKESTATIC FOOShaded.enhanceStackTrace (Ljava/lang/Throwable;)V
+   L2
+    ALOAD 1
+    ATHROW
+   L3
 
   public static checkInterruption()V
    L0
@@ -531,6 +568,146 @@ final class FOOShaded {
    L1
     RETURN
    L2
+
+  public static init([Ljava/lang/String;Ljava/lang/String;)V
+   L0
+    ALOAD 1
+    PUTSTATIC FOOShaded.funcGroupClassPrefix : Ljava/lang/String;
+   L1
+    ALOAD 0
+    ARRAYLENGTH
+    ANEWARRAY com/dylibso/chicory/runtime/internal/smap/Stratum
+    PUTSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
+   L2
+    ICONST_0
+    ISTORE 2
+   L3
+    ILOAD 2
+    ALOAD 0
+    ARRAYLENGTH
+    IF_ICMPGE L4
+   L5
+    GETSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
+    ILOAD 2
+    ALOAD 0
+    ILOAD 2
+    AALOAD
+   L6
+    INVOKESTATIC com/dylibso/chicory/runtime/internal/smap/SmapParser.parse (Ljava/lang/String;)Lcom/dylibso/chicory/runtime/internal/smap/Smap;
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/Smap.getDefaultStratum ()Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/Stratum.optimizeForLookups ()Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
+    AASTORE
+   L7
+    IINC 2 1
+    GOTO L3
+   L4
+    RETURN
+   L8
+
+  private static enhanceStackTrace(Ljava/lang/Throwable;)V
+   L0
+    GETSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
+    IFNONNULL L1
+   L2
+    RETURN
+   L1
+    ALOAD 0
+    INVOKEVIRTUAL java/lang/Throwable.getStackTrace ()[Ljava/lang/StackTraceElement;
+    ASTORE 1
+   L3
+    ICONST_0
+    ISTORE 2
+   L4
+    ILOAD 2
+    ALOAD 1
+    ARRAYLENGTH
+    IF_ICMPGE L5
+   L6
+    ALOAD 1
+    ILOAD 2
+    AALOAD
+    ASTORE 3
+   L7
+    ALOAD 3
+    INVOKEVIRTUAL java/lang/StackTraceElement.getClassName ()Ljava/lang/String;
+    GETSTATIC FOOShaded.funcGroupClassPrefix : Ljava/lang/String;
+    INVOKEVIRTUAL java/lang/String.startsWith (Ljava/lang/String;)Z
+    IFEQ L8
+   L9
+    ALOAD 3
+    INVOKEVIRTUAL java/lang/StackTraceElement.getClassName ()Ljava/lang/String;
+    GETSTATIC FOOShaded.funcGroupClassPrefix : Ljava/lang/String;
+    INVOKEVIRTUAL java/lang/String.length ()I
+    INVOKEVIRTUAL java/lang/String.substring (I)Ljava/lang/String;
+    ASTORE 4
+   L10
+    ALOAD 4
+    INVOKESTATIC java/lang/Integer.parseInt (Ljava/lang/String;)I
+    ISTORE 5
+   L11
+    ILOAD 5
+    GETSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
+    ARRAYLENGTH
+    IF_ICMPGE L8
+   L12
+    GETSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
+    ILOAD 5
+    AALOAD
+    ASTORE 6
+   L13
+    ALOAD 6
+    ALOAD 3
+    INVOKEVIRTUAL java/lang/StackTraceElement.getLineNumber ()I
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/Stratum.getLineMapping (I)Lcom/dylibso/chicory/runtime/internal/smap/LineMapping;
+    ASTORE 7
+   L14
+    ALOAD 7
+    IFNULL L8
+   L15
+    ALOAD 6
+    ALOAD 7
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/LineMapping.lineFileID ()I
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/Stratum.getPath (I)Ljava/lang/String;
+    ASTORE 8
+   L16
+    ALOAD 6
+    ALOAD 3
+    INVOKEVIRTUAL java/lang/StackTraceElement.getLineNumber ()I
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/Stratum.getFunctionMapping (I)Ljava/lang/String;
+    ASTORE 9
+   L17
+    ALOAD 9
+    IFNONNULL L18
+   L19
+    ALOAD 3
+    INVOKEVIRTUAL java/lang/StackTraceElement.getMethodName ()Ljava/lang/String;
+    ASTORE 9
+   L18
+    ALOAD 1
+    ILOAD 2
+    NEW java/lang/StackTraceElement
+    DUP
+    ALOAD 3
+   L20
+    INVOKEVIRTUAL java/lang/StackTraceElement.getClassName ()Ljava/lang/String;
+    ALOAD 9
+    ALOAD 8
+    ALOAD 7
+   L21
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/LineMapping.inputStartLine ()J
+    L2I
+    INVOKESPECIAL java/lang/StackTraceElement.<init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V
+    AASTORE
+   L8
+    IINC 2 1
+    GOTO L4
+   L5
+    ALOAD 0
+    ALOAD 1
+    INVOKEVIRTUAL java/lang/Throwable.setStackTrace ([Ljava/lang/StackTraceElement;)V
+   L22
+    RETURN
+   L23
 
   static <clinit>()V
    L0

@@ -215,4 +215,8 @@ public class StackFrame {
             stack.push(value);
         }
     }
+
+    public AnnotatedInstruction currentInstruction() {
+        return currentInstruction;
+    }
 }

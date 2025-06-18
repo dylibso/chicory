@@ -10,6 +10,7 @@ import static com.dylibso.chicory.wasm.types.ExternalType.TAG;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
+import com.dylibso.chicory.runtime.internal.smap.Stratum;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.UninstantiableException;
@@ -69,6 +70,8 @@ public class Instance {
 
     private final Map<Integer, WasmException> exnRefs;
 
+    Function<WasmModule, Stratum> debugParser;
+
     Instance(
             WasmModule module,
             Global[] globalInitializers,
@@ -85,8 +88,10 @@ public class Instance {
             Function<Instance, Machine> machineFactory,
             boolean initialize,
             boolean start,
-            ExecutionListener listener) {
+            ExecutionListener listener,
+            Function<WasmModule, Stratum> debugParser) {
         this.module = module;
+        this.debugParser = debugParser;
         this.globalInitializers = globalInitializers.clone();
         this.globals = new GlobalInstance[globalInitializers.length];
         this.memory = memory;
@@ -358,6 +363,7 @@ public class Instance {
         private ExecutionListener listener;
         private ImportValues importValues;
         private Function<Instance, Machine> machineFactory;
+        private Function<WasmModule, Stratum> debugParser;
 
         private Builder(WasmModule module) {
             this.module = Objects.requireNonNull(module);
@@ -370,6 +376,11 @@ public class Instance {
 
         public Builder withStart(boolean s) {
             this.start = s;
+            return this;
+        }
+
+        public Builder withDebugParser(Function<WasmModule, Stratum> debugParser) {
+            this.debugParser = debugParser;
             return this;
         }
 
@@ -884,7 +895,12 @@ public class Instance {
                     machineFactory,
                     initialize,
                     start,
-                    listener);
+                    listener,
+                    debugParser);
         }
+    }
+
+    public Function<WasmModule, Stratum> debugParser() {
+        return debugParser;
     }
 }

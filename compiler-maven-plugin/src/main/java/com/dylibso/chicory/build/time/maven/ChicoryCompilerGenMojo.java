@@ -1,11 +1,18 @@
 package com.dylibso.chicory.build.time.maven;
 
+import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
+import static java.lang.invoke.MethodHandles.publicLookup;
+import static java.lang.invoke.MethodType.methodType;
+
 import com.dylibso.chicory.build.time.compiler.Config;
 import com.dylibso.chicory.build.time.compiler.Generator;
 import com.dylibso.chicory.compiler.InterpreterFallback;
+import com.dylibso.chicory.runtime.internal.smap.Stratum;
+import com.dylibso.chicory.wasm.WasmModule;
 import java.io.File;
 import java.io.IOException;
 import java.util.Set;
+import java.util.function.Function;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -76,6 +83,18 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+
+        Function<WasmModule, Stratum> debugParser;
+
+        // Use the DebugParser if it's on the classpath.
+        try {
+            debugParser = createDebugParser("com.dylibso.chicory.dwarf.rust.DebugParser", "parse");
+            getLog().info("Debug parser enabled");
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException ignore) {
+            getLog().info("Debug parser disabled");
+            debugParser = null;
+        }
+
         getLog().info("Generating AOT classes for " + name + " from " + wasmFile);
 
         var config =
@@ -87,6 +106,7 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
                         .withTargetWasmFolder(targetWasmFolder.toPath())
                         .withInterpreterFallback(interpreterFallback)
                         .withInterpretedFunctions(interpretedFunctions)
+                        .withDebugParser(debugParser)
                         .build();
 
         var generator = new Generator(config);
@@ -103,5 +123,17 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
         resource.setDirectory(targetClassFolder.getPath());
         project.addResource(resource);
         project.addCompileSourceRoot(targetSourceFolder.getPath());
+    }
+
+    private Function<WasmModule, Stratum> createDebugParser(String clazzName, String method)
+            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException {
+        var classLoader = ChicoryCompilerGenMojo.class.getClassLoader();
+        var clazz = classLoader.loadClass(clazzName);
+        var handle =
+                publicLookup()
+                        .findStatic(clazz, method, methodType(Stratum.class, WasmModule.class));
+        @SuppressWarnings("unchecked")
+        Function<WasmModule, Stratum> function = asInterfaceInstance(Function.class, handle);
+        return function;
     }
 }

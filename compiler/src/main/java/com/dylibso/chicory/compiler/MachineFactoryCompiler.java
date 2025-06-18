@@ -3,6 +3,7 @@ package com.dylibso.chicory.compiler;
 import com.dylibso.chicory.compiler.internal.MachineFactory;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
+import com.dylibso.chicory.runtime.internal.smap.Stratum;
 import com.dylibso.chicory.wasm.WasmModule;
 import java.util.Set;
 import java.util.function.Function;
@@ -25,7 +26,6 @@ public final class MachineFactoryCompiler {
      * </pre>
      * <p>
      * Every instance created by the builder will pay the cost of compiling the module.
-     * </p>
      *
      * @see #compile(WasmModule) If you want to compile the module only once for multiple instances.
      */
@@ -37,7 +37,6 @@ public final class MachineFactoryCompiler {
      * Compiles a machine factory that can used in instance builders.
      * The module is only compiled once and the machine factory is reused for every
      * instance created by the builder.
-     * <p>
      * <pre>
      * var module  = Parser.parse(is);
      * var builder = Instance.builder(module)
@@ -55,7 +54,6 @@ public final class MachineFactoryCompiler {
      * The builder allows you to configure the compiler options used to compile the module to
      * byte code.
      * This should be used when you want to create multiple instances of the same module.
-     * <p>
      * <pre>
      * var module  = Parser.parse(is);
      * var builder = Instance.builder(module)
@@ -98,6 +96,11 @@ public final class MachineFactoryCompiler {
 
         public Builder withInterpretedFunctions(Set<Integer> interpretedFunctions) {
             compilerBuilder.withInterpretedFunctions(interpretedFunctions);
+            return this;
+        }
+
+        public Builder withDebugParser(Function<WasmModule, Stratum> debugParser) {
+            compilerBuilder.withDebugParser(debugParser);
             return this;
         }
 
