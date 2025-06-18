@@ -1,14 +1,11 @@
 package com.dylibso.chicory.compiler.internal;
 
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.localType;
-import static com.dylibso.chicory.compiler.internal.Emitters.TRY_CATCH_BLOCK;
 import static com.dylibso.chicory.compiler.internal.TypeStack.FUNCTION_SCOPE;
 import static java.util.Collections.reverse;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
-import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
-import com.dylibso.chicory.compiler.internal.Emitters.TryCatchBlock;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
@@ -60,6 +57,30 @@ final class WasmAnalyzer {
         return functionTypes;
     }
 
+    public static class TryCatchBlock {
+        final AnnotatedInstruction ins;
+        final long start;
+        final long end;
+        final long handler;
+        final long after;
+        final long[] afterCatch;
+
+        public TryCatchBlock(
+                AnnotatedInstruction ins,
+                long start,
+                long end,
+                long handler,
+                long after,
+                long[] afterCatch) {
+            this.ins = ins;
+            this.start = start;
+            this.end = end;
+            this.handler = handler;
+            this.after = after;
+            this.afterCatch = afterCatch;
+        }
+    }
+
     @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public List<CompilerInstruction> analyze(int funcId) {
         var functionType = functionTypes.get(funcId);
@@ -94,16 +115,24 @@ final class WasmAnalyzer {
 
             if (ins.opcode() == OpCode.TRY_TABLE
                     && body.instructions().get(idx + 1).opcode() != OpCode.END) {
-                var block =
-                        new TryCatchBlock(ins, nextLabel++, nextLabel++, nextLabel++, nextLabel++);
+                var start = nextLabel++;
+                var end = nextLabel++;
+                var handle = nextLabel++;
+                var after = nextLabel++;
+
+                var afterCatchLabels = new long[ins.catches().size()];
+                for (int i = 0; i < ins.catches().size(); i++) {
+                    afterCatchLabels[i] = nextLabel++;
+                }
+
+                var block = new TryCatchBlock(ins, start, end, handle, after, afterCatchLabels);
                 tryCatchBlocks.put(ins.address(), block);
                 result.add(
                         new CompilerInstruction(
-                                TRY_CATCH_BLOCK(block),
+                                CompilerOpCode.TRY_CATCH_BLOCK,
                                 block.start,
                                 block.end,
-                                block.handler,
-                                block.after));
+                                block.handler));
             }
         }
 
@@ -268,7 +297,6 @@ final class WasmAnalyzer {
                         var tryCatchBlock = tryCatchBlocks.get(ins.address());
                         result.add(
                                 new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.start));
-
                         break;
                     }
 
@@ -279,8 +307,7 @@ final class WasmAnalyzer {
 
                         // Weird: sometimes we see END occur multiple times for
                         if (tryCatchBlock != null) {
-
-                            nextLabel = analyzeTryCatchEnd(result, nextLabel, tryCatchBlock);
+                            analyzeTryCatchEnd(result, tryCatchBlock);
                         }
                     }
                     stack.exitScope(ins.scope());
@@ -348,51 +375,64 @@ final class WasmAnalyzer {
         return result;
     }
 
-    private static int analyzeTryCatchEnd(
-            List<CompilerInstruction> result, int nextLabel, TryCatchBlock tryCatchBlock) {
+    private static void analyzeTryCatchEnd(
+            List<CompilerInstruction> result, TryCatchBlock tryCatchBlock) {
 
         // Mark the end of the try block
         result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.end));
 
         // Jump over the exception handler if since no exception was thrown
-        var afterHandlerLabel = nextLabel++;
-        result.add(new CompilerInstruction(CompilerOpCode.GOTO, afterHandlerLabel));
+        result.add(new CompilerInstruction(CompilerOpCode.GOTO, tryCatchBlock.after));
 
         // Mark the start of the exception handler
         result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.handler));
 
         // store the exception in a temporary slot
-        result.add(new CompilerInstruction((ctx) -> ctx.asm().store(ctx.tempSlot(), OBJECT_TYPE)));
-
-        // create labels for after each catch block
-        var afterCatchLabels = new long[tryCatchBlock.ins.catches().size()];
-        for (int i = 0; i < tryCatchBlock.ins.catches().size(); i++) {
-            afterCatchLabels[i] = nextLabel++;
-        }
+        result.add(new CompilerInstruction(CompilerOpCode.CATCH_START));
 
         for (int i = 0; i < tryCatchBlock.ins.catches().size(); i++) {
             var catchCondition = tryCatchBlock.ins.catches().get(i);
-            long afterCatchLabel = afterCatchLabels[i];
+            long afterCatchLabel = tryCatchBlock.afterCatch[i];
 
-            // Emmit an instruction for each catch condition
+            switch (catchCondition.opcode()) {
+                case CATCH:
+                    result.add(
+                            new CompilerInstruction(
+                                    CompilerOpCode.CATCH_COMPARE_TAG, catchCondition.tag()));
+                    result.add(new CompilerInstruction(CompilerOpCode.IFEQ, afterCatchLabel));
+                    result.add(
+                            new CompilerInstruction(
+                                    CompilerOpCode.CATCH_UNBOX_PARAMS, catchCondition.tag()));
+                    break;
+                case CATCH_REF:
+                    result.add(
+                            new CompilerInstruction(
+                                    CompilerOpCode.CATCH_COMPARE_TAG, catchCondition.tag()));
+                    result.add(new CompilerInstruction(CompilerOpCode.IFEQ, afterCatchLabel));
+                    result.add(
+                            new CompilerInstruction(
+                                    CompilerOpCode.CATCH_UNBOX_PARAMS, catchCondition.tag()));
+                    result.add(new CompilerInstruction(CompilerOpCode.CATCH_REGISTER_EXCEPTION));
+                    break;
+                case CATCH_ALL:
+                    // Always matches, no tag comparison needed
+                    break;
+                case CATCH_ALL_REF:
+                    // Always matches, register exception
+                    // and push its index
+                    result.add(new CompilerInstruction(CompilerOpCode.CATCH_REGISTER_EXCEPTION));
+                    break;
+            }
             result.add(
-                    new CompilerInstruction(
-                            Emitters.CATCH_CONDITION(catchCondition, afterCatchLabel),
-                            catchCondition.resolvedLabel(),
-                            afterCatchLabel));
+                    new CompilerInstruction(CompilerOpCode.GOTO, catchCondition.resolvedLabel()));
+            result.add(new CompilerInstruction(CompilerOpCode.LABEL, afterCatchLabel));
         }
 
         // Default case: re-throw the exception
-        result.add(
-                new CompilerInstruction(
-                        (ctx) -> {
-                            ctx.asm().load(ctx.tempSlot(), OBJECT_TYPE);
-                            ctx.asm().athrow();
-                        }));
+        result.add(new CompilerInstruction(CompilerOpCode.CATCH_END));
 
         // Mark the end of exception handler
-        result.add(new CompilerInstruction(CompilerOpCode.LABEL, afterHandlerLabel));
-        return nextLabel;
+        result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.after));
     }
 
     private void analyzeSimple(
