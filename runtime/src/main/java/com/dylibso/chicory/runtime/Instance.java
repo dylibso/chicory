@@ -10,6 +10,7 @@ import static com.dylibso.chicory.wasm.types.ExternalType.TAG;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
+import com.dylibso.chicory.runtime.internal.ExperimentalCopier;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.UninstantiableException;
@@ -53,25 +54,25 @@ public class Instance {
     private static final AtomicLong NEXT_INSTANCE_ID = new AtomicLong(1);
 
     private final long id = NEXT_INSTANCE_ID.getAndIncrement();
-    private final WasmModule module;
-    private final Machine machine;
-    private final FunctionBody[] functions;
-    private final Memory memory;
-    private final DataSegment[] dataSegments;
-    private final Global[] globalInitializers;
-    private final GlobalInstance[] globals;
-    private final FunctionType[] types;
-    private final int[] functionTypes;
-    private final ImportValues imports;
-    private final TableInstance[] tables;
-    private final Element[] elements;
-    private final TagInstance[] tags;
-    private final Map<String, Export> exports;
-    private final ExecutionListener listener;
-    private final Exports fluentExports;
+    protected final WasmModule module;
+    protected final Machine machine;
+    protected final FunctionBody[] functions;
+    protected final Memory memory;
+    protected final DataSegment[] dataSegments;
+    protected final Global[] globalInitializers;
+    protected final GlobalInstance[] globals;
+    protected final FunctionType[] types;
+    protected final int[] functionTypes;
+    protected final ImportValues imports;
+    protected final TableInstance[] tables;
+    protected final Element[] elements;
+    protected final TagInstance[] tags;
+    protected final Map<String, Export> exports;
+    protected final ExecutionListener listener;
+    protected final Exports fluentExports;
 
-    private final Map<Integer, WasmException> exnRefs;
-    private final Function<Instance, Machine> machineFactory;
+    protected final Map<Integer, WasmException> exnRefs;
+    protected final Function<Instance, Machine> machineFactory;
 
     Instance(
             WasmModule module,
@@ -124,10 +125,10 @@ public class Instance {
         }
     }
 
-    private Instance(Instance original, CopyOptions copyOptions) {
+    protected Instance(Instance original, ExperimentalCopier.Options options) {
 
-        this.imports = copyOptions.imports != null ? copyOptions.imports : original.imports.copy();
-        this.listener = copyOptions.listener != null ? copyOptions.listener : original.listener;
+        this.imports = options.imports() != null ? options.imports() : original.imports.copy();
+        this.listener = options.listener() != null ? options.listener() : original.listener;
 
         this.module = original.module;
         this.globalInitializers = original.globalInitializers.clone();
@@ -192,33 +193,6 @@ public class Instance {
         // Create a new machine instance using the original's machine factory
         this.machineFactory = original.machineFactory;
         this.machine = this.machineFactory.apply(this);
-    }
-
-    public class CopyOptions {
-        private ExecutionListener listener;
-        private ImportValues imports;
-
-        public CopyOptions withListener(ExecutionListener listener) {
-            this.listener = listener;
-            return this;
-        }
-
-        public CopyOptions withImports(ImportValues imports) {
-            this.imports = imports;
-            return this;
-        }
-
-        public Instance copy() {
-            return new Instance(Instance.this, this);
-        }
-    }
-
-    public CopyOptions copyWithOptions() {
-        return new CopyOptions();
-    }
-
-    public Instance copy() {
-        return copyWithOptions().copy();
     }
 
     public Instance initialize(boolean start) {

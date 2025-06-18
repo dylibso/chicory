@@ -1,5 +1,6 @@
-package com.dylibso.chicory.runtime;
+package com.dylibso.chicory.runtime.internal;
 
+import static com.dylibso.chicory.runtime.internal.ExperimentalCopier.copy;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -7,15 +8,25 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
+import com.dylibso.chicory.runtime.GlobalInstance;
+import com.dylibso.chicory.runtime.ImportGlobal;
+import com.dylibso.chicory.runtime.ImportValues;
+import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.WasmException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.Value;
 import org.junit.jupiter.api.Test;
 
-public class InstanceCopyTest {
+/**
+ * Tests for the {@link ExperimentalCopier} functionality.
+ * This class verifies that copying an instance creates a new instance with shared immutable modules,
+ * independent globals, memory, and tables.
+ */
+public class ExperimentalCopierTest {
 
     private static WasmModule loadModule(String fileName) {
-        return Parser.parse(InstanceCopyTest.class.getResourceAsStream("/" + fileName));
+        return Parser.parse(ExperimentalCopierTest.class.getResourceAsStream("/" + fileName));
     }
 
     @Test
@@ -23,7 +34,7 @@ public class InstanceCopyTest {
         var module = loadModule("compiled/exports.wat.wasm");
         var originalInstance = Instance.builder(module).build();
 
-        var copiedInstance = originalInstance.copy();
+        var copiedInstance = copy(originalInstance);
 
         assertNotNull(copiedInstance);
         assertNotSame(originalInstance, copiedInstance);
@@ -34,7 +45,7 @@ public class InstanceCopyTest {
         var module = loadModule("compiled/exports.wat.wasm");
         var originalInstance = Instance.builder(module).build();
 
-        var copiedInstance = originalInstance.copy();
+        var copiedInstance = copy(originalInstance);
 
         // Module should be shared (immutable)
         assertSame(originalInstance.module(), copiedInstance.module());
@@ -54,7 +65,7 @@ public class InstanceCopyTest {
         assertEquals(42, (int) originalInstance.export("get").apply()[0]);
 
         // Create copy - should have same state
-        var copiedInstance = originalInstance.copy();
+        var copiedInstance = copy(originalInstance);
         assertEquals(42, (int) copiedInstance.export("get").apply()[0]);
 
         // Modify original - copy should be unaffected
@@ -75,7 +86,7 @@ public class InstanceCopyTest {
 
         // Set different values and test independence
         originalInstance.export("set").apply(100);
-        var copiedInstance = originalInstance.copy();
+        var copiedInstance = copy(originalInstance);
 
         // Both should start with same value
         assertEquals(100, (int) originalInstance.export("get").apply()[0]);
@@ -114,7 +125,7 @@ public class InstanceCopyTest {
         var module = loadModule("compiled/memory.wat.wasm");
         var originalInstance = Instance.builder(module).build();
 
-        var copiedInstance = originalInstance.copy();
+        var copiedInstance = copy(originalInstance);
 
         var originalMemory = originalInstance.memory();
         var copiedMemory = copiedInstance.memory();
@@ -135,7 +146,7 @@ public class InstanceCopyTest {
         var module = loadModule("compiled/call_indirect-export.wat.wasm");
         var originalInstance = Instance.builder(module).build();
 
-        var copiedInstance = originalInstance.copy();
+        var copiedInstance = copy(originalInstance);
 
         // Test table independence if tables exist
         try {
@@ -174,7 +185,7 @@ public class InstanceCopyTest {
 
         var originalInstance = Instance.builder(module).withImportValues(importValues).build();
 
-        var copiedInstance = originalInstance.copy();
+        var copiedInstance = copy(originalInstance);
 
         assertNotNull(copiedInstance);
         assertNotSame(originalInstance, copiedInstance);
@@ -190,7 +201,7 @@ public class InstanceCopyTest {
         var exception = new WasmException(originalInstance, 0, new long[] {});
         var exnId = originalInstance.registerException(exception);
 
-        var copiedInstance = originalInstance.copy();
+        var copiedInstance = copy(originalInstance);
 
         // Exception should be preserved in copy
         var copiedExn = copiedInstance.exn(exnId);
@@ -203,7 +214,7 @@ public class InstanceCopyTest {
         var module = loadModule("compiled/add.wat.wasm");
         var originalInstance = Instance.builder(module).withInitialize(false).build();
 
-        var copiedInstance = originalInstance.copy();
+        var copiedInstance = copy(originalInstance);
 
         assertNotNull(copiedInstance);
         assertNotSame(originalInstance, copiedInstance);
@@ -219,7 +230,7 @@ public class InstanceCopyTest {
         assertEquals(42, originalInstance.exports().global("glob1").getValue());
         assertArrayEquals(new long[] {42}, originalInstance.exports().function("get-1").apply());
 
-        var copiedInstance = originalInstance.copy();
+        var copiedInstance = copy(originalInstance);
 
         // Both instances should have same exports available
         var originalExports = originalInstance.exports();
@@ -249,7 +260,7 @@ public class InstanceCopyTest {
         assertEquals(42, (int) original.export("get").apply()[0]);
 
         // Create copy
-        var copy = original.copy();
+        var copy = copy(original);
 
         // Verify copy has same state
         assertEquals(42, (int) copy.export("get").apply()[0]);
