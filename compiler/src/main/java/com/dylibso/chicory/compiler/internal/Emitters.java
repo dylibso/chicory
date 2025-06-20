@@ -722,7 +722,8 @@ final class Emitters {
         }
     }
 
-    public static void CATCH(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+    public static void CATCH_COMPARE_TAG(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         var tag = (int) ins.operand(0);
         // Compare tag
         asm.load(ctx.tempSlot(), OBJECT_TYPE);
@@ -731,7 +732,8 @@ final class Emitters {
         emitInvokeStatic(asm, EXCEPTION_MATCHES);
     }
 
-    public static void CATCH_REF(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+    public static void CATCH_REGISTER_EXCEPTION(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         // Register exception and push its
         // index
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
