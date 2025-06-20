@@ -565,4 +565,149 @@ public class WasmModuleTest {
         var future = service.submit(() -> function.apply());
         assertThrows(TimeoutException.class, () -> future.get(100, TimeUnit.MILLISECONDS));
     }
+
+    // Testing tail call edge cases
+    @Test
+    public void tailcallCompatibleSignatures() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_compatible_signatures.wat.wasm"))
+                        .build();
+        // entry(a, b, c, d) -> tail_caller(a, b, c + d) -> tail_callee(a + (c + d), b) -> helper(a
+        // + (c + d), b) -> (a + c + d) * b
+        var function = instance.exports().function("f");
+
+        assertEquals(33, function.apply(2, 3, 4, 5)[0]); // (2 + 4 + 5) * 3 = 33
+        assertEquals(24, function.apply(5, 2, 3, 4)[0]); // (5 + 3 + 4) * 2 = 24
+    }
+
+    @Test
+    public void tailcallImport() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_import.wat.wasm"))
+                        .withImportValues(
+                                ImportValues.builder()
+                                        .addFunction(
+                                                new HostFunction(
+                                                        "env",
+                                                        "imported_callee",
+                                                        FunctionType.of(
+                                                                List.of(
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32),
+                                                                List.of(ValType.I32)),
+                                                        (inst, args) -> {
+                                                            return new long[] {
+                                                                args[0] + args[1] + args[2]
+                                                                        + args[3] + args[4]
+                                                                        + args[5] + args[6]
+                                                                        + args[7]
+                                                            };
+                                                        }))
+                                        .build())
+                        .build();
+        // entry(1,2,3,4,5,6,7) -> caller(1,2,3,4,5,6,7) -> imported_callee(1,2,3,132,0,5,6,7) =
+        // 1+2+3+132+0+5+6+7 = 156
+        var function = instance.exports().function("f");
+
+        assertEquals(156, function.apply(1, 2, 3, 4, 5, 6, 7)[0]);
+    }
+
+    @Test
+    public void tailcallImportIndirect() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_import_indirect.wat.wasm"))
+                        .withImportValues(
+                                ImportValues.builder()
+                                        .addFunction(
+                                                new HostFunction(
+                                                        "env",
+                                                        "imported_callee",
+                                                        FunctionType.of(
+                                                                List.of(
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32,
+                                                                        ValType.I32),
+                                                                List.of(ValType.I32)),
+                                                        (inst, args) -> {
+                                                            return new long[] {
+                                                                args[0] + args[1] + args[2]
+                                                                        + args[3] + args[4]
+                                                                        + args[5] + args[6]
+                                                                        + args[7]
+                                                            };
+                                                        }))
+                                        .build())
+                        .build();
+        // entry(1,2,3,4,5,6,7) -> caller(1,2,3,4,5,6,7) -> imported_callee(1,2,3,132,0,5,6,7) =
+        // 1+2+3+132+0+5+6+7 = 156
+        var function = instance.exports().function("f");
+
+        assertEquals(156, function.apply(1, 2, 3, 4, 5, 6, 7)[0]);
+    }
+
+    @Test
+    public void tailcallMoreParams() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_more_params.wat.wasm")).build();
+        var function = instance.exports().function("f");
+
+        var result = function.apply();
+        // entry() -> tail_caller() -> tail_callee(1,2,3,4,5,6,7,8,9)
+        // tail_callee returns (1+2+3+4, 5+6+7+8+9) = (10, 35)
+        assertEquals(10, result[0]);
+        assertEquals(35, result[1]);
+    }
+
+    @Test
+    public void tailcallReturnCall() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_return_call.wat.wasm")).build();
+        var function = instance.exports().function("f");
+
+        //        {params: []uint64{10, 0, 1}, expResults: []uint64{55}},
+        //        {params: []uint64{20, 0, 1}, expResults: []uint64{6765}},
+        //        {params: []uint64{318, 0, 1}, expResults: []uint64{0x80dbbba8}},
+        assertEquals(55, function.apply(10, 0, 1)[0]);
+        assertEquals(6765, function.apply(20, 0, 1)[0]);
+        assertEquals(0x80dbbba8, function.apply(318, 0, 1)[0]);
+    }
+
+    @Test
+    public void tailcallReturnCallCount() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_return_call_count.wat.wasm"))
+                        .build();
+        var function = instance.exports().function("f");
+
+        //        {params: []uint64{1000_000_000, 0}, expResults: []uint64{1000_000_000}},
+        // original test: too slow takes > 1 minute
+        // assertEquals(1000_000_000, function.apply(1000_000_000, 0)[0]);
+        assertEquals(1000_000, function.apply(1000_000, 0)[0]);
+    }
+
+    @Test
+    public void tailcallReturnCallCountAcc() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/tail_call_return_call_count_acc.wat.wasm"))
+                        .build();
+        var function = instance.exports().function("f");
+
+        // {params: []uint64{1000_000_000, 0}, expResults: []uint64{0, 1000_000_000}},
+        // original test: too slow takes > 1 minute
+        var result = function.apply(1000_000);
+
+        assertEquals(0, result[0]);
+        assertEquals(1000_000, result[1]);
+    }
 }
