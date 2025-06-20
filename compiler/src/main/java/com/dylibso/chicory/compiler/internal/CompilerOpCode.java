@@ -203,6 +203,14 @@ enum CompilerOpCode {
     TABLE_GROW(OpCode.TABLE_GROW),
     TABLE_SIZE(OpCode.TABLE_SIZE),
     TABLE_FILL(OpCode.TABLE_FILL),
+    THROW(OpCode.THROW),
+    THROW_REF(OpCode.THROW_REF),
+    TRY_CATCH_BLOCK(OpCode.TRY_TABLE),
+    CATCH_START,
+    CATCH_END,
+    CATCH_UNBOX_PARAMS,
+    CATCH_COMPARE_TAG,
+    CATCH_REGISTER_EXCEPTION,
     ;
 
     private final Optional<OpCode> opcode;

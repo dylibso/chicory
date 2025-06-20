@@ -23,7 +23,7 @@ public class InterpreterMachine implements Machine {
 
     private final MStack stack;
 
-    private final Deque<StackFrame> callStack;
+    protected final Deque<StackFrame> callStack;
 
     private final Instance instance;
 
@@ -2188,7 +2188,7 @@ public class InterpreterMachine implements Machine {
         return sizeOf(instance.type(typeId).returns());
     }
 
-    private static StackFrame THROW_REF(
+    protected static StackFrame THROW_REF(
             Instance instance,
             int exceptionIdx,
             MStack stack,

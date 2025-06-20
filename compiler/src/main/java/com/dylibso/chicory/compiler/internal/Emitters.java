@@ -15,14 +15,20 @@ import static com.dylibso.chicory.compiler.internal.CompilerUtil.localType;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.slotCount;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.valueMethodName;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.valueMethodType;
+import static com.dylibso.chicory.compiler.internal.ShadedRefs.EXCEPTION_MATCHES;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.lang.Double.longBitsToDouble;
 import static java.lang.Float.intBitsToFloat;
+import static org.objectweb.asm.Type.INT_TYPE;
 import static org.objectweb.asm.Type.LONG_TYPE;
+import static org.objectweb.asm.Type.getInternalName;
+import static org.objectweb.asm.Type.getMethodDescriptor;
 import static org.objectweb.asm.Type.getType;
 import static org.objectweb.asm.commons.InstructionAdapter.OBJECT_TYPE;
 
+import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.OpCodeIdentifier;
+import com.dylibso.chicory.runtime.WasmException;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.lang.reflect.Method;
@@ -614,9 +620,13 @@ final class Emitters {
     }
 
     private static void emitUnboxResult(InstructionAdapter asm, Context ctx, List<ValType> types) {
-        asm.store(ctx.tempSlot(), OBJECT_TYPE);
+        emitUnboxResult(asm, types, ctx.tempSlot());
+    }
+
+    private static void emitUnboxResult(InstructionAdapter asm, List<ValType> types, int tempSlot) {
+        asm.store(tempSlot, OBJECT_TYPE);
         for (int i = 0; i < types.size(); i++) {
-            asm.load(ctx.tempSlot(), OBJECT_TYPE);
+            asm.load(tempSlot, OBJECT_TYPE);
             asm.iconst(i);
             asm.aload(LONG_TYPE);
             emitLongToJvm(asm, types.get(i));
@@ -657,5 +667,81 @@ final class Emitters {
                         + staticHelpers.getName()
                         + " does not provide an implementation of opcode "
                         + opcode.name());
+    }
+
+    public static void THROW(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int tagNumber = (int) ins.operand(0);
+        var type = ctx.tagFunctionType(tagNumber);
+
+        // emmit:
+        // call createWasmException(long[] args, int tagNumber, Instance instance)
+        emitBoxValuesOnStack(ctx, asm, type.params());
+        asm.iconst(tagNumber);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.CREATE_WASM_EXCEPTION);
+        asm.athrow();
+    }
+
+    public static void THROW_REF(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // The exception reference is already on the stack as an integer
+        // Get the instance and retrieve the exception
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        asm.swap(); // Swap instance and exception reference
+        emitInvokeVirtual(asm, ShadedRefs.INSTANCE_GET_EXCEPTION);
+        asm.athrow();
+    }
+
+    public static void CATCH_START(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        asm.store(ctx.tempSlot(), OBJECT_TYPE);
+    }
+
+    public static void CATCH_END(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        asm.load(ctx.tempSlot(), OBJECT_TYPE);
+        asm.athrow();
+    }
+
+    public static void CATCH_UNBOX_PARAMS(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        var tag = (int) ins.operand(0);
+        // Get the tag type to know what
+        // parameter types to unbox
+        var tagFuncType = ctx.tagFunctionType(tag);
+        if (!tagFuncType.params().isEmpty()) {
+            // unbox the exception args
+            asm.load(ctx.tempSlot(), OBJECT_TYPE);
+            asm.invokevirtual(
+                    getInternalName(WasmException.class),
+                    "args",
+                    getMethodDescriptor(getType(long[].class)),
+                    false);
+
+            // Store the array in a local variable
+            // Unbox each argument from the
+            // long[] array and push onto stack
+            emitUnboxResult(asm, tagFuncType.params(), ctx.tempSlot() + 1);
+        }
+    }
+
+    public static void CATCH_COMPARE_TAG(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        var tag = (int) ins.operand(0);
+        // Compare tag
+        asm.load(ctx.tempSlot(), OBJECT_TYPE);
+        asm.iconst(tag);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, EXCEPTION_MATCHES);
+    }
+
+    public static void CATCH_REGISTER_EXCEPTION(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // Register exception and push its
+        // index
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        asm.load(ctx.tempSlot(), OBJECT_TYPE);
+        asm.invokevirtual(
+                getInternalName(Instance.class),
+                "registerException",
+                getMethodDescriptor(INT_TYPE, getType(WasmException.class)),
+                false);
     }
 }

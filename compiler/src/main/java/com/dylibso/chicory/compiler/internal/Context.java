@@ -3,22 +3,26 @@ package com.dylibso.chicory.compiler.internal;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.hasTooManyParameters;
 import static com.dylibso.chicory.compiler.internal.CompilerUtil.slotCount;
 
+import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.TagImport;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Class for tracking context relevant to compiling a single function
  */
 final class Context {
 
+    private final WasmModule module;
     private final String internalClassName;
     private final int maxFunctionsPerClass;
     private final List<ValType> globalTypes;
     private final List<FunctionType> functionTypes;
-    private final FunctionType[] types;
     private final int funcId;
     private final FunctionType type;
     private final FunctionBody body;
@@ -26,21 +30,22 @@ final class Context {
     private final int memorySlot;
     private final int instanceSlot;
     private final int tempSlot;
+    private final List<TagImport> tagImports;
 
     public Context(
+            WasmModule module,
             String internalClassName,
             int maxFunctionsPerClass,
             List<ValType> globalTypes,
             List<FunctionType> functionTypes,
-            FunctionType[] types,
             int funcId,
             FunctionType type,
             FunctionBody body) {
+        this.module = module;
         this.internalClassName = internalClassName;
         this.maxFunctionsPerClass = maxFunctionsPerClass;
         this.globalTypes = globalTypes;
         this.functionTypes = functionTypes;
-        this.types = types;
         this.funcId = funcId;
         this.type = type;
         this.body = body;
@@ -81,6 +86,12 @@ final class Context {
 
         this.slots = List.copyOf(slots);
         this.tempSlot = slot;
+
+        this.tagImports =
+                module.importSection().stream()
+                        .filter((x) -> x.importType() == ExternalType.TAG)
+                        .map((x) -> (TagImport) x)
+                        .collect(Collectors.toList());
     }
 
     public String internalClassName() {
@@ -96,11 +107,11 @@ final class Context {
     }
 
     public FunctionType type(int idx) {
-        return types[idx];
+        return module.typeSection().getType(idx);
     }
 
     public FunctionType[] types() {
-        return types;
+        return module.typeSection().types();
     }
 
     public int getId() {
@@ -133,5 +144,22 @@ final class Context {
 
     public String classNameForFuncGroup(int funcId) {
         return "FuncGroup_" + (funcId / maxFunctionsPerClass);
+    }
+
+    public FunctionType tagFunctionType(int tagId) {
+        if (tagId < 0) {
+            throw new IllegalArgumentException("Tag ID must be non-negative");
+        }
+        int idx;
+        if (tagId < tagImports.size()) {
+            var tag = tagImports.get(tagId);
+            idx = tag.tagType().typeIdx();
+        } else {
+            if (module.tagSection().isEmpty()) {
+                throw new IllegalStateException("No tag section available");
+            }
+            idx = module.tagSection().get().getTag(tagId - tagImports.size()).typeIdx();
+        }
+        return type(idx);
     }
 }

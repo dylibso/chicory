@@ -59,6 +59,7 @@ import com.dylibso.chicory.compiler.InterpreterFallback;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
+import com.dylibso.chicory.runtime.WasmException;
 import com.dylibso.chicory.runtime.internal.CompilerInterpreterMachine;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
@@ -136,7 +137,7 @@ public final class Compiler {
             this.interpretedFunctions = new HashSet<>();
             this.interpreterFallback =
                     requireNonNullElse(interpreterFallback, InterpreterFallback.WARN);
-        } else if (interpreterFallback != InterpreterFallback.FAIL) {
+        } else if (interpreterFallback != null && interpreterFallback != InterpreterFallback.FAIL) {
             // if we are being given a set of interpreted functions, then any unlisted
             // function needs to trigger a failure.
             throw new IllegalArgumentException(
@@ -1166,7 +1167,6 @@ public final class Compiler {
                 emitBoxArguments(asm, type.params());
                 slots = type.params().stream().mapToInt(CompilerUtil::slotCount).sum();
             }
-
             var refInstance = slots + 1;
 
             asm.iconst(funcId);
@@ -1178,11 +1178,11 @@ public final class Compiler {
 
         var ctx =
                 new Context(
+                        module,
                         internalClassName,
                         maxFunctionsPerClass,
                         analyzer.globalTypes(),
                         functionTypes,
-                        module.typeSection().types(),
                         funcId,
                         type,
                         body);
@@ -1268,6 +1268,13 @@ public final class Compiler {
                     }
                     Label defaultLabel = labels.get(ins.operand(table.length));
                     asm.tableswitch(0, table.length - 1, defaultLabel, table);
+                    break;
+                case TRY_CATCH_BLOCK:
+                    asm.visitTryCatchBlock(
+                            labels.get(ins.operand(0)),
+                            labels.get(ins.operand(1)),
+                            labels.get(ins.operand(2)),
+                            getInternalName(WasmException.class));
                     break;
                 default:
                     var emitter = EMITTERS.get(ins.opcode());

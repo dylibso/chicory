@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -69,7 +70,7 @@ public class ApprovalTest {
     public void verifyI32Renamed() {
         var module = parse(getSystemClassLoader().getResourceAsStream("compiled/i32.wat.wasm"));
         var result = Compiler.builder(module).withClassName("FOO").build().compile();
-        verifyClass(result.classBytes(), false);
+        verifyClass(result.classBytes(), (name) -> !name.equals("FOO"));
     }
 
     @Test
@@ -98,25 +99,40 @@ public class ApprovalTest {
     }
 
     @Test
+    public void verifyExceptions() {
+        verifyGeneratedBytecode("exceptions.wat.wasm", (name) -> !name.contains("FuncGroup"));
+    }
+
+    @Test
     public void functions10() {
         var module =
                 parse(getSystemClassLoader().getResourceAsStream("compiled/functions_10.wat.wasm"));
         var result = Compiler.builder(module).withMaxFunctionsPerClass(5).build().compile();
-        verifyClass(result.classBytes(), true);
+        verifyClass(result.classBytes(), ApprovalTest::SKIP_Methods_CLASS);
     }
 
     private static void verifyGeneratedBytecode(String name) {
-        var module = parse(getSystemClassLoader().getResourceAsStream("compiled/" + name));
-        var result = Compiler.builder(module).build().compile();
-        verifyClass(result.classBytes(), true);
+        verifyGeneratedBytecode(name, ApprovalTest::SKIP_Methods_CLASS);
     }
 
-    private static void verifyClass(Map<String, byte[]> classBytes, boolean skipMethodsClass) {
+    private static void verifyGeneratedBytecode(
+            String name, Function<String, Boolean> classSkipper) {
+        var module = parse(getSystemClassLoader().getResourceAsStream("compiled/" + name));
+        var result = Compiler.builder(module).build().compile();
+        verifyClass(result.classBytes(), classSkipper);
+    }
+
+    private static boolean SKIP_Methods_CLASS(String name) {
+        return name.endsWith("Shaded");
+    }
+
+    private static void verifyClass(
+            Map<String, byte[]> classBytes, Function<String, Boolean> classSkipper) {
         var writer = new StringWriter();
 
         for (byte[] bytes : classBytes.values()) {
             ClassReader cr = new ClassReader(bytes);
-            if (skipMethodsClass && cr.getClassName().endsWith("Shaded")) {
+            if (classSkipper.apply(cr.getClassName())) {
                 continue;
             }
             cr.accept(new TraceClassVisitor(new PrintWriter(writer)), 0);

@@ -13,11 +13,7 @@ final class CompilerInstruction {
         this(opcode, EMPTY);
     }
 
-    public CompilerInstruction(CompilerOpCode opcode, long operand) {
-        this(opcode, new long[] {operand});
-    }
-
-    public CompilerInstruction(CompilerOpCode opcode, long[] operands) {
+    public CompilerInstruction(CompilerOpCode opcode, long... operands) {
         this.opcode = opcode;
         this.operands = operands;
     }
@@ -55,6 +51,7 @@ final class CompilerInstruction {
             case IFEQ:
             case IFNE:
             case SWITCH:
+            case TRY_CATCH_BLOCK:
                 return operands;
             default:
                 return EMPTY;
