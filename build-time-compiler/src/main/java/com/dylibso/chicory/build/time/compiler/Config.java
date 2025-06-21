@@ -1,7 +1,7 @@
 package com.dylibso.chicory.build.time.compiler;
 
 import com.dylibso.chicory.compiler.InterpreterFallback;
-import com.dylibso.chicory.runtime.internal.smap.Stratum;
+import com.dylibso.chicory.runtime.Stratum;
 import com.dylibso.chicory.wasm.WasmModule;
 import java.nio.file.Path;
 import java.util.Set;

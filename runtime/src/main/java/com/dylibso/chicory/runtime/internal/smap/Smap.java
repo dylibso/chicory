@@ -42,7 +42,7 @@ public class Smap {
 
     private String outputFileName;
     private String defaultStratum = "Java";
-    private final List<Stratum> strata = new ArrayList<>();
+    private final List<SmapStratum> strata = new ArrayList<>();
     private final List<String> embedded = new ArrayList<>();
     private boolean doEmbedded = true;
 
@@ -67,7 +67,7 @@ public class Smap {
      *                       to represent the default SMAP stratum unless
      *                       overwritten
      */
-    public Smap withStratum(Stratum stratum, boolean defaultStratum) {
+    public Smap withStratum(SmapStratum stratum, boolean defaultStratum) {
         strata.add(stratum);
         if (defaultStratum) {
             this.defaultStratum = stratum.getStratumName();
@@ -120,7 +120,7 @@ public class Smap {
         }
 
         // print our StratumSections, FileSections, and LineSections
-        for (Stratum s : strata) {
+        for (SmapStratum s : strata) {
             out.append(s.toString());
         }
 
@@ -134,8 +134,8 @@ public class Smap {
         return out.toString();
     }
 
-    public Stratum getDefaultStratum() {
-        for (Stratum s : strata) {
+    public SmapStratum getDefaultStratum() {
+        for (SmapStratum s : strata) {
             if (defaultStratum.equals(s.getStratumName())) {
                 return s;
             }
@@ -143,7 +143,7 @@ public class Smap {
         return null;
     }
 
-    public List<Stratum> getStrata() {
+    public List<SmapStratum> getStrata() {
         return strata;
     }
 }

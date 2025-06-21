@@ -20,13 +20,15 @@
 package com.dylibso.chicory.runtime.internal.smap;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
 /**
  * Represents the line and file mappings associated with a JSR-045 "stratum".
  */
-public class Stratum {
+public class SmapStratum implements com.dylibso.chicory.runtime.Stratum {
+
     public static final String FUNCTIONS_VENDOR_ID = "com.dylibso.chicory.functions";
 
     /**
@@ -35,8 +37,6 @@ public class Stratum {
     private static final class LongLineInfo extends LineMapping {
         private long inputStartLine = -1;
         private long outputStartLine = -1;
-        private long inputLineCount = 1;
-        private long outputLineIncrement = 1;
 
         @Override
         public long inputStartLine() {
@@ -46,16 +46,6 @@ public class Stratum {
         @Override
         public long outputStartLine() {
             return outputStartLine;
-        }
-
-        @Override
-        public long inputLineCount() {
-            return inputLineCount;
-        }
-
-        @Override
-        public long outputLineIncrement() {
-            return outputLineIncrement;
         }
 
         @Override
@@ -73,24 +63,6 @@ public class Stratum {
                 throw new IllegalArgumentException("" + outputStartLine);
             }
             this.outputStartLine = outputStartLine;
-            return this;
-        }
-
-        @Override
-        LineMapping withInputLineCount(long inputLineCount) {
-            if (inputLineCount < 0) {
-                throw new IllegalArgumentException("" + inputLineCount);
-            }
-            this.inputLineCount = inputLineCount;
-            return this;
-        }
-
-        @Override
-        LineMapping withOutputLineIncrement(long outputLineIncrement) {
-            if (outputLineIncrement < 0) {
-                throw new IllegalArgumentException("" + outputLineIncrement);
-            }
-            this.outputLineIncrement = outputLineIncrement;
             return this;
         }
     }
@@ -113,8 +85,6 @@ public class Stratum {
     private static final class IntLineInfo extends LineMapping {
         private int inputStartLine = -1;
         private int outputStartLine = -1;
-        private int inputLineCount = 1;
-        private int outputLineIncrement = 1;
 
         @Override
         public long inputStartLine() {
@@ -126,22 +96,12 @@ public class Stratum {
             return outputStartLine;
         }
 
-        @Override
-        public long inputLineCount() {
-            return inputLineCount;
-        }
-
-        @Override
-        public long outputLineIncrement() {
-            return outputLineIncrement;
-        }
-
         public LongLineInfo toLongLineInfo() {
             LongLineInfo longLineInfo = new LongLineInfo();
             longLineInfo.inputStartLine = inputStartLine;
             longLineInfo.outputStartLine = outputStartLine;
             longLineInfo.inputLineCount = inputLineCount;
-            longLineInfo.outputLineIncrement = outputLineIncrement;
+            longLineInfo.outputLineCount = outputLineCount;
             longLineInfo.lineFileID = lineFileID;
             return longLineInfo;
         }
@@ -167,30 +127,6 @@ public class Stratum {
                 throw new IllegalArgumentException("" + value);
             }
             this.outputStartLine = (int) value;
-            return this;
-        }
-
-        @Override
-        LineMapping withInputLineCount(long value) {
-            if (value > Integer.MAX_VALUE) {
-                throw new SwitchToLong(toLongLineInfo().withInputLineCount(value));
-            }
-            if (value < 0) {
-                throw new IllegalArgumentException("" + value);
-            }
-            this.inputLineCount = (int) value;
-            return this;
-        }
-
-        @Override
-        LineMapping withOutputLineIncrement(long value) {
-            if (value > Integer.MAX_VALUE) {
-                throw new SwitchToLong(toLongLineInfo().withOutputLineIncrement(value));
-            }
-            if (value < 0) {
-                throw new IllegalArgumentException("" + value);
-            }
-            this.outputLineIncrement = (int) value;
             return this;
         }
     }
@@ -232,10 +168,11 @@ public class Stratum {
      *
      * @param stratumName the name of the stratum (e.g., JSP)
      */
-    public Stratum(String stratumName) {
+    public SmapStratum(String stratumName) {
         this.stratumName = stratumName;
     }
 
+    @Override
     public void clear() {
         fileNameList.clear();
         filePathList.clear();
@@ -243,6 +180,7 @@ public class Stratum {
         lineData.clear();
     }
 
+    @Override
     public boolean isEmpty() {
         return lineData.isEmpty();
     }
@@ -258,6 +196,7 @@ public class Stratum {
     // *********************************************************************
     // Methods to add mapping information
 
+    @Override
     public void addFunctionMapping(String functionName, long startLine, long endLine) {
         functionData.add(new FunctionMapping(functionName, startLine, endLine));
     }
@@ -280,22 +219,6 @@ public class Stratum {
         filePathList.add(filePath);
         fileNameList.add(filename);
         return i;
-    }
-
-    public void addLineData(
-            String inputFilePath,
-            int inputStartLine,
-            int inputLineCount,
-            int outputStartLine,
-            int outputLineCount) {
-
-        addLineData(
-                inputFilePath,
-                inputFilePath,
-                inputStartLine,
-                inputLineCount,
-                outputStartLine,
-                outputLineCount);
     }
 
     /**
@@ -322,13 +245,14 @@ public class Stratum {
      *                        the subconscious urge to call this field
      *                        <code>OutputLineExcrement</code>.</i>
      */
+    @Override
     public void addLineData(
             String inputFileName,
             String inputFilePath,
             long inputStartLine,
-            long inputLineCount,
+            int inputLineCount,
             long outputStartLine,
-            long outputLineCount) {
+            int outputLineCount) {
 
         if (outputStartLine == 0) {
             throw new IllegalArgumentException("outputStartLine must be > 0");
@@ -344,10 +268,10 @@ public class Stratum {
             // is this just increasing the input line count?
             if (li.lineFileID() == lineFileID
                     && inputStartLine == li.inputStartLine() + li.inputLineCount()
-                    && outputLineCount == li.outputLineIncrement()
+                    && outputLineCount == li.outputLineCount()
                     && outputStartLine
                             == li.outputStartLine()
-                                    + li.inputLineCount() * li.outputLineIncrement()) {
+                                    + ((long) li.inputLineCount() * li.outputLineCount())) {
                 try {
                     li.withInputLineCount(li.inputLineCount() + inputLineCount);
                 } catch (SwitchToLong e) {
@@ -364,10 +288,10 @@ public class Stratum {
                     && li.inputLineCount() == 1
                     && outputStartLine
                             == li.outputStartLine()
-                                    + li.inputLineCount() * li.outputLineIncrement()) {
+                                    + (long) li.inputLineCount() * li.outputLineCount()) {
                 try {
-                    li.withOutputLineIncrement(
-                            outputStartLine - li.outputStartLine() + outputLineCount);
+                    li.withOutputLineCount(
+                            (int) (outputStartLine - li.outputStartLine() + outputLineCount));
                 } catch (SwitchToLong e) {
                     li = e.getLineInfo();
                     lineData.set(i, li);
@@ -382,13 +306,13 @@ public class Stratum {
             li.withInputStartLine(inputStartLine);
             li.withInputLineCount(inputLineCount);
             li.withOutputStartLine(outputStartLine);
-            li.withOutputLineIncrement(outputLineCount);
+            li.withOutputLineCount(outputLineCount);
         } catch (SwitchToLong e) {
             li = new LongLineInfo();
             li.withInputStartLine(inputStartLine);
             li.withInputLineCount(inputLineCount);
             li.withOutputStartLine(outputStartLine);
-            li.withOutputLineIncrement(outputLineCount);
+            li.withOutputLineCount(outputLineCount);
         }
         li.withLineFileID(lineFileID);
         lineData.add(li);
@@ -397,10 +321,10 @@ public class Stratum {
     /**
      * Combines consecutive LineInfos wherever possible
      */
-    public Stratum optimizeForWrite() {
+    public SmapStratum optimizeForWrite() {
 
         // Incorporate each LineInfo into the previous LineInfo's
-        // outputLineIncrement, if possible
+        // outputLineCount, if possible
         int i = 0;
         while (i < lineData.size() - 1) {
             var li = lineData.get(i);
@@ -411,12 +335,13 @@ public class Stratum {
                     && li.inputLineCount() == 1
                     && liNext.outputStartLine()
                             == li.outputStartLine()
-                                    + li.inputLineCount() * li.outputLineIncrement()) {
+                                    + (long) li.inputLineCount() * li.outputLineCount()) {
                 try {
-                    li.withOutputLineIncrement(
-                            liNext.outputStartLine()
-                                    - li.outputStartLine()
-                                    + liNext.outputLineIncrement());
+                    li.withOutputLineCount(
+                            (int)
+                                    (liNext.outputStartLine()
+                                            - li.outputStartLine()
+                                            + liNext.outputLineCount()));
                 } catch (SwitchToLong e) {
                     li = e.getLineInfo();
                     lineData.set(i, li);
@@ -435,10 +360,10 @@ public class Stratum {
             var liNext = lineData.get(i + 1);
             if (li.lineFileID() == liNext.lineFileID()
                     && liNext.inputStartLine() == li.inputStartLine() + li.inputLineCount()
-                    && liNext.outputLineIncrement() == li.outputLineIncrement()
+                    && liNext.outputLineCount() == li.outputLineCount()
                     && liNext.outputStartLine()
                             == li.outputStartLine()
-                                    + li.inputLineCount() * li.outputLineIncrement()) {
+                                    + (long) li.inputLineCount() * li.outputLineCount()) {
                 try {
                     li.withInputLineCount(li.inputLineCount() + liNext.inputLineCount());
                 } catch (SwitchToLong e) {
@@ -453,10 +378,11 @@ public class Stratum {
         return this;
     }
 
-    public Stratum optimizeForLookups() {
+    @Override
+    public SmapStratum optimizeForLookups() {
         // sort the lineData by outputStartLine
-        lineData.sort((a, b) -> Long.compare(a.outputStartLine(), b.outputStartLine()));
-        functionData.sort((a, b) -> Long.compare(a.getStartLine(), b.getStartLine()));
+        lineData.sort(Comparator.comparingLong(LineMapping::outputStartLine));
+        functionData.sort(Comparator.comparingLong(FunctionMapping::getStartLine));
         return this;
     }
 
@@ -475,7 +401,7 @@ public class Stratum {
 
             long outputStart = midInfo.outputStartLine();
             long outputEnd =
-                    outputStart + (midInfo.inputLineCount() * midInfo.outputLineIncrement()) - 1;
+                    outputStart + ((long) midInfo.inputLineCount() * midInfo.outputLineCount()) - 1;
 
             if (outputLine >= outputStart && outputLine <= outputEnd) {
                 return midInfo;
@@ -489,6 +415,7 @@ public class Stratum {
         return null;
     }
 
+    @Override
     public String getFunctionMapping(int outputLine) {
         // do a ranged binary search on functionData to find the FunctionMapping that contains the
         // outputLine
@@ -584,5 +511,16 @@ public class Stratum {
 
     public List<FunctionMapping> functionData() {
         return functionData;
+    }
+
+    @Override
+    public Line getInputLine(int outputLine) {
+        var l = getLineMapping(outputLine);
+        if (l != null) {
+            String fileName = getFile(l.lineFileID());
+            String filePath = getPath(l.lineFileID());
+            return new Line(fileName, filePath, l.inputStartLine(), l.inputLineCount());
+        }
+        return null;
     }
 }

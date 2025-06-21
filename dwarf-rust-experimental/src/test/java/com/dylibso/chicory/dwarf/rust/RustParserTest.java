@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+import com.dylibso.chicory.runtime.internal.smap.SmapStratum;
 import com.dylibso.chicory.wasm.Parser;
 import java.io.File;
 import java.io.StringWriter;
@@ -18,7 +19,7 @@ public class RustParserTest {
         var module =
                 Parser.parse(
                         RustParserTest.class.getResourceAsStream("/compiled/count_vowels.rs.wasm"));
-        var result = DebugParser.parse(module);
+        var result = (SmapStratum) DebugParser.parse(module);
         assertNotNull(result);
 
         // Just want peek at an entry and make sure it values look like
@@ -50,7 +51,7 @@ public class RustParserTest {
 
         // this file does not contain debug info
         var module = Parser.parse(new File("./rust/target/wasm32-wasip1/release/dwarf-rust.wasm"));
-        var result = DebugParser.parse(module);
+        var result = (SmapStratum) DebugParser.parse(module);
         assertNotNull(result);
         assertEquals(0, result.lineData().size());
     }

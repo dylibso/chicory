@@ -6,19 +6,13 @@ public abstract class LineMapping {
 
     abstract LineMapping withOutputStartLine(long outputStartLine);
 
-    abstract LineMapping withInputLineCount(long inputLineCount);
-
-    abstract LineMapping withOutputLineIncrement(long outputLineIncrement);
-
     public abstract long inputStartLine();
 
     public abstract long outputStartLine();
 
-    public abstract long inputLineCount();
-
-    public abstract long outputLineIncrement();
-
     protected int lineFileID;
+    protected int inputLineCount = 1;
+    protected int outputLineCount = 1;
 
     public int lineFileID() {
         return lineFileID;
@@ -44,11 +38,35 @@ public abstract class LineMapping {
             out.append(",").append(inputLineCount());
         }
         out.append(":").append(outputStartLine());
-        if (outputLineIncrement() != 1) {
-            out.append(",").append(outputLineIncrement());
+        if (outputLineCount() != 1) {
+            out.append(",").append(outputLineCount());
         }
         out.append('\n');
         return out.toString();
+    }
+
+    LineMapping withInputLineCount(int value) {
+        if (value < 0) {
+            throw new IllegalArgumentException("" + value);
+        }
+        this.inputLineCount = (int) value;
+        return this;
+    }
+
+    LineMapping withOutputLineCount(int value) {
+        if (value < 0) {
+            throw new IllegalArgumentException("" + value);
+        }
+        this.outputLineCount = (int) value;
+        return this;
+    }
+
+    public int inputLineCount() {
+        return inputLineCount;
+    }
+
+    public int outputLineCount() {
+        return outputLineCount;
     }
 
     @Override

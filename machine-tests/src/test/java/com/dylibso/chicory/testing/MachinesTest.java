@@ -385,6 +385,6 @@ public final class MachinesTest {
                         "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.from_raw_parts<u8>(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:75)"));
         assertTrue(
                 exceptionTxt.contains(
-                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.count_vowels(src/lib.rs:22)"));
+                        "at com.dylibso.chicory.$gen.CompiledMachineFuncGroup_0.count_vowels(src/lib.rs:23)"));
     }
 }

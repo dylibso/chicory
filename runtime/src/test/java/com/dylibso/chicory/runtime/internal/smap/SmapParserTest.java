@@ -3,6 +3,7 @@ package com.dylibso.chicory.runtime.internal.smap;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import com.dylibso.chicory.runtime.ParserException;
 import com.dylibso.chicory.wasm.io.InputStreams;
 import com.github.difflib.DiffUtils;
 import com.github.difflib.UnifiedDiffUtils;

@@ -61,9 +61,8 @@ import com.dylibso.chicory.compiler.InterpreterFallback;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.runtime.Memory;
+import com.dylibso.chicory.runtime.Stratum;
 import com.dylibso.chicory.runtime.internal.CompilerInterpreterMachine;
-import com.dylibso.chicory.runtime.internal.smap.Smap;
-import com.dylibso.chicory.runtime.internal.smap.Stratum;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -133,12 +132,11 @@ public final class Compiler {
     // Debug information
     static final class DebugContext {
         final Stratum inputStratum;
-        final Stratum outputStratum = new Stratum("WASM");
+        final Stratum outputStratum = Stratum.create("WASM");
         int nextOutputLineNo = 1;
 
         DebugContext(Stratum stratum) {
             this.inputStratum = requireNonNull(stratum, "stratum");
-            this.inputStratum.optimizeForLookups();
         }
 
         void reset() {
@@ -158,7 +156,8 @@ public final class Compiler {
         this.module = requireNonNull(module, "module");
         this.analyzer = new WasmAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
-        this.debugContext = new DebugContext(requireNonNullElseGet(stratum, () -> new Stratum("")));
+        this.debugContext =
+                new DebugContext(requireNonNullElseGet(stratum, () -> Stratum.create("")));
 
         if (interpretedFunctions == null || interpretedFunctions.isEmpty()) {
             this.interpretedFunctions = new HashSet<>();
@@ -483,13 +482,7 @@ public final class Compiler {
             if (!debugContext.outputStratum.isEmpty()) {
                 // add the source map entries to the class
                 var sourceFile = internalClassName + ".java";
-
-                String smap =
-                        new Smap()
-                                .withOutputFileName(sourceFile)
-                                .withStratum(debugContext.outputStratum.optimizeForWrite(), true)
-                                .toString();
-
+                String smap = Stratum.toSMapString(sourceFile, debugContext.outputStratum);
                 classWriter.visitSource(internalClassName, smap);
 
                 classWriter.visitField(

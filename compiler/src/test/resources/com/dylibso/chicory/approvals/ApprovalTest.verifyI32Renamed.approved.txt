@@ -69,9 +69,11 @@ public final class FOO implements com/dylibso/chicory/runtime/Machine {
 
 final class FOOShaded {
 
+  public final static INNERCLASS com/dylibso/chicory/runtime/Stratum$Line com/dylibso/chicory/runtime/Stratum Line
+
   private final static Z memCopyWorkaround
 
-  private static [Lcom/dylibso/chicory/runtime/internal/smap/Stratum; STRATA_BY_FUNC_GROUP
+  private static [Lcom/dylibso/chicory/runtime/Stratum; STRATA_BY_FUNC_GROUP
 
   private static Ljava/lang/String; funcGroupClassPrefix
 
@@ -576,8 +578,8 @@ final class FOOShaded {
    L1
     ALOAD 0
     ARRAYLENGTH
-    ANEWARRAY com/dylibso/chicory/runtime/internal/smap/Stratum
-    PUTSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
+    ANEWARRAY com/dylibso/chicory/runtime/Stratum
+    PUTSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/Stratum;
    L2
     ICONST_0
     ISTORE 2
@@ -587,26 +589,23 @@ final class FOOShaded {
     ARRAYLENGTH
     IF_ICMPGE L4
    L5
-    GETSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
+    GETSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/Stratum;
     ILOAD 2
     ALOAD 0
     ILOAD 2
     AALOAD
-   L6
-    INVOKESTATIC com/dylibso/chicory/runtime/internal/smap/SmapParser.parse (Ljava/lang/String;)Lcom/dylibso/chicory/runtime/internal/smap/Smap;
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/Smap.getDefaultStratum ()Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/Stratum.optimizeForLookups ()Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
+    INVOKESTATIC com/dylibso/chicory/runtime/Stratum.parseSMapString (Ljava/lang/String;)Lcom/dylibso/chicory/runtime/Stratum; (itf)
     AASTORE
-   L7
+   L6
     IINC 2 1
     GOTO L3
    L4
     RETURN
-   L8
+   L7
 
   private static enhanceStackTrace(Ljava/lang/Throwable;)V
    L0
-    GETSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
+    GETSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/Stratum;
     IFNONNULL L1
    L2
     RETURN
@@ -646,11 +645,11 @@ final class FOOShaded {
     ISTORE 5
    L11
     ILOAD 5
-    GETSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
+    GETSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/Stratum;
     ARRAYLENGTH
     IF_ICMPGE L8
    L12
-    GETSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/internal/smap/Stratum;
+    GETSTATIC FOOShaded.STRATA_BY_FUNC_GROUP : [Lcom/dylibso/chicory/runtime/Stratum;
     ILOAD 5
     AALOAD
     ASTORE 6
@@ -658,22 +657,20 @@ final class FOOShaded {
     ALOAD 6
     ALOAD 3
     INVOKEVIRTUAL java/lang/StackTraceElement.getLineNumber ()I
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/Stratum.getLineMapping (I)Lcom/dylibso/chicory/runtime/internal/smap/LineMapping;
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Stratum.getInputLine (I)Lcom/dylibso/chicory/runtime/Stratum$Line; (itf)
     ASTORE 7
    L14
     ALOAD 7
     IFNULL L8
    L15
-    ALOAD 6
     ALOAD 7
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/LineMapping.lineFileID ()I
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/Stratum.getPath (I)Ljava/lang/String;
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Stratum$Line.filePath ()Ljava/lang/String;
     ASTORE 8
    L16
     ALOAD 6
     ALOAD 3
     INVOKEVIRTUAL java/lang/StackTraceElement.getLineNumber ()I
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/Stratum.getFunctionMapping (I)Ljava/lang/String;
+    INVOKEINTERFACE com/dylibso/chicory/runtime/Stratum.getFunctionMapping (I)Ljava/lang/String; (itf)
     ASTORE 9
    L17
     ALOAD 9
@@ -694,7 +691,7 @@ final class FOOShaded {
     ALOAD 8
     ALOAD 7
    L21
-    INVOKEVIRTUAL com/dylibso/chicory/runtime/internal/smap/LineMapping.inputStartLine ()J
+    INVOKEVIRTUAL com/dylibso/chicory/runtime/Stratum$Line.line ()J
     L2I
     INVOKESPECIAL java/lang/StackTraceElement.<init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;I)V
     AASTORE

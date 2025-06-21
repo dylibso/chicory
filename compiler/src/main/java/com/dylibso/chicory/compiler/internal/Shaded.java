@@ -8,10 +8,9 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.MemCopyWorkaround;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpcodeImpl;
+import com.dylibso.chicory.runtime.Stratum;
 import com.dylibso.chicory.runtime.TrapException;
 import com.dylibso.chicory.runtime.WasmRuntimeException;
-import com.dylibso.chicory.runtime.internal.smap.SmapParser;
-import com.dylibso.chicory.runtime.internal.smap.Stratum;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -224,8 +223,7 @@ public final class Shaded {
         Shaded.funcGroupClassPrefix = funcGroupClassPrefix;
         STRATA_BY_FUNC_GROUP = new Stratum[smaps.length];
         for (int i = 0; i < smaps.length; i++) {
-            STRATA_BY_FUNC_GROUP[i] =
-                    SmapParser.parse(smaps[i]).getDefaultStratum().optimizeForLookups();
+            STRATA_BY_FUNC_GROUP[i] = Stratum.parseSMapString(smaps[i]);
         }
     }
 
@@ -243,10 +241,10 @@ public final class Shaded {
                 var group = Integer.parseInt(suffix);
                 if (group < STRATA_BY_FUNC_GROUP.length) {
                     var stratum = STRATA_BY_FUNC_GROUP[group];
-                    var lineMapping = stratum.getLineMapping(element.getLineNumber());
+                    var lineMapping = stratum.getInputLine(element.getLineNumber());
                     if (lineMapping != null) {
 
-                        var path = stratum.getPath(lineMapping.lineFileID());
+                        var path = lineMapping.filePath();
                         String functionName = stratum.getFunctionMapping(element.getLineNumber());
                         if (functionName == null) {
                             functionName = element.getMethodName();
@@ -256,7 +254,7 @@ public final class Shaded {
                                         element.getClassName(),
                                         functionName,
                                         path,
-                                        (int) lineMapping.inputStartLine());
+                                        (int) lineMapping.line());
                     }
                 }
             }

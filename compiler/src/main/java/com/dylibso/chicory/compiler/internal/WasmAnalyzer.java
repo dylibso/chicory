@@ -6,7 +6,7 @@ import static java.util.Collections.reverse;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
-import com.dylibso.chicory.runtime.internal.smap.LineMapping;
+import com.dylibso.chicory.runtime.Stratum;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
@@ -81,7 +81,7 @@ final class WasmAnalyzer {
         var codeSectionAddress = module.codeSection().address();
 
         int exitBlockDepth = -1;
-        LineMapping lastLineMapping = null;
+        Stratum.Line lastLineMapping = null;
         int startLineNo = -1;
         String debugFunctionName = null;
 
@@ -90,7 +90,7 @@ final class WasmAnalyzer {
 
             // get the sourceMapIndex for the current instruction:
             var lineMapping =
-                    debugContext.inputStratum.getLineMapping(ins.address() - codeSectionAddress);
+                    debugContext.inputStratum.getInputLine(ins.address() - codeSectionAddress);
             if (lineMapping != null && lineMapping != lastLineMapping) {
                 if (debugFunctionName == null) {
                     debugFunctionName =
@@ -103,15 +103,10 @@ final class WasmAnalyzer {
                     startLineNo = outputLineNo;
                 }
 
-                String file = debugContext.inputStratum.getFile(lineMapping.lineFileID());
-                String path = debugContext.inputStratum.getPath(lineMapping.lineFileID());
+                String file = lineMapping.fileName();
+                String path = lineMapping.filePath();
                 debugContext.outputStratum.addLineData(
-                        file,
-                        path,
-                        lineMapping.inputStartLine(),
-                        lineMapping.inputLineCount(),
-                        outputLineNo,
-                        1);
+                        file, path, lineMapping.line(), lineMapping.count(), outputLineNo, 1);
 
                 labels.add(idx);
                 result.add(new CompilerInstruction(CompilerOpCode.LABEL, idx));

@@ -7,7 +7,7 @@ import static java.lang.invoke.MethodType.methodType;
 import com.dylibso.chicory.build.time.compiler.Config;
 import com.dylibso.chicory.build.time.compiler.Generator;
 import com.dylibso.chicory.compiler.InterpreterFallback;
-import com.dylibso.chicory.runtime.internal.smap.Stratum;
+import com.dylibso.chicory.runtime.Stratum;
 import com.dylibso.chicory.wasm.WasmModule;
 import java.io.File;
 import java.io.IOException;

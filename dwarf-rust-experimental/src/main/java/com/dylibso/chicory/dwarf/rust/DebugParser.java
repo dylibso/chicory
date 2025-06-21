@@ -5,8 +5,8 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.internal.smap.ParserException;
-import com.dylibso.chicory.runtime.internal.smap.Stratum;
+import com.dylibso.chicory.runtime.ParserException;
+import com.dylibso.chicory.runtime.Stratum;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.WasmModule;
@@ -104,7 +104,7 @@ public final class DebugParser {
 
     private static Stratum parse(InputStream is) throws ParserException {
         SourceResult result = getSourceResult(is);
-        Stratum stratum = new Stratum("WASM");
+        var stratum = Stratum.create("WASM");
         HashMap<Integer, FileInfo> sourceFilesByID = new HashMap<>();
         for (var unit : result.units) {
             for (var file : unit.files) {

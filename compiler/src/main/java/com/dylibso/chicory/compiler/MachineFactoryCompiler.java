@@ -3,7 +3,7 @@ package com.dylibso.chicory.compiler;
 import com.dylibso.chicory.compiler.internal.MachineFactory;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
-import com.dylibso.chicory.runtime.internal.smap.Stratum;
+import com.dylibso.chicory.runtime.Stratum;
 import com.dylibso.chicory.wasm.WasmModule;
 import java.util.Set;
 import java.util.function.Function;

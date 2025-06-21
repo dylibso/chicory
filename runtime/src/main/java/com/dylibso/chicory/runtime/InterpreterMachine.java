@@ -4,7 +4,6 @@ import static com.dylibso.chicory.wasm.types.ValType.sizeOf;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.util.Objects.requireNonNullElse;
 
-import com.dylibso.chicory.runtime.internal.smap.Stratum;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
@@ -40,7 +39,7 @@ public class InterpreterMachine implements Machine {
         if (instance.debugParser() != null) {
             stratum = instance.debugParser().apply(instance.module());
         } else {
-            stratum = new Stratum("WASM");
+            stratum = Stratum.create("WASM");
         }
     }
 
@@ -2263,13 +2262,13 @@ public class InterpreterMachine implements Machine {
             // Convert to an address relative to the start of code section.
             int addressRelativeToCodeSection = address - codeSectionAddress;
             var functionName = stratum.getFunctionMapping(addressRelativeToCodeSection);
-            var lineMapping = stratum.getLineMapping(addressRelativeToCodeSection);
+            var lineMapping = stratum.getInputLine(addressRelativeToCodeSection);
 
             String fileName = null;
             int line = 0;
             if (lineMapping != null) {
-                fileName = stratum.getPath(lineMapping.lineFileID());
-                line = (int) lineMapping.inputStartLine();
+                fileName = lineMapping.filePath();
+                line = (int) lineMapping.line();
             } else {
                 fileName = "{wasm}";
                 line = address;

@@ -1,5 +1,6 @@
 package com.dylibso.chicory.runtime.internal.smap;
 
+import com.dylibso.chicory.runtime.ParserException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -65,7 +66,7 @@ public final class SmapParser {
         return lineIndex;
     }
 
-    private static int parseSections(String[] lines, int lineIndex, Smap generator)
+    private static void parseSections(String[] lines, int lineIndex, Smap generator)
             throws ParserException {
         while (lineIndex < lines.length) {
             String line = lines[lineIndex].trim();
@@ -89,8 +90,6 @@ public final class SmapParser {
                 lineIndex++;
             }
         }
-
-        return lineIndex;
     }
 
     private static int parseEmbeddedSmap(String[] lines, int lineIndex, Smap generator)
@@ -137,7 +136,7 @@ public final class SmapParser {
         }
 
         String stratumName = stratumLine.substring(3).trim();
-        Stratum stratum = new Stratum(stratumName);
+        SmapStratum stratum = new SmapStratum(stratumName);
         lineIndex++;
 
         // Parse file and line sections for this stratum
@@ -179,7 +178,7 @@ public final class SmapParser {
     private static int parseFileSection(
             String[] lines,
             int lineIndex,
-            Stratum stratum,
+            SmapStratum stratum,
             Map<Integer, String> fileIdToPath,
             Map<Integer, String> fileIdToName)
             throws ParserException {
@@ -242,7 +241,7 @@ public final class SmapParser {
     private static int parseLineSection(
             String[] lines,
             int lineIndex,
-            Stratum stratum,
+            SmapStratum stratum,
             Map<Integer, String> fileIdToPath,
             Map<Integer, String> fileIdToName)
             throws ParserException {
@@ -276,7 +275,7 @@ public final class SmapParser {
             long inputStartLine;
             int fileId =
                     lastFileId; // Will be overridden if specified, defaults to 0 for first file
-            long inputLineCount = 1;
+            int inputLineCount = 1;
 
             int hashIndex = inputPart.indexOf('#');
             if (hashIndex != -1) {
@@ -286,7 +285,7 @@ public final class SmapParser {
                 int commaIndex = fileAndCount.indexOf(',');
                 if (commaIndex != -1) {
                     fileId = Integer.parseInt(fileAndCount.substring(0, commaIndex));
-                    inputLineCount = Long.parseLong(fileAndCount.substring(commaIndex + 1));
+                    inputLineCount = Integer.parseInt(fileAndCount.substring(commaIndex + 1));
                 } else {
                     fileId = Integer.parseInt(fileAndCount);
                 }
@@ -294,7 +293,7 @@ public final class SmapParser {
                 int commaIndex = inputPart.indexOf(',');
                 if (commaIndex != -1) {
                     inputStartLine = Long.parseLong(inputPart.substring(0, commaIndex));
-                    inputLineCount = Long.parseLong(inputPart.substring(commaIndex + 1));
+                    inputLineCount = Integer.parseInt(inputPart.substring(commaIndex + 1));
                 } else {
                     inputStartLine = Long.parseLong(inputPart);
                 }
@@ -302,12 +301,12 @@ public final class SmapParser {
 
             // Parse output part
             long outputStartLine;
-            long outputLineIncrement = 1;
+            int outputLineCount = 1;
 
             int commaIndex = outputPart.indexOf(',');
             if (commaIndex != -1) {
                 outputStartLine = Long.parseLong(outputPart.substring(0, commaIndex));
-                outputLineIncrement = Long.parseLong(outputPart.substring(commaIndex + 1));
+                outputLineCount = Integer.parseInt(outputPart.substring(commaIndex + 1));
             } else {
                 outputStartLine = Long.parseLong(outputPart);
             }
@@ -327,7 +326,7 @@ public final class SmapParser {
                     inputStartLine,
                     inputLineCount,
                     outputStartLine,
-                    outputLineIncrement);
+                    outputLineCount);
             lastFileId = fileId;
 
             lineIndex++;
@@ -343,7 +342,7 @@ public final class SmapParser {
             return lineIndex; // No more lines to process
         }
         String vendor = lines[lineIndex].trim();
-        if (vendor.equals(Stratum.FUNCTIONS_VENDOR_ID)) {
+        if (vendor.equals(SmapStratum.FUNCTIONS_VENDOR_ID)) {
             lineIndex++;
             while (lineIndex < lines.length) {
                 String line = lines[lineIndex].trim();

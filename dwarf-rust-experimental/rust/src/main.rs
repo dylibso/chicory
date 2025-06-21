@@ -17,14 +17,7 @@ use wasm::{parse_sections, SectionKind};
 
 pub struct Pos {
   line: u32,
-  // column: u32,
 }
-
-// enum FuncState {
-//   Start,
-//   Ignored,
-//   Normal,
-// }
 
 #[derive(Default, Debug, Clone)]
 pub struct Line {
@@ -32,7 +25,6 @@ pub struct Line {
   file_id: u32,
   address: u64,
   line: u32,
-  // column: u32,
   score: u32,
 }
 
@@ -199,25 +191,7 @@ pub fn extract_source_info<R: Reader + Clone + Default>(src: R) -> Result<Source
 
     let mut rows = line_program.rows();
 
-    // let mut func_state = FuncState::Start;
-
     while let Some((header, row)) = rows.next_row()? {
-      // if let FuncState::Start = func_state {
-      //   func_state = if row.address() == 0 {
-      //     FuncState::Ignored
-      //   } else {
-      //     FuncState::Normal
-      //   };
-      // }
-      // if let FuncState::Ignored = func_state {
-      //   if row.end_sequence() {
-      //     func_state = FuncState::Start;
-      //   }
-      //   continue;
-      // }
-      // if row.end_sequence() {
-      //   func_state = FuncState::Start;
-      // }
 
       let file = match row.file(header) {
         Some(file) => file,
