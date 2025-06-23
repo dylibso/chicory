@@ -1,7 +1,0 @@
-Licenses of dependencies as produced by `cargo-license`:
-
-(MIT OR Apache-2.0) AND Unicode-3.0 (1): unicode-ident
-Apache-2.0 OR BSL-1.0 (1): ryu
-Apache-2.0 OR MIT (15): arrayvec, autocfg, fallible-iterator, gimli, hashbrown, indexmap, itoa, nodrop, proc-macro2, quote, serde, serde_derive, serde_json, stable_deref_trait, syn
-BSD-style (1): wasm-source-map
-MIT OR Unlicense (2): byteorder, memchr
