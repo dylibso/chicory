@@ -346,4 +346,23 @@ public final class ByteBufferMemory implements Memory {
     public void drop(int segment) {
         dataSegments[segment] = PassiveDataSegment.EMPTY;
     }
+
+    @Override
+    public ByteBufferMemory copy() {
+        ByteBufferMemory copy = new ByteBufferMemory(this.limits, this.allocStrategy);
+        copy.nPages = this.nPages;
+
+        // Copy the ByteBuffer content
+        copy.buffer = ByteBuffer.allocate(this.buffer.capacity()).order(ByteOrder.LITTLE_ENDIAN);
+        int originalPosition = this.buffer.position();
+        this.buffer.position(0);
+        copy.buffer.put(this.buffer);
+        this.buffer.position(originalPosition);
+        copy.buffer.position(originalPosition);
+
+        if (this.dataSegments != null) {
+            copy.dataSegments = this.dataSegments.clone();
+        }
+        return copy;
+    }
 }
