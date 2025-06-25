@@ -53,6 +53,13 @@
       <plugin>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>chicory-compiler-maven-plugin</artifactId>
+        <dependencies>
+          <dependency>
+            <groupId>com.dylibso.chicory</groupId>
+            <artifactId>dwarf-rust-experimental</artifactId>
+            <version>${project.version}</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <id>compile-quickjs</id>
@@ -82,6 +89,19 @@
             <configuration>
               <name>com.dylibso.chicory.wabt.Wat2Wasm</name>
               <wasmFile>${project.basedir}/../wabt/src/main/resources/wat2wasm</wasmFile>
+            </configuration>
+          </execution>
+          <execution>
+            <id>compile-count-vowels</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <name>com.dylibso.chicory.testing.gen.CountVowels</name>
+              <wasmFile>${project.basedir}/../wasm-corpus/src/main/resources/compiled/count_vowels.rs.wasm</wasmFile>
+              <interpretedFunctions>
+                <interpretedFunction>54</interpretedFunction>
+              </interpretedFunctions>
             </configuration>
           </execution>
         </executions>

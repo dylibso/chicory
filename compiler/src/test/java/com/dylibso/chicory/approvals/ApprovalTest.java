@@ -27,6 +27,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 // To approve everything use the env var: `APPROVAL_TESTS_USE_REPORTER=AutoApproveReporter`
 public class ApprovalTest {
+    public static final String CLASS_NAME = "com.dylibso.chicory.$gen.CompiledMachine";
 
     @Test
     public void verifyBranching() {
@@ -107,7 +108,12 @@ public class ApprovalTest {
     public void functions10() {
         var module =
                 parse(getSystemClassLoader().getResourceAsStream("compiled/functions_10.wat.wasm"));
-        var result = Compiler.builder(module).withMaxFunctionsPerClass(5).build().compile();
+        var result =
+                Compiler.builder(module)
+                        .withClassName(CLASS_NAME)
+                        .withMaxFunctionsPerClass(5)
+                        .build()
+                        .compile();
         verifyClass(result.classBytes(), ApprovalTest::SKIP_Methods_CLASS);
     }
 
@@ -118,7 +124,7 @@ public class ApprovalTest {
     private static void verifyGeneratedBytecode(
             String name, Function<String, Boolean> classSkipper) {
         var module = parse(getSystemClassLoader().getResourceAsStream("compiled/" + name));
-        var result = Compiler.builder(module).build().compile();
+        var result = Compiler.builder(module).withClassName(CLASS_NAME).build().compile();
         verifyClass(result.classBytes(), classSkipper);
     }
 

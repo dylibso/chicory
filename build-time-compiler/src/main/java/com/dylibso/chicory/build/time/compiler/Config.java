@@ -1,6 +1,7 @@
 package com.dylibso.chicory.build.time.compiler;
 
 import com.dylibso.chicory.compiler.InterpreterFallback;
+import com.dylibso.chicory.runtime.DebugParser;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.StringJoiner;
@@ -41,6 +42,11 @@ public final class Config {
      */
     private final Set<Integer> interpretedFunctions;
 
+    /**
+     * the debug parser to use to extract debug symbols from the wasm module.
+     */
+    private final DebugParser debugParser;
+
     private Config(
             Path wasmFile,
             String name,
@@ -48,7 +54,8 @@ public final class Config {
             Path targetSourceFolder,
             Path targetWasmFolder,
             InterpreterFallback interpreterFallback,
-            Set<Integer> interpretedFunctions) {
+            Set<Integer> interpretedFunctions,
+            DebugParser debugParser) {
         this.wasmFile = wasmFile;
         this.name = name;
         this.targetClassFolder = targetClassFolder;
@@ -56,6 +63,7 @@ public final class Config {
         this.targetWasmFolder = targetWasmFolder;
         this.interpreterFallback = interpreterFallback;
         this.interpretedFunctions = interpretedFunctions;
+        this.debugParser = debugParser;
     }
 
     public Path wasmFile() {
@@ -90,6 +98,10 @@ public final class Config {
         return new Builder();
     }
 
+    public DebugParser debugParser() {
+        return debugParser;
+    }
+
     @SuppressWarnings("StringSplitter")
     public String getPackageName() {
         var split = name.split("\\.");
@@ -114,6 +126,7 @@ public final class Config {
         private Path targetWasmFolder;
         private InterpreterFallback interpreterFallback = InterpreterFallback.FAIL;
         private Set<Integer> interpretedFunctions;
+        private DebugParser debugParser;
 
         private Builder() {}
 
@@ -152,6 +165,11 @@ public final class Config {
             return this;
         }
 
+        public Builder withDebugParser(DebugParser debugParser) {
+            this.debugParser = debugParser;
+            return this;
+        }
+
         public Config build() {
             return new Config(
                     wasmFile,
@@ -160,7 +178,8 @@ public final class Config {
                     targetSourceFolder,
                     targetWasmFolder,
                     interpreterFallback,
-                    interpretedFunctions);
+                    interpretedFunctions,
+                    debugParser);
         }
     }
 }

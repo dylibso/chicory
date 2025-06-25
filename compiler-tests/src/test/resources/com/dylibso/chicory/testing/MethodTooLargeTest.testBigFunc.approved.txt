@@ -3,7 +3,14 @@ private final Lcom/dylibso/chicory/runtime/Instance; instance
   private final Lcom/dylibso/chicory/runtime/internal/CompilerInterpreterMachine; compilerInterpreterMachine
 }
 
+  public final static INNERCLASS com/dylibso/chicory/runtime/Stratum$Line com/dylibso/chicory/runtime/Stratum Line
+  public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
+
   private final static Z memCopyWorkaround
+
+  private static [Lcom/dylibso/chicory/runtime/Stratum; STRATA_BY_FUNC_GROUP
+
+  private static Ljava/lang/String; funcGroupClassPrefix
 }
 
 final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {

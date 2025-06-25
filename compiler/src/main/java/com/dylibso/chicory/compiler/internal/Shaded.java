@@ -8,12 +8,15 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.MemCopyWorkaround;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpcodeImpl;
+import com.dylibso.chicory.runtime.Stratum;
 import com.dylibso.chicory.runtime.TrapException;
 import com.dylibso.chicory.runtime.WasmException;
 import com.dylibso.chicory.runtime.WasmRuntimeException;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * This class will get shaded into the compiled code.
@@ -173,23 +176,33 @@ public final class Shaded {
     }
 
     public static RuntimeException throwCallStackExhausted(StackOverflowError e) {
-        throw new ChicoryException("call stack exhausted", e);
+        ChicoryException error = new ChicoryException("call stack exhausted", e);
+        enhanceStackTrace(error);
+        throw error;
     }
 
     public static RuntimeException throwIndirectCallTypeMismatch() {
-        return new ChicoryException("indirect call type mismatch");
+        ChicoryException error = new ChicoryException("indirect call type mismatch");
+        enhanceStackTrace(error);
+        return error;
     }
 
     public static RuntimeException throwOutOfBoundsMemoryAccess() {
-        throw new WasmRuntimeException("out of bounds memory access");
+        WasmRuntimeException error = new WasmRuntimeException("out of bounds memory access");
+        enhanceStackTrace(error);
+        throw error;
     }
 
     public static RuntimeException throwTrapException() {
-        throw new TrapException("Trapped on unreachable instruction");
+        TrapException error = new TrapException("Trapped on unreachable instruction");
+        enhanceStackTrace(error);
+        throw error;
     }
 
     public static RuntimeException throwUnknownFunction(int index) {
-        throw new InvalidException(String.format("unknown function %d", index));
+        InvalidException error = new InvalidException(String.format("unknown function %d", index));
+        enhanceStackTrace(error);
+        throw error;
     }
 
     public static void checkInterruption() {
@@ -228,5 +241,64 @@ public final class Shaded {
         return tag < instance.imports().tagCount()
                 && currentCatchTag.type().typesMatch(exceptionTag.type())
                 && currentCatchTag.type().returnsMatch(exceptionTag.type());
+    }
+
+    private static Stratum[] STRATA_BY_FUNC_GROUP;
+    private static String funcGroupClassPrefix;
+
+    public static void init(Class<?>[] classes, String funcGroupClassPrefix) {
+        Shaded.funcGroupClassPrefix = funcGroupClassPrefix;
+        STRATA_BY_FUNC_GROUP = new Stratum[classes.length];
+
+        for (int i = 0; i < classes.length; i++) {
+            var clazz = classes[i];
+            String resource = "/" + clazz.getName().replace('.', '/') + ".smap";
+            try (var is = clazz.getResourceAsStream(resource)) {
+                if (is == null) {
+                    throw new ChicoryException(
+                            "Class " + clazz.getName() + " does not have a .smap resource");
+                }
+                var smap = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                STRATA_BY_FUNC_GROUP[i] = Stratum.parseSMapString(smap);
+            } catch (IOException e) {
+                throw new ChicoryException(
+                        "Class " + clazz.getName() + " does not have a static initStrata method");
+            }
+        }
+    }
+
+    private static void enhanceStackTrace(Throwable e) {
+        if (STRATA_BY_FUNC_GROUP == null) {
+            return;
+        }
+
+        var elements = e.getStackTrace();
+        for (int i = 0; i < elements.length; i++) {
+            var element = elements[i];
+            if (element.getClassName().startsWith(funcGroupClassPrefix)) {
+
+                String suffix = element.getClassName().substring(funcGroupClassPrefix.length());
+                var group = Integer.parseInt(suffix);
+                if (group < STRATA_BY_FUNC_GROUP.length) {
+                    var stratum = STRATA_BY_FUNC_GROUP[group];
+                    var lineMapping = stratum.getInputLine(element.getLineNumber());
+                    if (lineMapping != null) {
+
+                        var path = lineMapping.filePath();
+                        String functionName = stratum.getFunctionMapping(element.getLineNumber());
+                        if (functionName == null) {
+                            functionName = element.getMethodName();
+                        }
+                        elements[i] =
+                                new StackTraceElement(
+                                        element.getClassName(),
+                                        functionName,
+                                        path,
+                                        (int) lineMapping.line());
+                    }
+                }
+            }
+        }
+        e.setStackTrace(elements);
     }
 }

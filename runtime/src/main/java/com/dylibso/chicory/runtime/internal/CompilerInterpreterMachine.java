@@ -4,6 +4,7 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.InterpreterMachine;
 import com.dylibso.chicory.runtime.MStack;
 import com.dylibso.chicory.runtime.StackFrame;
+import com.dylibso.chicory.runtime.TrapException;
 import com.dylibso.chicory.runtime.WasmException;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -82,6 +83,9 @@ public class CompilerInterpreterMachine extends InterpreterMachine {
                         stack.push(result);
                     }
                 }
+            } catch (TrapException e) {
+                enhanceStackTrace(e, callStack);
+                throw e;
             } catch (WasmException e) {
                 // we need at least an empty frame
                 var stackFrame = new StackFrame(instance, funcId, args);

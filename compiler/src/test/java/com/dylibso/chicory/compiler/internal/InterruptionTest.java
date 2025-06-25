@@ -16,6 +16,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 
 public class InterruptionTest {
+    public static final String CLASS_NAME = "com.dylibso.chicory.$gen.CompiledMachine";
+
     @Test
     public void shouldInterruptLoop() throws InterruptedException {
         var module =
@@ -24,7 +26,10 @@ public class InterruptionTest {
                                 "/compiled/infinite-loop.c.wasm"));
         var instance =
                 Instance.builder(module)
-                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .withMachineFactory(
+                                MachineFactoryCompiler.builder(module)
+                                        .withClassName(CLASS_NAME)
+                                        .compile())
                         .build();
 
         var function = instance.export("run");
@@ -37,7 +42,10 @@ public class InterruptionTest {
                 Parser.parse(InterruptionTest.class.getResourceAsStream("/compiled/power.c.wasm"));
         var instance =
                 Instance.builder(module)
-                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .withMachineFactory(
+                                MachineFactoryCompiler.builder(module)
+                                        .withClassName(CLASS_NAME)
+                                        .compile())
                         .build();
         var function = instance.export("run");
         assertInterruption(() -> function.apply(100), functionIdx(module, "run"));
@@ -85,7 +93,7 @@ public class InterruptionTest {
             for (StackTraceElement element : thread.getStackTrace()) {
                 var className = element.getClassName();
                 var methodName = element.getMethodName();
-                if (className.startsWith(Compiler.DEFAULT_CLASS_NAME + "FuncGroup_")
+                if (className.contains("CompiledMachineFuncGroup_")
                         && methodName.equals(methodNameForFunc(funcIdx))) {
                     return;
                 }
