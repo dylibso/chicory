@@ -177,7 +177,7 @@ public final class ShadedRefs {
                     Shaded.class.getMethod(
                             "exceptionMatches", WasmException.class, int.class, Instance.class);
 
-            INIT = Shaded.class.getMethod("init", String[].class, String.class);
+            INIT = Shaded.class.getMethod("init", Class[].class, String.class);
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);
         }

@@ -15,6 +15,8 @@ import com.dylibso.chicory.runtime.WasmRuntimeException;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * This class will get shaded into the compiled code.
@@ -244,11 +246,24 @@ public final class Shaded {
     private static Stratum[] STRATA_BY_FUNC_GROUP;
     private static String funcGroupClassPrefix;
 
-    public static void init(String[] smaps, String funcGroupClassPrefix) {
+    public static void init(Class<?>[] classes, String funcGroupClassPrefix) {
         Shaded.funcGroupClassPrefix = funcGroupClassPrefix;
-        STRATA_BY_FUNC_GROUP = new Stratum[smaps.length];
-        for (int i = 0; i < smaps.length; i++) {
-            STRATA_BY_FUNC_GROUP[i] = Stratum.parseSMapString(smaps[i]);
+        STRATA_BY_FUNC_GROUP = new Stratum[classes.length];
+
+        for (int i = 0; i < classes.length; i++) {
+            var clazz = classes[i];
+            String resource = "/" + clazz.getName().replace('.', '/') + ".smap";
+            try (var is = clazz.getResourceAsStream(resource)) {
+                if (is == null) {
+                    throw new ChicoryException(
+                            "Class " + clazz.getName() + " does not have a .smap resource");
+                }
+                var smap = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                STRATA_BY_FUNC_GROUP[i] = Stratum.parseSMapString(smap);
+            } catch (IOException e) {
+                throw new ChicoryException(
+                        "Class " + clazz.getName() + " does not have a static initStrata method");
+            }
         }
     }
 

@@ -125,6 +125,7 @@ public final class Compiler {
     private final InterpreterFallback interpreterFallback;
     private final List<FunctionType> functionTypes;
     private final Map<String, byte[]> extraClasses = new LinkedHashMap<>();
+    private final Map<String, byte[]> extraResources = new LinkedHashMap<>();
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions;
 
@@ -249,13 +250,17 @@ public final class Compiler {
     }
 
     public CompilerResult compile() {
+        for (var entry : extraResources.entrySet()) {
+            classLoader.addResource(entry.getKey(), entry.getValue());
+        }
         var bytes = compileClass();
         var factory = createMachineFactory(bytes);
 
         Map<String, byte[]> classBytes = new LinkedHashMap<>();
         classBytes.put(className, bytes);
         classBytes.putAll(extraClasses);
-        return new CompilerResult(factory, classBytes, Set.copyOf(interpretedFunctions));
+        return new CompilerResult(
+                factory, classBytes, Set.copyOf(interpretedFunctions), extraResources);
     }
 
     private Function<Instance, Machine> createMachineFactory(byte[] classBytes) {
@@ -334,14 +339,18 @@ public final class Compiler {
                         loadChunkedClass(
                                 totalFunctions,
                                 maxFunctionsPerClass,
-                                (start, end, chunkSize) -> {
+                                (start, end, chunkSize, extraResources) -> {
                                     funcGroupCount++;
                                     maxFunctionsPerClass = chunkSize;
                                     String className = classNameForFuncGroup(start);
                                     return compileExtraClass(
                                             className,
                                             emitFunctionGroup(
-                                                    start, end, internalClassName(this.className)));
+                                                    start,
+                                                    end,
+                                                    internalClassName(this.className),
+                                                    extraResources,
+                                                    className));
                                 });
                 break;
             } catch (MethodTooLargeException e) {
@@ -389,7 +398,7 @@ public final class Compiler {
     }
 
     interface ChunkedClassEmitter {
-        byte[] emit(int start, int end, int chunkSize);
+        byte[] emit(int start, int end, int chunkSize, Map<String, byte[]> extraResources);
     }
 
     /**
@@ -407,6 +416,8 @@ public final class Compiler {
     int loadChunkedClass(int size, int chunkSize, ChunkedClassEmitter emitter) {
         ArrayList<byte[]> generated = new ArrayList<byte[]>();
         WasmClassLoader classLoader = new WasmClassLoader();
+        Map<String, byte[]> extraResources = new LinkedHashMap<>();
+
         while (true) {
             try {
                 int chunks = (size / chunkSize) + (size % chunkSize == 0 ? 0 : 1);
@@ -414,7 +425,7 @@ public final class Compiler {
                     var start = i * chunkSize;
                     var end = min(start + chunkSize, size);
 
-                    byte[] bytes = emitter.emit(start, end, chunkSize);
+                    byte[] bytes = emitter.emit(start, end, chunkSize, extraResources);
                     loadClass(classLoader, bytes);
                     generated.add(bytes);
                 }
@@ -425,11 +436,13 @@ public final class Compiler {
                     throw e;
                 }
                 generated.clear();
+                extraResources.clear();
                 classLoader = new WasmClassLoader();
             }
         }
         for (var bytes : generated) {
             loadExtraClass(bytes);
+            this.extraResources.putAll(extraResources);
         }
         return chunkSize;
     }
@@ -438,7 +451,12 @@ public final class Compiler {
         return "FuncGroup_" + (funcId / maxFunctionsPerClass);
     }
 
-    private Consumer<ClassVisitor> emitFunctionGroup(int start, int end, String internalClassName) {
+    private Consumer<ClassVisitor> emitFunctionGroup(
+            int start,
+            int end,
+            String internalClassName,
+            Map<String, byte[]> extraResources,
+            String funcGroupClassName) {
         return (classWriter) -> {
             debugContext.reset();
             for (int i = start; i < end; i++) {
@@ -483,16 +501,15 @@ public final class Compiler {
             }
             if (!debugContext.outputStratum.isEmpty()) {
                 // add the source map entries to the class
-                var sourceFile = internalClassName + ".java";
+                var baseName = internalClassName(className + funcGroupClassName);
+                var sourceFile = baseName + ".java";
                 String smap = Stratum.toSMapString(sourceFile, debugContext.outputStratum);
-                classWriter.visitSource(internalClassName, smap);
+                extraResources.put(
+                        baseName + ".smap", smap.getBytes(java.nio.charset.StandardCharsets.UTF_8));
 
-                classWriter.visitField(
-                        Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC,
-                        "SMAP",
-                        getDescriptor(String.class),
-                        null,
-                        smap);
+                if (smap.length() < 65535) {
+                    classWriter.visitSource(internalClassName, smap);
+                }
             }
         };
     }
@@ -655,14 +672,13 @@ public final class Compiler {
 
     private void compileStaticInitializer(InstructionAdapter asm, String internalClassName) {
         asm.iconst(funcGroupCount);
-        asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(String.class));
+        asm.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(Class.class));
+
         for (int i = 0; i < funcGroupCount; i++) {
             asm.dup();
             asm.iconst(i);
-            asm.getstatic(
-                    internalClassName + classNameForFuncGroup(i * maxFunctionsPerClass),
-                    "SMAP",
-                    getDescriptor(String.class));
+            String className = internalClassName + classNameForFuncGroup(i * maxFunctionsPerClass);
+            asm.aconst(Type.getObjectType(className));
             asm.astore(OBJECT_TYPE);
         }
         var classNamePrefix = internalClassName.replaceAll("/", ".") + "FuncGroup_";
@@ -816,7 +832,7 @@ public final class Compiler {
                     loadChunkedClass(
                             functionTypes.size(),
                             maxMachineCallMethods,
-                            (start, end, chunkSize) ->
+                            (start, end, chunkSize, extraResources) ->
                                     compileExtraClass(
                                             classNameForDispatch(start),
                                             (cw) ->
@@ -1079,7 +1095,7 @@ public final class Compiler {
             loadChunkedClass(
                     functionTypes.size(),
                     maxMachineCallMethods,
-                    (start, end, chunkSize) ->
+                    (start, end, chunkSize, extraResources) ->
                             compileExtraClass(
                                     classNameForCallIndirect(typeId, start),
                                     (cw) -> {

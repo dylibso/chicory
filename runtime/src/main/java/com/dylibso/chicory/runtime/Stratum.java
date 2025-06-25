@@ -3,6 +3,7 @@ package com.dylibso.chicory.runtime;
 import com.dylibso.chicory.runtime.internal.smap.Smap;
 import com.dylibso.chicory.runtime.internal.smap.SmapParser;
 import com.dylibso.chicory.runtime.internal.smap.SmapStratum;
+import java.util.Objects;
 
 /**
  * Stratum represents a mapping of source code lines to function names and addresses.
@@ -41,6 +42,23 @@ public interface Stratum {
 
         public int count() {
             return count;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Line line1 = (Line) o;
+            return line == line1.line
+                    && count == line1.count
+                    && Objects.equals(fileName, line1.fileName)
+                    && Objects.equals(filePath, line1.filePath);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(fileName, filePath, line, count);
         }
     }
 

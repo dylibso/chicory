@@ -4,6 +4,7 @@ private final Lcom/dylibso/chicory/runtime/Instance; instance
 }
 
   public final static INNERCLASS com/dylibso/chicory/runtime/Stratum$Line com/dylibso/chicory/runtime/Stratum Line
+  public final static INNERCLASS java/lang/invoke/MethodHandles$Lookup java/lang/invoke/MethodHandles Lookup
 
   private final static Z memCopyWorkaround
 
