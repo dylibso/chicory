@@ -97,7 +97,9 @@ public final class ByteBufferMemory implements Memory {
     }
 
     @Override
-    public boolean shared() { return this.limits.shared(); }
+    public boolean shared() {
+        return this.limits.shared();
+    }
 
     @Override
     public void initialize(Instance instance, DataSegment[] dataSegments) {

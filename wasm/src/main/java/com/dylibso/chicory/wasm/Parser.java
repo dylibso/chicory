@@ -693,7 +693,10 @@ public final class Parser {
                 int maximum = (int) readVarUInt32(buffer);
                 return new MemoryLimits(initial, maximum, limitType == 0x03);
             default:
-                throw new InvalidException("invalid memory limit type: " + limitType + ", shared memory must have maximum");
+                throw new InvalidException(
+                        "invalid memory limit type: "
+                                + limitType
+                                + ", shared memory must have maximum");
         }
     }
 
