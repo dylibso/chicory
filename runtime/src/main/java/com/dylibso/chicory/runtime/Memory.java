@@ -30,6 +30,8 @@ public interface Memory {
 
     int maximumPages();
 
+    boolean shared();
+
     void initialize(Instance instance, DataSegment[] dataSegments);
 
     void initPassiveSegment(int segmentId, int dest, int offset, int size);

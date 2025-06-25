@@ -148,6 +148,10 @@
             <wast>proposals/function-references/unreached-valid.wast</wast>
             <wast>proposals/tail-call/return_call.wast</wast>
             <wast>proposals/tail-call/return_call_indirect.wast</wast>
+            <wast>proposals/threads/atomic.wast</wast>
+            <wast>proposals/threads/exports.wast</wast>
+            <wast>proposals/threads/imports.wast</wast>
+            <wast>proposals/threads/memory.wast</wast>
             <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
             <wast>ref_null.wast</wast>
@@ -277,7 +281,7 @@
     <profile>
       <id>java21</id>
       <activation>
-        <jdk>21</jdk>
+        <jdk>[21,)</jdk>
       </activation>
       <properties>
         <maven.compiler.release>21</maven.compiler.release>
@@ -394,6 +398,10 @@
                 <wast>proposals/function-references/unreached-valid.wast</wast>
                 <wast>proposals/tail-call/return_call.wast</wast>
                 <wast>proposals/tail-call/return_call_indirect.wast</wast>
+                <wast>proposals/threads/atomic.wast</wast>
+                <wast>proposals/threads/exports.wast</wast>
+                <wast>proposals/threads/imports.wast</wast>
+                <wast>proposals/threads/memory.wast</wast>
                 <wast>ref_func.wast</wast>
                 <wast>ref_is_null.wast</wast>
                 <wast>ref_null.wast</wast>

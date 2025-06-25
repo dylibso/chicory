@@ -565,12 +565,22 @@ public final class Parser {
                         var rawTableType = readValueType(buffer, typeSection);
 
                         var limitType = readByte(buffer);
-                        assert limitType == 0x00 || limitType == 0x01;
                         var min = (int) readVarUInt32(buffer);
-                        var limits =
-                                limitType > 0
-                                        ? new TableLimits(min, readVarUInt32(buffer))
-                                        : new TableLimits(min);
+                        TableLimits limits = null;
+                        switch (limitType) {
+                            case 0x00:
+                                limits = new TableLimits(min);
+                                break;
+                            case 0x01:
+                            case 0x03:
+                                limits =
+                                        new TableLimits(
+                                                min, readVarUInt32(buffer), limitType == 0x03);
+                                break;
+                            default:
+                                throw new IllegalArgumentException(
+                                        "Invalid table limit: " + limitType);
+                        }
 
                         importSection.addImport(
                                 new TableImport(moduleName, importName, rawTableType, limits));
@@ -578,19 +588,7 @@ public final class Parser {
                     }
                 case MEMORY:
                     {
-                        var limitType = readByte(buffer);
-                        assert limitType == 0x00 || limitType == 0x01;
-                        var min = (int) Math.min(MemoryLimits.MAX_PAGES, readVarUInt32(buffer));
-                        var limits =
-                                limitType > 0
-                                        ? new MemoryLimits(
-                                                min,
-                                                (int)
-                                                        Math.min(
-                                                                MemoryLimits.MAX_PAGES,
-                                                                readVarUInt32(buffer)))
-                                        : new MemoryLimits(min, MemoryLimits.MAX_PAGES);
-
+                        var limits = parseMemoryLimits(buffer);
                         importSection.addImport(new MemoryImport(moduleName, importName, limits));
                         break;
                     }
@@ -685,17 +683,18 @@ public final class Parser {
     private static MemoryLimits parseMemoryLimits(ByteBuffer buffer) {
 
         var limitType = readByte(buffer);
-        if (!(limitType == 0x00 || limitType == 0x01)) {
-            throw new MalformedException("integer representation too long, integer too large");
-        }
 
         var initial = (int) readVarUInt32(buffer);
-        if (limitType != 0x01) {
-            return new MemoryLimits(initial);
+        switch (limitType) {
+            case 0x00:
+                return new MemoryLimits(initial);
+            case 0x01:
+            case 0x03:
+                int maximum = (int) readVarUInt32(buffer);
+                return new MemoryLimits(initial, maximum, limitType == 0x03);
+            default:
+                throw new InvalidException("invalid memory limit type: " + limitType + ", shared memory must have maximum");
         }
-
-        int maximum = (int) readVarUInt32(buffer);
-        return new MemoryLimits(initial, maximum);
     }
 
     private static GlobalSection parseGlobalSection(ByteBuffer buffer, TypeSection typeSection) {
