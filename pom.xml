@@ -67,7 +67,7 @@
     <velocity.version>1.7</velocity.version>
 
     <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
-    <checkstyle.version>10.25.1</checkstyle.version>
+    <checkstyle.version>10.26.0</checkstyle.version>
     <error-prone.version>2.38.0</error-prone.version>
     <flatten-maven-plugin.version>1.7.1</flatten-maven-plugin.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
