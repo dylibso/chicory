@@ -502,7 +502,9 @@ public class Instance {
             var maxCurrent = i.limits().max();
             if (!i.entryType().equals(t.table().elementType())) {
                 throw new UnlinkableException("incompatible import type");
-            } else if (minExpected < minCurrent || maxExpected > maxCurrent || t.table().limits().shared() != i.limits().shared()) {
+            } else if (minExpected < minCurrent
+                    || maxExpected > maxCurrent
+                    || t.table().limits().shared() != i.limits().shared()) {
                 throw new UnlinkableException(
                         "incompatible import type, non-compatible limits, expected: "
                                 + i.limits()
@@ -531,8 +533,9 @@ public class Instance {
             // In other words, the bounds are not valid when:
             // - HostMem current number of pages cannot be less than the import lower bound.
             // - HostMem upper bound cannot be larger than the given upper bound.
-            if (hostMemCurrentPages < importInitialPages || hostMemMaxPages > importMaxPages ||
-                    m.memory().shared() != i.limits().shared()) {
+            if (hostMemCurrentPages < importInitialPages
+                    || hostMemMaxPages > importMaxPages
+                    || m.memory().shared() != i.limits().shared()) {
                 throw new UnlinkableException(
                         "incompatible import type, non-compatible limits, import: "
                                 + i.limits()
@@ -540,7 +543,7 @@ public class Instance {
                                 + m.memory().initialPages()
                                 + ", host max pages: "
                                 + m.memory().maximumPages()
-                                +", host shared: "
+                                + ", host shared: "
                                 + m.memory().shared()
                                 + " on memory: "
                                 + m.module()
