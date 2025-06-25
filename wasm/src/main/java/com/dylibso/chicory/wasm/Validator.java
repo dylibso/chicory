@@ -300,6 +300,13 @@ final class Validator {
         }
     }
 
+    private void validateMemarg(long current, long expected) {
+        if (current != expected) {
+            throw new InvalidException(
+                    "invalid memarg, current: " + current + ", expected: " + expected);
+        }
+    }
+
     private void validateLane(int id, int max) {
         if (id < 0 || id >= max) {
             throw new InvalidException("invalid lane index " + id + " max is " + max);
@@ -900,31 +907,173 @@ final class Validator {
                 case MEMORY_GROW:
                 case I32_LOAD:
                 case I32_LOAD8_U:
+                case I32_ATOMIC_LOAD8_U:
                 case I32_LOAD8_S:
                 case I32_LOAD16_U:
+                case I32_ATOMIC_LOAD16_U:
                 case I32_LOAD16_S:
                 case I64_LOAD:
                 case I64_LOAD8_S:
                 case I64_LOAD8_U:
+                case I64_ATOMIC_LOAD8_U:
+                case I64_ATOMIC_LOAD16_U:
                 case I64_LOAD16_S:
                 case I64_LOAD16_U:
                 case I64_LOAD32_S:
                 case I64_LOAD32_U:
+                case I64_ATOMIC_LOAD32_U:
                 case F32_LOAD:
                 case F64_LOAD:
                 case I32_STORE:
+                case I32_ATOMIC_STORE:
                 case I32_STORE8:
+                case I32_ATOMIC_STORE8:
                 case I32_STORE16:
+                case I32_ATOMIC_STORE16:
+                case I32_ATOMIC_RMW_ADD:
+                case I32_ATOMIC_RMW_CMPXCHG:
+                case I32_ATOMIC_RMW8_CMPXCHG_U:
+                case I32_ATOMIC_RMW16_CMPXCHG_U:
+                case I64_ATOMIC_RMW_CMPXCHG:
+                case I64_ATOMIC_RMW8_CMPXCHG_U:
+                case I64_ATOMIC_RMW16_CMPXCHG_U:
+                case I64_ATOMIC_RMW32_CMPXCHG_U:
+                case I32_ATOMIC_RMW_XCHG:
+                case I32_ATOMIC_RMW_OR:
+                case I32_ATOMIC_RMW_XOR:
+                case I32_ATOMIC_RMW_SUB:
+                case I32_ATOMIC_RMW_AND:
+                case I32_ATOMIC_RMW8_ADD_U:
+                case I32_ATOMIC_RMW8_XCHG_U:
+                case I32_ATOMIC_RMW8_OR_U:
+                case I32_ATOMIC_RMW8_XOR_U:
+                case I32_ATOMIC_RMW8_AND_U:
+                case I32_ATOMIC_RMW8_SUB_U:
+                case I32_ATOMIC_RMW16_ADD_U:
+                case I32_ATOMIC_RMW16_XCHG_U:
+                case I32_ATOMIC_RMW16_OR_U:
+                case I32_ATOMIC_RMW16_XOR_U:
+                case I32_ATOMIC_RMW16_AND_U:
+                case I32_ATOMIC_RMW16_SUB_U:
                 case I64_STORE:
+                case I64_ATOMIC_STORE:
                 case I64_STORE8:
+                case I64_ATOMIC_STORE8:
                 case I64_STORE16:
+                case I64_ATOMIC_STORE16:
                 case I64_STORE32:
+                case I64_ATOMIC_STORE32:
                 case F32_STORE:
                 case F64_STORE:
+                case I64_ATOMIC_RMW_ADD:
+                case I64_ATOMIC_RMW_XCHG:
+                case I64_ATOMIC_RMW_OR:
+                case I64_ATOMIC_RMW_XOR:
+                case I64_ATOMIC_RMW_SUB:
+                case I64_ATOMIC_RMW_AND:
+                case I64_ATOMIC_RMW8_ADD_U:
+                case I64_ATOMIC_RMW8_XCHG_U:
+                case I64_ATOMIC_RMW8_OR_U:
+                case I64_ATOMIC_RMW8_XOR_U:
+                case I64_ATOMIC_RMW8_AND_U:
+                case I64_ATOMIC_RMW8_SUB_U:
+                case I64_ATOMIC_RMW16_ADD_U:
+                case I64_ATOMIC_RMW16_XCHG_U:
+                case I64_ATOMIC_RMW16_OR_U:
+                case I64_ATOMIC_RMW16_XOR_U:
+                case I64_ATOMIC_RMW16_AND_U:
+                case I64_ATOMIC_RMW16_SUB_U:
+                case I64_ATOMIC_RMW32_ADD_U:
+                case I64_ATOMIC_RMW32_XCHG_U:
+                case I64_ATOMIC_RMW32_OR_U:
+                case I64_ATOMIC_RMW32_XOR_U:
+                case I64_ATOMIC_RMW32_AND_U:
+                case I64_ATOMIC_RMW32_SUB_U:
                 case V128_STORE:
+                case MEM_ATOMIC_NOTIFY:
+                case MEM_ATOMIC_WAIT32:
+                case MEM_ATOMIC_WAIT64:
                     validateMemory(0);
                     break;
                 default:
+                    break;
+            }
+
+            switch (op.opcode()) {
+                case ATOMIC_FENCE:
+                case I32_ATOMIC_STORE8:
+                case I32_ATOMIC_LOAD8_U:
+                case I64_ATOMIC_STORE8:
+                case I64_ATOMIC_LOAD8_U:
+                case I32_ATOMIC_RMW8_ADD_U:
+                case I32_ATOMIC_RMW8_XCHG_U:
+                case I32_ATOMIC_RMW8_OR_U:
+                case I32_ATOMIC_RMW8_XOR_U:
+                case I32_ATOMIC_RMW8_AND_U:
+                case I32_ATOMIC_RMW8_SUB_U:
+                case I64_ATOMIC_RMW8_ADD_U:
+                case I64_ATOMIC_RMW8_XCHG_U:
+                case I64_ATOMIC_RMW8_OR_U:
+                case I64_ATOMIC_RMW8_XOR_U:
+                case I64_ATOMIC_RMW8_AND_U:
+                case I64_ATOMIC_RMW8_SUB_U:
+                case I32_ATOMIC_RMW8_CMPXCHG_U:
+                case I64_ATOMIC_RMW8_CMPXCHG_U:
+                    validateMemarg(op.operand(0), 0x00);
+                    break;
+                case I32_ATOMIC_STORE16:
+                case I32_ATOMIC_LOAD16_U:
+                case I64_ATOMIC_STORE16:
+                case I64_ATOMIC_LOAD16_U:
+                case I32_ATOMIC_RMW16_ADD_U:
+                case I32_ATOMIC_RMW16_XCHG_U:
+                case I32_ATOMIC_RMW16_OR_U:
+                case I32_ATOMIC_RMW16_XOR_U:
+                case I32_ATOMIC_RMW16_AND_U:
+                case I32_ATOMIC_RMW16_SUB_U:
+                case I64_ATOMIC_RMW16_ADD_U:
+                case I64_ATOMIC_RMW16_XCHG_U:
+                case I64_ATOMIC_RMW16_OR_U:
+                case I64_ATOMIC_RMW16_XOR_U:
+                case I64_ATOMIC_RMW16_AND_U:
+                case I64_ATOMIC_RMW16_SUB_U:
+                case I32_ATOMIC_RMW16_CMPXCHG_U:
+                case I64_ATOMIC_RMW16_CMPXCHG_U:
+                    validateMemarg(op.operand(0), 0x01);
+                    break;
+                case I32_ATOMIC_LOAD:
+                case I32_ATOMIC_STORE:
+                case I64_ATOMIC_STORE32:
+                case I64_ATOMIC_LOAD32_U:
+                case I32_ATOMIC_RMW_ADD:
+                case I32_ATOMIC_RMW_XCHG:
+                case I32_ATOMIC_RMW_OR:
+                case I32_ATOMIC_RMW_XOR:
+                case I32_ATOMIC_RMW_SUB:
+                case I32_ATOMIC_RMW_AND:
+                case I64_ATOMIC_RMW32_ADD_U:
+                case I64_ATOMIC_RMW32_XCHG_U:
+                case I64_ATOMIC_RMW32_OR_U:
+                case I64_ATOMIC_RMW32_XOR_U:
+                case I64_ATOMIC_RMW32_AND_U:
+                case I64_ATOMIC_RMW32_SUB_U:
+                case I32_ATOMIC_RMW_CMPXCHG:
+                case I64_ATOMIC_RMW32_CMPXCHG_U:
+                case MEM_ATOMIC_NOTIFY:
+                case MEM_ATOMIC_WAIT32:
+                    validateMemarg(op.operand(0), 0x02);
+                    break;
+                case I64_ATOMIC_LOAD:
+                case I64_ATOMIC_STORE:
+                case I64_ATOMIC_RMW_ADD:
+                case I64_ATOMIC_RMW_XCHG:
+                case I64_ATOMIC_RMW_OR:
+                case I64_ATOMIC_RMW_XOR:
+                case I64_ATOMIC_RMW_SUB:
+                case I64_ATOMIC_RMW_AND:
+                case I64_ATOMIC_RMW_CMPXCHG:
+                case MEM_ATOMIC_WAIT64:
+                    validateMemarg(op.operand(0), 0x03);
                     break;
             }
 
@@ -1014,9 +1163,35 @@ final class Validator {
 
                         break;
                     }
+                case MEM_ATOMIC_NOTIFY:
+                    {
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        pushVal(ValType.I32);
+                        break;
+                    }
+                case MEM_ATOMIC_WAIT32:
+                    {
+                        popVal(ValType.I64);
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        pushVal(ValType.I32);
+                        break;
+                    }
+                case MEM_ATOMIC_WAIT64:
+                    {
+                        popVal(ValType.I64);
+                        popVal(ValType.I64);
+                        popVal(ValType.I32);
+                        pushVal(ValType.I32);
+                        break;
+                    }
                 case I32_STORE:
+                case I32_ATOMIC_STORE:
                 case I32_STORE8:
+                case I32_ATOMIC_STORE8:
                 case I32_STORE16:
+                case I32_ATOMIC_STORE16:
                     {
                         popVal(ValType.I32);
                         popVal(ValType.I32);
@@ -1024,8 +1199,10 @@ final class Validator {
                     }
                 case I32_LOAD:
                 case I32_LOAD8_U:
+                case I32_ATOMIC_LOAD8_U:
                 case I32_LOAD8_S:
                 case I32_LOAD16_U:
+                case I32_ATOMIC_LOAD16_U:
                 case I32_LOAD16_S:
                 case I32_CLZ:
                 case I32_CTZ:
@@ -1034,6 +1211,7 @@ final class Validator {
                 case I32_EXTEND_16_S:
                 case I32_EQZ:
                 case MEMORY_GROW:
+                case I32_ATOMIC_LOAD:
                     {
                         popVal(ValType.I32);
                         pushVal(ValType.I32);
@@ -1046,7 +1224,34 @@ final class Validator {
                         pushVal(ValType.I32);
                         break;
                     }
+                case I32_ATOMIC_RMW_CMPXCHG:
+                case I32_ATOMIC_RMW8_CMPXCHG_U:
+                case I32_ATOMIC_RMW16_CMPXCHG_U:
+                    {
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        pushVal(ValType.I32);
+                        break;
+                    }
+                case I64_ATOMIC_RMW_CMPXCHG:
+                case I64_ATOMIC_RMW8_CMPXCHG_U:
+                case I64_ATOMIC_RMW16_CMPXCHG_U:
+                case I64_ATOMIC_RMW32_CMPXCHG_U:
+                    {
+                        popVal(ValType.I64);
+                        popVal(ValType.I64);
+                        popVal(ValType.I32);
+                        pushVal(ValType.I64);
+                        break;
+                    }
                 case I32_ADD:
+                case I32_ATOMIC_RMW_ADD:
+                case I32_ATOMIC_RMW_XCHG:
+                case I32_ATOMIC_RMW_OR:
+                case I32_ATOMIC_RMW_XOR:
+                case I32_ATOMIC_RMW_SUB:
+                case I32_ATOMIC_RMW_AND:
                 case I32_SUB:
                 case I32_MUL:
                 case I32_DIV_S:
@@ -1071,6 +1276,18 @@ final class Validator {
                 case I32_SHR_S:
                 case I32_ROTL:
                 case I32_ROTR:
+                case I32_ATOMIC_RMW8_ADD_U:
+                case I32_ATOMIC_RMW8_XCHG_U:
+                case I32_ATOMIC_RMW8_OR_U:
+                case I32_ATOMIC_RMW8_XOR_U:
+                case I32_ATOMIC_RMW8_AND_U:
+                case I32_ATOMIC_RMW8_SUB_U:
+                case I32_ATOMIC_RMW16_ADD_U:
+                case I32_ATOMIC_RMW16_XCHG_U:
+                case I32_ATOMIC_RMW16_OR_U:
+                case I32_ATOMIC_RMW16_XOR_U:
+                case I32_ATOMIC_RMW16_AND_U:
+                case I32_ATOMIC_RMW16_SUB_U:
                     {
                         popVal(ValType.I32);
                         popVal(ValType.I32);
@@ -1106,13 +1323,47 @@ final class Validator {
                 case I64_LOAD:
                 case I64_LOAD8_S:
                 case I64_LOAD8_U:
+                case I64_ATOMIC_LOAD8_U:
                 case I64_LOAD16_S:
                 case I64_LOAD16_U:
+                case I64_ATOMIC_LOAD16_U:
                 case I64_LOAD32_S:
                 case I64_LOAD32_U:
+                case I64_ATOMIC_LOAD32_U:
                 case I64_EXTEND_I32_U:
                 case I64_EXTEND_I32_S:
+                case I64_ATOMIC_LOAD:
                     {
+                        popVal(ValType.I32);
+                        pushVal(ValType.I64);
+                        break;
+                    }
+                case I64_ATOMIC_RMW_ADD:
+                case I64_ATOMIC_RMW_XCHG:
+                case I64_ATOMIC_RMW_OR:
+                case I64_ATOMIC_RMW_XOR:
+                case I64_ATOMIC_RMW_SUB:
+                case I64_ATOMIC_RMW_AND:
+                case I64_ATOMIC_RMW8_ADD_U:
+                case I64_ATOMIC_RMW8_XCHG_U:
+                case I64_ATOMIC_RMW8_OR_U:
+                case I64_ATOMIC_RMW8_XOR_U:
+                case I64_ATOMIC_RMW8_AND_U:
+                case I64_ATOMIC_RMW8_SUB_U:
+                case I64_ATOMIC_RMW16_ADD_U:
+                case I64_ATOMIC_RMW16_XCHG_U:
+                case I64_ATOMIC_RMW16_OR_U:
+                case I64_ATOMIC_RMW16_XOR_U:
+                case I64_ATOMIC_RMW16_AND_U:
+                case I64_ATOMIC_RMW16_SUB_U:
+                case I64_ATOMIC_RMW32_ADD_U:
+                case I64_ATOMIC_RMW32_XCHG_U:
+                case I64_ATOMIC_RMW32_OR_U:
+                case I64_ATOMIC_RMW32_XOR_U:
+                case I64_ATOMIC_RMW32_AND_U:
+                case I64_ATOMIC_RMW32_SUB_U:
+                    {
+                        popVal(ValType.I64);
                         popVal(ValType.I32);
                         pushVal(ValType.I64);
                         break;
@@ -1123,9 +1374,13 @@ final class Validator {
                         break;
                     }
                 case I64_STORE:
+                case I64_ATOMIC_STORE:
                 case I64_STORE8:
+                case I64_ATOMIC_STORE8:
                 case I64_STORE16:
+                case I64_ATOMIC_STORE16:
                 case I64_STORE32:
+                case I64_ATOMIC_STORE32:
                     {
                         popVal(ValType.I64);
                         popVal(ValType.I32);

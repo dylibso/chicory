@@ -107,6 +107,9 @@ public final class ByteArrayMemory implements Memory {
     }
 
     @Override
+    public boolean shared() { return this.limits.shared(); }
+
+    @Override
     public void initialize(Instance instance, DataSegment[] dataSegments) {
         this.dataSegments = dataSegments;
         if (dataSegments == null) {

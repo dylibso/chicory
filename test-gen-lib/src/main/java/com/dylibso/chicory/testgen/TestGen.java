@@ -136,7 +136,9 @@ public final class TestGen {
                     "exception-handling",
                     new Proposal("eh"),
                     "function-references",
-                    new Proposal("function-references"));
+                    new Proposal("function-references"),
+                    "threads",
+                    new Proposal("threads"));
 
     private static final class TestGenerator {
 
