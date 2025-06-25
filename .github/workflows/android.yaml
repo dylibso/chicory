@@ -46,7 +46,7 @@ jobs:
           ~/.android/avd/*
           ~/.android/adb*
         # adding a unique identifier(today's date) to easily change it and effectively "clean the cache"
-        key: avd-03062025-${{ matrix.api-level }}
+        key: avd-25062025-${{ matrix.api-level }}
     # create AVD if cache failed.
     - name: create AVD and generate snapshot for caching
       if: steps.avd-cache.outputs.cache-hit != 'true'
