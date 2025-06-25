@@ -179,7 +179,7 @@ public final class Parser {
 
         private Builder() {}
 
-        /*
+        /**
          * @param sectionId : the sectionId to be included while parsing, e.g. SectionId.MEMORY
          */
         public Builder includeSectionId(int sectionId) {
