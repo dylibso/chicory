@@ -5,6 +5,8 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.wasm.ChicoryException;
+import com.dylibso.chicory.wasm.InvalidException;
+import com.dylibso.chicory.wasm.MalformedException;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -1903,37 +1905,44 @@ public class InterpreterMachine implements Machine {
         return readMemPtr(stack, operands, false);
     }
 
+    protected static void verifyAtomicAlignment(long address, int memargAlign) {
+        int align = 0;
+        switch ((int) memargAlign) {
+            case 0x00:
+                align = 8;
+                break;
+            case 0x01:
+                align = 16;
+                break;
+            case 0x02:
+                align = 32;
+                break;
+            case 0x03:
+                align = 64;
+                break;
+        }
+
+        System.out.println("address: " + address + ", align: " + align + " - " + (address & (align - 1)));
+        // var masked = (address & (align - 1));
+        // if (masked != 0L) {
+        long mask = (long)(align - 1);
+        if ((address & mask) != 0L) {
+              // throw new InvalidException("unaligned atomic");
+        }
+    }
+
     protected static int readMemPtr(MStack stack, Operands operands, boolean verifyAlignement) {
         int address = (int) stack.pop();
         if (operands.get(1) < 0 || operands.get(1) >= Integer.MAX_VALUE || address < 0) {
             throw new WasmRuntimeException("out of bounds memory access");
         }
 
+        var ptr = (int) (operands.get(1) + address);
         if (verifyAlignement) {
-//            int align = 0;
-//            switch ((int) operands.get(0)) {
-//                case 0x00:
-//                    align = 8;
-//                    break;
-//                case 0x01:
-//                    align = 16;
-//                    break;
-//                case 0x02:
-//                    align = 32;
-//                    break;
-//                case 0x03:
-//                    align = 64;
-//                    break;
-//            }
-//            long mask = (long) (align - 1);
-//            if ((address & mask) != 0L) {
-//                throw new ChicoryException("unaligned atomic " + address + " - " + mask);
-//            } else {
-//                System.out.println("Aligned atomic " + address + " - " + mask);
-//            }
+            verifyAtomicAlignment(ptr, (int) operands.get(0));
         }
 
-        return (int) (operands.get(1) + address);
+        return ptr;
     }
 
     private static void F64_STORE(MStack stack, Instance instance, Operands operands) {
@@ -2251,6 +2260,7 @@ public class InterpreterMachine implements Machine {
         synchronized (instance.memory()) {
             var value = (byte) stack.pop();
             var ptr = (int) (operands.get(1) + (int) stack.pop());
+            verifyAtomicAlignment(ptr, 0x00);
             instance.memory().writeByte(ptr, value);
         }
     }
@@ -2259,6 +2269,7 @@ public class InterpreterMachine implements Machine {
         synchronized (instance.memory()) {
             var value = (short) stack.pop();
             var ptr = readMemPtr(stack, operands, true);
+            verifyAtomicAlignment(ptr, 0x01);
             instance.memory().writeShort(ptr, value);
         }
     }
@@ -2267,6 +2278,7 @@ public class InterpreterMachine implements Machine {
         synchronized (instance.memory()) {
             var value = stack.pop();
             var ptr = (int) (operands.get(1) + (int) stack.pop());
+            verifyAtomicAlignment(ptr, 0x02);
             instance.memory().writeI32(ptr, (int) value);
         }
     }
@@ -2275,6 +2287,7 @@ public class InterpreterMachine implements Machine {
         synchronized (instance.memory()) {
             var value = stack.pop();
             var ptr = readMemPtr(stack, operands, true);
+            verifyAtomicAlignment(ptr, 0x03);
             instance.memory().writeLong(ptr, value);
         }
     }
