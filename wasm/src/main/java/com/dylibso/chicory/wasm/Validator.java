@@ -991,6 +991,7 @@ final class Validator {
                 case MEM_ATOMIC_WAIT32:
                 case MEM_ATOMIC_WAIT64:
                 case I32_ATOMIC_LOAD:
+                case I64_ATOMIC_LOAD:
                     validateMemory(0);
                     break;
                 default:
