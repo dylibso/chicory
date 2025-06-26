@@ -27,11 +27,8 @@ import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+
+import java.util.*;
 import java.util.stream.Stream;
 
 // Heavily inspired by wazero
@@ -300,10 +297,10 @@ final class Validator {
         }
     }
 
-    private void validateMemarg(long current, long expected) {
+    private void validateMemAlign(long current, long expected) {
         if (current != expected) {
             throw new InvalidException(
-                    "invalid memarg, current: " + current + ", expected: " + expected);
+                    "invalid memory alignement, current: " + current + ", expected: " + expected);
         }
     }
 
@@ -993,6 +990,7 @@ final class Validator {
                 case MEM_ATOMIC_NOTIFY:
                 case MEM_ATOMIC_WAIT32:
                 case MEM_ATOMIC_WAIT64:
+                case I32_ATOMIC_LOAD:
                     validateMemory(0);
                     break;
                 default:
@@ -1002,8 +1000,8 @@ final class Validator {
             switch (op.opcode()) {
                 case ATOMIC_FENCE:
                 case I32_ATOMIC_STORE8:
-                case I32_ATOMIC_LOAD8_U:
                 case I64_ATOMIC_STORE8:
+                case I32_ATOMIC_LOAD8_U:
                 case I64_ATOMIC_LOAD8_U:
                 case I32_ATOMIC_RMW8_ADD_U:
                 case I32_ATOMIC_RMW8_XCHG_U:
@@ -1019,11 +1017,11 @@ final class Validator {
                 case I64_ATOMIC_RMW8_SUB_U:
                 case I32_ATOMIC_RMW8_CMPXCHG_U:
                 case I64_ATOMIC_RMW8_CMPXCHG_U:
-                    validateMemarg(op.operand(0), 0x00);
+                    validateMemAlign(op.operand(0), 0x00);
                     break;
                 case I32_ATOMIC_STORE16:
-                case I32_ATOMIC_LOAD16_U:
                 case I64_ATOMIC_STORE16:
+                case I32_ATOMIC_LOAD16_U:
                 case I64_ATOMIC_LOAD16_U:
                 case I32_ATOMIC_RMW16_ADD_U:
                 case I32_ATOMIC_RMW16_XCHG_U:
@@ -1039,11 +1037,11 @@ final class Validator {
                 case I64_ATOMIC_RMW16_SUB_U:
                 case I32_ATOMIC_RMW16_CMPXCHG_U:
                 case I64_ATOMIC_RMW16_CMPXCHG_U:
-                    validateMemarg(op.operand(0), 0x01);
+                    validateMemAlign(op.operand(0), 0x01);
                     break;
-                case I32_ATOMIC_LOAD:
                 case I32_ATOMIC_STORE:
                 case I64_ATOMIC_STORE32:
+                case I32_ATOMIC_LOAD:
                 case I64_ATOMIC_LOAD32_U:
                 case I32_ATOMIC_RMW_ADD:
                 case I32_ATOMIC_RMW_XCHG:
@@ -1061,10 +1059,10 @@ final class Validator {
                 case I64_ATOMIC_RMW32_CMPXCHG_U:
                 case MEM_ATOMIC_NOTIFY:
                 case MEM_ATOMIC_WAIT32:
-                    validateMemarg(op.operand(0), 0x02);
+                    validateMemAlign(op.operand(0), 0x02);
                     break;
-                case I64_ATOMIC_LOAD:
                 case I64_ATOMIC_STORE:
+                case I64_ATOMIC_LOAD:
                 case I64_ATOMIC_RMW_ADD:
                 case I64_ATOMIC_RMW_XCHG:
                 case I64_ATOMIC_RMW_OR:
@@ -1072,8 +1070,8 @@ final class Validator {
                 case I64_ATOMIC_RMW_SUB:
                 case I64_ATOMIC_RMW_AND:
                 case I64_ATOMIC_RMW_CMPXCHG:
-                case MEM_ATOMIC_WAIT64:
-                    validateMemarg(op.operand(0), 0x03);
+                 case MEM_ATOMIC_WAIT64:
+                    validateMemAlign(op.operand(0), 0x03);
                     break;
             }
 

@@ -15,6 +15,7 @@ import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
+import java.util.function.BiFunction;
 
 /**
  * This is responsible for holding and interpreting the Wasm code.
@@ -827,6 +828,164 @@ public class InterpreterMachine implements Machine {
                     break;
                 case ELEM_DROP:
                     ELEM_DROP(instance, operands);
+                    break;
+                    // Threads proposal:
+                case I32_ATOMIC_LOAD:
+                    I32_ATOMIC_LOAD(stack, instance, operands);
+                    break;
+                case I64_ATOMIC_LOAD:
+                    I64_ATOMIC_LOAD(stack, instance, operands);
+                    break;
+                case I64_ATOMIC_LOAD8_U:
+                    I64_ATOMIC_LOAD8_U(stack, instance, operands);
+                    break;
+                case I32_ATOMIC_LOAD8_U:
+                    I32_ATOMIC_LOAD8_U(stack, instance, operands);
+                    break;
+                case I32_ATOMIC_LOAD16_U:
+                    I32_ATOMIC_LOAD16_U(stack, instance, operands);
+                    break;
+                case I64_ATOMIC_LOAD16_U:
+                    I64_ATOMIC_LOAD16_U(stack, instance, operands);
+                    break;
+                case I64_ATOMIC_LOAD32_U:
+                    I64_ATOMIC_LOAD32_U(stack, instance, operands);
+                    break;
+                case I32_ATOMIC_STORE:
+                    I32_ATOMIC_STORE(stack, instance, operands);
+                    break;
+                case I64_ATOMIC_STORE:
+                    I64_ATOMIC_STORE(stack, instance, operands);
+                    break;
+                case I32_ATOMIC_STORE8:
+                case I64_ATOMIC_STORE8:
+                    I64_ATOMIC_STORE8(stack, instance, operands);
+                    break;
+                case I32_ATOMIC_STORE16:
+                case I64_ATOMIC_STORE16:
+                    I64_ATOMIC_STORE16(stack, instance, operands);
+                    break;
+                case I64_ATOMIC_STORE32:
+                    I64_ATOMIC_STORE32(stack, instance, operands);
+                    break;
+                case I32_ATOMIC_RMW_ADD:
+                    I32_ATOMIC_RMW(stack, instance, operands, (x, y) -> x + y);
+                    break;
+                case I32_ATOMIC_RMW_SUB:
+                    I32_ATOMIC_RMW(stack, instance, operands, (x, y) -> x - y);
+                    break;
+                case I32_ATOMIC_RMW_AND:
+                    I32_ATOMIC_RMW(stack, instance, operands, (x, y) -> x & y);
+                    break;
+                case I32_ATOMIC_RMW_OR:
+                    I32_ATOMIC_RMW(stack, instance, operands, (x, y) -> x | y);
+                    break;
+                case I32_ATOMIC_RMW_XOR:
+                    I32_ATOMIC_RMW(stack, instance, operands, (x, y) -> x ^ y);
+                    break;
+                case I32_ATOMIC_RMW_XCHG:
+                    I32_ATOMIC_RMW(stack, instance, operands, (x, y) -> y);
+                    break;
+                case I32_ATOMIC_RMW_CMPXCHG:
+                    I32_ATOMIC_RMW_CMPXCHG(stack, instance, operands);
+                    break;
+                case I64_ATOMIC_RMW_ADD:
+                    I64_ATOMIC_RMW(stack, instance, operands, (x, y) -> x + y);
+                    break;
+                case I64_ATOMIC_RMW_SUB:
+                    I64_ATOMIC_RMW(stack, instance, operands, (x, y) -> x - y);
+                    break;
+                case I64_ATOMIC_RMW_AND:
+                    I64_ATOMIC_RMW(stack, instance, operands, (x, y) -> x & y);
+                    break;
+                case I64_ATOMIC_RMW_OR:
+                    I64_ATOMIC_RMW(stack, instance, operands, (x, y) -> x | y);
+                    break;
+                case I64_ATOMIC_RMW_XOR:
+                    I64_ATOMIC_RMW(stack, instance, operands, (x, y) -> x ^ y);
+                    break;
+                case I64_ATOMIC_RMW_XCHG:
+                    I64_ATOMIC_RMW(stack, instance, operands, (x, y) -> y);
+                    break;
+                case I64_ATOMIC_RMW_CMPXCHG:
+                    I64_ATOMIC_RMW_CMPXCHG(stack, instance, operands);
+                    break;
+                case I32_ATOMIC_RMW8_ADD_U:
+                case I64_ATOMIC_RMW8_ADD_U:
+                    I64_ATOMIC_RMW8_U(stack, instance, operands, (x, y) -> (byte) (x + y));
+                    break;
+                case I32_ATOMIC_RMW8_SUB_U:
+                case I64_ATOMIC_RMW8_SUB_U:
+                    I64_ATOMIC_RMW8_U(stack, instance, operands, (x, y) -> (byte) (x - y));
+                    break;
+                case I32_ATOMIC_RMW8_AND_U:
+                case I64_ATOMIC_RMW8_AND_U:
+                    I64_ATOMIC_RMW8_U(stack, instance, operands, (x, y) -> (byte) (x & y));
+                    break;
+                case I32_ATOMIC_RMW8_OR_U:
+                case I64_ATOMIC_RMW8_OR_U:
+                    I64_ATOMIC_RMW8_U(stack, instance, operands, (x, y) -> (byte) (x | y));
+                    break;
+                case I32_ATOMIC_RMW8_XOR_U:
+                case I64_ATOMIC_RMW8_XOR_U:
+                    I64_ATOMIC_RMW8_U(stack, instance, operands, (x, y) -> (byte) (x ^ y));
+                    break;
+                case I32_ATOMIC_RMW8_XCHG_U:
+                case I64_ATOMIC_RMW8_XCHG_U:
+                    I64_ATOMIC_RMW8_U(stack, instance, operands, (x, y) -> y);
+                    break;
+                case I32_ATOMIC_RMW8_CMPXCHG_U:
+                case I64_ATOMIC_RMW8_CMPXCHG_U:
+                    I64_ATOMIC_RMW8_CMPXCHG_U(stack, instance, operands);
+                    break;
+                case I32_ATOMIC_RMW16_ADD_U:
+                case I64_ATOMIC_RMW16_ADD_U:
+                    I64_ATOMIC_RMW16_U(stack, instance, operands, (x, y) -> (short) (x + y));
+                    break;
+                case I32_ATOMIC_RMW16_SUB_U:
+                case I64_ATOMIC_RMW16_SUB_U:
+                    I64_ATOMIC_RMW16_U(stack, instance, operands, (x, y) -> (short) (x - y));
+                    break;
+                case I32_ATOMIC_RMW16_AND_U:
+                case I64_ATOMIC_RMW16_AND_U:
+                    I64_ATOMIC_RMW16_U(stack, instance, operands, (x, y) -> (short) (x & y));
+                    break;
+                case I32_ATOMIC_RMW16_OR_U:
+                case I64_ATOMIC_RMW16_OR_U:
+                    I64_ATOMIC_RMW16_U(stack, instance, operands, (x, y) -> (short) (x | y));
+                    break;
+                case I32_ATOMIC_RMW16_XOR_U:
+                case I64_ATOMIC_RMW16_XOR_U:
+                    I64_ATOMIC_RMW16_U(stack, instance, operands, (x, y) -> (short) (x ^ y));
+                    break;
+                case I32_ATOMIC_RMW16_XCHG_U:
+                case I64_ATOMIC_RMW16_XCHG_U:
+                    I64_ATOMIC_RMW16_U(stack, instance, operands, (x, y) -> y);
+                    break;
+                case I32_ATOMIC_RMW16_CMPXCHG_U:
+                case I64_ATOMIC_RMW16_CMPXCHG_U:
+                    I64_ATOMIC_RMW16_CMPXCHG_U(stack, instance, operands);
+                    break;
+                case I64_ATOMIC_RMW32_ADD_U:
+                    I64_ATOMIC_RMW32_U(stack, instance, operands, (x, y) -> x + y);
+                    break;
+                case I64_ATOMIC_RMW32_SUB_U:
+                    I64_ATOMIC_RMW32_U(stack, instance, operands, (x, y) -> x - y);
+                    break;
+                case I64_ATOMIC_RMW32_AND_U:
+                    I64_ATOMIC_RMW32_U(stack, instance, operands, (x, y) -> x & y);
+                    break;
+                case I64_ATOMIC_RMW32_OR_U:
+                    I64_ATOMIC_RMW32_U(stack, instance, operands, (x, y) -> x | y);
+                    break;
+                case I64_ATOMIC_RMW32_XOR_U:
+                    I64_ATOMIC_RMW32_U(stack, instance, operands, (x, y) -> x ^ y);
+                    break;
+                case I64_ATOMIC_RMW32_XCHG_U:
+                    I64_ATOMIC_RMW32_U(stack, instance, operands, (x, y) -> y);
+                    break;
+                case I64_ATOMIC_RMW32_CMPXCHG_U:
+                    I64_ATOMIC_RMW32_CMPXCHG_U(stack, instance, operands);
                     break;
                 default:
                     {
@@ -1741,11 +1900,38 @@ public class InterpreterMachine implements Machine {
     }
 
     protected static int readMemPtr(MStack stack, Operands operands) {
-        int offset = (int) stack.pop();
-        if (operands.get(1) < 0 || operands.get(1) >= Integer.MAX_VALUE || offset < 0) {
+        return readMemPtr(stack, operands, false);
+    }
+
+    protected static int readMemPtr(MStack stack, Operands operands, boolean verifyAlignement) {
+        int address = (int) stack.pop();
+        if (operands.get(1) < 0 || operands.get(1) >= Integer.MAX_VALUE || address < 0) {
             throw new WasmRuntimeException("out of bounds memory access");
         }
-        return (int) (operands.get(1) + offset);
+
+        if (verifyAlignement) {
+            int align = 0;
+            switch ((int) operands.get(0)) {
+                case 0x00:
+                    align = 0;
+                    break;
+                case 0x01:
+                    align = 1;
+                    break;
+                case 0x02:
+                    align = 2;
+                    break;
+                case 0x03:
+                    align = 3;
+                    break;
+            }
+            long mask = (long) (align - 1);
+            if ((address & mask) != 0L) {
+                throw new ChicoryException("unaligned atomic");
+            }
+        }
+
+        return (int) (operands.get(1) + address);
     }
 
     private static void F64_STORE(MStack stack, Instance instance, Operands operands) {
@@ -1992,6 +2178,234 @@ public class InterpreterMachine implements Machine {
             stack.push(tmp);
         } else {
             currentStackFrame.setLocal(i, stack.peek());
+        }
+    }
+
+    private static void I32_ATOMIC_LOAD(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var ptr = readMemPtr(stack, operands, true);
+            var val = instance.memory().readI32(ptr);
+            stack.push(val);
+        }
+    }
+
+    private static void I64_ATOMIC_LOAD(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var ptr = readMemPtr(stack, operands);
+            var val = instance.memory().readI64(ptr);
+            stack.push(val);
+        }
+    }
+
+    private static void I64_ATOMIC_LOAD8_U(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var ptr = readMemPtr(stack, operands);
+            var val = instance.memory().readU8(ptr);
+            stack.push(val);
+        }
+    }
+
+    private static void I32_ATOMIC_LOAD8_U(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var ptr = readMemPtr(stack, operands);
+            var val = instance.memory().readU8(ptr);
+            stack.push(val);
+        }
+    }
+
+    private static void I32_ATOMIC_LOAD16_U(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var ptr = readMemPtr(stack, operands);
+            var val = instance.memory().readU16(ptr);
+            stack.push(val);
+        }
+    }
+
+    private static void I64_ATOMIC_LOAD16_U(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var ptr = readMemPtr(stack, operands);
+            var val = instance.memory().readU16(ptr);
+            stack.push(val);
+        }
+    }
+
+    private static void I64_ATOMIC_LOAD32_U(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var ptr = readMemPtr(stack, operands);
+            var val = instance.memory().readU32(ptr);
+            stack.push(val);
+        }
+    }
+
+    private static void I32_ATOMIC_STORE(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var value = (int) stack.pop();
+            var ptr = readMemPtr(stack, operands);
+            instance.memory().writeI32(ptr, value);
+        }
+    }
+
+    private static void I64_ATOMIC_STORE8(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var value = (byte) stack.pop();
+            var ptr = (int) (operands.get(1) + (int) stack.pop());
+            instance.memory().writeByte(ptr, value);
+        }
+    }
+
+    private static void I64_ATOMIC_STORE16(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var value = (short) stack.pop();
+            var ptr = readMemPtr(stack, operands);
+            instance.memory().writeShort(ptr, value);
+        }
+    }
+
+    private static void I64_ATOMIC_STORE32(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var value = stack.pop();
+            var ptr = (int) (operands.get(1) + (int) stack.pop());
+            instance.memory().writeI32(ptr, (int) value);
+        }
+    }
+
+    private static void I64_ATOMIC_STORE(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var value = stack.pop();
+            var ptr = readMemPtr(stack, operands);
+            instance.memory().writeLong(ptr, value);
+        }
+    }
+
+    private static void I32_ATOMIC_RMW(
+            MStack stack,
+            Instance instance,
+            Operands operands,
+            BiFunction<Integer, Integer, Integer> op) {
+        synchronized (instance.memory()) {
+            var toOp = (int) stack.pop();
+            var ptr = readMemPtr(stack, operands);
+            var val = (int) instance.memory().readI32(ptr);
+            instance.memory().writeI32(ptr, op.apply(val, toOp));
+            stack.push(val);
+        }
+    }
+
+    private static void I32_ATOMIC_RMW_CMPXCHG(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var replacement = (int) stack.pop();
+            var expected = (int) stack.pop();
+            var ptr = readMemPtr(stack, operands);
+            var val = (int) instance.memory().readI32(ptr);
+            if (val == expected) {
+                instance.memory().writeI32(ptr, replacement);
+            }
+            stack.push(val);
+        }
+    }
+
+    private static void I64_ATOMIC_RMW(
+            MStack stack, Instance instance, Operands operands, BiFunction<Long, Long, Long> op) {
+        synchronized (instance.memory()) {
+            var toOp = stack.pop();
+            var ptr = readMemPtr(stack, operands);
+            var val = instance.memory().readI64(ptr);
+            instance.memory().writeLong(ptr, op.apply(val, toOp));
+            stack.push(val);
+        }
+    }
+
+    private static void I64_ATOMIC_RMW_CMPXCHG(MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var replacement = stack.pop();
+            var expected = stack.pop();
+            var ptr = readMemPtr(stack, operands);
+            var val = instance.memory().readI64(ptr);
+            if (val == expected) {
+                instance.memory().writeLong(ptr, replacement);
+            }
+            stack.push(val);
+        }
+    }
+
+    private static void I64_ATOMIC_RMW8_U(
+            MStack stack, Instance instance, Operands operands, BiFunction<Byte, Byte, Byte> op) {
+        synchronized (instance.memory()) {
+            var toOp = (byte) stack.pop();
+            var ptr = readMemPtr(stack, operands);
+            var val = (byte) instance.memory().readU8(ptr);
+            instance.memory().writeByte(ptr, op.apply(val, toOp));
+            stack.push(val);
+        }
+    }
+
+    private static void I64_ATOMIC_RMW8_CMPXCHG_U(
+            MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var replacement = (byte) stack.pop();
+            var expected = (byte) stack.pop();
+            var ptr = readMemPtr(stack, operands);
+            var val = (byte) instance.memory().readU8(ptr);
+            if (val == expected) {
+                instance.memory().writeByte(ptr, replacement);
+            }
+            stack.push(val);
+        }
+    }
+
+    private static void I64_ATOMIC_RMW16_U(
+            MStack stack,
+            Instance instance,
+            Operands operands,
+            BiFunction<Short, Short, Short> op) {
+        synchronized (instance.memory()) {
+            var toOp = (short) stack.pop();
+            var ptr = readMemPtr(stack, operands);
+            var val = (short) instance.memory().readU16(ptr);
+            instance.memory().writeShort(ptr, op.apply(val, toOp));
+            stack.push(val);
+        }
+    }
+
+    private static void I64_ATOMIC_RMW16_CMPXCHG_U(
+            MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var replacement = (short) stack.pop();
+            var expected = (short) stack.pop();
+            var ptr = readMemPtr(stack, operands);
+            var val = (short) instance.memory().readU16(ptr);
+            if (val == expected) {
+                instance.memory().writeShort(ptr, replacement);
+            }
+            stack.push(val);
+        }
+    }
+
+    private static void I64_ATOMIC_RMW32_U(
+            MStack stack,
+            Instance instance,
+            Operands operands,
+            BiFunction<Integer, Integer, Integer> op) {
+        synchronized (instance.memory()) {
+            var toOp = (int) stack.pop();
+            var ptr = readMemPtr(stack, operands);
+            var val = (int) instance.memory().readU32(ptr);
+            instance.memory().writeI32(ptr, op.apply(val, toOp));
+            stack.push(val);
+        }
+    }
+
+    private static void I64_ATOMIC_RMW32_CMPXCHG_U(
+            MStack stack, Instance instance, Operands operands) {
+        synchronized (instance.memory()) {
+            var replacement = (int) stack.pop();
+            var expected = (int) stack.pop();
+            var ptr = readMemPtr(stack, operands);
+            var val = (int) instance.memory().readU32(ptr);
+            if (val == expected) {
+                instance.memory().writeI32(ptr, replacement);
+            }
+            stack.push(val);
         }
     }
 
