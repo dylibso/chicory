@@ -1910,25 +1910,27 @@ public class InterpreterMachine implements Machine {
         }
 
         if (verifyAlignement) {
-            int align = 0;
-            switch ((int) operands.get(0)) {
-                case 0x00:
-                    align = 0;
-                    break;
-                case 0x01:
-                    align = 1;
-                    break;
-                case 0x02:
-                    align = 2;
-                    break;
-                case 0x03:
-                    align = 3;
-                    break;
-            }
-            long mask = (long) (align - 1);
-            if ((address & mask) != 0L) {
-                throw new ChicoryException("unaligned atomic");
-            }
+//            int align = 0;
+//            switch ((int) operands.get(0)) {
+//                case 0x00:
+//                    align = 8;
+//                    break;
+//                case 0x01:
+//                    align = 16;
+//                    break;
+//                case 0x02:
+//                    align = 32;
+//                    break;
+//                case 0x03:
+//                    align = 64;
+//                    break;
+//            }
+//            long mask = (long) (align - 1);
+//            if ((address & mask) != 0L) {
+//                throw new ChicoryException("unaligned atomic " + address + " - " + mask);
+//            } else {
+//                System.out.println("Aligned atomic " + address + " - " + mask);
+//            }
         }
 
         return (int) (operands.get(1) + address);
@@ -2191,7 +2193,7 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_LOAD(MStack stack, Instance instance, Operands operands) {
         synchronized (instance.memory()) {
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = instance.memory().readI64(ptr);
             stack.push(val);
         }
@@ -2199,7 +2201,7 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_LOAD8_U(MStack stack, Instance instance, Operands operands) {
         synchronized (instance.memory()) {
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = instance.memory().readU8(ptr);
             stack.push(val);
         }
@@ -2207,7 +2209,7 @@ public class InterpreterMachine implements Machine {
 
     private static void I32_ATOMIC_LOAD8_U(MStack stack, Instance instance, Operands operands) {
         synchronized (instance.memory()) {
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = instance.memory().readU8(ptr);
             stack.push(val);
         }
@@ -2215,7 +2217,7 @@ public class InterpreterMachine implements Machine {
 
     private static void I32_ATOMIC_LOAD16_U(MStack stack, Instance instance, Operands operands) {
         synchronized (instance.memory()) {
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = instance.memory().readU16(ptr);
             stack.push(val);
         }
@@ -2223,7 +2225,7 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_LOAD16_U(MStack stack, Instance instance, Operands operands) {
         synchronized (instance.memory()) {
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = instance.memory().readU16(ptr);
             stack.push(val);
         }
@@ -2231,7 +2233,7 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_LOAD32_U(MStack stack, Instance instance, Operands operands) {
         synchronized (instance.memory()) {
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = instance.memory().readU32(ptr);
             stack.push(val);
         }
@@ -2240,7 +2242,7 @@ public class InterpreterMachine implements Machine {
     private static void I32_ATOMIC_STORE(MStack stack, Instance instance, Operands operands) {
         synchronized (instance.memory()) {
             var value = (int) stack.pop();
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             instance.memory().writeI32(ptr, value);
         }
     }
@@ -2256,7 +2258,7 @@ public class InterpreterMachine implements Machine {
     private static void I64_ATOMIC_STORE16(MStack stack, Instance instance, Operands operands) {
         synchronized (instance.memory()) {
             var value = (short) stack.pop();
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             instance.memory().writeShort(ptr, value);
         }
     }
@@ -2272,7 +2274,7 @@ public class InterpreterMachine implements Machine {
     private static void I64_ATOMIC_STORE(MStack stack, Instance instance, Operands operands) {
         synchronized (instance.memory()) {
             var value = stack.pop();
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             instance.memory().writeLong(ptr, value);
         }
     }
@@ -2284,7 +2286,7 @@ public class InterpreterMachine implements Machine {
             BiFunction<Integer, Integer, Integer> op) {
         synchronized (instance.memory()) {
             var toOp = (int) stack.pop();
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = (int) instance.memory().readI32(ptr);
             instance.memory().writeI32(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2295,7 +2297,7 @@ public class InterpreterMachine implements Machine {
         synchronized (instance.memory()) {
             var replacement = (int) stack.pop();
             var expected = (int) stack.pop();
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = (int) instance.memory().readI32(ptr);
             if (val == expected) {
                 instance.memory().writeI32(ptr, replacement);
@@ -2308,7 +2310,7 @@ public class InterpreterMachine implements Machine {
             MStack stack, Instance instance, Operands operands, BiFunction<Long, Long, Long> op) {
         synchronized (instance.memory()) {
             var toOp = stack.pop();
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = instance.memory().readI64(ptr);
             instance.memory().writeLong(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2319,7 +2321,7 @@ public class InterpreterMachine implements Machine {
         synchronized (instance.memory()) {
             var replacement = stack.pop();
             var expected = stack.pop();
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = instance.memory().readI64(ptr);
             if (val == expected) {
                 instance.memory().writeLong(ptr, replacement);
@@ -2332,7 +2334,7 @@ public class InterpreterMachine implements Machine {
             MStack stack, Instance instance, Operands operands, BiFunction<Byte, Byte, Byte> op) {
         synchronized (instance.memory()) {
             var toOp = (byte) stack.pop();
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = (byte) instance.memory().readU8(ptr);
             instance.memory().writeByte(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2344,7 +2346,7 @@ public class InterpreterMachine implements Machine {
         synchronized (instance.memory()) {
             var replacement = (byte) stack.pop();
             var expected = (byte) stack.pop();
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = (byte) instance.memory().readU8(ptr);
             if (val == expected) {
                 instance.memory().writeByte(ptr, replacement);
@@ -2360,7 +2362,7 @@ public class InterpreterMachine implements Machine {
             BiFunction<Short, Short, Short> op) {
         synchronized (instance.memory()) {
             var toOp = (short) stack.pop();
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = (short) instance.memory().readU16(ptr);
             instance.memory().writeShort(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2372,7 +2374,7 @@ public class InterpreterMachine implements Machine {
         synchronized (instance.memory()) {
             var replacement = (short) stack.pop();
             var expected = (short) stack.pop();
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = (short) instance.memory().readU16(ptr);
             if (val == expected) {
                 instance.memory().writeShort(ptr, replacement);
@@ -2388,7 +2390,7 @@ public class InterpreterMachine implements Machine {
             BiFunction<Integer, Integer, Integer> op) {
         synchronized (instance.memory()) {
             var toOp = (int) stack.pop();
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = (int) instance.memory().readU32(ptr);
             instance.memory().writeI32(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2400,7 +2402,7 @@ public class InterpreterMachine implements Machine {
         synchronized (instance.memory()) {
             var replacement = (int) stack.pop();
             var expected = (int) stack.pop();
-            var ptr = readMemPtr(stack, operands);
+            var ptr = readMemPtr(stack, operands, true);
             var val = (int) instance.memory().readU32(ptr);
             if (val == expected) {
                 instance.memory().writeI32(ptr, replacement);
