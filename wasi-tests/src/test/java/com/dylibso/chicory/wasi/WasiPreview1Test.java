@@ -476,7 +476,7 @@ public class WasiPreview1Test {
                             .withOptions(
                                     WasiOptions.builder()
                                             .inheritSystem()
-                                            .withStdin(new ByteArrayInputStream("".getBytes()))
+                                            .withStdin(new ByteArrayInputStream("".getBytes(UTF_8)))
                                             .withArguments(
                                                     List.of(
                                                             "protoc-gen-java",
@@ -505,10 +505,6 @@ public class WasiPreview1Test {
 
                 store.addImportValues(imports);
                 store.instantiate("gen-grpc", module);
-                //                var instance =
-                //
-                // Instance.builder(module).withImportValues(imports).withStart(false).build();
-                //                instance.exports().function("_start").apply();
             }
         }
     }
