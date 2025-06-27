@@ -42,7 +42,7 @@ public interface Memory {
         }
     }
 
-    default void checkAlignment(int addr, int expected) {
+    default Object checkAlignment(int addr, int expected) {
         if (shared()) {
             if (!alignments().containsKey(addr)) {
                 setAlignment(addr, expected);
@@ -57,8 +57,16 @@ public interface Memory {
                                 + ", alignment expected: "
                                 + expected);
             }
+            return alignments().get(addr);
         }
+        return null;
     }
+
+    int waitOn(int address, int expected, long timeout);
+
+    int waitOn(int address, long expected, long timeout);
+
+    int notifyAddress(int address);
 
     void initialize(Instance instance, DataSegment[] dataSegments);
 

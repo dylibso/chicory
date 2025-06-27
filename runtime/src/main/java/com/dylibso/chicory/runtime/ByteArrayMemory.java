@@ -19,6 +19,8 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 /**
@@ -62,6 +64,95 @@ public final class ByteArrayMemory implements Memory {
         this.buffer = new byte[allocStrategy.initial(PAGE_SIZE * limits.initialPages())];
         this.nPages = limits.initialPages();
         this.alignments = (limits.shared()) ? new HashMap<>() : null;
+    }
+
+    // atomic wait handling
+    private final Map<Integer, AtomicInteger> monitors = new ConcurrentHashMap<>();
+
+    // Wait until value at address != expected
+    @Override
+    public int waitOn(int address, int expected, long timeout) {
+        timeout = (timeout < 0) ? Long.MAX_VALUE : timeout;
+        AtomicInteger monitor =
+                monitors.compute(
+                        address,
+                        (k, v) -> {
+                            if (v == null) {
+                                return new AtomicInteger(1);
+                            } else {
+                                v.incrementAndGet();
+                                return v;
+                            }
+                        });
+        long millis = timeout / 1_000_000L;
+        int nanos = (int) (timeout % 1_000_000L);
+
+        try {
+            synchronized (monitor) {
+                if (((int) INT_ARR_HANDLE.getVolatile(buffer, address)) == expected) {
+                    try {
+                        monitor.wait(millis, nanos);
+                    } catch (InterruptedException ie) {
+                        return 0; // wake
+                    }
+                    return 2; // timeout
+                } else {
+                    return 1; // not-equal
+                }
+            }
+        } finally {
+            monitor.decrementAndGet();
+        }
+    }
+
+    @Override
+    public int waitOn(int address, long expected, long timeout) {
+        timeout = (timeout < 0) ? Long.MAX_VALUE : timeout;
+        AtomicInteger monitor =
+                monitors.compute(
+                        address,
+                        (k, v) -> {
+                            if (v == null) {
+                                return new AtomicInteger(1);
+                            } else {
+                                v.incrementAndGet();
+                                return v;
+                            }
+                        });
+        long millis = timeout / 1_000_000L;
+        int nanos = (int) (timeout % 1_000_000L);
+
+        try {
+            synchronized (monitor) {
+                if (((long) LONG_ARR_HANDLE.getVolatile(buffer, address)) == expected) {
+                    try {
+                        monitor.wait(millis, nanos);
+                    } catch (InterruptedException ie) {
+                        return 0; // wake
+                    }
+                    return 2; // timeout
+                } else {
+                    return 1; // not-equal
+                }
+            }
+        } finally {
+            monitor.decrementAndGet();
+        }
+    }
+
+    // Notify all waiters at this address
+    @Override
+    public int notifyAddress(int address) {
+        if (!shared()) {
+            return 0;
+        }
+
+        AtomicInteger monitor = monitors.get(address);
+        synchronized (monitor) {
+            monitor.notifyAll();
+        }
+        monitors.remove(address);
+        return monitor.get();
     }
 
     private byte[] allocateByteBuffer(int capacity) {

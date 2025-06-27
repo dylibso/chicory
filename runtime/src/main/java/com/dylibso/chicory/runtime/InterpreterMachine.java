@@ -3,7 +3,6 @@ package com.dylibso.chicory.runtime;
 import static com.dylibso.chicory.wasm.types.ValType.sizeOf;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.util.Objects.requireNonNullElse;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
@@ -16,7 +15,6 @@ import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 /**
@@ -990,7 +988,14 @@ public class InterpreterMachine implements Machine {
                     I64_ATOMIC_RMW32_CMPXCHG_U(stack, instance, operands);
                     break;
                 case MEM_ATOMIC_WAIT32:
-                    MEM_ATOMIC_WAIT32(stack, instance);
+                    MEM_ATOMIC_WAIT32(stack, instance, operands);
+                    break;
+                case MEM_ATOMIC_WAIT64:
+                    MEM_ATOMIC_WAIT64(stack, instance, operands);
+                    break;
+                case MEM_ATOMIC_NOTIFY:
+                    MEM_ATOMIC_NOTIFY(stack, instance, operands);
+                    break;
                 default:
                     {
                         evalDefault(stack, instance, callStack, instruction, operands);
@@ -2167,109 +2172,97 @@ public class InterpreterMachine implements Machine {
     }
 
     private static void I32_ATOMIC_LOAD(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = instance.memory().readI32(ptr);
             stack.push(val);
         }
     }
 
     private static void I64_ATOMIC_LOAD(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = instance.memory().readI64(ptr);
             stack.push(val);
         }
     }
 
     private static void I64_ATOMIC_LOAD8_U(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = instance.memory().readU8(ptr);
             stack.push(val);
         }
     }
 
     private static void I32_ATOMIC_LOAD8_U(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = instance.memory().readU8(ptr);
             stack.push(val);
         }
     }
 
     private static void I32_ATOMIC_LOAD16_U(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = instance.memory().readU16(ptr);
             stack.push(val);
         }
     }
 
     private static void I64_ATOMIC_LOAD16_U(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = instance.memory().readU16(ptr);
             stack.push(val);
         }
     }
 
     private static void I64_ATOMIC_LOAD32_U(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = instance.memory().readU32(ptr);
             stack.push(val);
         }
     }
 
     private static void I32_ATOMIC_STORE(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var value = (int) stack.pop();
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var value = (int) stack.pop();
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             instance.memory().writeI32(ptr, value);
         }
     }
 
     private static void I64_ATOMIC_STORE8(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var value = (byte) stack.pop();
-            var ptr = (int) (operands.get(1) + (int) stack.pop());
-            instance.memory().checkAlignment(ptr, 0x00);
+        var value = (byte) stack.pop();
+        var ptr = (int) (operands.get(1) + (int) stack.pop());
+        synchronized (instance.memory().checkAlignment(ptr, 0x00)) {
             instance.memory().writeByte(ptr, value);
         }
     }
 
     private static void I64_ATOMIC_STORE16(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var value = (short) stack.pop();
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, 0x01);
+        var value = (short) stack.pop();
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, 0x01)) {
             instance.memory().writeShort(ptr, value);
         }
     }
 
     private static void I64_ATOMIC_STORE32(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var value = stack.pop();
-            var ptr = (int) (operands.get(1) + (int) stack.pop());
-            instance.memory().checkAlignment(ptr, 0x02);
+        var value = stack.pop();
+        var ptr = (int) (operands.get(1) + (int) stack.pop());
+        synchronized (instance.memory().checkAlignment(ptr, 0x02)) {
             instance.memory().writeI32(ptr, (int) value);
         }
     }
 
     private static void I64_ATOMIC_STORE(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var value = stack.pop();
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, 0x03);
+        var value = stack.pop();
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, 0x03)) {
             instance.memory().writeLong(ptr, value);
         }
     }
@@ -2279,10 +2272,9 @@ public class InterpreterMachine implements Machine {
             Instance instance,
             Operands operands,
             BiFunction<Integer, Integer, Integer> op) {
-        synchronized (instance.memory()) {
-            var toOp = (int) stack.pop();
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var toOp = (int) stack.pop();
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = (int) instance.memory().readI32(ptr);
             instance.memory().writeI32(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2290,11 +2282,10 @@ public class InterpreterMachine implements Machine {
     }
 
     private static void I32_ATOMIC_RMW_CMPXCHG(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var replacement = (int) stack.pop();
-            var expected = (int) stack.pop();
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var replacement = (int) stack.pop();
+        var expected = (int) stack.pop();
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = (int) instance.memory().readI32(ptr);
             if (val == expected) {
                 instance.memory().writeI32(ptr, replacement);
@@ -2305,10 +2296,9 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_RMW(
             MStack stack, Instance instance, Operands operands, BiFunction<Long, Long, Long> op) {
-        synchronized (instance.memory()) {
-            var toOp = stack.pop();
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var toOp = stack.pop();
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = instance.memory().readI64(ptr);
             instance.memory().writeLong(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2316,11 +2306,10 @@ public class InterpreterMachine implements Machine {
     }
 
     private static void I64_ATOMIC_RMW_CMPXCHG(MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var replacement = stack.pop();
-            var expected = stack.pop();
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var replacement = stack.pop();
+        var expected = stack.pop();
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = instance.memory().readI64(ptr);
             if (val == expected) {
                 instance.memory().writeLong(ptr, replacement);
@@ -2331,10 +2320,9 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_RMW8_U(
             MStack stack, Instance instance, Operands operands, BiFunction<Byte, Byte, Byte> op) {
-        synchronized (instance.memory()) {
-            var toOp = (byte) stack.pop();
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var toOp = (byte) stack.pop();
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = (byte) instance.memory().readU8(ptr);
             instance.memory().writeByte(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2343,11 +2331,10 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_RMW8_CMPXCHG_U(
             MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var replacement = (byte) stack.pop();
-            var expected = (byte) stack.pop();
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var replacement = (byte) stack.pop();
+        var expected = (byte) stack.pop();
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = (byte) instance.memory().readU8(ptr);
             if (val == expected) {
                 instance.memory().writeByte(ptr, replacement);
@@ -2361,10 +2348,9 @@ public class InterpreterMachine implements Machine {
             Instance instance,
             Operands operands,
             BiFunction<Short, Short, Short> op) {
-        synchronized (instance.memory()) {
-            var toOp = (short) stack.pop();
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var toOp = (short) stack.pop();
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = (short) instance.memory().readU16(ptr);
             instance.memory().writeShort(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2373,11 +2359,10 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_RMW16_CMPXCHG_U(
             MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var replacement = (short) stack.pop();
-            var expected = (short) stack.pop();
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var replacement = (short) stack.pop();
+        var expected = (short) stack.pop();
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = (short) instance.memory().readU16(ptr);
             if (val == expected) {
                 instance.memory().writeShort(ptr, replacement);
@@ -2391,10 +2376,9 @@ public class InterpreterMachine implements Machine {
             Instance instance,
             Operands operands,
             BiFunction<Integer, Integer, Integer> op) {
-        synchronized (instance.memory()) {
-            var toOp = (int) stack.pop();
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var toOp = (int) stack.pop();
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = (int) instance.memory().readU32(ptr);
             instance.memory().writeI32(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2403,11 +2387,10 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_RMW32_CMPXCHG_U(
             MStack stack, Instance instance, Operands operands) {
-        synchronized (instance.memory()) {
-            var replacement = (int) stack.pop();
-            var expected = (int) stack.pop();
-            var ptr = readMemPtr(stack, operands);
-            instance.memory().checkAlignment(ptr, (int) operands.get(0));
+        var replacement = (int) stack.pop();
+        var expected = (int) stack.pop();
+        var ptr = readMemPtr(stack, operands);
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
             var val = (int) instance.memory().readU32(ptr);
             if (val == expected) {
                 instance.memory().writeI32(ptr, replacement);
@@ -2418,16 +2401,30 @@ public class InterpreterMachine implements Machine {
 
     private static void MEM_ATOMIC_WAIT32(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        var timeout = stack.pop();
-        var expected = (int) stack.pop();
+        long timeout = stack.pop();
+        int expected = (int) stack.pop();
 
-        timeout = (timeout < 0) ? Long.MAX_VALUE : timeout;
-        var val = (int) instance.memory().readU32(ptr);
-        if (val != expected) {
-            stack.push(1); // not equal
-        } else {
-            // TODO: GO ON
+        synchronized (instance.memory().checkAlignment(ptr, 0x02)) {
+            var result = instance.memory().waitOn(ptr, expected, timeout);
+            stack.push(result);
         }
+    }
+
+    private static void MEM_ATOMIC_WAIT64(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        long timeout = stack.pop();
+        long expected = stack.pop();
+
+        synchronized (instance.memory().checkAlignment(ptr, 0x02)) {
+            var result = instance.memory().waitOn(ptr, expected, timeout);
+            stack.push(result);
+        }
+    }
+
+    private static void MEM_ATOMIC_NOTIFY(MStack stack, Instance instance, Operands operands) {
+        var ptr = readMemPtr(stack, operands);
+        var result = instance.memory().notifyAddress(ptr);
+        stack.push(result);
     }
 
     private static StackFrame RETURN_CALL(
