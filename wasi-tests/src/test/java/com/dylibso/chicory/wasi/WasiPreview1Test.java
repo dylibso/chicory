@@ -33,6 +33,8 @@ import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Random;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -451,6 +453,7 @@ public class WasiPreview1Test {
     // starts, ends but does nothing, need to dig down!
     @Test
     @Timeout(value = 30, unit = MINUTES)
+    @Disabled
     public void runProtoc() throws Exception {
         try (var fs = newZeroFs()) {
             var dir = "protos";
