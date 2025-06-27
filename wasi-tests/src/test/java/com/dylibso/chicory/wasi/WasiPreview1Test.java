@@ -463,8 +463,7 @@ public class WasiPreview1Test {
                 Parser.parse(
                         new File(
                                 "/home/andreatp/workspace/go-protoc-gen-grpc-java/internal/wasm/memory.wasm"));
-        var memInstance =
-                Instance.builder(memModule).build();
+        var memInstance = Instance.builder(memModule).build();
         store.register("env", memInstance);
         try (var fs = newZeroFs()) {
             var dir = "protos";
@@ -506,9 +505,10 @@ public class WasiPreview1Test {
 
                 store.addImportValues(imports);
                 store.instantiate("gen-grpc", module);
-//                var instance =
-//                        Instance.builder(module).withImportValues(imports).withStart(false).build();
-//                instance.exports().function("_start").apply();
+                //                var instance =
+                //
+                // Instance.builder(module).withImportValues(imports).withStart(false).build();
+                //                instance.exports().function("_start").apply();
             }
         }
     }
