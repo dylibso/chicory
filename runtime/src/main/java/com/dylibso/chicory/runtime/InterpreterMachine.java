@@ -2282,15 +2282,15 @@ public class InterpreterMachine implements Machine {
     }
 
     private static void I32_ATOMIC_RMW_CMPXCHG(MStack stack, Instance instance, Operands operands) {
-        var replacement = (int) stack.pop();
-        var expected = (int) stack.pop();
-        var ptr = readMemPtr(stack, operands);
+        var replacement = (int) stack.pop(); // c3
+        var expected = (int) stack.pop(); // c2
+        var ptr = readMemPtr(stack, operands); // i
         synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
-            var val = (int) instance.memory().readI32(ptr);
-            if (val == expected) {
+            var loaded = (int) instance.memory().readI32(ptr);
+            if (loaded == expected) {
                 instance.memory().writeI32(ptr, replacement);
             }
-            stack.push(val);
+            stack.push(loaded);
         }
     }
 
@@ -2400,9 +2400,9 @@ public class InterpreterMachine implements Machine {
     }
 
     private static void MEM_ATOMIC_WAIT32(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
-        long timeout = stack.pop();
-        int expected = (int) stack.pop();
+        long timeout = stack.pop(); // k
+        int expected = (int) stack.pop(); // c
+        var ptr = readMemPtr(stack, operands); // i
 
         synchronized (instance.memory().checkAlignment(ptr, 0x02)) {
             var result = instance.memory().waitOn(ptr, expected, timeout);
@@ -2411,9 +2411,9 @@ public class InterpreterMachine implements Machine {
     }
 
     private static void MEM_ATOMIC_WAIT64(MStack stack, Instance instance, Operands operands) {
-        var ptr = readMemPtr(stack, operands);
         long timeout = stack.pop();
         long expected = stack.pop();
+        var ptr = readMemPtr(stack, operands);
 
         synchronized (instance.memory().checkAlignment(ptr, 0x02)) {
             var result = instance.memory().waitOn(ptr, expected, timeout);
@@ -2422,9 +2422,13 @@ public class InterpreterMachine implements Machine {
     }
 
     private static void MEM_ATOMIC_NOTIFY(MStack stack, Instance instance, Operands operands) {
+        int maxThreads = (int) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        var result = instance.memory().notifyAddress(ptr);
-        stack.push(result);
+
+        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+            var result = instance.memory().notifyAddress(ptr, maxThreads);
+            stack.push(result);
+        }
     }
 
     private static StackFrame RETURN_CALL(

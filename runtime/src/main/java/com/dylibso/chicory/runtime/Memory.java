@@ -59,6 +59,7 @@ public interface Memory {
             }
             return alignments().get(addr);
         }
+        // TODO: verify what to do on unshared memories
         return null;
     }
 
@@ -66,7 +67,7 @@ public interface Memory {
 
     int waitOn(int address, long expected, long timeout);
 
-    int notifyAddress(int address);
+    int notifyAddress(int address, int maxThreads);
 
     void initialize(Instance instance, DataSegment[] dataSegments);
 
