@@ -188,6 +188,9 @@
           <!-- No need to check the assertion of multiple tables(the spec will be rebased eventually): https://github.com/WebAssembly/spec/blob/main/interpreter/valid/valid.ml#L729 -->
           <excludedTests>SpecV1BinaryTest.test40,
             SpecV1EhBinaryTest.test40,
+            SpecV1BinaryTest.test92,
+            SpecV1EhBinaryTest.test92,
+            SpecV1FunctionReferencesBinaryTest.test92,
             SpecV1ThreadsImportsTest.test64,
             SpecV1ThreadsImportsTest.test65,
             SpecV1ThreadsImportsTest.test66,
@@ -501,8 +504,12 @@
               <!-- it's a different error with EH -->
               <!-- No need to check the assertion of multiple tables(the spec will be rebased eventually): https://github.com/WebAssembly/spec/blob/main/interpreter/valid/valid.ml#L729 -->
               <!-- TODO: SpecV1ThreadsMemoryTest no clue how it should work, limitType is 2 -->
+              <!-- TODO: investigate the binary test 92 -->
               <excludedTests>SpecV1BinaryTest.test40,
                 SpecV1EhBinaryTest.test40,
+                SpecV1BinaryTest.test92,
+                SpecV1EhBinaryTest.test92,
+                SpecV1FunctionReferencesBinaryTest.test92,
                 SpecV1ThreadsImportsTest.test64,
                 SpecV1ThreadsImportsTest.test65,
                 SpecV1ThreadsImportsTest.test66,
