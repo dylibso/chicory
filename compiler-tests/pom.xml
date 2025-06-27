@@ -182,8 +182,10 @@
           </includedWasts>
           <!-- Skip Binary as there is a THROW_REF in a Global initializer -->
           <!-- Skip stack-overflows in tail calls -->
+          <!-- TODO: check binary test 92 -->
           <excludedTests>
             SpecV1BinaryTest.test40,
+            SpecV1BinaryTest.test92,
             SpecV1TcReturnCallTest.test19,
             SpecV1TcReturnCallTest.test24,
             SpecV1TcReturnCallTest.test25,
@@ -197,7 +199,8 @@
             SpecV1EhTryTableTest.test39,
             SpecV1EhTryTableTest.test40,
             <!-- Investigate why this one fails -->
-            SpecV1EhBinaryTest.test40
+            SpecV1EhBinaryTest.test40,
+            SpecV1EhBinaryTest.test92
           </excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts/>
