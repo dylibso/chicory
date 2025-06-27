@@ -27,8 +27,11 @@ import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Stream;
 
 // Heavily inspired by wazero
@@ -1071,7 +1074,7 @@ final class Validator {
                 case I64_ATOMIC_RMW_SUB:
                 case I64_ATOMIC_RMW_AND:
                 case I64_ATOMIC_RMW_CMPXCHG:
-                 case MEM_ATOMIC_WAIT64:
+                case MEM_ATOMIC_WAIT64:
                     validateMemAlign(op.operand(0), 0x03);
                     break;
             }

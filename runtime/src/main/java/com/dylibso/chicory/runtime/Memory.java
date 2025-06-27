@@ -1,8 +1,10 @@
 package com.dylibso.chicory.runtime;
 
+import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 public interface Memory {
 
@@ -31,6 +33,32 @@ public interface Memory {
     int maximumPages();
 
     boolean shared();
+
+    Map<Integer, Integer> alignments();
+
+    default void setAlignment(int addr, int alignment) {
+        if (shared()) {
+            alignments().put(addr, alignment);
+        }
+    }
+
+    default void checkAlignment(int addr, int expected) {
+        if (shared()) {
+            if (!alignments().containsKey(addr)) {
+                setAlignment(addr, expected);
+            } else if (alignments().get(addr) < expected) {
+                // TODO: verify this is empirical since the spec says:
+                // It is a validation error if the alignment field of the memory access immediate
+                // has any other value than the natural alignment for that access size.
+                // https://github.com/WebAssembly/threads/blob/main/proposals/threads/Overview.md#alignment
+                throw new InvalidException(
+                        "unaligned atomic, alignment found: "
+                                + alignments().get(addr)
+                                + ", alignment expected: "
+                                + expected);
+            }
+        }
+    }
 
     void initialize(Instance instance, DataSegment[] dataSegments);
 
@@ -143,5 +171,4 @@ public interface Memory {
     }
 
     void drop(int segment);
-
 }

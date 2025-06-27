@@ -17,6 +17,8 @@ import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -46,6 +48,7 @@ public final class ByteArrayMemory implements Memory {
     private DataSegment[] dataSegments;
     private byte[] buffer;
     private int nPages;
+    private final Map<Integer, Integer> alignments;
 
     private final MemAllocStrategy allocStrategy;
 
@@ -58,6 +61,7 @@ public final class ByteArrayMemory implements Memory {
         this.limits = limits;
         this.buffer = new byte[allocStrategy.initial(PAGE_SIZE * limits.initialPages())];
         this.nPages = limits.initialPages();
+        this.alignments = (limits.shared()) ? new HashMap<>() : null;
     }
 
     private byte[] allocateByteBuffer(int capacity) {
@@ -67,6 +71,11 @@ public final class ByteArrayMemory implements Memory {
         } else {
             return buffer;
         }
+    }
+
+    @Override
+    public Map<Integer, Integer> alignments() {
+        return alignments;
     }
 
     /**
