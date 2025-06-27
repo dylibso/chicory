@@ -71,7 +71,7 @@ public final class ByteBufferMemory implements Memory {
 
     // Notify all waiters at this address
     @Override
-    public int notifyAddress(int address) {
+    public int notifyAddress(int address, int maxThreads) {
         throw new IllegalArgumentException("not implemented");
     }
 

@@ -6,6 +6,7 @@ import static java.nio.file.Files.createDirectory;
 import static java.nio.file.Files.createSymbolicLink;
 import static java.nio.file.Files.writeString;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -13,7 +14,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
+import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.ByteBufferMemory;
+import com.dylibso.chicory.runtime.ImportMemory;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
@@ -442,5 +445,54 @@ public class WasiPreview1Test {
     private static WasiPreview1 wasiWithDirectory(String guest, Path host) {
         var options = WasiOptions.builder().withDirectory(guest, host).build();
         return WasiPreview1.builder().withOptions(options).build();
+    }
+
+    // TODO: clean this up
+    // starts, ends but does nothing, need to dig down!
+    @Test
+    @Timeout(value = 30, unit = MINUTES)
+    public void runProtoc() throws Exception {
+        try (var fs = newZeroFs()) {
+            var dir = "protos";
+            Path source = new File("./src/test/resources/protoc-test").toPath().resolve(dir);
+            Path target = fs.getPath("/");
+            copyDirectory(source, target);
+
+            try (var wasi =
+                    WasiPreview1.builder()
+                            .withOptions(
+                                    WasiOptions.builder()
+                                            .inheritSystem()
+                                            .withArguments(
+                                                    List.of(
+                                                            "protoc-gen-java",
+                                                            "-grpc-java_out=out/grpc-java",
+                                                            "-Iprotos helloworld.proto"))
+                                            .withDirectory(target.toString(), target)
+                                            .build())
+                            .build()) {
+                var imports =
+                        ImportValues.builder()
+                                .addFunction(wasi.toHostFunctions())
+                                .addMemory(
+                                        new ImportMemory(
+                                                "env",
+                                                "memory",
+                                                new ByteArrayMemory(
+                                                        new MemoryLimits(
+                                                                /* 7 */ 4,
+                                                                MemoryLimits.MAX_PAGES,
+                                                                true))))
+                                .build();
+                var module =
+                        Parser.parse(
+                                new File(
+                                        "/home/andreatp/workspace/go-protoc-gen-grpc-java/internal/wasm/protoc-gen-grpc-java.wasm"));
+                var instance =
+                        Instance.builder(module).withImportValues(imports).withStart(false).build();
+
+                instance.exports().function("_start").apply();
+            }
+        }
     }
 }

@@ -142,14 +142,26 @@ public final class ByteArrayMemory implements Memory {
 
     // Notify all waiters at this address
     @Override
-    public int notifyAddress(int address) {
+    public int notifyAddress(int address, int maxThreads) {
         if (!shared()) {
             return 0;
         }
 
         AtomicInteger monitor = monitors.get(address);
+        if (monitor == null) {
+            return 0;
+        }
         synchronized (monitor) {
-            monitor.notifyAll();
+            // this logic is fully untested by the testsuite :-(
+            if (maxThreads < 0 || monitor.get() < maxThreads) {
+                monitor.notifyAll();
+            } else {
+                var count = maxThreads;
+                while (monitor.get() > 0 && count > 0) {
+                    monitor.notify();
+                    count--;
+                }
+            }
         }
         monitors.remove(address);
         return monitor.get();
