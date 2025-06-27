@@ -578,8 +578,8 @@ public final class Parser {
                                                 min, readVarUInt32(buffer), limitType == 0x03);
                                 break;
                             default:
-                                throw new IllegalArgumentException(
-                                        "Invalid table limit: " + limitType);
+                                throw new MalformedException(
+                                        "integer too large, invalid table limit: " + limitType);
                         }
 
                         importSection.addImport(
@@ -681,9 +681,7 @@ public final class Parser {
     }
 
     private static MemoryLimits parseMemoryLimits(ByteBuffer buffer) {
-
         var limitType = readByte(buffer);
-
         var initial = (int) readVarUInt32(buffer);
         switch (limitType) {
             case 0x00:
@@ -692,9 +690,11 @@ public final class Parser {
             case 0x03:
                 int maximum = (int) readVarUInt32(buffer);
                 return new MemoryLimits(initial, maximum, limitType == 0x03);
+            case 0x02:
+                throw new MalformedException("integer too large");
             default:
-                throw new InvalidException(
-                        "invalid memory limit type: "
+                throw new MalformedException(
+                        "integer representation too long, invalid memory limit type: "
                                 + limitType
                                 + ", shared memory must have maximum");
         }
