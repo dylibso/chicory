@@ -60,6 +60,22 @@ public final class ByteBufferMemory implements Memory {
     }
 
     @Override
+    public int waitOn(int address, int expected, long timeout) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
+    public int waitOn(int address, long expected, long timeout) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    // Notify all waiters at this address
+    @Override
+    public int notifyAddress(int address) {
+        throw new IllegalArgumentException("not implemented");
+    }
+
+    @Override
     public Map<Integer, Integer> alignments() {
         return alignments;
     }
