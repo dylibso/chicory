@@ -108,6 +108,11 @@ public final class Spectest {
                 .addMemory(
                         new ImportMemory(
                                 "spectest", "memory", new ByteBufferMemory(new MemoryLimits(1, 2))))
+                .addMemory(
+                        new ImportMemory(
+                                "spectest",
+                                "shared_memory",
+                                new ByteBufferMemory(new MemoryLimits(1, 2, true))))
                 .addTable(
                         new ImportTable(
                                 "spectest",

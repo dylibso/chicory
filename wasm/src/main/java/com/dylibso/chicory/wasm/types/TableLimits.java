@@ -11,17 +11,23 @@ public class TableLimits {
 
     private long min;
     private final long max;
+    private final boolean shared;
 
     public TableLimits(long min) {
         this(min, LIMIT_MAX);
     }
 
     public TableLimits(long min, long max) {
+        this(min, max, false);
+    }
+
+    public TableLimits(long min, long max, boolean shared) {
         if (min > max) {
             throw new InvalidException("size minimum must not be greater than maximum");
         }
         this.min = Math.min(Math.max(0, min), LIMIT_MAX);
         this.max = Math.min(max, LIMIT_MAX);
+        this.shared = shared;
     }
 
     public void grow(int size) {
@@ -34,6 +40,10 @@ public class TableLimits {
 
     public long max() {
         return max;
+    }
+
+    public boolean shared() {
+        return shared;
     }
 
     @Override

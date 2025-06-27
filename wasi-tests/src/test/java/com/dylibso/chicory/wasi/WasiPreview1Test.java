@@ -6,6 +6,7 @@ import static java.nio.file.Files.createDirectory;
 import static java.nio.file.Files.createSymbolicLink;
 import static java.nio.file.Files.writeString;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -13,7 +14,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
+import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.ByteBufferMemory;
+import com.dylibso.chicory.runtime.ImportMemory;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
@@ -30,6 +33,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Random;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -442,5 +446,66 @@ public class WasiPreview1Test {
     private static WasiPreview1 wasiWithDirectory(String guest, Path host) {
         var options = WasiOptions.builder().withDirectory(guest, host).build();
         return WasiPreview1.builder().withOptions(options).build();
+    }
+
+    // TODO: clean this up
+    // starts, ends but does nothing, need to dig down!
+    // TODO: note to self:
+    // try to run this example first:
+    // https://github.com/WebAssembly/threads/blob/b2567bff61ee6fbe731934f0ed17a5d48dc9ab01/proposals/threads/Overview.md#example
+    @Test
+    @Timeout(value = 30, unit = MINUTES)
+    @Disabled
+    public void runProtoc() throws Exception {
+        var store = new Store();
+
+        var memModule =
+                Parser.parse(
+                        new File(
+                                "/home/andreatp/workspace/go-protoc-gen-grpc-java/internal/wasm/memory.wasm"));
+        var memInstance = Instance.builder(memModule).build();
+        store.register("env", memInstance);
+        try (var fs = newZeroFs()) {
+            var dir = "protos";
+            Path source = new File("./src/test/resources/protoc-test").toPath().resolve(dir);
+            Path target = fs.getPath("/");
+            copyDirectory(source, target);
+
+            try (var wasi =
+                    WasiPreview1.builder()
+                            .withOptions(
+                                    WasiOptions.builder()
+                                            .inheritSystem()
+                                            .withStdin(new ByteArrayInputStream("".getBytes(UTF_8)))
+                                            .withArguments(
+                                                    List.of(
+                                                            "protoc-gen-java",
+                                                            "-grpc-java_out=out/grpc-java",
+                                                            "-Iprotos helloworld.proto"))
+                                            .withDirectory(target.toString(), target)
+                                            .build())
+                            .build()) {
+                var imports =
+                        ImportValues.builder()
+                                .addFunction(wasi.toHostFunctions())
+                                .addMemory(
+                                        new ImportMemory(
+                                                "env",
+                                                "memory",
+                                                new ByteArrayMemory(
+                                                        new MemoryLimits(
+                                                                /* 7 */ 4,
+                                                                MemoryLimits.MAX_PAGES,
+                                                                true))))
+                                .build();
+                var module =
+                        Parser.parse(
+                                new File(
+                                        "/home/andreatp/workspace/go-protoc-gen-grpc-java/internal/wasm/protoc-gen-grpc-java.wasm"));
+
+                store.addImportValues(imports);
+                store.instantiate("gen-grpc", module);
+            }
+        }
     }
 }

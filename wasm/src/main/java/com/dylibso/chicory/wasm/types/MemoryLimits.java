@@ -28,6 +28,8 @@ public final class MemoryLimits {
      */
     private final int maximum;
 
+    private final boolean shared;
+
     /**
      * Construct a new instance.
      * The maximum size will be {@link #MAX_PAGES}.
@@ -45,6 +47,17 @@ public final class MemoryLimits {
      * @param maximum the maximum size, in pages
      */
     public MemoryLimits(int initial, int maximum) {
+        this(initial, maximum, false);
+    }
+
+    /**
+     * Construct a new instance.
+     *
+     * @param initial the initial size, in pages
+     * @param maximum the maximum size, in pages
+     * @param shared if this memory is shared
+     */
+    public MemoryLimits(int initial, int maximum, boolean shared) {
         if (initial > MAX_PAGES || maximum > MAX_PAGES || initial < 0 || maximum < 0) {
             throw new InvalidException("memory size must be at most 65536 pages (4GiB)");
         }
@@ -54,6 +67,7 @@ public final class MemoryLimits {
 
         this.initial = initial;
         this.maximum = maximum;
+        this.shared = shared;
     }
 
     /**
@@ -75,6 +89,10 @@ public final class MemoryLimits {
      */
     public int maximumPages() {
         return maximum;
+    }
+
+    public boolean shared() {
+        return shared;
     }
 
     @Override
