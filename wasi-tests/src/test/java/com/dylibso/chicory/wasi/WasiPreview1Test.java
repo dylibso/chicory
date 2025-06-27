@@ -450,10 +450,22 @@ public class WasiPreview1Test {
 
     // TODO: clean this up
     // starts, ends but does nothing, need to dig down!
+    // TODO: note to self:
+    // try to run this example first:
+    // https://github.com/WebAssembly/threads/blob/b2567bff61ee6fbe731934f0ed17a5d48dc9ab01/proposals/threads/Overview.md#example
     @Test
     @Timeout(value = 30, unit = MINUTES)
     @Disabled
     public void runProtoc() throws Exception {
+        var store = new Store();
+
+        var memModule =
+                Parser.parse(
+                        new File(
+                                "/home/andreatp/workspace/go-protoc-gen-grpc-java/internal/wasm/memory.wasm"));
+        var memInstance =
+                Instance.builder(memModule).build();
+        store.register("env", memInstance);
         try (var fs = newZeroFs()) {
             var dir = "protos";
             Path source = new File("./src/test/resources/protoc-test").toPath().resolve(dir);
@@ -465,6 +477,7 @@ public class WasiPreview1Test {
                             .withOptions(
                                     WasiOptions.builder()
                                             .inheritSystem()
+                                            .withStdin(new ByteArrayInputStream("".getBytes()))
                                             .withArguments(
                                                     List.of(
                                                             "protoc-gen-java",
@@ -490,10 +503,12 @@ public class WasiPreview1Test {
                         Parser.parse(
                                 new File(
                                         "/home/andreatp/workspace/go-protoc-gen-grpc-java/internal/wasm/protoc-gen-grpc-java.wasm"));
-                var instance =
-                        Instance.builder(module).withImportValues(imports).withStart(false).build();
 
-                instance.exports().function("_start").apply();
+                store.addImportValues(imports);
+                store.instantiate("gen-grpc", module);
+//                var instance =
+//                        Instance.builder(module).withImportValues(imports).withStart(false).build();
+//                instance.exports().function("_start").apply();
             }
         }
     }
