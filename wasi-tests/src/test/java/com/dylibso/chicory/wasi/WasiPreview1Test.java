@@ -26,6 +26,8 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.ValType;
+import com.google.protobuf.DescriptorProtos;
+import com.google.protobuf.compiler.PluginProtos;
 import io.roastedroot.zerofs.Configuration;
 import io.roastedroot.zerofs.ZeroFs;
 import java.io.ByteArrayInputStream;
@@ -468,18 +470,37 @@ public class WasiPreview1Test {
                                 "/home/andreatp/workspace/go-protoc-gen-grpc-java/internal/wasm/memory.wasm"));
         var memInstance = Instance.builder(memModule).build();
         store.register("env", memInstance);
-        try (var fs = newZeroFs()) {
+        try (var stdout = new ByteArrayOutputStream();
+                var fs = newZeroFs()) {
             var dir = "protos";
             Path source = new File("./src/test/resources/protoc-test").toPath().resolve(dir);
             Path target = fs.getPath("/");
             copyDirectory(source, target);
 
+            // Load the descriptor set
+            DescriptorProtos.FileDescriptorSet descriptorSet = DescriptorProtos.FileDescriptorSet.parseFrom(
+                    WasiPreview1Test.class.getResourceAsStream("/protoc-test/protos/helloworld.desc")
+            );
+
+            // Initialize the CodeGeneratorRequest.Builder
+            PluginProtos.CodeGeneratorRequest.Builder requestBuilder = PluginProtos.CodeGeneratorRequest.newBuilder()
+                    .setParameter("out=/out") // Specify the output directory
+                    .addFileToGenerate("helloworld.proto"); // Specify the file to generate
+
+            // Add all FileDescriptorProto entries from the descriptor set
+            for (DescriptorProtos.FileDescriptorProto fileDescriptor : descriptorSet.getFileList()) {
+                requestBuilder.addProtoFile(fileDescriptor);
+            }
+
+            PluginProtos.CodeGeneratorRequest codeGeneratorRequest = requestBuilder.build();
+
             try (var wasi =
                     WasiPreview1.builder()
                             .withOptions(
                                     WasiOptions.builder()
-                                            .inheritSystem()
-                                            .withStdin(new ByteArrayInputStream("".getBytes(UTF_8)))
+                                            .withStdin(new ByteArrayInputStream(codeGeneratorRequest.toByteArray()))
+                                            .withStdout(stdout)
+                                            .withStderr(System.err)
                                             .withArguments(List.of("protoc-gen-java"))
                                             .withDirectory(target.toString(), target)
                                             .build())
@@ -510,6 +531,11 @@ public class WasiPreview1Test {
                 //                (export "_start" (func 17))
                 //                (start 16)
                 instance.getMachine().call(17, new long[] {});
+
+                PluginProtos.CodeGeneratorResponse response = PluginProtos.CodeGeneratorResponse.parseFrom(stdout.toByteArray());
+
+                assertEquals(1, response.getFileCount());
+                assertArrayEquals(java.nio.file.Files.readAllBytes(Path.of("src/test/resources/protoc-test/generated.java")), response.getFile(0).getContent().getBytes());
             }
         }
     }
