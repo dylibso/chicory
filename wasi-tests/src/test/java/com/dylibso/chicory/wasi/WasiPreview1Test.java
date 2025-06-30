@@ -480,11 +480,7 @@ public class WasiPreview1Test {
                                     WasiOptions.builder()
                                             .inheritSystem()
                                             .withStdin(new ByteArrayInputStream("".getBytes(UTF_8)))
-                                            .withArguments(
-                                                    List.of(
-                                                            "protoc-gen-java",
-                                                            "-grpc-java_out=out/grpc-java",
-                                                            "-Iprotos helloworld.proto"))
+                                            .withArguments(List.of("protoc-gen-java"))
                                             .withDirectory(target.toString(), target)
                                             .build())
                             .build()) {
@@ -507,50 +503,79 @@ public class WasiPreview1Test {
                                         "/home/andreatp/workspace/go-protoc-gen-grpc-java/internal/wasm/protoc-gen-grpc-java.wasm"));
 
                 store.addImportValues(imports);
-                store.instantiate("gen-grpc", module);
+                var instance = store.instantiate("gen-grpc", module);
+
+                // TODO:
+                // verify startSection and startFunction in the spec and how it should work!
+                //                (export "_start" (func 17))
+                //                (start 16)
+                instance.getMachine().call(17, new long[] {});
             }
         }
     }
 
     @Test
-    @Timeout(value = 30, unit = MINUTES)
-    @Disabled
     public void runJq() throws Exception {
-        var module = Parser.parse(new File("/home/andreatp/workspace/go-jq/internal/wasm/jq.wasm"));
+        var module = Parser.parse(WasiPreview1Test.class.getResourceAsStream("/no-simd-jq.wasm"));
 
         try (var stdout = new ByteArrayOutputStream();
+                var stderr = new ByteArrayOutputStream();
                 var wasi =
                         WasiPreview1.builder()
                                 .withOptions(
                                         WasiOptions.builder()
                                                 .withStdin(
                                                         new ByteArrayInputStream(
-                                                                "{\"foo\": 0}".getBytes(UTF_8)))
-                                                .withStderr(stdout)
+                                                                "{\n  \"foo\":   0   \n}"
+                                                                        .getBytes(UTF_8)))
+                                                .withStderr(stderr)
                                                 .withStdout(stdout)
-                                                .withArguments(List.of("jq", "--help"))
+                                                .withArguments(
+                                                        List.of(
+                                                                "jq",
+                                                                "-M",
+                                                                "--compact-output",
+                                                                "."))
                                                 .build())
                                 .build()) {
-            Instance.builder(module)
-                    .withImportValues(
-                            ImportValues.builder()
-                                    .addFunction(wasi.toHostFunctions())
-                                    .addFunction(
-                                            new HostFunction(
-                                                    "wasi",
-                                                    "thread-spawn",
-                                                    FunctionType.of(
-                                                            List.of(ValType.I32),
-                                                            List.of(ValType.I32)),
-                                                    (inst, args) -> {
-                                                        throw new UnsupportedOperationException(
-                                                                "--run-tests is not supported");
-                                                    }))
-                                    .build())
-                    .withMemoryFactory(ByteArrayMemory::new)
-                    .build();
+            var instance =
+                    Instance.builder(module)
+                            .withImportValues(
+                                    ImportValues.builder()
+                                            .addFunction(wasi.toHostFunctions())
+                                            .addFunction(
+                                                    new HostFunction(
+                                                            "wasi",
+                                                            "thread-spawn",
+                                                            FunctionType.of(
+                                                                    List.of(ValType.I32),
+                                                                    List.of(ValType.I32)),
+                                                            (inst, args) -> {
+                                                                throw new UnsupportedOperationException(
+                                                                        "--run-tests is not"
+                                                                                + " supported");
+                                                            }))
+                                            .build())
+                            .withMemoryFactory(ByteArrayMemory::new)
+                            .build();
 
-            System.out.println("STDOUT: " + stdout);
+            // TODO: re-read the spec to understand how this should work...
+            // this is the relevant WAT:
+            //                (export "_start" (func 21))
+            //                (export "wasi_thread_start" (func 682))
+            //                (start 20)
+            // instance.getMachine().call(20, new long[]{});
+            try {
+                instance.getMachine().call(21, new long[] {});
+            } catch (WasiExitException e) {
+                System.out.println(stdout);
+                System.err.println(stderr);
+                if (e.exitCode() != 0) {
+                    throw new RuntimeException("jq returned exit code: " + e.exitCode());
+                }
+            }
+
+            assertEquals("{\"foo\":0}\n", new String(stdout.toByteArray(), UTF_8));
         }
     }
 }
