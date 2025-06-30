@@ -16,13 +16,16 @@ import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.ByteBufferMemory;
+import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.ImportMemory;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
+import com.dylibso.chicory.wasm.types.ValType;
 import io.roastedroot.zerofs.Configuration;
 import io.roastedroot.zerofs.ZeroFs;
 import java.io.ByteArrayInputStream;
@@ -506,6 +509,48 @@ public class WasiPreview1Test {
                 store.addImportValues(imports);
                 store.instantiate("gen-grpc", module);
             }
+        }
+    }
+
+    @Test
+    @Timeout(value = 30, unit = MINUTES)
+    @Disabled
+    public void runJq() throws Exception {
+        var module = Parser.parse(new File("/home/andreatp/workspace/go-jq/internal/wasm/jq.wasm"));
+
+        try (var stdout = new ByteArrayOutputStream();
+                var wasi =
+                        WasiPreview1.builder()
+                                .withOptions(
+                                        WasiOptions.builder()
+                                                .withStdin(
+                                                        new ByteArrayInputStream(
+                                                                "{\"foo\": 0}".getBytes(UTF_8)))
+                                                .withStderr(stdout)
+                                                .withStdout(stdout)
+                                                .withArguments(List.of("jq", "--help"))
+                                                .build())
+                                .build()) {
+            Instance.builder(module)
+                    .withImportValues(
+                            ImportValues.builder()
+                                    .addFunction(wasi.toHostFunctions())
+                                    .addFunction(
+                                            new HostFunction(
+                                                    "wasi",
+                                                    "thread-spawn",
+                                                    FunctionType.of(
+                                                            List.of(ValType.I32),
+                                                            List.of(ValType.I32)),
+                                                    (inst, args) -> {
+                                                        throw new UnsupportedOperationException(
+                                                                "--run-tests is not supported");
+                                                    }))
+                                    .build())
+                    .withMemoryFactory(ByteArrayMemory::new)
+                    .build();
+
+            System.out.println("STDOUT: " + stdout);
         }
     }
 }

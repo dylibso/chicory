@@ -710,4 +710,73 @@ public class WasmModuleTest {
         assertEquals(0, result[0]);
         assertEquals(1000_000, result[1]);
     }
+
+    @Test
+    public void threadsExample() throws Exception {
+        // attempting to validate the threads implementation:
+        // https://github.com/WebAssembly/threads/blob/b2567bff61ee6fbe731934f0ed17a5d48dc9ab01/proposals/threads/Overview.md#example
+        var module = loadModule("compiled/threads-example.wat.wasm");
+        var memory = new ByteArrayMemory(new MemoryLimits(1, 1, true));
+        var mutexAddr = 0;
+
+        var mainInstance =
+                Instance.builder(module)
+                        .withImportValues(
+                                ImportValues.builder()
+                                        .addMemory(new ImportMemory("env", "memory", memory))
+                                        .build())
+                        .build();
+
+        var workerInstance =
+                Instance.builder(module)
+                        .withImportValues(
+                                ImportValues.builder()
+                                        .addMemory(new ImportMemory("env", "memory", memory))
+                                        .build())
+                        .build();
+
+        // Lock on main
+        var mainLocked = mainInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        assertEquals(1, mainLocked);
+
+        // the worker instance cannot acquire the lock
+        var workerLocked = workerInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        assertEquals(0, workerLocked);
+
+        // unlock main
+        mainInstance.exports().function("unlockMutex").apply(mutexAddr);
+
+        // now lock from worker
+        workerLocked = workerInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        assertEquals(1, workerLocked);
+
+        // main cannot lock
+        mainLocked = mainInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        assertEquals(0, mainLocked);
+
+        workerInstance.exports().function("unlockMutex").apply(mutexAddr);
+
+        // now more interesting
+        // main gets the lock
+        mainLocked = mainInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        assertEquals(1, mainLocked);
+
+        var workerAcquiredLock = new AtomicBoolean(false);
+        Thread t =
+                new Thread(
+                        () -> {
+                            // worker remains ready for locking
+                            workerInstance.exports().function("lockMutex").apply(mutexAddr);
+                            workerAcquiredLock.set(true);
+                            workerInstance.exports().function("unlockMutex").apply(mutexAddr);
+                        });
+        t.start();
+
+        // unlock the mutex to let the worker acquire the lock
+        mainInstance.exports().function("unlockMutex").apply(mutexAddr);
+
+        t.join();
+
+        assertTrue(workerAcquiredLock.get());
+    }
 }
