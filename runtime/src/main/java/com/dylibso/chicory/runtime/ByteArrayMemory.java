@@ -65,6 +65,7 @@ public final class ByteArrayMemory implements Memory {
 
     // atomic wait handling
     private final Map<Integer, AtomicInteger> monitors = new ConcurrentHashMap<>();
+    private final Map<Integer, AtomicInteger> notifyInProgress = new ConcurrentHashMap<>();
 
     @Override
     public Object lock(int address) {
@@ -86,19 +87,37 @@ public final class ByteArrayMemory implements Memory {
                                 return v;
                             }
                         });
-        long millis = timeout / 1_000_000L;
-        int nanos = (int) (timeout % 1_000_000L);
         long elapsed = System.nanoTime() + timeout;
 
         try {
             synchronized (monitor) {
                 if (((int) INT_ARR_HANDLE.getVolatile(buffer, address)) == expected) {
                     try {
-                        monitor.wait(millis, nanos);
+                        while (!notifyInProgress.containsKey(address)
+                                && System.nanoTime() < elapsed) {
+                            System.out.println(
+                                    " --> "
+                                            + notifyInProgress.containsKey(address)
+                                            + " - "
+                                            + System.nanoTime()
+                                            + " - "
+                                            + elapsed);
+                            var waitTime = elapsed - System.nanoTime();
+                            long millis = Math.max(waitTime / 1_000_000L, 0);
+                            int nanos = Math.max((int) (waitTime % 1_000_000L), 0);
+                            monitor.wait(millis, nanos);
+                        }
+                        System.out.println(
+                                " --> "
+                                        + notifyInProgress.containsKey(address)
+                                        + " - "
+                                        + System.nanoTime()
+                                        + " - "
+                                        + elapsed);
                     } catch (InterruptedException ie) {
                         throw new ChicoryInterruptedException("Thread interrupted");
                     }
-                    if (System.nanoTime() > elapsed) {
+                    if (System.nanoTime() >= elapsed) {
                         return 2; // timeout
                     } else {
                         return 0; // wake
@@ -108,6 +127,11 @@ public final class ByteArrayMemory implements Memory {
                 }
             }
         } finally {
+            // TODO: what to do if the procedure is not complete?
+            if (notifyInProgress.containsKey(address)
+                    && notifyInProgress.get(address).decrementAndGet() == 0) {
+                notifyInProgress.remove(address);
+            }
             monitor.decrementAndGet();
         }
     }
@@ -126,19 +150,23 @@ public final class ByteArrayMemory implements Memory {
                                 return v;
                             }
                         });
-        long millis = timeout / 1_000_000L;
-        int nanos = (int) (timeout % 1_000_000L);
         long elapsed = System.nanoTime() + timeout;
 
         try {
             synchronized (monitor) {
                 if (((long) LONG_ARR_HANDLE.getVolatile(buffer, address)) == expected) {
                     try {
-                        monitor.wait(millis, nanos);
+                        while (!notifyInProgress.containsKey(address)
+                                && System.nanoTime() < elapsed) {
+                            var waitTime = elapsed - System.nanoTime();
+                            long millis = waitTime / 1_000_000L;
+                            int nanos = (int) (waitTime % 1_000_000L);
+                            monitor.wait(millis, nanos);
+                        }
                     } catch (InterruptedException ie) {
                         throw new ChicoryInterruptedException("Thread interrupted");
                     }
-                    if (System.nanoTime() > elapsed) {
+                    if (System.nanoTime() >= elapsed) {
                         return 2; // timeout
                     } else {
                         return 0; // wake
@@ -163,19 +191,27 @@ public final class ByteArrayMemory implements Memory {
         if (monitor == null) {
             return 0;
         }
+        System.out.println("notify! " + address + " - " + notifyInProgress.containsKey(address));
+
         synchronized (monitor) {
             // this logic is fully untested by the testsuite :-(
+            System.out.println("notify! " + notifyInProgress.containsKey(address));
             if (maxThreads < 0 || monitor.get() < maxThreads) {
+                notifyInProgress.put(address, new AtomicInteger(monitor.get()));
                 monitor.notifyAll();
             } else {
                 var count = maxThreads;
+                notifyInProgress.put(address, new AtomicInteger(monitor.get() - maxThreads));
                 while (monitor.get() > 0 && count > 0) {
                     monitor.notify();
                     count--;
                 }
             }
         }
-        monitors.remove(address);
+        if (monitor.get() <= 0) {
+            monitors.remove(address);
+        }
+        System.out.println("notify finished");
         return monitor.get();
     }
 
