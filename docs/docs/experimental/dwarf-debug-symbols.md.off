@@ -8,7 +8,10 @@ title: Dwarf Debug Symbols
 
 > Experimental – subject to change in future releases.
 
-Chicory can now read **DWARF** debug symbols embedded in a WebAssembly module and use them to enrich Java stack traces with the *original* source-level file names and line numbers that produced the trap.  This is extremely valuable when you are running modules generated from higher-level languages such as **Rust** or **Go** and need to identify exactly where a failure occurred.
+Chicory can now read **DWARF** debug symbols embedded in a WebAssembly module and use them to enrich Java stack traces
+with the *original* source-level file names and line numbers that produced the trap.  This is extremely valuable when
+you are running modules generated from languages such as **Rust** or **Go** and need to identify exactly
+where a failure occurred.
 
 Without debug symbols you would normally see a stack trace that only references the Chicory Java interpreter implementation:
 
@@ -49,6 +52,13 @@ com.dylibso.chicory.runtime.TrapException: Trapped on unreachable instruction
 
 ```
 
+# Limitations
+
+* **Experimental** – APIs and behaviour may change without notice.
+* WASM has NOT standardized on Dwarf for debug symbols.  This may not work for all WASM modules.
+* The WebAssembly module must be compiled *with* debug info.
+* Performance impact is negligible at runtime, but there is a one-off cost during module loading while the DWARF sections are parsed.
+
 # Getting Started
 
 ## 1. Add the Maven dependency
@@ -59,8 +69,6 @@ com.dylibso.chicory.runtime.TrapException: Trapped on unreachable instruction
   <artifactId>dwarf-rust-experimental</artifactId>
 </dependency>
 ```
-
-The artefact is purposefully isolated so the feature can evolve independently of the core runtime.  At the moment the implementation uses a Rust library compiled to WASM and then compiled to byte code to extract the dwarf debug symbols.
 
 ## 2. Enable the parser
 
@@ -137,13 +145,6 @@ the `chicory-compiler-maven-plugin`.
     </plugins>
   </build>
 ```
-
-# Limitations
-
-* **Experimental** – APIs and behaviour may change without notice.
-* WASM has NOT standardized on Dwarf for debug symbols.  This may not work for all WASM modules.
-* The WebAssembly module must be compiled *with* debug info.
-* Performance impact is negligible at runtime, but there is a one-off cost during module loading while the DWARF sections are parsed.
 
 # Feedback
 

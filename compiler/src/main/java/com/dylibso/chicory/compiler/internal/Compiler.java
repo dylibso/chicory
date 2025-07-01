@@ -681,8 +681,8 @@ public final class Compiler {
             asm.aconst(Type.getObjectType(className));
             asm.astore(OBJECT_TYPE);
         }
-        var classNamePrefix = internalClassName.replaceAll("/", ".") + "FuncGroup_";
-        asm.aconst(classNamePrefix);
+
+        asm.aconst(internalClassName.replace("/", ".") + "FuncGroup_");
         emitInvokeStatic(asm, INIT);
         asm.areturn(VOID_TYPE);
     }
