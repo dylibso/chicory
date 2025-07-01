@@ -5,6 +5,7 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.wasm.ChicoryException;
+import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -1517,14 +1518,12 @@ public class InterpreterMachine implements Machine {
     private static void I64_STORE32(MStack stack, Instance instance, Operands operands) {
         var value = stack.pop();
         var ptr = (int) (operands.get(1) + (int) stack.pop());
-        instance.memory().setAlignment(ptr, (int) operands.get(0));
         instance.memory().writeI32(ptr, (int) value);
     }
 
     private static void I64_STORE8(MStack stack, Instance instance, Operands operands) {
         var value = (byte) stack.pop();
         var ptr = (int) (operands.get(1) + (int) stack.pop());
-        instance.memory().setAlignment(ptr, (int) operands.get(0));
         instance.memory().writeByte(ptr, value);
     }
 
@@ -1922,35 +1921,30 @@ public class InterpreterMachine implements Machine {
     private static void F64_STORE(MStack stack, Instance instance, Operands operands) {
         var value = Value.longToDouble(stack.pop());
         var ptr = readMemPtr(stack, operands);
-        instance.memory().setAlignment(ptr, (int) operands.get(0));
         instance.memory().writeF64(ptr, value);
     }
 
     private static void F32_STORE(MStack stack, Instance instance, Operands operands) {
         var value = Value.longToFloat(stack.pop());
         var ptr = readMemPtr(stack, operands);
-        instance.memory().setAlignment(ptr, (int) operands.get(0));
         instance.memory().writeF32(ptr, value);
     }
 
     private static void I64_STORE(MStack stack, Instance instance, Operands operands) {
         var value = stack.pop();
         var ptr = readMemPtr(stack, operands);
-        instance.memory().setAlignment(ptr, (int) operands.get(0));
         instance.memory().writeLong(ptr, value);
     }
 
     private static void I64_STORE16(MStack stack, Instance instance, Operands operands) {
         var value = (short) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        instance.memory().setAlignment(ptr, (int) operands.get(0));
         instance.memory().writeShort(ptr, value);
     }
 
     private static void I32_STORE(MStack stack, Instance instance, Operands operands) {
         var value = (int) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        instance.memory().setAlignment(ptr, (int) operands.get(0));
         instance.memory().writeI32(ptr, value);
     }
 
@@ -2173,7 +2167,10 @@ public class InterpreterMachine implements Machine {
 
     private static void I32_ATOMIC_LOAD(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var val = instance.memory().readI32(ptr);
             stack.push(val);
         }
@@ -2181,7 +2178,10 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_LOAD(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var val = instance.memory().readI64(ptr);
             stack.push(val);
         }
@@ -2189,7 +2189,7 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_LOAD8_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        synchronized (instance.memory().lock(ptr)) {
             var val = instance.memory().readU8(ptr);
             stack.push(val);
         }
@@ -2197,7 +2197,7 @@ public class InterpreterMachine implements Machine {
 
     private static void I32_ATOMIC_LOAD8_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        synchronized (instance.memory().lock(ptr)) {
             var val = instance.memory().readU8(ptr);
             stack.push(val);
         }
@@ -2205,7 +2205,10 @@ public class InterpreterMachine implements Machine {
 
     private static void I32_ATOMIC_LOAD16_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var val = instance.memory().readU16(ptr);
             stack.push(val);
         }
@@ -2213,7 +2216,10 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_LOAD16_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var val = instance.memory().readU16(ptr);
             stack.push(val);
         }
@@ -2221,7 +2227,10 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_LOAD32_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var val = instance.memory().readU32(ptr);
             stack.push(val);
         }
@@ -2230,7 +2239,10 @@ public class InterpreterMachine implements Machine {
     private static void I32_ATOMIC_STORE(MStack stack, Instance instance, Operands operands) {
         var value = (int) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             instance.memory().writeI32(ptr, value);
         }
     }
@@ -2238,7 +2250,7 @@ public class InterpreterMachine implements Machine {
     private static void I64_ATOMIC_STORE8(MStack stack, Instance instance, Operands operands) {
         var value = (byte) stack.pop();
         var ptr = (int) (operands.get(1) + (int) stack.pop());
-        synchronized (instance.memory().checkAlignment(ptr, 0x00)) {
+        synchronized (instance.memory().lock(ptr)) {
             instance.memory().writeByte(ptr, value);
         }
     }
@@ -2246,15 +2258,21 @@ public class InterpreterMachine implements Machine {
     private static void I64_ATOMIC_STORE16(MStack stack, Instance instance, Operands operands) {
         var value = (short) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, 0x01)) {
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             instance.memory().writeShort(ptr, value);
         }
     }
 
     private static void I64_ATOMIC_STORE32(MStack stack, Instance instance, Operands operands) {
         var value = stack.pop();
-        var ptr = (int) (operands.get(1) + (int) stack.pop());
-        synchronized (instance.memory().checkAlignment(ptr, 0x02)) {
+        var ptr = readMemPtr(stack, operands);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             instance.memory().writeI32(ptr, (int) value);
         }
     }
@@ -2262,7 +2280,10 @@ public class InterpreterMachine implements Machine {
     private static void I64_ATOMIC_STORE(MStack stack, Instance instance, Operands operands) {
         var value = stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, 0x03)) {
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             instance.memory().writeLong(ptr, value);
         }
     }
@@ -2274,7 +2295,10 @@ public class InterpreterMachine implements Machine {
             BiFunction<Integer, Integer, Integer> op) {
         var toOp = (int) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var val = (int) instance.memory().readI32(ptr);
             instance.memory().writeI32(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2285,7 +2309,10 @@ public class InterpreterMachine implements Machine {
         var replacement = (int) stack.pop(); // c3
         var expected = (int) stack.pop(); // c2
         var ptr = readMemPtr(stack, operands); // i
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var loaded = (int) instance.memory().readI32(ptr);
             if (loaded == expected) {
                 instance.memory().writeI32(ptr, replacement);
@@ -2298,7 +2325,10 @@ public class InterpreterMachine implements Machine {
             MStack stack, Instance instance, Operands operands, BiFunction<Long, Long, Long> op) {
         var toOp = stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var val = instance.memory().readI64(ptr);
             instance.memory().writeLong(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2309,7 +2339,10 @@ public class InterpreterMachine implements Machine {
         var replacement = stack.pop();
         var expected = stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var val = instance.memory().readI64(ptr);
             if (val == expected) {
                 instance.memory().writeLong(ptr, replacement);
@@ -2322,7 +2355,7 @@ public class InterpreterMachine implements Machine {
             MStack stack, Instance instance, Operands operands, BiFunction<Byte, Byte, Byte> op) {
         var toOp = (byte) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        synchronized (instance.memory().lock(ptr)) {
             var val = (byte) instance.memory().readU8(ptr);
             instance.memory().writeByte(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2334,7 +2367,7 @@ public class InterpreterMachine implements Machine {
         var replacement = (byte) stack.pop();
         var expected = (byte) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        synchronized (instance.memory().lock(ptr)) {
             var val = (byte) instance.memory().readU8(ptr);
             if (val == expected) {
                 instance.memory().writeByte(ptr, replacement);
@@ -2350,7 +2383,10 @@ public class InterpreterMachine implements Machine {
             BiFunction<Short, Short, Short> op) {
         var toOp = (short) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var val = (short) instance.memory().readU16(ptr);
             instance.memory().writeShort(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2362,7 +2398,10 @@ public class InterpreterMachine implements Machine {
         var replacement = (short) stack.pop();
         var expected = (short) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var val = (short) instance.memory().readU16(ptr);
             if (val == expected) {
                 instance.memory().writeShort(ptr, replacement);
@@ -2378,7 +2417,10 @@ public class InterpreterMachine implements Machine {
             BiFunction<Integer, Integer, Integer> op) {
         var toOp = (int) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var val = (int) instance.memory().readU32(ptr);
             instance.memory().writeI32(ptr, op.apply(val, toOp));
             stack.push(val);
@@ -2390,7 +2432,10 @@ public class InterpreterMachine implements Machine {
         var replacement = (int) stack.pop();
         var expected = (int) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var val = (int) instance.memory().readU32(ptr);
             if (val == expected) {
                 instance.memory().writeI32(ptr, replacement);
@@ -2403,8 +2448,10 @@ public class InterpreterMachine implements Machine {
         long timeout = stack.pop(); // k
         int expected = (int) stack.pop(); // c
         var ptr = readMemPtr(stack, operands); // i
-
-        synchronized (instance.memory().checkAlignment(ptr, 0x02)) {
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var result = instance.memory().waitOn(ptr, expected, timeout);
             stack.push(result);
         }
@@ -2414,8 +2461,10 @@ public class InterpreterMachine implements Machine {
         long timeout = stack.pop();
         long expected = stack.pop();
         var ptr = readMemPtr(stack, operands);
-
-        synchronized (instance.memory().checkAlignment(ptr, 0x02)) {
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (instance.memory().lock(ptr)) {
             var result = instance.memory().waitOn(ptr, expected, timeout);
             stack.push(result);
         }
@@ -2425,8 +2474,8 @@ public class InterpreterMachine implements Machine {
         int maxThreads = (int) stack.pop();
         var ptr = readMemPtr(stack, operands);
 
-        synchronized (instance.memory().checkAlignment(ptr, (int) operands.get(0))) {
-            var result = instance.memory().notifyAddress(ptr, maxThreads);
+        synchronized (instance.memory().lock(ptr)) {
+            var result = instance.memory().notify(ptr, maxThreads);
             stack.push(result);
         }
     }

@@ -779,4 +779,169 @@ public class WasmModuleTest {
 
         assertTrue(workerAcquiredLock.get());
     }
+
+    @Test
+    public void threadsExampleWake() throws Exception {
+        var module = loadModule("compiled/threads-example.wat.wasm");
+        var memory = new ByteArrayMemory(new MemoryLimits(1, 1, true));
+        var mutexAddr = 0;
+
+        var mainInstance =
+                Instance.builder(module)
+                        .withImportValues(
+                                ImportValues.builder()
+                                        .addMemory(new ImportMemory("env", "memory", memory))
+                                        .build())
+                        .build();
+
+        var workerInstance =
+                Instance.builder(module)
+                        .withImportValues(
+                                ImportValues.builder()
+                                        .addMemory(new ImportMemory("env", "memory", memory))
+                                        .build())
+                        .build();
+
+        // Lock on main
+        var mainLocked = mainInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        assertEquals(1, mainLocked);
+
+        var workerAcquireLock = new AtomicInteger(-1);
+        Thread workerT =
+                new Thread(
+                        () -> {
+                            // worker remains ready for locking
+                            var result = workerInstance.exports().function("lockMutexWithTimeout").apply(mutexAddr, 1)[0];
+                            workerAcquireLock.set((int) result);
+                        });
+        Thread mainT =
+                new Thread(
+                        () -> {
+                            // unlock the mutex
+                            try {
+                                Thread.sleep(10);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                            mainInstance.exports().function("unlockMutex").apply(mutexAddr);
+                        });
+        workerT.start();
+        mainT.start();
+
+        mainT.join();
+        workerT.join();
+
+        // 0 == ok -> unlocked and notified
+        assertEquals(0, workerAcquireLock.get());
+    }
+
+    @Test
+    public void threadsExampleNotEqual() throws Exception {
+        var module = loadModule("compiled/threads-example.wat.wasm");
+        var memory = new ByteArrayMemory(new MemoryLimits(1, 1, true));
+        var mutexAddr = 0;
+
+        var mainInstance =
+                Instance.builder(module)
+                        .withImportValues(
+                                ImportValues.builder()
+                                        .addMemory(new ImportMemory("env", "memory", memory))
+                                        .build())
+                        .build();
+
+        var workerInstance =
+                Instance.builder(module)
+                        .withImportValues(
+                                ImportValues.builder()
+                                        .addMemory(new ImportMemory("env", "memory", memory))
+                                        .build())
+                        .build();
+
+        // Lock on main
+        var mainLocked = mainInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        assertEquals(1, mainLocked);
+
+        var workerAcquireLock = new AtomicInteger(-1);
+        Thread workerT =
+                new Thread(
+                        () -> {
+                            // worker remains ready for locking
+                            var result = workerInstance.exports().function("lockMutexWithTimeout").apply(mutexAddr, 2)[0];
+                            workerAcquireLock.set((int) result);
+                        });
+        Thread mainT =
+                new Thread(
+                        () -> {
+                            // unlock the mutex
+                            try {
+                                Thread.sleep(10);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                            mainInstance.exports().function("unlockMutex").apply(mutexAddr);
+                        });
+        workerT.start();
+        mainT.start();
+
+        mainT.join();
+        workerT.join();
+
+        // 1 == not equal
+        assertEquals(1, workerAcquireLock.get());
+    }
+
+    @Test
+    public void threadsExampleTimeout() throws Exception {
+        var module = loadModule("compiled/threads-example.wat.wasm");
+        var memory = new ByteArrayMemory(new MemoryLimits(1, 1, true));
+        var mutexAddr = 0;
+
+        var mainInstance =
+                Instance.builder(module)
+                        .withImportValues(
+                                ImportValues.builder()
+                                        .addMemory(new ImportMemory("env", "memory", memory))
+                                        .build())
+                        .build();
+
+        var workerInstance =
+                Instance.builder(module)
+                        .withImportValues(
+                                ImportValues.builder()
+                                        .addMemory(new ImportMemory("env", "memory", memory))
+                                        .build())
+                        .build();
+
+        // Lock on main
+        var mainLocked = mainInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        assertEquals(1, mainLocked);
+
+        var workerAcquireLock = new AtomicInteger(-1);
+        Thread workerT =
+                new Thread(
+                        () -> {
+                            // worker remains ready for locking
+                            var result = workerInstance.exports().function("lockMutexWithTimeout").apply(mutexAddr, 1)[0];
+                            workerAcquireLock.set((int) result);
+                        });
+        Thread mainT =
+                new Thread(
+                        () -> {
+                            // unlock the mutex
+                            try {
+                                Thread.sleep(400);
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                            mainInstance.exports().function("unlockMutex").apply(mutexAddr);
+                        });
+        workerT.start();
+        mainT.start();
+
+        mainT.join();
+        workerT.join();
+
+        // 2 == timeout
+        assertEquals(2, workerAcquireLock.get());
+    }
 }

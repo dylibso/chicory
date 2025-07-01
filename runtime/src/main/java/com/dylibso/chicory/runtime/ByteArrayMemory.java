@@ -17,7 +17,6 @@ import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,7 +49,6 @@ public final class ByteArrayMemory implements Memory {
     private DataSegment[] dataSegments;
     private byte[] buffer;
     private int nPages;
-    private final Map<Integer, Integer> alignments;
 
     private final MemAllocStrategy allocStrategy;
 
@@ -63,11 +61,15 @@ public final class ByteArrayMemory implements Memory {
         this.limits = limits;
         this.buffer = new byte[allocStrategy.initial(PAGE_SIZE * limits.initialPages())];
         this.nPages = limits.initialPages();
-        this.alignments = (limits.shared()) ? new HashMap<>() : null;
     }
 
     // atomic wait handling
     private final Map<Integer, AtomicInteger> monitors = new ConcurrentHashMap<>();
+
+    @Override
+    public Object lock(int address) {
+        return monitors.computeIfAbsent(address, k -> new AtomicInteger(0));
+    }
 
     // Wait until value at address != expected
     @Override
@@ -86,6 +88,7 @@ public final class ByteArrayMemory implements Memory {
                         });
         long millis = timeout / 1_000_000L;
         int nanos = (int) (timeout % 1_000_000L);
+        long elapsed = System.nanoTime() + timeout;
 
         try {
             synchronized (monitor) {
@@ -93,9 +96,13 @@ public final class ByteArrayMemory implements Memory {
                     try {
                         monitor.wait(millis, nanos);
                     } catch (InterruptedException ie) {
+                        throw new ChicoryInterruptedException("Thread interrupted");
+                    }
+                    if (System.nanoTime() > elapsed) {
+                        return 2; // timeout
+                    } else {
                         return 0; // wake
                     }
-                    return 2; // timeout
                 } else {
                     return 1; // not-equal
                 }
@@ -121,6 +128,7 @@ public final class ByteArrayMemory implements Memory {
                         });
         long millis = timeout / 1_000_000L;
         int nanos = (int) (timeout % 1_000_000L);
+        long elapsed = System.nanoTime() + timeout;
 
         try {
             synchronized (monitor) {
@@ -128,9 +136,13 @@ public final class ByteArrayMemory implements Memory {
                     try {
                         monitor.wait(millis, nanos);
                     } catch (InterruptedException ie) {
+                        throw new ChicoryInterruptedException("Thread interrupted");
+                    }
+                    if (System.nanoTime() > elapsed) {
+                        return 2; // timeout
+                    } else {
                         return 0; // wake
                     }
-                    return 2; // timeout
                 } else {
                     return 1; // not-equal
                 }
@@ -142,7 +154,7 @@ public final class ByteArrayMemory implements Memory {
 
     // Notify all waiters at this address
     @Override
-    public int notifyAddress(int address, int maxThreads) {
+    public int notify(int address, int maxThreads) {
         if (!shared()) {
             return 0;
         }
@@ -174,11 +186,6 @@ public final class ByteArrayMemory implements Memory {
         } else {
             return buffer;
         }
-    }
-
-    @Override
-    public Map<Integer, Integer> alignments() {
-        return alignments;
     }
 
     /**

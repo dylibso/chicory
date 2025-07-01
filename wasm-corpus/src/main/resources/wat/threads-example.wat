@@ -57,6 +57,23 @@
     )
   )
 
+  ;; Lock a mutex at the given address, timeout after 200 ms
+  ;; Returns:
+  ;;   0 => "ok", woken by another agent.
+  ;;   1 => "not-equal", loaded value != expected value
+  ;;   2 => "timed-out", the timeout expired
+  (func (export "lockMutexWithTimeout")
+    (param $mutexAddr i32)
+    (param $expected i32)
+    (result i32)
+
+    (memory.atomic.wait32
+      (local.get $mutexAddr)
+      (local.get $expected)
+      (i64.const 200000000) ;; 200ms
+    )
+  )
+
   ;; Unlock a mutex at the given address.
   (func (export "unlockMutex")
     (param $mutexAddr i32)

@@ -16,8 +16,6 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -32,7 +30,6 @@ public final class ByteBufferMemory implements Memory {
     private DataSegment[] dataSegments;
     private ByteBuffer buffer;
     private int nPages;
-    private final Map<Integer, Integer> alignments;
 
     private final MemAllocStrategy allocStrategy;
 
@@ -47,7 +44,6 @@ public final class ByteBufferMemory implements Memory {
                 ByteBuffer.allocate(allocStrategy.initial(PAGE_SIZE * limits.initialPages()))
                         .order(ByteOrder.LITTLE_ENDIAN);
         this.nPages = limits.initialPages();
-        this.alignments = (limits.shared()) ? new HashMap<>() : null;
     }
 
     private ByteBuffer allocateByteBuffer(int capacity) {
@@ -60,24 +56,24 @@ public final class ByteBufferMemory implements Memory {
     }
 
     @Override
+    public Object lock(int address) {
+        throw new ChicoryException("not implemented, use ByteArrayMemory instead");
+    }
+
+    @Override
     public int waitOn(int address, int expected, long timeout) {
-        throw new IllegalArgumentException("not implemented");
+        throw new ChicoryException("not implemented, use ByteArrayMemory instead");
     }
 
     @Override
     public int waitOn(int address, long expected, long timeout) {
-        throw new IllegalArgumentException("not implemented");
+        throw new ChicoryException("not implemented, use ByteArrayMemory instead");
     }
 
     // Notify all waiters at this address
     @Override
-    public int notifyAddress(int address, int maxThreads) {
-        throw new IllegalArgumentException("not implemented");
-    }
-
-    @Override
-    public Map<Integer, Integer> alignments() {
-        return alignments;
+    public int notify(int address, int maxThreads) {
+        throw new ChicoryException("not implemented, use ByteArrayMemory instead");
     }
 
     /**
