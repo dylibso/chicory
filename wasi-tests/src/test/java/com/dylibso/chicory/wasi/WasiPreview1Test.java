@@ -6,7 +6,6 @@ import static java.nio.file.Files.createDirectory;
 import static java.nio.file.Files.createSymbolicLink;
 import static java.nio.file.Files.writeString;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -14,20 +13,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
-import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.ByteBufferMemory;
-import com.dylibso.chicory.runtime.HostFunction;
-import com.dylibso.chicory.runtime.ImportMemory;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
-import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
-import com.dylibso.chicory.wasm.types.ValType;
-import com.google.protobuf.DescriptorProtos;
-import com.google.protobuf.compiler.PluginProtos;
 import io.roastedroot.zerofs.Configuration;
 import io.roastedroot.zerofs.ZeroFs;
 import java.io.ByteArrayInputStream;
@@ -38,7 +30,6 @@ import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Random;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -451,153 +442,5 @@ public class WasiPreview1Test {
     private static WasiPreview1 wasiWithDirectory(String guest, Path host) {
         var options = WasiOptions.builder().withDirectory(guest, host).build();
         return WasiPreview1.builder().withOptions(options).build();
-    }
-
-    // TODO: clean this up
-    // starts, ends but does nothing, need to dig down!
-    // TODO: note to self:
-    // try to run this example first:
-    // https://github.com/WebAssembly/threads/blob/b2567bff61ee6fbe731934f0ed17a5d48dc9ab01/proposals/threads/Overview.md#example
-    @Test
-    @Timeout(value = 30, unit = MINUTES)
-    @Disabled
-    public void runProtoc() throws Exception {
-        var store = new Store();
-
-        var memModule =
-                Parser.parse(
-                        new File(
-                                "/home/andreatp/workspace/go-protoc-gen-grpc-java/internal/wasm/memory.wasm"));
-        var memInstance = Instance.builder(memModule).build();
-        store.register("env", memInstance);
-        try (var stdout = new ByteArrayOutputStream();
-                var fs = newZeroFs()) {
-            var dir = "protos";
-            Path source = new File("./src/test/resources/protoc-test").toPath().resolve(dir);
-            Path target = fs.getPath("/");
-            copyDirectory(source, target);
-
-            // Load the descriptor set
-            DescriptorProtos.FileDescriptorSet descriptorSet =
-                    DescriptorProtos.FileDescriptorSet.parseFrom(
-                            WasiPreview1Test.class.getResourceAsStream(
-                                    "/protoc-test/protos/helloworld.desc"));
-
-            // Initialize the CodeGeneratorRequest.Builder
-            PluginProtos.CodeGeneratorRequest.Builder requestBuilder =
-                    PluginProtos.CodeGeneratorRequest.newBuilder()
-                            .setParameter("out=/out") // Specify the output directory
-                            .addFileToGenerate("helloworld.proto"); // Specify the file to generate
-
-            // Add all FileDescriptorProto entries from the descriptor set
-            for (DescriptorProtos.FileDescriptorProto fileDescriptor :
-                    descriptorSet.getFileList()) {
-                requestBuilder.addProtoFile(fileDescriptor);
-            }
-
-            PluginProtos.CodeGeneratorRequest codeGeneratorRequest = requestBuilder.build();
-
-            try (var wasi =
-                    WasiPreview1.builder()
-                            .withOptions(
-                                    WasiOptions.builder()
-                                            .withStdin(
-                                                    new ByteArrayInputStream(
-                                                            codeGeneratorRequest.toByteArray()))
-                                            .withStdout(stdout)
-                                            .withStderr(System.err)
-                                            .withArguments(List.of("protoc-gen-java"))
-                                            .withDirectory(target.toString(), target)
-                                            .build())
-                            .build()) {
-                var imports =
-                        ImportValues.builder()
-                                .addFunction(wasi.toHostFunctions())
-                                .addMemory(
-                                        new ImportMemory(
-                                                "env",
-                                                "memory",
-                                                new ByteArrayMemory(
-                                                        new MemoryLimits(
-                                                                /* 7 */ 4,
-                                                                MemoryLimits.MAX_PAGES,
-                                                                true))))
-                                .build();
-                var module =
-                        Parser.parse(
-                                new File(
-                                        "/home/andreatp/workspace/go-protoc-gen-grpc-java/internal/wasm/protoc-gen-grpc-java.wasm"));
-
-                store.addImportValues(imports);
-                store.instantiate("gen-grpc", module);
-
-                PluginProtos.CodeGeneratorResponse response =
-                        PluginProtos.CodeGeneratorResponse.parseFrom(stdout.toByteArray());
-
-                assertEquals(1, response.getFileCount());
-                assertArrayEquals(
-                        java.nio.file.Files.readAllBytes(
-                                Path.of("src/test/resources/protoc-test/generated.java")),
-                        response.getFile(0).getContent().getBytes(UTF_8));
-            }
-        }
-    }
-
-    @Test
-    public void runJq() throws Exception {
-        var module = Parser.parse(WasiPreview1Test.class.getResourceAsStream("/no-simd-jq.wasm"));
-
-        try (var stdout = new ByteArrayOutputStream();
-                var stderr = new ByteArrayOutputStream();
-                var wasi =
-                        WasiPreview1.builder()
-                                .withOptions(
-                                        WasiOptions.builder()
-                                                .withStdin(
-                                                        new ByteArrayInputStream(
-                                                                "{\n  \"foo\":   0   \n}"
-                                                                        .getBytes(UTF_8)))
-                                                .withStderr(stderr)
-                                                .withStdout(stdout)
-                                                .withArguments(
-                                                        List.of(
-                                                                "jq",
-                                                                "-M",
-                                                                "--compact-output",
-                                                                "."))
-                                                .build())
-                                .build()) {
-            var instanceBuilder =
-                    Instance.builder(module)
-                            .withImportValues(
-                                    ImportValues.builder()
-                                            .addFunction(wasi.toHostFunctions())
-                                            .addFunction(
-                                                    new HostFunction(
-                                                            "wasi",
-                                                            "thread-spawn",
-                                                            FunctionType.of(
-                                                                    List.of(ValType.I32),
-                                                                    List.of(ValType.I32)),
-                                                            (inst, args) -> {
-                                                                throw new UnsupportedOperationException(
-                                                                        "--run-tests is not"
-                                                                                + " supported");
-                                                            }))
-                                            .build())
-                            .withMemoryFactory(ByteArrayMemory::new);
-
-            try {
-                instanceBuilder.build();
-            } catch (WasiExitException e) {
-                System.out.println(stdout);
-                System.err.println(stderr);
-                if (e.exitCode() != 0) {
-                    throw new RuntimeException("jq returned exit code: " + e.exitCode());
-                }
-            }
-
-            assertEquals("{\"foo\":0}\n", new String(stdout.toByteArray(), UTF_8));
-        }
     }
 }

@@ -40,12 +40,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-      <version>4.31.1</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>io.roastedroot</groupId>
       <artifactId>zerofs</artifactId>
       <scope>test</scope>
