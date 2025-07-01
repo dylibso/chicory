@@ -256,21 +256,7 @@ public class ThreadsProposalTest {
                                             .apply(mutexAddr, 1)[0];
                             workerAcquireLock.set((int) result);
                         });
-        Thread mainT =
-                new Thread(
-                        () -> {
-                            // unlock the mutex
-                            try {
-                                Thread.sleep(400);
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                            mainInstance.exports().function("unlockMutex").apply(mutexAddr);
-                        });
         workerT.start();
-        mainT.start();
-
-        mainT.join();
         workerT.join();
 
         // 2 == timeout
