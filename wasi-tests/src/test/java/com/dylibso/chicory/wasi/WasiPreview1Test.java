@@ -529,13 +529,7 @@ public class WasiPreview1Test {
                                         "/home/andreatp/workspace/go-protoc-gen-grpc-java/internal/wasm/protoc-gen-grpc-java.wasm"));
 
                 store.addImportValues(imports);
-                var instance = store.instantiate("gen-grpc", module);
-
-                // TODO:
-                // verify startSection and startFunction in the spec and how it should work!
-                //                (export "_start" (func 17))
-                //                (start 16)
-                instance.getMachine().call(17, new long[] {});
+                store.instantiate("gen-grpc", module);
 
                 PluginProtos.CodeGeneratorResponse response =
                         PluginProtos.CodeGeneratorResponse.parseFrom(stdout.toByteArray());
@@ -573,7 +567,7 @@ public class WasiPreview1Test {
                                                                 "."))
                                                 .build())
                                 .build()) {
-            var instance =
+            var instanceBuilder =
                     Instance.builder(module)
                             .withImportValues(
                                     ImportValues.builder()
@@ -591,17 +585,10 @@ public class WasiPreview1Test {
                                                                                 + " supported");
                                                             }))
                                             .build())
-                            .withMemoryFactory(ByteArrayMemory::new)
-                            .build();
+                            .withMemoryFactory(ByteArrayMemory::new);
 
-            // TODO: re-read the spec to understand how this should work...
-            // this is the relevant WAT:
-            //                (export "_start" (func 21))
-            //                (export "wasi_thread_start" (func 682))
-            //                (start 20)
-            // instance.getMachine().call(20, new long[]{});
             try {
-                instance.getMachine().call(21, new long[] {});
+                instanceBuilder.build();
             } catch (WasiExitException e) {
                 System.out.println(stdout);
                 System.err.println(stderr);

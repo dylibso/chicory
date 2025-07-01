@@ -170,13 +170,18 @@ public class Instance {
             throw new InvalidException("unknown memory");
         }
 
-        Export startFunction = this.exports.get(START_FUNCTION_NAME);
-        if (startFunction != null && start) {
+        if (this.module.startSection().isPresent()) {
             try {
-                export(START_FUNCTION_NAME).apply();
+                this.machine.call(
+                        (int) this.module.startSection().get().startIndex(), new long[] {});
             } catch (TrapException e) {
                 throw new UninstantiableException(e.getMessage(), e);
             }
+        }
+
+        Export startFunction = this.exports.get(START_FUNCTION_NAME);
+        if (startFunction != null && start) {
+            export(START_FUNCTION_NAME).apply();
         }
 
         return this;
@@ -782,15 +787,6 @@ public class Instance {
                             imports,
                             requireNonNullElseGet(importValues, ImportValues::empty),
                             module.memorySection().map(MemorySection::memoryCount).orElse(0));
-
-            if (module.startSection().isPresent()) {
-                var export =
-                        new Export(
-                                START_FUNCTION_NAME,
-                                (int) module.startSection().get().startIndex(),
-                                FUNCTION);
-                exports.put(START_FUNCTION_NAME, export);
-            }
 
             for (int i = 0; i < module.functionSection().functionCount(); i++) {
                 functionTypes[funcIdx++] = module.functionSection().getFunctionType(i);
