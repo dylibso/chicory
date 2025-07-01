@@ -16,6 +16,9 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 /**
@@ -46,6 +49,122 @@ public final class ByteBufferMemory implements Memory {
         this.nPages = limits.initialPages();
     }
 
+    // atomic wait handling
+    private final Map<Integer, AtomicInteger> monitors = new ConcurrentHashMap<>();
+
+    @Override
+    public Object lock(int address) {
+        return monitors.computeIfAbsent(address, k -> new AtomicInteger(0));
+    }
+
+    // Wait until value at address != expected
+    @Override
+    public int waitOn(int address, int expected, long timeout) {
+        timeout = (timeout < 0) ? Long.MAX_VALUE : timeout;
+        AtomicInteger monitor =
+                monitors.compute(
+                        address,
+                        (k, v) -> {
+                            if (v == null) {
+                                return new AtomicInteger(1);
+                            } else {
+                                v.incrementAndGet();
+                                return v;
+                            }
+                        });
+        long millis = timeout / 1_000_000L;
+        int nanos = (int) (timeout % 1_000_000L);
+        long elapsed = System.nanoTime() + timeout;
+
+        try {
+            synchronized (monitor) {
+                if (buffer.getInt(address) == expected) {
+                    try {
+                        monitor.wait(millis, nanos);
+                    } catch (InterruptedException ie) {
+                        throw new ChicoryInterruptedException("Thread interrupted");
+                    }
+                    if (System.nanoTime() > elapsed) {
+                        return 2; // timeout
+                    } else {
+                        return 0; // wake
+                    }
+                } else {
+                    return 1; // not-equal
+                }
+            }
+        } finally {
+            monitor.decrementAndGet();
+        }
+    }
+
+    @Override
+    public int waitOn(int address, long expected, long timeout) {
+        timeout = (timeout < 0) ? Long.MAX_VALUE : timeout;
+        AtomicInteger monitor =
+                monitors.compute(
+                        address,
+                        (k, v) -> {
+                            if (v == null) {
+                                return new AtomicInteger(1);
+                            } else {
+                                v.incrementAndGet();
+                                return v;
+                            }
+                        });
+        long millis = timeout / 1_000_000L;
+        int nanos = (int) (timeout % 1_000_000L);
+        long elapsed = System.nanoTime() + timeout;
+
+        try {
+            synchronized (monitor) {
+                if (buffer.getLong(address) == expected) {
+                    try {
+                        monitor.wait(millis, nanos);
+                    } catch (InterruptedException ie) {
+                        throw new ChicoryInterruptedException("Thread interrupted");
+                    }
+                    if (System.nanoTime() > elapsed) {
+                        return 2; // timeout
+                    } else {
+                        return 0; // wake
+                    }
+                } else {
+                    return 1; // not-equal
+                }
+            }
+        } finally {
+            monitor.decrementAndGet();
+        }
+    }
+
+    // Notify all waiters at this address
+    @Override
+    public int notify(int address, int maxThreads) {
+        if (!shared()) {
+            return 0;
+        }
+
+        AtomicInteger monitor = monitors.get(address);
+        if (monitor == null) {
+            return 0;
+        }
+        synchronized (monitor) {
+            // this logic is fully untested by the testsuite :-(
+            if (maxThreads < 0 || monitor.get() < maxThreads) {
+                monitor.notifyAll();
+            } else {
+                var count = maxThreads;
+                while (monitor.get() > 0 && count > 0) {
+                    monitor.notify();
+                    count--;
+                }
+            }
+        }
+        monitors.remove(address);
+        return monitor.get();
+    }
+
     private ByteBuffer allocateByteBuffer(int capacity) {
         if (capacity > buffer.capacity()) {
             int nextCapacity = allocStrategy.next(buffer.capacity(), capacity);
@@ -53,27 +172,6 @@ public final class ByteBufferMemory implements Memory {
         } else {
             return buffer;
         }
-    }
-
-    @Override
-    public Object lock(int address) {
-        throw new ChicoryException("not implemented, use ByteArrayMemory instead");
-    }
-
-    @Override
-    public int waitOn(int address, int expected, long timeout) {
-        throw new ChicoryException("not implemented, use ByteArrayMemory instead");
-    }
-
-    @Override
-    public int waitOn(int address, long expected, long timeout) {
-        throw new ChicoryException("not implemented, use ByteArrayMemory instead");
-    }
-
-    // Notify all waiters at this address
-    @Override
-    public int notify(int address, int maxThreads) {
-        throw new ChicoryException("not implemented, use ByteArrayMemory instead");
     }
 
     /**
