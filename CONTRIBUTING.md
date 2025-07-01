@@ -102,6 +102,10 @@ To overcome this issue go to "Help menu" -> "Edit Custom Properties" and add the
 idea.max.intellisense.filesize=5000
 ```
 
+### Wildcard imports
+
+In this project, we disallow wildcard imports, when using IntelliJ we suggest to apply [this configuration](https://www.jetbrains.com/help/idea/creating-and-optimizing-imports.html#disable-wildcard-imports).
+
 ### Tests and documentation are not optional
 
 Don't forget to include tests in your pull requests.
