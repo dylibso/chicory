@@ -811,7 +811,11 @@ public class WasmModuleTest {
                 new Thread(
                         () -> {
                             // worker remains ready for locking
-                            var result = workerInstance.exports().function("lockMutexWithTimeout").apply(mutexAddr, 1)[0];
+                            var result =
+                                    workerInstance
+                                            .exports()
+                                            .function("lockMutexWithTimeout")
+                                            .apply(mutexAddr, 1)[0];
                             workerAcquireLock.set((int) result);
                         });
         Thread mainT =
@@ -866,7 +870,11 @@ public class WasmModuleTest {
                 new Thread(
                         () -> {
                             // worker remains ready for locking
-                            var result = workerInstance.exports().function("lockMutexWithTimeout").apply(mutexAddr, 2)[0];
+                            var result =
+                                    workerInstance
+                                            .exports()
+                                            .function("lockMutexWithTimeout")
+                                            .apply(mutexAddr, 2)[0];
                             workerAcquireLock.set((int) result);
                         });
         Thread mainT =
@@ -921,7 +929,11 @@ public class WasmModuleTest {
                 new Thread(
                         () -> {
                             // worker remains ready for locking
-                            var result = workerInstance.exports().function("lockMutexWithTimeout").apply(mutexAddr, 1)[0];
+                            var result =
+                                    workerInstance
+                                            .exports()
+                                            .function("lockMutexWithTimeout")
+                                            .apply(mutexAddr, 1)[0];
                             workerAcquireLock.set((int) result);
                         });
         Thread mainT =

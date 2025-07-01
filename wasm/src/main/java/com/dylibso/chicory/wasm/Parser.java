@@ -691,12 +691,14 @@ public final class Parser {
                 int maximum = (int) readVarUInt32(buffer);
                 return new MemoryLimits(initial, maximum, limitType == 0x03);
             case 0x02:
-                throw new MalformedException("integer too large");
+                throw new InvalidException("shared memory must have maximum");
             default:
-                throw new MalformedException(
-                        "integer representation too long, invalid memory limit type: "
-                                + limitType
-                                + ", shared memory must have maximum");
+                if (limitType > 0) {
+                    throw new MalformedException(
+                            "integer too large, invalid memory limit: " + limitType);
+                } else {
+                    throw new MalformedException("integer representation too long: " + limitType);
+                }
         }
     }
 

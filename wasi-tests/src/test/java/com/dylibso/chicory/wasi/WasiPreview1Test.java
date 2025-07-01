@@ -478,17 +478,20 @@ public class WasiPreview1Test {
             copyDirectory(source, target);
 
             // Load the descriptor set
-            DescriptorProtos.FileDescriptorSet descriptorSet = DescriptorProtos.FileDescriptorSet.parseFrom(
-                    WasiPreview1Test.class.getResourceAsStream("/protoc-test/protos/helloworld.desc")
-            );
+            DescriptorProtos.FileDescriptorSet descriptorSet =
+                    DescriptorProtos.FileDescriptorSet.parseFrom(
+                            WasiPreview1Test.class.getResourceAsStream(
+                                    "/protoc-test/protos/helloworld.desc"));
 
             // Initialize the CodeGeneratorRequest.Builder
-            PluginProtos.CodeGeneratorRequest.Builder requestBuilder = PluginProtos.CodeGeneratorRequest.newBuilder()
-                    .setParameter("out=/out") // Specify the output directory
-                    .addFileToGenerate("helloworld.proto"); // Specify the file to generate
+            PluginProtos.CodeGeneratorRequest.Builder requestBuilder =
+                    PluginProtos.CodeGeneratorRequest.newBuilder()
+                            .setParameter("out=/out") // Specify the output directory
+                            .addFileToGenerate("helloworld.proto"); // Specify the file to generate
 
             // Add all FileDescriptorProto entries from the descriptor set
-            for (DescriptorProtos.FileDescriptorProto fileDescriptor : descriptorSet.getFileList()) {
+            for (DescriptorProtos.FileDescriptorProto fileDescriptor :
+                    descriptorSet.getFileList()) {
                 requestBuilder.addProtoFile(fileDescriptor);
             }
 
@@ -498,7 +501,9 @@ public class WasiPreview1Test {
                     WasiPreview1.builder()
                             .withOptions(
                                     WasiOptions.builder()
-                                            .withStdin(new ByteArrayInputStream(codeGeneratorRequest.toByteArray()))
+                                            .withStdin(
+                                                    new ByteArrayInputStream(
+                                                            codeGeneratorRequest.toByteArray()))
                                             .withStdout(stdout)
                                             .withStderr(System.err)
                                             .withArguments(List.of("protoc-gen-java"))
@@ -532,10 +537,14 @@ public class WasiPreview1Test {
                 //                (start 16)
                 instance.getMachine().call(17, new long[] {});
 
-                PluginProtos.CodeGeneratorResponse response = PluginProtos.CodeGeneratorResponse.parseFrom(stdout.toByteArray());
+                PluginProtos.CodeGeneratorResponse response =
+                        PluginProtos.CodeGeneratorResponse.parseFrom(stdout.toByteArray());
 
                 assertEquals(1, response.getFileCount());
-                assertArrayEquals(java.nio.file.Files.readAllBytes(Path.of("src/test/resources/protoc-test/generated.java")), response.getFile(0).getContent().getBytes());
+                assertArrayEquals(
+                        java.nio.file.Files.readAllBytes(
+                                Path.of("src/test/resources/protoc-test/generated.java")),
+                        response.getFile(0).getContent().getBytes(UTF_8));
             }
         }
     }
