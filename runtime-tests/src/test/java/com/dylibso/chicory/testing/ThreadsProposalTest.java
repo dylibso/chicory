@@ -25,60 +25,103 @@ public class ThreadsProposalTest {
         return Parser.parse(ThreadsProposalTest.class.getResourceAsStream("/" + fileName));
     }
 
+    @FunctionalInterface
+    interface LockWithTimeout {
+        int lock(Instance instance, int mutexAddr, long expected);
+    }
+
     private static Stream<Arguments> memoryImplementations() {
+        var memoryLimits = new MemoryLimits(1, 1, true);
         return Stream.of(
-                Arguments.of(new ByteArrayMemory(new MemoryLimits(1, 1, true))),
-                Arguments.of(new ByteBufferMemory(new MemoryLimits(1, 1, true))));
+                Arguments.of(new ByteArrayMemory(memoryLimits)),
+                Arguments.of(new ByteBufferMemory(memoryLimits)));
+    }
+
+    private static Stream<Arguments> memoryAndLocksImplementations() {
+        var memoryLimits = new MemoryLimits(1, 1, true);
+        return Stream.of(
+                Arguments.of(
+                        new ByteArrayMemory(memoryLimits),
+                        (LockWithTimeout) ThreadsProposalTest::lockMutexWithTimeout),
+                Arguments.of(
+                        new ByteArrayMemory(memoryLimits),
+                        (LockWithTimeout) ThreadsProposalTest::lock64MutexWithTimeout),
+                Arguments.of(
+                        new ByteBufferMemory(memoryLimits),
+                        (LockWithTimeout) ThreadsProposalTest::lockMutexWithTimeout),
+                Arguments.of(
+                        new ByteBufferMemory(memoryLimits),
+                        (LockWithTimeout) ThreadsProposalTest::lock64MutexWithTimeout));
+    }
+
+    // originally from:
+    // https://github.com/WebAssembly/threads/blob/b2567bff61ee6fbe731934f0ed17a5d48dc9ab01/proposals/threads/Overview.md#example
+    private static WasmModule module = loadModule("compiled/threads-example.wat.wasm");
+
+    private static Instance newInstance(Memory memory) {
+        return Instance.builder(module)
+                .withImportValues(
+                        ImportValues.builder()
+                                .addMemory(new ImportMemory("env", "memory", memory))
+                                .build())
+                .build();
+    }
+
+    private static int tryLockMutex(Instance instance, int mutexAddr) {
+        return (int) instance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+    }
+
+    private static int lockMutexWithTimeout(Instance instance, int mutexAddr, long expected) {
+        return (int)
+                instance.exports()
+                        .function("lockMutexWithTimeout")
+                        .apply(mutexAddr, (int) expected)[0];
+    }
+
+    private static int lock64MutexWithTimeout(Instance instance, int mutexAddr, long expected) {
+        return (int)
+                instance.exports().function("lock64MutexWithTimeout").apply(mutexAddr, expected)[0];
+    }
+
+    private static void lockMutex(Instance instance, int mutexAddr) {
+        instance.exports().function("lockMutex").apply(mutexAddr);
+    }
+
+    private static void unlockMutex(Instance instance, int mutexAddr) {
+        instance.exports().function("unlockMutex").apply(mutexAddr);
     }
 
     @ParameterizedTest
     @MethodSource("memoryImplementations")
     public void threadsExample(Memory memory) throws Exception {
-        // attempting to validate the threads implementation:
-        // https://github.com/WebAssembly/threads/blob/b2567bff61ee6fbe731934f0ed17a5d48dc9ab01/proposals/threads/Overview.md#example
-        var module = loadModule("compiled/threads-example.wat.wasm");
         var mutexAddr = 0;
-
-        var mainInstance =
-                Instance.builder(module)
-                        .withImportValues(
-                                ImportValues.builder()
-                                        .addMemory(new ImportMemory("env", "memory", memory))
-                                        .build())
-                        .build();
-
-        var workerInstance =
-                Instance.builder(module)
-                        .withImportValues(
-                                ImportValues.builder()
-                                        .addMemory(new ImportMemory("env", "memory", memory))
-                                        .build())
-                        .build();
+        var mainInstance = newInstance(memory);
+        var workerInstance = newInstance(memory);
 
         // Lock on main
-        var mainLocked = mainInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        var mainLocked = tryLockMutex(mainInstance, mutexAddr);
         assertEquals(1, mainLocked);
 
         // the worker instance cannot acquire the lock
-        var workerLocked = workerInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        var workerLocked = tryLockMutex(workerInstance, mutexAddr);
         assertEquals(0, workerLocked);
 
         // unlock main
-        mainInstance.exports().function("unlockMutex").apply(mutexAddr);
+        unlockMutex(mainInstance, mutexAddr);
 
         // now lock from worker
-        workerLocked = workerInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        workerLocked = tryLockMutex(workerInstance, mutexAddr);
         assertEquals(1, workerLocked);
 
         // main cannot lock
-        mainLocked = mainInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        mainLocked = tryLockMutex(mainInstance, mutexAddr);
         assertEquals(0, mainLocked);
 
         workerInstance.exports().function("unlockMutex").apply(mutexAddr);
 
         // now more interesting
         // main gets the lock
-        mainLocked = mainInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        mainLocked = tryLockMutex(mainInstance, mutexAddr);
         assertEquals(1, mainLocked);
 
         var workerAcquiredLock = new AtomicBoolean(false);
@@ -86,14 +129,14 @@ public class ThreadsProposalTest {
                 new Thread(
                         () -> {
                             // worker remains ready for locking
-                            workerInstance.exports().function("lockMutex").apply(mutexAddr);
+                            lockMutex(workerInstance, mutexAddr);
                             workerAcquiredLock.set(true);
-                            workerInstance.exports().function("unlockMutex").apply(mutexAddr);
+                            unlockMutex(workerInstance, mutexAddr);
                         });
         t.start();
 
         // unlock the mutex to let the worker acquire the lock
-        mainInstance.exports().function("unlockMutex").apply(mutexAddr);
+        unlockMutex(mainInstance, mutexAddr);
 
         t.join();
 
@@ -101,29 +144,15 @@ public class ThreadsProposalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("memoryImplementations")
-    public void threadsExampleWake(Memory memory) throws Exception {
-        var module = loadModule("compiled/threads-example.wat.wasm");
+    @MethodSource("memoryAndLocksImplementations")
+    public void threadsExampleWake(Memory memory, LockWithTimeout lockWithTimeout)
+            throws Exception {
         var mutexAddr = 0;
-
-        var mainInstance =
-                Instance.builder(module)
-                        .withImportValues(
-                                ImportValues.builder()
-                                        .addMemory(new ImportMemory("env", "memory", memory))
-                                        .build())
-                        .build();
-
-        var workerInstance =
-                Instance.builder(module)
-                        .withImportValues(
-                                ImportValues.builder()
-                                        .addMemory(new ImportMemory("env", "memory", memory))
-                                        .build())
-                        .build();
+        var mainInstance = newInstance(memory);
+        var workerInstance = newInstance(memory);
 
         // Lock on main
-        var mainLocked = mainInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        var mainLocked = tryLockMutex(mainInstance, mutexAddr);
         assertEquals(1, mainLocked);
 
         var workerAcquireLock = new AtomicInteger(-1);
@@ -131,12 +160,8 @@ public class ThreadsProposalTest {
                 new Thread(
                         () -> {
                             // worker remains ready for locking
-                            var result =
-                                    workerInstance
-                                            .exports()
-                                            .function("lockMutexWithTimeout")
-                                            .apply(mutexAddr, 1)[0];
-                            workerAcquireLock.set((int) result);
+                            var result = lockWithTimeout.lock(workerInstance, mutexAddr, 1);
+                            workerAcquireLock.set(result);
                         });
         Thread mainT =
                 new Thread(
@@ -147,7 +172,7 @@ public class ThreadsProposalTest {
                             } catch (InterruptedException e) {
                                 throw new RuntimeException(e);
                             }
-                            mainInstance.exports().function("unlockMutex").apply(mutexAddr);
+                            unlockMutex(mainInstance, mutexAddr);
                         });
         workerT.start();
         mainT.start();
@@ -160,29 +185,15 @@ public class ThreadsProposalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("memoryImplementations")
-    public void threadsExampleNotEqual(Memory memory) throws Exception {
-        var module = loadModule("compiled/threads-example.wat.wasm");
+    @MethodSource("memoryAndLocksImplementations")
+    public void threadsExampleNotEqual(Memory memory, LockWithTimeout lockWithTimeout)
+            throws Exception {
         var mutexAddr = 0;
-
-        var mainInstance =
-                Instance.builder(module)
-                        .withImportValues(
-                                ImportValues.builder()
-                                        .addMemory(new ImportMemory("env", "memory", memory))
-                                        .build())
-                        .build();
-
-        var workerInstance =
-                Instance.builder(module)
-                        .withImportValues(
-                                ImportValues.builder()
-                                        .addMemory(new ImportMemory("env", "memory", memory))
-                                        .build())
-                        .build();
+        var mainInstance = newInstance(memory);
+        var workerInstance = newInstance(memory);
 
         // Lock on main
-        var mainLocked = mainInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        var mainLocked = tryLockMutex(mainInstance, mutexAddr);
         assertEquals(1, mainLocked);
 
         var workerAcquireLock = new AtomicInteger(-1);
@@ -190,12 +201,8 @@ public class ThreadsProposalTest {
                 new Thread(
                         () -> {
                             // worker remains ready for locking
-                            var result =
-                                    workerInstance
-                                            .exports()
-                                            .function("lockMutexWithTimeout")
-                                            .apply(mutexAddr, 2)[0];
-                            workerAcquireLock.set((int) result);
+                            var result = lockWithTimeout.lock(workerInstance, mutexAddr, 2);
+                            workerAcquireLock.set(result);
                         });
         Thread mainT =
                 new Thread(
@@ -206,7 +213,7 @@ public class ThreadsProposalTest {
                             } catch (InterruptedException e) {
                                 throw new RuntimeException(e);
                             }
-                            mainInstance.exports().function("unlockMutex").apply(mutexAddr);
+                            unlockMutex(mainInstance, mutexAddr);
                         });
         workerT.start();
         mainT.start();
@@ -219,29 +226,15 @@ public class ThreadsProposalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("memoryImplementations")
-    public void threadsExampleTimeout(Memory memory) throws Exception {
-        var module = loadModule("compiled/threads-example.wat.wasm");
+    @MethodSource("memoryAndLocksImplementations")
+    public void threadsExampleTimeout(Memory memory, LockWithTimeout lockWithTimeout)
+            throws Exception {
         var mutexAddr = 0;
-
-        var mainInstance =
-                Instance.builder(module)
-                        .withImportValues(
-                                ImportValues.builder()
-                                        .addMemory(new ImportMemory("env", "memory", memory))
-                                        .build())
-                        .build();
-
-        var workerInstance =
-                Instance.builder(module)
-                        .withImportValues(
-                                ImportValues.builder()
-                                        .addMemory(new ImportMemory("env", "memory", memory))
-                                        .build())
-                        .build();
+        var mainInstance = newInstance(memory);
+        var workerInstance = newInstance(memory);
 
         // Lock on main
-        var mainLocked = mainInstance.exports().function("tryLockMutex").apply(mutexAddr)[0];
+        var mainLocked = tryLockMutex(mainInstance, mutexAddr);
         assertEquals(1, mainLocked);
 
         var workerAcquireLock = new AtomicInteger(-1);
@@ -249,12 +242,8 @@ public class ThreadsProposalTest {
                 new Thread(
                         () -> {
                             // worker remains ready for locking
-                            var result =
-                                    workerInstance
-                                            .exports()
-                                            .function("lockMutexWithTimeout")
-                                            .apply(mutexAddr, 1)[0];
-                            workerAcquireLock.set((int) result);
+                            var result = lockWithTimeout.lock(workerInstance, mutexAddr, 1);
+                            workerAcquireLock.set(result);
                         });
         workerT.start();
         workerT.join();

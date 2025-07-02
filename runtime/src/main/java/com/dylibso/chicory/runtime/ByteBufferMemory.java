@@ -50,91 +50,91 @@ public final class ByteBufferMemory implements Memory {
     }
 
     // atomic wait handling
-    private final Map<Integer, AtomicInteger> monitors = new ConcurrentHashMap<>();
+    private final Map<Integer, AtomicInteger> monitors = (shared()) ? new ConcurrentHashMap<>() : null;
+    private final Map<Integer, AtomicInteger> notifyInProgress = (shared()) ? new ConcurrentHashMap<>() : null;
 
     @Override
     public Object lock(int address) {
         return monitors.computeIfAbsent(address, k -> new AtomicInteger(0));
     }
 
+    private AtomicInteger nextMonitor(int address) {
+        return monitors.compute(
+                address,
+                (k, v) -> {
+                    if (v == null) {
+                        return new AtomicInteger(1);
+                    } else {
+                        v.incrementAndGet();
+                        return v;
+                    }
+                });
+    }
+
+    private int waitOnMonitor(int address, long timeout) {
+        long elapsed = System.nanoTime() + timeout;
+        try {
+            while (!notifyInProgress.containsKey(address) // prevents spurious wakeup
+                    && System.nanoTime() < elapsed) {
+                var waitTime = elapsed - System.nanoTime();
+                long millis = Math.max(waitTime / 1_000_000L, 0);
+                int nanos = Math.max((int) (waitTime % 1_000_000L), 0);
+                monitors.get(address).wait(millis, nanos);
+            }
+        } catch (InterruptedException ie) {
+            throw new ChicoryInterruptedException("Thread interrupted");
+        }
+        if (System.nanoTime() >= elapsed) {
+            return 2; // timeout
+        } else {
+            return 0; // wake
+        }
+    }
+
+    private void endWaitOn(int address) {
+        if (notifyInProgress.containsKey(address)
+                && notifyInProgress.get(address).decrementAndGet() == 0) {
+            notifyInProgress.remove(address);
+        }
+        if (monitors.containsKey(address) && monitors.get(address).decrementAndGet() == 0) {
+            monitors.remove(address);
+        }
+        ;
+    }
+
     // Wait until value at address != expected
     @Override
     public int waitOn(int address, int expected, long timeout) {
-        timeout = (timeout < 0) ? Long.MAX_VALUE : timeout;
-        AtomicInteger monitor =
-                monitors.compute(
-                        address,
-                        (k, v) -> {
-                            if (v == null) {
-                                return new AtomicInteger(1);
-                            } else {
-                                v.incrementAndGet();
-                                return v;
-                            }
-                        });
-        long millis = timeout / 1_000_000L;
-        int nanos = (int) (timeout % 1_000_000L);
-        long elapsed = System.nanoTime() + timeout;
+        AtomicInteger monitor = nextMonitor(address);
 
-        try {
-            synchronized (monitor) {
+        synchronized (monitor) {
+            try {
                 if (buffer.getInt(address) == expected) {
-                    try {
-                        monitor.wait(millis, nanos);
-                    } catch (InterruptedException ie) {
-                        throw new ChicoryInterruptedException("Thread interrupted");
-                    }
-                    if (System.nanoTime() > elapsed) {
-                        return 2; // timeout
-                    } else {
-                        return 0; // wake
-                    }
+                    return waitOnMonitor(address, (timeout < 0) ? Long.MAX_VALUE : timeout);
                 } else {
                     return 1; // not-equal
                 }
+            } finally {
+                endWaitOn(address);
             }
-        } finally {
-            monitor.decrementAndGet();
         }
     }
 
     @Override
     public int waitOn(int address, long expected, long timeout) {
         timeout = (timeout < 0) ? Long.MAX_VALUE : timeout;
-        AtomicInteger monitor =
-                monitors.compute(
-                        address,
-                        (k, v) -> {
-                            if (v == null) {
-                                return new AtomicInteger(1);
-                            } else {
-                                v.incrementAndGet();
-                                return v;
-                            }
-                        });
-        long millis = timeout / 1_000_000L;
-        int nanos = (int) (timeout % 1_000_000L);
-        long elapsed = System.nanoTime() + timeout;
+        AtomicInteger monitor = nextMonitor(address);
 
-        try {
-            synchronized (monitor) {
+        synchronized (monitor) {
+            try {
                 if (buffer.getLong(address) == expected) {
-                    try {
-                        monitor.wait(millis, nanos);
-                    } catch (InterruptedException ie) {
-                        throw new ChicoryInterruptedException("Thread interrupted");
-                    }
-                    if (System.nanoTime() > elapsed) {
-                        return 2; // timeout
-                    } else {
-                        return 0; // wake
-                    }
+                    return waitOnMonitor(address, (timeout < 0) ? Long.MAX_VALUE : timeout);
                 } else {
                     return 1; // not-equal
                 }
+            } finally {
+                endWaitOn(address);
             }
-        } finally {
-            monitor.decrementAndGet();
         }
     }
 
@@ -149,19 +149,23 @@ public final class ByteBufferMemory implements Memory {
         if (monitor == null) {
             return 0;
         }
+
         synchronized (monitor) {
-            // this logic is fully untested by the testsuite :-(
             if (maxThreads < 0 || monitor.get() < maxThreads) {
+                notifyInProgress.put(address, new AtomicInteger(monitor.get()));
                 monitor.notifyAll();
             } else {
                 var count = maxThreads;
+                notifyInProgress.put(address, new AtomicInteger(monitor.get() - maxThreads));
                 while (monitor.get() > 0 && count > 0) {
                     monitor.notify();
                     count--;
                 }
             }
         }
-        monitors.remove(address);
+        if (monitor.get() <= 0) {
+            monitors.remove(address);
+        }
         return monitor.get();
     }
 

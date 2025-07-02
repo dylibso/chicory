@@ -74,6 +74,18 @@
     )
   )
 
+  (func (export "lock64MutexWithTimeout")
+    (param $mutexAddr i32)
+    (param $expected i64)
+    (result i32)
+
+    (memory.atomic.wait64
+      (local.get $mutexAddr)
+      (local.get $expected)
+      (i64.const 200000000) ;; 200ms
+    )
+  )
+
   ;; Unlock a mutex at the given address.
   (func (export "unlockMutex")
     (param $mutexAddr i32)
