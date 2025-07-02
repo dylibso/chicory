@@ -61,11 +61,18 @@ public final class ByteArrayMemory implements Memory {
         this.limits = limits;
         this.buffer = new byte[allocStrategy.initial(PAGE_SIZE * limits.initialPages())];
         this.nPages = limits.initialPages();
+        if (limits.shared()) {
+            monitors = new ConcurrentHashMap<>();
+            notifyInProgress = new ConcurrentHashMap<>();
+        } else {
+            monitors = null;
+            notifyInProgress = null;
+        }
     }
 
     // atomic wait handling
-    private final Map<Integer, AtomicInteger> monitors = new ConcurrentHashMap<>();
-    private final Map<Integer, AtomicInteger> notifyInProgress = new ConcurrentHashMap<>();
+    private final Map<Integer, AtomicInteger> monitors;
+    private final Map<Integer, AtomicInteger> notifyInProgress;
 
     @Override
     public Object lock(int address) {

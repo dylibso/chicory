@@ -47,13 +47,18 @@ public final class ByteBufferMemory implements Memory {
                 ByteBuffer.allocate(allocStrategy.initial(PAGE_SIZE * limits.initialPages()))
                         .order(ByteOrder.LITTLE_ENDIAN);
         this.nPages = limits.initialPages();
+        if (limits.shared()) {
+            monitors = new ConcurrentHashMap<>();
+            notifyInProgress = new ConcurrentHashMap<>();
+        } else {
+            monitors = null;
+            notifyInProgress = null;
+        }
     }
 
     // atomic wait handling
-    private final Map<Integer, AtomicInteger> monitors =
-            (shared()) ? new ConcurrentHashMap<>() : null;
-    private final Map<Integer, AtomicInteger> notifyInProgress =
-            (shared()) ? new ConcurrentHashMap<>() : null;
+    private final Map<Integer, AtomicInteger> monitors;
+    private final Map<Integer, AtomicInteger> notifyInProgress;
 
     @Override
     public Object lock(int address) {
