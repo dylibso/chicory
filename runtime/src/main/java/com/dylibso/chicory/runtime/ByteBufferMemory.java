@@ -50,8 +50,10 @@ public final class ByteBufferMemory implements Memory {
     }
 
     // atomic wait handling
-    private final Map<Integer, AtomicInteger> monitors = (shared()) ? new ConcurrentHashMap<>() : null;
-    private final Map<Integer, AtomicInteger> notifyInProgress = (shared()) ? new ConcurrentHashMap<>() : null;
+    private final Map<Integer, AtomicInteger> monitors =
+            (shared()) ? new ConcurrentHashMap<>() : null;
+    private final Map<Integer, AtomicInteger> notifyInProgress =
+            (shared()) ? new ConcurrentHashMap<>() : null;
 
     @Override
     public Object lock(int address) {
