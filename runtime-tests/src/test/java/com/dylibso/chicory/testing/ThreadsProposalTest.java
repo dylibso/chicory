@@ -75,7 +75,7 @@ public class ThreadsProposalTest {
         return (int)
                 instance.exports()
                         .function("lockMutexWithTimeout")
-                        .apply(mutexAddr, (int) expected)[0];
+                        .apply(mutexAddr, expected)[0];
     }
 
     private static int lock64MutexWithTimeout(Instance instance, int mutexAddr, long expected) {
