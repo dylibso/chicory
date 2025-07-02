@@ -149,6 +149,10 @@
             <wast>proposals/exception-handling/try_table.wast</wast>
             <wast>proposals/tail-call/return_call.wast</wast>
             <wast>proposals/tail-call/return_call_indirect.wast</wast>
+            <wast>proposals/threads/atomic.wast</wast>
+            <wast>proposals/threads/exports.wast</wast>
+            <wast>proposals/threads/imports.wast</wast>
+            <wast>proposals/threads/memory.wast</wast>
             <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
             <wast>ref_null.wast</wast>
@@ -197,7 +201,11 @@
             SpecV1EhTryTableTest.test39,
             SpecV1EhTryTableTest.test40,
             <!-- Investigate why this one fails -->
-            SpecV1EhBinaryTest.test40
+            SpecV1EhBinaryTest.test40,
+            <!-- Testing an old behavior around multiple tables -->
+            SpecV1ThreadsImportsTest.test64,
+            SpecV1ThreadsImportsTest.test65,
+            SpecV1ThreadsImportsTest.test66
           </excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts/>

@@ -605,6 +605,341 @@ final class Emitters {
         emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_WRITE_DOUBLE);
     }
 
+    public static void ATOMIC_INT_READ_BYTE(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_BYTE_READ);
+    }
+
+    public static void ATOMIC_INT_READ_SHORT(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_SHORT_READ);
+    }
+
+    public static void ATOMIC_INT_READ(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_READ);
+    }
+
+    public static void ATOMIC_LONG_READ(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_READ);
+    }
+
+    public static void ATOMIC_LONG_READ_BYTE(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_BYTE_READ);
+    }
+
+    public static void ATOMIC_LONG_READ_SHORT(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_SHORT_READ);
+    }
+
+    public static void ATOMIC_LONG_READ_INT(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_INT_READ);
+    }
+
+    public static void ATOMIC_INT_STORE(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_WRITE);
+    }
+
+    public static void ATOMIC_INT_STORE_BYTE(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_BYTE_WRITE);
+    }
+
+    public static void ATOMIC_INT_STORE_SHORT(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_SHORT_WRITE);
+    }
+
+    public static void ATOMIC_LONG_STORE(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_WRITE);
+    }
+
+    public static void ATOMIC_LONG_STORE_BYTE(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        asm.visitInsn(Opcodes.L2I);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_BYTE_WRITE);
+    }
+
+    public static void ATOMIC_LONG_STORE_SHORT(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        asm.visitInsn(Opcodes.L2I);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_SHORT_WRITE);
+    }
+
+    public static void ATOMIC_LONG_STORE_INT(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        asm.visitInsn(Opcodes.L2I);
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_INT_WRITE);
+    }
+
+    public static void ATOMIC_INT_RMW_ADD(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW_ADD);
+    }
+
+    public static void ATOMIC_INT_RMW_SUB(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW_SUB);
+    }
+
+    public static void ATOMIC_INT_RMW_AND(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW_AND);
+    }
+
+    public static void ATOMIC_INT_RMW_OR(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW_OR);
+    }
+
+    public static void ATOMIC_INT_RMW_XOR(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW_XOR);
+    }
+
+    public static void ATOMIC_INT_RMW_XCHG(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW_XCHG);
+    }
+
+    public static void ATOMIC_INT_RMW_CMPXCHG(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW_CMPXCHG);
+    }
+
+    public static void ATOMIC_INT_RMW8_ADD_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW8_ADD_U);
+    }
+
+    public static void ATOMIC_INT_RMW8_SUB_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW8_SUB_U);
+    }
+
+    public static void ATOMIC_INT_RMW8_AND_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW8_AND_U);
+    }
+
+    public static void ATOMIC_INT_RMW8_OR_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW8_OR_U);
+    }
+
+    public static void ATOMIC_INT_RMW8_XOR_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW8_XOR_U);
+    }
+
+    public static void ATOMIC_INT_RMW8_XCHG_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW8_XCHG_U);
+    }
+
+    public static void ATOMIC_INT_RMW8_CMPXCHG_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW8_CMPXCHG_U);
+    }
+
+    public static void ATOMIC_INT_RMW16_ADD_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW16_ADD_U);
+    }
+
+    public static void ATOMIC_INT_RMW16_SUB_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW16_SUB_U);
+    }
+
+    public static void ATOMIC_INT_RMW16_AND_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW16_AND_U);
+    }
+
+    public static void ATOMIC_INT_RMW16_OR_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW16_OR_U);
+    }
+
+    public static void ATOMIC_INT_RMW16_XOR_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW16_XOR_U);
+    }
+
+    public static void ATOMIC_INT_RMW16_XCHG_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW16_XCHG_U);
+    }
+
+    public static void ATOMIC_INT_RMW16_CMPXCHG_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_INT_RMW16_CMPXCHG_U);
+    }
+
+    // I64 variants
+    public static void ATOMIC_LONG_RMW_ADD(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW_ADD);
+    }
+
+    public static void ATOMIC_LONG_RMW_SUB(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW_SUB);
+    }
+
+    public static void ATOMIC_LONG_RMW_AND(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW_AND);
+    }
+
+    public static void ATOMIC_LONG_RMW_OR(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW_OR);
+    }
+
+    public static void ATOMIC_LONG_RMW_XOR(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW_XOR);
+    }
+
+    public static void ATOMIC_LONG_RMW_XCHG(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW_XCHG);
+    }
+
+    public static void ATOMIC_LONG_RMW_CMPXCHG(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW_CMPXCHG);
+    }
+
+    public static void ATOMIC_LONG_RMW8_ADD_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW8_ADD_U);
+    }
+
+    public static void ATOMIC_LONG_RMW8_SUB_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW8_SUB_U);
+    }
+
+    public static void ATOMIC_LONG_RMW8_AND_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW8_AND_U);
+    }
+
+    public static void ATOMIC_LONG_RMW8_OR_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW8_OR_U);
+    }
+
+    public static void ATOMIC_LONG_RMW8_XOR_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW8_XOR_U);
+    }
+
+    public static void ATOMIC_LONG_RMW8_XCHG_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW8_XCHG_U);
+    }
+
+    public static void ATOMIC_LONG_RMW8_CMPXCHG_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW8_CMPXCHG_U);
+    }
+
+    public static void ATOMIC_LONG_RMW16_ADD_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW16_ADD_U);
+    }
+
+    public static void ATOMIC_LONG_RMW16_SUB_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW16_SUB_U);
+    }
+
+    public static void ATOMIC_LONG_RMW16_AND_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW16_AND_U);
+    }
+
+    public static void ATOMIC_LONG_RMW16_OR_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW16_OR_U);
+    }
+
+    public static void ATOMIC_LONG_RMW16_XOR_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW16_XOR_U);
+    }
+
+    public static void ATOMIC_LONG_RMW16_XCHG_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW16_XCHG_U);
+    }
+
+    public static void ATOMIC_LONG_RMW16_CMPXCHG_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW16_CMPXCHG_U);
+    }
+
+    public static void ATOMIC_LONG_RMW32_ADD_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW32_ADD_U);
+    }
+
+    public static void ATOMIC_LONG_RMW32_SUB_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW32_SUB_U);
+    }
+
+    public static void ATOMIC_LONG_RMW32_AND_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW32_AND_U);
+    }
+
+    public static void ATOMIC_LONG_RMW32_OR_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW32_OR_U);
+    }
+
+    public static void ATOMIC_LONG_RMW32_XOR_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW32_XOR_U);
+    }
+
+    public static void ATOMIC_LONG_RMW32_XCHG_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW32_XCHG_U);
+    }
+
+    public static void ATOMIC_LONG_RMW32_CMPXCHG_U(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_LONG_RMW32_CMPXCHG_U);
+    }
+
+    // Wait/Notify
+    public static void MEM_ATOMIC_WAIT32(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_WAIT32);
+    }
+
+    public static void MEM_ATOMIC_WAIT64(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_WAIT64);
+    }
+
+    public static void MEM_ATOMIC_NOTIFY(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_NOTIFY);
+    }
+
     private static void emitLoadOrStore(
             Context ctx, CompilerInstruction ins, InstructionAdapter asm, Method method) {
         long offset = ins.operand(1);
