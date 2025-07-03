@@ -1,6 +1,9 @@
 package com.dylibso.chicory.runtime.internal.smap;
 
+import static com.dylibso.chicory.runtime.internal.smap.Smap.FUNCTIONS_VENDOR_ID;
+
 import com.dylibso.chicory.runtime.ParserException;
+import com.dylibso.chicory.runtime.Stratum;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -78,7 +81,7 @@ public final class SmapParser {
                 // Embedded SMAP open section
                 lineIndex = parseEmbeddedSmap(lines, lineIndex, generator);
             } else if (line.startsWith("*S ")) {
-                // Stratum section
+                // Stratum.Builder section
                 lineIndex = parseStratumSection(lines, lineIndex, generator);
             } else if (line.startsWith("*V")) {
                 // Vendor section - skip for now
@@ -136,7 +139,7 @@ public final class SmapParser {
         }
 
         String stratumName = stratumLine.substring(3).trim();
-        SmapStratum stratum = new SmapStratum(stratumName);
+        Stratum.Builder stratum = Stratum.builder(stratumName);
         lineIndex++;
 
         // Parse file and line sections for this stratum
@@ -178,7 +181,7 @@ public final class SmapParser {
     private static int parseFileSection(
             String[] lines,
             int lineIndex,
-            SmapStratum stratum,
+            Stratum.Builder stratum,
             Map<Integer, String> fileIdToPath,
             Map<Integer, String> fileIdToName)
             throws ParserException {
@@ -241,7 +244,7 @@ public final class SmapParser {
     private static int parseLineSection(
             String[] lines,
             int lineIndex,
-            SmapStratum stratum,
+            Stratum.Builder stratum,
             Map<Integer, String> fileIdToPath,
             Map<Integer, String> fileIdToName)
             throws ParserException {
@@ -320,7 +323,7 @@ public final class SmapParser {
                         "Unknown file ID " + fileId + " at line " + (lineIndex + 1));
             }
 
-            stratum.addLineData(
+            stratum.withLineMapping(
                     fileName,
                     filePath,
                     inputStartLine,
@@ -342,7 +345,7 @@ public final class SmapParser {
             return lineIndex; // No more lines to process
         }
         String vendor = lines[lineIndex].trim();
-        if (vendor.equals(SmapStratum.FUNCTIONS_VENDOR_ID)) {
+        if (vendor.equals(FUNCTIONS_VENDOR_ID)) {
             lineIndex++;
             while (lineIndex < lines.length) {
                 String line = lines[lineIndex].trim();
@@ -357,7 +360,7 @@ public final class SmapParser {
                             String functionName = parts[1];
                             generator
                                     .getDefaultStratum()
-                                    .addFunctionMapping(functionName, start, end);
+                                    .withFunctionMapping(functionName, start, end);
 
                         } catch (NumberFormatException e) {
                             continue;

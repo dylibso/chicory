@@ -107,7 +107,7 @@ public final class DebugParser implements com.dylibso.chicory.runtime.DebugParse
 
     private static Stratum parse(InputStream is) throws ParserException {
         SourceResult result = getSourceResult(is);
-        var stratum = Stratum.create("WASM");
+        var stratum = Stratum.builder("WASM");
         HashMap<Integer, FileInfo> sourceFilesByID = new HashMap<>();
         for (var unit : result.units) {
             for (var file : unit.files) {
@@ -144,7 +144,7 @@ public final class DebugParser implements com.dylibso.chicory.runtime.DebugParse
             int line = (int) location[2];
 
             var file = sourceFilesByID.get(fileID);
-            stratum.addLineData(file.file, file.path, line, 1, address, outputLineCount);
+            stratum.withLineMapping(file.file, file.path, line, 1, address, outputLineCount);
         }
 
         if (result.functions != null) {
@@ -156,11 +156,11 @@ public final class DebugParser implements com.dylibso.chicory.runtime.DebugParse
                 }
                 long startAddress = locations[0];
                 long endAddress = locations[1];
-                stratum.addFunctionMapping(functionName, startAddress, endAddress);
+                stratum.withFunctionMapping(functionName, startAddress, endAddress);
             }
         }
 
-        return stratum.optimizeForLookups();
+        return stratum.build();
     }
 
     static SourceResult getSourceResult(InputStream is) {

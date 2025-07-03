@@ -139,7 +139,6 @@ public final class MachinesTest {
         var countVowels = instance.export("count_vowels");
         var exception = assertThrows(TrapException.class, () -> countVowels.apply(0, -1));
         var exceptionTxt = readStackTrace(exception);
-        System.out.println(exceptionTxt);
 
         assertTrue(
                 exceptionTxt.contains(

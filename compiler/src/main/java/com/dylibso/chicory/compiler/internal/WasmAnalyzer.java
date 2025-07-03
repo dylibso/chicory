@@ -167,7 +167,7 @@ final class WasmAnalyzer {
 
                 String file = lineMapping.fileName();
                 String path = lineMapping.filePath();
-                debugContext.outputStratum.addLineData(
+                debugContext.outputStratum.withLineMapping(
                         file, path, lineMapping.line(), lineMapping.count(), outputLineNo, 1);
 
                 labels.add(idx);
@@ -405,7 +405,7 @@ final class WasmAnalyzer {
 
         if (debugFunctionName != null && startLineNo >= 0) {
             var endLineNo = debugContext.nextOutputLineNo++;
-            debugContext.outputStratum.addFunctionMapping(
+            debugContext.outputStratum.withFunctionMapping(
                     debugFunctionName, startLineNo, endLineNo);
 
             var idx = body.instructions().size();

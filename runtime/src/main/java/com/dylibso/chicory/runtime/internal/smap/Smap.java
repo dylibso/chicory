@@ -19,6 +19,8 @@
 
 package com.dylibso.chicory.runtime.internal.smap;
 
+import com.dylibso.chicory.runtime.LineMapping;
+import com.dylibso.chicory.runtime.Stratum;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,6 +33,8 @@ import java.util.List;
  */
 public class Smap {
 
+    public static final String FUNCTIONS_VENDOR_ID = "com.dylibso.chicory.functions";
+
     /*
      * The SMAP syntax is reasonably straightforward.  The purpose of this
      * class is currently twofold:
@@ -42,7 +46,7 @@ public class Smap {
 
     private String outputFileName;
     private String defaultStratum = "Java";
-    private final List<SmapStratum> strata = new ArrayList<>();
+    private final List<Stratum.Builder> strata = new ArrayList<>();
     private final List<String> embedded = new ArrayList<>();
     private boolean doEmbedded = true;
 
@@ -56,21 +60,21 @@ public class Smap {
     }
 
     /**
-     * Adds the given SmapStratum object, representing a Stratum with
+     * Adds the given Stratum.Builder object, representing a Stratum.Builder with
      * logically associated FileSection and LineSection blocks, to
      * the current Smap.  If <code>default</code> is true, this
      * stratum is made the default stratum, overriding any previously
      * set default.
      *
-     * @param stratum        the SmapStratum object to add
-     * @param defaultStratum if <code>true</code>, this SmapStratum is considered
+     * @param stratum        the Stratum.Builder object to add
+     * @param defaultStratum if <code>true</code>, this Stratum.Builder is considered
      *                       to represent the default SMAP stratum unless
      *                       overwritten
      */
-    public Smap withStratum(SmapStratum stratum, boolean defaultStratum) {
+    public Smap withStratum(Stratum.Builder stratum, boolean defaultStratum) {
         strata.add(stratum);
         if (defaultStratum) {
-            this.defaultStratum = stratum.getStratumName();
+            this.defaultStratum = stratum.stratumName();
         }
         return this;
     }
@@ -120,12 +124,12 @@ public class Smap {
         }
 
         // print our StratumSections, FileSections, and LineSections
-        for (SmapStratum s : strata) {
-            out.append(s.toString());
+        for (Stratum.Builder s : strata) {
+            out.append(stratumToString(s));
         }
 
         if (!getDefaultStratum().functionData().isEmpty()) {
-            out.append(getDefaultStratum().toVendorString());
+            out.append(toVendorString(getDefaultStratum()));
         }
 
         // end the SMAP
@@ -134,16 +138,149 @@ public class Smap {
         return out.toString();
     }
 
-    public SmapStratum getDefaultStratum() {
-        for (SmapStratum s : strata) {
-            if (defaultStratum.equals(s.getStratumName())) {
+    private Stratum.Builder optimize(Stratum.Builder builder) {
+        var lineData = builder.lineData();
+        // Incorporate each LineInfo into the previous LineInfo's
+        // outputLineCount, if possible
+        int i = 0;
+        while (i < lineData.size() - 1) {
+            var li = lineData.get(i);
+            var liNext = lineData.get(i + 1);
+            if (li.lineFileID() == liNext.lineFileID()
+                    && liNext.inputStartLine() == li.inputStartLine()
+                    && liNext.inputLineCount() == 1
+                    && li.inputLineCount() == 1
+                    && liNext.outputStartLine()
+                            == li.outputStartLine()
+                                    + (long) li.inputLineCount() * li.outputLineCount()) {
+                li.withOutputLineCount(
+                        (int)
+                                (liNext.outputStartLine()
+                                        - li.outputStartLine()
+                                        + liNext.outputLineCount()));
+                lineData.remove(i + 1);
+            } else {
+                i++;
+            }
+        }
+
+        // Incorporate each LineInfo into the previous LineInfo's
+        // inputLineCount, if possible
+        i = 0;
+        while (i < lineData.size() - 1) {
+            var li = lineData.get(i);
+            var liNext = lineData.get(i + 1);
+            if (li.lineFileID() == liNext.lineFileID()
+                    && liNext.inputStartLine() == li.inputStartLine() + li.inputLineCount()
+                    && liNext.outputLineCount() == li.outputLineCount()
+                    && liNext.outputStartLine()
+                            == li.outputStartLine()
+                                    + (long) li.inputLineCount() * li.outputLineCount()) {
+                li.withInputLineCount(li.inputLineCount() + liNext.inputLineCount());
+                lineData.remove(i + 1);
+            } else {
+                i++;
+            }
+        }
+        return builder;
+    }
+
+    private String stratumToString(Stratum.Builder builder) {
+
+        var s = optimize(builder);
+        // check state and initialize buffer
+        var fileNameList = s.fileNameList();
+        var filePathList = s.filePathList();
+        var lineData = s.lineData();
+
+        if (fileNameList.isEmpty() || lineData.isEmpty()) {
+            return "";
+        }
+
+        StringBuilder out = new StringBuilder();
+
+        // print StratumSection
+        out.append("*S ").append(s.stratumName()).append("\n");
+
+        // print FileSection
+        out.append("*F\n");
+        int bound = fileNameList.size();
+        for (int i = 0; i < bound; i++) {
+            String fileName = fileNameList.get(i);
+            String filePath = filePathList.get(i);
+            if (!fileName.equals(filePath)) {
+                out.append("+ ").append(i).append(" ").append(fileName).append("\n");
+                out.append(filePath).append("\n");
+            } else {
+                out.append(i).append(" ").append(fileName).append("\n");
+            }
+        }
+
+        // print LineSection
+        out.append("*L\n");
+        bound = lineData.size();
+        int lastFileID = 0;
+
+        for (int i = 0; i < bound; i++) {
+            LineMapping.Builder li = lineData.get(i);
+            int fileID = li.lineFileID();
+            var includeFileID = fileID != lastFileID;
+            out.append(getString(li, includeFileID));
+            lastFileID = fileID;
+        }
+
+        return out.toString();
+    }
+
+    private String getString(LineMapping.Builder line, boolean includeFileID) {
+        if (line.inputStartLine() == -1 || line.outputStartLine() == -1) {
+            throw new IllegalStateException();
+        }
+        StringBuilder out = new StringBuilder();
+        out.append(line.inputStartLine());
+        if (includeFileID) {
+            out.append("#").append(line.lineFileID());
+        }
+        if (line.inputLineCount() != 1) {
+            out.append(",").append(line.inputLineCount());
+        }
+        out.append(":").append(line.outputStartLine());
+        if (line.outputLineCount() != 1) {
+            out.append(",").append(line.outputLineCount());
+        }
+        out.append('\n');
+        return out.toString();
+    }
+
+    private String toVendorString(Stratum.Builder stratum) {
+        StringBuilder out = new StringBuilder();
+
+        // print StratumSection
+
+        out.append("*V\n").append(Smap.FUNCTIONS_VENDOR_ID).append("\n");
+
+        for (Stratum.FunctionMapping fm : stratum.functionData()) {
+            String escapedFunctionName = fm.getFunctionName().replace('\n', '_');
+            out.append(fm.getStartLine())
+                    .append(",")
+                    .append(fm.getEndLine())
+                    .append("=")
+                    .append(escapedFunctionName)
+                    .append("\n");
+        }
+        return out.toString();
+    }
+
+    public Stratum.Builder getDefaultStratum() {
+        for (Stratum.Builder s : strata) {
+            if (defaultStratum.equals(s.stratumName())) {
                 return s;
             }
         }
         return null;
     }
 
-    public List<SmapStratum> getStrata() {
+    public List<Stratum.Builder> getStrata() {
         return strata;
     }
 }

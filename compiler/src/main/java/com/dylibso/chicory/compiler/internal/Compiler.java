@@ -135,7 +135,7 @@ public final class Compiler {
     // Debug information
     static final class DebugContext {
         final Stratum inputStratum;
-        final Stratum outputStratum = Stratum.create("WASM");
+        final Stratum.Builder outputStratum = Stratum.builder("WASM");
         int nextOutputLineNo = 1;
 
         DebugContext(Stratum stratum) {
@@ -160,7 +160,7 @@ public final class Compiler {
         this.analyzer = new WasmAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
         this.debugContext =
-                new DebugContext(requireNonNullElseGet(stratum, () -> Stratum.create("")));
+                new DebugContext(requireNonNullElseGet(stratum, () -> Stratum.builder("").build()));
 
         if (interpretedFunctions == null || interpretedFunctions.isEmpty()) {
             this.interpretedFunctions = new HashSet<>();

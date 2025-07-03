@@ -51,7 +51,7 @@ public class InterpreterMachine implements Machine {
         } else if (instance.debugParser() != null) {
             stratum = instance.debugParser().apply(instance.module());
         } else {
-            stratum = Stratum.create("WASM");
+            stratum = Stratum.builder("WASM").build();
         }
     }
 

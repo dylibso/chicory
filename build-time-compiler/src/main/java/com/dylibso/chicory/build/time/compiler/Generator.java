@@ -130,11 +130,11 @@ public class Generator {
 
                         writeVarUInt32(out, count);
 
-                        Stratum inputStratum = Stratum.create("WASM");
+                        var inputStratum = Stratum.builder("WASM").build();
                         if (config.debugParser() != null) {
                             inputStratum = config.debugParser().apply(module);
                         }
-                        final Stratum outputStratum = Stratum.create("WASM");
+                        final var outputStratum = Stratum.builder("WASM");
 
                         var actual = readVarUInt32(source);
                         assert count == actual;
@@ -205,7 +205,7 @@ public class Generator {
             WasmModule module,
             int funcId,
             Stratum inputStratum,
-            Stratum outputStratum,
+            Stratum.Builder outputStratum,
             int newFunctionAddress,
             int functionSize) {
         String debugFunctionName = null;
@@ -223,7 +223,7 @@ public class Generator {
 
             if (debugFunctionName == null) {
                 debugFunctionName = inputStratum.getFunctionMapping(relativeAddress);
-                outputStratum.addFunctionMapping(
+                outputStratum.withFunctionMapping(
                         debugFunctionName, newFunctionAddress, newFunctionAddress + functionSize);
             }
 
@@ -233,7 +233,7 @@ public class Generator {
                 if (lastLine != null && !line.equals(lastLine)) {
                     var newAddress = lastLineAddress - originalFunctionAddress + newFunctionAddress;
                     var instructionSize = relativeAddress - lastLineAddress;
-                    outputStratum.addLineData(
+                    outputStratum.withLineMapping(
                             lastLine.fileName(),
                             lastLine.filePath(),
                             lastLine.line(),
@@ -249,7 +249,7 @@ public class Generator {
         if (lastLine != null) {
             var newAddress = lastLineAddress - originalFunctionAddress + newFunctionAddress;
             var instructionSize = 1;
-            outputStratum.addLineData(
+            outputStratum.withLineMapping(
                     lastLine.fileName(),
                     lastLine.filePath(),
                     lastLine.line(),
