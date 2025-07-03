@@ -11,14 +11,17 @@ public final class CompilerResult {
     private final Function<Instance, Machine> machineFactory;
     private final Map<String, byte[]> classBytes;
     private final Set<Integer> interpretedFunctions;
+    private final Map<String, byte[]> extraResources;
 
     public CompilerResult(
             Function<Instance, Machine> machineFactory,
             Map<String, byte[]> classBytes,
-            Set<Integer> interpretedFunctions) {
+            Set<Integer> interpretedFunctions,
+            Map<String, byte[]> extraResources) {
         this.machineFactory = machineFactory;
         this.classBytes = classBytes;
         this.interpretedFunctions = interpretedFunctions;
+        this.extraResources = extraResources;
     }
 
     public Function<Instance, Machine> machineFactory() {
@@ -31,5 +34,9 @@ public final class CompilerResult {
 
     public Set<Integer> interpretedFunctions() {
         return interpretedFunctions;
+    }
+
+    public Map<String, byte[]> extraResources() {
+        return extraResources;
     }
 }

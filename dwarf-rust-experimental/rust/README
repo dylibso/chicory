@@ -1,0 +1,6 @@
+Fork https://github.com/bmeurer/wasm-source-map
+that inputs a WebAssembly file on stdin and outputs source map data as json on stdout.
+
+To build for use by wasm, run:
+
+    cargo build --target=wasm32-wasip1 --release

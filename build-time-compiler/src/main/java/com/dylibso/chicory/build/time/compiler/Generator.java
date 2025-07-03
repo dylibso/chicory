@@ -8,12 +8,14 @@ import static com.github.javaparser.StaticJavaParser.parseType;
 import com.dylibso.chicory.compiler.internal.Compiler;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
+import com.dylibso.chicory.runtime.Stratum;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.WasmWriter;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.RawSection;
 import com.dylibso.chicory.wasm.types.SectionId;
+import com.dylibso.chicory.wasm.types.UnknownCustomSection;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
@@ -36,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
@@ -55,6 +58,7 @@ public class Generator {
         var compiler =
                 Compiler.builder(module)
                         .withClassName(machineName)
+                        .withDebugParser(config.debugParser())
                         .withInterpreterFallback(config.interpreterFallback())
                         .withInterpretedFunctions(config.interpretedFunctions())
                         .build();
@@ -67,6 +71,12 @@ public class Generator {
         for (Map.Entry<String, byte[]> entry : result.classBytes().entrySet()) {
             var binaryName = entry.getKey().replace('.', '/') + ".class";
             var targetFile = config.targetClassFolder().resolve(binaryName);
+            Files.write(targetFile, entry.getValue());
+        }
+
+        for (Map.Entry<String, byte[]> entry : result.extraResources().entrySet()) {
+            var resourceName = entry.getKey();
+            var targetFile = config.targetWasmFolder().resolve(resourceName);
             Files.write(targetFile, entry.getValue());
         }
 
@@ -117,15 +127,34 @@ public class Generator {
                         var out = new ByteArrayOutputStream();
                         var importFuncs = module.importSection().importCount();
                         int count = module.codeSection().functionBodyCount();
+
                         writeVarUInt32(out, count);
+
+                        var inputStratum = Stratum.builder("WASM").build();
+                        if (config.debugParser() != null) {
+                            inputStratum = config.debugParser().apply(module);
+                        }
+                        final var outputStratum = Stratum.builder("WASM");
+
                         var actual = readVarUInt32(source);
                         assert count == actual;
                         for (int i = 0; i < count; i++) {
                             var funcId = importFuncs + i;
                             if (interpretedFunctions.contains(funcId)) {
+                                var bodySize = (int) readVarUInt32(source);
+
+                                if (!inputStratum.isEmpty()) {
+                                    var newFunctionAddress = out.size();
+                                    remapFunctionStratum(
+                                            module,
+                                            funcId,
+                                            inputStratum,
+                                            outputStratum,
+                                            newFunctionAddress,
+                                            bodySize);
+                                }
 
                                 // Copy over the original function body from the source
-                                var bodySize = (int) readVarUInt32(source);
                                 writeVarUInt32(out, bodySize);
                                 var bodyBytes = new byte[bodySize];
                                 source.get(bodyBytes);
@@ -151,6 +180,14 @@ public class Generator {
                             }
                         }
                         writer.writeSection(SectionId.CODE, out.toByteArray());
+                        if (!outputStratum.isEmpty()) {
+                            var smap = Stratum.toSMapString("interpreted.wasm", outputStratum);
+                            writer.writeSection(
+                                    UnknownCustomSection.builder()
+                                            .withName("SMAP")
+                                            .withBytes(smap.getBytes(StandardCharsets.UTF_8))
+                                            .build());
+                        }
                     } else if (section.sectionId() != SectionId.CUSTOM) {
                         writer.writeSection((RawSection) section);
                     }
@@ -162,6 +199,64 @@ public class Generator {
                         .resolve(config.getBaseName() + ".meta");
         Files.createDirectories(newWasmFile.getParent());
         Files.write(newWasmFile, writer.bytes());
+    }
+
+    private static void remapFunctionStratum(
+            WasmModule module,
+            int funcId,
+            Stratum inputStratum,
+            Stratum.Builder outputStratum,
+            int newFunctionAddress,
+            int functionSize) {
+        String debugFunctionName = null;
+        Stratum.Line lastLine = null;
+        var lastLineAddress = -1;
+        var originalFunctionAddress = -1;
+
+        var instructions = module.codeSection().getFunctionBody(funcId).instructions();
+        for (var ins : instructions) {
+            var relativeAddress = ins.address() - module.codeSection().address();
+
+            if (originalFunctionAddress == -1) {
+                originalFunctionAddress = relativeAddress;
+            }
+
+            if (debugFunctionName == null) {
+                debugFunctionName = inputStratum.getFunctionMapping(relativeAddress);
+                outputStratum.withFunctionMapping(
+                        debugFunctionName, newFunctionAddress, newFunctionAddress + functionSize);
+            }
+
+            var line = inputStratum.getInputLine(relativeAddress);
+            if (line != null) {
+                // did we get a new line mapping?
+                if (lastLine != null && !line.equals(lastLine)) {
+                    var newAddress = lastLineAddress - originalFunctionAddress + newFunctionAddress;
+                    var instructionSize = relativeAddress - lastLineAddress;
+                    outputStratum.withLineMapping(
+                            lastLine.fileName(),
+                            lastLine.filePath(),
+                            lastLine.line(),
+                            lastLine.count(),
+                            newAddress,
+                            instructionSize);
+                }
+                lastLine = line;
+                lastLineAddress = relativeAddress;
+            }
+        }
+
+        if (lastLine != null) {
+            var newAddress = lastLineAddress - originalFunctionAddress + newFunctionAddress;
+            var instructionSize = 1;
+            outputStratum.withLineMapping(
+                    lastLine.fileName(),
+                    lastLine.filePath(),
+                    lastLine.line(),
+                    lastLine.count(),
+                    newAddress,
+                    instructionSize);
+        }
     }
 
     private static void createFolders(Path filesFolder, String[] split) throws IOException {

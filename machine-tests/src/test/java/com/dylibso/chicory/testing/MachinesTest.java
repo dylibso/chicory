@@ -15,6 +15,7 @@ import com.dylibso.chicory.runtime.InterpreterMachine;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.runtime.TableInstance;
 import com.dylibso.chicory.runtime.TrapException;
+import com.dylibso.chicory.testing.gen.CountVowels;
 import com.dylibso.chicory.testing.gen.DynamicHelloJS;
 import com.dylibso.chicory.testing.gen.QuickJS;
 import com.dylibso.chicory.wabt.Wat2Wasm;
@@ -32,6 +33,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -278,5 +281,32 @@ public final class MachinesTest {
         var ex = assertThrows(TrapException.class, instance.export("call-other-fail")::apply);
         var className = ex.getStackTrace()[0].getClassName();
         assertTrue(className.contains("InterpreterMachine"), className);
+    }
+
+    private String readStackTrace(Throwable t) {
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
+    }
+
+    @Test
+    public void shouldEmitUnderstandableStackTracesCompiledAndInterpreted() throws Exception {
+        WasmModule module = CountVowels.load();
+        var instance = Instance.builder(module).withMachineFactory(CountVowels::create).build();
+        var countVowels = instance.export("count_vowels");
+        var exception = assertThrows(TrapException.class, () -> countVowels.apply(0, -1));
+        var exceptionTxt = readStackTrace(exception);
+        System.out.println(exceptionTxt);
+
+        assertTrue(
+                exceptionTxt.contains(
+                        "at com.dylibso.chicory.testing.gen.CountVowelsMachineFuncGroup_0.func_30(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:68)"));
+        assertTrue(
+                exceptionTxt.contains(
+                        "at 0x00029b: chicory"
+                            + " interpreter.from_raw_parts<u8>(/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/ub_checks.rs:75)"));
+        assertTrue(
+                exceptionTxt.contains(
+                        "at com.dylibso.chicory.testing.gen.CountVowelsMachineFuncGroup_0.count_vowels(src/lib.rs:23)"));
     }
 }

@@ -1,0 +1,3 @@
+input file=error.rs
+input path=/rustc/17067e9ac6d7ecb70e50f92c1944e545188d2359/library/core/src/str/error.rs
+input line=45

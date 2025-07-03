@@ -20,6 +20,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.TraceClassVisitor;
 
 public class MethodTooLargeTest {
+    public static final String CLASS_NAME = "com.dylibso.chicory.$gen.CompiledMachine";
 
     @Test
     public void testBigFunc() {
@@ -27,7 +28,7 @@ public class MethodTooLargeTest {
         byte[] wasm = Wat2Wasm.parse(wat);
 
         var module = Parser.parse(wasm);
-        var result = Compiler.builder(module).build().compile();
+        var result = Compiler.builder(module).withClassName(CLASS_NAME).build().compile();
 
         // We only verify that the resulting class contains the fallback to interpreter
         verifyClass(result.classBytes(), true);

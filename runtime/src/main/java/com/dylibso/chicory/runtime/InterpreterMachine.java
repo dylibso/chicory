@@ -4,17 +4,23 @@ import static com.dylibso.chicory.wasm.types.ValType.sizeOf;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.util.Objects.requireNonNullElse;
 
+import com.dylibso.chicory.runtime.internal.CompilerInterpreterMachine;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
+import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.UnknownCustomSection;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Set;
 
 /**
  * This is responsible for holding and interpreting the Wasm code.
@@ -27,10 +33,26 @@ public class InterpreterMachine implements Machine {
 
     private final Instance instance;
 
+    private final Stratum stratum;
+
     public InterpreterMachine(Instance instance) {
         this.instance = instance;
         stack = new MStack();
         this.callStack = new ArrayDeque<>();
+
+        CustomSection smapSection = instance.module().customSection("SMAP");
+        if (smapSection instanceof UnknownCustomSection) {
+            // this occurs when the build time compiler generates a new code section
+            // as the original debug mappings are stripped.
+            var smap =
+                    new String(
+                            ((UnknownCustomSection) smapSection).bytes(), StandardCharsets.UTF_8);
+            stratum = Stratum.parseSMapString(smap);
+        } else if (instance.debugParser() != null) {
+            stratum = instance.debugParser().apply(instance.module());
+        } else {
+            stratum = Stratum.builder("WASM").build();
+        }
     }
 
     @FunctionalInterface
@@ -168,7 +190,8 @@ public class InterpreterMachine implements Machine {
             instance.onExecution(instruction, stack);
             switch (opcode) {
                 case UNREACHABLE:
-                    throw new TrapException("Trapped on unreachable instruction");
+                    THROW_UNREACHABLE(callStack);
+                    break;
                 case NOP:
                     break;
                 case LOOP:
@@ -2250,6 +2273,105 @@ public class InterpreterMachine implements Machine {
             }
         }
         return sizeOf(instance.type(typeId).returns());
+    }
+
+    private void THROW_UNREACHABLE(Deque<StackFrame> callStack) {
+        TrapException e = new TrapException("Trapped on unreachable instruction");
+        enhanceStackTrace(e, callStack);
+        throw e;
+    }
+
+    protected void enhanceStackTrace(Throwable e, Deque<StackFrame> callStack) {
+        int size = callStack.size();
+        var funcIds = new int[size];
+        var addresses = new int[size];
+        for (int i = 0; i < size; i++) {
+            var frame = callStack.pop();
+            funcIds[i] = frame.funcId();
+            addresses[i] = frame.currentInstruction().address();
+        }
+
+        if (stratum.isEmpty()) {
+            return;
+        }
+
+        var wasmDebugInfoAdded = false;
+        var interpreterFramesFound = false;
+        var traces = new ArrayList<>();
+
+        var interpreterClassNames =
+                Set.of(
+                        InterpreterMachine.class.getName(),
+                        CompilerInterpreterMachine.class.getName());
+        for (var trace : List.of(e.getStackTrace())) {
+
+            if (interpreterFramesFound || !interpreterClassNames.contains(trace.getClassName())) {
+                // keep all the non-interpreter frames...
+                traces.add(trace);
+                if (wasmDebugInfoAdded) {
+                    // don't replace any more interpreter frames..
+                    interpreterFramesFound = true;
+                }
+                continue;
+            }
+
+            // we eat all the interpreter frames.
+            if (wasmDebugInfoAdded) {
+                continue;
+            }
+
+            // The following happens when we reach the first interpreter frame..
+            wasmDebugInfoAdded = true;
+
+            // add the wasm debug info.
+            var codeSectionAddress = instance.module().codeSection().address();
+            for (int i = 0; i < addresses.length; i++) {
+
+                var funcId = funcIds[i];
+
+                // A Stratum contains line and function mappings for the code section.
+                // A function mapping is:
+                //
+                //    [ start_address, end_address, function_name ]
+                //
+                // A line mapping is:
+                //
+                //    [ inputLineStart, inputLineCount, inputFileID, outputLineStart,
+                // outputLineCount ]
+                //
+                // where and addresses and outputLineStart is the WASM instruction address relative
+                // to
+                // the
+                // start of the code section address.
+
+                // This address is relative to the start of the wasm module.  We display this as
+                // it will match the output of `wasm-tools dump` and other tools.
+                var address = addresses[i];
+
+                // Convert to an address relative to the start of code section.
+                int addressRelativeToCodeSection = address - codeSectionAddress;
+                var functionName = stratum.getFunctionMapping(addressRelativeToCodeSection);
+                var lineMapping = stratum.getInputLine(addressRelativeToCodeSection);
+
+                String fileName = null;
+                int line = 0;
+                if (lineMapping != null) {
+                    fileName = lineMapping.filePath();
+                    line = (int) lineMapping.line();
+                } else {
+                    fileName = "{wasm}";
+                    line = address;
+                }
+
+                String className = String.format("0x%06x: chicory interpreter", address);
+                if (functionName == null) {
+                    functionName = String.format("func_%d", funcId);
+                }
+                traces.add(new StackTraceElement(className, functionName, fileName, line));
+            }
+        }
+
+        e.setStackTrace(traces.toArray(new StackTraceElement[0]));
     }
 
     protected static StackFrame THROW_REF(

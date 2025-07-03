@@ -7,11 +7,17 @@ import java.util.Objects;
 public final class CodeSection extends Section {
     private final List<FunctionBody> functionBodies;
     private final boolean requiresDataCount;
+    private final int address;
 
-    private CodeSection(List<FunctionBody> functionBodies, boolean requiresDataCount) {
+    private CodeSection(List<FunctionBody> functionBodies, boolean requiresDataCount, int address) {
         super(SectionId.CODE);
         this.functionBodies = List.copyOf(functionBodies);
         this.requiresDataCount = requiresDataCount;
+        this.address = address;
+    }
+
+    public int address() {
+        return address;
     }
 
     public FunctionBody[] functionBodies() {
@@ -37,6 +43,7 @@ public final class CodeSection extends Section {
     public static final class Builder {
         private final List<FunctionBody> functionBodies = new ArrayList<>();
         private boolean requiresDataCount;
+        private int address;
 
         private Builder() {}
 
@@ -58,7 +65,12 @@ public final class CodeSection extends Section {
         }
 
         public CodeSection build() {
-            return new CodeSection(functionBodies, requiresDataCount);
+            return new CodeSection(functionBodies, requiresDataCount, address);
+        }
+
+        public Builder withSectionAddress(int sectionAddress) {
+            this.address = sectionAddress;
+            return this;
         }
     }
 

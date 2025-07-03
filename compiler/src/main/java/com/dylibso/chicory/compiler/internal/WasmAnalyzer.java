@@ -6,6 +6,7 @@ import static java.util.Collections.reverse;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
+import com.dylibso.chicory.runtime.Stratum;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
@@ -82,7 +83,7 @@ final class WasmAnalyzer {
     }
 
     @SuppressWarnings("checkstyle:modifiedcontrolvariable")
-    public List<CompilerInstruction> analyze(int funcId) {
+    public List<CompilerInstruction> analyze(int funcId, Compiler.DebugContext debugContext) {
         var functionType = functionTypes.get(funcId);
         var body = module.codeSection().getFunctionBody(funcId - functionImports);
         var stack = new TypeStack();
@@ -139,13 +140,45 @@ final class WasmAnalyzer {
         // implicit block for the function
         stack.enterScope(FUNCTION_SCOPE, FunctionType.of(List.of(), functionType.returns()));
 
+        var codeSectionAddress = module.codeSection().address();
+
         int exitBlockDepth = -1;
+        Stratum.Line lastLineMapping = null;
+        int startLineNo = -1;
+        String debugFunctionName = null;
+
         for (int idx = 0; idx < body.instructions().size(); idx++) {
             AnnotatedInstruction ins = body.instructions().get(idx);
 
-            if (labels.contains(idx)) {
+            // get the sourceMapIndex for the current instruction:
+            var lineMapping =
+                    debugContext.inputStratum.getInputLine(ins.address() - codeSectionAddress);
+            if (lineMapping != null && lineMapping != lastLineMapping) {
+                if (debugFunctionName == null) {
+                    debugFunctionName =
+                            debugContext.inputStratum.getFunctionMapping(
+                                    ins.address() - codeSectionAddress);
+                }
+
+                var outputLineNo = debugContext.nextOutputLineNo++;
+                if (startLineNo < 0) {
+                    startLineNo = outputLineNo;
+                }
+
+                String file = lineMapping.fileName();
+                String path = lineMapping.filePath();
+                debugContext.outputStratum.withLineMapping(
+                        file, path, lineMapping.line(), lineMapping.count(), outputLineNo, 1);
+
+                labels.add(idx);
+                result.add(new CompilerInstruction(CompilerOpCode.LABEL, idx));
+                result.add(
+                        new CompilerInstruction(
+                                CompilerOpCode.LINE_NUMBER, new long[] {outputLineNo, idx}));
+            } else if (labels.contains(idx)) {
                 result.add(new CompilerInstruction(CompilerOpCode.LABEL, idx));
             }
+            lastLineMapping = lineMapping;
 
             // skip instructions after unconditional control transfer
             if (exitBlockDepth >= 0) {
@@ -368,6 +401,18 @@ final class WasmAnalyzer {
         // implicit return at end of function
         for (var type : reversed(functionType.returns())) {
             stack.pop(type);
+        }
+
+        if (debugFunctionName != null && startLineNo >= 0) {
+            var endLineNo = debugContext.nextOutputLineNo++;
+            debugContext.outputStratum.withFunctionMapping(
+                    debugFunctionName, startLineNo, endLineNo);
+
+            var idx = body.instructions().size();
+            result.add(new CompilerInstruction(CompilerOpCode.LABEL, idx));
+            result.add(
+                    new CompilerInstruction(
+                            CompilerOpCode.LINE_NUMBER, new long[] {endLineNo, idx}));
         }
         result.add(new CompilerInstruction(CompilerOpCode.RETURN, ids(functionType.returns())));
 
