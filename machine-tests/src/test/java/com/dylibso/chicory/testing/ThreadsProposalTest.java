@@ -3,17 +3,23 @@ package com.dylibso.chicory.testing;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.ByteBufferMemory;
 import com.dylibso.chicory.runtime.ImportMemory;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
+import com.dylibso.chicory.runtime.InterpreterMachine;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -30,41 +36,61 @@ public class ThreadsProposalTest {
         int lock(Instance instance, int mutexAddr, long expected);
     }
 
-    private static Stream<Arguments> memoryImplementations() {
-        var memoryLimits = new MemoryLimits(1, 1, true);
-        return Stream.of(
-                Arguments.of(new ByteArrayMemory(memoryLimits)),
-                Arguments.of(new ByteBufferMemory(memoryLimits)));
+    private static MemoryLimits memoryLimits = new MemoryLimits(1, 1, true);
+    private static List<Supplier<Memory>> memories =
+            List.of(
+                    () -> new ByteArrayMemory(memoryLimits),
+                    () -> new ByteBufferMemory(memoryLimits));
+    private static List<Function<Instance.Builder, Instance.Builder>> machines =
+            List.of(
+                    // interpreter
+                    (instBuilder) -> instBuilder.withMachineFactory(InterpreterMachine::new),
+                    // runtime compiler
+                    (instBuilder) ->
+                            instBuilder.withMachineFactory(MachineFactoryCompiler::compile),
+                    // build time compiler
+                    (instBuilder) -> instBuilder.withMachineFactory(ThreadsExampleModule::create));
+    private static List<LockWithTimeout> locks =
+            List.of(
+                    ThreadsProposalTest::lockMutexWithTimeout,
+                    ThreadsProposalTest::lock64MutexWithTimeout);
+
+    private static Stream<Arguments> memoryAndMachinesImplementations() {
+        List<Arguments> args = new ArrayList<>();
+        for (var mem : memories) {
+            for (var machine : machines) {
+                args.add(Arguments.of(mem.get(), machine));
+            }
+        }
+        return args.stream();
     }
 
-    private static Stream<Arguments> memoryAndLocksImplementations() {
-        var memoryLimits = new MemoryLimits(1, 1, true);
-        return Stream.of(
-                Arguments.of(
-                        new ByteArrayMemory(memoryLimits),
-                        (LockWithTimeout) ThreadsProposalTest::lockMutexWithTimeout),
-                Arguments.of(
-                        new ByteArrayMemory(memoryLimits),
-                        (LockWithTimeout) ThreadsProposalTest::lock64MutexWithTimeout),
-                Arguments.of(
-                        new ByteBufferMemory(memoryLimits),
-                        (LockWithTimeout) ThreadsProposalTest::lockMutexWithTimeout),
-                Arguments.of(
-                        new ByteBufferMemory(memoryLimits),
-                        (LockWithTimeout) ThreadsProposalTest::lock64MutexWithTimeout));
+    private static Stream<Arguments> memoryMachinesAndLocksImplementations() {
+        List<Arguments> args = new ArrayList<>();
+        for (var mem : memories) {
+            for (var machine : machines) {
+                for (var lock : locks) {
+                    args.add(Arguments.of(mem.get(), machine, lock));
+                }
+            }
+        }
+        return args.stream();
     }
 
     // originally from:
     // https://github.com/WebAssembly/threads/blob/b2567bff61ee6fbe731934f0ed17a5d48dc9ab01/proposals/threads/Overview.md#example
     private static WasmModule module = loadModule("compiled/threads-example.wat.wasm");
 
-    private static Instance newInstance(Memory memory) {
-        return Instance.builder(module)
-                .withImportValues(
-                        ImportValues.builder()
-                                .addMemory(new ImportMemory("env", "memory", memory))
-                                .build())
-                .build();
+    private static Instance newInstance(
+            Memory memory, Function<Instance.Builder, Instance.Builder> machineInject) {
+        var builder =
+                Instance.builder(module)
+                        .withImportValues(
+                                ImportValues.builder()
+                                        .addMemory(new ImportMemory("env", "memory", memory))
+                                        .build());
+
+        return machineInject.apply(builder).build();
     }
 
     private static int tryLockMutex(Instance instance, int mutexAddr) {
@@ -90,11 +116,13 @@ public class ThreadsProposalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("memoryImplementations")
-    public void threadsExample(Memory memory) throws Exception {
+    @MethodSource("memoryAndMachinesImplementations")
+    public void threadsExample(
+            Memory memory, Function<Instance.Builder, Instance.Builder> machineInject)
+            throws Exception {
         var mutexAddr = 0;
-        var mainInstance = newInstance(memory);
-        var workerInstance = newInstance(memory);
+        var mainInstance = newInstance(memory, machineInject);
+        var workerInstance = newInstance(memory, machineInject);
 
         // Lock on main
         var mainLocked = tryLockMutex(mainInstance, mutexAddr);
@@ -142,12 +170,15 @@ public class ThreadsProposalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("memoryAndLocksImplementations")
-    public void threadsExampleWake(Memory memory, LockWithTimeout lockWithTimeout)
+    @MethodSource("memoryMachinesAndLocksImplementations")
+    public void threadsExampleWake(
+            Memory memory,
+            Function<Instance.Builder, Instance.Builder> machineInject,
+            LockWithTimeout lockWithTimeout)
             throws Exception {
         var mutexAddr = 0;
-        var mainInstance = newInstance(memory);
-        var workerInstance = newInstance(memory);
+        var mainInstance = newInstance(memory, machineInject);
+        var workerInstance = newInstance(memory, machineInject);
 
         // Lock on main
         var mainLocked = tryLockMutex(mainInstance, mutexAddr);
@@ -183,12 +214,15 @@ public class ThreadsProposalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("memoryAndLocksImplementations")
-    public void threadsExampleNotEqual(Memory memory, LockWithTimeout lockWithTimeout)
+    @MethodSource("memoryMachinesAndLocksImplementations")
+    public void threadsExampleNotEqual(
+            Memory memory,
+            Function<Instance.Builder, Instance.Builder> machineInject,
+            LockWithTimeout lockWithTimeout)
             throws Exception {
         var mutexAddr = 0;
-        var mainInstance = newInstance(memory);
-        var workerInstance = newInstance(memory);
+        var mainInstance = newInstance(memory, machineInject);
+        var workerInstance = newInstance(memory, machineInject);
 
         // Lock on main
         var mainLocked = tryLockMutex(mainInstance, mutexAddr);
@@ -224,12 +258,15 @@ public class ThreadsProposalTest {
     }
 
     @ParameterizedTest
-    @MethodSource("memoryAndLocksImplementations")
-    public void threadsExampleTimeout(Memory memory, LockWithTimeout lockWithTimeout)
+    @MethodSource("memoryMachinesAndLocksImplementations")
+    public void threadsExampleTimeout(
+            Memory memory,
+            Function<Instance.Builder, Instance.Builder> machineInject,
+            LockWithTimeout lockWithTimeout)
             throws Exception {
         var mutexAddr = 0;
-        var mainInstance = newInstance(memory);
-        var workerInstance = newInstance(memory);
+        var mainInstance = newInstance(memory, machineInject);
+        var workerInstance = newInstance(memory, machineInject);
 
         // Lock on main
         var mainLocked = tryLockMutex(mainInstance, mutexAddr);

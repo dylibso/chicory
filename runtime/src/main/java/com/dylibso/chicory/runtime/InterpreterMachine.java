@@ -2249,7 +2249,7 @@ public class InterpreterMachine implements Machine {
 
     private static void I64_ATOMIC_STORE8(MStack stack, Instance instance, Operands operands) {
         var value = (byte) stack.pop();
-        var ptr = (int) (operands.get(1) + (int) stack.pop());
+        var ptr = readMemPtr(stack, operands);
         synchronized (instance.memory().lock(ptr)) {
             instance.memory().writeByte(ptr, value);
         }

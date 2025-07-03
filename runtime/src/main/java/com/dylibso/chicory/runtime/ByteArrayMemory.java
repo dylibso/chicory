@@ -76,6 +76,10 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public Object lock(int address) {
+        if (!shared()) {
+            // disable locking
+            return new Object();
+        }
         return monitors.computeIfAbsent(address, k -> new AtomicInteger(0));
     }
 
@@ -92,20 +96,22 @@ public final class ByteArrayMemory implements Memory {
                 });
     }
 
-    private int waitOnMonitor(int address, long timeout) {
-        long elapsed = System.nanoTime() + timeout;
+    // this method should only be invoked guarded in a "synchronized (monitor)" section
+    private int waitOnMonitor(int address, long timeout, AtomicInteger monitor) {
+        long endTime = System.nanoTime() + timeout;
         try {
             while (!notifyInProgress.containsKey(address) // prevents spurious wakeup
-                    && System.nanoTime() < elapsed) {
-                var waitTime = elapsed - System.nanoTime();
+                    && System.nanoTime() < endTime) {
+                var waitTime = endTime - System.nanoTime();
                 long millis = Math.max(waitTime / 1_000_000L, 0);
                 int nanos = Math.max((int) (waitTime % 1_000_000L), 0);
-                monitors.get(address).wait(millis, nanos);
+                monitor.wait(millis, nanos);
             }
         } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt(); // Restore interrupt status
             throw new ChicoryInterruptedException("Thread interrupted");
         }
-        if (System.nanoTime() >= elapsed) {
+        if (System.nanoTime() >= endTime) {
             return 2; // timeout
         } else {
             return 0; // wake
@@ -113,25 +119,29 @@ public final class ByteArrayMemory implements Memory {
     }
 
     private void endWaitOn(int address) {
-        if (notifyInProgress.containsKey(address)
-                && notifyInProgress.get(address).decrementAndGet() == 0) {
+        AtomicInteger notifyCount = notifyInProgress.get(address);
+        if (notifyCount != null && notifyCount.decrementAndGet() == 0) {
             notifyInProgress.remove(address);
         }
-        if (monitors.containsKey(address) && monitors.get(address).decrementAndGet() == 0) {
+        AtomicInteger monitor = monitors.get(address);
+        if (monitor != null && monitor.decrementAndGet() == 0) {
             monitors.remove(address);
         }
-        ;
     }
 
     // Wait until value at address != expected
     @Override
     public int waitOn(int address, int expected, long timeout) {
+        if (!shared()) {
+            throw new ChicoryException("Attempt to wait on a non-shared memory, not supported.");
+        }
         AtomicInteger monitor = nextMonitor(address);
 
         synchronized (monitor) {
             try {
                 if (((int) INT_ARR_HANDLE.getVolatile(buffer, address)) == expected) {
-                    return waitOnMonitor(address, (timeout < 0) ? Long.MAX_VALUE : timeout);
+                    return waitOnMonitor(
+                            address, (timeout < 0) ? Long.MAX_VALUE : timeout, monitor);
                 } else {
                     return 1; // not-equal
                 }
@@ -143,13 +153,16 @@ public final class ByteArrayMemory implements Memory {
 
     @Override
     public int waitOn(int address, long expected, long timeout) {
-        timeout = (timeout < 0) ? Long.MAX_VALUE : timeout;
+        if (!shared()) {
+            throw new ChicoryException("Attempt to wait on a non-shared memory, not supported.");
+        }
         AtomicInteger monitor = nextMonitor(address);
 
         synchronized (monitor) {
             try {
                 if (((long) LONG_ARR_HANDLE.getVolatile(buffer, address)) == expected) {
-                    return waitOnMonitor(address, (timeout < 0) ? Long.MAX_VALUE : timeout);
+                    return waitOnMonitor(
+                            address, (timeout < 0) ? Long.MAX_VALUE : timeout, monitor);
                 } else {
                     return 1; // not-equal
                 }
