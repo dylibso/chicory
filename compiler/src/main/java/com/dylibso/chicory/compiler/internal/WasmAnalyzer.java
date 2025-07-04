@@ -454,6 +454,9 @@ final class WasmAnalyzer {
             case I32_LOAD:
             case I32_POPCNT:
             case MEMORY_GROW:
+            case I32_ATOMIC_LOAD:
+            case I32_ATOMIC_LOAD8_U:
+            case I32_ATOMIC_LOAD16_U:
                 // [I32] -> [I32]
                 stack.pop(ValType.I32);
                 stack.push(ValType.I32);
@@ -536,6 +539,25 @@ final class WasmAnalyzer {
             case I32_SHR_U:
             case I32_SUB:
             case I32_XOR:
+            case I32_ATOMIC_RMW_ADD:
+            case I32_ATOMIC_RMW_SUB:
+            case I32_ATOMIC_RMW_AND:
+            case I32_ATOMIC_RMW_OR:
+            case I32_ATOMIC_RMW_XOR:
+            case I32_ATOMIC_RMW_XCHG:
+            case MEM_ATOMIC_NOTIFY:
+            case I32_ATOMIC_RMW8_ADD_U:
+            case I32_ATOMIC_RMW8_SUB_U:
+            case I32_ATOMIC_RMW8_AND_U:
+            case I32_ATOMIC_RMW8_OR_U:
+            case I32_ATOMIC_RMW8_XOR_U:
+            case I32_ATOMIC_RMW8_XCHG_U:
+            case I32_ATOMIC_RMW16_ADD_U:
+            case I32_ATOMIC_RMW16_SUB_U:
+            case I32_ATOMIC_RMW16_AND_U:
+            case I32_ATOMIC_RMW16_OR_U:
+            case I32_ATOMIC_RMW16_XOR_U:
+            case I32_ATOMIC_RMW16_XCHG_U:
                 // [I32 I32] -> [I32]
                 stack.pop(ValType.I32);
                 stack.pop(ValType.I32);
@@ -636,6 +658,10 @@ final class WasmAnalyzer {
             case I64_LOAD8_S:
             case I64_LOAD8_U:
             case I64_LOAD:
+            case I64_ATOMIC_LOAD:
+            case I64_ATOMIC_LOAD8_U:
+            case I64_ATOMIC_LOAD16_U:
+            case I64_ATOMIC_LOAD32_U:
                 // [I32] -> [I64]
                 stack.pop(ValType.I32);
                 stack.push(ValType.I64);
@@ -695,6 +721,9 @@ final class WasmAnalyzer {
             case I32_STORE:
             case I32_STORE8:
             case I32_STORE16:
+            case I32_ATOMIC_STORE:
+            case I32_ATOMIC_STORE8:
+            case I32_ATOMIC_STORE16:
                 // [I32 I32] -> []
                 stack.pop(ValType.I32);
                 stack.pop(ValType.I32);
@@ -708,6 +737,10 @@ final class WasmAnalyzer {
             case I64_STORE8:
             case I64_STORE16:
             case I64_STORE32:
+            case I64_ATOMIC_STORE:
+            case I64_ATOMIC_STORE8:
+            case I64_ATOMIC_STORE16:
+            case I64_ATOMIC_STORE32:
                 // [I32 I64] -> []
                 stack.pop(ValType.I64);
                 stack.pop(ValType.I32);
@@ -809,6 +842,68 @@ final class WasmAnalyzer {
             case DATA_DROP:
             case ELEM_DROP:
                 // [] -> []
+                break;
+            case I32_ATOMIC_RMW_CMPXCHG:
+            case I32_ATOMIC_RMW8_CMPXCHG_U:
+            case I32_ATOMIC_RMW16_CMPXCHG_U:
+                // [I32 I32 I32] -> [I32]
+                stack.pop(ValType.I32);
+                stack.pop(ValType.I32);
+                stack.pop(ValType.I32);
+                stack.push(ValType.I32);
+                break;
+            case I64_ATOMIC_RMW_ADD:
+            case I64_ATOMIC_RMW_SUB:
+            case I64_ATOMIC_RMW_AND:
+            case I64_ATOMIC_RMW_OR:
+            case I64_ATOMIC_RMW_XOR:
+            case I64_ATOMIC_RMW_XCHG:
+            case I64_ATOMIC_RMW8_ADD_U:
+            case I64_ATOMIC_RMW8_SUB_U:
+            case I64_ATOMIC_RMW8_AND_U:
+            case I64_ATOMIC_RMW8_OR_U:
+            case I64_ATOMIC_RMW8_XOR_U:
+            case I64_ATOMIC_RMW8_XCHG_U:
+            case I64_ATOMIC_RMW16_ADD_U:
+            case I64_ATOMIC_RMW16_SUB_U:
+            case I64_ATOMIC_RMW16_AND_U:
+            case I64_ATOMIC_RMW16_OR_U:
+            case I64_ATOMIC_RMW16_XOR_U:
+            case I64_ATOMIC_RMW16_XCHG_U:
+            case I64_ATOMIC_RMW32_ADD_U:
+            case I64_ATOMIC_RMW32_SUB_U:
+            case I64_ATOMIC_RMW32_AND_U:
+            case I64_ATOMIC_RMW32_OR_U:
+            case I64_ATOMIC_RMW32_XOR_U:
+            case I64_ATOMIC_RMW32_XCHG_U:
+                // [I32 I64] -> [I64]
+                stack.pop(ValType.I64);
+                stack.pop(ValType.I32);
+                stack.push(ValType.I64);
+                break;
+            case I64_ATOMIC_RMW_CMPXCHG:
+            case I64_ATOMIC_RMW8_CMPXCHG_U:
+            case I64_ATOMIC_RMW16_CMPXCHG_U:
+            case I64_ATOMIC_RMW32_CMPXCHG_U:
+                // [I32 I64 I64] -> [I64]
+                stack.pop(ValType.I64);
+                stack.pop(ValType.I64);
+                stack.pop(ValType.I32);
+                stack.push(ValType.I64);
+                break;
+            case MEM_ATOMIC_WAIT32:
+                // [I32 I32 I64] -> [I32]
+                stack.pop(ValType.I64);
+                stack.pop(ValType.I32);
+                stack.pop(ValType.I32);
+                stack.push(ValType.I32);
+                break;
+            case MEM_ATOMIC_WAIT64:
+                // [I32 I64 I64] -> [I32]
+                stack.pop(ValType.I64);
+                stack.pop(ValType.I64);
+                stack.pop(ValType.I32);
+                stack.push(ValType.I32);
                 break;
             default:
                 throw new ChicoryException("Unhandled opcode: " + ins.opcode());

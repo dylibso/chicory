@@ -84,6 +84,137 @@ final class EmitterMap {
                     .intrinsic(CompilerOpCode.F32_STORE, Emitters::F32_STORE)
                     .intrinsic(CompilerOpCode.F64_STORE, Emitters::F64_STORE)
 
+                    // === Threads =====
+                    .intrinsic(CompilerOpCode.ATOMIC_INT_LOAD, Emitters::ATOMIC_INT_READ)
+                    .intrinsic(CompilerOpCode.ATOMIC_INT_LOAD_BYTE, Emitters::ATOMIC_INT_READ_BYTE)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_LOAD_SHORT, Emitters::ATOMIC_INT_READ_SHORT)
+                    .intrinsic(CompilerOpCode.ATOMIC_LONG_LOAD, Emitters::ATOMIC_LONG_READ)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_LOAD_BYTE, Emitters::ATOMIC_LONG_READ_BYTE)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_LOAD_SHORT, Emitters::ATOMIC_LONG_READ_SHORT)
+                    .intrinsic(CompilerOpCode.ATOMIC_LONG_LOAD_INT, Emitters::ATOMIC_LONG_READ_INT)
+                    .intrinsic(CompilerOpCode.ATOMIC_INT_STORE, Emitters::ATOMIC_INT_STORE)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_STORE_BYTE, Emitters::ATOMIC_INT_STORE_BYTE)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_STORE_SHORT, Emitters::ATOMIC_INT_STORE_SHORT)
+                    .intrinsic(CompilerOpCode.ATOMIC_LONG_STORE, Emitters::ATOMIC_LONG_STORE)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_STORE_BYTE, Emitters::ATOMIC_LONG_STORE_BYTE)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_STORE_SHORT,
+                            Emitters::ATOMIC_LONG_STORE_SHORT)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_STORE_INT, Emitters::ATOMIC_LONG_STORE_INT)
+                    .intrinsic(CompilerOpCode.ATOMIC_INT_RMW_ADD, Emitters::ATOMIC_INT_RMW_ADD)
+                    .intrinsic(CompilerOpCode.ATOMIC_INT_RMW_SUB, Emitters::ATOMIC_INT_RMW_SUB)
+                    .intrinsic(CompilerOpCode.ATOMIC_INT_RMW_AND, Emitters::ATOMIC_INT_RMW_AND)
+                    .intrinsic(CompilerOpCode.ATOMIC_INT_RMW_OR, Emitters::ATOMIC_INT_RMW_OR)
+                    .intrinsic(CompilerOpCode.ATOMIC_INT_RMW_XOR, Emitters::ATOMIC_INT_RMW_XOR)
+                    .intrinsic(CompilerOpCode.ATOMIC_INT_RMW_XCHG, Emitters::ATOMIC_INT_RMW_XCHG)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW_CMPXCHG, Emitters::ATOMIC_INT_RMW_CMPXCHG)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW8_ADD_U, Emitters::ATOMIC_INT_RMW8_ADD_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW8_SUB_U, Emitters::ATOMIC_INT_RMW8_SUB_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW8_AND_U, Emitters::ATOMIC_INT_RMW8_AND_U)
+                    .intrinsic(CompilerOpCode.ATOMIC_INT_RMW8_OR_U, Emitters::ATOMIC_INT_RMW8_OR_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW8_XOR_U, Emitters::ATOMIC_INT_RMW8_XOR_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW8_XCHG_U, Emitters::ATOMIC_INT_RMW8_XCHG_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW8_CMPXCHG_U,
+                            Emitters::ATOMIC_INT_RMW8_CMPXCHG_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW16_ADD_U, Emitters::ATOMIC_INT_RMW16_ADD_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW16_SUB_U, Emitters::ATOMIC_INT_RMW16_SUB_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW16_AND_U, Emitters::ATOMIC_INT_RMW16_AND_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW16_OR_U, Emitters::ATOMIC_INT_RMW16_OR_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW16_XOR_U, Emitters::ATOMIC_INT_RMW16_XOR_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW16_XCHG_U,
+                            Emitters::ATOMIC_INT_RMW16_XCHG_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_INT_RMW16_CMPXCHG_U,
+                            Emitters::ATOMIC_INT_RMW16_CMPXCHG_U)
+                    .intrinsic(CompilerOpCode.ATOMIC_LONG_RMW_ADD, Emitters::ATOMIC_LONG_RMW_ADD)
+                    .intrinsic(CompilerOpCode.ATOMIC_LONG_RMW_SUB, Emitters::ATOMIC_LONG_RMW_SUB)
+                    .intrinsic(CompilerOpCode.ATOMIC_LONG_RMW_AND, Emitters::ATOMIC_LONG_RMW_AND)
+                    .intrinsic(CompilerOpCode.ATOMIC_LONG_RMW_OR, Emitters::ATOMIC_LONG_RMW_OR)
+                    .intrinsic(CompilerOpCode.ATOMIC_LONG_RMW_XOR, Emitters::ATOMIC_LONG_RMW_XOR)
+                    .intrinsic(CompilerOpCode.ATOMIC_LONG_RMW_XCHG, Emitters::ATOMIC_LONG_RMW_XCHG)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW_CMPXCHG,
+                            Emitters::ATOMIC_LONG_RMW_CMPXCHG)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW8_ADD_U, Emitters::ATOMIC_LONG_RMW8_ADD_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW8_SUB_U, Emitters::ATOMIC_LONG_RMW8_SUB_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW8_AND_U, Emitters::ATOMIC_LONG_RMW8_AND_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW8_OR_U, Emitters::ATOMIC_LONG_RMW8_OR_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW8_XOR_U, Emitters::ATOMIC_LONG_RMW8_XOR_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW8_XCHG_U,
+                            Emitters::ATOMIC_LONG_RMW8_XCHG_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW8_CMPXCHG_U,
+                            Emitters::ATOMIC_LONG_RMW8_CMPXCHG_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW16_ADD_U,
+                            Emitters::ATOMIC_LONG_RMW16_ADD_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW16_SUB_U,
+                            Emitters::ATOMIC_LONG_RMW16_SUB_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW16_AND_U,
+                            Emitters::ATOMIC_LONG_RMW16_AND_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW16_OR_U, Emitters::ATOMIC_LONG_RMW16_OR_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW16_XOR_U,
+                            Emitters::ATOMIC_LONG_RMW16_XOR_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW16_XCHG_U,
+                            Emitters::ATOMIC_LONG_RMW16_XCHG_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW16_CMPXCHG_U,
+                            Emitters::ATOMIC_LONG_RMW16_CMPXCHG_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW32_ADD_U,
+                            Emitters::ATOMIC_LONG_RMW32_ADD_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW32_SUB_U,
+                            Emitters::ATOMIC_LONG_RMW32_SUB_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW32_AND_U,
+                            Emitters::ATOMIC_LONG_RMW32_AND_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW32_OR_U, Emitters::ATOMIC_LONG_RMW32_OR_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW32_XOR_U,
+                            Emitters::ATOMIC_LONG_RMW32_XOR_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW32_XCHG_U,
+                            Emitters::ATOMIC_LONG_RMW32_XCHG_U)
+                    .intrinsic(
+                            CompilerOpCode.ATOMIC_LONG_RMW32_CMPXCHG_U,
+                            Emitters::ATOMIC_LONG_RMW32_CMPXCHG_U)
+                    .intrinsic(CompilerOpCode.MEM_ATOMIC_WAIT32, Emitters::MEM_ATOMIC_WAIT32)
+                    .intrinsic(CompilerOpCode.MEM_ATOMIC_WAIT64, Emitters::MEM_ATOMIC_WAIT64)
+                    .intrinsic(CompilerOpCode.MEM_ATOMIC_NOTIFY, Emitters::MEM_ATOMIC_NOTIFY)
+
                     // ====== I32 ======
                     .intrinsic(CompilerOpCode.I32_ADD, Emitters::I32_ADD)
                     .intrinsic(CompilerOpCode.I32_AND, Emitters::I32_AND)

@@ -170,13 +170,18 @@ public class Instance {
             throw new InvalidException("unknown memory");
         }
 
-        Export startFunction = this.exports.get(START_FUNCTION_NAME);
-        if (startFunction != null && start) {
+        if (this.module.startSection().isPresent()) {
             try {
-                export(START_FUNCTION_NAME).apply();
+                this.machine.call(
+                        (int) this.module.startSection().get().startIndex(), new long[] {});
             } catch (TrapException e) {
                 throw new UninstantiableException(e.getMessage(), e);
             }
+        }
+
+        Export startFunction = this.exports.get(START_FUNCTION_NAME);
+        if (startFunction != null && start) {
+            export(START_FUNCTION_NAME).apply();
         }
 
         return this;
@@ -502,7 +507,9 @@ public class Instance {
             var maxCurrent = i.limits().max();
             if (!i.entryType().equals(t.table().elementType())) {
                 throw new UnlinkableException("incompatible import type");
-            } else if (minExpected < minCurrent || maxExpected > maxCurrent) {
+            } else if (minExpected < minCurrent
+                    || maxExpected > maxCurrent
+                    || t.table().limits().shared() != i.limits().shared()) {
                 throw new UnlinkableException(
                         "incompatible import type, non-compatible limits, expected: "
                                 + i.limits()
@@ -531,7 +538,9 @@ public class Instance {
             // In other words, the bounds are not valid when:
             // - HostMem current number of pages cannot be less than the import lower bound.
             // - HostMem upper bound cannot be larger than the given upper bound.
-            if (hostMemCurrentPages < importInitialPages || hostMemMaxPages > importMaxPages) {
+            if (hostMemCurrentPages < importInitialPages
+                    || hostMemMaxPages > importMaxPages
+                    || m.memory().shared() != i.limits().shared()) {
                 throw new UnlinkableException(
                         "incompatible import type, non-compatible limits, import: "
                                 + i.limits()
@@ -539,6 +548,8 @@ public class Instance {
                                 + m.memory().initialPages()
                                 + ", host max pages: "
                                 + m.memory().maximumPages()
+                                + ", host shared: "
+                                + m.memory().shared()
                                 + " on memory: "
                                 + m.module()
                                 + "."
@@ -776,15 +787,6 @@ public class Instance {
                             imports,
                             requireNonNullElseGet(importValues, ImportValues::empty),
                             module.memorySection().map(MemorySection::memoryCount).orElse(0));
-
-            if (module.startSection().isPresent()) {
-                var export =
-                        new Export(
-                                START_FUNCTION_NAME,
-                                (int) module.startSection().get().startIndex(),
-                                FUNCTION);
-                exports.put(START_FUNCTION_NAME, export);
-            }
 
             for (int i = 0; i < module.functionSection().functionCount(); i++) {
                 functionTypes[funcIdx++] = module.functionSection().getFunctionType(i);

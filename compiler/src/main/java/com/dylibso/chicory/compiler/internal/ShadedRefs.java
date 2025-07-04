@@ -37,6 +37,13 @@ public final class ShadedRefs {
     static final Method MEMORY_WRITE_LONG;
     static final Method MEMORY_WRITE_FLOAT;
     static final Method MEMORY_WRITE_DOUBLE;
+    static final Method MEMORY_ATOMIC_INT_BYTE_READ;
+    static final Method MEMORY_ATOMIC_INT_SHORT_READ;
+    static final Method MEMORY_ATOMIC_INT_READ;
+    static final Method MEMORY_ATOMIC_LONG_BYTE_READ;
+    static final Method MEMORY_ATOMIC_LONG_SHORT_READ;
+    static final Method MEMORY_ATOMIC_LONG_INT_READ;
+    static final Method MEMORY_ATOMIC_LONG_READ;
     static final Method REF_IS_NULL;
     static final Method TABLE_GET;
     static final Method TABLE_SET;
@@ -58,6 +65,67 @@ public final class ShadedRefs {
     static final Method CREATE_WASM_EXCEPTION;
     static final Method INSTANCE_GET_EXCEPTION;
     static final Method EXCEPTION_MATCHES;
+
+    static final Method MEMORY_ATOMIC_INT_WRITE;
+    static final Method MEMORY_ATOMIC_INT_BYTE_WRITE;
+    static final Method MEMORY_ATOMIC_INT_SHORT_WRITE;
+    static final Method MEMORY_ATOMIC_LONG_WRITE;
+    static final Method MEMORY_ATOMIC_LONG_BYTE_WRITE;
+    static final Method MEMORY_ATOMIC_LONG_SHORT_WRITE;
+    static final Method MEMORY_ATOMIC_LONG_INT_WRITE;
+    static final Method MEMORY_ATOMIC_INT_RMW_ADD;
+    static final Method MEMORY_ATOMIC_INT_RMW_SUB;
+    static final Method MEMORY_ATOMIC_INT_RMW_AND;
+    static final Method MEMORY_ATOMIC_INT_RMW_OR;
+    static final Method MEMORY_ATOMIC_INT_RMW_XOR;
+    static final Method MEMORY_ATOMIC_INT_RMW_XCHG;
+    static final Method MEMORY_ATOMIC_INT_RMW_CMPXCHG;
+
+    static final Method MEMORY_ATOMIC_INT_RMW8_ADD_U;
+    static final Method MEMORY_ATOMIC_INT_RMW8_SUB_U;
+    static final Method MEMORY_ATOMIC_INT_RMW8_AND_U;
+    static final Method MEMORY_ATOMIC_INT_RMW8_OR_U;
+    static final Method MEMORY_ATOMIC_INT_RMW8_XOR_U;
+    static final Method MEMORY_ATOMIC_INT_RMW8_XCHG_U;
+    static final Method MEMORY_ATOMIC_INT_RMW8_CMPXCHG_U;
+    static final Method MEMORY_ATOMIC_INT_RMW16_ADD_U;
+    static final Method MEMORY_ATOMIC_INT_RMW16_SUB_U;
+    static final Method MEMORY_ATOMIC_INT_RMW16_AND_U;
+    static final Method MEMORY_ATOMIC_INT_RMW16_OR_U;
+    static final Method MEMORY_ATOMIC_INT_RMW16_XOR_U;
+    static final Method MEMORY_ATOMIC_INT_RMW16_XCHG_U;
+    static final Method MEMORY_ATOMIC_INT_RMW16_CMPXCHG_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW_ADD;
+    static final Method MEMORY_ATOMIC_LONG_RMW_SUB;
+    static final Method MEMORY_ATOMIC_LONG_RMW_AND;
+    static final Method MEMORY_ATOMIC_LONG_RMW_OR;
+    static final Method MEMORY_ATOMIC_LONG_RMW_XOR;
+    static final Method MEMORY_ATOMIC_LONG_RMW_XCHG;
+    static final Method MEMORY_ATOMIC_LONG_RMW_CMPXCHG;
+    static final Method MEMORY_ATOMIC_LONG_RMW8_ADD_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW8_SUB_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW8_AND_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW8_OR_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW8_XOR_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW8_XCHG_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW8_CMPXCHG_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW16_ADD_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW16_SUB_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW16_AND_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW16_OR_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW16_XOR_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW16_XCHG_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW16_CMPXCHG_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW32_ADD_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW32_SUB_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW32_AND_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW32_OR_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW32_XOR_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW32_XCHG_U;
+    static final Method MEMORY_ATOMIC_LONG_RMW32_CMPXCHG_U;
+    static final Method MEMORY_ATOMIC_WAIT32;
+    static final Method MEMORY_ATOMIC_WAIT64;
+    static final Method MEMORY_ATOMIC_NOTIFY;
 
     static {
         try {
@@ -118,6 +186,27 @@ public final class ShadedRefs {
             MEMORY_WRITE_DOUBLE =
                     Shaded.class.getMethod(
                             "memoryWriteDouble", int.class, double.class, int.class, Memory.class);
+            MEMORY_ATOMIC_INT_BYTE_READ =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntByteRead", int.class, int.class, Memory.class);
+            MEMORY_ATOMIC_INT_SHORT_READ =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntShortRead", int.class, int.class, Memory.class);
+            MEMORY_ATOMIC_INT_READ =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRead", int.class, int.class, Memory.class);
+            MEMORY_ATOMIC_LONG_READ =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRead", int.class, int.class, Memory.class);
+            MEMORY_ATOMIC_LONG_BYTE_READ =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongByteRead", int.class, int.class, Memory.class);
+            MEMORY_ATOMIC_LONG_SHORT_READ =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongShortRead", int.class, int.class, Memory.class);
+            MEMORY_ATOMIC_LONG_INT_READ =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongIntRead", int.class, int.class, Memory.class);
             REF_IS_NULL = Shaded.class.getMethod("isRefNull", int.class);
             TABLE_GET = Shaded.class.getMethod("tableGet", int.class, int.class, Instance.class);
             TABLE_SET =
@@ -175,6 +264,402 @@ public final class ShadedRefs {
             EXCEPTION_MATCHES =
                     Shaded.class.getMethod(
                             "exceptionMatches", WasmException.class, int.class, Instance.class);
+
+            MEMORY_ATOMIC_INT_WRITE =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntWrite", int.class, int.class, int.class, Memory.class);
+            MEMORY_ATOMIC_INT_BYTE_WRITE =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntByteWrite",
+                            int.class,
+                            byte.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_SHORT_WRITE =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntShortWrite",
+                            int.class,
+                            short.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_WRITE =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongWrite",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_BYTE_WRITE =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongByteWrite",
+                            int.class,
+                            byte.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_SHORT_WRITE =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongShortWrite",
+                            int.class,
+                            short.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_INT_WRITE =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongIntWrite",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW_ADD =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmwAdd", int.class, int.class, int.class, Memory.class);
+            MEMORY_ATOMIC_INT_RMW_SUB =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmwSub", int.class, int.class, int.class, Memory.class);
+            MEMORY_ATOMIC_INT_RMW_AND =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmwAnd", int.class, int.class, int.class, Memory.class);
+            MEMORY_ATOMIC_INT_RMW_OR =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmwOr", int.class, int.class, int.class, Memory.class);
+            MEMORY_ATOMIC_INT_RMW_XOR =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmwXor", int.class, int.class, int.class, Memory.class);
+            MEMORY_ATOMIC_INT_RMW_XCHG =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmwXchg",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW_CMPXCHG =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmwCmpxchg",
+                            int.class,
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+
+            MEMORY_ATOMIC_INT_RMW8_ADD_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw8AddU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW8_SUB_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw8SubU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW8_AND_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw8AndU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW8_OR_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw8OrU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW8_XOR_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw8XorU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW8_XCHG_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw8XchgU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW8_CMPXCHG_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw8CmpxchgU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW16_ADD_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw16AddU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW16_SUB_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw16SubU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW16_AND_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw16AndU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW16_OR_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw16OrU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW16_XOR_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw16XorU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW16_XCHG_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw16XchgU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_INT_RMW16_CMPXCHG_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicIntRmw16CmpxchgU",
+                            int.class,
+                            int.class,
+                            int.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW_ADD =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmwAdd",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW_SUB =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmwSub",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW_AND =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmwAnd",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW_OR =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmwOr",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW_XOR =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmwXor",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW_XCHG =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmwXchg",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW_CMPXCHG =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmwCmpxchg",
+                            int.class,
+                            long.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW8_ADD_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw8AddU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW8_SUB_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw8SubU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW8_AND_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw8AndU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW8_OR_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw8OrU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW8_XOR_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw8XorU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW8_XCHG_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw8XchgU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW8_CMPXCHG_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw8CmpxchgU",
+                            int.class,
+                            long.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW16_ADD_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw16AddU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW16_SUB_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw16SubU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW16_AND_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw16AndU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW16_OR_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw16OrU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW16_XOR_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw16XorU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW16_XCHG_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw16XchgU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW16_CMPXCHG_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw16CmpxchgU",
+                            int.class,
+                            long.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW32_ADD_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw32AddU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW32_SUB_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw32SubU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW32_AND_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw32AndU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW32_OR_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw32OrU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW32_XOR_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw32XorU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW32_XCHG_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw32XchgU",
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_LONG_RMW32_CMPXCHG_U =
+                    Shaded.class.getMethod(
+                            "memoryAtomicLongRmw32CmpxchgU",
+                            int.class,
+                            long.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_WAIT32 =
+                    Shaded.class.getMethod(
+                            "memoryAtomicWait32",
+                            int.class,
+                            int.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_WAIT64 =
+                    Shaded.class.getMethod(
+                            "memoryAtomicWait64",
+                            int.class,
+                            long.class,
+                            long.class,
+                            int.class,
+                            Memory.class);
+            MEMORY_ATOMIC_NOTIFY =
+                    Shaded.class.getMethod(
+                            "memoryAtomicNotify", int.class, int.class, int.class, Memory.class);
 
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);

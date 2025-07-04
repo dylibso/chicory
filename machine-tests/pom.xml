@@ -46,6 +46,11 @@
       <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-params</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -82,6 +87,16 @@
             <configuration>
               <name>com.dylibso.chicory.wabt.Wat2Wasm</name>
               <wasmFile>${project.basedir}/../wabt/src/main/resources/wat2wasm</wasmFile>
+            </configuration>
+          </execution>
+          <execution>
+            <id>threads</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <name>com.dylibso.chicory.testing.ThreadsExampleModule</name>
+              <wasmFile>${project.basedir}/../wasm-corpus/src/main/resources/compiled/threads-example.wat.wasm</wasmFile>
             </configuration>
           </execution>
         </executions>

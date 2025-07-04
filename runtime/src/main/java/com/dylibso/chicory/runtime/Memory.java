@@ -30,6 +30,16 @@ public interface Memory {
 
     int maximumPages();
 
+    boolean shared();
+
+    Object lock(int address);
+
+    int waitOn(int address, int expected, long timeout);
+
+    int waitOn(int address, long expected, long timeout);
+
+    int notify(int address, int maxThreads);
+
     void initialize(Instance instance, DataSegment[] dataSegments);
 
     void initPassiveSegment(int segmentId, int dest, int offset, int size);

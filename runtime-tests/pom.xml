@@ -148,6 +148,10 @@
             <wast>proposals/function-references/unreached-valid.wast</wast>
             <wast>proposals/tail-call/return_call.wast</wast>
             <wast>proposals/tail-call/return_call_indirect.wast</wast>
+            <wast>proposals/threads/atomic.wast</wast>
+            <wast>proposals/threads/exports.wast</wast>
+            <wast>proposals/threads/imports.wast</wast>
+            <wast>proposals/threads/memory.wast</wast>
             <wast>ref_func.wast</wast>
             <wast>ref_is_null.wast</wast>
             <wast>ref_null.wast</wast>
@@ -181,7 +185,12 @@
           </includedWasts>
           <!-- This test is supposed to fail because there is a THROW_REF in a Global initializer -->
           <!-- it's a different error with EH -->
-          <excludedTests>SpecV1BinaryTest.test40,SpecV1EhBinaryTest.test40</excludedTests>
+          <!-- No need to check the assertion of multiple tables(the spec will be rebased eventually): https://github.com/WebAssembly/spec/blob/main/interpreter/valid/valid.ml#L729 -->
+          <excludedTests>SpecV1BinaryTest.test40,
+            SpecV1EhBinaryTest.test40,
+            SpecV1ThreadsImportsTest.test64,
+            SpecV1ThreadsImportsTest.test65,
+            SpecV1ThreadsImportsTest.test66</excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts/>
           <excludedUnlinkableWasts/>
@@ -394,6 +403,10 @@
                 <wast>proposals/function-references/unreached-valid.wast</wast>
                 <wast>proposals/tail-call/return_call.wast</wast>
                 <wast>proposals/tail-call/return_call_indirect.wast</wast>
+                <wast>proposals/threads/atomic.wast</wast>
+                <wast>proposals/threads/exports.wast</wast>
+                <wast>proposals/threads/imports.wast</wast>
+                <wast>proposals/threads/memory.wast</wast>
                 <wast>ref_func.wast</wast>
                 <wast>ref_is_null.wast</wast>
                 <wast>ref_null.wast</wast>
@@ -485,7 +498,12 @@
               </includedWasts>
               <!-- This test is supposed to fail because there is a THROW_REF in a Global initializer -->
               <!-- it's a different error with EH -->
-              <excludedTests>SpecV1BinaryTest.test40,SpecV1EhBinaryTest.test40</excludedTests>
+              <!-- No need to check the assertion of multiple tables(the spec will be rebased eventually): https://github.com/WebAssembly/spec/blob/main/interpreter/valid/valid.ml#L729 -->
+              <excludedTests>SpecV1BinaryTest.test40,
+                SpecV1EhBinaryTest.test40,
+                SpecV1ThreadsImportsTest.test64,
+                SpecV1ThreadsImportsTest.test65,
+                SpecV1ThreadsImportsTest.test66</excludedTests>
               <excludedMalformedWasts/>
               <excludedInvalidWasts/>
               <excludedUnlinkableWasts/>

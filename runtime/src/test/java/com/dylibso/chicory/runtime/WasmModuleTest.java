@@ -4,6 +4,7 @@ import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -173,7 +174,9 @@ public class WasmModuleTest {
     @Test
     public void shouldTrapOnUnreachable() {
         var instanceBuilder = Instance.builder(loadModule("compiled/trap.wat.wasm"));
-        assertThrows(UninstantiableException.class, () -> instanceBuilder.build());
+        var uninstantiable =
+                assertThrows(UninstantiableException.class, () -> instanceBuilder.build());
+        assertInstanceOf(TrapException.class, uninstantiable.getCause());
     }
 
     @Test

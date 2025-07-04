@@ -16,6 +16,9 @@ import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 /**
@@ -44,6 +47,146 @@ public final class ByteBufferMemory implements Memory {
                 ByteBuffer.allocate(allocStrategy.initial(PAGE_SIZE * limits.initialPages()))
                         .order(ByteOrder.LITTLE_ENDIAN);
         this.nPages = limits.initialPages();
+        if (limits.shared()) {
+            monitors = new ConcurrentHashMap<>();
+            notifyInProgress = new ConcurrentHashMap<>();
+        } else {
+            monitors = null;
+            notifyInProgress = null;
+        }
+    }
+
+    // atomic wait handling
+    private final Map<Integer, AtomicInteger> monitors;
+    private final Map<Integer, AtomicInteger> notifyInProgress;
+
+    @Override
+    public Object lock(int address) {
+        if (!shared()) {
+            // disable locking
+            return new Object();
+        }
+        return monitors.computeIfAbsent(address, k -> new AtomicInteger(0));
+    }
+
+    private AtomicInteger nextMonitor(int address) {
+        return monitors.compute(
+                address,
+                (k, v) -> {
+                    if (v == null) {
+                        return new AtomicInteger(1);
+                    } else {
+                        v.incrementAndGet();
+                        return v;
+                    }
+                });
+    }
+
+    // this method should only be invoked guarded in a "synchronized (monitor)" section
+    private int waitOnMonitor(int address, long timeout, AtomicInteger monitor) {
+        long endTime = System.nanoTime() + timeout;
+        try {
+            while (!notifyInProgress.containsKey(address) // prevents spurious wakeup
+                    && System.nanoTime() < endTime) {
+                var waitTime = endTime - System.nanoTime();
+                long millis = Math.max(waitTime / 1_000_000L, 0);
+                int nanos = Math.max((int) (waitTime % 1_000_000L), 0);
+                monitor.wait(millis, nanos);
+            }
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt(); // Restore interrupt status
+            throw new ChicoryInterruptedException("Thread interrupted");
+        }
+        if (System.nanoTime() >= endTime) {
+            return 2; // timeout
+        } else {
+            return 0; // wake
+        }
+    }
+
+    private void endWaitOn(int address) {
+        AtomicInteger notifyCount = notifyInProgress.get(address);
+        if (notifyCount != null && notifyCount.decrementAndGet() == 0) {
+            notifyInProgress.remove(address);
+        }
+        AtomicInteger monitor = monitors.get(address);
+        if (monitor != null && monitor.decrementAndGet() == 0) {
+            monitors.remove(address);
+        }
+    }
+
+    // Wait until value at address != expected
+    @Override
+    public int waitOn(int address, int expected, long timeout) {
+        if (!shared()) {
+            throw new ChicoryException("Attempt to wait on a non-shared memory, not supported.");
+        }
+        AtomicInteger monitor = nextMonitor(address);
+
+        synchronized (monitor) {
+            try {
+                if (buffer.getInt(address) == expected) {
+                    return waitOnMonitor(
+                            address, (timeout < 0) ? Long.MAX_VALUE : timeout, monitor);
+                } else {
+                    return 1; // not-equal
+                }
+            } finally {
+                endWaitOn(address);
+            }
+        }
+    }
+
+    @Override
+    public int waitOn(int address, long expected, long timeout) {
+        if (!shared()) {
+            throw new ChicoryException("Attempt to wait on a non-shared memory, not supported.");
+        }
+        AtomicInteger monitor = nextMonitor(address);
+
+        synchronized (monitor) {
+            try {
+                if (buffer.getLong(address) == expected) {
+                    return waitOnMonitor(
+                            address, (timeout < 0) ? Long.MAX_VALUE : timeout, monitor);
+                } else {
+                    return 1; // not-equal
+                }
+            } finally {
+                endWaitOn(address);
+            }
+        }
+    }
+
+    // Notify all waiters at this address
+    @Override
+    public int notify(int address, int maxThreads) {
+        if (!shared()) {
+            return 0;
+        }
+
+        AtomicInteger monitor = monitors.get(address);
+        if (monitor == null) {
+            return 0;
+        }
+
+        synchronized (monitor) {
+            if (maxThreads < 0 || monitor.get() < maxThreads) {
+                notifyInProgress.put(address, new AtomicInteger(monitor.get()));
+                monitor.notifyAll();
+            } else {
+                var count = maxThreads;
+                notifyInProgress.put(address, new AtomicInteger(monitor.get() - maxThreads));
+                while (monitor.get() > 0 && count > 0) {
+                    monitor.notify();
+                    count--;
+                }
+            }
+        }
+        if (monitor.get() <= 0) {
+            monitors.remove(address);
+        }
+        return monitor.get();
     }
 
     private ByteBuffer allocateByteBuffer(int capacity) {
@@ -94,6 +237,11 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public int maximumPages() {
         return min(this.limits.maximumPages(), RUNTIME_MAX_PAGES);
+    }
+
+    @Override
+    public boolean shared() {
+        return this.limits.shared();
     }
 
     @Override

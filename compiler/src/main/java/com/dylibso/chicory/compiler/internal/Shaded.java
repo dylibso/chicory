@@ -167,6 +167,135 @@ public final class Shaded {
         memory.writeF64(getAddr(base, offset), value);
     }
 
+    public static int memoryAtomicIntByteRead(int base, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            return memory.read(ptr);
+        }
+    }
+
+    public static int memoryAtomicIntShortRead(int base, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            return memory.readShort(ptr);
+        }
+    }
+
+    public static int memoryAtomicIntRead(int base, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            return memory.readInt(ptr);
+        }
+    }
+
+    public static long memoryAtomicLongRead(int base, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            return memory.readLong(ptr);
+        }
+    }
+
+    public static long memoryAtomicLongByteRead(int base, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            return memory.read(ptr);
+        }
+    }
+
+    public static long memoryAtomicLongShortRead(int base, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            return memory.readShort(ptr);
+        }
+    }
+
+    public static long memoryAtomicLongIntRead(int base, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            return memory.readInt(ptr);
+        }
+    }
+
+    public static void memoryAtomicIntWrite(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            memory.writeI32(ptr, value);
+        }
+    }
+
+    public static void memoryAtomicIntByteWrite(int base, byte value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            memory.writeByte(ptr, value);
+        }
+    }
+
+    public static void memoryAtomicIntShortWrite(int base, short value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            memory.writeShort(ptr, value);
+        }
+    }
+
+    public static void memoryAtomicLongWrite(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            memory.writeLong(ptr, value);
+        }
+    }
+
+    public static void memoryAtomicLongByteWrite(int base, byte value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            memory.writeByte(ptr, value);
+        }
+    }
+
+    public static void memoryAtomicLongShortWrite(
+            int base, short value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            memory.writeShort(ptr, value);
+        }
+    }
+
+    public static void memoryAtomicLongIntWrite(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            memory.writeI32(ptr, value);
+        }
+    }
+
     // let the following memory access throw if the base is negative
     public static int getAddr(int base, int offset) {
         return (base < 0) ? base : base + offset;
@@ -228,5 +357,612 @@ public final class Shaded {
         return tag < instance.imports().tagCount()
                 && currentCatchTag.type().typesMatch(exceptionTag.type())
                 && currentCatchTag.type().returnsMatch(exceptionTag.type());
+    }
+
+    // Example for I32_ATOMIC_RMW_ADD
+    public static int memoryAtomicIntRmwAdd(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readInt(ptr);
+            memory.writeI32(ptr, old + value);
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmwSub(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readInt(ptr);
+            memory.writeI32(ptr, old - value);
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmwAnd(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readInt(ptr);
+            memory.writeI32(ptr, old & value);
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmwOr(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readInt(ptr);
+            memory.writeI32(ptr, old | value);
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmwXor(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readInt(ptr);
+            memory.writeI32(ptr, old ^ value);
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmwXchg(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readInt(ptr);
+            memory.writeI32(ptr, value);
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmwCmpxchg(
+            int base, int expected, int replacement, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readInt(ptr);
+            if (old == expected) {
+                memory.writeI32(ptr, replacement);
+            }
+            return old;
+        }
+    }
+
+    // I32 8-bit RMW ops
+    public static int memoryAtomicIntRmw8AddU(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            int old = memory.read(ptr) & 0xFF;
+            memory.writeByte(ptr, (byte) (old + (value & 0xFF)));
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmw8SubU(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            int old = memory.read(ptr) & 0xFF;
+            memory.writeByte(ptr, (byte) (old - (value & 0xFF)));
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmw8AndU(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            int old = memory.read(ptr) & 0xFF;
+            memory.writeByte(ptr, (byte) (old & (value & 0xFF)));
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmw8OrU(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            int old = memory.read(ptr) & 0xFF;
+            memory.writeByte(ptr, (byte) (old | (value & 0xFF)));
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmw8XorU(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            int old = memory.read(ptr) & 0xFF;
+            memory.writeByte(ptr, (byte) (old ^ (value & 0xFF)));
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmw8XchgU(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.read(ptr) & 0xFF;
+            memory.writeByte(ptr, (byte) (value & 0xFF));
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmw8CmpxchgU(
+            int base, int expected, int replacement, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            int old = memory.read(ptr) & 0xFF;
+            if (old == (expected & 0xFF)) {
+                memory.writeByte(ptr, (byte) (replacement & 0xFF));
+            }
+            return old;
+        }
+    }
+
+    // I32 16-bit RMW ops
+    public static int memoryAtomicIntRmw16AddU(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readShort(ptr) & 0xFFFF;
+            memory.writeShort(ptr, (short) (old + (value & 0xFFFF)));
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmw16SubU(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readShort(ptr) & 0xFFFF;
+            memory.writeShort(ptr, (short) (old - (value & 0xFFFF)));
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmw16AndU(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readShort(ptr) & 0xFFFF;
+            memory.writeShort(ptr, (short) (old & (value & 0xFFFF)));
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmw16OrU(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readShort(ptr) & 0xFFFF;
+            memory.writeShort(ptr, (short) (old | (value & 0xFFFF)));
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmw16XorU(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readShort(ptr) & 0xFFFF;
+            memory.writeShort(ptr, (short) (old ^ (value & 0xFFFF)));
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmw16XchgU(int base, int value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readShort(ptr) & 0xFFFF;
+            memory.writeShort(ptr, (short) (value & 0xFFFF));
+            return old;
+        }
+    }
+
+    public static int memoryAtomicIntRmw16CmpxchgU(
+            int base, int expected, int replacement, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            int old = memory.readShort(ptr) & 0xFFFF;
+            if (old == (expected & 0xFFFF)) {
+                memory.writeShort(ptr, (short) (replacement & 0xFFFF));
+            }
+            return old;
+        }
+    }
+
+    // I64 8-bit RMW ops
+    public static long memoryAtomicLongRmw8AddU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            long old = memory.read(ptr) & 0xFFL;
+            memory.writeByte(ptr, (byte) (old + (value & 0xFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw8SubU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            long old = memory.read(ptr) & 0xFFL;
+            memory.writeByte(ptr, (byte) (old - (value & 0xFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw8AndU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            long old = memory.read(ptr) & 0xFFL;
+            memory.writeByte(ptr, (byte) (old & (value & 0xFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw8OrU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            long old = memory.read(ptr) & 0xFFL;
+            memory.writeByte(ptr, (byte) (old | (value & 0xFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw8XorU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            long old = memory.read(ptr) & 0xFFL;
+            memory.writeByte(ptr, (byte) (old ^ (value & 0xFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw8XchgU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            long old = memory.read(ptr) & 0xFFL;
+            memory.writeByte(ptr, (byte) (value & 0xFFL));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw8CmpxchgU(
+            int base, long expected, long replacement, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            long old = memory.read(ptr) & 0xFFL;
+            if (old == (expected & 0xFFL)) {
+                memory.writeByte(ptr, (byte) (replacement & 0xFFL));
+            }
+            return old;
+        }
+    }
+
+    // I64 16-bit RMW ops
+    public static long memoryAtomicLongRmw16AddU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readShort(ptr) & 0xFFFFL;
+            memory.writeShort(ptr, (short) (old + (value & 0xFFFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw16SubU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readShort(ptr) & 0xFFFFL;
+            memory.writeShort(ptr, (short) (old - (value & 0xFFFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw16AndU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readShort(ptr) & 0xFFFFL;
+            memory.writeShort(ptr, (short) (old & (value & 0xFFFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw16OrU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readShort(ptr) & 0xFFFFL;
+            memory.writeShort(ptr, (short) (old | (value & 0xFFFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw16XorU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readShort(ptr) & 0xFFFFL;
+            memory.writeShort(ptr, (short) (old ^ (value & 0xFFFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw16XchgU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readShort(ptr) & 0xFFFFL;
+            memory.writeShort(ptr, (short) (value & 0xFFFFL));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw16CmpxchgU(
+            int base, long expected, long replacement, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 2 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readShort(ptr) & 0xFFFFL;
+            if (old == (expected & 0xFFFFL)) {
+                memory.writeShort(ptr, (short) (replacement & 0xFFFFL));
+            }
+            return old;
+        }
+    }
+
+    // I64 32-bit RMW ops
+    public static long memoryAtomicLongRmw32AddU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readInt(ptr) & 0xFFFFFFFFL;
+            memory.writeI32(ptr, (int) (old + (value & 0xFFFFFFFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw32SubU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readInt(ptr) & 0xFFFFFFFFL;
+            memory.writeI32(ptr, (int) (old - (value & 0xFFFFFFFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw32AndU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readInt(ptr) & 0xFFFFFFFFL;
+            memory.writeI32(ptr, (int) (old & (value & 0xFFFFFFFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw32OrU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readInt(ptr) & 0xFFFFFFFFL;
+            memory.writeI32(ptr, (int) (old | (value & 0xFFFFFFFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw32XorU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readInt(ptr) & 0xFFFFFFFFL;
+            memory.writeI32(ptr, (int) (old ^ (value & 0xFFFFFFFFL)));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw32XchgU(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readInt(ptr) & 0xFFFFFFFFL;
+            memory.writeI32(ptr, (int) (value & 0xFFFFFFFFL));
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmw32CmpxchgU(
+            int base, long expected, long replacement, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readInt(ptr) & 0xFFFFFFFFL;
+            if (old == (expected & 0xFFFFFFFFL)) {
+                memory.writeI32(ptr, (int) (replacement & 0xFFFFFFFFL));
+            }
+            return old;
+        }
+    }
+
+    // I64 64-bit RMW ops
+    public static long memoryAtomicLongRmwAdd(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readLong(ptr);
+            memory.writeLong(ptr, old + value);
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmwSub(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readLong(ptr);
+            memory.writeLong(ptr, old - value);
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmwAnd(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readLong(ptr);
+            memory.writeLong(ptr, old & value);
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmwOr(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readLong(ptr);
+            memory.writeLong(ptr, old | value);
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmwXor(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readLong(ptr);
+            memory.writeLong(ptr, old ^ value);
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmwXchg(int base, long value, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readLong(ptr);
+            memory.writeLong(ptr, value);
+            return old;
+        }
+    }
+
+    public static long memoryAtomicLongRmwCmpxchg(
+            int base, long expected, long replacement, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            long old = memory.readLong(ptr);
+            if (old == expected) {
+                memory.writeLong(ptr, replacement);
+            }
+            return old;
+        }
+    }
+
+    // Wait/Notify
+    public static int memoryAtomicWait32(
+            int base, int expected, long timeout, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 4 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            return memory.waitOn(ptr, expected, timeout);
+        }
+    }
+
+    public static int memoryAtomicWait64(
+            int base, long expected, long timeout, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        if (ptr % 8 != 0) {
+            throw new InvalidException("unaligned atomic");
+        }
+        synchronized (memory.lock(ptr)) {
+            return memory.waitOn(ptr, expected, timeout);
+        }
+    }
+
+    public static int memoryAtomicNotify(int base, int count, int offset, Memory memory) {
+        var ptr = getAddr(base, offset);
+        synchronized (memory.lock(ptr)) {
+            return memory.notify(ptr, count);
+        }
     }
 }
