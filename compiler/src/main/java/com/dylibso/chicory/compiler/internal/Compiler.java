@@ -562,7 +562,7 @@ public final class Compiler {
                         null);
 
         // uncomment if you ever want to troubleshoot invalid bytecode generation
-        methodWriter = new CheckMethodAdapter(methodWriter);
+        // methodWriter = new CheckMethodAdapter(methodWriter);
 
         methodWriter.visitCode();
         consumer.accept(new InstructionAdapter(methodWriter));
