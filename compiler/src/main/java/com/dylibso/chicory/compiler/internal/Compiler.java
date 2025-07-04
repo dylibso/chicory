@@ -89,7 +89,6 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.InstructionAdapter;
 import org.objectweb.asm.util.CheckClassAdapter;
-import org.objectweb.asm.util.CheckMethodAdapter;
 
 public final class Compiler {
 
