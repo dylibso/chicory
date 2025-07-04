@@ -105,6 +105,7 @@
         <version>2.1.1</version>
         <configuration>
           <flags>-Xmx1G</flags>
+          <inputFile>${project.build.directory}/${project.build.finalName}.jar</inputFile>
           <programFile>chicory-compiler</programFile>
           <attachProgramFile>true</attachProgramFile>
         </configuration>
