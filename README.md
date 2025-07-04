@@ -94,14 +94,14 @@ If you have an interest in working on any of these please reach out in Zulip!
   * in the interpreter(and compiler**)
 * [x] Compiler out of experimental
 * [x] Exception Handling
-  * in the interpreter
+* [x] Threads Support
 * [ ] GC Support
   * in progress
 
 ### Proposals and Specs
 
 * [ ] Multi-Memory Support
-* [ ] Threads Support
+
 
 ## On the press
 
