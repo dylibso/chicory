@@ -14,12 +14,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ByteBufferMemory;
+import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
+import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
+import com.dylibso.chicory.wasm.types.ValType;
 import io.roastedroot.zerofs.Configuration;
 import io.roastedroot.zerofs.ZeroFs;
 import java.io.ByteArrayInputStream;
@@ -225,6 +228,49 @@ public class WasiPreview1Test {
         Instance.builder(module).withImportValues(imports).build();
 
         assertEquals("Hello, Wasi Console!\n", fakeStdout.output());
+    }
+
+    @Test
+    public void shouldRunWasiSwiftModule() throws Exception {
+        var fakeStdout = new MockPrintStream();
+        var wasiOpts = WasiOptions.builder().withStdout(fakeStdout).build();
+        var wasi = WasiPreview1.builder().withOptions(wasiOpts).build();
+        var imports = ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
+
+        var module = loadModule("compiled/hello-world.swift.wasm");
+        Instance.builder(module).withImportValues(imports).build();
+
+        assertEquals("Hello, Swift world!\n", fakeStdout.output());
+    }
+
+    @Test
+    public void shouldRunWasiSwiftModuleWithImportExport() throws Exception {
+        var wasiOpts = WasiOptions.builder().build();
+        var wasi = WasiPreview1.builder().withOptions(wasiOpts).build();
+        var imports =
+                ImportValues.builder()
+                        .addFunction(wasi.toHostFunctions())
+                        .addFunction(
+                                new HostFunction(
+                                        "env",
+                                        "operation",
+                                        FunctionType.of(
+                                                List.of(ValType.I32, ValType.I32),
+                                                List.of(ValType.I32)),
+                                        (inst, args) -> {
+                                            var x = args[0];
+                                            var y = args[1];
+
+                                            return new long[] {x * y};
+                                        }))
+                        .build();
+
+        var module = loadModule("compiled/calculator.swift.wasm");
+        var instance = Instance.builder(module).withImportValues(imports).withStart(false).build();
+
+        var result = (int) instance.exports().function("run").apply(2, 3)[0];
+
+        assertEquals(6, result);
     }
 
     @Test

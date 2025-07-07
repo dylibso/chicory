@@ -4,7 +4,7 @@ FROM ubuntu:jammy
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    apt-get install -y curl build-essential gcc make pkg-config libssl-dev dotnet-sdk-8.0 && \
+    apt-get install -y curl build-essential gcc make pkg-config libssl-dev dotnet-sdk-8.0 unzip git gnupg2 libcurl4-openssl-dev libedit2 libpython3-dev libxml2-dev libz3-dev python3-lldb-13 tzdata zlib1g-dev && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -57,7 +57,14 @@ ENV PATH=$PATH:$GOPATH/bin
 RUN curl -L -O https://github.com/tinygo-org/tinygo/releases/download/v0.30.0/tinygo_0.30.0_amd64.deb && \
     dpkg -i tinygo_0.30.0_amd64.deb
 
-ENV PATH="/opt/wabt/bin:${PATH}"
+# Install Swift
+RUN curl -O https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz && \
+    tar zxf swiftly-$(uname -m).tar.gz && \
+    ./swiftly init --assume-yes && \
+    ~/.local/share/swiftly/bin/swiftly install 6.2-SNAPSHOT && \
+    ~/.local/share/swiftly/bin/swift sdk install "https://download.swift.org/swift-6.2-branch/wasm-sdk/swift-6.2-DEVELOPMENT-SNAPSHOT-2025-07-09-a/swift-6.2-DEVELOPMENT-SNAPSHOT-2025-07-09-a_wasm.artifactbundle.tar.gz" --checksum "a26426852195f876f94e56d7819d94090de12fcfe158c8d53d5453f9467f7190"
+
+ENV PATH="/opt/wabt/bin:~/.local/share/swiftly/bin:${PATH}"
 
 # Install wasm-tools
 RUN cargo install wasm-tools

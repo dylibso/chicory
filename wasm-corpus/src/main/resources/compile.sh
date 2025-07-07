@@ -49,6 +49,15 @@ compileDotnet() {
   (set -x; cd $1 && dotnet publish -c Release && cp ./bin/Release/net8.0/wasi-wasm/AppBundle/*.wasm "../../compiled/$filename.dotnet.wasm")
 }
 
+compileSwift() {
+  filename=$(basename "$1")
+  (set -x; cd $1 && \
+    swiftly use 6.2-snapshot -y && \
+    swift build -c release --swift-sdk swift-6.2-DEVELOPMENT-SNAPSHOT-2025-07-09-a_wasm-embedded && \
+    cp .build/wasm32-unknown-wasip1/release/*.wasm "../../compiled/$filename.swift.wasm" && \
+    rm -rf .build)
+}
+
 compile() {
   lang=$1
   case "$lang" in
@@ -76,6 +85,9 @@ compile() {
     dotnet)
       compileDotnet $2
       ;;
+    swift)
+      compileSwift $2
+      ;;
     *)
       echo "Don't know how to compile language [$lang]"
       exit 1
@@ -87,7 +99,7 @@ lang="${1:-all}"
 path="${2:-all}"
 
 if [[ "$lang" == "all" ]]; then
-  langs=("wat" "rust" "c" "javy" "javy-dynamic" "tinygo" "go" "dotnet")
+  langs=("wat" "rust" "c" "javy" "javy-dynamic" "tinygo" "go" "dotnet" "swift")
 else
   langs=("$lang")
 fi
