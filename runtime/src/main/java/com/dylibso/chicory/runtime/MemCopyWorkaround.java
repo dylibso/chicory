@@ -13,7 +13,10 @@ public final class MemCopyWorkaround {
     }
 
     public static boolean shouldUseMemWorkaround() {
-        String version = System.getProperty("java.version");
+        return shouldUseMemWorkaround(System.getProperty("java.version"));
+    }
+
+    public static boolean shouldUseMemWorkaround(String version) {
         if (version == null || version.equals("0")) {
             // Android https://developer.android.com/reference/java/lang/System#getProperties()
             return false;
@@ -24,7 +27,13 @@ public final class MemCopyWorkaround {
             // Java 9 or later: "11.0.9" or "17.0.1"
             int dotIndex = version.indexOf(".");
             String majorStr = (dotIndex != -1) ? version.substring(0, dotIndex) : version;
-            return Integer.parseInt(majorStr) <= 17;
+            int dashIndex = majorStr.indexOf("-");
+            majorStr = (dashIndex != -1) ? majorStr.substring(0, dashIndex) : majorStr;
+            try {
+                return Integer.parseInt(majorStr) <= 17;
+            } catch (NumberFormatException nfe) {
+                return false;
+            }
         }
     }
 
