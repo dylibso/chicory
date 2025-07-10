@@ -70,7 +70,7 @@
     (memory.atomic.wait32
       (local.get $mutexAddr)
       (local.get $expected)
-      (i64.const 200000000) ;; 200ms
+      (i64.const 1000000000) ;; 1s
     )
   )
 
@@ -82,7 +82,7 @@
     (memory.atomic.wait64
       (local.get $mutexAddr)
       (local.get $expected)
-      (i64.const 200000000) ;; 200ms
+      (i64.const 1000000000) ;; 1s
     )
   )
 
