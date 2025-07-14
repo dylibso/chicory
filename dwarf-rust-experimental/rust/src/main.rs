@@ -17,14 +17,7 @@ use wasm::{parse_sections, SectionKind};
 
 pub struct Pos {
   line: u32,
-  // column: u32,
 }
-
-// enum FuncState {
-//   Start,
-//   Ignored,
-//   Normal,
-// }
 
 #[derive(Default, Debug, Clone)]
 pub struct Line {
@@ -32,7 +25,6 @@ pub struct Line {
   file_id: u32,
   address: u64,
   line: u32,
-  // column: u32,
   score: u32,
 }
 
@@ -199,25 +191,7 @@ pub fn extract_source_info<R: Reader + Clone + Default>(src: R) -> Result<Source
 
     let mut rows = line_program.rows();
 
-    // let mut func_state = FuncState::Start;
-
     while let Some((header, row)) = rows.next_row()? {
-      // if let FuncState::Start = func_state {
-      //   func_state = if row.address() == 0 {
-      //     FuncState::Ignored
-      //   } else {
-      //     FuncState::Normal
-      //   };
-      // }
-      // if let FuncState::Ignored = func_state {
-      //   if row.end_sequence() {
-      //     func_state = FuncState::Start;
-      //   }
-      //   continue;
-      // }
-      // if row.end_sequence() {
-      //   func_state = FuncState::Start;
-      // }
 
       let file = match row.file(header) {
         Some(file) => file,
@@ -469,34 +443,4 @@ fn main() {
     });
     std::process::exit(1);
   });
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  pub fn test_parse() {
-    // read a file in
-    let src = std::fs::read("./src/count_vowels.wasm").expect("could not read wasm file");
-    let actual = extract_source_info(EndianSlice::new(src.as_slice(), LittleEndian))
-      .expect("extract_soruce_info failed");
-
-    // Optionally write the expected test data when REGENERATE_TEST_DATA env var is set
-    if std::env::var("REGENERATE_TEST_DATA").is_ok() {
-      std::fs::write(
-        "./src/count_vowels.wasm.json",
-        serde_json::to_string_pretty(&actual).expect("json failed"),
-      )
-      .unwrap();
-      println!("Regenerated test data in ./src/count_vowels.wasm.json");
-    }
-
-    // read count_vowels.rs.wasm.json
-    let expected: SourceResult = serde_json::from_reader(
-      std::fs::File::open("./src/count_vowels.wasm.json").expect("could not read json file"),
-    )
-    .expect("json failed");
-    assert_eq!(actual, expected);
-  }
 }

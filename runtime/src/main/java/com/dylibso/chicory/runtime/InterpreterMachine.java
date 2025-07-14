@@ -40,6 +40,10 @@ public class InterpreterMachine implements Machine {
         stack = new MStack();
         this.callStack = new ArrayDeque<>();
 
+        // The SMAP custom section only gets added to WASM modules that are created by
+        // the build time compiler (see Generator.java).
+        // The module is meta-module and will only contain code for functions which
+        // will be interpreted (typically because they were too large to compile to bytecode).
         CustomSection smapSection = instance.module().customSection("SMAP");
         if (smapSection instanceof UnknownCustomSection) {
             // this occurs when the build time compiler generates a new code section

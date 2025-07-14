@@ -1,4 +1,4 @@
-w#!/usr/bin/env bash
+#!/usr/bin/env bash
 
 # Usage:
 #   ./build.sh [command]
