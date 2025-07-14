@@ -188,25 +188,13 @@ public class ThreadsProposalTest {
         Thread workerT =
                 new Thread(
                         () -> {
-                            // worker remains ready for locking
                             var result = lockWithTimeout.lock(workerInstance, mutexAddr, 1);
                             workerAcquireLock.set(result);
                         });
-        Thread mainT =
-                new Thread(
-                        () -> {
-                            // unlock the mutex
-                            try {
-                                Thread.sleep(10);
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                            unlockMutex(mainInstance, mutexAddr);
-                        });
         workerT.start();
-        mainT.start();
+        Thread.sleep(200);
 
-        mainT.join();
+        unlockMutex(mainInstance, mutexAddr);
         workerT.join();
 
         // 0 == ok -> unlocked and notified
