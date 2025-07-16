@@ -19,7 +19,7 @@ final class Shader {
 
     private Shader() {}
 
-    public static byte[] createShadedClass(String className) {
+    public static byte[] createShadedClass(String className, String shadedClassName) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassVisitor visitor = shadedClassRemapper(writer, className);
 
@@ -36,7 +36,7 @@ final class Shader {
                         super.visit(
                                 version,
                                 Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
-                                internalClassName(className + "Shaded"),
+                                shadedClassName,
                                 null,
                                 superName,
                                 null);
