@@ -121,18 +121,20 @@ public final class Compiler {
     private final Map<String, byte[]> extraClasses = new LinkedHashMap<>();
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions;
-    private boolean loadClassEnabled = true;
+    private final boolean loadClassEnabled;
 
     private Compiler(
             WasmModule module,
             String className,
             int maxFunctionsPerClass,
             InterpreterFallback interpreterFallback,
-            Set<Integer> interpretedFunctions) {
+            Set<Integer> interpretedFunctions,
+            boolean loadClassEnabled) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.analyzer = new WasmAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
+        this.loadClassEnabled = loadClassEnabled;
 
         if (interpretedFunctions == null || interpretedFunctions.isEmpty()) {
             this.interpretedFunctions = new HashSet<>();
@@ -164,6 +166,7 @@ public final class Compiler {
         private int maxFunctionsPerClass;
         private InterpreterFallback interpreterFallback;
         private Set<Integer> interpretedFunctions;
+        private boolean loadClassEnabled;
 
         private Builder(WasmModule module) {
             this.module = module;
@@ -189,6 +192,11 @@ public final class Compiler {
             return this;
         }
 
+        public Builder withLoadClassEnabled(boolean loadClassEnabled) {
+            this.loadClassEnabled = loadClassEnabled;
+            return this;
+        }
+
         public Compiler build() {
             var className = this.className;
             if (className == null) {
@@ -204,7 +212,8 @@ public final class Compiler {
                     className,
                     maxFunctionsPerClass,
                     interpreterFallback,
-                    interpretedFunctions);
+                    interpretedFunctions,
+                    loadClassEnabled);
         }
     }
 
@@ -241,7 +250,9 @@ public final class Compiler {
     }
 
     private Class<?> loadClass(WasmClassLoader classLoader, byte[] classBytes) {
-        if (!loadClassEnabled) return null;
+        if (!loadClassEnabled) {
+            return null;
+        }
         try {
             var clazz = classLoader.loadFromBytes(classBytes);
             // force initialization to run JVM verifier
@@ -273,7 +284,7 @@ public final class Compiler {
     }
 
     private void loadExtraClass(String className, byte[] bytes) {
-        Class<?> clazz = loadClass(bytes);
+        loadClass(bytes);
         extraClasses.put(className, bytes);
     }
 

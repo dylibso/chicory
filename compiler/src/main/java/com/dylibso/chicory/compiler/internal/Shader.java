@@ -73,7 +73,14 @@ final class Shader {
             }
             return in.readAllBytes();
         } catch (IOException e) {
-            throw new ChicoryException("Could not load bytecode for " + clazz, e);
+            try (var in = clazz.getClassLoader().getResourceAsStream(name + ".dat")) {
+                if (in == null) {
+                    throw new IOException("Resource not found: " + name);
+                }
+                return in.readAllBytes();
+            } catch (IOException e2) {
+                throw new ChicoryException("Could not load bytecode for " + clazz, e2);
+            }
         }
     }
 }

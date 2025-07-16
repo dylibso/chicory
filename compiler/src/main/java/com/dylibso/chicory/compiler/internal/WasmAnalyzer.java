@@ -280,7 +280,10 @@ final class WasmAnalyzer {
                             targets.put(target, label);
                         }
                     }
-                    long[] operands = ins.labelTable().stream().mapToLong(targets::get).toArray();
+                    long[] operands =
+                            ins.labelTable().stream()
+                                    .mapToLong(x -> (long) targets.get(x))
+                                    .toArray();
                     result.add(new CompilerInstruction(CompilerOpCode.SWITCH, operands));
                     result.addAll(unwinds);
                     break;
