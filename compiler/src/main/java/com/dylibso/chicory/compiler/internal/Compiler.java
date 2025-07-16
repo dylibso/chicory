@@ -121,6 +121,7 @@ public final class Compiler {
     private final Map<String, byte[]> extraClasses = new LinkedHashMap<>();
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions;
+    private final ClassFileResolver classFileResolver;
     private final boolean loadClassEnabled;
 
     private Compiler(
@@ -129,11 +130,13 @@ public final class Compiler {
             int maxFunctionsPerClass,
             InterpreterFallback interpreterFallback,
             Set<Integer> interpretedFunctions,
+            ClassFileResolver classFileResolver,
             boolean loadClassEnabled) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.analyzer = new WasmAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
+        this.classFileResolver = classFileResolver;
         this.loadClassEnabled = loadClassEnabled;
 
         if (interpretedFunctions == null || interpretedFunctions.isEmpty()) {
@@ -166,7 +169,8 @@ public final class Compiler {
         private int maxFunctionsPerClass;
         private InterpreterFallback interpreterFallback;
         private Set<Integer> interpretedFunctions;
-        private boolean loadClassEnabled;
+        private Boolean loadClassEnabled;
+        private ClassFileResolver classFileResolver;
 
         private Builder(WasmModule module) {
             this.module = module;
@@ -192,6 +196,11 @@ public final class Compiler {
             return this;
         }
 
+        public Builder withClassFileResolver(ClassFileResolver classFileResolver) {
+            this.classFileResolver = classFileResolver;
+            return this;
+        }
+
         public Builder withLoadClassEnabled(boolean loadClassEnabled) {
             this.loadClassEnabled = loadClassEnabled;
             return this;
@@ -207,12 +216,23 @@ public final class Compiler {
             if (maxFunctionsPerClass <= 0) {
                 maxFunctionsPerClass = DEFAULT_MAX_FUNCTIONS_PER_CLASS;
             }
+
+            if (this.classFileResolver == null) {
+                this.classFileResolver = Shader::getBytecode;
+            }
+
+            var loadClassEnabled = true;
+            if (this.loadClassEnabled != null) {
+                loadClassEnabled = this.loadClassEnabled;
+            }
+
             return new Compiler(
                     module,
                     className,
                     maxFunctionsPerClass,
                     interpreterFallback,
                     interpretedFunctions,
+                    classFileResolver,
                     loadClassEnabled);
         }
     }
@@ -290,7 +310,7 @@ public final class Compiler {
 
     private void compileExtraClasses() {
         String shadedClassName = internalClassName(className + "Shaded");
-        byte[] shadedClass = createShadedClass(className, shadedClassName);
+        byte[] shadedClass = createShadedClass(className, shadedClassName, classFileResolver);
         loadExtraClass(shadedClassName, shadedClass);
 
         int totalFunctions = functionImports + module.functionSection().functionCount();

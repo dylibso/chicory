@@ -19,7 +19,8 @@ final class Shader {
 
     private Shader() {}
 
-    public static byte[] createShadedClass(String className, String shadedClassName) {
+    public static byte[] createShadedClass(
+            String className, String shadedClassName, ClassFileResolver resolver) {
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassVisitor visitor = shadedClassRemapper(writer, className);
 
@@ -43,7 +44,7 @@ final class Shader {
                     }
                 };
 
-        ClassReader reader = new ClassReader(getBytecode(Shaded.class));
+        ClassReader reader = new ClassReader(resolver.getBytecode(Shaded.class));
         reader.accept(visitor, ClassReader.SKIP_FRAMES);
 
         return writer.toByteArray();
@@ -65,7 +66,7 @@ final class Shader {
                 });
     }
 
-    private static byte[] getBytecode(Class<?> clazz) {
+    static byte[] getBytecode(Class<?> clazz) {
         var name = getInternalName(clazz) + ".class";
         try (var in = clazz.getClassLoader().getResourceAsStream(name)) {
             if (in == null) {
@@ -73,14 +74,18 @@ final class Shader {
             }
             return in.readAllBytes();
         } catch (IOException e) {
-            try (var in = clazz.getClassLoader().getResourceAsStream(name + ".dat")) {
-                if (in == null) {
-                    throw new IOException("Resource not found: " + name);
-                }
-                return in.readAllBytes();
-            } catch (IOException e2) {
-                throw new ChicoryException("Could not load bytecode for " + clazz, e2);
-            }
+            throw new ChicoryException("Could not load bytecode for " + clazz, e);
         }
+        //
+        //        name += ".bytes";
+        //        try (var in = clazz.getClassLoader().getResourceAsStream(name)) {
+        //            if (in != null) {
+        //                return in.readAllBytes();
+        //            }
+        //        } catch (IOException e) {
+        //            throw new ChicoryException("Could not load bytecode for " + clazz, e);
+        //        }
+        //
+        //        throw new ChicoryException("Could not load bytecode for " + clazz);
     }
 }
