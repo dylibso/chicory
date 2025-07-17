@@ -280,6 +280,10 @@ final class WasmAnalyzer {
                             targets.put(target, label);
                         }
                     }
+                    // Note: some stricter compilers (e.g., Android ART) do not perform
+                    // unboxing+widening
+                    // int->long with a method reference, so instead of mapToLong(targets::get),
+                    // we prefer an explicit lambda+cast.
                     long[] operands =
                             ins.labelTable().stream()
                                     .mapToLong(x -> (long) targets.get(x))

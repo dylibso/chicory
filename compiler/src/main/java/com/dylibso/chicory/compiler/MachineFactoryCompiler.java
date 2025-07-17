@@ -103,7 +103,11 @@ public final class MachineFactoryCompiler {
         }
 
         public Function<Instance, Machine> compile() {
-            var result = compilerBuilder.build().compile();
+            var result =
+                    compilerBuilder
+                            .withClassCollectorFactory(ClassLoadingCollector::new)
+                            .build()
+                            .compile();
             var collector = (ClassLoadingCollector) result.collector();
             return new MachineFactory(module, collector.machineFactory());
         }

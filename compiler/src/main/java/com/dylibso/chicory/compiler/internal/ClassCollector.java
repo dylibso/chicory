@@ -2,10 +2,17 @@ package com.dylibso.chicory.compiler.internal;
 
 import java.util.Map;
 
+/**
+ * A class collector exposes methods to resolve class files
+ * from the classpath and collecting bytes representing classes.
+ */
 public interface ClassCollector {
-    void putMainClass(String className, byte[] bytes);
+    /**
+     * Main entry point
+     */
+    String mainClassName();
 
-    String mainClass();
+    void putMainClass(String className, byte[] bytes);
 
     void put(String name, byte[] data);
 

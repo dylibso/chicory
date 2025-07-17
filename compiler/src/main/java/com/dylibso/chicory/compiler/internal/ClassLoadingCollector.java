@@ -2,10 +2,12 @@ package com.dylibso.chicory.compiler.internal;
 
 import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
 import static java.lang.invoke.MethodHandles.publicLookup;
+import static org.objectweb.asm.Type.getInternalName;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.ChicoryException;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collections;
@@ -27,7 +29,7 @@ public class ClassLoadingCollector implements ClassCollector {
     }
 
     @Override
-    public String mainClass() {
+    public String mainClassName() {
         return mainClass;
     }
 
@@ -35,6 +37,10 @@ public class ClassLoadingCollector implements ClassCollector {
     public void putMainClass(String className, byte[] bytes) {
         this.mainClass = className;
         loadClass(bytes);
+
+        // Ensure the main class comes first in order
+        // this is not strictly necessary, but it is often
+        // enforced in test cases.
 
         var classBytes = new LinkedHashMap<String, byte[]>();
         classBytes.put(className, bytes);

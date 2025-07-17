@@ -11,7 +11,7 @@ public class ByteClassCollector implements ClassCollector {
     public ByteClassCollector() {}
 
     @Override
-    public String mainClass() {
+    public String mainClassName() {
         return mainClass;
     }
 
