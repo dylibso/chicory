@@ -272,15 +272,15 @@ final class CompilerUtil {
         return name.replace('.', '/');
     }
 
-    static String classNameForDispatch(int id) {
-        return "Dispatch_" + id;
+    static String classNameForDispatch(String prefix, int id) {
+        return prefix + "Dispatch_" + id;
     }
 
     static String callDispatchMethodName(int start) {
         return "call_dispatch_" + start;
     }
 
-    static String classNameForCallIndirect(int typeId, int start) {
-        return "Indirect_" + typeId + "_" + start;
+    static String classNameForCallIndirect(String prefix, int typeId, int start) {
+        return prefix + "Indirect_" + typeId + "_" + start;
     }
 }

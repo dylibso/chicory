@@ -142,8 +142,8 @@ final class Context {
         return tempSlot;
     }
 
-    public String classNameForFuncGroup(int funcId) {
-        return "FuncGroup_" + (funcId / maxFunctionsPerClass);
+    public String classNameForFuncGroup(String prefix, int funcId) {
+        return prefix + "FuncGroup_" + (funcId / maxFunctionsPerClass);
     }
 
     public FunctionType tagFunctionType(int tagId) {

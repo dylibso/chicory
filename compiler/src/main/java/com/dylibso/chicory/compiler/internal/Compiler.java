@@ -253,7 +253,7 @@ public final class Compiler {
                                 maxFunctionsPerClass,
                                 (start, end, chunkSize, collector) -> {
                                     maxFunctionsPerClass = chunkSize;
-                                    String className = classNameForFuncGroup(start);
+                                    String className = classNameForFuncGroup(this.className, start);
                                     compileExtraClass(
                                             collector,
                                             className,
@@ -346,8 +346,8 @@ public final class Compiler {
         return chunkSize;
     }
 
-    private String classNameForFuncGroup(int funcId) {
-        return "FuncGroup_" + (funcId / maxFunctionsPerClass);
+    private String classNameForFuncGroup(String prefix, int funcId) {
+        return prefix + "FuncGroup_" + (funcId / maxFunctionsPerClass);
     }
 
     private Consumer<ClassVisitor> emitFunctionGroup(int start, int end, String internalClassName) {
@@ -678,7 +678,7 @@ public final class Compiler {
                             (start, end, chunkSize, collector) ->
                                     compileExtraClass(
                                             collector,
-                                            classNameForDispatch(start),
+                                            classNameForDispatch(className, start),
                                             (cw) ->
                                                     emitFunction(
                                                             cw,
@@ -699,7 +699,7 @@ public final class Compiler {
             ClassCollector collector, String name, Consumer<ClassVisitor> consumer) {
         ClassWriter binaryWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassVisitor classWriter = shadedClassRemapper(binaryWriter, className);
-        String internalClassName = internalClassName(className + name);
+        String internalClassName = internalClassName(name);
         classWriter.visit(
                 Opcodes.V11,
                 Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
@@ -738,7 +738,7 @@ public final class Compiler {
             for (int i = 0; i < labels.length; i++) {
                 asm.mark(labels[i]);
                 asm.invokestatic(
-                        internalClassName(className + classNameForDispatch(i << shift)),
+                        internalClassName(classNameForDispatch(className, i << shift)),
                         callDispatchMethodName(i << shift),
                         MACHINE_CALL_METHOD_TYPE.toMethodDescriptorString(),
                         false);
@@ -769,7 +769,7 @@ public final class Compiler {
         for (int id = max(start, functionImports); id < end; id++) {
             asm.mark(labels[id - start]);
             asm.invokestatic(
-                    internalClassName(className + classNameForFuncGroup(id)),
+                    internalClassName(classNameForFuncGroup(className, id)),
                     callMethodName(id),
                     CALL_METHOD_TYPE.toMethodDescriptorString(),
                     false);
@@ -815,7 +815,7 @@ public final class Compiler {
         asm.load(0, OBJECT_TYPE);
 
         emitInvokeFunction(
-                asm, internalClassName(className) + classNameForFuncGroup(funcId), funcId, type);
+                asm, internalClassName(classNameForFuncGroup(className, funcId)), funcId, type);
 
         // box the result into long[]
         Class<?> returnType = jvmReturnType(type);
@@ -922,7 +922,7 @@ public final class Compiler {
                 //    return func_0(a, b, memory, callerInstance);
                 asm.mark(labels[i]);
                 emitInvokeFunction(
-                        asm, internalClassName + classNameForFuncGroup(keys[i]), keys[i], type);
+                        asm, classNameForFuncGroup(internalClassName, keys[i]), keys[i], type);
                 asm.areturn(getType(jvmReturnType(type)));
             }
 
@@ -943,7 +943,7 @@ public final class Compiler {
                     (start, end, chunkSize, collector) ->
                             compileExtraClass(
                                     collector,
-                                    classNameForCallIndirect(typeId, start),
+                                    classNameForCallIndirect(this.className, typeId, start),
                                     (cw) -> {
                                         emitFunction(
                                                 cw,
@@ -978,7 +978,7 @@ public final class Compiler {
                 asm.mark(labels[i]);
                 asm.load(funcId, INT_TYPE);
                 asm.invokestatic(
-                        internalClassName + classNameForCallIndirect(typeId, i << shift),
+                        classNameForCallIndirect(internalClassName, typeId, i << shift),
                         "apply",
                         applyParams.toMethodDescriptorString(),
                         false);
@@ -1047,7 +1047,7 @@ public final class Compiler {
             //    return func_0(a, b, memory, callerInstance);
             asm.mark(labels[i]);
             emitInvokeFunction(
-                    asm, internalClassName + classNameForFuncGroup(keys[i]), keys[i], type);
+                    asm, classNameForFuncGroup(internalClassName, keys[i]), keys[i], type);
             asm.areturn(getType(jvmReturnType(type)));
             asm.areturn(OBJECT_TYPE);
         }
