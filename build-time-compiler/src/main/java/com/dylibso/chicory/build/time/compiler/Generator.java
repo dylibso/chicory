@@ -5,6 +5,7 @@ import static com.dylibso.chicory.wasm.WasmWriter.writeVarUInt32;
 import static com.github.javaparser.StaticJavaParser.parseClassOrInterfaceType;
 import static com.github.javaparser.StaticJavaParser.parseType;
 
+import com.dylibso.chicory.compiler.internal.ByteClassCollector;
 import com.dylibso.chicory.compiler.internal.Compiler;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
@@ -55,6 +56,7 @@ public class Generator {
         var compiler =
                 Compiler.builder(module)
                         .withClassName(machineName)
+                        .withClassCollectorFactory(ByteClassCollector::new)
                         .withInterpreterFallback(config.interpreterFallback())
                         .withInterpretedFunctions(config.interpretedFunctions())
                         .build();

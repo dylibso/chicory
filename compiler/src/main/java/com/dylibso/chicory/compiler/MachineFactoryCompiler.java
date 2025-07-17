@@ -1,5 +1,6 @@
 package com.dylibso.chicory.compiler;
 
+import com.dylibso.chicory.compiler.internal.ClassLoadingCollector;
 import com.dylibso.chicory.compiler.internal.MachineFactory;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
@@ -103,7 +104,8 @@ public final class MachineFactoryCompiler {
 
         public Function<Instance, Machine> compile() {
             var result = compilerBuilder.build().compile();
-            return new MachineFactory(module, result.machineFactory());
+            var collector = (ClassLoadingCollector) result.collector();
+            return new MachineFactory(module, collector.machineFactory());
         }
     }
 }

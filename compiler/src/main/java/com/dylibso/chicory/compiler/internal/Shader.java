@@ -19,8 +19,8 @@ final class Shader {
 
     private Shader() {}
 
-    public static byte[] createShadedClass(
-            String className, String shadedClassName, ClassFileResolver resolver) {
+    public static void createShadedClass(String className, ClassCollector collector) {
+        String shadedClassName = internalClassName(className + "Shaded");
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassVisitor visitor = shadedClassRemapper(writer, className);
 
@@ -44,10 +44,10 @@ final class Shader {
                     }
                 };
 
-        ClassReader reader = new ClassReader(resolver.getBytecode(Shaded.class));
+        ClassReader reader = new ClassReader(collector.resolve(Shaded.class));
         reader.accept(visitor, ClassReader.SKIP_FRAMES);
 
-        return writer.toByteArray();
+        collector.put(shadedClassName, writer.toByteArray());
     }
 
     public static ClassRemapper shadedClassRemapper(ClassVisitor visitor, String className) {

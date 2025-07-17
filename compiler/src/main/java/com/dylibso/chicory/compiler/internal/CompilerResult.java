@@ -1,32 +1,24 @@
 package com.dylibso.chicory.compiler.internal;
 
-import com.dylibso.chicory.runtime.Instance;
-import com.dylibso.chicory.runtime.Machine;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 
 public final class CompilerResult {
 
-    private final Function<Instance, Machine> machineFactory;
-    private final Map<String, byte[]> classBytes;
+    private final ClassCollector collector;
     private final Set<Integer> interpretedFunctions;
 
-    public CompilerResult(
-            Function<Instance, Machine> machineFactory,
-            Map<String, byte[]> classBytes,
-            Set<Integer> interpretedFunctions) {
-        this.machineFactory = machineFactory;
-        this.classBytes = classBytes;
+    public CompilerResult(ClassCollector collector, Set<Integer> interpretedFunctions) {
+        this.collector = collector;
         this.interpretedFunctions = interpretedFunctions;
     }
 
-    public Function<Instance, Machine> machineFactory() {
-        return machineFactory;
+    public Map<String, byte[]> classBytes() {
+        return collector.classBytes();
     }
 
-    public Map<String, byte[]> classBytes() {
-        return classBytes;
+    public ClassCollector collector() {
+        return this.collector;
     }
 
     public Set<Integer> interpretedFunctions() {
