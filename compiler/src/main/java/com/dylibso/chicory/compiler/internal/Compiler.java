@@ -104,7 +104,6 @@ public final class Compiler {
     // This should give us the biggest class size possible.
     private static final int DEFAULT_MAX_FUNCTIONS_PER_CLASS = 1024 * 12;
 
-    private final WasmClassLoader classLoader = new WasmClassLoader();
     private final String className;
     private final WasmModule module;
     private final WasmAnalyzer analyzer;
