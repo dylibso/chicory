@@ -5,6 +5,9 @@ import java.util.Map;
 /**
  * A class collector exposes methods to resolve class files
  * from the classpath and collecting bytes representing classes.
+ * <p>
+ * The ClassCollector may optionally throw on put() and putAll()
+ * if the given data is not valid.
  */
 public interface ClassCollector {
     /**

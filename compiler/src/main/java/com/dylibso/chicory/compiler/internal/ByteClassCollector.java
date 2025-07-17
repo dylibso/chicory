@@ -4,6 +4,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A simple {@link ClassCollector} that stores all the classes
+ * in a map. It resolves a given class to bytes by looking into classpath.
+ *
+ */
 public class ByteClassCollector implements ClassCollector {
     private final Map<String, byte[]> classBytes = new HashMap<>();
     private String mainClass;

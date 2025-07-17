@@ -2,12 +2,10 @@ package com.dylibso.chicory.compiler.internal;
 
 import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
 import static java.lang.invoke.MethodHandles.publicLookup;
-import static org.objectweb.asm.Type.getInternalName;
 
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.ChicoryException;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collections;
@@ -18,6 +16,15 @@ import java.util.function.Function;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.CheckClassAdapter;
 
+/**
+ * A {@link ClassCollector} that stores the classes in an ordered map.
+ *
+ * <ul>
+ *   <li> It loads the given bytes into a classloader for verification as they are inserted.
+ *   <li> It resolves a given class to bytes by looking into classpath.
+ *   <li> It optionally generates a MachineFactory with the internal classloader
+ * </ul>
+ */
 public class ClassLoadingCollector implements ClassCollector {
     private final WasmClassLoader classLoader;
     private LinkedHashMap<String, byte[]> classBytes = new LinkedHashMap<>();
@@ -49,6 +56,10 @@ public class ClassLoadingCollector implements ClassCollector {
         this.classBytes = classBytes;
     }
 
+    /**
+     * It may throw if the class is invalid
+     * (e.g., ClassTooLargeException, MethodTooLargeException, VerifyError)
+     */
     @Override
     public void put(String className, byte[] bytes) {
         loadClass(bytes);

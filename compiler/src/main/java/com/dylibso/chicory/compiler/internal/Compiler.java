@@ -251,7 +251,7 @@ public final class Compiler {
                         loadChunkedClass(
                                 totalFunctions,
                                 maxFunctionsPerClass,
-                                (start, end, chunkSize, collector) -> {
+                                (collector, start, end, chunkSize) -> {
                                     maxFunctionsPerClass = chunkSize;
                                     String className = classNameForFuncGroup(this.className, start);
                                     compileExtraClass(
@@ -301,13 +301,12 @@ public final class Compiler {
         }
 
         if (!functionTypes.isEmpty()) {
-            String machineCallClassName = internalClassName(className + "MachineCall");
-            collector.put(machineCallClassName, compileMachineCallClass(machineCallClassName));
+            compileMachineCallClass();
         }
     }
 
     interface ChunkedClassEmitter {
-        void emit(int start, int end, int chunkSize, ClassCollector collector);
+        void emit(ClassCollector collector, int start, int end, int chunkSize);
     }
 
     /**
@@ -323,6 +322,8 @@ public final class Compiler {
      * @return The final chunk size used for loading the class.
      */
     int loadChunkedClass(int size, int chunkSize, ChunkedClassEmitter emitter) {
+        // Create a temporary collector to verify class construction
+        // (if the collector supports throwing ClassTooLargeException).
         ClassCollector collector = classCollectorFactory.get();
         while (true) {
             try {
@@ -331,7 +332,7 @@ public final class Compiler {
                     var start = i * chunkSize;
                     var end = min(start + chunkSize, size);
 
-                    emitter.emit(start, end, chunkSize, collector);
+                    emitter.emit(collector, start, end, chunkSize);
                 }
                 break;
             } catch (ClassTooLargeException e) {
@@ -342,6 +343,8 @@ public final class Compiler {
                 collector = classCollectorFactory.get();
             }
         }
+
+        // Store the final results into the global collector.
         this.collector.putAll(collector);
         return chunkSize;
     }
@@ -641,9 +644,10 @@ public final class Compiler {
         asm.athrow();
     }
 
-    private byte[] compileMachineCallClass(String machineCallClassName) {
+    private void compileMachineCallClass() {
         ClassWriter binaryWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassVisitor classWriter = shadedClassRemapper(binaryWriter, className);
+        String machineCallClassName = internalClassName(className + "MachineCall");
 
         classWriter.visit(
                 Opcodes.V11,
@@ -675,7 +679,7 @@ public final class Compiler {
                     loadChunkedClass(
                             functionTypes.size(),
                             maxMachineCallMethods,
-                            (start, end, chunkSize, collector) ->
+                            (collector, start, end, chunkSize) ->
                                     compileExtraClass(
                                             collector,
                                             classNameForDispatch(className, start),
@@ -692,7 +696,7 @@ public final class Compiler {
         }
         emitFunction(classWriter, "call", MACHINE_CALL_METHOD_TYPE, true, callMethod);
 
-        return binaryWriter.toByteArray();
+        collector.put(machineCallClassName, binaryWriter.toByteArray());
     }
 
     private void compileExtraClass(
@@ -940,7 +944,7 @@ public final class Compiler {
             loadChunkedClass(
                     functionTypes.size(),
                     maxMachineCallMethods,
-                    (start, end, chunkSize, collector) ->
+                    (collector, start, end, chunkSize) ->
                             compileExtraClass(
                                     collector,
                                     classNameForCallIndirect(this.className, typeId, start),
