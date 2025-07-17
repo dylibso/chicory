@@ -58,7 +58,7 @@ public class ClassLoadingCollector implements ClassCollector {
 
     /**
      * It may throw if the class is invalid
-     * (e.g., ClassTooLargeException, MethodTooLargeException, VerifyError)
+     * (e.g., VerifyError)
      */
     @Override
     public void put(String className, byte[] bytes) {
