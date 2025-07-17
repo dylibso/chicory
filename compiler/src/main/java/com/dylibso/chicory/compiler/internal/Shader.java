@@ -76,16 +76,5 @@ final class Shader {
         } catch (IOException e) {
             throw new ChicoryException("Could not load bytecode for " + clazz, e);
         }
-        //
-        //        name += ".bytes";
-        //        try (var in = clazz.getClassLoader().getResourceAsStream(name)) {
-        //            if (in != null) {
-        //                return in.readAllBytes();
-        //            }
-        //        } catch (IOException e) {
-        //            throw new ChicoryException("Could not load bytecode for " + clazz, e);
-        //        }
-        //
-        //        throw new ChicoryException("Could not load bytecode for " + clazz);
     }
 }

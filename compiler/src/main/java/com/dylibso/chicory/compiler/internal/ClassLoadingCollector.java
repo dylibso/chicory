@@ -9,7 +9,7 @@ import com.dylibso.chicory.wasm.ChicoryException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -18,7 +18,7 @@ import org.objectweb.asm.util.CheckClassAdapter;
 
 public class ClassLoadingCollector implements ClassCollector {
     private final WasmClassLoader classLoader;
-    private final Map<String, byte[]> classBytes = new HashMap<>();
+    private LinkedHashMap<String, byte[]> classBytes = new LinkedHashMap<>();
     private String mainClass;
     private Function<Instance, Machine> machineFactory;
 
@@ -34,7 +34,13 @@ public class ClassLoadingCollector implements ClassCollector {
     @Override
     public void putMainClass(String className, byte[] bytes) {
         this.mainClass = className;
-        put(className, bytes);
+        loadClass(bytes);
+
+        var classBytes = new LinkedHashMap<String, byte[]>();
+        classBytes.put(className, bytes);
+        classBytes.putAll(this.classBytes);
+
+        this.classBytes = classBytes;
     }
 
     @Override

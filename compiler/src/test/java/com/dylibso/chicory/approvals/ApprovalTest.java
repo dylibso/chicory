@@ -5,7 +5,6 @@ import static java.lang.ClassLoader.getSystemClassLoader;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.objectweb.asm.Type.getInternalName;
 
-import com.dylibso.chicory.compiler.internal.ClassCollector;
 import com.dylibso.chicory.compiler.internal.Compiler;
 import com.dylibso.chicory.compiler.internal.Shaded;
 import java.io.PrintWriter;
@@ -13,7 +12,6 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -72,7 +70,7 @@ public class ApprovalTest {
     public void verifyI32Renamed() {
         var module = parse(getSystemClassLoader().getResourceAsStream("compiled/i32.wat.wasm"));
         var result = Compiler.builder(module).withClassName("FOO").build().compile();
-        verifyClass(result.collector(), (name) -> !name.equals("FOO"));
+        verifyClass(result.classBytes(), (name) -> !name.equals("FOO"));
     }
 
     @Test
@@ -110,7 +108,7 @@ public class ApprovalTest {
         var module =
                 parse(getSystemClassLoader().getResourceAsStream("compiled/functions_10.wat.wasm"));
         var result = Compiler.builder(module).withMaxFunctionsPerClass(5).build().compile();
-        verifyClass(result.collector(), ApprovalTest::SKIP_Methods_CLASS);
+        verifyClass(result.classBytes(), ApprovalTest::SKIP_Methods_CLASS);
     }
 
     private static void verifyGeneratedBytecode(String name) {
@@ -121,7 +119,7 @@ public class ApprovalTest {
             String name, Function<String, Boolean> classSkipper) {
         var module = parse(getSystemClassLoader().getResourceAsStream("compiled/" + name));
         var result = Compiler.builder(module).build().compile();
-        verifyClass(result.collector(), classSkipper);
+        verifyClass(result.classBytes(), classSkipper);
     }
 
     private static boolean SKIP_Methods_CLASS(String name) {
@@ -129,30 +127,11 @@ public class ApprovalTest {
     }
 
     private static void verifyClass(
-            ClassCollector collector, Function<String, Boolean> classSkipper) {
+            Map<String, byte[]> classBytes, Function<String, Boolean> classSkipper) {
         var writer = new StringWriter();
 
-        Map<String, byte[]> classBytes = collector.classBytes();
-
-        String[] names =
-                classBytes.keySet().stream()
-                        .filter(s -> !s.equals(collector.mainClass()))
-                        .toArray(String[]::new);
-
-        Arrays.sort(names);
-
-        // First print the main class
-        var bytes = classBytes.get(collector.mainClass());
-        ClassReader cr = new ClassReader(bytes);
-        if (!classSkipper.apply(cr.getClassName())) {
-            cr.accept(new TraceClassVisitor(new PrintWriter(writer)), 0);
-            writer.append("\n");
-        }
-
-        // Then append the remaining classes
-        for (String className : names) {
-            bytes = classBytes.get(className);
-            cr = new ClassReader(bytes);
+        for (byte[] bytes : classBytes.values()) {
+            ClassReader cr = new ClassReader(bytes);
             if (classSkipper.apply(cr.getClassName())) {
                 continue;
             }
