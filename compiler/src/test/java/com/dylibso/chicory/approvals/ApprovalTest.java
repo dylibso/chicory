@@ -15,7 +15,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import org.apache.velocity.Template;
@@ -135,10 +134,10 @@ public class ApprovalTest {
 
         Map<String, byte[]> classBytes = collector.classBytes();
 
-        String[] names = classBytes.keySet()
-                .stream()
-                .filter(s -> !s.equals(collector.mainClass()))
-                .toArray(String[]::new);
+        String[] names =
+                classBytes.keySet().stream()
+                        .filter(s -> !s.equals(collector.mainClass()))
+                        .toArray(String[]::new);
 
         Arrays.sort(names);
 
