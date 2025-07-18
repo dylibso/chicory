@@ -17,9 +17,13 @@ public final class MachineFactory implements Function<Instance, Machine> {
 
     public MachineFactory(WasmModule module) {
         this.module = module;
-        var compiler = Compiler.builder(module).build();
+        var compiler =
+                Compiler.builder(module)
+                        .withClassCollectorFactory(ClassLoadingCollector::new)
+                        .build();
         var result = compiler.compile();
-        this.factory = result.machineFactory();
+        var collector = (ClassLoadingCollector) result.collector();
+        this.factory = collector.machineFactory();
     }
 
     public MachineFactory(WasmModule module, Function<Instance, Machine> factory) {

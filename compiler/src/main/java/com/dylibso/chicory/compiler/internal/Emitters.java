@@ -186,7 +186,7 @@ final class Emitters {
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
         emitInvokeFunction(
                 asm,
-                ctx.internalClassName() + ctx.classNameForFuncGroup(funcId),
+                ctx.classNameForFuncGroup(ctx.internalClassName(), funcId),
                 funcId,
                 functionType);
 

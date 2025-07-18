@@ -40,8 +40,6 @@ import static com.dylibso.chicory.compiler.internal.Shader.createShadedClass;
 import static com.dylibso.chicory.compiler.internal.Shader.shadedClassRemapper;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
-import static java.lang.invoke.MethodHandles.publicLookup;
 import static java.lang.invoke.MethodType.methodType;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
@@ -67,19 +65,15 @@ import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.ValType;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import org.objectweb.asm.ClassReader;
+import java.util.function.Supplier;
 import org.objectweb.asm.ClassTooLargeException;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -88,7 +82,6 @@ import org.objectweb.asm.MethodTooLargeException;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.InstructionAdapter;
-import org.objectweb.asm.util.CheckClassAdapter;
 
 public final class Compiler {
 
@@ -111,14 +104,14 @@ public final class Compiler {
     // This should give us the biggest class size possible.
     private static final int DEFAULT_MAX_FUNCTIONS_PER_CLASS = 1024 * 12;
 
-    private final WasmClassLoader classLoader = new WasmClassLoader();
     private final String className;
     private final WasmModule module;
     private final WasmAnalyzer analyzer;
     private final int functionImports;
     private final InterpreterFallback interpreterFallback;
     private final List<FunctionType> functionTypes;
-    private final Map<String, byte[]> extraClasses = new LinkedHashMap<>();
+    private final Supplier<ClassCollector> classCollectorFactory;
+    private final ClassCollector collector;
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions;
 
@@ -127,11 +120,14 @@ public final class Compiler {
             String className,
             int maxFunctionsPerClass,
             InterpreterFallback interpreterFallback,
-            Set<Integer> interpretedFunctions) {
+            Set<Integer> interpretedFunctions,
+            Supplier<ClassCollector> classCollectorFactory) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.analyzer = new WasmAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
+        this.classCollectorFactory = classCollectorFactory;
+        this.collector = classCollectorFactory.get();
 
         if (interpretedFunctions == null || interpretedFunctions.isEmpty()) {
             this.interpretedFunctions = new HashSet<>();
@@ -163,6 +159,7 @@ public final class Compiler {
         private int maxFunctionsPerClass;
         private InterpreterFallback interpreterFallback;
         private Set<Integer> interpretedFunctions;
+        private Supplier<ClassCollector> classCollectorFactory;
 
         private Builder(WasmModule module) {
             this.module = module;
@@ -188,6 +185,11 @@ public final class Compiler {
             return this;
         }
 
+        public Builder withClassCollectorFactory(Supplier<ClassCollector> classCollectorFactory) {
+            this.classCollectorFactory = classCollectorFactory;
+            return this;
+        }
+
         public Compiler build() {
             var className = this.className;
             if (className == null) {
@@ -198,72 +200,29 @@ public final class Compiler {
             if (maxFunctionsPerClass <= 0) {
                 maxFunctionsPerClass = DEFAULT_MAX_FUNCTIONS_PER_CLASS;
             }
+
+            if (this.classCollectorFactory == null) {
+                this.classCollectorFactory = ClassLoadingCollector::new;
+            }
+
             return new Compiler(
                     module,
                     className,
                     maxFunctionsPerClass,
                     interpreterFallback,
-                    interpretedFunctions);
+                    interpretedFunctions,
+                    classCollectorFactory);
         }
     }
 
     public CompilerResult compile() {
         var bytes = compileClass();
-        var factory = createMachineFactory(bytes);
-
-        Map<String, byte[]> classBytes = new LinkedHashMap<>();
-        classBytes.put(className, bytes);
-        classBytes.putAll(extraClasses);
-        return new CompilerResult(factory, classBytes, Set.copyOf(interpretedFunctions));
-    }
-
-    private Function<Instance, Machine> createMachineFactory(byte[] classBytes) {
-        try {
-            var clazz = loadClass(classBytes).asSubclass(Machine.class);
-            // convert constructor to factory interface
-            var constructor = clazz.getConstructor(Instance.class);
-            var handle = publicLookup().unreflectConstructor(constructor);
-            @SuppressWarnings("unchecked")
-            Function<Instance, Machine> function = asInterfaceInstance(Function.class, handle);
-            return function;
-        } catch (ReflectiveOperationException e) {
-            throw new ChicoryException(e);
-        }
-    }
-
-    private Class<?> loadClass(byte[] classBytes) {
-        return loadClass(classLoader, classBytes);
-    }
-
-    private Class<?> loadClass(WasmClassLoader classLoader, byte[] classBytes) {
-        try {
-            var clazz = classLoader.loadFromBytes(classBytes);
-            // force initialization to run JVM verifier
-            Class.forName(clazz.getName(), true, clazz.getClassLoader());
-            return clazz;
-        } catch (ClassNotFoundException e) {
-            throw new AssertionError(e);
-        } catch (VerifyError e) {
-            // run ASM verifier to help with debugging
-            try {
-                var out = new StringWriter().append("ASM verifier:\n\n");
-                CheckClassAdapter.verify(new ClassReader(classBytes), true, new PrintWriter(out));
-                e.addSuppressed(new RuntimeException(out.toString()));
-            } catch (Throwable t) {
-                e.addSuppressed(t);
-            }
-            throw e;
-        }
-    }
-
-    private String loadExtraClass(byte[] bytes) {
-        Class<?> clazz = loadClass(bytes);
-        extraClasses.put(clazz.getName(), bytes);
-        return clazz.getName();
+        collector.putMainClass(className, bytes);
+        return new CompilerResult(collector, Set.copyOf(interpretedFunctions));
     }
 
     private void compileExtraClasses() {
-        loadExtraClass(createShadedClass(className));
+        createShadedClass(className, collector);
 
         int totalFunctions = functionImports + module.functionSection().functionCount();
 
@@ -292,10 +251,11 @@ public final class Compiler {
                         loadChunkedClass(
                                 totalFunctions,
                                 maxFunctionsPerClass,
-                                (start, end, chunkSize) -> {
+                                (collector, start, end, chunkSize) -> {
                                     maxFunctionsPerClass = chunkSize;
-                                    String className = classNameForFuncGroup(start);
-                                    return compileExtraClass(
+                                    String className = classNameForFuncGroup(this.className, start);
+                                    compileExtraClass(
+                                            collector,
                                             className,
                                             emitFunctionGroup(
                                                     start, end, internalClassName(this.className)));
@@ -341,12 +301,12 @@ public final class Compiler {
         }
 
         if (!functionTypes.isEmpty()) {
-            loadExtraClass(compileMachineCallClass());
+            compileMachineCallClass();
         }
     }
 
     interface ChunkedClassEmitter {
-        byte[] emit(int start, int end, int chunkSize);
+        void emit(ClassCollector collector, int start, int end, int chunkSize);
     }
 
     /**
@@ -362,8 +322,9 @@ public final class Compiler {
      * @return The final chunk size used for loading the class.
      */
     int loadChunkedClass(int size, int chunkSize, ChunkedClassEmitter emitter) {
-        ArrayList<byte[]> generated = new ArrayList<byte[]>();
-        WasmClassLoader classLoader = new WasmClassLoader();
+        // Create a temporary collector to verify class construction
+        // (if the collector supports throwing ClassTooLargeException).
+        ClassCollector collector = classCollectorFactory.get();
         while (true) {
             try {
                 int chunks = (size / chunkSize) + (size % chunkSize == 0 ? 0 : 1);
@@ -371,9 +332,7 @@ public final class Compiler {
                     var start = i * chunkSize;
                     var end = min(start + chunkSize, size);
 
-                    byte[] bytes = emitter.emit(start, end, chunkSize);
-                    loadClass(classLoader, bytes);
-                    generated.add(bytes);
+                    emitter.emit(collector, start, end, chunkSize);
                 }
                 break;
             } catch (ClassTooLargeException e) {
@@ -381,18 +340,17 @@ public final class Compiler {
                 if (chunkSize == 0) {
                     throw e;
                 }
-                generated.clear();
-                classLoader = new WasmClassLoader();
+                collector = classCollectorFactory.get();
             }
         }
-        for (var bytes : generated) {
-            loadExtraClass(bytes);
-        }
+
+        // Store the final results into the global collector.
+        this.collector.putAll(collector);
         return chunkSize;
     }
 
-    private String classNameForFuncGroup(int funcId) {
-        return "FuncGroup_" + (funcId / maxFunctionsPerClass);
+    private String classNameForFuncGroup(String prefix, int funcId) {
+        return prefix + "FuncGroup_" + (funcId / maxFunctionsPerClass);
     }
 
     private Consumer<ClassVisitor> emitFunctionGroup(int start, int end, String internalClassName) {
@@ -686,14 +644,15 @@ public final class Compiler {
         asm.athrow();
     }
 
-    private byte[] compileMachineCallClass() {
+    private void compileMachineCallClass() {
         ClassWriter binaryWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassVisitor classWriter = shadedClassRemapper(binaryWriter, className);
+        String machineCallClassName = internalClassName(className + "MachineCall");
 
         classWriter.visit(
                 Opcodes.V11,
                 Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
-                internalClassName(className + "MachineCall"),
+                machineCallClassName,
                 null,
                 getInternalName(Object.class),
                 null);
@@ -720,9 +679,10 @@ public final class Compiler {
                     loadChunkedClass(
                             functionTypes.size(),
                             maxMachineCallMethods,
-                            (start, end, chunkSize) ->
+                            (collector, start, end, chunkSize) ->
                                     compileExtraClass(
-                                            classNameForDispatch(start),
+                                            collector,
+                                            classNameForDispatch(className, start),
                                             (cw) ->
                                                     emitFunction(
                                                             cw,
@@ -736,13 +696,14 @@ public final class Compiler {
         }
         emitFunction(classWriter, "call", MACHINE_CALL_METHOD_TYPE, true, callMethod);
 
-        return binaryWriter.toByteArray();
+        collector.put(machineCallClassName, binaryWriter.toByteArray());
     }
 
-    private byte[] compileExtraClass(String name, Consumer<ClassVisitor> consumer) {
+    private void compileExtraClass(
+            ClassCollector collector, String name, Consumer<ClassVisitor> consumer) {
         ClassWriter binaryWriter = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassVisitor classWriter = shadedClassRemapper(binaryWriter, className);
-        String internalClassName = internalClassName(className + name);
+        String internalClassName = internalClassName(name);
         classWriter.visit(
                 Opcodes.V11,
                 Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
@@ -751,7 +712,7 @@ public final class Compiler {
                 getInternalName(Object.class),
                 null);
         consumer.accept(classWriter);
-        return binaryWriter.toByteArray();
+        collector.put(name, binaryWriter.toByteArray());
     }
 
     private Consumer<InstructionAdapter> compileMachineCallDispatch(int maxMachineCallMethods) {
@@ -781,7 +742,7 @@ public final class Compiler {
             for (int i = 0; i < labels.length; i++) {
                 asm.mark(labels[i]);
                 asm.invokestatic(
-                        internalClassName(className + classNameForDispatch(i << shift)),
+                        internalClassName(classNameForDispatch(className, i << shift)),
                         callDispatchMethodName(i << shift),
                         MACHINE_CALL_METHOD_TYPE.toMethodDescriptorString(),
                         false);
@@ -812,7 +773,7 @@ public final class Compiler {
         for (int id = max(start, functionImports); id < end; id++) {
             asm.mark(labels[id - start]);
             asm.invokestatic(
-                    internalClassName(className + classNameForFuncGroup(id)),
+                    internalClassName(classNameForFuncGroup(className, id)),
                     callMethodName(id),
                     CALL_METHOD_TYPE.toMethodDescriptorString(),
                     false);
@@ -858,7 +819,7 @@ public final class Compiler {
         asm.load(0, OBJECT_TYPE);
 
         emitInvokeFunction(
-                asm, internalClassName(className) + classNameForFuncGroup(funcId), funcId, type);
+                asm, internalClassName(classNameForFuncGroup(className, funcId)), funcId, type);
 
         // box the result into long[]
         Class<?> returnType = jvmReturnType(type);
@@ -965,7 +926,7 @@ public final class Compiler {
                 //    return func_0(a, b, memory, callerInstance);
                 asm.mark(labels[i]);
                 emitInvokeFunction(
-                        asm, internalClassName + classNameForFuncGroup(keys[i]), keys[i], type);
+                        asm, classNameForFuncGroup(internalClassName, keys[i]), keys[i], type);
                 asm.areturn(getType(jvmReturnType(type)));
             }
 
@@ -983,9 +944,10 @@ public final class Compiler {
             loadChunkedClass(
                     functionTypes.size(),
                     maxMachineCallMethods,
-                    (start, end, chunkSize) ->
+                    (collector, start, end, chunkSize) ->
                             compileExtraClass(
-                                    classNameForCallIndirect(typeId, start),
+                                    collector,
+                                    classNameForCallIndirect(this.className, typeId, start),
                                     (cw) -> {
                                         emitFunction(
                                                 cw,
@@ -1020,7 +982,7 @@ public final class Compiler {
                 asm.mark(labels[i]);
                 asm.load(funcId, INT_TYPE);
                 asm.invokestatic(
-                        internalClassName + classNameForCallIndirect(typeId, i << shift),
+                        classNameForCallIndirect(internalClassName, typeId, i << shift),
                         "apply",
                         applyParams.toMethodDescriptorString(),
                         false);
@@ -1089,7 +1051,7 @@ public final class Compiler {
             //    return func_0(a, b, memory, callerInstance);
             asm.mark(labels[i]);
             emitInvokeFunction(
-                    asm, internalClassName + classNameForFuncGroup(keys[i]), keys[i], type);
+                    asm, classNameForFuncGroup(internalClassName, keys[i]), keys[i], type);
             asm.areturn(getType(jvmReturnType(type)));
             asm.areturn(OBJECT_TYPE);
         }

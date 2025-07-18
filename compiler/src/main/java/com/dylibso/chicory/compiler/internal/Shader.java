@@ -19,7 +19,8 @@ final class Shader {
 
     private Shader() {}
 
-    public static byte[] createShadedClass(String className) {
+    public static void createShadedClass(String className, ClassCollector collector) {
+        String shadedClassName = internalClassName(className + "Shaded");
         ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
         ClassVisitor visitor = shadedClassRemapper(writer, className);
 
@@ -36,17 +37,17 @@ final class Shader {
                         super.visit(
                                 version,
                                 Opcodes.ACC_FINAL | Opcodes.ACC_SUPER,
-                                internalClassName(className + "Shaded"),
+                                shadedClassName,
                                 null,
                                 superName,
                                 null);
                     }
                 };
 
-        ClassReader reader = new ClassReader(getBytecode(Shaded.class));
+        ClassReader reader = new ClassReader(collector.resolve(Shaded.class));
         reader.accept(visitor, ClassReader.SKIP_FRAMES);
 
-        return writer.toByteArray();
+        collector.put(shadedClassName, writer.toByteArray());
     }
 
     public static ClassRemapper shadedClassRemapper(ClassVisitor visitor, String className) {
@@ -65,7 +66,7 @@ final class Shader {
                 });
     }
 
-    private static byte[] getBytecode(Class<?> clazz) {
+    static byte[] getBytecode(Class<?> clazz) {
         var name = getInternalName(clazz) + ".class";
         try (var in = clazz.getClassLoader().getResourceAsStream(name)) {
             if (in == null) {
