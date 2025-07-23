@@ -28,7 +28,8 @@ public class TestGenMojo extends AbstractMojo {
     /**
      * Repository of the testsuite.
      */
-    @Parameter(required = true, defaultValue = "main")
+    // TODO: restore `main`
+    @Parameter(required = true, defaultValue = "88e97b0f742f4c3ee01fea683da130f344dd7b02")
     private String testSuiteRepoRef;
 
     /**
