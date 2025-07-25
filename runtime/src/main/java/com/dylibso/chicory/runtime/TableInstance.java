@@ -82,4 +82,14 @@ public class TableInstance {
             this.refs[i] = REF_NULL_VALUE;
         }
     }
+
+    public TableInstance copy() {
+        TableInstance copy = new TableInstance(this.table, this.refs.length > 0 ? this.refs[0] : 0);
+        // Deep copy the mutable arrays
+        copy.instances = this.instances.clone();
+        copy.refs = this.refs.clone();
+        // Note: The Instance references in the instances array will need to be
+        // updated by the calling code to point to the copied instances
+        return copy;
+    }
 }
