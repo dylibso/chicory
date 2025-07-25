@@ -1054,15 +1054,15 @@ public final class WasiPreview1 implements Closeable {
             this.errorcode = errcode;
         }
 
-        public boolean isError() {
+        boolean isError() {
             return (this.resolved == null);
         }
 
-        public int error() {
+        int error() {
             return errorcode;
         }
 
-        public Path resolved() {
+        Path resolved() {
             return resolved;
         }
     }

@@ -51,21 +51,21 @@ final class Validator {
     @SuppressWarnings("PublicField")
     private static class CtrlFrame {
         // OpCode of the current Control Flow instruction
-        public final OpCode opCode;
+        final OpCode opCode;
         // params or inputs
-        public final List<ValType> startTypes;
+        final List<ValType> startTypes;
         // returns or outputs
-        public final List<ValType> endTypes;
+        final List<ValType> endTypes;
         // the height of the value stack before entering the current Control Flow instruction
-        public final int height;
+        final int height;
         // the height of the init stack before entering the current Control Flow
-        public final int initHeight;
+        final int initHeight;
         // set after unconditional jumps
-        public boolean unreachable;
+        boolean unreachable;
         // if there is no else, we explicit check that the enclosing IF is not returning values
-        public boolean hasElse;
+        boolean hasElse;
 
-        public CtrlFrame(
+        CtrlFrame(
                 OpCode opCode,
                 List<ValType> startTypes,
                 List<ValType> endTypes,
