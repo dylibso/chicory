@@ -83,9 +83,9 @@ public final class WasiOptions {
         // https://github.com/oracle/graal/blob/f63ba1767a34d9a4e9d747d077d684f20f4d934d/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/ThreadLocalRandomAccessors.java#L38
         private Random random = ThreadLocalRandom.current();
         private Clock clock = Clock.systemUTC();
-        private OutputStream stdout = OutputStream.nullOutputStream();
-        private OutputStream stderr = OutputStream.nullOutputStream();
-        private InputStream stdin = InputStream.nullInputStream();
+        private OutputStream stdout = IO.nullOutputStream();
+        private OutputStream stderr = IO.nullOutputStream();
+        private InputStream stdin = IO.nullInputStream();
         private List<String> arguments = List.of();
         private final Map<String, String> environment = new LinkedHashMap<>();
         private final Map<String, Path> directories = new LinkedHashMap<>();

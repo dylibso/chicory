@@ -124,8 +124,23 @@ public final class WasiPreview1 implements Closeable {
             return this;
         }
 
+        private boolean isAndroid() {
+            try {
+                Class.forName("android.os.Build");
+                return true;
+            } catch (ClassNotFoundException e) {
+                // Fallback: check known system property
+                String runtime = System.getProperty("java.runtime.name");
+                return runtime != null && runtime.toLowerCase().contains("android");
+            }
+        }
+
         public WasiPreview1 build() {
-            if (logger == null) {
+            if (logger == null && isAndroid()) {
+                // Android requires explicitly setting a logger since System.Logger is not available
+                throw new WasmRuntimeException(
+                        "Set logger using withLogger() when running on Android devices");
+            } else if (logger == null) {
                 logger = new SystemLogger();
             }
             if (opts == null) {
