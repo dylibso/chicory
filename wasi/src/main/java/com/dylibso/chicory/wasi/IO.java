@@ -11,7 +11,7 @@ import java.util.Objects;
  * {@code OutputStream.nullOutputStream()} and {@code InputStream.nullInputStream()}
  * which were introduced in Android API Level 33.
  */
-class IO {
+final class IO {
     private IO() {}
 
     /**
