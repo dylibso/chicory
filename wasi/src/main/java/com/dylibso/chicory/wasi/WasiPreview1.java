@@ -27,6 +27,7 @@ import com.dylibso.chicory.wasi.Descriptors.InStream;
 import com.dylibso.chicory.wasi.Descriptors.OutStream;
 import com.dylibso.chicory.wasi.Descriptors.PreopenedDirectory;
 import com.dylibso.chicory.wasm.ChicoryException;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -54,10 +55,10 @@ import java.nio.file.attribute.FileTime;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -131,7 +132,7 @@ public final class WasiPreview1 implements Closeable {
             } catch (ClassNotFoundException e) {
                 // Fallback: check known system property
                 String runtime = System.getProperty("java.runtime.name");
-                return runtime != null && runtime.toLowerCase().contains("android");
+                return runtime != null && runtime.toLowerCase(Locale.ENGLISH).contains("android");
             }
         }
 
@@ -1252,7 +1253,7 @@ public final class WasiPreview1 implements Closeable {
             return wasiResult(WasiErrno.ENOTDIR);
         }
 
-        Set<OpenOption> openOptions = new HashSet<>(Arrays.asList());
+        Set<OpenOption> openOptions = new HashSet<>(List.of());
 
         boolean append = flagSet(fdFlags, WasiFdFlags.APPEND);
         boolean truncate = flagSet(openFlags, WasiOpenFlags.TRUNC);
@@ -1871,7 +1872,7 @@ public final class WasiPreview1 implements Closeable {
     private static LinkOption[] toLinkOptions(int lookupFlags) {
         return flagSet(lookupFlags, WasiLookupFlags.SYMLINK_FOLLOW)
                 ? new LinkOption[0]
-                : new LinkOption[] {LinkOption.NOFOLLOW_LINKS};
+                : new LinkOption[]{LinkOption.NOFOLLOW_LINKS};
     }
 
     private static boolean flagSet(long flags, long mask) {
