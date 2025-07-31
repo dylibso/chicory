@@ -27,7 +27,6 @@ import com.dylibso.chicory.wasi.Descriptors.InStream;
 import com.dylibso.chicory.wasi.Descriptors.OutStream;
 import com.dylibso.chicory.wasi.Descriptors.PreopenedDirectory;
 import com.dylibso.chicory.wasm.ChicoryException;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -1872,7 +1871,7 @@ public final class WasiPreview1 implements Closeable {
     private static LinkOption[] toLinkOptions(int lookupFlags) {
         return flagSet(lookupFlags, WasiLookupFlags.SYMLINK_FOLLOW)
                 ? new LinkOption[0]
-                : new LinkOption[]{LinkOption.NOFOLLOW_LINKS};
+                : new LinkOption[] {LinkOption.NOFOLLOW_LINKS};
     }
 
     private static boolean flagSet(long flags, long mask) {
