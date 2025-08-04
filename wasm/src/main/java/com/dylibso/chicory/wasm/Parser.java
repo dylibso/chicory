@@ -435,7 +435,7 @@ public final class Parser {
             sectionsOrder.add(SectionId.DATA);
         }
 
-        public void validateSectionType(byte sectionId) {
+        void validateSectionType(byte sectionId) {
             if (sectionsOrder.contains((int) sectionId)) {
                 if (maxSection < 0 || sectionsOrder.indexOf((int) sectionId) > maxSection) {
                     maxSection = sectionsOrder.indexOf((int) sectionId);
