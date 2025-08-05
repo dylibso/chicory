@@ -18,8 +18,6 @@ final class IO {
      * Returns an {@link OutputStream} that discards all bytes written to it.
      * This implementation provides compatibility for Android devices running below API Level 33,
      * where {@code OutputStream.nullOutputStream()} is not available.
-     * <p>
-     * This implementation is copied from {@code OutputStream.nullOutputStream()}.
      *
      * @return an output stream that discards all bytes written to it
      */
@@ -55,8 +53,6 @@ final class IO {
      * Returns an {@link InputStream} that contains no bytes.
      * This implementation provides compatibility for Android devices running below API Level 33,
      * where {@code InputStream.nullInputStream()} is not available.
-     * <p>
-     * This implementation is copied from {@code InputStream.nullInputStream()}.
      *
      * @return an input stream that contains no bytes
      */
@@ -119,15 +115,6 @@ final class IO {
                 ensureOpen();
                 return 0L;
             }
-
-            /* This method was added in Java 12+ */
-            // @Override
-            // public void skipNBytes(long n) throws IOException {
-            //     ensureOpen();
-            //     if (n > 0) {
-            //         throw new EOFException();
-            //     }
-            // }
 
             @Override
             public long transferTo(OutputStream out) throws IOException {

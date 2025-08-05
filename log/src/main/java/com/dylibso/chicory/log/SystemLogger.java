@@ -1,7 +1,6 @@
 package com.dylibso.chicory.log;
 
 public class SystemLogger implements Logger {
-    // FIX: System.getLogger() is not available on Android.
     private static final System.Logger LOGGER = System.getLogger("chicory");
 
     @Override
