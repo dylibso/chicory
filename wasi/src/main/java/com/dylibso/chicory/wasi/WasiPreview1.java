@@ -1870,7 +1870,7 @@ public final class WasiPreview1 implements Closeable {
     private static LinkOption[] toLinkOptions(int lookupFlags) {
         return flagSet(lookupFlags, WasiLookupFlags.SYMLINK_FOLLOW)
                 ? new LinkOption[0]
-                : new LinkOption[]{LinkOption.NOFOLLOW_LINKS};
+                : new LinkOption[] {LinkOption.NOFOLLOW_LINKS};
     }
 
     private static boolean flagSet(long flags, long mask) {
