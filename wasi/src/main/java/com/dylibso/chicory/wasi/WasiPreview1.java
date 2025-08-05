@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toList;
 import com.dylibso.chicory.annotations.Buffer;
 import com.dylibso.chicory.annotations.HostModule;
 import com.dylibso.chicory.annotations.WasmExport;
+import com.dylibso.chicory.log.AndroidLogger;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostFunction;
@@ -137,9 +138,7 @@ public final class WasiPreview1 implements Closeable {
 
         public WasiPreview1 build() {
             if (logger == null && isAndroid()) {
-                // Android requires explicitly setting a logger since System.Logger is not available
-                throw new WasmRuntimeException(
-                        "Set logger using withLogger() when running on Android devices");
+                logger = new AndroidLogger();
             } else if (logger == null) {
                 logger = new SystemLogger();
             }
@@ -1871,7 +1870,7 @@ public final class WasiPreview1 implements Closeable {
     private static LinkOption[] toLinkOptions(int lookupFlags) {
         return flagSet(lookupFlags, WasiLookupFlags.SYMLINK_FOLLOW)
                 ? new LinkOption[0]
-                : new LinkOption[] {LinkOption.NOFOLLOW_LINKS};
+                : new LinkOption[]{LinkOption.NOFOLLOW_LINKS};
     }
 
     private static boolean flagSet(long flags, long mask) {
