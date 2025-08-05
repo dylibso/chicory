@@ -125,7 +125,7 @@ public final class WasiPreview1 implements Closeable {
             return this;
         }
 
-        private boolean isAndroid() {
+        private static boolean isAndroid() {
             try {
                 Class.forName("android.os.Build");
                 return true;
