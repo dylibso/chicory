@@ -17,7 +17,7 @@ import static java.util.stream.Collectors.toList;
 import com.dylibso.chicory.annotations.Buffer;
 import com.dylibso.chicory.annotations.HostModule;
 import com.dylibso.chicory.annotations.WasmExport;
-import com.dylibso.chicory.log.AndroidLogger;
+import com.dylibso.chicory.log.BasicLogger;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostFunction;
@@ -138,7 +138,7 @@ public final class WasiPreview1 implements Closeable {
 
         public WasiPreview1 build() {
             if (logger == null && isAndroid()) {
-                logger = new AndroidLogger();
+                logger = new BasicLogger();
             } else if (logger == null) {
                 logger = new SystemLogger();
             }

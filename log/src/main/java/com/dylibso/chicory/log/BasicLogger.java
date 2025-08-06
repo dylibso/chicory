@@ -1,6 +1,6 @@
 package com.dylibso.chicory.log;
 
-public class AndroidLogger implements Logger {
+public class BasicLogger implements Logger {
     private static final java.util.logging.Logger LOGGER =
             java.util.logging.Logger.getLogger("chicory");
 
