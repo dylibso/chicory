@@ -17,6 +17,7 @@ import static java.util.stream.Collectors.toList;
 import com.dylibso.chicory.annotations.Buffer;
 import com.dylibso.chicory.annotations.HostModule;
 import com.dylibso.chicory.annotations.WasmExport;
+import com.dylibso.chicory.log.BasicLogger;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.HostFunction;
@@ -54,10 +55,10 @@ import java.nio.file.attribute.FileTime;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -124,8 +125,21 @@ public final class WasiPreview1 implements Closeable {
             return this;
         }
 
+        private static boolean isAndroid() {
+            try {
+                Class.forName("android.os.Build");
+                return true;
+            } catch (ClassNotFoundException e) {
+                // Fallback: check known system property
+                String runtime = System.getProperty("java.runtime.name");
+                return runtime != null && runtime.toLowerCase(Locale.ENGLISH).contains("android");
+            }
+        }
+
         public WasiPreview1 build() {
-            if (logger == null) {
+            if (logger == null && isAndroid()) {
+                logger = new BasicLogger();
+            } else if (logger == null) {
                 logger = new SystemLogger();
             }
             if (opts == null) {
@@ -1237,7 +1251,7 @@ public final class WasiPreview1 implements Closeable {
             return wasiResult(WasiErrno.ENOTDIR);
         }
 
-        Set<OpenOption> openOptions = new HashSet<>(Arrays.asList());
+        Set<OpenOption> openOptions = new HashSet<>(List.of());
 
         boolean append = flagSet(fdFlags, WasiFdFlags.APPEND);
         boolean truncate = flagSet(openFlags, WasiOpenFlags.TRUNC);
