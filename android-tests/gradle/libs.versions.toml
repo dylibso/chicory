@@ -6,6 +6,7 @@ chicory = "999-SNAPSHOT"
 
 [libraries]
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junitJupiterApi" }
+chicory-wasi = { module = "com.dylibso.chicory:wasi", version.ref = "chicory"}
 chicory-runtime = { module = "com.dylibso.chicory:runtime", version.ref = "chicory"}
 chicory-wasm = { module = "com.dylibso.chicory:wasm", version.ref = "chicory"}
 chicory-wasmCorpus = { module = "com.dylibso.chicory:wasm-corpus", version.ref = "chicory"}
