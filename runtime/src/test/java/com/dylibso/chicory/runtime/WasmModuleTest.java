@@ -21,6 +21,7 @@ import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -712,5 +713,58 @@ public class WasmModuleTest {
 
         assertEquals(0, result[0]);
         assertEquals(1000_000, result[1]);
+    }
+
+    @Test
+    public void testExternrefHandling() {
+        var testObject = new Object();
+        var sideTable = new HashMap<Long, Object>();
+
+        var imports =
+                ImportValues.builder()
+                        .addFunction(
+                                new HostFunction(
+                                        "env",
+                                        "get_host_object",
+                                        FunctionType.of(List.of(), List.of(ValType.ExternRef)),
+                                        (inst, args) -> {
+                                            sideTable.put(123L, testObject);
+                                            return new long[] {123L};
+                                        }))
+                        .addFunction(
+                                new HostFunction(
+                                        "env",
+                                        "is_null",
+                                        FunctionType.of(
+                                                List.of(ValType.ExternRef), List.of(ValType.I32)),
+                                        (inst, args) -> {
+                                            long key = args[0];
+                                            return (sideTable.get(key) == null)
+                                                    ? new long[] {1}
+                                                    : new long[] {0};
+                                        }))
+                        .build();
+        var instance =
+                Instance.builder(loadModule("compiled/externref-example.wat.wasm"))
+                        .withImportValues(imports)
+                        .build();
+
+        var roundTrip = instance.exports().function("process_externref").apply(123L)[0];
+        assertEquals(123L, roundTrip);
+
+        // object has not been created yet
+        var isNull1 = instance.exports().function("is_null").apply(123L)[0];
+        assertEquals(1L, isNull1);
+
+        // now we create the test object
+        var ref = instance.exports().function("get_host_object").apply()[0];
+        assertEquals(123L, ref);
+
+        var isNull2 = instance.exports().function("is_null").apply(123L)[0];
+        assertEquals(0L, isNull2);
+
+        // verify against a reference that doesn't exist
+        var isNull3 = instance.exports().function("is_null").apply(1L)[0];
+        assertEquals(1L, isNull3);
     }
 }
