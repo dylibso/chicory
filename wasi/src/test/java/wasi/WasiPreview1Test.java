@@ -131,7 +131,7 @@ public class WasiPreview1Test {
         quickjs.export("eval_bytecode").apply(codePtr, codeLength);
 
         // stderr?
-        assertEquals(greetingMsg + "\n", stderr.toString(UTF_8));
+        assertEquals(greetingMsg + "\n", new String(stderr.toByteArray(), UTF_8));
     }
 
     @Test
@@ -162,7 +162,7 @@ public class WasiPreview1Test {
                 .build();
 
         // stderr?
-        assertEquals("Hello world dynamic Javy!\n", stderr.toString(UTF_8));
+        assertEquals("Hello world dynamic Javy!\n", new String(stderr.toByteArray(), UTF_8));
     }
 
     @Test

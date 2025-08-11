@@ -19,6 +19,6 @@ class MockPrintStream extends PrintStream {
     }
 
     public String output() {
-        return baos.toString(UTF_8);
+        return new String(baos.toByteArray(), UTF_8);
     }
 }
