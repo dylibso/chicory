@@ -17,7 +17,7 @@ jobs:
       result-link: "https://nightly.link/dylibso/chicory/actions/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}.zip"
     steps:
       - name: Checkout sources for this branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: main
       - name: Set up Java
@@ -44,7 +44,7 @@ jobs:
       result-link: "https://nightly.link/dylibso/chicory/actions/artifacts/${{ steps.artifact-upload-step.outputs.artifact-id }}.zip"
     steps:
       - name: Checkout sources for this branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
