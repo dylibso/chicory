@@ -26,16 +26,16 @@ jobs:
           version: 17
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Checkout testsuite
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: WebAssembly/testsuite
           path: testsuite
           # The ref needs to stay in sync with the default value in test-gen-plugin
           ref: 88e97b0f742f4c3ee01fea683da130f344dd7b02
       - name: Checkout wasi-testsuite
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: WebAssembly/wasi-testsuite
           path: wasi-testsuite
@@ -56,7 +56,7 @@ jobs:
     name: CI - Docs
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -85,16 +85,16 @@ jobs:
         folder: [runtime-tests, compiler-tests, wasi-tests]
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Checkout testsuite
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: WebAssembly/testsuite
           path: testsuite
           # The ref needs to stay in sync with the default value in test-gen-plugin
           ref: 88e97b0f742f4c3ee01fea683da130f344dd7b02
       - name: Checkout wasi-testsuite
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: WebAssembly/wasi-testsuite
           path: wasi-testsuite
