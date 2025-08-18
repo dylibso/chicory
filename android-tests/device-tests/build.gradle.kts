@@ -25,17 +25,21 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions { jvmTarget = "11" }
+
+    packagingOptions { pickFirst("logging.properties") }
 }
 
 dependencies {
     // "androidTestRuntimeImplementation" name here comes from Android's product
     // flavor convention. androidTest<productFlavorName>Implementation
     addLibraryTests(configurationName = "androidTestRuntimeImplementation", libraryPath = "runtime")
+    addLibraryTests(configurationName = "androidTestRuntimeImplementation", libraryPath = "wasi")
     // common dependencies can be added here
     // if you need to add a dependency on a specific module, you can use
     // "androidTest<productFlavorName>Implementation"(<your dependency>)
     // e.g.
     // "androidTestRuntimeImplementation"(libs.chicory.runtime)
+    androidTestImplementation(libs.chicory.wasi)
     androidTestImplementation(libs.chicory.runtime)
     androidTestImplementation(libs.chicory.wasm)
     androidTestImplementation(libs.chicory.wasmCorpus)
