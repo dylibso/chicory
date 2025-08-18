@@ -1,6 +1,6 @@
 [versions]
 agp = "8.8.0"
-junitJupiterApi = "5.11.2"
+junitJupiterApi = "5.13.4"
 kotlin = "2.2.10"
 chicory = "999-SNAPSHOT"
 
