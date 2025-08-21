@@ -129,3 +129,8 @@ If you have an interest in working on any of these please reach out in Zulip!
 * [Proxy-Wasm - Java Host](https://github.com/roastedroot/proxy-wasm-java-host)
 * [Quickjs4J - Sandboxed runtime for JavaScript](https://github.com/roastedroot/quickjs4j)
 * [WildFly - AI Feature Pack](https://github.com/wildfly-extras/wildfly-ai-feature-pack)
+
+## Meet the Team
+
+📅 Chicory Office Hours, every Tuesdays, 16:00–16:30 UTC (09:00–09:30 PT · 12:00–12:30 ET · 18:00–18:30 CET).
+The link will be shared in the Zulip chat each week. Let’s talk Chicory!
