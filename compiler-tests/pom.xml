@@ -188,18 +188,18 @@
           <!-- Skip stack-overflows in tail calls -->
           <excludedTests>
             SpecV1BinaryTest.test40,
-            SpecV1TcReturnCallTest.test19,
-            SpecV1TcReturnCallTest.test24,
-            SpecV1TcReturnCallTest.test25,
-            SpecV1TcReturnCallTest.test30,
-            SpecV1TcReturnCallTest.test31,
-            SpecV1TcReturnCallIndirectTest.test40,
-            SpecV1TcReturnCallIndirectTest.test41,
-            SpecV1TcReturnCallIndirectTest.test46,
-            SpecV1TcReturnCallIndirectTest.test47,
+            SpecV1TailCallReturnCallTest.test19,
+            SpecV1TailCallReturnCallTest.test24,
+            SpecV1TailCallReturnCallTest.test25,
+            SpecV1TailCallReturnCallTest.test30,
+            SpecV1TailCallReturnCallTest.test31,
+            SpecV1TailCallReturnCallIndirectTest.test40,
+            SpecV1TailCallReturnCallIndirectTest.test41,
+            SpecV1TailCallReturnCallIndirectTest.test46,
+            SpecV1TailCallReturnCallIndirectTest.test47,
             <!-- Skip exception tests with tail calls -->
-            SpecV1EhTryTableTest.test39,
-            SpecV1EhTryTableTest.test40,
+            SpecV1ExceptionHandlingTryTableTest.test39,
+            SpecV1ExceptionHandlingTryTableTest.test40,
             <!-- Investigate why this one fails -->
             SpecV1EhBinaryTest.test40,
             <!-- Testing an old behavior around multiple tables -->
