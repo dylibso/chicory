@@ -97,7 +97,13 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
             case ValType.ID.F64:
                 return double.class;
             default:
-                log(ERROR, "Unsupported WASM type: " + type, currentElement);
+                if (ValType.TypeIdxCode.EXTERN.code() == type.typeIdx()) {
+                    return long.class;
+                }
+                log(
+                        ERROR,
+                        "javaClassFromValueType - Unsupported WASM type: " + type,
+                        currentElement);
                 throw new AbortProcessingException();
         }
     }
@@ -117,7 +123,10 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                 return new MethodCallExpr(
                         new NameExpr("Value"), "doubleToLong", new NodeList<>(nameExpr));
             default:
-                log(ERROR, "Unsupported WASM type: " + type, currentElement);
+                if (ValType.TypeIdxCode.EXTERN.code() == type.typeIdx()) {
+                    return nameExpr;
+                }
+                log(ERROR, "toLong - Unsupported WASM type: " + type, currentElement);
                 throw new AbortProcessingException();
         }
     }
@@ -137,7 +146,10 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                 return new MethodCallExpr(
                         new NameExpr("Value"), "longToDouble", new NodeList<>(nameExpr));
             default:
-                log(ERROR, "Unsupported WASM type: " + type, currentElement);
+                if (ValType.TypeIdxCode.EXTERN.code() == type.typeIdx()) {
+                    return nameExpr;
+                }
+                log(ERROR, "toLong - Unsupported WASM type: " + type, currentElement);
                 throw new AbortProcessingException();
         }
     }
@@ -170,9 +182,14 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                                             return new FieldAccessExpr(
                                                     new NameExpr("ValType"), "F64");
                                         default:
+                                            if (ValType.TypeIdxCode.EXTERN.code() == vt.typeIdx()) {
+                                                return new FieldAccessExpr(
+                                                        new NameExpr("ValType"), "ExternRef");
+                                            }
                                             log(
                                                     ERROR,
-                                                    "Unsupported WASM type: " + vt,
+                                                    "listOfValueTypes - Unsupported WASM type: "
+                                                            + vt,
                                                     currentElement);
                                             throw new AbortProcessingException();
                                     }
@@ -182,7 +199,8 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
     }
 
     private void processModule(TypeElement type) throws URISyntaxException, IOException {
-        var wasmFile = type.getAnnotation(WasmModuleInterface.class).value();
+        var annot = type.getAnnotation(WasmModuleInterface.class);
+        var wasmFile = annot.value();
 
         WasmModule module;
         if (wasmFile.startsWith("file:")) {
