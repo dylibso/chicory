@@ -16,8 +16,10 @@ import com.dylibso.chicory.wasm.io.InputStreams;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
+import com.dylibso.chicory.wasm.types.ArrayType;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.CodeSection;
+import com.dylibso.chicory.wasm.types.CompType;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.DataCountSection;
 import com.dylibso.chicory.wasm.types.DataSection;
@@ -46,9 +48,13 @@ import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.RawSection;
+import com.dylibso.chicory.wasm.types.RecType;
+import com.dylibso.chicory.wasm.types.RecursiveType;
 import com.dylibso.chicory.wasm.types.Section;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
+import com.dylibso.chicory.wasm.types.StructType;
+import com.dylibso.chicory.wasm.types.SubType;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TableLimits;
@@ -472,6 +478,89 @@ public final class Parser {
         return new RawSection(sectionId, bytes);
     }
 
+    private static RecursiveType parseRecType(ByteBuffer buffer, TypeSection typeSection) {
+        var id = readByte(buffer);
+
+        if (id == 0x4E) {
+            var count = (int) readVarUInt32(buffer);
+            var vec = new SubType[count];
+
+            // Parse parameter types
+            for (int i = 0; i < count; i++) {
+                vec[i] = parseSubType(buffer, typeSection);
+            }
+            return new RecursiveType(List.of(vec), null);
+        } else {
+            return new RecursiveType(null, parseSubType(buffer, typeSection));
+        }
+    }
+
+    private static SubType parseSubType(ByteBuffer buffer, TypeSection typeSection) {
+        var id = readByte(buffer);
+
+        if (id == 0x50 || id == 0x4f) {
+            var count = (int) readVarUInt32(buffer);
+            var vec = new CompType[count];
+
+            // Parse parameter types
+            for (int i = 0; i < count; i++) {
+                // TODO: we can probably skip some recursive resolution when 0x$E since it should be final
+                vec[i] = parseCompType(buffer, typeSection);
+            }
+
+            return new SubType(List.of(vec), null);
+        } else {
+            return new SubType(null, parseCompType(buffer, typeSection));
+        }
+    }
+
+    public static CompType parseCompType(ByteBuffer buffer, TypeSection typeSection) {
+        var id = readByte(buffer);
+
+        if (id == 0x5E) {
+            // parseArrayType
+            return new CompType(new ArrayType(readValueType(buffer, typeSection)), null, null);
+        } else if (id == 0x5F) {
+            // parseStructType
+            var count = (int) readVarUInt32(buffer);
+            var vec = new ValType[count];
+
+            // Parse parameter types
+            for (int i = 0; i < count; i++) {
+                // TODO: we can probably skip some recursive resolution when 0x$E since it should be final
+                vec[i] = readValueType(buffer, typeSection);
+            }
+
+            return new CompType(null, new StructType(List.of(vec)), null);
+        } else if (id == 0x60) {
+            // Parse function types (form = 0x60)
+            var paramCount = (int) readVarUInt32(buffer);
+            var paramsBuilder = new ValType[paramCount];
+
+            // Parse parameter types
+            for (int j = 0; j < paramCount; j++) {
+                paramsBuilder[j] = readValueType(buffer, typeSection);
+            }
+
+            var returnCount = (int) readVarUInt32(buffer);
+            var returnsBuilder = new ValType[returnCount];
+
+            // Parse return types
+            for (int j = 0; j < returnCount; j++) {
+                returnsBuilder[j] = readValueType(buffer, typeSection);
+            }
+
+            var params = Arrays.stream(paramsBuilder).toArray(ValType[]::new);
+            var returns = Arrays.stream(returnsBuilder).toArray(ValType[]::new);
+
+            return new CompType(null, null, FunctionType.of(params, returns));
+        } else {
+            throw new MalformedException(
+                    "Invalid comptype. id "
+                            + String.format("0x%02X", id));
+        }
+    }
+
     private static TypeSection parseTypeSection(ByteBuffer buffer) {
 
         var typeCount = readVarUInt32(buffer);
@@ -484,51 +573,24 @@ public final class Parser {
                 throw new MalformedException("integer representation too long");
             }
 
-            if (form != 0x60) {
-                throw new MalformedException(
-                        "We don't support non func types. Form "
-                                + String.format("0x%02X", form)
-                                + " was given but we expected 0x60");
-            }
+            var recType = parseRecType(buffer, typeSection.getTypes());
 
-            // Parse function types (form = 0x60)
-            var paramCount = (int) readVarUInt32(buffer);
-            var paramsBuilder = new ValType.Builder[paramCount];
-
-            // Parse parameter types
-            for (int j = 0; j < paramCount; j++) {
-                paramsBuilder[j] = readValueTypeBuilder(buffer);
-            }
-
-            var returnCount = (int) readVarUInt32(buffer);
-            var returnsBuilder = new ValType.Builder[returnCount];
-
-            // Parse return types
-            for (int j = 0; j < returnCount; j++) {
-                returnsBuilder[j] = readValueTypeBuilder(buffer);
-            }
-
+            // TODO: restore this validation step
             // a type can only refer to types with idx less than it
-            var maxTypeIdx = i - 1;
-            Stream.concat(Arrays.stream(paramsBuilder), Arrays.stream(returnsBuilder))
-                    .forEach(
-                            v -> {
-                                if (v.isReference()) {
-                                    var typeIdx = v.typeIdx();
-                                    if (typeIdx > maxTypeIdx) {
-                                        throw new InvalidException(
-                                                "unknown type: recursive type, type mismatch");
-                                    }
-                                }
-                            });
+            //            var maxTypeIdx = i - 1;
+            //            Stream.concat(Arrays.stream(paramsBuilder), Arrays.stream(returnsBuilder))
+            //                    .forEach(
+            //                            v -> {
+            //                                if (v.isReference()) {
+            //                                    var typeIdx = v.typeIdx();
+            //                                    if (typeIdx > maxTypeIdx) {
+            //                                        throw new InvalidException(
+            //                                                "unknown type: recursive type, type mismatch");
+            //                                    }
+            //                                }
+            //                            });
 
-            Function<ValType.Builder, ValType> build =
-                    (ValType.Builder builder) -> builder.build(typeSection.getTypes()::get);
-
-            var params = Arrays.stream(paramsBuilder).map(build).toArray(ValType[]::new);
-            var returns = Arrays.stream(returnsBuilder).map(build).toArray(ValType[]::new);
-
-            typeSection.addFunctionType(FunctionType.of(params, returns));
+            typeSection.addFunctionType(recType);
         }
 
         return typeSection.build();
