@@ -34,7 +34,7 @@ public final class ValType {
     // defined function type. This is not representable in the binary or textual representation
     // of WASM. This is instead used after substitution to represent closed ValType.
     // This is useful when validating import function values.
-    private final FunctionType resolvedFunctionType;
+    private final RecType resolvedRecType;
 
     private ValType(int opcode) {
         this(opcode, NULL_TYPEIDX, null);
@@ -44,7 +44,7 @@ public final class ValType {
         this(opcode, typeIdx, null);
     }
 
-    private ValType(int opcode, int typeIdx, FunctionType resolvedFunctionType) {
+    private ValType(int opcode, int typeIdx, RecType resolvedRecType) {
         // Conveniently, all value types we want to represent can fit inside a Java long.
         // We store the typeIdx (of reference types) in the upper 4 bytes and the opcode in the
         // lower 4 bytes.
@@ -58,9 +58,9 @@ public final class ValType {
             typeIdx = TypeIdxCode.EXN.code();
             opcode = ID.RefNull;
         } else if ((opcode == ID.RefNull || opcode == ID.Ref) && typeIdx >= 0) {
-            Objects.requireNonNull(resolvedFunctionType);
+            Objects.requireNonNull(resolvedRecType);
         }
-        this.resolvedFunctionType = resolvedFunctionType;
+        this.resolvedRecType = resolvedRecType;
 
         this.id = createId(opcode, typeIdx);
     }
@@ -220,7 +220,7 @@ public final class ValType {
         if (t1.typeIdx() >= 0 && t2.typeIdx() == TypeIdxCode.FUNC.code()) {
             return true;
         } else if (t1.typeIdx() >= 0 && t2.typeIdx() >= 0) {
-            return t1.resolvedFunctionType.equals(t2.resolvedFunctionType);
+            return t1.resolvedRecType.equals(t2.resolvedRecType);
         } else if (t1.typeIdx() == TypeIdxCode.BOT.code()) {
             return true;
         }
@@ -251,8 +251,8 @@ public final class ValType {
 
     @Override
     public int hashCode() {
-        if (this.resolvedFunctionType != null) {
-            return resolvedFunctionType.hashCode();
+        if (this.resolvedRecType != null) {
+            return resolvedRecType.hashCode();
         }
         return Long.hashCode(id);
     }
@@ -264,10 +264,10 @@ public final class ValType {
         }
         ValType that = (ValType) other;
 
-        if (this.resolvedFunctionType != null && that.resolvedFunctionType != null) {
+        if (this.resolvedRecType != null && that.resolvedRecType != null) {
             return opcode(this.id) == opcode(that.id)
-                    && this.resolvedFunctionType.equals(that.resolvedFunctionType);
-        } else if (this.resolvedFunctionType == null && that.resolvedFunctionType == null) {
+                    && this.resolvedRecType.equals(that.resolvedRecType);
+        } else if (this.resolvedRecType == null && that.resolvedRecType == null) {
             return this.id == that.id;
         } else {
             return false;
@@ -415,7 +415,16 @@ public final class ValType {
                     });
         }
 
-        public ValType build(Function<Integer, FunctionType> context) {
+        //        public ValType build(Function<Integer, FunctionType> context) {
+        //            if (!isValidOpcode(opcode)) {
+        //                throw new ChicoryException("Invalid type opcode: " + opcode);
+        //            }
+        //
+        //            var resolvedFunctionType = substitute(opcode, typeIdx, context);
+        //            return new ValType(opcode, typeIdx, resolvedFunctionType);
+        //        }
+
+        public ValType build(Function<Integer, RecType> context) {
             if (!isValidOpcode(opcode)) {
                 throw new ChicoryException("Invalid type opcode: " + opcode);
             }
@@ -424,8 +433,22 @@ public final class ValType {
             return new ValType(opcode, typeIdx, resolvedFunctionType);
         }
 
-        public FunctionType substitute(
-                int opcode, int typeIdx, Function<Integer, FunctionType> context) {
+        //        public FunctionType substitute(
+        //                int opcode, int typeIdx, Function<Integer, FunctionType> context) {
+        //            if (ValType.isReference(opcode) && typeIdx >= 0) {
+        //                // no need to recursively substitute because all ValType are fully
+        // resolved
+        //                try {
+        //                    return context.apply(typeIdx);
+        //                } catch (IndexOutOfBoundsException e) {
+        //                    throw new InvalidException("unknown type: " + typeIdx);
+        //                }
+        //            }
+        //
+        //            return null;
+        //        }
+
+        public RecType substitute(int opcode, int typeIdx, Function<Integer, RecType> context) {
             if (ValType.isReference(opcode) && typeIdx >= 0) {
                 // no need to recursively substitute because all ValType are fully resolved
                 try {

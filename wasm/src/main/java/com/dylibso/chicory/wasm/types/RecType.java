@@ -1,4 +1,3 @@
 package com.dylibso.chicory.wasm.types;
 
-public interface RecType {
-}
+public interface RecType {}

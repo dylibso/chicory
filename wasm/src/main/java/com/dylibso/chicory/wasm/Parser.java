@@ -84,7 +84,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Parser for Web Assembly binaries.
@@ -478,7 +477,7 @@ public final class Parser {
         return new RawSection(sectionId, bytes);
     }
 
-    private static RecursiveType parseRecType(ByteBuffer buffer, TypeSection typeSection) {
+    private static RecursiveType parseRecType(ByteBuffer buffer, List<RecType> recTypes) {
         var id = readByte(buffer);
 
         if (id == 0x4E) {
@@ -487,39 +486,37 @@ public final class Parser {
 
             // Parse parameter types
             for (int i = 0; i < count; i++) {
-                vec[i] = parseSubType(buffer, typeSection);
+                vec[i] = parseSubType(readByte(buffer), buffer, recTypes);
             }
             return new RecursiveType(List.of(vec), null);
         } else {
-            return new RecursiveType(null, parseSubType(buffer, typeSection));
+            return new RecursiveType(null, parseSubType(id, buffer, recTypes));
         }
     }
 
-    private static SubType parseSubType(ByteBuffer buffer, TypeSection typeSection) {
-        var id = readByte(buffer);
-
+    private static SubType parseSubType(byte id, ByteBuffer buffer, List<RecType> recTypes) {
         if (id == 0x50 || id == 0x4f) {
             var count = (int) readVarUInt32(buffer);
             var vec = new CompType[count];
 
             // Parse parameter types
             for (int i = 0; i < count; i++) {
-                // TODO: we can probably skip some recursive resolution when 0x$E since it should be final
-                vec[i] = parseCompType(buffer, typeSection);
+                // TODO: we can probably skip some recursive resolution when 0x$E since it should be
+                // final
+                vec[i] = parseCompType(readByte(buffer), buffer, recTypes);
             }
 
             return new SubType(List.of(vec), null);
         } else {
-            return new SubType(null, parseCompType(buffer, typeSection));
+            return new SubType(null, parseCompType(id, buffer, recTypes));
         }
     }
 
-    public static CompType parseCompType(ByteBuffer buffer, TypeSection typeSection) {
-        var id = readByte(buffer);
-
+    public static CompType parseCompType(byte id, ByteBuffer buffer, List<RecType> recTypes) {
         if (id == 0x5E) {
             // parseArrayType
-            return new CompType(new ArrayType(readValueType(buffer, typeSection)), null, null);
+            return new CompType(
+                    new ArrayType(readValueTypeBuilder(buffer).build(recTypes::get)), null, null);
         } else if (id == 0x5F) {
             // parseStructType
             var count = (int) readVarUInt32(buffer);
@@ -527,8 +524,9 @@ public final class Parser {
 
             // Parse parameter types
             for (int i = 0; i < count; i++) {
-                // TODO: we can probably skip some recursive resolution when 0x$E since it should be final
-                vec[i] = readValueType(buffer, typeSection);
+                // TODO: we can probably skip some recursive resolution when 0x$E since it should be
+                // final
+                vec[i] = readValueTypeBuilder(buffer).build(recTypes::get);
             }
 
             return new CompType(null, new StructType(List.of(vec)), null);
@@ -539,7 +537,7 @@ public final class Parser {
 
             // Parse parameter types
             for (int j = 0; j < paramCount; j++) {
-                paramsBuilder[j] = readValueType(buffer, typeSection);
+                paramsBuilder[j] = readValueTypeBuilder(buffer).build(recTypes::get);
             }
 
             var returnCount = (int) readVarUInt32(buffer);
@@ -547,7 +545,7 @@ public final class Parser {
 
             // Parse return types
             for (int j = 0; j < returnCount; j++) {
-                returnsBuilder[j] = readValueType(buffer, typeSection);
+                returnsBuilder[j] = readValueTypeBuilder(buffer).build(recTypes::get);
             }
 
             var params = Arrays.stream(paramsBuilder).toArray(ValType[]::new);
@@ -555,25 +553,24 @@ public final class Parser {
 
             return new CompType(null, null, FunctionType.of(params, returns));
         } else {
-            throw new MalformedException(
-                    "Invalid comptype. id "
-                            + String.format("0x%02X", id));
+            throw new MalformedException("Invalid comptype. id " + String.format("0x%02X", id));
         }
     }
 
     private static TypeSection parseTypeSection(ByteBuffer buffer) {
 
         var typeCount = readVarUInt32(buffer);
-        TypeSection.Builder typeSection = TypeSection.builder();
+        List<RecType> recTypes = new ArrayList<>();
 
         // Parse individual types in the type section
         for (int i = 0; i < typeCount; i++) {
-            var form = readVarUInt32(buffer);
-            if (form > Byte.MAX_VALUE) {
-                throw new MalformedException("integer representation too long");
-            }
+            //            TODO: verify where to put this check again
+            //            var form = readVarUInt32(buffer);
+            //            if (form > Byte.MAX_VALUE) {
+            //                throw new MalformedException("integer representation too long");
+            //            }
 
-            var recType = parseRecType(buffer, typeSection.getTypes());
+            var recType = parseRecType(buffer, recTypes);
 
             // TODO: restore this validation step
             // a type can only refer to types with idx less than it
@@ -585,12 +582,18 @@ public final class Parser {
             //                                    var typeIdx = v.typeIdx();
             //                                    if (typeIdx > maxTypeIdx) {
             //                                        throw new InvalidException(
-            //                                                "unknown type: recursive type, type mismatch");
+            //                                                "unknown type: recursive type, type
+            // mismatch");
             //                                    }
             //                                }
             //                            });
 
-            typeSection.addFunctionType(recType);
+            recTypes.add(recType);
+        }
+
+        TypeSection.Builder typeSection = TypeSection.builder();
+        for (var t : recTypes) {
+            typeSection.addRecType(t);
         }
 
         return typeSection.build();

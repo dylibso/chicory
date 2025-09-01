@@ -11,4 +11,16 @@ public class CompType implements RecType {
         this.structType = structType;
         this.functionType = functionType;
     }
+
+    public ArrayType getArrayType() {
+        return arrayType;
+    }
+
+    public StructType getStructType() {
+        return structType;
+    }
+
+    public FunctionType getFunctionType() {
+        return functionType;
+    }
 }

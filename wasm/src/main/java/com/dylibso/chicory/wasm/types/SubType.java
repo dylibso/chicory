@@ -11,4 +11,12 @@ public class SubType implements RecType {
         this.compTypes = compTypes;
         this.compType = compType;
     }
+
+    public List<CompType> getCompTypes() {
+        return compTypes;
+    }
+
+    public CompType getCompType() {
+        return compType;
+    }
 }

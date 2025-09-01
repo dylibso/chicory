@@ -9,4 +9,8 @@ public class StructType implements RecType {
     public StructType(List<ValType> fieldTypes) {
         this.fieldTypes = fieldTypes;
     }
+
+    public List<ValType> getFieldTypes() {
+        return fieldTypes;
+    }
 }

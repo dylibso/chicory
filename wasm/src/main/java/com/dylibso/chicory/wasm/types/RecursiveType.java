@@ -11,4 +11,12 @@ public class RecursiveType implements RecType {
         this.subTypes = subTypes;
         this.subType = subType;
     }
+
+    public List<SubType> getSubTypes() {
+        return subTypes;
+    }
+
+    public SubType getSubType() {
+        return subType;
+    }
 }

@@ -7,4 +7,8 @@ public class ArrayType implements RecType {
     public ArrayType(ValType fieldType) {
         this.fieldType = fieldType;
     }
+
+    public ValType getFieldType() {
+        return fieldType;
+    }
 }
