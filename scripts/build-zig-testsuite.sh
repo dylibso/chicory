@@ -13,16 +13,18 @@ BINARYEN_INSTALL="binaryen-install"
 
 ZIG_TESTSUITE="zig-testsuite"
 
+ZIG_MIRROR=$(${SCRIPT_DIR}/pick-zig-mirror.sh)
+
 # Install Zig 
 if [ ! -d "$ZIG_INSTALL" ]; then
     mkdir -p ${ZIG_INSTALL}
-    curl -sSL https://ziglang.org/download/${ZIG_VERSION}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz | tar -xJ --strip-components=1 -C ${ZIG_INSTALL}
+    curl -sSL ${ZIG_MIRROR}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz | tar -xJ --strip-components=1 -C ${ZIG_INSTALL}
 fi
 
 # Install Zig source
 if [ ! -d "$ZIG_SOURCE" ]; then
     mkdir -p ${ZIG_SOURCE}
-    curl -sSL https://ziglang.org/download/${ZIG_VERSION}/zig-${ZIG_VERSION}.tar.xz | tar -xJ --strip-components=1 -C ${ZIG_SOURCE}
+    curl -sSL ${ZIG_MIRROR}/zig-${ZIG_VERSION}.tar.xz | tar -xJ --strip-components=1 -C ${ZIG_SOURCE}
 fi
 
 #Install Binaryen
