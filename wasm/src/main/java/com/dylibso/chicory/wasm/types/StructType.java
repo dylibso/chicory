@@ -3,14 +3,14 @@ package com.dylibso.chicory.wasm.types;
 import java.util.List;
 
 public class StructType implements RecType {
-    private final List<ValType> fieldTypes;
+    private final List<FieldType> fieldTypes;
 
     // TODO: use a builder instead
-    public StructType(List<ValType> fieldTypes) {
+    public StructType(List<FieldType> fieldTypes) {
         this.fieldTypes = fieldTypes;
     }
 
-    public List<ValType> getFieldTypes() {
+    public List<FieldType> getFieldTypes() {
         return fieldTypes;
     }
 }

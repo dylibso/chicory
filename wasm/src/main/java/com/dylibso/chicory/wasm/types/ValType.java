@@ -322,7 +322,6 @@ public final class ValType {
         public static final int RefNull = 0x63;
         public static final int Ref = 0x64;
         public static final int ExternRef = 0x6f;
-        // From the Exception Handling proposal
         public static final int ExnRef = 0x69; // -0x17
         public static final int FuncRef = 0x70;
         public static final int V128 = 0x7b;

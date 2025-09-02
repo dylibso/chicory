@@ -29,6 +29,7 @@ import com.dylibso.chicory.wasm.types.ElementSection;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
+import com.dylibso.chicory.wasm.types.FieldType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionSection;
@@ -45,6 +46,7 @@ import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.PackedType;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.RawSection;
@@ -53,6 +55,7 @@ import com.dylibso.chicory.wasm.types.RecursiveType;
 import com.dylibso.chicory.wasm.types.Section;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
+import com.dylibso.chicory.wasm.types.StorageType;
 import com.dylibso.chicory.wasm.types.StructType;
 import com.dylibso.chicory.wasm.types.SubType;
 import com.dylibso.chicory.wasm.types.Table;
@@ -516,17 +519,17 @@ public final class Parser {
         if (id == 0x5E) {
             // parseArrayType
             return new CompType(
-                    new ArrayType(readValueTypeBuilder(buffer).build(recTypes::get)), null, null);
+                    new ArrayType(parseFieldType(readByte(buffer), buffer, recTypes)), null, null);
         } else if (id == 0x5F) {
             // parseStructType
             var count = (int) readVarUInt32(buffer);
-            var vec = new ValType[count];
+            var vec = new FieldType[count];
 
             // Parse parameter types
             for (int i = 0; i < count; i++) {
                 // TODO: we can probably skip some recursive resolution when 0x$E since it should be
                 // final
-                vec[i] = readValueTypeBuilder(buffer).build(recTypes::get);
+                vec[i] = parseFieldType(readByte(buffer), buffer, recTypes);
             }
 
             return new CompType(null, new StructType(List.of(vec)), null);
@@ -554,6 +557,19 @@ public final class Parser {
             return new CompType(null, null, FunctionType.of(params, returns));
         } else {
             throw new MalformedException("Invalid comptype. id " + String.format("0x%02X", id));
+        }
+    }
+
+    public static FieldType parseFieldType(byte id, ByteBuffer buffer, List<RecType> recTypes) {
+        var mut = MutabilityType.forId(readByte(buffer));
+        return new FieldType(parseStorageType(id, buffer, recTypes), mut);
+    }
+
+    public static StorageType parseStorageType(byte id, ByteBuffer buffer, List<RecType> recTypes) {
+        if (id == 0x78 || id == 0x79) {
+            return new StorageType(null, PackedType.fromValue(id));
+        } else {
+            return new StorageType(readValueTypeBuilder(buffer).build(recTypes::get), null);
         }
     }
 
@@ -1185,7 +1201,7 @@ public final class Parser {
 
         var address = buffer.position();
         int b = (int) readByte(buffer) & 0xff;
-        if (b >= 0xfc && b < 0xff) { // is multi-byte
+        if (b >= 0xfb && b < 0xff) { // is multi-byte
             b = (int) ((b << 8) + readVarUInt32(buffer));
         }
         var op = OpCode.byOpCode(b);

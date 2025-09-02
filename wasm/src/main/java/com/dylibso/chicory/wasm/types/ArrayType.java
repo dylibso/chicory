@@ -1,14 +1,14 @@
 package com.dylibso.chicory.wasm.types;
 
 public class ArrayType implements RecType {
-    private final ValType fieldType;
+    private final FieldType fieldType;
 
     // TODO: use a builder
-    public ArrayType(ValType fieldType) {
+    public ArrayType(FieldType fieldType) {
         this.fieldType = fieldType;
     }
 
-    public ValType getFieldType() {
+    public FieldType getFieldType() {
         return fieldType;
     }
 }
