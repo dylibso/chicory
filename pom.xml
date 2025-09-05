@@ -94,7 +94,7 @@
     <spotless-maven-plugin.version>2.46.1</spotless-maven-plugin.version>
     <templating-maven-plugin.version>3.0.0</templating-maven-plugin.version>
     <maven-file-management.version>3.2.0</maven-file-management.version>
-    <google-compile-testing.version>0.21.0</google-compile-testing.version>
+    <google-compile-testing.version>0.22.0</google-compile-testing.version>
     <wagon-maven-plugin.version>2.0.2</wagon-maven-plugin.version>
     <zerofs.version>0.1.0</zerofs.version>
   </properties>
