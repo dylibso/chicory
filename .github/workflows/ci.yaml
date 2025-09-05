@@ -64,7 +64,7 @@ jobs:
           java-version: '21'
           cache: maven
       - name: set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: Build Chicory
