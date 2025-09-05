@@ -10,17 +10,19 @@ permissions:
   checks: write
 
 jobs:
-  ci:
-    name: CI
+  ibm-ci:
+    name: IBM CI
     runs-on: ${{ matrix.os }}
     continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
         # Thanks to: https://github.com/IBM/actionspz
-        os:
-          - ubuntu-24.04-ppc64le
-          - ubuntu-24.04-s390x
+        include:
+          - os: ubuntu-24.04-ppc64le
+            arch: ppc64le
+          - os: ubuntu-24.04-s390x
+            arch: s390x
         version: [11, 17, 21]
     steps:
       - name: Checkout sources
@@ -41,8 +43,9 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
+          distribution: 'semeru'
           java-version: '${{ matrix.version }}'
+          architecture: '$${{ matrix.arch }}'
           cache: maven
       - name: Test Java and Check Style
         run: mvn -B spotless:check clean install -X
