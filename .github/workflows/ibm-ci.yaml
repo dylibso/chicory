@@ -41,10 +41,10 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
-          distribution: 'semeru'
+          distribution: 'temurin'
           java-version: '${{ matrix.version }}'
           cache: maven
       - name: Test Java and Check Style
-        run: mvn -B spotless:check clean install
+        run: mvn -B spotless:check clean install -X
         env:
           MAVEN_OPTS: "-ea"
