@@ -18,8 +18,6 @@ jobs:
       fail-fast: false
       matrix:
         # Thanks to: https://github.com/IBM/actionspz
-        os: [ubuntu-24.04-ppc64le, ubuntu-24.04-s390x]
-        arch: [ppc64le, s390x]
         include:
           - os: ubuntu-24.04-ppc64le
             arch: ppc64le
@@ -45,8 +43,9 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
-          distribution: 'temurin'
+          distribution: 'semeru'
           java-version: '${{ matrix.version }}'
+          architecture: '${{ matrix.arch }}'
           cache: maven
       - name: Test Java and Check Style
         run: mvn -B spotless:check clean install -X
