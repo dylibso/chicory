@@ -56,7 +56,8 @@
     <asm.version>9.8</asm.version>
     <commons-io.version>2.20.0</commons-io.version>
     <commons-lang.version>3.18.0</commons-lang.version>
-    <jackson.version>2.19.2</jackson.version>
+    <jackson-annotations.version>2.20</jackson-annotations.version>
+    <jackson-databind.version>2.20.0</jackson-databind.version>
     <javaparser.version>3.27.0</javaparser.version>
     <zip4j.version>2.11.5</zip4j.version>
     <jmh.version>1.37</jmh.version>
@@ -186,12 +187,12 @@
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-annotations</artifactId>
-        <version>${jackson.version}</version>
+        <version>${jackson-annotations.version}</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
-        <version>${jackson.version}</version>
+        <version>${jackson-databind.version}</version>
       </dependency>
 
       <!-- Javaparser -->
