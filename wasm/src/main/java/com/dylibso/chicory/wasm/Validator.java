@@ -2142,6 +2142,11 @@ final class Validator {
                         pushVal(ValType.V128);
                         break;
                     }
+                    // TODO: the validation algorithm changed a bit, this needs to be mapped:
+                    // https://webassembly.github.io/gc/core/appendix/algorithm.html
+                    // to start we disable validation ...
+                case ARRAY_GET_U:
+                    return;
                 default:
                     throw new IllegalArgumentException(
                             "Missing type validation opcode handling for " + op.opcode());
