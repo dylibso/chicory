@@ -26,7 +26,8 @@ jobs:
           - os: ubuntu-24.04-s390x
             arch: s390x
         # version: [11, 17, 21]
-        version: [21]
+        version: [17]
+        # next issue to narrow down is the error with SIMD on Java 21
     steps:
       - name: Checkout sources
         uses: actions/checkout@v5

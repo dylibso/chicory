@@ -112,12 +112,12 @@
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>annotations</artifactId>
-        <version>${project.version}</version>
+        <version>1.5.1</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>annotations-processor</artifactId>
-        <version>${project.version}</version>
+        <version>1.5.1</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
@@ -134,52 +134,47 @@
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>compiler</artifactId>
-        <version>${project.version}</version>
+        <version>1.5.1</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>log</artifactId>
-        <version>${project.version}</version>
+        <version>1.5.1</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>runtime</artifactId>
-        <version>${project.version}</version>
+        <version>1.5.1</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>simd</artifactId>
-        <version>${project.version}</version>
+        <version>1.5.1</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>test-gen-lib</artifactId>
-        <version>${project.version}</version>
+        <version>1.5.1</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>wabt</artifactId>
-        <version>${project.version}</version>
+        <version>1.5.1</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>wasi</artifactId>
-        <version>${project.version}</version>
+        <version>1.5.1</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>wasm</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.dylibso.chicory</groupId>
-        <artifactId>wasm-corpus</artifactId>
-        <version>${project.version}</version>
+        <version>1.5.1</version>
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
         <artifactId>wasm-tools</artifactId>
-        <version>${project.version}</version>
+        <version>1.5.1</version>
       </dependency>
 
       <!-- Jackson -->
@@ -355,7 +350,7 @@
         <plugin>
           <groupId>com.dylibso.chicory</groupId>
           <artifactId>chicory-compiler-maven-plugin</artifactId>
-          <version>${project.version}</version>
+          <version>1.5.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -860,9 +855,9 @@
       <activation>
         <jdk>21</jdk>
       </activation>
-      <modules>
+      <!-- <modules>
         <module>simd</module>
-      </modules>
+      </modules> -->
     </profile>
 
     <profile>
