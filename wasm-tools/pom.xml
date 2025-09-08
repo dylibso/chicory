@@ -73,6 +73,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-antrun-plugin</artifactId>
+        <version>${maven-antrun-plugin.version}</version>
         <executions>
           <execution>
             <goals>
@@ -95,6 +96,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>wagon-maven-plugin</artifactId>
+        <version>${wagon-maven-plugin.version}</version>
         <executions>
           <execution>
             <id>download-wasm-tools</id>

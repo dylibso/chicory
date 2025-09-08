@@ -293,18 +293,6 @@
         <version>${maven-plugin-annotations.version}</version>
         <scope>provided</scope>
       </dependency>
-      <dependency>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>${maven-antrun-plugin.version}</version>
-        <scope>provided</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>wagon-maven-plugin</artifactId>
-        <version>${wagon-maven-plugin.version}</version>
-        <scope>provided</scope>
-      </dependency>
 
       <!-- Approval tests -->
       <dependency>
