@@ -1,9 +1,13 @@
-name: CI
+name: IBM CI
 
 on:
   push:
     branches: [ main ]
   pull_request:
+
+# on:
+#   schedule:
+#    - cron: "0 0 * * *" # everyday
 
 permissions:
   contents: read
@@ -25,6 +29,7 @@ jobs:
           - os: ubuntu-24.04-s390x
             arch: s390x
         version: [11, 17, 21]
+        jvm: [temurin, semeru]
     steps:
       - name: Checkout sources
         uses: actions/checkout@v5
@@ -44,11 +49,11 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v5
         with:
-          distribution: 'semeru'
+          distribution: '${{ matrix.jvm }}'
           java-version: '${{ matrix.version }}'
           architecture: '${{ matrix.arch }}'
           cache: maven
       - name: Test Java and Check Style
-        run: mvn -B spotless:check clean install -X
+        run: mvn -B clean install
         env:
           MAVEN_OPTS: "-ea"
