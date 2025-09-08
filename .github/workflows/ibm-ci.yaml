@@ -28,8 +28,28 @@ jobs:
         # version: [11, 17, 21]
         version: [21]
     steps:
+      - name: Checkout sources
+        uses: actions/checkout@v5
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'semeru'
+          java-version: '${{ matrix.version }}'
+          cache: maven
+      - name: Test Java and Check Style
+        run: mvn -B clean install -X
+        env:
+          MAVEN_OPTS: "-ea"
       - name: Debug
+        if: always()
         run: |
-          curl -L https://github.com/bytecodealliance/wasm-tools/releases/download/v1.227.1/wasm-tools-1.227.1-wasm32-wasip1.tar.gz -o wasm-tools-curl.tar.gz
-          wget https://github.com/bytecodealliance/wasm-tools/releases/download/v1.227.1/wasm-tools-1.227.1-wasm32-wasip1.tar.gz
-          ls -alh
+          echo "1"
+          ls -alh ./debug-z
+          echo "2"
+          ls -alh ./debug-z/target
+
+      # - name: Debug
+      #   run: |
+      #     curl -L https://github.com/bytecodealliance/wasm-tools/releases/download/v1.227.1/wasm-tools-1.227.1-wasm32-wasip1.tar.gz -o wasm-tools-curl.tar.gz
+      #     wget https://github.com/bytecodealliance/wasm-tools/releases/download/v1.227.1/wasm-tools-1.227.1-wasm32-wasip1.tar.gz
+      #     ls -alh

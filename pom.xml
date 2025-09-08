@@ -873,7 +873,8 @@
         </property>
       </activation>
       <modules>
-        <module>annotations/annotations</module>
+        <module>debug-z</module>
+        <!-- <module>annotations/annotations</module>
         <module>annotations/it</module>
         <module>annotations/processor</module>
         <module>bom</module>
@@ -898,7 +899,7 @@
         <module>wasi-tests</module>
         <module>wasm</module>
         <module>wasm-corpus</module>
-        <module>wasm-tools</module>
+        <module>wasm-tools</module> -->
       </modules>
     </profile>
 

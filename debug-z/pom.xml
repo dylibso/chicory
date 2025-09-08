@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.dylibso.chicory</groupId>
+    <artifactId>chicory</artifactId>
+    <version>999-SNAPSHOT</version>
+  </parent>
+  <artifactId>wasm-tools</artifactId>
+  <packaging>jar</packaging>
+
+  <name>Chicory - wasm-tools</name>
+  <description>wasm tools compiled to pure Java with Chicory</description>
+
+  <properties>
+    <wasm-tools.version>1.227.1</wasm-tools.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>log</artifactId>
+      <version>1.5.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>runtime</artifactId>
+      <version>1.5.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasi</artifactId>
+      <version>1.5.1</version>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm</artifactId>
+      <version>1.5.1</version>
+    </dependency>
+    <dependency>
+      <groupId>io.roastedroot</groupId>
+      <artifactId>zerofs</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>chicory-compiler-maven-plugin</artifactId>
+        <version>1.5.1</version>
+        <executions>
+          <execution>
+            <id>wasmtools</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <name>com.dylibso.chicory.tools.wasm.WasmToolsModule</name>
+              <wasmFile>${project.basedir}/target/wasm-tools.wasm</wasmFile>
+              <interpretedFunctions>
+                <function>3938</function>
+                <function>4116</function>
+                <function>4614</function>
+                <function>6771</function>
+                <function>13564</function>
+              </interpretedFunctions>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <phase>initialize</phase>
+            <configuration>
+              <target>
+                <untar compression="gzip" dest="${project.basedir}/target" src="${project.basedir}/wasm-tools-${wasm-tools.version}-wasm32-wasip1.tar.gz">
+                  <flattenmapper/>
+                  <patternset>
+                    <include name="**/*.wasm"/>
+                  </patternset>
+                </untar>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>wagon-maven-plugin</artifactId>
+        <version>${wagon-maven-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>download-wasm-tools</id>
+            <goals>
+              <goal>download-single</goal>
+            </goals>
+            <phase>validate</phase>
+            <configuration>
+              <url>https://github.com/bytecodealliance/wasm-tools/releases/download/v${wasm-tools.version}/wasm-tools-${wasm-tools.version}-wasm32-wasip1.tar.gz</url>
+              <toDir>${project.basedir}</toDir>
+              <skipIfExists>true</skipIfExists>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
