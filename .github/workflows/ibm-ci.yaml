@@ -1,9 +1,9 @@
-name: CI
+name: IBM DEBUG CI
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
+  #   branches: [ main ]
+  # pull_request:
 
 permissions:
   contents: read
@@ -18,37 +18,18 @@ jobs:
       fail-fast: false
       matrix:
         # Thanks to: https://github.com/IBM/actionspz
-        os: [ubuntu-24.04-ppc64le, ubuntu-24.04-s390x]
+        # os: [ubuntu-24.04-ppc64le, ubuntu-24.04-s390x]
+        os: ubuntu-24.04-s390x
         include:
-          - os: ubuntu-24.04-ppc64le
-            arch: ppc64le
+          # - os: ubuntu-24.04-ppc64le
+          #   arch: ppc64le
           - os: ubuntu-24.04-s390x
             arch: s390x
-        version: [11, 17, 21]
+        # version: [11, 17, 21]
+        version: [21]
     steps:
-      - name: Checkout sources
-        uses: actions/checkout@v5
-      - name: Checkout testsuite
-        uses: actions/checkout@v5
-        with:
-          repository: WebAssembly/testsuite
-          path: testsuite
-          # The ref needs to stay in sync with the default value in test-gen-plugin
-          ref: 88e97b0f742f4c3ee01fea683da130f344dd7b02
-      - name: Checkout wasi-testsuite
-        uses: actions/checkout@v5
-        with:
-          repository: WebAssembly/wasi-testsuite
-          path: wasi-testsuite
-          ref: prod/testsuite-base
-      - name: Set up Java
-        uses: actions/setup-java@v5
-        with:
-          distribution: 'semeru'
-          java-version: '${{ matrix.version }}'
-          architecture: '${{ matrix.arch }}'
-          cache: maven
-      - name: Test Java and Check Style
-        run: mvn -B spotless:check clean install -X
-        env:
-          MAVEN_OPTS: "-ea"
+      - name: Debug
+        run: |
+          curl -L https://github.com/bytecodealliance/wasm-tools/releases/download/v1.227.1/wasm-tools-1.227.1-wasm32-wasip1.tar.gz -o wasm-tools-curl.tar.gz
+          wget https://github.com/bytecodealliance/wasm-tools/releases/download/v1.227.1/wasm-tools-1.227.1-wasm32-wasip1.tar.gz
+          ls -alh
