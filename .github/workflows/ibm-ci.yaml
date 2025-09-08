@@ -19,7 +19,7 @@ jobs:
       matrix:
         # Thanks to: https://github.com/IBM/actionspz
         # os: [ubuntu-24.04-ppc64le, ubuntu-24.04-s390x]
-        os: ubuntu-24.04-s390x
+        os: [ubuntu-24.04-s390x]
         include:
           # - os: ubuntu-24.04-ppc64le
           #   arch: ppc64le
