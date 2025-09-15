@@ -21,4 +21,5 @@
       (i32.const 46))
   (func   (export "get-10") (param $x1 i32) (param $x2 i64) (param $x3 f32) (param $x4 f64) (result i32) (result i32)
       (i32.const 47) (i32.const 48))
+  (func   (export "get.1") (result i32) (global.get $glob1))
 )

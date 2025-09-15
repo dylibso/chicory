@@ -36,6 +36,7 @@ class AllExportsTest {
 
         // Assert
         assertEquals(exportsModule.glob1().getValue(), exportsModule.get1());
+        assertEquals(exportsModule.glob1().getValue(), exportsModule._get1());
         assertEquals(exportsModule.glob2().getValue(), exportsModule.get2());
         assertEquals(Value.longToFloat(exportsModule.glob3().getValue()), exportsModule.get3());
         assertEquals(Value.longToDouble(exportsModule.glob4().getValue()), exportsModule.get4());
