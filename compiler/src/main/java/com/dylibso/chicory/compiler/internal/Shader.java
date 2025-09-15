@@ -68,6 +68,7 @@ final class Shader {
 
     static byte[] getBytecode(Class<?> clazz) {
         var name = getInternalName(clazz) + ".class";
+        // Okay when running with Java modules (JPMS), because .class are exempted from checks
         try (var in = clazz.getClassLoader().getResourceAsStream(name)) {
             if (in == null) {
                 throw new IOException("Resource not found: " + name);
