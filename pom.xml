@@ -482,6 +482,9 @@
           <excludeGeneratedSources>true</excludeGeneratedSources>
           <checkstyleRules>
             <module name="Checker">
+              <module name="BeforeExecutionExclusionFileFilter">
+                <property name="fileNamePattern" value="module\-info\.java$"/>
+              </module>
               <module name="FileTabCharacter">
                 <property name="fileExtensions" value="java,xml"/>
               </module>
@@ -541,6 +544,13 @@
             </module>
           </checkstyleRules>
         </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>11.0.1</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <id>checkstyle</id>
@@ -564,6 +574,7 @@
           <compilerArgs>
             <arg>-XDcompilePolicy=simple</arg>
             <arg>--should-stop=ifError=FLOW</arg>
+            <arg>-Xlint:-module</arg>
             <arg>-Xplugin:ErrorProne \
               -Xep:MissingCasesInEnumSwitch:OFF \
               -Xep:MissingOverride:ERROR \
@@ -676,6 +687,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <useModulePath>false</useModulePath>
           <systemPropertyVariables>
             <jna.library.path>../target/release</jna.library.path>
             <java.util.logging.config.file>src/test/resources/logging.properties</java.util.logging.config.file>
