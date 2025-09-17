@@ -13,29 +13,30 @@ public final class MemCopyWorkaround {
     }
 
     public static boolean shouldUseMemWorkaround() {
-        return shouldUseMemWorkaround(System.getProperty("java.version"));
+        return false;
+        // return shouldUseMemWorkaround(System.getProperty("java.version"));
     }
 
-    public static boolean shouldUseMemWorkaround(String version) {
-        if (version == null || version.equals("0")) {
-            // Android https://developer.android.com/reference/java/lang/System#getProperties()
-            return false;
-        } else if (version.startsWith("1.")) {
-            // Java 8 or earlier: "1.8.0_231" → 8
-            return true;
-        } else {
-            // Java 9 or later: "11.0.9" or "17.0.1"
-            int dotIndex = version.indexOf(".");
-            String majorStr = (dotIndex != -1) ? version.substring(0, dotIndex) : version;
-            int dashIndex = majorStr.indexOf("-");
-            majorStr = (dashIndex != -1) ? majorStr.substring(0, dashIndex) : majorStr;
-            try {
-                return Integer.parseInt(majorStr) <= 17;
-            } catch (NumberFormatException nfe) {
-                return false;
-            }
-        }
-    }
+    // public static boolean shouldUseMemWorkaround(String version) {
+    //     if (version == null || version.equals("0")) {
+    //         // Android https://developer.android.com/reference/java/lang/System#getProperties()
+    //         return false;
+    //     } else if (version.startsWith("1.")) {
+    //         // Java 8 or earlier: "1.8.0_231" → 8
+    //         return true;
+    //     } else {
+    //         // Java 9 or later: "11.0.9" or "17.0.1"
+    //         int dotIndex = version.indexOf(".");
+    //         String majorStr = (dotIndex != -1) ? version.substring(0, dotIndex) : version;
+    //         int dashIndex = majorStr.indexOf("-");
+    //         majorStr = (dashIndex != -1) ? majorStr.substring(0, dashIndex) : majorStr;
+    //         try {
+    //             return Integer.parseInt(majorStr) <= 17;
+    //         } catch (NumberFormatException nfe) {
+    //             return false;
+    //         }
+    //     }
+    // }
 
     static {
         if (shouldUseMemWorkaround()) {
