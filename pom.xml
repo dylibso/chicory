@@ -548,7 +548,7 @@
           <dependency>
             <groupId>com.puppycrawl.tools</groupId>
             <artifactId>checkstyle</artifactId>
-            <version>11.0.1</version>
+            <version>${checkstyle.version}</version>
           </dependency>
         </dependencies>
         <executions>
@@ -761,11 +761,16 @@
       <activation>
         <jdk>11</jdk>
       </activation>
-      <properties>
-        <checkstyle.skip>true</checkstyle.skip>
-      </properties>
       <build>
         <plugins>
+          <!-- disable checkstyle -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
           <!-- disable Error Prone -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
