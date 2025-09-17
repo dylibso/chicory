@@ -122,7 +122,8 @@ public class WasiTestGenMojo extends AbstractMojo {
 
         // validate and group files by test suite
         PathMatcher pathMatcher =
-                FileSystems.getDefault().getPathMatcher("glob:**/tests/*/testsuite/*.wasm");
+                FileSystems.getDefault()
+                        .getPathMatcher("glob:**/tests/*/testsuite/wasm32-wasip1/*.wasm");
 
         Map<String, List<File>> filesBySuite = new LinkedHashMap<>();
         for (File file : allFiles) {

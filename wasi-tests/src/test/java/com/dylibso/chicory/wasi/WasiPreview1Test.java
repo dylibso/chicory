@@ -52,7 +52,10 @@ public class WasiPreview1Test {
     public void wasiPositionedWriteWithAppendShouldFail() throws IOException {
         try (var fs = newZeroFs()) {
             var dir = "fs-tests.dir";
-            Path source = new File("../wasi-testsuite/tests/c/testsuite").toPath().resolve(dir);
+            Path source =
+                    new File("../wasi-testsuite/tests/c/testsuite/wasm32-wasip1")
+                            .toPath()
+                            .resolve(dir);
             Path target = fs.getPath(dir);
             copyDirectory(source, target);
 
