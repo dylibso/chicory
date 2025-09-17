@@ -56,7 +56,18 @@ public final class WasiTestRunner {
             }
 
             for (String dir : dirs) {
-                Path source = test.getParentFile().toPath().resolve(dir);
+                // the only used folder is fs-tests.dir
+                // available only in the c testsuite
+                // wasi-testsuite/tests/c/src/fs-tests.dir
+                Path source =
+                        test.getParentFile()
+                                .getParentFile()
+                                .getParentFile()
+                                .getParentFile()
+                                .toPath()
+                                .resolve("c")
+                                .resolve("src")
+                                .resolve(dir);
                 Path target = fs.getPath(dir);
                 copyDirectory(source, target);
                 options.withDirectory(target.toString(), target);
