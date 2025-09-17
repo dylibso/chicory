@@ -286,7 +286,7 @@ public class InterpreterMachine implements Machine {
                 case TABLE_SET:
                     TABLE_SET(stack, instance, operands);
                     break;
-                    // TODO signed and unsigned are the same right now
+                // TODO signed and unsigned are the same right now
                 case I32_LOAD:
                     I32_LOAD(stack, instance, operands);
                     break;
@@ -361,7 +361,7 @@ public class InterpreterMachine implements Machine {
                 case MEMORY_SIZE:
                     MEMORY_SIZE(stack, instance);
                     break;
-                    // TODO 32bit and 64 bit operations are the same for now
+                // TODO 32bit and 64 bit operations are the same for now
                 case I32_CONST:
                     stack.push(operands.get(0));
                     break;
@@ -632,9 +632,9 @@ public class InterpreterMachine implements Machine {
                 case F64_NEAREST:
                     F64_NEAREST(stack);
                     break;
-                    // For the extend_* operations, note that java
-                    // automatically does this when casting from
-                    // smaller to larger primitives
+                // For the extend_* operations, note that java
+                // automatically does this when casting from
+                // smaller to larger primitives
                 case I32_EXTEND_8_S:
                     I32_EXTEND_8_S(stack);
                     break;
@@ -830,7 +830,7 @@ public class InterpreterMachine implements Machine {
                 case ELEM_DROP:
                     ELEM_DROP(instance, operands);
                     break;
-                    // Threads proposal:
+                // Threads proposal:
                 case I32_ATOMIC_LOAD:
                     I32_ATOMIC_LOAD(stack, instance, operands);
                     break;

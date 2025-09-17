@@ -139,7 +139,7 @@ public final class ByteArrayMemory implements Memory {
 
         synchronized (monitor) {
             try {
-                if (((int) INT_ARR_HANDLE.getVolatile(buffer, address)) == expected) {
+                if (readInt(address) == expected) {
                     return waitOnMonitor(
                             address, (timeout < 0) ? Long.MAX_VALUE : timeout, monitor);
                 } else {
@@ -160,7 +160,7 @@ public final class ByteArrayMemory implements Memory {
 
         synchronized (monitor) {
             try {
-                if (((long) LONG_ARR_HANDLE.getVolatile(buffer, address)) == expected) {
+                if (readLong(address) == expected) {
                     return waitOnMonitor(
                             address, (timeout < 0) ? Long.MAX_VALUE : timeout, monitor);
                 } else {

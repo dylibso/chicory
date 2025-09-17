@@ -968,7 +968,7 @@ public final class Parser {
                         {
                             instruction.withLabelFalse(instructions.size() + 1);
                         }
-                        // fallthrough
+                    // fallthrough
                     case BR:
                         {
                             var offset = (int) baseInstruction.operand(0);
@@ -1195,7 +1195,7 @@ public final class Parser {
                                 case CATCH:
                                 case CATCH_REF:
                                     operands.add(readVarUInt32(buffer)); // tag
-                                    // intentional fall-through
+                                // intentional fall-through
                                 case CATCH_ALL:
                                 case CATCH_ALL_REF:
                                     operands.add(readVarUInt32(buffer)); // label
