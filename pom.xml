@@ -67,14 +67,14 @@
     <picocli.version>4.7.7</picocli.version>
     <velocity.version>1.7</velocity.version>
 
-    <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
     <checkstyle.version>11.0.1</checkstyle.version>
     <error-prone.version>2.41.0</error-prone.version>
     <flatten-maven-plugin.version>1.7.2</flatten-maven-plugin.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.14.0</maven-compiler-plugin.version>
-    <maven-dependency-plugin.version>3.8.1</maven-dependency-plugin.version>
+    <!-- https://github.com/apache/maven-dependency-plugin/issues/1499 -->
+    <maven-dependency-plugin.version>3.8.2-SNAPSHOT</maven-dependency-plugin.version>
     <maven-deploy-plugin.version>3.1.4</maven-deploy-plugin.version>
     <maven-enforcer-plugin.version>3.6.1</maven-enforcer-plugin.version>
     <maven-failsafe-plugin.version>3.5.4</maven-failsafe-plugin.version>
@@ -487,7 +487,8 @@
               <include>**/src/test/java/**/*.java</include>
             </includes>
             <googleJavaFormat>
-              <version>1.18.1</version>
+              <!-- https://github.com/diffplug/spotless/issues/2468 -->
+              <version>1.27.0</version>
               <style>AOSP</style>
               <reflowLongStrings>true</reflowLongStrings>
               <formatJavadoc>false</formatJavadoc>
@@ -859,7 +860,7 @@
     <profile>
       <id>java21</id>
       <activation>
-        <jdk>21</jdk>
+        <jdk>[21,)</jdk>
       </activation>
       <modules>
         <module>simd</module>

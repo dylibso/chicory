@@ -772,10 +772,10 @@ final class Validator {
                     }
                 case IF:
                     popVal(ValType.I32);
-                    // fallthrough
+                // fallthrough
                 case LOOP:
-                    // t1* -> t2*
-                    // fallthrough
+                // t1* -> t2*
+                // fallthrough
                 case BLOCK:
                     {
                         var t1 = getParams(op);
