@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
+import com.dylibso.chicory.corpus.CorpusResources;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.Parser;
@@ -18,10 +19,7 @@ import org.junit.jupiter.api.Test;
 public class InterruptionTest {
     @Test
     public void shouldInterruptLoop() throws InterruptedException {
-        var module =
-                Parser.parse(
-                        InterruptionTest.class.getResourceAsStream(
-                                "/compiled/infinite-loop.c.wasm"));
+        var module = Parser.parse(CorpusResources.getResource("compiled/infinite-loop.c.wasm"));
         var instance =
                 Instance.builder(module)
                         .withMachineFactory(MachineFactoryCompiler::compile)
@@ -33,8 +31,7 @@ public class InterruptionTest {
 
     @Test
     public void shouldInterruptCall() throws InterruptedException {
-        var module =
-                Parser.parse(InterruptionTest.class.getResourceAsStream("/compiled/power.c.wasm"));
+        var module = Parser.parse(CorpusResources.getResource("compiled/power.c.wasm"));
         var instance =
                 Instance.builder(module)
                         .withMachineFactory(MachineFactoryCompiler::compile)

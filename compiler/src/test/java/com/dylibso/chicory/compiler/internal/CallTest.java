@@ -3,6 +3,7 @@ package com.dylibso.chicory.compiler.internal;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
+import com.dylibso.chicory.corpus.CorpusResources;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import org.junit.jupiter.api.Test;
@@ -11,8 +12,7 @@ public class CallTest {
 
     @Test
     public void callLotsOfArgs() throws InterruptedException {
-        var module =
-                Parser.parse(CallTest.class.getResourceAsStream("/compiled/lots-of-args.wat.wasm"));
+        var module = Parser.parse(CorpusResources.getResource("compiled/lots-of-args.wat.wasm"));
         var instance =
                 Instance.builder(module)
                         .withMachineFactory(MachineFactoryCompiler::compile)
@@ -26,8 +26,7 @@ public class CallTest {
     @Test
     @SuppressWarnings("deprecation")
     public void callLotsOfArgsOnDeprecatedAotMachine() throws InterruptedException {
-        var module =
-                Parser.parse(CallTest.class.getResourceAsStream("/compiled/lots-of-args.wat.wasm"));
+        var module = Parser.parse(CorpusResources.getResource("compiled/lots-of-args.wat.wasm"));
         var instance =
                 Instance.builder(module)
                         .withMachineFactory(MachineFactoryCompiler::compile)

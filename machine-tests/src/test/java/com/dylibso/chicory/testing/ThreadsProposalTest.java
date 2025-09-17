@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
+import com.dylibso.chicory.corpus.CorpusResources;
 import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.ByteBufferMemory;
 import com.dylibso.chicory.runtime.ImportMemory;
@@ -31,7 +32,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class ThreadsProposalTest {
 
     private static WasmModule loadModule(String fileName) {
-        return Parser.parse(ThreadsProposalTest.class.getResourceAsStream("/" + fileName));
+        return Parser.parse(CorpusResources.getResource(fileName));
     }
 
     @FunctionalInterface

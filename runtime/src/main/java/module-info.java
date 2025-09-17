@@ -3,6 +3,5 @@ module com.dylibso.chicory.runtime {
 
     exports com.dylibso.chicory.runtime;
     exports com.dylibso.chicory.runtime.alloc;
-    exports com.dylibso.chicory.runtime.internal to
-            com.dylibso.chicory.compiler;
+    exports com.dylibso.chicory.runtime.internal;
 }

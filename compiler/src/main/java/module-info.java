@@ -6,7 +6,6 @@ module com.dylibso.chicory.compiler {
     requires org.objectweb.asm.util;
 
     exports com.dylibso.chicory.compiler;
-    exports com.dylibso.chicory.compiler.internal to
-            com.dylibso.chicory.build.time.compiler;
+    exports com.dylibso.chicory.compiler.internal;
     exports com.dylibso.chicory.experimental.aot;
 }
