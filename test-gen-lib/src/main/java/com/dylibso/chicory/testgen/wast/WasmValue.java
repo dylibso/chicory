@@ -37,6 +37,14 @@ public class WasmValue {
             case EXTERN_REF:
             case EXN_REF:
             case FUNC_REF:
+            case STRUCT_REF:
+            case ANY_REF:
+            case NULL_REF:
+            case NULL_FUNC_REF:
+            case NULL_EXTERN_REF:
+            case ARRAY_REF:
+            case EQ_REF:
+            case I31_REF:
             case REF_NULL:
                 if (result.equals("null")) {
                     return "Value.REF_NULL_VALUE";
@@ -137,6 +145,15 @@ public class WasmValue {
                 case REF_NULL:
                     return new NameExpr(
                             "assertEquals(" + resultVar + ", " + "REF_NULL_VALUE" + ")");
+                case STRUCT_REF:
+                case ANY_REF:
+                case NULL_REF:
+                case NULL_FUNC_REF:
+                case NULL_EXTERN_REF:
+                case ARRAY_REF:
+                case EQ_REF:
+                case I31_REF:
+                    return new NameExpr("assertEquals(\"TODO\", \"implement me\")");
                 default:
                     throw new IllegalArgumentException(
                             "cannot generate assertion for WasmValue: " + this);
@@ -183,6 +200,13 @@ public class WasmValue {
                 }
             case EXTERN_REF:
             case EXN_REF:
+            case STRUCT_REF:
+            case ANY_REF:
+            case NULL_REF:
+            case NULL_FUNC_REF:
+            case NULL_EXTERN_REF:
+            case ARRAY_REF:
+            case EQ_REF:
             case FUNC_REF:
                 if (value[0].equals("null")) {
                     return "Value.REF_NULL_VALUE";
@@ -288,6 +312,14 @@ public class WasmValue {
                 }
             case EXTERN_REF:
             case EXN_REF:
+            case STRUCT_REF:
+            case ANY_REF:
+            case NULL_REF:
+            case NULL_FUNC_REF:
+            case NULL_EXTERN_REF:
+            case ARRAY_REF:
+            case EQ_REF:
+            case I31_REF:
             case FUNC_REF:
                 if (value[0].toString().equals("null")) {
                     return "Value.REF_NULL_VALUE";
