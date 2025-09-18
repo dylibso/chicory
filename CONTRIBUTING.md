@@ -72,8 +72,9 @@ All submissions, including submissions by project members, need to be reviewed a
 
 ### Building the Runtime
 
-Contributors and other advanced users may want to build the runtime from source. To do so, you'll need to have Maven installed.
-`Java version 11+` required for a proper build. You can download and install [Java 11 Temurin](https://adoptium.net/temurin/releases/?version=11)
+Contributors and other advanced users may want to build the runtime from source. To do so, you'll need to use Java and Maven:
+* `Java version 11+` is required for a proper build. You can download and install [Java 11 Temurin](https://adoptium.net/temurin/releases/?version=11)
+* You need Maven. If you don't have Maven installed, replace `mvn` in the below commands with `./mvnw` (Linux/Mac) or `./mvnw.cmd` (Windows).
 
 Basic steps:
 
