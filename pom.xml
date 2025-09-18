@@ -791,6 +791,13 @@
             <configuration>
               <skip>true</skip>
             </configuration>
+            <dependencies/>
+            <executions>
+              <execution>
+                <id>checkstyle</id>
+                <phase>none</phase>
+              </execution>
+            </executions>
           </plugin>
           <!-- disable Error Prone -->
           <plugin>
