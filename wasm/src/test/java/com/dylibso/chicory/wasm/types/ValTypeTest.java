@@ -2,6 +2,7 @@ package com.dylibso.chicory.wasm.types;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.dylibso.chicory.corpus.CorpusResources;
 import com.dylibso.chicory.wasm.Parser;
 import org.junit.jupiter.api.Test;
 
@@ -45,9 +46,7 @@ public class ValTypeTest {
     @Test
     public void checkExternRef() {
         var module =
-                Parser.parse(
-                        ValTypeTest.class.getResourceAsStream(
-                                "/compiled/externref-example.wat.wasm"));
+                Parser.parse(CorpusResources.getResource("compiled/externref-example.wat.wasm"));
 
         assertEquals(3, module.typeSection().types().length);
 
