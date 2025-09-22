@@ -53,6 +53,7 @@ public final class WasiTestRunner {
             // TODO: dangling filesystem is not supported
             if (!test.getName().contains("environ")) {
                 options.withEnvironment("NO_DANGLING_FILESYSTEM", "true");
+                options.withEnvironment("NO_FILESYSTEM_RIGHTS", "false");
             }
 
             for (String dir : dirs) {
