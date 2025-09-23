@@ -3,6 +3,7 @@ package com.dylibso.chicory.compiler.internal;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.compiler.InterpreterFallback;
 import com.dylibso.chicory.runtime.Instance;
@@ -66,7 +67,9 @@ public class CacheTest {
         }
 
         public Bytecode get(Integer key) {
-            return cache.get(key);
+            var res = cache.get(key);
+            cacheHit = res != null;
+            return res;
         }
 
         public void put(Integer key, Bytecode value) {
@@ -131,7 +134,7 @@ public class CacheTest {
         var instance2 = Instance.builder(module).withMachineFactory(factory).build();
 
         exerciseCountVowels(instance2);
-        assertFalse(cache.get().cacheHit);
+        assertTrue(cache.get().cacheHit);
     }
 
     private static void exerciseCountVowels(Instance instance) {
