@@ -416,8 +416,10 @@ public final class WasiPreview1 implements Closeable {
 
     @WasmExport
     public int fdFdstatSetRights(int fd, long rightsBase, long rightsInheriting) {
-        logger.tracef("fd_fdstat_set_rights: [%s, %s, %s]", fd, rightsBase, rightsInheriting);
-        throw new WasmRuntimeException("We don't yet support this WASI call: fd_fdstat_set_rights");
+        logger.errorf(
+                "fd_fdstat_set_rights operation not supported: [%s, %s, %s]",
+                fd, rightsBase, rightsInheriting);
+        return wasiResult(WasiErrno.ENOTSUP);
     }
 
     @WasmExport
