@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dylibso.chicory.corpus.CorpusResources;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.UninstantiableException;
@@ -36,7 +37,7 @@ import org.junit.jupiter.api.Test;
 public class WasmModuleTest {
 
     private static WasmModule loadModule(String fileName) {
-        return Parser.parse(WasmModuleTest.class.getResourceAsStream("/" + fileName));
+        return Parser.parse(CorpusResources.getResource(fileName));
     }
 
     @Test

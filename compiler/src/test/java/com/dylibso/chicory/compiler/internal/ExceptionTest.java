@@ -3,6 +3,7 @@ package com.dylibso.chicory.compiler.internal;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
+import com.dylibso.chicory.corpus.CorpusResources;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Test;
 public class ExceptionTest {
 
     private static final WasmModule MODULE =
-            Parser.parse(ExceptionTest.class.getResourceAsStream("/compiled/exceptions.wat.wasm"));
+            Parser.parse(CorpusResources.getResource("compiled/exceptions.wat.wasm"));
 
     private static int throwIfFn;
     private static int catchlessTryFn;

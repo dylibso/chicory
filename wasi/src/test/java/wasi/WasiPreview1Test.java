@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.dylibso.chicory.corpus.CorpusResources;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
@@ -26,7 +27,7 @@ import org.junit.jupiter.api.Timeout;
 public class WasiPreview1Test {
 
     private static WasmModule loadModule(String fileName) {
-        return Parser.parse(WasiPreview1Test.class.getResourceAsStream("/" + fileName));
+        return Parser.parse(CorpusResources.getResource(fileName));
     }
 
     @Test

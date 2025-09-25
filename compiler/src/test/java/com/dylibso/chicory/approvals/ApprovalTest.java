@@ -1,12 +1,12 @@
 package com.dylibso.chicory.approvals;
 
 import static com.dylibso.chicory.wasm.Parser.parse;
-import static java.lang.ClassLoader.getSystemClassLoader;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.objectweb.asm.Type.getInternalName;
 
 import com.dylibso.chicory.compiler.internal.Compiler;
 import com.dylibso.chicory.compiler.internal.Shaded;
+import com.dylibso.chicory.corpus.CorpusResources;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -68,7 +68,7 @@ public class ApprovalTest {
 
     @Test
     public void verifyI32Renamed() {
-        var module = parse(getSystemClassLoader().getResourceAsStream("compiled/i32.wat.wasm"));
+        var module = parse(CorpusResources.getResource("compiled/i32.wat.wasm"));
         var result = Compiler.builder(module).withClassName("FOO").build().compile();
         verifyClass(result.classBytes(), (name) -> !name.equals("FOO"));
     }
@@ -105,8 +105,7 @@ public class ApprovalTest {
 
     @Test
     public void functions10() {
-        var module =
-                parse(getSystemClassLoader().getResourceAsStream("compiled/functions_10.wat.wasm"));
+        var module = parse(CorpusResources.getResource("compiled/functions_10.wat.wasm"));
         var result = Compiler.builder(module).withMaxFunctionsPerClass(5).build().compile();
         verifyClass(result.classBytes(), ApprovalTest::SKIP_Methods_CLASS);
     }
@@ -117,7 +116,7 @@ public class ApprovalTest {
 
     private static void verifyGeneratedBytecode(
             String name, Function<String, Boolean> classSkipper) {
-        var module = parse(getSystemClassLoader().getResourceAsStream("compiled/" + name));
+        var module = parse(CorpusResources.getResource("compiled/" + name));
         var result = Compiler.builder(module).build().compile();
         verifyClass(result.classBytes(), classSkipper);
     }
