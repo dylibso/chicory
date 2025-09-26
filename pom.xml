@@ -92,7 +92,7 @@
     <maven-invoker-plugin.version>3.9.1</maven-invoker-plugin.version>
     <central-publishing-maven-plugin.version>0.9.0</central-publishing-maven-plugin.version>
     <exec-maven-plugin.version>3.5.1</exec-maven-plugin.version>
-    <spotless-maven-plugin.version>2.46.1</spotless-maven-plugin.version>
+    <spotless-maven-plugin.version>3.0.0</spotless-maven-plugin.version>
     <templating-maven-plugin.version>3.0.0</templating-maven-plugin.version>
     <maven-file-management.version>3.2.0</maven-file-management.version>
     <google-compile-testing.version>0.23.0</google-compile-testing.version>
@@ -469,89 +469,6 @@
 
     <plugins>
       <plugin>
-        <groupId>com.diffplug.spotless</groupId>
-        <artifactId>spotless-maven-plugin</artifactId>
-        <configuration>
-          <formats>
-            <format>
-              <includes>
-                <include>*.md</include>
-                <include>android-tests/*.md</include>
-                <include>.gitignore</include>
-              </includes>
-              <trimTrailingWhitespace/>
-              <endWithNewline/>
-              <indent>
-                <spaces>true</spaces>
-                <spacesPerTab>2</spacesPerTab>
-              </indent>
-            </format>
-          </formats>
-          <java>
-            <includes>
-              <include>**/src/main/java/**/*.java</include>
-              <include>**/src/test/java/**/*.java</include>
-            </includes>
-            <googleJavaFormat>
-              <version>1.18.1</version>
-              <style>AOSP</style>
-              <reflowLongStrings>true</reflowLongStrings>
-              <formatJavadoc>false</formatJavadoc>
-            </googleJavaFormat>
-            <importOrder/>
-            <jsr223>
-              <name>Wildcard Imports Not Allowed</name>
-              <dependency>org.apache.groovy:groovy-jsr223:4.0.27</dependency>
-              <engine>groovy</engine>
-              <script>def pattern = ~/import\s+(?:static\s+)?[^\*\s]+\*;(\r\n|\r|\n)/
-                def matcher = pattern.matcher(source)
-                if (matcher.find()) {
-                   def importText = matcher.group().trim()
-                   throw new Exception("Wildcard imports not allowed:\n\n    " + importText + "\n\nPlease fully expand the imports.\n")
-                }
-                source</script>
-            </jsr223>
-            <removeUnusedImports/>
-          </java>
-          <pom>
-            <includes>
-              <include>**/pom.xml</include>
-            </includes>
-            <excludes>
-              <exclude>**/target/**/*.xml</exclude>
-            </excludes>
-            <sortPom>
-              <expandEmptyElements>false</expandEmptyElements>
-              <sortModules>true</sortModules>
-              <sortDependencies>scope,groupId,artifactId</sortDependencies>
-              <sortDependencyExclusions>groupId,artifactId</sortDependencyExclusions>
-              <sortPlugins>groupId,artifactId</sortPlugins>
-            </sortPom>
-          </pom>
-          <kotlin>
-            <includes>
-              <include>android-tests/**/*.gradle.kts</include>
-              <include>android-tests/**/*.kt</include>
-            </includes>
-            <ktfmt>
-              <!-- there is no AOSP style for ktfmt, hence using Kotlin style -->
-              <style>KOTLINLANG</style>
-              <removeUnusedImports>true</removeUnusedImports>
-            </ktfmt>
-          </kotlin>
-        </configuration>
-        <executions>
-          <execution>
-            <id>format</id>
-            <goals>
-              <goal>apply</goal>
-            </goals>
-            <phase>process-sources</phase>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <configuration>
@@ -859,6 +776,90 @@
             </plugin>
           </plugins>
         </pluginManagement>
+        <plugins>
+          <plugin>
+            <groupId>com.diffplug.spotless</groupId>
+            <artifactId>spotless-maven-plugin</artifactId>
+            <configuration>
+              <formats>
+                <format>
+                  <includes>
+                    <include>*.md</include>
+                    <include>android-tests/*.md</include>
+                    <include>.gitignore</include>
+                  </includes>
+                  <trimTrailingWhitespace/>
+                  <endWithNewline/>
+                  <indent>
+                    <spaces>true</spaces>
+                    <spacesPerTab>2</spacesPerTab>
+                  </indent>
+                </format>
+              </formats>
+              <java>
+                <includes>
+                  <include>**/src/main/java/**/*.java</include>
+                  <include>**/src/test/java/**/*.java</include>
+                </includes>
+                <googleJavaFormat>
+                  <version>1.18.1</version>
+                  <style>AOSP</style>
+                  <reflowLongStrings>true</reflowLongStrings>
+                  <formatJavadoc>false</formatJavadoc>
+                </googleJavaFormat>
+                <importOrder/>
+                <jsr223>
+                  <name>Wildcard Imports Not Allowed</name>
+                  <dependency>org.apache.groovy:groovy-jsr223:4.0.27</dependency>
+                  <engine>groovy</engine>
+                  <script>def pattern = ~/import\s+(?:static\s+)?[^\*\s]+\*;(\r\n|\r|\n)/
+                def matcher = pattern.matcher(source)
+                if (matcher.find()) {
+                   def importText = matcher.group().trim()
+                   throw new Exception("Wildcard imports not allowed:\n\n    " + importText + "\n\nPlease fully expand the imports.\n")
+                }
+                source</script>
+                </jsr223>
+                <removeUnusedImports/>
+              </java>
+              <pom>
+                <includes>
+                  <include>**/pom.xml</include>
+                </includes>
+                <excludes>
+                  <exclude>**/target/**/*.xml</exclude>
+                </excludes>
+                <sortPom>
+                  <expandEmptyElements>false</expandEmptyElements>
+                  <sortModules>true</sortModules>
+                  <sortDependencies>scope,groupId,artifactId</sortDependencies>
+                  <sortDependencyExclusions>groupId,artifactId</sortDependencyExclusions>
+                  <sortPlugins>groupId,artifactId</sortPlugins>
+                </sortPom>
+              </pom>
+              <kotlin>
+                <includes>
+                  <include>android-tests/**/*.gradle.kts</include>
+                  <include>android-tests/**/*.kt</include>
+                </includes>
+                <ktfmt>
+                  <!-- there is no AOSP style for ktfmt, hence using Kotlin style -->
+                  <style>KOTLINLANG</style>
+                  <removeUnusedImports>true</removeUnusedImports>
+                </ktfmt>
+              </kotlin>
+            </configuration>
+            <executions>
+              <execution>
+                <id>format</id>
+                <goals>
+                  <goal>apply</goal>
+                </goals>
+                <phase>process-sources</phase>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
       </build>
     </profile>
 

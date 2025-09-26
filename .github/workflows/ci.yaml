@@ -46,8 +46,8 @@ jobs:
           distribution: 'temurin'
           java-version: '${{ matrix.version }}'
           cache: maven
-      - name: Test Java and Check Style
-        run: mvn -B spotless:check clean install
+      - name: Test Java
+        run: mvn -B clean install
         env:
           MAVEN_OPTS: "-ea"
 
