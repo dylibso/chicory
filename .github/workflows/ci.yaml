@@ -24,6 +24,8 @@ jobs:
           version: 11
         - os: windows-11-arm
           version: 17
+        - os: windows-11-arm
+          version: 25
     steps:
       - name: Checkout sources
         uses: actions/checkout@v5
