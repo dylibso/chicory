@@ -34,7 +34,7 @@ public enum MutabilityType {
             case ID.Var:
                 return Var;
             default:
-                throw new MalformedException("Global malformed mutability");
+                throw new MalformedException("Global malformed mutability " + id);
         }
     }
 

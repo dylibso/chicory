@@ -997,6 +997,13 @@ public class InterpreterMachine implements Machine {
                 case MEM_ATOMIC_NOTIFY:
                     MEM_ATOMIC_NOTIFY(stack, instance, operands);
                     break;
+                // GC opcodes
+                case STRUCT_NEW:
+                    STRUCT_NEW(stack, instance, operands);
+                    break;
+                case STRUCT_NEW_DEFAULT:
+                    STRUCT_NEW_DEFAULT(stack, instance, operands);
+                    break;
                 default:
                     {
                         evalDefault(stack, instance, callStack, instruction, operands);
@@ -2911,6 +2918,17 @@ public class InterpreterMachine implements Machine {
             stack.push(ref);
             BR(frame, stack, instruction);
         }
+    }
+
+    // GC opcode implementations
+    private static void STRUCT_NEW(MStack stack, Instance instance, Operands operands) {
+        var typeIdx = (int) operands.get(0);
+        stack.push(REF_NULL_VALUE);
+    }
+
+    private static void STRUCT_NEW_DEFAULT(MStack stack, Instance instance, Operands operands) {
+        var typeIdx = (int) operands.get(0);
+        stack.push(REF_NULL_VALUE);
     }
 
     protected static long[] extractArgsForParams(MStack stack, List<ValType> params) {

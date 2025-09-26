@@ -3,7 +3,7 @@ package com.dylibso.chicory.wasm.types;
 import java.util.List;
 import java.util.Objects;
 
-public final class FunctionType {
+public final class FunctionType implements RecType {
     private final List<ValType> params;
     private final List<ValType> returns;
     private final int hashCode;
