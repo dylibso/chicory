@@ -17,7 +17,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import jdk.incubator.vector.LongVector;
 import jdk.incubator.vector.Vector;
-import jdk.incubator.vector.VectorOperators;
 
 public final class SimdInterpreterMachine extends InterpreterMachine {
 

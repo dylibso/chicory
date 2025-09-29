@@ -14,7 +14,7 @@
   <description>SIMD instructions support for Chicory</description>
 
   <properties>
-    <maven.compiler.release>21</maven.compiler.release>
+    <maven.compiler.release>25</maven.compiler.release>
 
     <!-- TODO: fixme working around "[WARNING] using incubating module(s): jdk.incubator.vector" -->
     <maven.compiler.failOnWarning>false</maven.compiler.failOnWarning>
@@ -76,7 +76,50 @@
           <argLine>--add-modules=jdk.incubator.vector</argLine>
         </configuration>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>templating-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>filter-src</id>
+            <goals>
+              <goal>filter-sources</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
+
+  <profiles>
+    <profile>
+      <id>java21</id>
+      <activation>
+        <jdk>21</jdk>
+      </activation>
+      <properties>
+        <maven.compiler.release>21</maven.compiler.release>
+      </properties>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>templating-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>filter-src</id>
+                <goals>
+                  <goal>filter-sources</goal>
+                </goals>
+                <configuration>
+                  <sourceDirectory>${basedir}/src/main/java-templates-21</sourceDirectory>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>
