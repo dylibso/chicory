@@ -1,5 +1,9 @@
 package com.dylibso.chicory.simd;
 
+/**
+  * Generated compatibility shim for cross-version compatibility with jdk.incubator.vector.VectorOperators
+  *
+  */
 final class VectorOperators {
 
     private VectorOperators() {}
