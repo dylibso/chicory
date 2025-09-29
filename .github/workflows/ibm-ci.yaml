@@ -1,0 +1,59 @@
+name: IBM CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+# on:
+#   schedule:
+#    - cron: "0 0 * * *" # everyday
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  ibm-ci:
+    name: IBM CI
+    runs-on: ${{ matrix.os }}
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        # Thanks to: https://github.com/IBM/actionspz
+        os: [ubuntu-24.04-ppc64le, ubuntu-24.04-s390x]
+        include:
+          - os: ubuntu-24.04-ppc64le
+            arch: ppc64le
+          - os: ubuntu-24.04-s390x
+            arch: s390x
+        version: [11, 17, 21]
+        jvm: [temurin, semeru]
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v5
+      - name: Checkout testsuite
+        uses: actions/checkout@v5
+        with:
+          repository: WebAssembly/testsuite
+          path: testsuite
+          # The ref needs to stay in sync with the default value in test-gen-plugin
+          ref: 88e97b0f742f4c3ee01fea683da130f344dd7b02
+      - name: Checkout wasi-testsuite
+        uses: actions/checkout@v5
+        with:
+          repository: WebAssembly/wasi-testsuite
+          path: wasi-testsuite
+          ref: prod/testsuite-base
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: '${{ matrix.jvm }}'
+          java-version: '${{ matrix.version }}'
+          architecture: '${{ matrix.arch }}'
+          cache: maven
+      - name: Test Java and Check Style
+        run: mvn -B clean install
+        env:
+          MAVEN_OPTS: "-ea"

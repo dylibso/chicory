@@ -98,6 +98,7 @@
     <google-compile-testing.version>0.23.0</google-compile-testing.version>
     <wagon-maven-plugin.version>2.0.2</wagon-maven-plugin.version>
     <zerofs.version>0.1.0</zerofs.version>
+    <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
   </properties>
 
   <dependencyManagement>

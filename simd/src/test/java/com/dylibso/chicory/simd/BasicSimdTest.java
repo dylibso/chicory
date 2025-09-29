@@ -2,6 +2,7 @@ package com.dylibso.chicory.simd;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ public class BasicSimdTest {
                                         BasicSimdTest.class.getResourceAsStream(
                                                 "/compiled/simd-example.wat.wasm")))
                         .withMachineFactory(SimdInterpreterMachine::new)
+                        .withMemoryFactory(ByteArrayMemory::new)
                         .build();
         var main = instance.export("main");
         var result = main.apply()[0];
