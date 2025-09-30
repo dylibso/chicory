@@ -18,12 +18,14 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest, ubuntu-24.04-arm, windows-11-arm]
-        version: [11, 17, 21]
+        version: [11, 17, 21, 25]
         exclude:
         - os: windows-11-arm
           version: 11
         - os: windows-11-arm
           version: 17
+        - os: windows-11-arm
+          version: 25
     steps:
       - name: Checkout sources
         uses: actions/checkout@v5
