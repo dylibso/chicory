@@ -168,7 +168,7 @@ public final class AnnotatedInstruction extends Instruction {
                     if (labelFalse.isEmpty()) {
                         throw new InvalidException("unknown label " + base);
                     }
-                    // fallthrough
+                // fallthrough
                 case ELSE:
                 case BR:
                     if (labelTrue.isEmpty()) {
