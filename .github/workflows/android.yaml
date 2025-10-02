@@ -30,7 +30,7 @@ jobs:
     # Setup Gradle. Cache will be readonly except for the main branch.
     # see: https://github.com/gradle/actions/blob/main/docs/setup-gradle.md#using-the-cache-read-only
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v4
+      uses: gradle/actions/setup-gradle@v5
     # Setup KVM to speedup the emulator.
     - name: Enable KVM
       run: |
