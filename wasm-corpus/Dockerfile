@@ -69,6 +69,9 @@ ENV PATH="/opt/wabt/bin:~/.local/share/swiftly/bin:${PATH}"
 # Install wasm-tools
 RUN cargo install wasm-tools
 
+# Install wasm-tools
+RUN cargo install wasm-tools
+
 WORKDIR /usr/code
 
 ENTRYPOINT ["./compile.sh"]
