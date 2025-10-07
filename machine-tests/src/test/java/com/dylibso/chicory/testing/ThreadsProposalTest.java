@@ -1,5 +1,6 @@
 package com.dylibso.chicory.testing;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -21,6 +22,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -273,5 +275,25 @@ public class ThreadsProposalTest {
 
         // 2 == timeout
         assertEquals(2, workerAcquireLock.get());
+    }
+
+    @Test
+    public void atomicFenceShouldWorkInInterpreter() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/atomic_fence_example.wat.wasm")).build();
+        var function = instance.exports().function("fence_example");
+
+        assertDoesNotThrow(() -> function.apply());
+    }
+
+    @Test
+    public void atomicFenceShouldWorkInCompiler() throws Exception {
+        var instance =
+                Instance.builder(loadModule("compiled/atomic_fence_example.wat.wasm"))
+                        .withMachineFactory(MachineFactoryCompiler::compile)
+                        .build();
+        var function = instance.exports().function("fence_example");
+
+        assertDoesNotThrow(() -> function.apply());
     }
 }

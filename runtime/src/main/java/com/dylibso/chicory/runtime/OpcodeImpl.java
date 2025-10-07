@@ -7,6 +7,7 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValu
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.ValType;
+import java.lang.invoke.VarHandle;
 
 /**
  * Note: Some opcodes are easy or trivial to implement as compiler intrinsics (local.get, i32.add, etc).
@@ -866,5 +867,10 @@ public final class OpcodeImpl {
                 table.setRef(i, val, instance);
             }
         }
+    }
+
+    @OpCodeIdentifier(OpCode.ATOMIC_FENCE)
+    public static void ATOMIC_FENCE() {
+        VarHandle.fullFence();
     }
 }

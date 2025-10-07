@@ -280,6 +280,7 @@ enum CompilerOpCode {
     MEM_ATOMIC_WAIT32(OpCode.MEM_ATOMIC_WAIT32),
     MEM_ATOMIC_WAIT64(OpCode.MEM_ATOMIC_WAIT64),
     MEM_ATOMIC_NOTIFY(OpCode.MEM_ATOMIC_NOTIFY),
+    ATOMIC_FENCE(OpCode.ATOMIC_FENCE),
     ;
 
     private final Optional<OpCode> opcode;

@@ -214,6 +214,7 @@ final class EmitterMap {
                     .intrinsic(CompilerOpCode.MEM_ATOMIC_WAIT32, Emitters::MEM_ATOMIC_WAIT32)
                     .intrinsic(CompilerOpCode.MEM_ATOMIC_WAIT64, Emitters::MEM_ATOMIC_WAIT64)
                     .intrinsic(CompilerOpCode.MEM_ATOMIC_NOTIFY, Emitters::MEM_ATOMIC_NOTIFY)
+                    .shared(CompilerOpCode.ATOMIC_FENCE, OpcodeImpl.class)
 
                     // ====== I32 ======
                     .intrinsic(CompilerOpCode.I32_ADD, Emitters::I32_ADD)

@@ -1148,6 +1148,7 @@ final class Validator {
                 case BR_ON_NULL:
                 case BR_ON_NON_NULL:
                 case END:
+                case ATOMIC_FENCE:
                     break;
                 case DATA_DROP:
                     {
