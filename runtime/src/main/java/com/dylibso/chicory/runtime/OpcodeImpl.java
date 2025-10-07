@@ -7,6 +7,7 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValu
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.ValType;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Note: Some opcodes are easy or trivial to implement as compiler intrinsics (local.get, i32.add, etc).
@@ -870,11 +871,6 @@ public final class OpcodeImpl {
 
     private static final Runnable ATOMIC_FENCE_IMPL;
 
-    @SuppressWarnings("removal")
-    private static void unsafeFullFence() {
-        sun.misc.Unsafe.getUnsafe().fullFence();
-    }
-
     static {
         Runnable impl;
         try {
@@ -883,7 +879,24 @@ public final class OpcodeImpl {
             java.lang.invoke.VarHandle.fullFence();
             impl = java.lang.invoke.VarHandle::fullFence;
         } catch (RuntimeException e) {
-            impl = OpcodeImpl::unsafeFullFence;
+            try {
+                Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
+                var theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
+                theUnsafeField.setAccessible(true);
+                var theUnsafe = theUnsafeField.get(null);
+                var fullFence = unsafeClass.getMethod("fullFence");
+
+                impl =
+                        () -> {
+                            try {
+                                fullFence.invoke(theUnsafe);
+                            } catch (IllegalAccessException | InvocationTargetException ex) {
+                                throw new RuntimeException("Failed to invoke sun.misc.Unsafe", ex);
+                            }
+                        };
+            } catch (Throwable ex) {
+                throw new RuntimeException("Failed to lookup sun.misc.Unsafe", ex);
+            }
         }
         ATOMIC_FENCE_IMPL = impl;
     }
