@@ -7,7 +7,6 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValu
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.ValType;
-import java.lang.invoke.VarHandle;
 
 /**
  * Note: Some opcodes are easy or trivial to implement as compiler intrinsics (local.get, i32.add, etc).
@@ -869,8 +868,28 @@ public final class OpcodeImpl {
         }
     }
 
+    private static final Runnable ATOMIC_FENCE_IMPL;
+
+    @SuppressWarnings("removal")
+    private static void unsafeFullFence() {
+        sun.misc.Unsafe.getUnsafe().fullFence();
+    }
+
+    static {
+        Runnable impl;
+        try {
+            // to take into account older Android API level:
+            // https://developer.android.com/reference/java/lang/invoke/VarHandle#fullFence()
+            java.lang.invoke.VarHandle.fullFence();
+            impl = java.lang.invoke.VarHandle::fullFence;
+        } catch (RuntimeException e) {
+            impl = OpcodeImpl::unsafeFullFence;
+        }
+        ATOMIC_FENCE_IMPL = impl;
+    }
+
     @OpCodeIdentifier(OpCode.ATOMIC_FENCE)
     public static void ATOMIC_FENCE() {
-        VarHandle.fullFence();
+        ATOMIC_FENCE_IMPL.run();
     }
 }
