@@ -891,11 +891,11 @@ public final class OpcodeImpl {
                             try {
                                 fullFence.invoke(theUnsafe);
                             } catch (IllegalAccessException | InvocationTargetException ex) {
-                                throw new RuntimeException("Failed to invoke sun.misc.Unsafe", ex);
+                                throw new RuntimeException("ATOMIC_FENCE implementation: Failed to invoke sun.misc.Unsafe", ex);
                             }
                         };
             } catch (Throwable ex) {
-                throw new RuntimeException("Failed to lookup sun.misc.Unsafe", ex);
+                throw new RuntimeException("ATOMIC_FENCE implementation: Failed to lookup sun.misc.Unsafe", ex);
             }
         }
         ATOMIC_FENCE_IMPL = impl;
