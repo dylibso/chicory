@@ -876,13 +876,10 @@ public final class OpcodeImpl {
         try {
             // to take into account older Android API level:
             // https://developer.android.com/reference/java/lang/invoke/VarHandle#fullFence()
-            System.out.println("DEBUG ME: testing VarHandle");
             java.lang.invoke.VarHandle.fullFence();
             impl = java.lang.invoke.VarHandle::fullFence;
-            System.out.println("DEBUG ME: using VarHandle");
         } catch (NoSuchMethodError e) {
             try {
-                System.out.println("DEBUG ME: testing Unsafe");
                 Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
                 var theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
                 theUnsafeField.setAccessible(true);
@@ -900,7 +897,6 @@ public final class OpcodeImpl {
                                         ex);
                             }
                         };
-                System.out.println("DEBUG ME: using Unsafe");
             } catch (Throwable ex) {
                 throw new RuntimeException(
                         "ATOMIC_FENCE implementation: Failed to lookup sun.misc.Unsafe", ex);
