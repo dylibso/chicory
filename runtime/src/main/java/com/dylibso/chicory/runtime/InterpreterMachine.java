@@ -997,6 +997,9 @@ public class InterpreterMachine implements Machine {
                 case MEM_ATOMIC_NOTIFY:
                     MEM_ATOMIC_NOTIFY(stack, instance, operands);
                     break;
+                case ATOMIC_FENCE:
+                    ATOMIC_FENCE();
+                    break;
                 default:
                     {
                         evalDefault(stack, instance, callStack, instruction, operands);
@@ -2478,6 +2481,10 @@ public class InterpreterMachine implements Machine {
             var result = instance.memory().notify(ptr, maxThreads);
             stack.push(result);
         }
+    }
+
+    private static void ATOMIC_FENCE() {
+        OpcodeImpl.ATOMIC_FENCE();
     }
 
     private static StackFrame RETURN_CALL(

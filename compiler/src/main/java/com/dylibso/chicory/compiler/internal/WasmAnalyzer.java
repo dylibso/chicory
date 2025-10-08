@@ -846,6 +846,7 @@ final class WasmAnalyzer {
                 // [] -> [t]
                 stack.push(globalTypes.get((int) ins.operand(0)));
                 break;
+            case ATOMIC_FENCE:
             case DATA_DROP:
             case ELEM_DROP:
                 // [] -> []
