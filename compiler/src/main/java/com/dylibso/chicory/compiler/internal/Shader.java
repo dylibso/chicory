@@ -53,9 +53,8 @@ final class Shader {
     public static ClassRemapper shadedClassRemapper(ClassVisitor visitor, String className) {
         String targetInternalName = internalClassName(className + "Shaded");
         String originalInternalName = internalClassName(Shaded.class.getName());
-        return new ClassRemapper(
-                visitor,
-                new Remapper() {
+        Remapper remapper =
+                new Remapper(Opcodes.ASM9) {
                     @Override
                     public String map(String internalName) {
                         if (internalName.equals(originalInternalName)) {
@@ -63,7 +62,8 @@ final class Shader {
                         }
                         return super.map(internalName);
                     }
-                });
+                };
+        return new ClassRemapper(visitor, remapper);
     }
 
     static byte[] getBytecode(Class<?> clazz) {
