@@ -1120,7 +1120,7 @@ public final class Parser {
 
         var address = buffer.position();
         int b = (int) readByte(buffer) & 0xff;
-        if (b >= 0xfc && b < 0xff) { // is multi-byte
+        if (b >= 0xfb && b < 0xff) { // is multi-byte
             b = (int) ((b << 8) + readVarUInt32(buffer));
         }
         var op = OpCode.byOpCode(b);
