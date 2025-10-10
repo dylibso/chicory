@@ -7,6 +7,7 @@ import static com.github.javaparser.StaticJavaParser.parseType;
 
 import com.dylibso.chicory.compiler.internal.ByteClassCollector;
 import com.dylibso.chicory.compiler.internal.Compiler;
+import com.dylibso.chicory.runtime.CompiledModule;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.Parser;
@@ -22,6 +23,7 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.ClassExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.MethodReferenceExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.StringLiteralExpr;
@@ -31,6 +33,7 @@ import com.github.javaparser.ast.stmt.CatchClause;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.TryStmt;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.utils.SourceRoot;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -41,6 +44,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 public class Generator {
 
@@ -95,10 +99,13 @@ public class Generator {
 
         var type = cu.addClass(moduleName, Modifier.Keyword.PUBLIC, Modifier.Keyword.FINAL);
 
-        type.addConstructor(Modifier.Keyword.PRIVATE).createBody();
+        type.addImplementedType(CompiledModule.class);
+        type.addConstructor(Modifier.Keyword.PUBLIC).createBody();
 
         generateCreateMethod(cu, type, machineName);
         generateLoadMethod(cu, type, moduleName, wasmName);
+        generateMachineFactoryMethod(cu, type, moduleName);
+        generateWasmModuleMethod(cu, type, moduleName);
 
         dest.add(packageName, moduleName + ".java", cu);
         dest.saveAll();
@@ -243,5 +250,55 @@ public class Generator {
                         .setResources(new NodeList<>(resourceVar))
                         .setTryBlock(new BlockStmt(new NodeList<>(returnStmt)))
                         .setCatchClauses(new NodeList<>(catchIoException)));
+    }
+
+    private static void generateMachineFactoryMethod(
+            CompilationUnit cu, ClassOrInterfaceDeclaration type, String moduleName) {
+
+        // implement:
+        // Function<Instance, Machine> machineFactory() {
+        //    return ::create;
+        // }
+
+        cu.addImport(Instance.class);
+        cu.addImport(Machine.class);
+        cu.addImport(Function.class);
+
+        var functionType =
+                new ClassOrInterfaceType()
+                        .setName("Function")
+                        .setTypeArguments(
+                                NodeList.nodeList(
+                                        new ClassOrInterfaceType().setName("Instance"),
+                                        new ClassOrInterfaceType().setName("Machine")));
+
+        var method =
+                type.addMethod("machineFactory", Modifier.Keyword.PUBLIC).setType(functionType);
+
+        var returnStmt =
+                new ReturnStmt(
+                        new MethodReferenceExpr()
+                                .setScope(new NameExpr(moduleName))
+                                .setIdentifier("create"));
+        method.createBody().addStatement(returnStmt);
+    }
+
+    private static void generateWasmModuleMethod(
+            CompilationUnit cu, ClassOrInterfaceDeclaration type, String moduleName) {
+
+        // implement:
+        // WasmModule wasmModule() {
+        // return load();
+        // }
+
+        cu.addImport(WasmModule.class);
+
+        var method =
+                type.addMethod("wasmModule", Modifier.Keyword.PUBLIC).setType(WasmModule.class);
+
+        var returnStmt =
+                new ReturnStmt(
+                        new MethodCallExpr().setScope(new NameExpr(moduleName)).setName("load"));
+        method.createBody().addStatement(returnStmt);
     }
 }
