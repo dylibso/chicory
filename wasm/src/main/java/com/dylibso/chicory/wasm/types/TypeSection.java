@@ -5,22 +5,22 @@ import java.util.List;
 import java.util.Objects;
 
 public final class TypeSection extends Section {
-    private final List<FunctionType> types;
+    private final List<RecType> types;
 
-    private TypeSection(List<FunctionType> types) {
+    private TypeSection(List<RecType> types) {
         super(SectionId.TYPE);
         this.types = List.copyOf(types);
     }
 
-    public FunctionType[] types() {
-        return types.toArray(new FunctionType[0]);
+    public RecType[] types() {
+        return types.toArray(new RecType[0]);
     }
 
     public int typeCount() {
         return types.size();
     }
 
-    public FunctionType getType(int idx) {
+    public RecType getType(int idx) {
         return types.get(idx);
     }
 
@@ -29,23 +29,17 @@ public final class TypeSection extends Section {
     }
 
     public static final class Builder {
-        private final List<FunctionType> types = new ArrayList<>();
+        private final List<RecType> types = new ArrayList<>();
 
         private Builder() {}
 
-        public List<FunctionType> getTypes() {
+        public List<RecType> getTypes() {
             return types;
         }
 
-        /**
-         * Add a function type definition to this section.
-         *
-         * @param functionType the function type to add to this section (must not be {@code null})
-         * @return the Builder
-         */
-        public Builder addFunctionType(FunctionType functionType) {
-            Objects.requireNonNull(functionType, "functionType");
-            types.add(functionType);
+        public Builder addRecType(RecType recType) {
+            Objects.requireNonNull(recType, "functionType");
+            types.add(recType);
             return this;
         }
 

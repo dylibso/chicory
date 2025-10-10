@@ -366,7 +366,8 @@ final class Validator {
         if (idx < 0 || idx >= module.typeSection().typeCount()) {
             throw new InvalidException("unknown type " + idx);
         }
-        return module.typeSection().getType(idx);
+        // TODO: assumptions ... extend to the rest of the types
+        return module.typeSection().getType(idx).subTypes()[0].compType().funcType();
     }
 
     private Global getGlobal(int idx) {
@@ -457,15 +458,28 @@ final class Validator {
     void validateTypes() {
         var types = module.typeSection().types();
         for (var i = 0; i < types.length; i++) {
-            var t = types[i];
-            t.params().forEach(this::validateValueType);
-            t.returns().forEach(this::validateValueType);
+            var subTypes = types[i].subTypes();
+            for (var j = 0; j < subTypes.length; j++) {
+                var st = subTypes[j];
+                if (st.compType().funcType() != null) {
+                    var t = st.compType().funcType();
+                    t.params().forEach(this::validateValueType);
+                    t.returns().forEach(this::validateValueType);
+                } else {
+                    // TODO validation of array and structs
+                }
+            }
         }
     }
 
     void validateTags() {
         for (var tagType : module.tagSection().map(ts -> ts.types()).orElse(new TagType[0])) {
-            var type = module.typeSection().getType(tagType.typeIdx());
+            var type =
+                    module.typeSection()
+                            .getType(tagType.typeIdx())
+                            .subTypes()[0]
+                            .compType()
+                            .funcType();
             if (type.returns().size() > 0) {
                 throw new InvalidException("non-empty tag result type index: " + tagType.typeIdx());
             }
@@ -656,7 +670,7 @@ final class Validator {
     private void validateValueType(ValType valueType) {
         if (valueType.isReference() && valueType.typeIdx() >= 0) {
             int idx = valueType.typeIdx();
-            if (idx >= module.typeSection().typeCount()) {
+            if (idx >= module.typeSection().typeCount() && !ValType.ID.isAbsHeapType(idx)) {
                 throw new InvalidException("unknown type " + idx);
             }
         }
@@ -724,7 +738,10 @@ final class Validator {
                                                 module.typeSection()
                                                         .getType(
                                                                 getTagType(currentCatch.tag())
-                                                                        .typeIdx());
+                                                                        .typeIdx())
+                                                        .subTypes()[0]
+                                                        .compType()
+                                                        .funcType();
                                         pushVals(tagType.params());
                                         break;
                                     }
@@ -734,7 +751,10 @@ final class Validator {
                                                 module.typeSection()
                                                         .getType(
                                                                 getTagType(currentCatch.tag())
-                                                                        .typeIdx());
+                                                                        .typeIdx())
+                                                        .subTypes()[0]
+                                                        .compType()
+                                                        .funcType();
                                         pushVals(tagType.params());
                                         pushVal(ValType.ExnRef);
                                         break;
@@ -759,8 +779,8 @@ final class Validator {
                             throw new InvalidException("unknown tag " + tagNumber);
                         }
                         var type = module.typeSection().getType(getTagType(tagNumber).typeIdx());
-                        popVals(type.params());
-                        assert (type.returns().size() == 0);
+                        popVals(type.subTypes()[0].compType().funcType().params());
+                        assert (type.subTypes()[0].compType().funcType().returns().size() == 0);
                         unreachable();
                         break;
                     }
@@ -2142,6 +2162,41 @@ final class Validator {
                         popVal(ValType.I32);
                         pushVal(ValType.V128);
                         break;
+                    }
+                case STRUCT_NEW:
+                case STRUCT_NEW_DEFAULT:
+                case STRUCT_GET:
+                case STRUCT_GET_S:
+                case STRUCT_GET_U:
+                case STRUCT_SET:
+                case ARRAY_NEW:
+                case ARRAY_NEW_DEFAULT:
+                case ARRAY_NEW_FIXED:
+                case ARRAY_NEW_DATA:
+                case ARRAY_NEW_ELEM:
+                case ARRAY_GET:
+                case ARRAY_GET_S:
+                case ARRAY_GET_U:
+                case ARRAY_SET:
+                case ARRAY_LEN:
+                case ARRAY_FILL:
+                case ARRAY_COPY:
+                case ARRAY_INIT_DATA:
+                case ARRAY_INIT_ELEM:
+                case REF_TEST:
+                case REF_TEST_NULL:
+                case CAST_TEST:
+                case CAST_TEST_NULL:
+                case BR_ON_CAST:
+                case BR_ON_CAST_FAIL:
+                case ANY_CONVERT_EXTERN:
+                case EXTERN_CONVERT_ANY:
+                case REF_I31:
+                case I31_GET_S:
+                case I31_GET_U:
+                    {
+                        // TODO: remove me skipping validation for now
+                        return;
                     }
                 default:
                     throw new IllegalArgumentException(

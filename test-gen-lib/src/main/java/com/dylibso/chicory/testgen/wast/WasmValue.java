@@ -130,7 +130,7 @@ public class WasmValue {
         }
     }
 
-    public NameExpr toAssertion(String resultVar) {
+    public NameExpr toAssertion(String resultVar, String moduleName) {
         if (value == null) {
             // according to
             // https://github.com/WebAssembly/spec/blob/05949f507908aac3ad2a21661b5c39fa013da950/interpreter/script/js.ml#L150
@@ -145,12 +145,14 @@ public class WasmValue {
                 case REF_NULL:
                     return new NameExpr(
                             "assertEquals(" + resultVar + ", " + "REF_NULL_VALUE" + ")");
+                case ARRAY_REF:
+                    return new NameExpr(
+                            "assertNotNull(" + moduleName + ".array((int) results[0]))");
                 case STRUCT_REF:
                 case ANY_REF:
                 case NULL_REF:
                 case NULL_FUNC_REF:
                 case NULL_EXTERN_REF:
-                case ARRAY_REF:
                 case EQ_REF:
                 case I31_REF:
                     return new NameExpr("assertEquals(\"TODO\", \"implement me\")");

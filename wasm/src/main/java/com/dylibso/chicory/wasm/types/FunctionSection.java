@@ -17,7 +17,8 @@ public final class FunctionSection extends Section {
     }
 
     public FunctionType getFunctionType(int idx, TypeSection typeSection) {
-        return typeSection.getType(getFunctionType(idx));
+        // TODO: this is based on a lot of assumptions ..
+        return typeSection.getType(getFunctionType(idx)).subTypes()[0].compType().funcType();
     }
 
     public int functionCount() {

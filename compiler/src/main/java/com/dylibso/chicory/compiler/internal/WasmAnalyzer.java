@@ -205,7 +205,13 @@ final class WasmAnalyzer {
 
                     // [p* I32] -> [r*]
                     stack.pop(ValType.I32);
-                    updateStack(stack, module.typeSection().getType((int) ins.operand(0)));
+                    updateStack(
+                            stack,
+                            module.typeSection()
+                                    .getType((int) ins.operand(0))
+                                    .subTypes()[0]
+                                    .compType()
+                                    .funcType());
                     result.add(
                             new CompilerInstruction(
                                     CompilerOpCode.of(OpCode.CALL_INDIRECT), ins.operands()));
@@ -831,7 +837,13 @@ final class WasmAnalyzer {
             case CALL_INDIRECT:
                 // [p* I32] -> [r*]
                 stack.pop(ValType.I32);
-                updateStack(stack, module.typeSection().getType((int) ins.operand(0)));
+                updateStack(
+                        stack,
+                        module.typeSection()
+                                .getType((int) ins.operand(0))
+                                .subTypes()[0]
+                                .compType()
+                                .funcType());
                 break;
             case GLOBAL_SET:
             case LOCAL_SET:
@@ -990,7 +1002,7 @@ final class WasmAnalyzer {
             return FunctionType.returning(
                     ValType.builder().fromId(typeId).build(module.typeSection()::getType));
         }
-        return module.typeSection().getType((int) typeId);
+        return module.typeSection().getType((int) typeId).subTypes()[0].compType().funcType();
     }
 
     private static List<ValType> getGlobalTypes(WasmModule module) {
@@ -1014,7 +1026,13 @@ final class WasmAnalyzer {
                 module.importSection().stream()
                         .filter(FunctionImport.class::isInstance)
                         .map(FunctionImport.class::cast)
-                        .map(function -> module.typeSection().getType(function.typeIndex()));
+                        .map(
+                                function ->
+                                        module.typeSection()
+                                                .getType(function.typeIndex())
+                                                .subTypes()[0]
+                                                .compType()
+                                                .funcType());
 
         var functions = module.functionSection();
         var moduleFunctions =

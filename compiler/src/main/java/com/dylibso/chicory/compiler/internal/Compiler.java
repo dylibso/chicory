@@ -450,7 +450,7 @@ public final class Compiler {
         var allTypes = module.typeSection().types();
         for (int i = 0; i < allTypes.length; i++) {
             var typeId = i;
-            var type = allTypes[i];
+            var type = allTypes[i].subTypes()[0].compType().funcType();
             emitFunction(
                     classWriter,
                     callIndirectMethodName(typeId),

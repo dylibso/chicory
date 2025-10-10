@@ -335,7 +335,8 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                             ? module.functionSection()
                                     .getFunctionType(export.index() - functionImports.length)
                             : functionImports[export.index()].typeIndex();
-            var exportType = module.typeSection().getType(funcType);
+            var exportType =
+                    module.typeSection().getType(funcType).subTypes()[0].compType().funcType();
 
             var argPrefix = "arg";
             var handleCallArguments = new ArrayList<Expression>();
@@ -501,7 +502,10 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
 
                         var importType =
                                 module.typeSection()
-                                        .getType((((FunctionImport) importedFun).typeIndex()));
+                                        .getType((((FunctionImport) importedFun).typeIndex()))
+                                        .subTypes()[0]
+                                        .compType()
+                                        .funcType();
                         importMethod.removeBody();
 
                         // build lambda return

@@ -33,6 +33,7 @@ import com.dylibso.chicory.wasm.types.MemoryImport;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.MutabilityType;
+import com.dylibso.chicory.wasm.types.RecType;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TagImport;
@@ -57,7 +58,7 @@ public class Instance {
     private final DataSegment[] dataSegments;
     private final Global[] globalInitializers;
     private final GlobalInstance[] globals;
-    private final FunctionType[] types;
+    private final RecType[] types;
     private final int[] functionTypes;
     private final ImportValues imports;
     private final TableInstance[] tables;
@@ -69,13 +70,17 @@ public class Instance {
 
     private final Map<Integer, WasmException> exnRefs;
 
+    // TODO: this should be a weak data structure
+    // and we should re-use indexes, keeping it simple for now
+    private final Map<Integer, long[]> arrayRefs;
+
     Instance(
             WasmModule module,
             Global[] globalInitializers,
             Memory memory,
             DataSegment[] dataSegments,
             FunctionBody[] functions,
-            FunctionType[] types,
+            RecType[] types,
             int[] functionTypes,
             ImportValues imports,
             Table[] tables,
@@ -101,13 +106,14 @@ public class Instance {
         this.tags = (tags == null) ? new TagInstance[0] : new TagInstance[tags.length];
         for (int i = 0; i < this.tags.length; i++) {
             this.tags[i] = new TagInstance(tags[i]);
-            this.tags[i].setType(types[tags[i].typeIdx()]);
+            this.tags[i].setType(types[tags[i].typeIdx()].subTypes()[0].compType().funcType());
         }
         this.exports = exports;
         this.listener = listener;
         this.fluentExports = new Exports(this);
 
         this.exnRefs = new HashMap<>();
+        this.arrayRefs = new HashMap<>();
 
         for (int i = 0; i < tables.length; i++) {
             var initValue = (int) computeConstantValue(this, tables[i].initialize())[0];
@@ -276,6 +282,13 @@ public class Instance {
         if (idx >= types.length) {
             throw new InvalidException("unknown type " + idx);
         }
+        return types[idx].subTypes()[0].compType().funcType();
+    }
+
+    public RecType recType(int idx) {
+        if (idx >= types.length) {
+            throw new InvalidException("unknown type " + idx);
+        }
         return types[idx];
     }
 
@@ -337,6 +350,17 @@ public class Instance {
 
     public WasmException exn(int idx) {
         return exnRefs.get(idx);
+    }
+
+    public int registerArray(long[] arr) {
+        // TODO: this is a simplistic approach
+        var id = arrayRefs.size();
+        arrayRefs.put(id, arr);
+        return id;
+    }
+
+    public long[] array(int idx) {
+        return arrayRefs.get(idx);
     }
 
     public Machine getMachine() {
@@ -416,7 +440,12 @@ public class Instance {
         }
 
         private void validateExternalFunctionSignature(FunctionImport imprt, ImportFunction f) {
-            var expectedType = module.typeSection().getType(imprt.typeIndex());
+            var expectedType =
+                    module.typeSection()
+                            .getType(imprt.typeIndex())
+                            .subTypes()[0]
+                            .compType()
+                            .funcType();
 
             if (!f.functionType().equals(expectedType)) {
                 throw new UnlinkableException(
@@ -466,7 +495,12 @@ public class Instance {
         }
 
         private void validateHostTagType(TagImport i, ImportTag t) {
-            var expectedType = module.typeSection().getType(i.tagType().typeIdx());
+            var expectedType =
+                    module.typeSection()
+                            .getType(i.tagType().typeIdx())
+                            .subTypes()[0]
+                            .compType()
+                            .funcType();
             var gotType = t.tag().type();
             if (expectedType.params().size() != gotType.params().size()
                     || expectedType.returns().size() != gotType.returns().size()) {
