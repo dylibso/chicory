@@ -6,8 +6,14 @@ import com.dylibso.chicory.wasm.Parser;
 import org.junit.jupiter.api.Test;
 
 public class ValTypeTest {
-    private FunctionType context(int idx) {
-        return FunctionType.returning(ValType.FuncRef);
+    private RecType context(int idx) {
+        return new RecType(
+                new SubType[] {
+                    new SubType(
+                            new int[0],
+                            new CompType(null, null, FunctionType.returning(ValType.FuncRef)),
+                            true)
+                });
     }
 
     @Test
@@ -51,7 +57,14 @@ public class ValTypeTest {
 
         assertEquals(3, module.typeSection().types().length);
 
-        var type0 = module.typeSection().types()[0].returns().get(0);
+        var type0 =
+                module.typeSection()
+                        .types()[0]
+                        .subTypes()[0]
+                        .compType()
+                        .funcType()
+                        .returns()
+                        .get(0);
         assertEquals(ValType.TypeIdxCode.EXTERN.code(), type0.typeIdx());
     }
 }

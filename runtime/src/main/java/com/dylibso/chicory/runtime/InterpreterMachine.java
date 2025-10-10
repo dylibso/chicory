@@ -14,6 +14,7 @@ import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -1000,6 +1001,88 @@ public class InterpreterMachine implements Machine {
                 case ATOMIC_FENCE:
                     ATOMIC_FENCE();
                     break;
+                // Wasm GC opcodes
+                case ARRAY_NEW_DEFAULT:
+                    {
+                        var typeIdx = (int) operands.get(0);
+                        var storageType =
+                                instance.recType(typeIdx)
+                                        // TODO: those runtime lookups are not good, need to move
+                                        // the logic at compile/build
+                                        .subTypes()[0] // can we have more than one subType?
+                                        .compType()
+                                        .arrayType()
+                                        .fieldType()
+                                        .storageType();
+
+                        long defaultValue;
+                        int slots;
+                        if (storageType.packedType() != null) {
+                            // TODO: optimize packed types?
+                            // no packed optimization for now
+                            defaultValue = 0;
+                            slots = 1;
+                        } else {
+                            if (storageType.valType().isReference()) {
+                                defaultValue = REF_NULL_VALUE;
+                                slots = 1;
+                            } else if (storageType.valType().id() == ValType.V128.id()) {
+                                defaultValue = 0;
+                                slots = 2;
+                            } else {
+                                // validation should have been already done
+                                defaultValue = 0;
+                                slots = 1;
+                            }
+                        }
+
+                        var size = stack.pop();
+                        var arr = new long[(int) size * slots];
+                        Arrays.fill(arr, defaultValue);
+
+                        var arrIdx = instance.registerArray(arr);
+                        stack.push(arrIdx);
+                        break;
+                    }
+                case ARRAY_GET:
+                {
+                    var idx = (int) stack.pop();
+                    var ref = (int) stack.pop();
+
+                    // TODO: let's leave vector operations and packed opt
+                    // for later on to keep code readability
+                    stack.push(instance.array(ref)[idx]);
+                    break;
+                }
+                case ARRAY_SET:
+                {
+                    var val = stack.pop();
+                    var idx = (int) stack.pop();
+                    var ref = (int) stack.pop();
+
+                    instance.array(ref)[idx] = val;
+                    break;
+                }
+                case ARRAY_LEN:
+                {
+                    var ref = (int) stack.pop();
+
+                    stack.push(instance.array(ref).length);
+                    break;
+                }
+                case ARRAY_NEW_FIXED:
+                {
+                    var n = (int) operands.get(1);
+                    var slots = 1; // TODO fixme handling of simd etc.
+                    var arr = new long[(int) n * slots];
+
+                    for (int i = 0; i < n; i++) {
+                        arr[n - i - 1] = stack.pop();
+                    }
+                    var ref = instance.registerArray(arr);
+                    stack.push(ref);
+                    break;
+                }
                 default:
                     {
                         evalDefault(stack, instance, callStack, instruction, operands);
