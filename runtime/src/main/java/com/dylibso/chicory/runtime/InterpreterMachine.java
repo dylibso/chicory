@@ -1018,7 +1018,7 @@ public class InterpreterMachine implements Machine {
                         long defaultValue;
                         int slots;
                         if (storageType.packedType() != null) {
-                            // TODO: optimize packed types!
+                            // TODO: optimize packed types?
                             // no packed optimization for now
                             defaultValue = 0;
                             slots = 1;
@@ -1044,6 +1044,45 @@ public class InterpreterMachine implements Machine {
                         stack.push(arrIdx);
                         break;
                     }
+                case ARRAY_GET:
+                {
+                    var idx = (int) stack.pop();
+                    var ref = (int) stack.pop();
+
+                    // TODO: let's leave vector operations and packed opt
+                    // for later on to keep code readability
+                    stack.push(instance.array(ref)[idx]);
+                    break;
+                }
+                case ARRAY_SET:
+                {
+                    var val = stack.pop();
+                    var idx = (int) stack.pop();
+                    var ref = (int) stack.pop();
+
+                    instance.array(ref)[idx] = val;
+                    break;
+                }
+                case ARRAY_LEN:
+                {
+                    var ref = (int) stack.pop();
+
+                    stack.push(instance.array(ref).length);
+                    break;
+                }
+                case ARRAY_NEW_FIXED:
+                {
+                    var n = (int) operands.get(1);
+                    var slots = 1; // TODO fixme handling of simd etc.
+                    var arr = new long[(int) n * slots];
+
+                    for (int i = 0; i < n; i++) {
+                        arr[n - i - 1] = stack.pop();
+                    }
+                    var ref = instance.registerArray(arr);
+                    stack.push(ref);
+                    break;
+                }
                 default:
                     {
                         evalDefault(stack, instance, callStack, instruction, operands);

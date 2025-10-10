@@ -148,12 +148,15 @@ public class WasmValue {
                 case ARRAY_REF:
                     return new NameExpr(
                             "assertNotNull(" + moduleName + ".array((int) results[0]))");
+                case EQ_REF:
+                    // TODO: this will expanded, we are verifying the reference exists
+                    return new NameExpr(
+                            "assertNotNull(" + moduleName + ".array((int) results[0]))");
                 case STRUCT_REF:
                 case ANY_REF:
                 case NULL_REF:
                 case NULL_FUNC_REF:
                 case NULL_EXTERN_REF:
-                case EQ_REF:
                 case I31_REF:
                     return new NameExpr("assertEquals(\"TODO\", \"implement me\")");
                 default:
