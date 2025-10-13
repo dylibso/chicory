@@ -17,12 +17,13 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -277,23 +278,45 @@ public class ThreadsProposalTest {
         assertEquals(2, workerAcquireLock.get());
     }
 
-    @Test
-    public void atomicFenceShouldWorkInInterpreter() throws Exception {
-        var instance =
-                Instance.builder(loadModule("compiled/atomic_fence_example.wat.wasm")).build();
-        var function = instance.exports().function("fence_example");
+    @ParameterizedTest
+    @MethodSource("memoryAndMachinesImplementations")
+    public void atomicFenceOrder(
+            Memory memory, Function<Instance.Builder, Instance.Builder> machineInject)
+            throws Exception {
+        var mainInstance = newInstance(memory, machineInject);
+        var workerInstance = newInstance(memory, machineInject);
 
-        assertDoesNotThrow(() -> function.apply());
-    }
+        var fencedReadAndVerify = mainInstance.exports().function("fenced_read_and_verify");
+        var fencedWrite = workerInstance.exports().function("fenced_write");
 
-    @Test
-    public void atomicFenceShouldWorkInCompiler() throws Exception {
-        var instance =
-                Instance.builder(loadModule("compiled/atomic_fence_example.wat.wasm"))
-                        .withMachineFactory(MachineFactoryCompiler::compile)
-                        .build();
-        var function = instance.exports().function("fence_example");
+        memory.writeI32(0, 0);
+        memory.writeI32(4, 0);
 
-        assertDoesNotThrow(() -> function.apply());
+        AtomicBoolean done = new AtomicBoolean(false);
+
+        Thread workerT =
+                new Thread(
+                        () -> {
+                            while (!done.get()) {
+                                fencedWrite.apply();
+                            }
+                        });
+
+        // set done after 200ms
+        CompletableFuture.delayedExecutor(200, TimeUnit.MILLISECONDS)
+                .execute(
+                        () -> {
+                            done.set(true);
+                        });
+        workerT.start();
+        assertDoesNotThrow(
+                () -> {
+                    while (!done.get()) {
+                        fencedReadAndVerify.apply();
+                    }
+                });
+        workerT.join();
+        // also verify we made some iterations
+        assertTrue(memory.readI32(0) > 10000);
     }
 }
