@@ -1,5 +1,6 @@
 package com.dylibso.chicory.compiler.internal;
 
+import com.dylibso.chicory.runtime.CompiledModule;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.WasmModule;
@@ -10,7 +11,7 @@ import java.util.function.Function;
  * All compilation is done in a single compile phase during instantiation
  * and is reused for all created machine instances.
  */
-public final class MachineFactory implements Function<Instance, Machine> {
+public final class MachineFactory implements Function<Instance, Machine>, CompiledModule {
 
     private final WasmModule module;
     private final Function<Instance, Machine> factory;
@@ -37,5 +38,15 @@ public final class MachineFactory implements Function<Instance, Machine> {
             throw new IllegalArgumentException("Instance module does not match factory module");
         }
         return factory.apply(instance);
+    }
+
+    @Override
+    public WasmModule wasmModule() {
+        return this.module;
+    }
+
+    @Override
+    public Function<Instance, Machine> machineFactory() {
+        return factory;
     }
 }
