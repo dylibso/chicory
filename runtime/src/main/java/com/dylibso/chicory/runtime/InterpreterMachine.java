@@ -1,11 +1,13 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.ValType.sizeOf;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
+import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -1045,44 +1047,114 @@ public class InterpreterMachine implements Machine {
                         break;
                     }
                 case ARRAY_GET:
-                {
-                    var idx = (int) stack.pop();
-                    var ref = (int) stack.pop();
+                    {
+                        var idx = (int) stack.pop();
+                        var ref = (int) stack.pop();
 
-                    // TODO: let's leave vector operations and packed opt
-                    // for later on to keep code readability
-                    stack.push(instance.array(ref)[idx]);
-                    break;
-                }
-                case ARRAY_SET:
-                {
-                    var val = stack.pop();
-                    var idx = (int) stack.pop();
-                    var ref = (int) stack.pop();
-
-                    instance.array(ref)[idx] = val;
-                    break;
-                }
-                case ARRAY_LEN:
-                {
-                    var ref = (int) stack.pop();
-
-                    stack.push(instance.array(ref).length);
-                    break;
-                }
-                case ARRAY_NEW_FIXED:
-                {
-                    var n = (int) operands.get(1);
-                    var slots = 1; // TODO fixme handling of simd etc.
-                    var arr = new long[(int) n * slots];
-
-                    for (int i = 0; i < n; i++) {
-                        arr[n - i - 1] = stack.pop();
+                        // TODO: let's leave vector operations and packed opt
+                        // for later on to keep code readability
+                        stack.push(instance.array(ref)[idx]);
+                        break;
                     }
-                    var ref = instance.registerArray(arr);
-                    stack.push(ref);
-                    break;
-                }
+                case ARRAY_SET:
+                    {
+                        var val = stack.pop();
+                        var idx = (int) stack.pop();
+                        var ref = (int) stack.pop();
+
+                        instance.array(ref)[idx] = val;
+                        break;
+                    }
+                case ARRAY_LEN:
+                    {
+                        var ref = (int) stack.pop();
+
+                        stack.push(instance.array(ref).length);
+                        break;
+                    }
+                case ARRAY_NEW_FIXED:
+                    {
+                        var n = (int) operands.get(1);
+                        var slots = 1; // TODO fixme handling of simd etc.
+                        var arr = new long[(int) n * slots];
+
+                        for (int i = 0; i < n; i++) {
+                            arr[n - i - 1] = stack.pop();
+                        }
+                        var ref = instance.registerArray(arr);
+                        stack.push(ref);
+                        break;
+                    }
+                case ARRAY_NEW_DATA:
+                    {
+                        var typeId = (int) operands.get(0);
+                        var dataId = (int) operands.get(1);
+                        var dataSegment =
+                                instance.module().dataSection().dataSegments()[dataId].data();
+
+                        var n = (int) stack.pop();
+                        var s = (int) stack.pop();
+
+                        // Get the array type to determine field type and storage type
+                        var storageType =
+                                instance.recType(typeId)
+                                        .subTypes()[0] // First subtype contains the array type
+                                        .compType()
+                                        .arrayType()
+                                        .fieldType()
+                                        .storageType();
+
+                        int slots = 1; // TODO: fixme
+                        var arr = new long[n * slots];
+
+                        // Copy data from data segment, handling packed types
+                        for (int i = 0; i < n; i++) {
+                            // TODO: packed types handling
+                            // For regular types, copy the value directly
+                            if (s + i < dataSegment.length) {
+                                arr[i] = dataSegment[s + i];
+                            }
+                        }
+
+                        var ref = instance.registerArray(arr);
+                        stack.push(ref);
+
+                        break;
+                    }
+                case ARRAY_GET_S:
+                case ARRAY_GET_U:
+                    {
+                        var idx = (int) stack.pop();
+                        var refIdx = (int) stack.pop();
+
+                        stack.push(instance.array(refIdx)[idx]);
+                        break;
+                    }
+                case ARRAY_NEW_ELEM:
+                    {
+                        var typeId = (int) operands.get(0);
+                        var elemId = (int) operands.get(1);
+
+                        var n = (int) stack.pop();
+                        var s = (int) stack.pop();
+
+                        int slots = 1; // TODO: handling of other types etc.
+                        var arr = new long[(n - s) * slots];
+
+                        // Get element segment initializers
+                        var elem = instance.element(elemId);
+
+                        for (int i = s; i < n; i++) {
+                            // BLOCKER: requires extended-const ?
+                            var val = (int) computeConstantValue(instance, elem.initializers().get(i))[0];
+                            arr[i] = val;
+                        }
+
+                        var ref = instance.registerArray(arr);
+                        stack.push(ref);
+
+                        break;
+                    }
                 default:
                     {
                         evalDefault(stack, instance, callStack, instruction, operands);

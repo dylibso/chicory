@@ -227,7 +227,8 @@ public final class ValType {
         if (t1.typeIdx() >= 0 && t2.typeIdx() == TypeIdxCode.FUNC.code()) {
             return true;
         } else if (t1.typeIdx() >= 0 && t2.typeIdx() >= 0) {
-            return (t1.resolvedRecType == null && t2.resolvedRecType == null) || // TODO: verify correctness
+            return (t1.resolvedRecType == null && t2.resolvedRecType == null)
+                    || // TODO: verify correctness
                     t1.resolvedRecType.equals(t2.resolvedRecType);
         } else if (t1.typeIdx() == TypeIdxCode.BOT.code()) {
             return true;
