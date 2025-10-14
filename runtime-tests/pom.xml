@@ -120,6 +120,9 @@
             <wast>proposals/exception-handling/throw.wast</wast>
             <wast>proposals/exception-handling/throw_ref.wast</wast>
             <wast>proposals/exception-handling/try_table.wast</wast>
+            <wast>proposals/extended-const/data.wast</wast>
+            <wast>proposals/extended-const/elem.wast</wast>
+            <wast>proposals/extended-const/global.wast</wast>
             <wast>proposals/function-references/binary.wast</wast>
             <wast>proposals/function-references/br_on_non_null.wast</wast>
             <wast>proposals/function-references/br_on_null.wast</wast>
@@ -375,6 +378,9 @@
                 <wast>proposals/exception-handling/throw.wast</wast>
                 <wast>proposals/exception-handling/throw_ref.wast</wast>
                 <wast>proposals/exception-handling/try_table.wast</wast>
+                <wast>proposals/extended-const/data.wast</wast>
+                <wast>proposals/extended-const/elem.wast</wast>
+                <wast>proposals/extended-const/global.wast</wast>
                 <wast>proposals/function-references/binary.wast</wast>
                 <wast>proposals/function-references/br_on_non_null.wast</wast>
                 <wast>proposals/function-references/br_on_null.wast</wast>

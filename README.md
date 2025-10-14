@@ -95,6 +95,7 @@ If you have an interest in working on any of these please reach out in Zulip!
 * [x] Compiler out of experimental
 * [x] Exception Handling
 * [x] Threads Support
+* [x] Extended Constant Expressions
 * [ ] GC Support
   * in progress
 
