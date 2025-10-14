@@ -1145,7 +1145,8 @@ public class InterpreterMachine implements Machine {
                         var elem = instance.element(elemId);
 
                         for (int i = s; i < n; i++) {
-                            // BLOCKER: requires extended-const ?
+                            // BLOCKER: missing extended constants:
+                            // https://github.com/WebAssembly/gc/blob/main/proposals/gc/MVP.md#constant-expressions
                             var val = (int) computeConstantValue(instance, elem.initializers().get(i))[0];
                             arr[i] = val;
                         }
