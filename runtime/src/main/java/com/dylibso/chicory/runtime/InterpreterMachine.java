@@ -7,7 +7,6 @@ import static java.util.Objects.requireNonNullElse;
 
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
-import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -1147,7 +1146,10 @@ public class InterpreterMachine implements Machine {
                         for (int i = s; i < n; i++) {
                             // BLOCKER: missing extended constants:
                             // https://github.com/WebAssembly/gc/blob/main/proposals/gc/MVP.md#constant-expressions
-                            var val = (int) computeConstantValue(instance, elem.initializers().get(i))[0];
+                            var val =
+                                    (int)
+                                            computeConstantValue(
+                                                    instance, elem.initializers().get(i))[0];
                             arr[i] = val;
                         }
 
@@ -1156,6 +1158,36 @@ public class InterpreterMachine implements Machine {
 
                         break;
                     }
+                case ARRAY_COPY:
+                {
+                    // TODO: need "array.new" in intializers
+
+                    var n = (int) stack.pop();
+                    var s = (int) stack.pop();
+                    var ref2 = (int) stack.pop();
+                    var d = (int) stack.pop();
+                    var ref1 = (int) stack.pop();
+
+                    int didx = 0;
+                    int sidx = 0;
+                    for (int i = 0; i < n; i++) {
+                        if (didx <= sidx) {
+                            didx = d + i;
+                            sidx = s + i;
+                        } else {
+                            didx = d + n - 1;
+                            sidx = s + n - 1;
+                        }
+
+                        instance.array(ref1)[didx] = instance.array(ref2)[sidx];
+                    }
+
+                    stack.push(ref1);
+                    stack.push(d);
+                    stack.push(ref2);
+                    stack.push(s);
+                    break;
+                }
                 default:
                     {
                         evalDefault(stack, instance, callStack, instruction, operands);
