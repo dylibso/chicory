@@ -68,9 +68,13 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
@@ -231,8 +235,18 @@ public final class Parser {
 
     public WasmModule parse(Supplier<InputStream> inputStreamSupplier) {
         WasmModule.Builder moduleBuilder = WasmModule.builder();
+        MessageDigest messageDigest = null;
         try (InputStream is = inputStreamSupplier.get()) {
-            parse(is, (s) -> onSection(moduleBuilder, s));
+            InputStream maybeDigestedInputStream = is;
+            // wrap the input stream so we can calculate the sha256 hash of the buffer
+            try {
+                messageDigest = MessageDigest.getInstance("SHA-256");
+                maybeDigestedInputStream = new DigestInputStream(is, messageDigest);
+            } catch (NoSuchAlgorithmException ignore) {
+                // if we can't get the algorithm, then we just don't set the MessageDigest
+            }
+            parse(maybeDigestedInputStream, (s) -> onSection(moduleBuilder, s));
+
         } catch (IOException e) {
             throw new ChicoryException(e);
         } catch (MalformedException e) {
@@ -240,6 +254,10 @@ public final class Parser {
                     "section size mismatch, unexpected end of section or function, "
                             + e.getMessage(),
                     e);
+        }
+        if (messageDigest != null) {
+            moduleBuilder.withMessageDigest(
+                    "sha256:" + Base64.getEncoder().encodeToString(messageDigest.digest()));
         }
         return moduleBuilder.build();
     }

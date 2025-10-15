@@ -110,15 +110,18 @@ public final class MachineFactoryCompiler {
         }
 
         public Function<Instance, Machine> compile() {
-            CompilerResult result = (cache != null) ? cache.get(module.hashCode()) : null;
+            CompilerResult result =
+                    (cache != null && module.messageDigest() != null)
+                            ? cache.get(module.messageDigest())
+                            : null;
             if (result == null) {
                 result =
                         compilerBuilder
                                 .withClassCollectorFactory(ClassLoadingCollector::new)
                                 .build()
                                 .compile();
-                if (cache != null) {
-                    cache.put(module.hashCode(), result);
+                if (cache != null && module.messageDigest() != null) {
+                    cache.put(module.messageDigest(), result);
                 }
             }
 

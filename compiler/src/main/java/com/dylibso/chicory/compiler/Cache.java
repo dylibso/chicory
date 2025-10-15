@@ -5,7 +5,7 @@ import com.dylibso.chicory.compiler.internal.CompilerResult;
 public interface Cache {
 
     // TODO: this way CompilerResult becomes public API
-    void put(int key, CompilerResult content);
+    void put(String key, CompilerResult content);
 
-    CompilerResult get(int key);
+    CompilerResult get(String key);
 }

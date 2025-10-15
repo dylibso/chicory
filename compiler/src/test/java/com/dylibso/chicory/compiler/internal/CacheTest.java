@@ -25,16 +25,16 @@ import org.junit.jupiter.api.io.TempDir;
 public class CacheTest {
 
     static class MockCacheImpl implements Cache {
-        private final Map<Integer, CompilerResult> cache = new HashMap<>();
+        private final Map<String, CompilerResult> cache = new HashMap<>();
         public boolean cacheHit;
 
         @Override
-        public void put(int key, CompilerResult content) {
+        public void put(String key, CompilerResult content) {
             cache.put(key, content);
         }
 
         @Override
-        public CompilerResult get(int key) {
+        public CompilerResult get(String key) {
             var result = cache.get(key);
             if (result != null) {
                 cacheHit = true;
@@ -82,7 +82,7 @@ public class CacheTest {
 
     static class MockEhCacheImpl implements Cache, AutoCloseable {
         private final CacheManager cacheManager;
-        private final org.ehcache.Cache<Integer, CompilerResult> cache;
+        private final org.ehcache.Cache<String, CompilerResult> cache;
         public boolean cacheHit;
 
         public MockEhCacheImpl() {
@@ -91,21 +91,21 @@ public class CacheTest {
                             .withCache(
                                     "myCache",
                                     CacheConfigurationBuilder.newCacheConfigurationBuilder(
-                                            Integer.class,
+                                            String.class,
                                             CompilerResult.class,
                                             ResourcePoolsBuilder.heap(10)))
                             .build(true);
 
-            cache = cacheManager.getCache("myCache", Integer.class, CompilerResult.class);
+            cache = cacheManager.getCache("myCache", String.class, CompilerResult.class);
         }
 
         @Override
-        public void put(int key, CompilerResult content) {
+        public void put(String key, CompilerResult content) {
             cache.put(key, content);
         }
 
         @Override
-        public CompilerResult get(int key) {
+        public CompilerResult get(String key) {
             var result = cache.get(key);
             if (result != null) {
                 cacheHit = true;
@@ -146,7 +146,7 @@ public class CacheTest {
 
     static class MockPersistentEhCacheImpl implements Cache, AutoCloseable {
         private final PersistentCacheManager cacheManager;
-        private final org.ehcache.Cache<Integer, CompilerResult> cache;
+        private final org.ehcache.Cache<String, CompilerResult> cache;
         public boolean cacheHit;
 
         public MockPersistentEhCacheImpl(Path tempDir) {
@@ -156,23 +156,23 @@ public class CacheTest {
                             .withCache(
                                     "myCache",
                                     CacheConfigurationBuilder.newCacheConfigurationBuilder(
-                                            Integer.class,
+                                            String.class,
                                             CompilerResult.class,
                                             ResourcePoolsBuilder.newResourcePoolsBuilder()
                                                     .heap(10, EntryUnit.ENTRIES)
                                                     .disk(10, MemoryUnit.MB, true)))
                             .build(true);
 
-            cache = cacheManager.getCache("myCache", Integer.class, CompilerResult.class);
+            cache = cacheManager.getCache("myCache", String.class, CompilerResult.class);
         }
 
         @Override
-        public void put(int key, CompilerResult content) {
+        public void put(String key, CompilerResult content) {
             cache.put(key, content);
         }
 
         @Override
-        public CompilerResult get(int key) {
+        public CompilerResult get(String key) {
             var result = cache.get(key);
             if (result != null) {
                 cacheHit = true;
