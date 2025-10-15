@@ -1,6 +1,7 @@
 package com.dylibso.chicory.compiler;
 
 import com.dylibso.chicory.compiler.internal.ClassLoadingCollector;
+import com.dylibso.chicory.compiler.internal.CompilerResult;
 import com.dylibso.chicory.compiler.internal.MachineFactory;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
@@ -76,6 +77,7 @@ public final class MachineFactoryCompiler {
     public static final class Builder {
         private final WasmModule module;
         private final com.dylibso.chicory.compiler.internal.Compiler.Builder compilerBuilder;
+        private Cache cache;
 
         private Builder(WasmModule module) {
             this.module = module;
@@ -102,12 +104,24 @@ public final class MachineFactoryCompiler {
             return this;
         }
 
+        public Builder withCache(Cache cache) {
+            this.cache = cache;
+            return this;
+        }
+
         public Function<Instance, Machine> compile() {
-            var result =
-                    compilerBuilder
-                            .withClassCollectorFactory(ClassLoadingCollector::new)
-                            .build()
-                            .compile();
+            CompilerResult result = (cache != null) ? cache.get(module.hashCode()) : null;
+            if (result == null) {
+                result =
+                        compilerBuilder
+                                .withClassCollectorFactory(ClassLoadingCollector::new)
+                                .build()
+                                .compile();
+                if (cache != null) {
+                    cache.put(module.hashCode(), result);
+                }
+            }
+
             var collector = (ClassLoadingCollector) result.collector();
             return new MachineFactory(module, collector.machineFactory());
         }
