@@ -1,11 +1,39 @@
 package com.dylibso.chicory.compiler;
 
-import com.dylibso.chicory.compiler.internal.CompilerResult;
+import java.io.Closeable;
+import java.io.IOException;
+import java.nio.file.Path;
 
 public interface Cache {
 
-    // TODO: this way CompilerResult becomes public API
-    void put(String key, CompilerResult content);
+    /**
+     * The temp dir is deleted once closed.
+     */
+    interface TempDir extends Closeable {
+        Path path();
+    }
 
-    CompilerResult get(String key);
+    /**
+     * Return the directory for the given key if it exists else null.
+     *
+     * @param key    "algo:digest"
+     */
+    Path get(String key) throws IOException;
+
+    /**
+     * Create a unique temporary directory suitable for writing the computation output.
+     * The directory will be on the same filesystem as the final target so that ATOMIC_MOVE works.
+     */
+    TempDir createTempDir() throws IOException;
+
+    /**
+     * Atomically publish a completed temp directory into the cache location for the key.
+     * If another thread/process already published for this key the
+     * existing path is returned.
+     *
+     * @param key    "algo:digest"
+     * @param tmpDir a directory containing fully written results (created via createTempDir())
+     * @return the final cache directory path
+     */
+    Path put(String key, TempDir tmpDir) throws IOException;
 }
