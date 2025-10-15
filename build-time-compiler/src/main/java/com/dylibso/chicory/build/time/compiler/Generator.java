@@ -20,7 +20,9 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.ClassExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.MethodReferenceExpr;
@@ -30,6 +32,7 @@ import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.CatchClause;
+import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.TryStmt;
@@ -102,7 +105,7 @@ public class Generator {
         type.addConstructor(Modifier.Keyword.PUBLIC).createBody();
 
         generateCreateMethod(cu, type, machineName);
-        generateWasmModuleHolderInnerClass(type, moduleName, wasmName);
+        generateWasmModuleField(type, moduleName, wasmName);
         generateLoadMethod(cu, type);
         generateMachineFactoryMethod(cu, type, moduleName);
         generateWasmModuleMethod(cu, type, moduleName);
@@ -200,12 +203,11 @@ public class Generator {
         method.addStatement(new ReturnStmt(constructorInvocation));
     }
 
-    private static void generateWasmModuleHolderInnerClass(
+    private static void generateWasmModuleField(
             ClassOrInterfaceDeclaration type, String moduleName, String wasmName) {
 
         // Generates:
         // <code>
-        //     private static class WasmModuleHolder {
         //
         //        static final WasmModule INSTANCE;
         //
@@ -214,23 +216,13 @@ public class Generator {
         // Wast2JsonModule.class.getResourceAsStream("Wast2JsonModule.meta")) {
         //                INSTANCE = Parser.parse(in);
         //            } catch (IOException e) {
-        //                throw new UncheckedIOException("Failed to load AOT WASM module", e);
+        //                throw new UncheckedIOException("...", e);
         //            }
         //        }
-        //    }
         // </code>
 
-        var holderClass =
-                new ClassOrInterfaceDeclaration(
-                        NodeList.nodeList(
-                                new Modifier(Modifier.Keyword.PRIVATE),
-                                new Modifier(Modifier.Keyword.STATIC)),
-                        false,
-                        "WasmModuleHolder");
-        type.addMember(holderClass);
-
         // Add the static final INSTANCE field
-        holderClass.addField(
+        type.addField(
                 WasmModule.class, "INSTANCE", Modifier.Keyword.STATIC, Modifier.Keyword.FINAL);
 
         // Build the try-with-resources block for the static initializer
@@ -238,41 +230,41 @@ public class Generator {
                 new MethodCallExpr(
                         new ClassExpr(parseType(moduleName)),
                         "getResourceAsStream",
-                        new NodeList<>(new StringLiteralExpr(wasmName)));
+                        NodeList.nodeList(new StringLiteralExpr(wasmName)));
         var resourceVar =
                 new VariableDeclarationExpr(
                         new VariableDeclarator(parseType("InputStream"), "in", getResource));
 
         var assignmentStmt =
-                new com.github.javaparser.ast.stmt.ExpressionStmt(
-                        new com.github.javaparser.ast.expr.AssignExpr(
+                new ExpressionStmt(
+                        new AssignExpr(
                                 new NameExpr("INSTANCE"),
                                 new MethodCallExpr()
                                         .setScope(new NameExpr("Parser"))
                                         .setName("parse")
                                         .addArgument(new NameExpr("in")),
-                                com.github.javaparser.ast.expr.AssignExpr.Operator.ASSIGN));
+                                AssignExpr.Operator.ASSIGN));
 
         var newException =
                 new ObjectCreationExpr()
                         .setType(parseClassOrInterfaceType("UncheckedIOException"))
-                        .addArgument(new StringLiteralExpr("Failed to load AOT WASM module"))
+                        .addArgument(
+                                new StringLiteralExpr(
+                                        "Failed to load build time compiled WASM meta module"))
                         .addArgument(new NameExpr("e"));
         var catchIoException =
                 new CatchClause()
-                        .setParameter(
-                                new com.github.javaparser.ast.body.Parameter(
-                                        parseClassOrInterfaceType("IOException"), "e"))
-                        .setBody(new BlockStmt(new NodeList<>(new ThrowStmt(newException))));
+                        .setParameter(new Parameter(parseClassOrInterfaceType("IOException"), "e"))
+                        .setBody(new BlockStmt(NodeList.nodeList(new ThrowStmt(newException))));
 
         var staticInitializerBlock =
                 new TryStmt()
-                        .setResources(new NodeList<>(resourceVar))
-                        .setTryBlock(new BlockStmt(new NodeList<>(assignmentStmt)))
-                        .setCatchClauses(new NodeList<>(catchIoException));
+                        .setResources(NodeList.nodeList(resourceVar))
+                        .setTryBlock(new BlockStmt(NodeList.nodeList(assignmentStmt)))
+                        .setCatchClauses(NodeList.nodeList(catchIoException));
 
         // Add the static initializer block to the holder class
-        var staticInitializer = holderClass.addStaticInitializer();
+        var staticInitializer = type.addStaticInitializer();
         // The static initializer is already a BlockStmt, so we add the try statement to it
         staticInitializer.addStatement(staticInitializerBlock);
     }
@@ -281,7 +273,7 @@ public class Generator {
         // Generates:
         // <code>
         //     public static WasmModule load() {
-        //         return WasmModuleHolder.INSTANCE;
+        //         return INSTANCE;
         //     }
         // </code>
         cu.addImport(IOException.class);
@@ -297,10 +289,7 @@ public class Generator {
                         .setType(WasmModule.class)
                         .createBody();
 
-        method.addStatement(
-                new ReturnStmt(
-                        new com.github.javaparser.ast.expr.FieldAccessExpr(
-                                new NameExpr("WasmModuleHolder"), "INSTANCE")));
+        method.addStatement(new ReturnStmt("INSTANCE"));
     }
 
     private static void generateMachineFactoryMethod(
