@@ -10,8 +10,8 @@ import com.dylibso.chicory.compiler.DirectoryCache;
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
-import com.google.common.jimfs.Configuration;
-import com.google.common.jimfs.Jimfs;
+import io.roastedroot.zerofs.Configuration;
+import io.roastedroot.zerofs.ZeroFs;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
@@ -22,7 +22,7 @@ public class CacheTest {
     static class MockCacheImpl implements Cache {
         public boolean cacheHit;
 
-        FileSystem fs = Jimfs.newFileSystem(Configuration.unix());
+        FileSystem fs = ZeroFs.newFileSystem(Configuration.unix());
         DirectoryCache cache = new DirectoryCache(fs.getPath("/cache"));
 
         @Override
