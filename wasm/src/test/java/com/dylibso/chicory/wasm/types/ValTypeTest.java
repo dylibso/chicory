@@ -3,17 +3,31 @@ package com.dylibso.chicory.wasm.types;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.wasm.Parser;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 public class ValTypeTest {
     private RecType context(int idx) {
-        return new RecType(
-                new SubType[] {
-                    new SubType(
-                            new int[0],
-                            new CompType(null, null, FunctionType.returning(ValType.FuncRef)),
-                            true)
-                });
+        return RecType.builder()
+                .withSubTypeBuilders(
+                        new SubType.Builder[] {
+                            SubType.builder()
+                                    .withFinal(true)
+                                    .withTypeIdx(new int[0])
+                                    .withCompTypeBuilder(
+                                            CompType.builder()
+                                                    .withFuncType(
+                                                            FunctionType.builder()
+                                                                    .withReturns(
+                                                                            List.of(
+                                                                                    ValType
+                                                                                            .builder()
+                                                                                            .withOpcode(
+                                                                                                    ValType
+                                                                                                            .ID
+                                                                                                            .FuncRef)))))
+                        })
+                .build(i -> null);
     }
 
     @Test

@@ -2,12 +2,12 @@ package com.dylibso.chicory.wasm.types;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Function;
 
 public class RecType {
     private final SubType[] subTypes;
 
-    // TODO: builders
-    public RecType(SubType[] subTypes) {
+    private RecType(SubType[] subTypes) {
         this.subTypes = subTypes.clone();
     }
 
@@ -27,5 +27,28 @@ public class RecType {
     @Override
     public int hashCode() {
         return Arrays.hashCode(subTypes);
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private SubType.Builder[] subTypeBuilders;
+
+        private Builder() {}
+
+        public Builder withSubTypeBuilders(SubType.Builder[] subTypeBuilders) {
+            this.subTypeBuilders = subTypeBuilders;
+            return this;
+        }
+
+        public RecType build(Function<Integer, RecType> context) {
+            SubType[] subTypes = new SubType[subTypeBuilders.length];
+            for (int i = 0; i < subTypeBuilders.length; i++) {
+                subTypes[i] = subTypeBuilders[i].build(context);
+            }
+            return new RecType(subTypes);
+        }
     }
 }

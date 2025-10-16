@@ -1159,35 +1159,35 @@ public class InterpreterMachine implements Machine {
                         break;
                     }
                 case ARRAY_COPY:
-                {
-                    // TODO: need "array.new" in intializers
+                    {
+                        // TODO: need "array.new" in intializers
 
-                    var n = (int) stack.pop();
-                    var s = (int) stack.pop();
-                    var ref2 = (int) stack.pop();
-                    var d = (int) stack.pop();
-                    var ref1 = (int) stack.pop();
+                        var n = (int) stack.pop();
+                        var s = (int) stack.pop();
+                        var ref2 = (int) stack.pop();
+                        var d = (int) stack.pop();
+                        var ref1 = (int) stack.pop();
 
-                    int didx = 0;
-                    int sidx = 0;
-                    for (int i = 0; i < n; i++) {
-                        if (didx <= sidx) {
-                            didx = d + i;
-                            sidx = s + i;
-                        } else {
-                            didx = d + n - 1;
-                            sidx = s + n - 1;
+                        int didx = 0;
+                        int sidx = 0;
+                        for (int i = 0; i < n; i++) {
+                            if (didx <= sidx) {
+                                didx = d + i;
+                                sidx = s + i;
+                            } else {
+                                didx = d + n - 1;
+                                sidx = s + n - 1;
+                            }
+
+                            instance.array(ref1)[didx] = instance.array(ref2)[sidx];
                         }
 
-                        instance.array(ref1)[didx] = instance.array(ref2)[sidx];
+                        stack.push(ref1);
+                        stack.push(d);
+                        stack.push(ref2);
+                        stack.push(s);
+                        break;
                     }
-
-                    stack.push(ref1);
-                    stack.push(d);
-                    stack.push(ref2);
-                    stack.push(s);
-                    break;
-                }
                 default:
                     {
                         evalDefault(stack, instance, callStack, instruction, operands);

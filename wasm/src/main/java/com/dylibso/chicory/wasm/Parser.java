@@ -483,52 +483,54 @@ public final class Parser {
         return new RawSection(sectionId, bytes);
     }
 
-    private static FieldType parseFieldType(ByteBuffer buffer, TypeSection.Builder typeSection) {
+    private static FieldType.Builder parseFieldType(ByteBuffer buffer) {
         var id = (int) readVarUInt32(buffer);
 
         if (id == PackedType.I8.ID() || id == PackedType.I16.ID()) {
             var packedType = PackedType.fromId(id);
             var mut = MutabilityType.forId(readByte(buffer));
-            return new FieldType(new StorageType(null, packedType), mut);
+            return FieldType.builder()
+                    .withStorageTypeBuilder(StorageType.builder().withPackedType(packedType))
+                    .withMutability(mut);
         } else {
             var valTypeBuilder = readValueTypeBuilderFromOpCode(buffer, id);
-            // This fails when there is a forward reference, need a better data structure I guess
-            var valType = valTypeBuilder.build(typeSection.getTypes()::get);
             var mut = MutabilityType.forId(readByte(buffer));
 
-            return new FieldType(new StorageType(valType, null), mut);
+            return FieldType.builder()
+                    .withStorageTypeBuilder(
+                            StorageType.builder().withValTypeBuilder(valTypeBuilder))
+                    .withMutability(mut);
         }
     }
 
-    private static ArrayType parseArrayType(ByteBuffer buffer, TypeSection.Builder typeSection) {
-        return new ArrayType(parseFieldType(buffer, typeSection));
+    private static ArrayType.Builder parseArrayType(ByteBuffer buffer) {
+        return ArrayType.builder().withFieldTypeBuilder(parseFieldType(buffer));
     }
 
-    private static StructType parseStructType(ByteBuffer buffer, TypeSection.Builder typeSection) {
+    private static StructType.Builder parseStructType(ByteBuffer buffer) {
         var count = (int) readVarUInt32(buffer);
-        var fieldTypes = new FieldType[count];
+        var builder = StructType.builder();
         for (int i = 0; i < count; i++) {
-            fieldTypes[i] = parseFieldType(buffer, typeSection);
+            builder.addFieldTypeBuilder(parseFieldType(buffer));
         }
-        return new StructType(fieldTypes);
+        return builder;
     }
 
-    private static FunctionType parseFunctionType(
-            ByteBuffer buffer, TypeSection.Builder typeSection) {
+    private static FunctionType.Builder parseFunctionType(ByteBuffer buffer) {
         var paramCount = (int) readVarUInt32(buffer);
-        var paramsBuilder = new ValType.Builder[paramCount];
+        List<ValType.Builder> paramsBuilder = new ArrayList<>(paramCount);
 
         // Parse parameter types
         for (int j = 0; j < paramCount; j++) {
-            paramsBuilder[j] = readValueTypeBuilder(buffer);
+            paramsBuilder.add(readValueTypeBuilder(buffer));
         }
 
         var returnCount = (int) readVarUInt32(buffer);
-        var returnsBuilder = new ValType.Builder[returnCount];
+        List<ValType.Builder> returnsBuilder = new ArrayList<>(returnCount);
 
         // Parse return types
         for (int j = 0; j < returnCount; j++) {
-            returnsBuilder[j] = readValueTypeBuilder(buffer);
+            returnsBuilder.add(readValueTypeBuilder(buffer));
         }
 
         // TODO: restore this check?
@@ -547,28 +549,21 @@ public final class Parser {
         //                            }
         //                        });
 
-        Function<ValType.Builder, ValType> build =
-                (ValType.Builder builder) -> builder.build(typeSection.getTypes()::get);
-
-        var params = Arrays.stream(paramsBuilder).map(build).toArray(ValType[]::new);
-        var returns = Arrays.stream(returnsBuilder).map(build).toArray(ValType[]::new);
-
-        return FunctionType.of(params, returns);
+        return FunctionType.builder().withParams(paramsBuilder).withReturns(returnsBuilder);
     }
 
-    private static CompType parseCompType(
-            int id, ByteBuffer buffer, TypeSection.Builder typeSection) {
+    private static CompType.Builder parseCompType(int id, ByteBuffer buffer) {
         if (id > Byte.MAX_VALUE) {
             throw new MalformedException("integer representation too long");
         }
 
         switch (id) {
             case 0x5E:
-                return new CompType(parseArrayType(buffer, typeSection), null, null);
+                return CompType.builder().withArrayType(parseArrayType(buffer));
             case 0x5F:
-                return new CompType(null, parseStructType(buffer, typeSection), null);
+                return CompType.builder().withStructType(parseStructType(buffer));
             case 0x60:
-                return new CompType(null, null, parseFunctionType(buffer, typeSection));
+                return CompType.builder().withFuncType(parseFunctionType(buffer));
             default:
                 throw new MalformedException(
                         "Invalid composite type. Form "
@@ -577,8 +572,7 @@ public final class Parser {
         }
     }
 
-    private static SubType parseSubType(
-            int id, ByteBuffer buffer, TypeSection.Builder typeSection) {
+    private static SubType.Builder parseSubType(int id, ByteBuffer buffer) {
         if (id == 0x50
                 || // non final typeIdx
                 id == 0x4F) { // final typeIdx
@@ -588,41 +582,66 @@ public final class Parser {
             for (int i = 0; i < count; i++) {
                 typeIdxs[i] = (int) readVarUInt32(buffer);
             }
-            return new SubType(
-                    typeIdxs,
-                    parseCompType((int) readVarUInt32(buffer), buffer, typeSection),
-                    id == 0x4F);
+            return SubType.builder()
+                    .withTypeIdx(typeIdxs)
+                    .withFinal(id == 0x4F)
+                    .withCompTypeBuilder(parseCompType((int) readVarUInt32(buffer), buffer));
         } else {
             // fallback to the compressed form
-            return new SubType(new int[0], parseCompType(id, buffer, typeSection), true);
+            return SubType.builder()
+                    .withTypeIdx(new int[0])
+                    .withFinal(true)
+                    .withCompTypeBuilder(parseCompType(id, buffer));
         }
     }
 
-    private static RecType parseRecType(ByteBuffer buffer, TypeSection.Builder typeSection) {
+    private static RecType.Builder parseRecType(ByteBuffer buffer) {
         var discriminator = (int) readVarUInt32(buffer);
         if (discriminator == 0x4E) {
             var count = (int) readVarUInt32(buffer);
-            var subTypes = new SubType[count];
+            var subTypes = new SubType.Builder[count];
 
             for (int i = 0; i < count; i++) {
-                subTypes[i] = parseSubType((int) readVarUInt32(buffer), buffer, typeSection);
+                subTypes[i] = parseSubType((int) readVarUInt32(buffer), buffer);
             }
-            return new RecType(subTypes);
+            return RecType.builder().withSubTypeBuilders(subTypes);
         } else {
             // fallback to the compressed form
-            return new RecType(new SubType[] {parseSubType(discriminator, buffer, typeSection)});
+            return RecType.builder()
+                    .withSubTypeBuilders(
+                            new SubType.Builder[] {parseSubType(discriminator, buffer)});
         }
     }
 
     private static TypeSection parseTypeSection(ByteBuffer buffer) {
 
-        var typeCount = readVarUInt32(buffer);
+        var typeCount = (int) readVarUInt32(buffer);
         TypeSection.Builder typeSection = TypeSection.builder();
 
         // Parse individual types in the type section
+
+        // first step we collect all the builders
+        var recTypeBuilders = new RecType.Builder[typeCount];
         for (int i = 0; i < typeCount; i++) {
-            var recType = parseRecType(buffer, typeSection);
-            typeSection.addRecType(recType);
+            recTypeBuilders[i] = parseRecType(buffer);
+        }
+
+        // keeping here to play with it for a little
+        //        Function<Integer, RecType> build =
+        //                id -> {
+        //                    if (id >= typeSection.getTypes().size()) {
+        //                        throw new MalformedException("forward reference? how to fix it?");
+        //                    } else {
+        //                        return recTypeBuilders[id].build(typeSection.getTypes()::get);
+        //                    }
+        //                };
+
+        // and we finalize resolving the types
+        for (int i = 0; i < typeCount; i++) {
+            recTypeBuilders[i] = parseRecType(buffer);
+            // instead of addRecType we should probably use an array so that we can go back and
+            // forth over it - next iteration
+            typeSection.addRecType(recTypeBuilders[i].build(typeSection.getTypes()::get));
         }
 
         return typeSection.build();

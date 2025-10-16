@@ -2,6 +2,8 @@ package com.dylibso.chicory.wasm.types;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public final class FunctionType {
     private final List<ValType> params;
@@ -108,5 +110,30 @@ public final class FunctionType {
             builder.append(')');
         }
         return builder.toString();
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static final class Builder {
+        private List<ValType.Builder> params;
+        private List<ValType.Builder> returns;
+
+        public Builder withParams(List<ValType.Builder> params) {
+            this.params = params;
+            return this;
+        }
+
+        public Builder withReturns(List<ValType.Builder> returns) {
+            this.returns = returns;
+            return this;
+        }
+
+        public FunctionType build(Function<Integer, RecType> context) {
+            return new FunctionType(
+                    params.stream().map(p -> p.build(context)).collect(Collectors.toList()),
+                    returns.stream().map(p -> p.build(context)).collect(Collectors.toList()));
+        }
     }
 }
