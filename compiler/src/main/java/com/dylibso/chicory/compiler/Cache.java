@@ -28,12 +28,10 @@ public interface Cache {
 
     /**
      * Atomically publish a completed temp directory into the cache location for the key.
-     * If another thread/process already published for this key the
-     * existing path is returned.
+     * If another thread/process already published for this key then this is a no-op.
      *
      * @param key    "algo:digest"
      * @param tmpDir a directory containing fully written results (created via createTempDir())
-     * @return the final cache directory path
      */
-    Path put(String key, TempDir tmpDir) throws IOException;
+    void put(String key, TempDir tmpDir) throws IOException;
 }

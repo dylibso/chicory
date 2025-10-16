@@ -40,8 +40,8 @@ public class CacheTest {
         }
 
         @Override
-        public Path put(String key, TempDir tmpDir) throws IOException {
-            return cache.put(key, tmpDir);
+        public void put(String key, TempDir tmpDir) throws IOException {
+            cache.put(key, tmpDir);
         }
     }
 

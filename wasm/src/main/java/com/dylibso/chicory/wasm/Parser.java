@@ -256,7 +256,7 @@ public final class Parser {
                     e);
         }
         if (messageDigest != null) {
-            moduleBuilder.withMessageDigest(
+            moduleBuilder.withDigest(
                     "sha256:" + Base64.getEncoder().encodeToString(messageDigest.digest()));
         }
         return moduleBuilder.build();

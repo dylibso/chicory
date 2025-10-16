@@ -41,7 +41,7 @@ public final class WasmModule {
     private final Optional<DataCountSection> dataCountSection;
     private final Optional<TagSection> tagSection;
     private final List<Integer> ignoredSections;
-    private final String messageDigest;
+    private final String digest;
 
     private WasmModule(
             TypeSection typeSection,
@@ -59,7 +59,7 @@ public final class WasmModule {
             Optional<TagSection> tagSection,
             Map<String, CustomSection> customSections,
             List<Integer> ignoredSections,
-            String messageDigest) {
+            String digest) {
         this.typeSection = requireNonNull(typeSection);
         this.importSection = requireNonNull(importSection);
         this.functionSection = requireNonNull(functionSection);
@@ -75,7 +75,7 @@ public final class WasmModule {
         this.tagSection = tagSection;
         this.customSections = Map.copyOf(customSections);
         this.ignoredSections = List.copyOf(ignoredSections);
-        this.messageDigest = messageDigest;
+        this.digest = digest;
     }
 
     public TypeSection typeSection() {
@@ -122,8 +122,8 @@ public final class WasmModule {
         return tableSection;
     }
 
-    public String messageDigest() {
-        return messageDigest;
+    public String digest() {
+        return digest;
     }
 
     public List<CustomSection> customSections() {
@@ -171,7 +171,7 @@ public final class WasmModule {
         private final Map<String, CustomSection> customSections = new HashMap<>();
         private final List<Integer> ignoredSections = new ArrayList<>();
         private boolean validate = true;
-        private String messageDigest;
+        private String digest;
 
         private Builder() {}
 
@@ -257,8 +257,8 @@ public final class WasmModule {
             return this;
         }
 
-        public Builder withMessageDigest(String messageDigest) {
-            this.messageDigest = messageDigest;
+        public Builder withDigest(String digest) {
+            this.digest = digest;
             return this;
         }
 
@@ -280,7 +280,7 @@ public final class WasmModule {
                             tagSection,
                             customSections,
                             ignoredSections,
-                            messageDigest);
+                            digest);
 
             var validator = new Validator(module);
             validator.validateModule();

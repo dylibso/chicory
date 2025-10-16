@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 /**
  * Disk-backed sharded directory cache.
  */
-public class DirectoryCache {
+public class DirectoryCache implements Cache {
 
     private static final String ALLOWED_DIGEST_CHARS = "^[A-Za-z0-9+_\\-/]+=$";
     private static final Pattern ALLOWED_DIGEST_CHARS_REGEX = Pattern.compile(ALLOWED_DIGEST_CHARS);
@@ -53,6 +53,7 @@ public class DirectoryCache {
      * Return the directory for the given key if it exists (and is a directory), else null.
      * Does not create anything.
      */
+    @Override
     public Path get(String key) {
         Path target = toDirectoryPath(key);
         return Files.isDirectory(target) ? target : null;
@@ -100,6 +101,7 @@ public class DirectoryCache {
      * Create a unique temporary directory under baseDir/.tmp, suitable for writing the computation output.
      * The directory will be on the same filesystem as the final target so that ATOMIC_MOVE works.
      */
+    @Override
     public Cache.TempDir createTempDir() throws IOException {
         Files.createDirectories(tmpRoot);
         return new TempDirImpl(Files.createTempDirectory(tmpRoot, "d-"));
@@ -112,9 +114,9 @@ public class DirectoryCache {
      *
      * @param key    "algo:digest"
      * @param tmpDir a directory containing fully written results (created via createTempDir())
-     * @return the final cache directory path
      */
-    public Path put(String key, Cache.TempDir tmpDir) throws IOException {
+    @Override
+    public void put(String key, Cache.TempDir tmpDir) throws IOException {
         Objects.requireNonNull(tmpDir, "tmpDir");
         if (!Files.isDirectory(tmpDir.path())) {
             throw new IllegalArgumentException("tmpDir must be an existing directory: " + tmpDir);
@@ -131,19 +133,12 @@ public class DirectoryCache {
         try {
             // Ensure parent exists before atomic move.
             Files.createDirectories(parent);
-
-            // If already present, return existing.
-            if (Files.isDirectory(finalPath)) {
-                return finalPath;
-            }
-
-            // Try atomic move; if target appeared between our checks, handle gracefully.
-            try {
-                Files.move(tmpDir.path(), finalPath, ATOMIC_MOVE);
-            } catch (FileAlreadyExistsException ignore) {
-                // SUPPRESS CHECKSTYLE EmptyCatchBlock
-            }
-            return finalPath;
+            // Move it
+            Files.move(tmpDir.path(), finalPath, ATOMIC_MOVE);
+        } catch (FileAlreadyExistsException ignore) {
+            // SUPPRESS CHECKSTYLE EmptyCatchBlock
+            // This just means another process won the race, but it should
+            // have the same contents.
         } finally {
             lock.unlock();
         }

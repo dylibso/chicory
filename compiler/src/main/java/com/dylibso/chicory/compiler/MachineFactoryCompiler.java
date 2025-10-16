@@ -114,115 +114,105 @@ public final class MachineFactoryCompiler {
         }
 
         public Function<Instance, Machine> compile() {
+            try {
 
-            var useCache = cache != null && module.messageDigest() != null;
-            if (!useCache) {
-                // we can't cache so compile the classes...
+                // Can we load the byte codes from the cache?
+                var useCache = cache != null && module.digest() != null;
+                if (useCache) {
+                    Path cachePath = cache.get(module.digest());
+                    if (cachePath != null) {
+                        var collector = loadCollector(cachePath);
+                        return new MachineFactory(module, collector.machineFactory());
+                    }
+                }
+
+                // Compile the byte codes...
                 var result =
                         compilerBuilder
                                 .withClassCollectorFactory(ClassLoadingCollector::new)
                                 .build()
                                 .compile();
                 var collector = (ClassLoadingCollector) result.collector();
-                return new MachineFactory(module, collector.machineFactory());
-            }
 
-            // We can cache, so see if it's previously compiled.
-            try {
-                Path cachePath = cache.get(module.messageDigest());
-                if (cachePath == null) {
-
-                    // Not previously compiled, so compile it now...
-                    var result =
-                            compilerBuilder
-                                    .withClassCollectorFactory(ClassLoadingCollector::new)
-                                    .build()
-                                    .compile();
-
-                    var collector = (ClassLoadingCollector) result.collector();
-
-                    // Store the compiled results in the cache
+                if (useCache) {
+                    // store results in the cache to speed the next time.
                     try (var tempPath = cache.createTempDir()) {
-                        var properties = new Properties();
-                        properties.put("mainClass", collector.mainClassName());
-                        var wasmModuleProperties =
-                                tempPath.path().resolve("wasm-module.properties");
-                        try (var f = Files.newOutputStream(wasmModuleProperties)) {
-                            properties.store(f, "");
-                        }
-                        writeClassesToCache(tempPath.path(), collector.classBytes());
-                        cache.put(module.messageDigest(), tempPath);
-                    } catch (IOException e) {
-                        throw new ChicoryException(e);
+                        storeClassLoadingCollector(collector, tempPath.path());
+                        cache.put(module.digest(), tempPath);
                     }
-
-                    return new MachineFactory(module, collector.machineFactory());
                 }
 
-                // It was previously compiled, just load it.
-                var wasmModuleProperties = cachePath.resolve("wasm-module.properties");
-                try (var is = Files.newInputStream(wasmModuleProperties)) {
-
-                    var properties = new Properties();
-                    properties.load(is);
-                    String mainClass = properties.getProperty("mainClass");
-
-                    var collector = new ClassLoadingCollector();
-                    var classes = loadClassesFromCache(cachePath);
-                    for (var entry : classes.entrySet()) {
-                        if (entry.getKey().equals(mainClass)) {
-                            collector.putMainClass(mainClass, classes.get(mainClass));
-                        } else {
-                            collector.put(entry.getKey(), entry.getValue());
-                        }
-                    }
-
-                    return new MachineFactory(module, collector.machineFactory());
-                }
-
+                return new MachineFactory(module, collector.machineFactory());
             } catch (IOException e) {
                 throw new ChicoryException(e);
             }
         }
     }
 
-    private static void writeClassesToCache(Path cachePath, Map<String, byte[]> classBytes)
-            throws IOException {
-        for (var entry : classBytes.entrySet()) {
+    private static void storeClassLoadingCollector(
+            ClassLoadingCollector collector, Path destination) throws IOException {
+        // Store the compiled results in the cache
+        var properties = new Properties();
+        properties.put("mainClass", collector.mainClassName());
+        var wasmModuleProperties = destination.resolve("wasm-module.properties");
+        try (var f = Files.newOutputStream(wasmModuleProperties)) {
+            properties.store(f, "");
+        }
+        for (var entry : collector.classBytes().entrySet()) {
             var className = entry.getKey().replace('.', '/') + ".class";
-            var classFile = cachePath.resolve(className);
+            var classFile = destination.resolve(className);
             Files.createDirectories(classFile.getParent());
             Files.write(classFile, entry.getValue());
         }
     }
 
-    private static Map<String, byte[]> loadClassesFromCache(Path cachePath) throws IOException {
-        Map<String, byte[]> classBytes = new HashMap<>();
+    private static ClassLoadingCollector loadCollector(Path source) throws IOException {
+        var collector = new ClassLoadingCollector();
 
-        // Walk through all files in the cache directory
-        try (var stream = Files.walk(cachePath)) {
-            stream.filter(Files::isRegularFile)
-                    .filter(path -> path.toString().endsWith(".class"))
-                    .forEach(
-                            classFile -> {
-                                try {
-                                    // Convert file path back to class name
-                                    // e.g., cachePath/foo/bar/Example.class -> foo.bar.Example
-                                    String relativePath =
-                                            cachePath.relativize(classFile).toString();
-                                    String className =
-                                            relativePath.replace('/', '.').replace(".class", "");
+        // It was previously compiled, just load it.
+        var wasmModuleProperties = source.resolve("wasm-module.properties");
+        try (var is = Files.newInputStream(wasmModuleProperties)) {
 
-                                    // Read the class file bytes
-                                    byte[] bytes = Files.readAllBytes(classFile);
-                                    classBytes.put(className, bytes);
-                                } catch (IOException e) {
-                                    throw new RuntimeException(
-                                            "Failed to read class file: " + classFile, e);
-                                }
-                            });
+            var properties = new Properties();
+            properties.load(is);
+            String mainClass = properties.getProperty("mainClass");
+
+            Map<String, byte[]> classes = new HashMap<>();
+
+            // Walk through all files in the cache directory
+            try (var stream = Files.walk(source)) {
+                stream.filter(Files::isRegularFile)
+                        .filter(path -> path.toString().endsWith(".class"))
+                        .forEach(
+                                classFile -> {
+                                    try {
+                                        // Convert file path back to class name
+                                        // e.g., cachePath/foo/bar/Example.class -> foo.bar.Example
+                                        String relativePath =
+                                                source.relativize(classFile).toString();
+                                        String className =
+                                                relativePath
+                                                        .replace('/', '.')
+                                                        .replace(".class", "");
+
+                                        // Read the class file bytes
+                                        byte[] bytes = Files.readAllBytes(classFile);
+                                        classes.put(className, bytes);
+                                    } catch (IOException e) {
+                                        throw new RuntimeException(
+                                                "Failed to read class file: " + classFile, e);
+                                    }
+                                });
+            }
+
+            for (var entry : classes.entrySet()) {
+                if (entry.getKey().equals(mainClass)) {
+                    collector.putMainClass(mainClass, classes.get(mainClass));
+                } else {
+                    collector.put(entry.getKey(), entry.getValue());
+                }
+            }
         }
-
-        return classBytes;
+        return collector;
     }
 }
