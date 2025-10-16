@@ -3,7 +3,7 @@ package com.dylibso.chicory.compiler;
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
 import java.io.IOException;
-import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.FileSystemException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -135,10 +135,12 @@ public class DirectoryCache implements Cache {
             Files.createDirectories(parent);
             // Move it
             Files.move(tmpDir.path(), finalPath, ATOMIC_MOVE);
-        } catch (FileAlreadyExistsException ignore) {
-            // SUPPRESS CHECKSTYLE EmptyCatchBlock
-            // This just means another process won the race, but it should
-            // have the same contents.
+        } catch (FileSystemException e) {
+            // did another process beat us to creating the cache entry?
+            if (Files.isDirectory(finalPath)) {
+                return;
+            }
+            throw e;
         } finally {
             lock.unlock();
         }
