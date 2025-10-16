@@ -2,13 +2,11 @@ package com.dylibso.chicory.compiler;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
+import com.dylibso.chicory.compiler.internal.PathUtils;
 import java.io.IOException;
 import java.nio.file.FileSystemException;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantLock;
@@ -74,26 +72,7 @@ public class DirectoryCache implements Cache {
 
         @Override
         public void close() throws IOException {
-            if (!Files.exists(path)) {
-                return;
-            }
-            Files.walkFileTree(
-                    path,
-                    new SimpleFileVisitor<>() {
-                        @Override
-                        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-                                throws IOException {
-                            Files.delete(file);
-                            return FileVisitResult.CONTINUE;
-                        }
-
-                        @Override
-                        public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-                                throws IOException {
-                            Files.delete(dir);
-                            return FileVisitResult.CONTINUE;
-                        }
-                    });
+            PathUtils.recursiveDelete(path);
         }
     }
 

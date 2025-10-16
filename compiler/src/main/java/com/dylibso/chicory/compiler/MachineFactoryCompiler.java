@@ -193,6 +193,7 @@ public final class MachineFactoryCompiler {
                                         String className =
                                                 relativePath
                                                         .replace('/', '.')
+                                                        .replace('\\', '.')
                                                         .replace(".class", "");
 
                                         // Read the class file bytes
