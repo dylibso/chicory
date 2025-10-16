@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
 /**
@@ -22,29 +21,15 @@ public class DirectoryCache implements Cache {
 
     private final Path baseDir;
     private final Path tmpRoot;
-    private final ReentrantLock[] stripes;
 
     /**
-     * Construct with a sensible default (64 stripes).
+     * Construct a DirectoryCache at the given Path
+     *
+     * @param baseDir     the root cache directory (e.g., Paths.get("cache"))
      */
     public DirectoryCache(Path baseDir) {
-        this(baseDir, 64);
-    }
-
-    /**
-     * @param baseDir     the root cache directory (e.g., Paths.get("cache"))
-     * @param stripeCount number of lock stripes (power of two recommended; e.g., 64 or 128)
-     */
-    public DirectoryCache(Path baseDir, int stripeCount) {
         this.baseDir = Objects.requireNonNull(baseDir, "baseDir");
-        if (stripeCount <= 0) {
-            throw new IllegalArgumentException("stripeCount must be > 0");
-        }
         this.tmpRoot = baseDir.resolve(".tmp");
-        this.stripes = new ReentrantLock[stripeCount];
-        for (int i = 0; i < stripeCount; i++) {
-            stripes[i] = new ReentrantLock();
-        }
     }
 
     /**
@@ -107,8 +92,6 @@ public class DirectoryCache implements Cache {
             throw new IOException("Cannot determine parent for " + finalPath);
         }
 
-        ReentrantLock lock = stripeFor(key);
-        lock.lock();
         try {
             // Ensure parent exists before atomic move.
             Files.createDirectories(parent);
@@ -120,22 +103,10 @@ public class DirectoryCache implements Cache {
                 return;
             }
             throw e;
-        } finally {
-            lock.unlock();
         }
     }
 
     // ---------- internals ----------
-    private ReentrantLock stripeFor(String key) {
-        int h = smear(key.hashCode());
-        int idx = (h & 0x7fffffff) % stripes.length;
-        return stripes[idx];
-    }
-
-    private static int smear(int h) {
-        h ^= (h >>> 16);
-        return h;
-    }
 
     /**
      * baseDir / <algo> / <first2> / <remainder>
