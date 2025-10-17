@@ -140,6 +140,11 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
+        <artifactId>dircache-experimental</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
         <artifactId>log</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -898,6 +903,7 @@
         <module>compiler</module>
         <module>compiler-maven-plugin</module>
         <module>compiler-tests</module>
+        <module>dircache</module>
         <module>docs-lib</module>
         <module>fuzz</module>
         <module>jmh</module>
@@ -933,6 +939,7 @@
         <module>cli</module>
         <module>compiler</module>
         <module>compiler-maven-plugin</module>
+        <module>dircache</module>
         <module>log</module>
         <module>runtime</module>
         <module>wabt</module>
