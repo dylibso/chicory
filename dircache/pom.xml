@@ -6,38 +6,26 @@
     <groupId>com.dylibso.chicory</groupId>
     <artifactId>chicory</artifactId>
     <version>999-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>compiler</artifactId>
+  <artifactId>dircache-experimental</artifactId>
   <packaging>jar</packaging>
 
-  <name>Chicory - Compiler</name>
-  <description>Wasm to Java bytecode compiler</description>
+  <name>Chicory - Dircache - Experimental</name>
+  <description>Chicory directory based Cache</description>
 
   <dependencies>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
+      <artifactId>compiler</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
       <artifactId>runtime</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.ow2.asm</groupId>
-      <artifactId>asm</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.ow2.asm</groupId>
-      <artifactId>asm-commons</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.ow2.asm</groupId>
-      <artifactId>asm-util</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.approvaltests</groupId>
-      <artifactId>approvaltests</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -46,8 +34,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.velocity</groupId>
-      <artifactId>velocity</artifactId>
+      <groupId>io.roastedroot</groupId>
+      <artifactId>zerofs</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -60,6 +48,7 @@
       <artifactId>junit-jupiter-engine</artifactId>
       <scope>test</scope>
     </dependency>
+
   </dependencies>
 
 </project>

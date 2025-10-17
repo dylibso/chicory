@@ -18,5 +18,5 @@ public interface Cache {
      * @param key    "algo:digest"
      * @param data   the data to cache
      */
-    void put(String key, byte[] data) throws IOException;
+    void putIfAbsent(String key, byte[] data) throws IOException;
 }

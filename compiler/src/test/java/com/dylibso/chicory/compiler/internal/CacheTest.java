@@ -2,27 +2,33 @@ package com.dylibso.chicory.compiler.internal;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.compiler.Cache;
-import com.dylibso.chicory.compiler.DirectoryCache;
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
-import io.roastedroot.zerofs.Configuration;
-import io.roastedroot.zerofs.ZeroFs;
 import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 
 public class CacheTest {
 
-    static class CacheWithHitCounter implements Cache {
+    static class MockCache implements Cache {
+        ConcurrentHashMap<String, byte[]> cache = new ConcurrentHashMap<>();
+
+        @Override
+        public byte[] get(String key) throws IOException {
+            return cache.get(key);
+        }
+
+        @Override
+        public void putIfAbsent(String key, byte[] data) throws IOException {
+            cache.putIfAbsent(key, data);
+        }
+    }
+
+    public static class CacheWithHitCounter implements Cache {
         private final Cache cache;
         public AtomicInteger hits = new AtomicInteger(0);
 
@@ -40,8 +46,8 @@ public class CacheTest {
         }
 
         @Override
-        public void put(String key, byte[] data) throws IOException {
-            cache.put(key, data);
+        public void putIfAbsent(String key, byte[] data) throws IOException {
+            cache.putIfAbsent(key, data);
         }
     }
 
@@ -60,10 +66,9 @@ public class CacheTest {
     }
 
     @Test
-    public void shouldCacheCompiledResultInMemFS() {
+    public void shouldCacheCompiledResultInMem() {
 
-        FileSystem fs = ZeroFs.newFileSystem(Configuration.unix());
-        var cache = new CacheWithHitCounter(new DirectoryCache(fs.getPath("/cache")));
+        var cache = new CacheWithHitCounter(new MockCache());
         var module =
                 Parser.parse(CacheTest.class.getResourceAsStream("/compiled/count_vowels.rs.wasm"));
 
@@ -82,104 +87,5 @@ public class CacheTest {
                         .build();
         exerciseCountVowels(instance2);
         assertEquals(1, cache.hits.get());
-    }
-
-    @Test
-    public void shouldCacheCompiledResultNativeFS() throws IOException {
-
-        var module =
-                Parser.parse(CacheTest.class.getResourceAsStream("/compiled/count_vowels.rs.wasm"));
-
-        var cacheDir = Files.createTempDirectory("test");
-        try {
-            var cache = new CacheWithHitCounter(new DirectoryCache(cacheDir));
-
-            var instance1 =
-                    Instance.builder(module)
-                            .withMachineFactory(
-                                    MachineFactoryCompiler.builder(module)
-                                            .withCache(cache)
-                                            .compile())
-                            .build();
-
-            exerciseCountVowels(instance1);
-            assertEquals(0, cache.hits.get());
-            var instance2 =
-                    Instance.builder(module)
-                            .withMachineFactory(
-                                    MachineFactoryCompiler.builder(module)
-                                            .withCache(cache)
-                                            .compile())
-                            .build();
-            exerciseCountVowels(instance2);
-            assertEquals(1, cache.hits.get());
-        } finally {
-            PathUtils.recursiveDelete(cacheDir);
-        }
-    }
-
-    @Test
-    public void testConcurrentAccessNativeFS() throws IOException {
-
-        var module =
-                Parser.parse(CacheTest.class.getResourceAsStream("/compiled/count_vowels.rs.wasm"));
-
-        var cacheDir = Files.createTempDirectory("test");
-        try {
-            // Execute the section concurrently 100 times
-
-            var concurrency = 100;
-            ExecutorService executor = Executors.newFixedThreadPool(concurrency);
-            CompletableFuture<Void>[] futures = new CompletableFuture[concurrency];
-
-            AtomicInteger hits = new AtomicInteger(0);
-
-            for (int i = 0; i < concurrency; i++) {
-                futures[i] =
-                        CompletableFuture.runAsync(
-                                () -> {
-
-                                    // each thread gets its own DirectoryCache so it simulates
-                                    // multiple
-                                    // processes accessing the disk cache concurrently
-                                    var cache =
-                                            new CacheWithHitCounter(new DirectoryCache(cacheDir));
-
-                                    var instance1 =
-                                            Instance.builder(module)
-                                                    .withMachineFactory(
-                                                            MachineFactoryCompiler.builder(module)
-                                                                    .withCache(cache)
-                                                                    .compile())
-                                                    .build();
-
-                                    exerciseCountVowels(instance1);
-
-                                    var instance2 =
-                                            Instance.builder(module)
-                                                    .withMachineFactory(
-                                                            MachineFactoryCompiler.builder(module)
-                                                                    .withCache(cache)
-                                                                    .compile())
-                                                    .build();
-                                    exerciseCountVowels(instance2);
-
-                                    hits.addAndGet(cache.hits.get());
-                                },
-                                executor);
-            }
-
-            // Wait for all tasks to complete
-            CompletableFuture.allOf(futures).join();
-            executor.shutdown();
-
-            // Some of the first 100 instance creates may result in a cache hit but ALL the 2nd
-            // instance
-            // creates should result in
-            // cache hits.
-            assertTrue(hits.get() >= concurrency);
-        } finally {
-            PathUtils.recursiveDelete(cacheDir);
-        }
     }
 }

@@ -140,7 +140,7 @@ public final class MachineFactoryCompiler {
 
                 if (useCache) {
                     // store results in the cache to speed the next time.
-                    cache.put(module.digest(), storeClassLoadingCollector(collector));
+                    cache.putIfAbsent(module.digest(), storeClassLoadingCollector(collector));
                 }
 
                 return new MachineFactory(module, collector.machineFactory());

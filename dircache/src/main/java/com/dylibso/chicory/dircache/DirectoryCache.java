@@ -1,7 +1,8 @@
-package com.dylibso.chicory.compiler;
+package com.dylibso.chicory.dircache;
 
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
+import com.dylibso.chicory.compiler.Cache;
 import com.dylibso.chicory.compiler.internal.PathUtils;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -51,7 +52,7 @@ public class DirectoryCache implements Cache {
      * @param data   the data to cache
      */
     @Override
-    public void put(String key, byte[] data) throws IOException {
+    public void putIfAbsent(String key, byte[] data) throws IOException {
         Objects.requireNonNull(data, "data");
 
         Path finalPath = toFilePath(key);
