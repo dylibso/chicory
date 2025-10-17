@@ -27,6 +27,7 @@ import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -526,9 +527,6 @@ final class Validator {
     void validateGlobals() {
         for (Global g : module.globalSection().globals()) {
             validateConstantExpression(g.initInstructions(), g.valueType());
-            if (g.mutabilityType() == MutabilityType.Const && g.initInstructions().size() > 1) {
-                throw new InvalidException("constant expression required");
-            }
         }
     }
 
@@ -536,47 +534,51 @@ final class Validator {
             List<? extends Instruction> expr, ValType expectedType) {
         validateValueType(expectedType);
         int allFuncCount = this.functionImports.size() + module.functionSection().functionCount();
-        int constInstrCount = 0;
+        var valTypeStack = new ArrayDeque<ValType>();
         for (var instruction : expr) {
-            ValType exprType = null;
-
             switch (instruction.opcode()) {
                 case I32_CONST:
-                    exprType = ValType.I32;
-                    constInstrCount++;
+                    valTypeStack.push(ValType.I32);
+                    break;
+                case I32_ADD:
+                case I32_SUB:
+                case I32_MUL:
+                    valTypeStack.pop();
+                    valTypeStack.pop();
+                    valTypeStack.push(ValType.I32);
                     break;
                 case I64_CONST:
-                    exprType = ValType.I64;
-                    constInstrCount++;
+                    valTypeStack.push(ValType.I64);
+                    break;
+                case I64_ADD:
+                case I64_SUB:
+                case I64_MUL:
+                    valTypeStack.pop();
+                    valTypeStack.pop();
+                    valTypeStack.push(ValType.I64);
                     break;
                 case F32_CONST:
-                    exprType = ValType.F32;
-                    constInstrCount++;
+                    valTypeStack.push(ValType.F32);
                     break;
                 case F64_CONST:
-                    exprType = ValType.F64;
-                    constInstrCount++;
+                    valTypeStack.push(ValType.F64);
                     break;
                 case V128_CONST:
-                    exprType = ValType.V128;
-                    constInstrCount++;
+                    valTypeStack.push(ValType.V128);
                     break;
                 case REF_NULL:
                     {
                         int operand = (int) instruction.operand(0);
-                        exprType = valType(ValType.ID.RefNull, operand);
-                        constInstrCount++;
+                        valTypeStack.push(valType(ValType.ID.RefNull, operand));
                         break;
                     }
                 case REF_FUNC:
                     {
-                        constInstrCount++;
                         int idx = (int) instruction.operand(0);
-                        exprType = valType(ValType.ID.Ref, getFunctionType(idx));
+                        valTypeStack.push(valType(ValType.ID.Ref, getFunctionType(idx)));
                         if (idx < 0 || idx > allFuncCount) {
                             throw new InvalidException("unknown function " + idx);
                         }
-
                         break;
                     }
                 case GLOBAL_GET:
@@ -589,7 +591,7 @@ final class Validator {
                                         "constant expression required, initializer expression"
                                                 + " cannot reference a mutable global");
                             }
-                            exprType = global.valueType();
+                            valTypeStack.push(global.valueType());
                         } else {
                             throw new InvalidException(
                                     "unknown global "
@@ -597,7 +599,6 @@ final class Validator {
                                             + ", initializer expression can only reference"
                                             + " an imported global");
                         }
-                        constInstrCount++;
                         break;
                     }
                 case END:
@@ -608,18 +609,19 @@ final class Validator {
                                     + " encountered: "
                                     + instruction);
             }
+        }
 
+        if (valTypeStack.size() < 1) {
+            throw new InvalidException("type mismatch, no constant expressions found");
+        }
+        if (valTypeStack.size() != 1) {
+            throw new InvalidException(
+                    "type mismatch, values remaining on the stack after evaluation");
+        } else {
+            var exprType = valTypeStack.pop();
             if (exprType != null && !ValType.matches(exprType, expectedType)) {
                 throw new InvalidException("type mismatch");
             }
-
-            // There must be at most one constant instruction.
-            if (constInstrCount > 1) {
-                throw new InvalidException("type mismatch, multiple constant expressions found");
-            }
-        }
-        if (constInstrCount <= 0) {
-            throw new InvalidException("type mismatch, no constant expressions found");
         }
     }
 

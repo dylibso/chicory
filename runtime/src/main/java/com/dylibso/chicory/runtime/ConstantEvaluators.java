@@ -2,9 +2,11 @@ package com.dylibso.chicory.runtime;
 
 import static com.dylibso.chicory.wasm.types.OpCode.GLOBAL_GET;
 
+import com.dylibso.chicory.wasm.MalformedException;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
+import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.List;
 
@@ -16,44 +18,96 @@ final class ConstantEvaluators {
     }
 
     public static long[] computeConstantValue(Instance instance, List<Instruction> expr) {
-        long tos = -1L;
+        var stack = new ArrayDeque<long[]>();
         for (var instruction : expr) {
             switch (instruction.opcode()) {
+                case I32_ADD:
+                    {
+                        var x = (int) stack.pop()[0];
+                        var y = (int) stack.pop()[0];
+                        stack.push(new long[] {x + y});
+                        break;
+                    }
+                case I32_SUB:
+                    {
+                        var x = (int) stack.pop()[0];
+                        var y = (int) stack.pop()[0];
+                        stack.push(new long[] {y - x});
+                        break;
+                    }
+                case I32_MUL:
+                    {
+                        var x = (int) stack.pop()[0];
+                        var y = (int) stack.pop()[0];
+                        int res = x * y;
+                        stack.push(new long[] {res});
+                        break;
+                    }
+                case I64_ADD:
+                    {
+                        var x = stack.pop()[0];
+                        var y = stack.pop()[0];
+                        stack.push(new long[] {x + y});
+                        break;
+                    }
+                case I64_SUB:
+                    {
+                        var x = stack.pop()[0];
+                        var y = stack.pop()[0];
+                        stack.push(new long[] {y - x});
+                        break;
+                    }
+                case I64_MUL:
+                    {
+                        var x = stack.pop()[0];
+                        var y = stack.pop()[0];
+                        stack.push(new long[] {x * y});
+                        break;
+                    }
                 case V128_CONST:
-                    return new long[] {instruction.operand(0), instruction.operand(1)};
+                    {
+                        stack.push(new long[] {instruction.operand(0), instruction.operand(1)});
+                        break;
+                    }
                 case F32_CONST:
                 case F64_CONST:
                 case I32_CONST:
                 case I64_CONST:
                 case REF_FUNC:
                     {
-                        tos = instruction.operand(0);
+                        stack.push(new long[] {instruction.operand(0)});
                         break;
                     }
                 case REF_NULL:
                     {
-                        tos = Value.REF_NULL_VALUE;
+                        stack.push(new long[] {Value.REF_NULL_VALUE});
                         break;
                     }
                 case GLOBAL_GET:
                     {
                         var idx = (int) instruction.operand(0);
                         if (instance.global(idx).getType().equals(ValType.V128)) {
-                            return new long[] {
-                                instance.global(idx).getValueLow(),
-                                instance.global(idx).getValueHigh()
-                            };
+                            stack.push(
+                                    new long[] {
+                                        instance.global(idx).getValueLow(),
+                                        instance.global(idx).getValueHigh()
+                                    });
                         } else {
-                            return new long[] {instance.global(idx).getValueLow()};
+                            stack.push(new long[] {instance.global(idx).getValueLow()});
                         }
+                        break;
                     }
                 case END:
                     {
                         break;
                     }
+                default:
+                    throw new MalformedException(
+                            "Invalid instruction in constant value" + instruction);
             }
         }
-        return new long[] {tos};
+
+        return stack.pop();
     }
 
     public static Instance computeConstantInstance(Instance instance, List<Instruction> expr) {
