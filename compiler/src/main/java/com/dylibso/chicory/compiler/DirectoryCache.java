@@ -4,6 +4,7 @@ import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
 import com.dylibso.chicory.compiler.internal.PathUtils;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -12,7 +13,7 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
- * Disk-backed sharded directory cache.
+ * Disk-backed sharded file cache.
  */
 public class DirectoryCache implements Cache {
 
@@ -33,86 +34,63 @@ public class DirectoryCache implements Cache {
     }
 
     /**
-     * Return the directory for the given key if it exists (and is a directory), else null.
+     * Return the cached data for the given key if it exists, else null.
      * Does not create anything.
      */
     @Override
-    public Path get(String key) {
-        Path target = toDirectoryPath(key);
-        return Files.isDirectory(target) ? target : null;
-    }
-
-    private static final class TempDirImpl implements Cache.TempDir {
-
-        private final Path path;
-
-        private TempDirImpl(Path path) {
-            this.path = path;
-        }
-
-        @Override
-        public Path path() {
-            return path;
-        }
-
-        @Override
-        public void close() throws IOException {
-            PathUtils.recursiveDelete(path);
-        }
+    public byte[] get(String key) throws IOException {
+        Path target = toFilePath(key);
+        return Files.isRegularFile(target) ? Files.readAllBytes(target) : null;
     }
 
     /**
-     * Create a unique temporary directory under baseDir/.tmp, suitable for writing the computation output.
-     * The directory will be on the same filesystem as the final target so that ATOMIC_MOVE works.
-     */
-    @Override
-    public Cache.TempDir createTempDir() throws IOException {
-        Files.createDirectories(tmpRoot);
-        return new TempDirImpl(Files.createTempDirectory(tmpRoot, "d-"));
-    }
-
-    /**
-     * Atomically publish a completed temp directory into the cache location for the key.
-     * If another thread/process already published for this key, the temp directory is deleted and the
-     * existing path is returned.
+     * Atomically publish data into the cache location for the key.
+     * If another thread/process already published for this key then this is a no-op.
      *
      * @param key    "algo:digest"
-     * @param tmpDir a directory containing fully written results (created via createTempDir())
+     * @param data   the data to cache
      */
     @Override
-    public void put(String key, Cache.TempDir tmpDir) throws IOException {
-        Objects.requireNonNull(tmpDir, "tmpDir");
-        if (!Files.isDirectory(tmpDir.path())) {
-            throw new IllegalArgumentException("tmpDir must be an existing directory: " + tmpDir);
-        }
+    public void put(String key, byte[] data) throws IOException {
+        Objects.requireNonNull(data, "data");
 
-        Path finalPath = toDirectoryPath(key);
+        Path finalPath = toFilePath(key);
         Path parent = finalPath.getParent(); // .../<algo>/<shard>
         if (parent == null) {
             throw new IOException("Cannot determine parent for " + finalPath);
         }
 
+        Files.createDirectories(this.tmpRoot);
+        var tmpFile = Files.createTempFile(tmpRoot, "f-", ".tmp");
         try {
+            // Write the data to temp file
+            Files.write(tmpFile, data);
+
             // Ensure parent exists before atomic move.
             Files.createDirectories(parent);
+
             // Move it
-            Files.move(tmpDir.path(), finalPath, ATOMIC_MOVE);
+            Files.move(tmpFile, finalPath, ATOMIC_MOVE);
         } catch (FileSystemException e) {
             // did another process beat us to creating the cache entry?
-            if (Files.isDirectory(finalPath)) {
+            if (Files.isRegularFile(finalPath)) {
                 return;
             }
             throw e;
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        } finally {
+            PathUtils.recursiveDelete(tmpFile);
         }
     }
 
     // ---------- internals ----------
 
-    /**
-     * baseDir / <algo> / <first2> / <remainder>
-     * Validates algo and digest.
+    /*
+     * baseDir / algo / first 2 chars of digest / remainder of digest.jar
+     * Validates the digest.
      */
-    private Path toDirectoryPath(String key) {
+    private Path toFilePath(String key) {
         Objects.requireNonNull(key, "key");
         int colon = key.indexOf(':');
         if (colon <= 0 || colon == key.length() - 1) {
@@ -139,6 +117,7 @@ public class DirectoryCache implements Cache {
 
         Path algoDir = baseDir.resolve(algo);
         Path shardDir = algoDir.resolve(shard);
-        return remainder.isEmpty() ? shardDir : shardDir.resolve(remainder);
+        Path basePath = remainder.isEmpty() ? shardDir : shardDir.resolve(remainder);
+        return basePath.resolveSibling(basePath.getFileName() + ".jar");
     }
 }

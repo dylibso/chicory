@@ -6,14 +6,18 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Machine;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.jar.JarEntry;
+import java.util.jar.JarInputStream;
+import java.util.jar.JarOutputStream;
 
 /**
  * Compiles WASM function bodies to JVM byte code that can be used as a machine factory for {@link Instance}'s.
@@ -119,9 +123,9 @@ public final class MachineFactoryCompiler {
                 // Can we load the byte codes from the cache?
                 var useCache = cache != null && module.digest() != null;
                 if (useCache) {
-                    Path cachePath = cache.get(module.digest());
-                    if (cachePath != null) {
-                        var collector = loadCollector(cachePath);
+                    byte[] cachedData = cache.get(module.digest());
+                    if (cachedData != null) {
+                        var collector = loadCollector(cachedData);
                         return new MachineFactory(module, collector.machineFactory());
                     }
                 }
@@ -136,10 +140,7 @@ public final class MachineFactoryCompiler {
 
                 if (useCache) {
                     // store results in the cache to speed the next time.
-                    try (var tempPath = cache.createTempDir()) {
-                        storeClassLoadingCollector(collector, tempPath.path());
-                        cache.put(module.digest(), tempPath);
-                    }
+                    cache.put(module.digest(), storeClassLoadingCollector(collector));
                 }
 
                 return new MachineFactory(module, collector.machineFactory());
@@ -149,68 +150,74 @@ public final class MachineFactoryCompiler {
         }
     }
 
-    private static void storeClassLoadingCollector(
-            ClassLoadingCollector collector, Path destination) throws IOException {
-        // Store the compiled results in the cache
-        var properties = new Properties();
-        properties.put("mainClass", collector.mainClassName());
-        var wasmModuleProperties = destination.resolve("wasm-module.properties");
-        try (var f = Files.newOutputStream(wasmModuleProperties)) {
-            properties.store(f, "");
-        }
-        for (var entry : collector.classBytes().entrySet()) {
-            var className = entry.getKey().replace('.', '/') + ".class";
-            var classFile = destination.resolve(className);
-            Files.createDirectories(classFile.getParent());
-            Files.write(classFile, entry.getValue());
+    private static byte[] storeClassLoadingCollector(ClassLoadingCollector collector) {
+        try {
+            // Create JAR in memory
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            try (JarOutputStream jos = new JarOutputStream(baos)) {
+                // Store the properties file
+                var properties = new Properties();
+                properties.put("mainClass", collector.mainClassName());
+                ByteArrayOutputStream propsBaos = new ByteArrayOutputStream();
+                properties.store(propsBaos, "");
+
+                JarEntry propsEntry = new JarEntry("wasm-module.properties");
+                jos.putNextEntry(propsEntry);
+                jos.write(propsBaos.toByteArray());
+                jos.closeEntry();
+
+                // Store all class files
+                for (var entry : collector.classBytes().entrySet()) {
+                    var className = entry.getKey().replace('.', '/') + ".class";
+                    JarEntry classEntry = new JarEntry(className);
+                    jos.putNextEntry(classEntry);
+                    jos.write(entry.getValue());
+                    jos.closeEntry();
+                }
+            }
+            return baos.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
     }
 
-    private static ClassLoadingCollector loadCollector(Path source) throws IOException {
+    private static ClassLoadingCollector loadCollector(byte[] jarData) throws IOException {
         var collector = new ClassLoadingCollector();
 
-        // It was previously compiled, just load it.
-        var wasmModuleProperties = source.resolve("wasm-module.properties");
-        try (var is = Files.newInputStream(wasmModuleProperties)) {
-
+        // It was previously compiled, just load it from JAR.
+        try (JarInputStream jis = new JarInputStream(new ByteArrayInputStream(jarData))) {
             var properties = new Properties();
-            properties.load(is);
-            String mainClass = properties.getProperty("mainClass");
-
+            String mainClass = null;
             Map<String, byte[]> classes = new HashMap<>();
 
-            // Walk through all files in the cache directory
-            try (var stream = Files.walk(source)) {
-                stream.filter(Files::isRegularFile)
-                        .filter(path -> path.toString().endsWith(".class"))
-                        .forEach(
-                                classFile -> {
-                                    try {
-                                        // Convert file path back to class name
-                                        // e.g., cachePath/foo/bar/Example.class -> foo.bar.Example
-                                        String relativePath =
-                                                source.relativize(classFile).toString();
-                                        String className =
-                                                relativePath
-                                                        .replace('/', '.')
-                                                        .replace('\\', '.')
-                                                        .replace(".class", "");
+            JarEntry entry;
+            while ((entry = jis.getNextJarEntry()) != null) {
+                if (entry.getName().equals("wasm-module.properties")) {
+                    // Load properties
+                    properties.load(jis);
+                    mainClass = properties.getProperty("mainClass");
+                } else if (entry.getName().endsWith(".class")) {
+                    // Load class file
+                    String className = entry.getName().replace('/', '.').replace(".class", "");
 
-                                        // Read the class file bytes
-                                        byte[] bytes = Files.readAllBytes(classFile);
-                                        classes.put(className, bytes);
-                                    } catch (IOException e) {
-                                        throw new RuntimeException(
-                                                "Failed to read class file: " + classFile, e);
-                                    }
-                                });
+                    // Read class file bytes
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    while ((bytesRead = jis.read(buffer)) != -1) {
+                        baos.write(buffer, 0, bytesRead);
+                    }
+                    classes.put(className, baos.toByteArray());
+                }
+                jis.closeEntry();
             }
 
-            for (var entry : classes.entrySet()) {
-                if (entry.getKey().equals(mainClass)) {
-                    collector.putMainClass(mainClass, classes.get(mainClass));
+            // Add classes to collector
+            for (var classEntry : classes.entrySet()) {
+                if (classEntry.getKey().equals(mainClass)) {
+                    collector.putMainClass(mainClass, classEntry.getValue());
                 } else {
-                    collector.put(entry.getKey(), entry.getValue());
+                    collector.put(classEntry.getKey(), classEntry.getValue());
                 }
             }
         }

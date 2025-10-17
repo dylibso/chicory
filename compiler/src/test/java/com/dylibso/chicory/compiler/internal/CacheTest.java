@@ -14,7 +14,6 @@ import io.roastedroot.zerofs.ZeroFs;
 import java.io.IOException;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -32,8 +31,8 @@ public class CacheTest {
         }
 
         @Override
-        public Path get(String key) throws IOException {
-            Path result = cache.get(key);
+        public byte[] get(String key) throws IOException {
+            byte[] result = cache.get(key);
             if (result != null) {
                 hits.incrementAndGet();
             }
@@ -41,13 +40,8 @@ public class CacheTest {
         }
 
         @Override
-        public TempDir createTempDir() throws IOException {
-            return cache.createTempDir();
-        }
-
-        @Override
-        public void put(String key, TempDir tmpDir) throws IOException {
-            cache.put(key, tmpDir);
+        public void put(String key, byte[] data) throws IOException {
+            cache.put(key, data);
         }
     }
 
