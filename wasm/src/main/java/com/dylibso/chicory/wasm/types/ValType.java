@@ -34,6 +34,8 @@ public final class ValType {
     // defined function type. This is not representable in the binary or textual representation
     // of WASM. This is instead used after substitution to represent closed ValType.
     // This is useful when validating import function values.
+
+    // can try to keep just the index of the resolvedType?
     private final RecType resolvedRecType;
 
     private ValType(int opcode) {
@@ -456,7 +458,14 @@ public final class ValType {
             return new ValType(opcode, typeIdx, resolvedRecType);
         }
 
+        // this should bubble up to the RecType.Builder
+        public boolean needsSubstitution() {
+            // extracting this logic to the parser to be able to resolve forward references
+            return (ValType.isReference(opcode) && typeIdx >= 0 && !ValType.ID.isAbsHeapType(typeIdx));
+        }
+
         public RecType substitute(int opcode, int typeIdx, Function<Integer, RecType> context) {
+            // extracting this logic to the parser to be able to resolve forward references
             if (ValType.isReference(opcode) && typeIdx >= 0 && !ValType.ID.isAbsHeapType(typeIdx)) {
                 // no need to recursively substitute because all ValType are fully resolved
                 try {

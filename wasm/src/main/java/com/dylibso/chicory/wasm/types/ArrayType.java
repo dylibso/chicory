@@ -27,6 +27,10 @@ public class ArrayType {
             return this;
         }
 
+        public boolean needsSubstitution() {
+            return fieldTypeBuilder.needsSubstitution();
+        }
+
         public ArrayType build(Function<Integer, RecType> context) {
             return new ArrayType(fieldTypeBuilder.build(context));
         }

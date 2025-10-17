@@ -43,11 +43,30 @@ public class RecType {
             return this;
         }
 
+        public boolean needsSubstitution() {
+            for (int i = 0; i < subTypeBuilders.length; i++) {
+                if (subTypeBuilders[i].needsSubstitution()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public RecType build(Function<Integer, RecType> context) {
             SubType[] subTypes = new SubType[subTypeBuilders.length];
-            for (int i = 0; i < subTypeBuilders.length; i++) {
-                subTypes[i] = subTypeBuilders[i].build(context);
+            for (int i = 0; i < subTypes.length; i++) {
+                var builder = subTypeBuilders[i];
+                if (!builder.needsSubstitution()) {
+                    subTypes[i] = builder.build(j -> null);
+                }
             }
+            for (int i = 0; i < subTypes.length; i++) {
+                var builder = subTypeBuilders[i];
+                if (subTypes[i] == null) {
+                    subTypes[i] = builder.build(context);
+                }
+            }
+
             return new RecType(subTypes);
         }
     }

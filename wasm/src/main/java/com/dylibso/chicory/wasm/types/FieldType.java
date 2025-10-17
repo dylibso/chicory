@@ -39,6 +39,10 @@ public class FieldType {
             return this;
         }
 
+        public boolean needsSubstitution() {
+            return storageTypeBuilder.needsSubstitution();
+        }
+
         public FieldType build(Function<Integer, RecType> context) {
             return new FieldType(storageTypeBuilder.build(context), mut);
         }

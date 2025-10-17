@@ -613,36 +613,49 @@ public final class Parser {
         }
     }
 
-    private static TypeSection parseTypeSection(ByteBuffer buffer) {
+    private static boolean allResolved(RecType[] recTypes) {
+        for (int i = 0; i < recTypes.length; i++) {
+            if (recTypes[i] == null) {
+                return false;
+            }
+        }
+        return true;
+    }
 
+    private static TypeSection parseTypeSection(ByteBuffer buffer) {
         var typeCount = (int) readVarUInt32(buffer);
         TypeSection.Builder typeSection = TypeSection.builder();
 
         // Parse individual types in the type section
-
         // first step we collect all the builders
         var recTypeBuilders = new RecType.Builder[typeCount];
         for (int i = 0; i < typeCount; i++) {
             recTypeBuilders[i] = parseRecType(buffer);
         }
 
-        // keeping here to play with it for a little
-        //        Function<Integer, RecType> build =
-        //                id -> {
-        //                    if (id >= typeSection.getTypes().size()) {
-        //                        throw new MalformedException("forward reference? how to fix it?");
-        //                    } else {
-        //                        return recTypeBuilders[id].build(typeSection.getTypes()::get);
-        //                    }
-        //                };
-
         // and we finalize resolving the types
+        RecType[] recTypes = new RecType[typeCount];
         for (int i = 0; i < typeCount; i++) {
-            recTypeBuilders[i] = parseRecType(buffer);
-            // instead of addRecType we should probably use an array so that we can go back and
-            // forth over it - next iteration
-            typeSection.addRecType(recTypeBuilders[i].build(typeSection.getTypes()::get));
+            var builder = recTypeBuilders[i];
+            if (!builder.needsSubstitution()) {
+                recTypes[i] = builder.build(j -> null);
+            }
         }
+        // TODO: this highly inefficient!!!!
+        // now what I'm doing is going to be very inefficient,
+        // but let see how far it gets!
+
+        // not sure this is needed, mutually recursive RecTypes?
+        // the types inside a RecType should be self-contained
+        // I should fix how resolution works
+        // while (!allResolved(recTypes)) {
+        for (int i = 0; i < typeCount; i++) {
+            if (recTypes[i] == null) {
+                recTypes[i] = recTypeBuilders[i].build(j -> recTypes[j]);
+            }
+        }
+        // }
+        typeSection.addRecTypes(recTypes);
 
         return typeSection.build();
     }

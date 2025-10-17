@@ -37,9 +37,9 @@ public final class TypeSection extends Section {
             return types;
         }
 
-        public Builder addRecType(RecType recType) {
-            Objects.requireNonNull(recType, "functionType");
-            types.add(recType);
+        public Builder addRecTypes(RecType[] recTypes) {
+            Objects.requireNonNull(recTypes, "functionType");
+            types.addAll(List.of(recTypes));
             return this;
         }
 

@@ -39,6 +39,14 @@ public class StorageType {
             return this;
         }
 
+        public boolean needsSubstitution() {
+            if (packedType != null) {
+                return false;
+            } else {
+                return valTypeBuilder.needsSubstitution();
+            }
+        }
+
         public StorageType build(Function<Integer, RecType> context) {
             var valType = (valTypeBuilder == null) ? null : valTypeBuilder.build(context);
             return new StorageType(valType, packedType);

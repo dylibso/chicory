@@ -68,6 +68,10 @@ public class SubType {
             return this;
         }
 
+        public boolean needsSubstitution() {
+            return compTypeBuilder.needsSubstitution();
+        }
+
         public SubType build(Function<Integer, RecType> context) {
             return new SubType(typeIdx, compTypeBuilder.build(context), isFinal);
         }

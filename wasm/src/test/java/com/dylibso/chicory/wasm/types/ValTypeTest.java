@@ -18,6 +18,7 @@ public class ValTypeTest {
                                             CompType.builder()
                                                     .withFuncType(
                                                             FunctionType.builder()
+                                                                    .withParams(List.of())
                                                                     .withReturns(
                                                                             List.of(
                                                                                     ValType

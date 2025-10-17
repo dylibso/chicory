@@ -68,6 +68,19 @@ public class CompType {
             return this;
         }
 
+        public boolean needsSubstitution() {
+            if (arrayTypeBuilder != null) {
+                return arrayTypeBuilder.needsSubstitution();
+            }
+            if (structTypeBuilder != null) {
+                return structTypeBuilder.needsSubstitution();
+            }
+            if (funcTypeBuilder != null) {
+                return funcTypeBuilder.needsSubstitution();
+            }
+            return false;
+        }
+
         public CompType build(Function<Integer, RecType> context) {
             return new CompType(
                     (arrayTypeBuilder == null) ? null : arrayTypeBuilder.build(context),

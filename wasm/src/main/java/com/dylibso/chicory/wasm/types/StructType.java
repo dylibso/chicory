@@ -29,6 +29,15 @@ public class StructType {
             return this;
         }
 
+        public boolean needsSubstitution() {
+            for (int i = 0; i < fieldTypeBuilder.size(); i++) {
+                if (fieldTypeBuilder.get(i).needsSubstitution()) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public StructType build(Function<Integer, RecType> context) {
             var fieldTypes = new FieldType[fieldTypeBuilder.size()];
             for (int i = 0; i < fieldTypeBuilder.size(); i++) {
