@@ -34,7 +34,9 @@ public final class ValType {
     // defined function type. This is not representable in the binary or textual representation
     // of WASM. This is instead used after substitution to represent closed ValType.
     // This is useful when validating import function values.
-    private final FunctionType resolvedFunctionType;
+
+    // can try to keep just the index of the resolvedType?
+    private final RecType resolvedRecType;
 
     private ValType(int opcode) {
         this(opcode, NULL_TYPEIDX, null);
@@ -44,7 +46,7 @@ public final class ValType {
         this(opcode, typeIdx, null);
     }
 
-    private ValType(int opcode, int typeIdx, FunctionType resolvedFunctionType) {
+    private ValType(int opcode, int typeIdx, RecType resolvedRecType) {
         // Conveniently, all value types we want to represent can fit inside a Java long.
         // We store the typeIdx (of reference types) in the upper 4 bytes and the opcode in the
         // lower 4 bytes.
@@ -57,10 +59,12 @@ public final class ValType {
         } else if (opcode == ID.ExnRef) {
             typeIdx = TypeIdxCode.EXN.code();
             opcode = ID.RefNull;
-        } else if ((opcode == ID.RefNull || opcode == ID.Ref) && typeIdx >= 0) {
-            Objects.requireNonNull(resolvedFunctionType);
+        } else if ((opcode == ID.RefNull || opcode == ID.Ref)
+                && typeIdx >= 0
+                && !ValType.ID.isAbsHeapType(typeIdx)) {
+            Objects.requireNonNull(resolvedRecType);
         }
-        this.resolvedFunctionType = resolvedFunctionType;
+        this.resolvedRecType = resolvedRecType;
 
         this.id = createId(opcode, typeIdx);
     }
@@ -185,6 +189,11 @@ public final class ValType {
             case ID.F64:
             case ID.FuncRef:
             case ID.ExternRef:
+            case ID.AnyRef:
+            case ID.EqRef:
+            case ID.i31:
+            case ID.StructRef:
+            case ID.ArrayRef:
                 return true;
             default:
                 return false;
@@ -220,7 +229,9 @@ public final class ValType {
         if (t1.typeIdx() >= 0 && t2.typeIdx() == TypeIdxCode.FUNC.code()) {
             return true;
         } else if (t1.typeIdx() >= 0 && t2.typeIdx() >= 0) {
-            return t1.resolvedFunctionType.equals(t2.resolvedFunctionType);
+            return (t1.resolvedRecType == null && t2.resolvedRecType == null)
+                    || // TODO: verify correctness
+                    t1.resolvedRecType.equals(t2.resolvedRecType);
         } else if (t1.typeIdx() == TypeIdxCode.BOT.code()) {
             return true;
         }
@@ -251,8 +262,8 @@ public final class ValType {
 
     @Override
     public int hashCode() {
-        if (this.resolvedFunctionType != null) {
-            return resolvedFunctionType.hashCode();
+        if (this.resolvedRecType != null) {
+            return resolvedRecType.hashCode();
         }
         return Long.hashCode(id);
     }
@@ -264,10 +275,10 @@ public final class ValType {
         }
         ValType that = (ValType) other;
 
-        if (this.resolvedFunctionType != null && that.resolvedFunctionType != null) {
+        if (this.resolvedRecType != null && that.resolvedRecType != null) {
             return opcode(this.id) == opcode(that.id)
-                    && this.resolvedFunctionType.equals(that.resolvedFunctionType);
-        } else if (this.resolvedFunctionType == null && that.resolvedFunctionType == null) {
+                    && this.resolvedRecType.equals(that.resolvedRecType);
+        } else if (this.resolvedRecType == null && that.resolvedRecType == null) {
             return this.id == that.id;
         } else {
             return false;
@@ -322,9 +333,16 @@ public final class ValType {
         public static final int RefNull = 0x63;
         public static final int Ref = 0x64;
         public static final int ExternRef = 0x6f;
-        // From the Exception Handling proposal
+        public static final int AnyRef = 0x6E;
+        public static final int EqRef = 0x6D;
+        public static final int i31 = 0x6C;
+        public static final int StructRef = 0x6B;
+        public static final int ArrayRef = 0x6A;
         public static final int ExnRef = 0x69; // -0x17
         public static final int FuncRef = 0x70;
+        public static final int NoneRef = 0x71;
+        public static final int NoExternRef = 0x72;
+        public static final int NoFuncRef = 0x73;
         public static final int V128 = 0x7b;
         public static final int F64 = 0x7c;
         public static final int F32 = 0x7d;
@@ -367,6 +385,22 @@ public final class ValType {
                     || opcode == F32
                     || opcode == I64
                     || opcode == I32);
+        }
+
+        // https://webassembly.github.io/gc/core/binary/types.html#heap-types
+        public static boolean isAbsHeapType(int opcode) {
+            return (opcode == NoFuncRef
+                    || opcode == NoExternRef
+                    || opcode == NoneRef
+                    || opcode == FuncRef
+                    || opcode == ExternRef
+                    // TODO: verify!
+                    || opcode == ExnRef
+                    || opcode == AnyRef
+                    || opcode == EqRef
+                    || opcode == i31
+                    || opcode == StructRef
+                    || opcode == ArrayRef);
         }
     }
 
@@ -415,18 +449,24 @@ public final class ValType {
                     });
         }
 
-        public ValType build(Function<Integer, FunctionType> context) {
+        public ValType build(Function<Integer, RecType> context) {
             if (!isValidOpcode(opcode)) {
                 throw new ChicoryException("Invalid type opcode: " + opcode);
             }
 
-            var resolvedFunctionType = substitute(opcode, typeIdx, context);
-            return new ValType(opcode, typeIdx, resolvedFunctionType);
+            var resolvedRecType = substitute(opcode, typeIdx, context);
+            return new ValType(opcode, typeIdx, resolvedRecType);
         }
 
-        public FunctionType substitute(
-                int opcode, int typeIdx, Function<Integer, FunctionType> context) {
-            if (ValType.isReference(opcode) && typeIdx >= 0) {
+        // this should bubble up to the RecType.Builder
+        public boolean needsSubstitution() {
+            // extracting this logic to the parser to be able to resolve forward references
+            return (ValType.isReference(opcode) && typeIdx >= 0 && !ValType.ID.isAbsHeapType(typeIdx));
+        }
+
+        public RecType substitute(int opcode, int typeIdx, Function<Integer, RecType> context) {
+            // extracting this logic to the parser to be able to resolve forward references
+            if (ValType.isReference(opcode) && typeIdx >= 0 && !ValType.ID.isAbsHeapType(typeIdx)) {
                 // no need to recursively substitute because all ValType are fully resolved
                 try {
                     return context.apply(typeIdx);

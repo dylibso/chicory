@@ -517,12 +517,24 @@ public class WasmModuleTest {
                 new ImportTag(
                         "env",
                         "tag",
-                        new TagInstance(new TagType((byte) 0, 0), module.typeSection().getType(0)));
+                        new TagInstance(
+                                new TagType((byte) 0, 0),
+                                module.typeSection()
+                                        .getType(0)
+                                        .subTypes()[0]
+                                        .compType()
+                                        .funcType()));
         var tagI64 =
                 new ImportTag(
                         "env",
                         "tag",
-                        new TagInstance(new TagType((byte) 0, 1), module.typeSection().getType(1)));
+                        new TagInstance(
+                                new TagType((byte) 0, 1),
+                                module.typeSection()
+                                        .getType(1)
+                                        .subTypes()[0]
+                                        .compType()
+                                        .funcType()));
 
         var imports =
                 ImportValues.builder()

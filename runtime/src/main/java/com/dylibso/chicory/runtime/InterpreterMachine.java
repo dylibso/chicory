@@ -1,5 +1,6 @@
 package com.dylibso.chicory.runtime;
 
+import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static com.dylibso.chicory.wasm.types.ValType.sizeOf;
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 import static java.util.Objects.requireNonNullElse;
@@ -14,6 +15,7 @@ import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayDeque;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -1000,6 +1002,192 @@ public class InterpreterMachine implements Machine {
                 case ATOMIC_FENCE:
                     ATOMIC_FENCE();
                     break;
+                // Wasm GC opcodes
+                case ARRAY_NEW_DEFAULT:
+                    {
+                        var typeIdx = (int) operands.get(0);
+                        var storageType =
+                                instance.recType(typeIdx)
+                                        // TODO: those runtime lookups are not good, need to move
+                                        // the logic at compile/build
+                                        .subTypes()[0] // can we have more than one subType?
+                                        .compType()
+                                        .arrayType()
+                                        .fieldType()
+                                        .storageType();
+
+                        long defaultValue;
+                        int slots;
+                        if (storageType.packedType() != null) {
+                            // TODO: optimize packed types?
+                            // no packed optimization for now
+                            defaultValue = 0;
+                            slots = 1;
+                        } else {
+                            if (storageType.valType().isReference()) {
+                                defaultValue = REF_NULL_VALUE;
+                                slots = 1;
+                            } else if (storageType.valType().id() == ValType.V128.id()) {
+                                defaultValue = 0;
+                                slots = 2;
+                            } else {
+                                // validation should have been already done
+                                defaultValue = 0;
+                                slots = 1;
+                            }
+                        }
+
+                        var size = stack.pop();
+                        var arr = new long[(int) size * slots];
+                        Arrays.fill(arr, defaultValue);
+
+                        var arrIdx = instance.registerArray(arr);
+                        stack.push(arrIdx);
+                        break;
+                    }
+                case ARRAY_GET:
+                    {
+                        var idx = (int) stack.pop();
+                        var ref = (int) stack.pop();
+
+                        // TODO: let's leave vector operations and packed opt
+                        // for later on to keep code readability
+                        stack.push(instance.array(ref)[idx]);
+                        break;
+                    }
+                case ARRAY_SET:
+                    {
+                        var val = stack.pop();
+                        var idx = (int) stack.pop();
+                        var ref = (int) stack.pop();
+
+                        instance.array(ref)[idx] = val;
+                        break;
+                    }
+                case ARRAY_LEN:
+                    {
+                        var ref = (int) stack.pop();
+
+                        stack.push(instance.array(ref).length);
+                        break;
+                    }
+                case ARRAY_NEW_FIXED:
+                    {
+                        var n = (int) operands.get(1);
+                        var slots = 1; // TODO fixme handling of simd etc.
+                        var arr = new long[(int) n * slots];
+
+                        for (int i = 0; i < n; i++) {
+                            arr[n - i - 1] = stack.pop();
+                        }
+                        var ref = instance.registerArray(arr);
+                        stack.push(ref);
+                        break;
+                    }
+                case ARRAY_NEW_DATA:
+                    {
+                        var typeId = (int) operands.get(0);
+                        var dataId = (int) operands.get(1);
+                        var dataSegment =
+                                instance.module().dataSection().dataSegments()[dataId].data();
+
+                        var n = (int) stack.pop();
+                        var s = (int) stack.pop();
+
+                        // Get the array type to determine field type and storage type
+                        var storageType =
+                                instance.recType(typeId)
+                                        .subTypes()[0] // First subtype contains the array type
+                                        .compType()
+                                        .arrayType()
+                                        .fieldType()
+                                        .storageType();
+
+                        int slots = 1; // TODO: fixme
+                        var arr = new long[n * slots];
+
+                        // Copy data from data segment, handling packed types
+                        for (int i = 0; i < n; i++) {
+                            // TODO: packed types handling
+                            // For regular types, copy the value directly
+                            if (s + i < dataSegment.length) {
+                                arr[i] = dataSegment[s + i];
+                            }
+                        }
+
+                        var ref = instance.registerArray(arr);
+                        stack.push(ref);
+
+                        break;
+                    }
+                case ARRAY_GET_S:
+                case ARRAY_GET_U:
+                    {
+                        var idx = (int) stack.pop();
+                        var refIdx = (int) stack.pop();
+
+                        stack.push(instance.array(refIdx)[idx]);
+                        break;
+                    }
+                case ARRAY_NEW_ELEM:
+                    {
+                        var typeId = (int) operands.get(0);
+                        var elemId = (int) operands.get(1);
+
+                        var n = (int) stack.pop();
+                        var s = (int) stack.pop();
+
+                        int slots = 1; // TODO: handling of other types etc.
+                        var arr = new long[(n - s) * slots];
+
+                        // Get element segment initializers
+                        var elem = instance.element(elemId);
+
+                        for (int i = s; i < n; i++) {
+                            // BLOCKER: missing extended constants:
+                            // https://github.com/WebAssembly/gc/blob/main/proposals/gc/MVP.md#constant-expressions
+                            var val =
+                                    (int)
+                                            computeConstantValue(
+                                                    instance, elem.initializers().get(i))[0];
+                            arr[i] = val;
+                        }
+
+                        var ref = instance.registerArray(arr);
+                        stack.push(ref);
+
+                        break;
+                    }
+                case ARRAY_COPY:
+                    {
+                        // TODO: need "array.new" in intializers
+
+                        var n = (int) stack.pop();
+                        var s = (int) stack.pop();
+                        var ref2 = (int) stack.pop();
+                        var d = (int) stack.pop();
+                        var ref1 = (int) stack.pop();
+
+                        int didx = 0;
+                        int sidx = 0;
+                        for (int i = 0; i < n; i++) {
+                            if (didx <= sidx) {
+                                didx = d + i;
+                                sidx = s + i;
+                            } else {
+                                didx = d + n - 1;
+                                sidx = s + n - 1;
+                            }
+
+                            instance.array(ref1)[didx] = instance.array(ref2)[sidx];
+                        }
+
+                        stack.push(ref1);
+                        stack.push(d);
+                        stack.push(ref2);
+                        stack.push(s);
+                        break;
+                    }
                 default:
                     {
                         evalDefault(stack, instance, callStack, instruction, operands);
