@@ -125,7 +125,7 @@ public final class MachineFactoryCompiler {
                 if (useCache) {
                     byte[] cachedData = cache.get(module.digest());
                     if (cachedData != null) {
-                        var collector = loadCollector(cachedData);
+                        var collector = loadClassLoadingCollector(cachedData);
                         return new MachineFactory(module, collector.machineFactory());
                     }
                 }
@@ -181,7 +181,8 @@ public final class MachineFactoryCompiler {
         }
     }
 
-    private static ClassLoadingCollector loadCollector(byte[] jarData) throws IOException {
+    private static ClassLoadingCollector loadClassLoadingCollector(byte[] jarData)
+            throws IOException {
         var collector = new ClassLoadingCollector();
 
         // It was previously compiled, just load it from JAR.

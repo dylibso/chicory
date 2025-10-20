@@ -1,4 +1,4 @@
-package com.dylibso.chicory.compiler.internal;
+package com.dylibso.chicory.dircache.internal;
 
 import java.io.IOException;
 import java.nio.file.FileVisitResult;

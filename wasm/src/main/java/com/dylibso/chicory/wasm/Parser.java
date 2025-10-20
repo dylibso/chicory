@@ -78,6 +78,7 @@ import java.util.Base64;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -89,6 +90,8 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings("UnnecessaryCodeBlock")
 public final class Parser {
+    private static final String DIGEST_ALGORITHM =
+            System.getProperty("com.dylibso.chicory.wasm.Parser.DIGEST_ALGORITHM", "SHA-256");
 
     static final byte[] MAGIC_BYTES = {0x00, 0x61, 0x73, 0x6D}; // Magic prefix \0asm
     static final byte[] VERSION_BYTES = {0x01, 0x00, 0x00, 0x00}; // Version 1
@@ -238,16 +241,13 @@ public final class Parser {
         MessageDigest messageDigest = null;
         try (InputStream is = inputStreamSupplier.get()) {
             InputStream maybeDigestedInputStream = is;
-            // wrap the input stream so we can calculate the sha256 hash of the buffer
-            try {
-                messageDigest = MessageDigest.getInstance("SHA-256");
+            if (!"none".equals(DIGEST_ALGORITHM)) {
+                // wrap the input stream so we can calculate the digest hash of the wasm module
+                messageDigest = MessageDigest.getInstance(DIGEST_ALGORITHM);
                 maybeDigestedInputStream = new DigestInputStream(is, messageDigest);
-            } catch (NoSuchAlgorithmException ignore) {
-                // if we can't get the algorithm, then we just don't set the MessageDigest
             }
             parse(maybeDigestedInputStream, (s) -> onSection(moduleBuilder, s));
-
-        } catch (IOException e) {
+        } catch (IOException | NoSuchAlgorithmException e) {
             throw new ChicoryException(e);
         } catch (MalformedException e) {
             throw new MalformedException(
@@ -256,8 +256,9 @@ public final class Parser {
                     e);
         }
         if (messageDigest != null) {
+            String algo = DIGEST_ALGORITHM.toLowerCase(Locale.getDefault()).replace(":", "");
             moduleBuilder.withDigest(
-                    "sha256:" + Base64.getEncoder().encodeToString(messageDigest.digest()));
+                    algo + ":" + Base64.getEncoder().encodeToString(messageDigest.digest()));
         }
         return moduleBuilder.build();
     }

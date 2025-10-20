@@ -3,7 +3,7 @@ package com.dylibso.chicory.dircache;
 import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
 
 import com.dylibso.chicory.compiler.Cache;
-import com.dylibso.chicory.compiler.internal.PathUtils;
+import com.dylibso.chicory.dircache.internal.PathUtils;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.FileSystemException;
