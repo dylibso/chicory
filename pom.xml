@@ -71,7 +71,7 @@
     <checkstyle.version>12.0.1</checkstyle.version>
     <error-prone.version>2.42.0</error-prone.version>
     <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
-    <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
+    <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
     <maven-clean-plugin.version>3.5.0</maven-clean-plugin.version>
     <maven-compiler-plugin.version>3.14.1</maven-compiler-plugin.version>
