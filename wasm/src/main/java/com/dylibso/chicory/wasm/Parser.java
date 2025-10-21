@@ -16,8 +16,10 @@ import com.dylibso.chicory.wasm.io.InputStreams;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
+import com.dylibso.chicory.wasm.types.ArrayType;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.CodeSection;
+import com.dylibso.chicory.wasm.types.CompType;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.DataCountSection;
 import com.dylibso.chicory.wasm.types.DataSection;
@@ -27,6 +29,7 @@ import com.dylibso.chicory.wasm.types.ElementSection;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
+import com.dylibso.chicory.wasm.types.FieldType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionSection;
@@ -43,12 +46,17 @@ import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.PackedType;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.RawSection;
+import com.dylibso.chicory.wasm.types.RecType;
 import com.dylibso.chicory.wasm.types.Section;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
+import com.dylibso.chicory.wasm.types.StorageType;
+import com.dylibso.chicory.wasm.types.StructType;
+import com.dylibso.chicory.wasm.types.SubType;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TableLimits;
@@ -78,7 +86,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Parser for Web Assembly binaries.
@@ -231,6 +238,10 @@ public final class Parser {
 
     public WasmModule parse(Supplier<InputStream> inputStreamSupplier) {
         WasmModule.Builder moduleBuilder = WasmModule.builder();
+
+        // TODO: remove me skipping validation for now
+        moduleBuilder.withValidation(false);
+
         try (InputStream is = inputStreamSupplier.get()) {
             parse(is, (s) -> onSection(moduleBuilder, s));
         } catch (IOException e) {
@@ -472,64 +483,179 @@ public final class Parser {
         return new RawSection(sectionId, bytes);
     }
 
-    private static TypeSection parseTypeSection(ByteBuffer buffer) {
+    private static FieldType.Builder parseFieldType(ByteBuffer buffer) {
+        var id = (int) readVarUInt32(buffer);
 
-        var typeCount = readVarUInt32(buffer);
+        if (id == PackedType.I8.ID() || id == PackedType.I16.ID()) {
+            var packedType = PackedType.fromId(id);
+            var mut = MutabilityType.forId(readByte(buffer));
+            return FieldType.builder()
+                    .withStorageTypeBuilder(StorageType.builder().withPackedType(packedType))
+                    .withMutability(mut);
+        } else {
+            var valTypeBuilder = readValueTypeBuilderFromOpCode(buffer, id);
+            var mut = MutabilityType.forId(readByte(buffer));
+
+            return FieldType.builder()
+                    .withStorageTypeBuilder(
+                            StorageType.builder().withValTypeBuilder(valTypeBuilder))
+                    .withMutability(mut);
+        }
+    }
+
+    private static ArrayType.Builder parseArrayType(ByteBuffer buffer) {
+        return ArrayType.builder().withFieldTypeBuilder(parseFieldType(buffer));
+    }
+
+    private static StructType.Builder parseStructType(ByteBuffer buffer) {
+        var count = (int) readVarUInt32(buffer);
+        var builder = StructType.builder();
+        for (int i = 0; i < count; i++) {
+            builder.addFieldTypeBuilder(parseFieldType(buffer));
+        }
+        return builder;
+    }
+
+    private static FunctionType.Builder parseFunctionType(ByteBuffer buffer) {
+        var paramCount = (int) readVarUInt32(buffer);
+        List<ValType.Builder> paramsBuilder = new ArrayList<>(paramCount);
+
+        // Parse parameter types
+        for (int j = 0; j < paramCount; j++) {
+            paramsBuilder.add(readValueTypeBuilder(buffer));
+        }
+
+        var returnCount = (int) readVarUInt32(buffer);
+        List<ValType.Builder> returnsBuilder = new ArrayList<>(returnCount);
+
+        // Parse return types
+        for (int j = 0; j < returnCount; j++) {
+            returnsBuilder.add(readValueTypeBuilder(buffer));
+        }
+
+        // TODO: restore this check?
+        // a type can only refer to types with idx less than it
+        //        var maxTypeIdx = i - 1;
+        //        Stream.concat(Arrays.stream(paramsBuilder), Arrays.stream(returnsBuilder))
+        //                .forEach(
+        //                        v -> {
+        //                            if (v.isReference()) {
+        //                                var typeIdx = v.typeIdx();
+        //                                if (typeIdx > maxTypeIdx) {
+        //                                    throw new InvalidException(
+        //                                            "unknown type: recursive type, type
+        // mismatch");
+        //                                }
+        //                            }
+        //                        });
+
+        return FunctionType.builder().withParams(paramsBuilder).withReturns(returnsBuilder);
+    }
+
+    private static CompType.Builder parseCompType(int id, ByteBuffer buffer) {
+        if (id > Byte.MAX_VALUE) {
+            throw new MalformedException("integer representation too long");
+        }
+
+        switch (id) {
+            case 0x5E:
+                return CompType.builder().withArrayType(parseArrayType(buffer));
+            case 0x5F:
+                return CompType.builder().withStructType(parseStructType(buffer));
+            case 0x60:
+                return CompType.builder().withFuncType(parseFunctionType(buffer));
+            default:
+                throw new MalformedException(
+                        "Invalid composite type. Form "
+                                + String.format("0x%02X", id)
+                                + " was not 0x5E, 0x5f or 0x60");
+        }
+    }
+
+    private static SubType.Builder parseSubType(int id, ByteBuffer buffer) {
+        if (id == 0x50
+                || // non final typeIdx
+                id == 0x4F) { // final typeIdx
+            var count = (int) readVarUInt32(buffer);
+            var typeIdxs = new int[count];
+
+            for (int i = 0; i < count; i++) {
+                typeIdxs[i] = (int) readVarUInt32(buffer);
+            }
+            return SubType.builder()
+                    .withTypeIdx(typeIdxs)
+                    .withFinal(id == 0x4F)
+                    .withCompTypeBuilder(parseCompType((int) readVarUInt32(buffer), buffer));
+        } else {
+            // fallback to the compressed form
+            return SubType.builder()
+                    .withTypeIdx(new int[0])
+                    .withFinal(true)
+                    .withCompTypeBuilder(parseCompType(id, buffer));
+        }
+    }
+
+    private static RecType.Builder parseRecType(ByteBuffer buffer) {
+        var discriminator = (int) readVarUInt32(buffer);
+        if (discriminator == 0x4E) {
+            var count = (int) readVarUInt32(buffer);
+            var subTypes = new SubType.Builder[count];
+
+            for (int i = 0; i < count; i++) {
+                subTypes[i] = parseSubType((int) readVarUInt32(buffer), buffer);
+            }
+            return RecType.builder().withSubTypeBuilders(subTypes);
+        } else {
+            // fallback to the compressed form
+            return RecType.builder()
+                    .withSubTypeBuilders(
+                            new SubType.Builder[] {parseSubType(discriminator, buffer)});
+        }
+    }
+
+    private static boolean allResolved(RecType[] recTypes) {
+        for (int i = 0; i < recTypes.length; i++) {
+            if (recTypes[i] == null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static TypeSection parseTypeSection(ByteBuffer buffer) {
+        var typeCount = (int) readVarUInt32(buffer);
         TypeSection.Builder typeSection = TypeSection.builder();
 
         // Parse individual types in the type section
+        // first step we collect all the builders
+        var recTypeBuilders = new RecType.Builder[typeCount];
         for (int i = 0; i < typeCount; i++) {
-            var form = readVarUInt32(buffer);
-            if (form > Byte.MAX_VALUE) {
-                throw new MalformedException("integer representation too long");
-            }
-
-            if (form != 0x60) {
-                throw new MalformedException(
-                        "We don't support non func types. Form "
-                                + String.format("0x%02X", form)
-                                + " was given but we expected 0x60");
-            }
-
-            // Parse function types (form = 0x60)
-            var paramCount = (int) readVarUInt32(buffer);
-            var paramsBuilder = new ValType.Builder[paramCount];
-
-            // Parse parameter types
-            for (int j = 0; j < paramCount; j++) {
-                paramsBuilder[j] = readValueTypeBuilder(buffer);
-            }
-
-            var returnCount = (int) readVarUInt32(buffer);
-            var returnsBuilder = new ValType.Builder[returnCount];
-
-            // Parse return types
-            for (int j = 0; j < returnCount; j++) {
-                returnsBuilder[j] = readValueTypeBuilder(buffer);
-            }
-
-            // a type can only refer to types with idx less than it
-            var maxTypeIdx = i - 1;
-            Stream.concat(Arrays.stream(paramsBuilder), Arrays.stream(returnsBuilder))
-                    .forEach(
-                            v -> {
-                                if (v.isReference()) {
-                                    var typeIdx = v.typeIdx();
-                                    if (typeIdx > maxTypeIdx) {
-                                        throw new InvalidException(
-                                                "unknown type: recursive type, type mismatch");
-                                    }
-                                }
-                            });
-
-            Function<ValType.Builder, ValType> build =
-                    (ValType.Builder builder) -> builder.build(typeSection.getTypes()::get);
-
-            var params = Arrays.stream(paramsBuilder).map(build).toArray(ValType[]::new);
-            var returns = Arrays.stream(returnsBuilder).map(build).toArray(ValType[]::new);
-
-            typeSection.addFunctionType(FunctionType.of(params, returns));
+            recTypeBuilders[i] = parseRecType(buffer);
         }
+
+        // and we finalize resolving the types
+        RecType[] recTypes = new RecType[typeCount];
+        for (int i = 0; i < typeCount; i++) {
+            var builder = recTypeBuilders[i];
+            if (!builder.needsSubstitution()) {
+                recTypes[i] = builder.build(j -> null);
+            }
+        }
+        // TODO: this highly inefficient!!!!
+        // now what I'm doing is going to be very inefficient,
+        // but let see how far it gets!
+
+        // not sure this is needed, mutually recursive RecTypes?
+        // the types inside a RecType should be self-contained
+        // I should fix how resolution works
+        // while (!allResolved(recTypes)) {
+        for (int i = 0; i < typeCount; i++) {
+            if (recTypes[i] == null) {
+                recTypes[i] = recTypeBuilders[i].build(j -> recTypes[j]);
+            }
+        }
+        // }
+        typeSection.addRecTypes(recTypes);
 
         return typeSection.build();
     }
@@ -1120,7 +1246,7 @@ public final class Parser {
 
         var address = buffer.position();
         int b = (int) readByte(buffer) & 0xff;
-        if (b >= 0xfc && b < 0xff) { // is multi-byte
+        if (b >= 0xfb && b < 0xff) { // is multi-byte
             b = (int) ((b << 8) + readVarUInt32(buffer));
         }
         var op = OpCode.byOpCode(b);
@@ -1315,10 +1441,39 @@ public final class Parser {
     private static ValType.Builder readValueTypeBuilderFromOpCode(
             ByteBuffer buffer, int valueTypeOpCode) {
         var builder = ValType.builder().withOpcode(valueTypeOpCode);
-        if (valueTypeOpCode == ValType.ID.Ref || valueTypeOpCode == ValType.ID.RefNull) {
-            return builder.withTypeIdx((int) readVarSInt32(buffer));
-        } else {
+        // encoding:
+        // https://webassembly.github.io/gc/core/binary/types.html#value-types
+        if (valueTypeOpCode == ValType.ID.I32
+                || valueTypeOpCode == ValType.ID.I64
+                || valueTypeOpCode == ValType.ID.F32
+                || valueTypeOpCode == ValType.ID.F64) { // numtype
             return builder;
+        } else if (valueTypeOpCode == ValType.ID.V128) { // vectype
+            return builder;
+        } else { // reftype
+            // https://webassembly.github.io/gc/core/binary/types.html#reference-types
+            if (valueTypeOpCode == ValType.ID.Ref || valueTypeOpCode == ValType.ID.RefNull) {
+                var ht = (int) readVarUInt32(buffer);
+                boolean isNegative = (ht & 0x80000000) != 0;
+                // heaptype
+                if (ValType.ID.isAbsHeapType(ht)) {
+                    return builder.withTypeIdx(ht);
+                } else if (!isNegative) {
+                    return builder.withTypeIdx(ht);
+                } else {
+                    throw new MalformedException(
+                            "Compact version needs to be an AbsHeapType but: " + ht + " found");
+                }
+            } else { // fallback to compact version
+                if (ValType.ID.isAbsHeapType(valueTypeOpCode)) {
+                    return builder.withOpcode(ValType.ID.RefNull).withTypeIdx(valueTypeOpCode);
+                } else {
+                    throw new MalformedException(
+                            "Compact version needs to be an AbsHeapType but: "
+                                    + valueTypeOpCode
+                                    + " found");
+                }
+            }
         }
     }
 

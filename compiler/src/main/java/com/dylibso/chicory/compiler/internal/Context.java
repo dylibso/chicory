@@ -7,6 +7,7 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.RecType;
 import com.dylibso.chicory.wasm.types.TagImport;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayList;
@@ -106,12 +107,16 @@ final class Context {
         return functionTypes;
     }
 
-    public FunctionType type(int idx) {
+    public RecType type(int idx) {
         return module.typeSection().getType(idx);
     }
 
     public FunctionType[] types() {
-        return module.typeSection().types();
+        var types = new FunctionType[module.typeSection().types().length];
+        for (int i = 0; i < module.typeSection().types().length; i++) {
+            types[i] = module.typeSection().getType(i).subTypes()[0].compType().funcType();
+        }
+        return types;
     }
 
     public int getId() {
@@ -160,6 +165,6 @@ final class Context {
             }
             idx = module.tagSection().get().getTag(tagId - tagImports.size()).typeIdx();
         }
-        return type(idx);
+        return type(idx).subTypes()[0].compType().funcType();
     }
 }
