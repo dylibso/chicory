@@ -13,7 +13,8 @@ public final class MemCopyWorkaround {
     }
 
     public static boolean shouldUseMemWorkaround() {
-        return shouldUseMemWorkaround(System.getProperty("java.version"));
+        return false;
+        // return shouldUseMemWorkaround(System.getProperty("java.version"));
     }
 
     public static boolean shouldUseMemWorkaround(String version) {

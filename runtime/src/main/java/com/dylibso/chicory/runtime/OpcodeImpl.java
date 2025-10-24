@@ -85,7 +85,7 @@ public final class OpcodeImpl {
 
     @OpCodeIdentifier(OpCode.I32_GE_U)
     public static int I32_GE_U(int a, int b) {
-        return Integer.compareUnsigned(a, b) >= 0 ? TRUE : FALSE;
+        return a + Integer.MIN_VALUE >= b + Integer.MIN_VALUE ? TRUE : FALSE;
     }
 
     @OpCodeIdentifier(OpCode.I32_GT_S)
@@ -95,7 +95,7 @@ public final class OpcodeImpl {
 
     @OpCodeIdentifier(OpCode.I32_GT_U)
     public static int I32_GT_U(int a, int b) {
-        return Integer.compareUnsigned(a, b) > 0 ? TRUE : FALSE;
+        return a + Integer.MIN_VALUE > b + Integer.MIN_VALUE ? TRUE : FALSE;
     }
 
     @OpCodeIdentifier(OpCode.I32_LE_S)
@@ -105,7 +105,7 @@ public final class OpcodeImpl {
 
     @OpCodeIdentifier(OpCode.I32_LE_U)
     public static int I32_LE_U(int a, int b) {
-        return Integer.compareUnsigned(a, b) <= 0 ? TRUE : FALSE;
+        return a + Integer.MIN_VALUE <= b + Integer.MIN_VALUE ? TRUE : FALSE;
     }
 
     @OpCodeIdentifier(OpCode.I32_LT_S)
@@ -115,7 +115,7 @@ public final class OpcodeImpl {
 
     @OpCodeIdentifier(OpCode.I32_LT_U)
     public static int I32_LT_U(int a, int b) {
-        return Integer.compareUnsigned(a, b) < 0 ? TRUE : FALSE;
+        return a + Integer.MIN_VALUE < b + Integer.MIN_VALUE ? TRUE : FALSE;
     }
 
     @OpCodeIdentifier(OpCode.I32_NE)
@@ -324,7 +324,7 @@ public final class OpcodeImpl {
 
     @OpCodeIdentifier(OpCode.I64_GE_U)
     public static int I64_GE_U(long a, long b) {
-        return Long.compareUnsigned(a, b) >= 0 ? TRUE : FALSE;
+        return a + Long.MIN_VALUE >= b + Long.MIN_VALUE ? TRUE : FALSE;
     }
 
     @OpCodeIdentifier(OpCode.I64_GT_S)
@@ -334,7 +334,7 @@ public final class OpcodeImpl {
 
     @OpCodeIdentifier(OpCode.I64_GT_U)
     public static int I64_GT_U(long a, long b) {
-        return Long.compareUnsigned(a, b) > 0 ? TRUE : FALSE;
+        return a + Long.MIN_VALUE > b + Long.MIN_VALUE ? TRUE : FALSE;
     }
 
     @OpCodeIdentifier(OpCode.I64_LE_S)
@@ -344,7 +344,7 @@ public final class OpcodeImpl {
 
     @OpCodeIdentifier(OpCode.I64_LE_U)
     public static int I64_LE_U(long a, long b) {
-        return Long.compareUnsigned(a, b) <= 0 ? TRUE : FALSE;
+        return a + Long.MIN_VALUE <= b + Long.MIN_VALUE ? TRUE : FALSE;
     }
 
     @OpCodeIdentifier(OpCode.I64_LT_S)
@@ -354,7 +354,7 @@ public final class OpcodeImpl {
 
     @OpCodeIdentifier(OpCode.I64_LT_U)
     public static int I64_LT_U(long a, long b) {
-        return Long.compareUnsigned(a, b) < 0 ? TRUE : FALSE;
+        return a + Long.MIN_VALUE < b + Long.MIN_VALUE ? TRUE : FALSE;
     }
 
     @OpCodeIdentifier(OpCode.I64_NE)
