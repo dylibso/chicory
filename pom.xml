@@ -69,7 +69,7 @@
 
     <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
     <checkstyle.version>12.3.0</checkstyle.version>
-    <error-prone.version>2.42.0</error-prone.version>
+    <error-prone.version>2.43.0</error-prone.version>
     <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
     <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
