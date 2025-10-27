@@ -31,7 +31,7 @@ jobs:
         run: ./scripts/build-jmh.sh
       - name: Run JMH
         run: ./scripts/run-jmh.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         id: artifact-upload-step
         with:
           name: main
@@ -56,7 +56,7 @@ jobs:
         run: ./scripts/build-jmh.sh
       - name: Run JMH
         run: ./scripts/run-jmh.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         id: artifact-upload-step
         with:
           name: current
