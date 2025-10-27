@@ -70,7 +70,7 @@ jobs:
         script: ./gradlew device-tests:connectedCheck
     - name: Upload test results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: android-test-results-for-api-${{ matrix.api-level }}
         path: |
