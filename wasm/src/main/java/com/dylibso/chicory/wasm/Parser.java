@@ -68,12 +68,17 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -85,6 +90,8 @@ import java.util.stream.Stream;
  */
 @SuppressWarnings("UnnecessaryCodeBlock")
 public final class Parser {
+    private static final String DIGEST_ALGORITHM =
+            System.getProperty("com.dylibso.chicory.wasm.Parser.DIGEST_ALGORITHM", "SHA-256");
 
     static final byte[] MAGIC_BYTES = {0x00, 0x61, 0x73, 0x6D}; // Magic prefix \0asm
     static final byte[] VERSION_BYTES = {0x01, 0x00, 0x00, 0x00}; // Version 1
@@ -231,15 +238,27 @@ public final class Parser {
 
     public WasmModule parse(Supplier<InputStream> inputStreamSupplier) {
         WasmModule.Builder moduleBuilder = WasmModule.builder();
+        MessageDigest messageDigest = null;
         try (InputStream is = inputStreamSupplier.get()) {
-            parse(is, (s) -> onSection(moduleBuilder, s));
-        } catch (IOException e) {
+            InputStream maybeDigestedInputStream = is;
+            if (!"none".equals(DIGEST_ALGORITHM)) {
+                // wrap the input stream so we can calculate the digest hash of the wasm module
+                messageDigest = MessageDigest.getInstance(DIGEST_ALGORITHM);
+                maybeDigestedInputStream = new DigestInputStream(is, messageDigest);
+            }
+            parse(maybeDigestedInputStream, (s) -> onSection(moduleBuilder, s));
+        } catch (IOException | NoSuchAlgorithmException e) {
             throw new ChicoryException(e);
         } catch (MalformedException e) {
             throw new MalformedException(
                     "section size mismatch, unexpected end of section or function, "
                             + e.getMessage(),
                     e);
+        }
+        if (messageDigest != null) {
+            String algo = DIGEST_ALGORITHM.toLowerCase(Locale.getDefault()).replace(":", "");
+            moduleBuilder.withDigest(
+                    algo + ":" + Base64.getEncoder().encodeToString(messageDigest.digest()));
         }
         return moduleBuilder.build();
     }
