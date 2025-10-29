@@ -33,6 +33,7 @@ public final class TypeSection extends Section {
 
         private Builder() {}
 
+        @Deprecated
         public List<FunctionType> getTypes() {
             return types;
         }
