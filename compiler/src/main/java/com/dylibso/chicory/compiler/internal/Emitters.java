@@ -80,7 +80,7 @@ final class Emitters {
     }
 
     public static ValType valType(long id, Context ctx) {
-        return ValType.builder().fromId(id).build(ctx::type);
+        return ValType.builder().fromId(id).build().resolve(ctx.typeSection());
     }
 
     public static void DROP_KEEP(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
