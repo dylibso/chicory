@@ -6,9 +6,6 @@ import com.dylibso.chicory.wasm.Parser;
 import org.junit.jupiter.api.Test;
 
 public class ValTypeTest {
-    private FunctionType context(int idx) {
-        return FunctionType.returning(ValType.FuncRef);
-    }
 
     @Test
     public void roundtrip() {
@@ -24,20 +21,17 @@ public class ValTypeTest {
                     ValType.builder()
                             .withOpcode(ValType.ID.RefNull)
                             .withTypeIdx(ValType.TypeIdxCode.FUNC.code())
-                            .build(this::context),
+                            .build(),
                     ValType.builder()
                             .withOpcode(ValType.ID.Ref)
                             .withTypeIdx(ValType.TypeIdxCode.EXTERN.code())
-                            .build(this::context),
-                    ValType.builder()
-                            .withOpcode(ValType.ID.Ref)
-                            .withTypeIdx(16)
-                            .build(this::context),
+                            .build(),
+                    ValType.builder().withOpcode(ValType.ID.Ref).withTypeIdx(16).build(),
                 };
 
         for (var vt : cases) {
             long id = vt.id();
-            ValType roundTrip = ValType.builder().fromId(id).build(this::context);
+            ValType roundTrip = ValType.builder().fromId(id).build();
             assert vt.equals(roundTrip) : "Failed to roundtrip: " + vt;
         }
     }

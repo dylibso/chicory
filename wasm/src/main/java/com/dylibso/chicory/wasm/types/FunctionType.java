@@ -6,12 +6,10 @@ import java.util.Objects;
 public final class FunctionType {
     private final List<ValType> params;
     private final List<ValType> returns;
-    private final int hashCode;
 
     private FunctionType(List<ValType> params, List<ValType> returns) {
         this.params = params;
         this.returns = returns;
-        hashCode = Objects.hash(params, returns);
     }
 
     public List<ValType> params() {
@@ -36,12 +34,12 @@ public final class FunctionType {
     }
 
     public boolean equals(FunctionType other) {
-        return hashCode == other.hashCode && paramsMatch(other) && returnsMatch(other);
+        return hashCode() == other.hashCode() && paramsMatch(other) && returnsMatch(other);
     }
 
     @Override
     public int hashCode() {
-        return hashCode;
+        return Objects.hash(params, returns);
     }
 
     private static final FunctionType empty = new FunctionType(List.of(), List.of());

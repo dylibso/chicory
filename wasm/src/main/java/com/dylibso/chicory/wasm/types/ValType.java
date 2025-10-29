@@ -3,7 +3,6 @@ package com.dylibso.chicory.wasm.types;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -34,17 +33,26 @@ public final class ValType {
     // defined function type. This is not representable in the binary or textual representation
     // of WASM. This is instead used after substitution to represent closed ValType.
     // This is useful when validating import function values.
-    private final FunctionType resolvedFunctionType;
+    private FunctionType resolvedFunctionType;
+    private final int resolvedFunctionTypeId;
 
     private ValType(int opcode) {
-        this(opcode, NULL_TYPEIDX, null);
+        this(opcode, NULL_TYPEIDX, -1);
     }
 
     private ValType(int opcode, int typeIdx) {
-        this(opcode, typeIdx, null);
+        this(opcode, typeIdx, -1);
     }
 
-    private ValType(int opcode, int typeIdx, FunctionType resolvedFunctionType) {
+    private ValType(int opcode, int typeIdx, int resolvedFunctionTypeId) {
+        this(opcode, typeIdx, resolvedFunctionTypeId, null);
+    }
+
+    private ValType(
+            int opcode,
+            int typeIdx,
+            int resolvedFunctionTypeId,
+            FunctionType resolvedFunctionType) {
         // Conveniently, all value types we want to represent can fit inside a Java long.
         // We store the typeIdx (of reference types) in the upper 4 bytes and the opcode in the
         // lower 4 bytes.
@@ -58,11 +66,31 @@ public final class ValType {
             typeIdx = TypeIdxCode.EXN.code();
             opcode = ID.RefNull;
         } else if ((opcode == ID.RefNull || opcode == ID.Ref) && typeIdx >= 0) {
-            Objects.requireNonNull(resolvedFunctionType);
+            assert resolvedFunctionTypeId >= 0;
         }
+        this.resolvedFunctionTypeId = resolvedFunctionTypeId;
         this.resolvedFunctionType = resolvedFunctionType;
 
         this.id = createId(opcode, typeIdx);
+    }
+
+    public ValType resolve(TypeSection typeSection) {
+        return resolve(typeSection, -1);
+    }
+
+    public ValType resolve(TypeSection typeSection, int currentIdx) {
+        if (resolvedFunctionTypeId >= 0) {
+            if (currentIdx >= 0 && currentIdx <= resolvedFunctionTypeId) {
+                throw new InvalidException(
+                        "type mismatch, unknown type: " + resolvedFunctionTypeId);
+            }
+            try {
+                resolvedFunctionType = typeSection.getType(resolvedFunctionTypeId);
+            } catch (IndexOutOfBoundsException e) {
+                throw new InvalidException("unknown type: " + resolvedFunctionTypeId);
+            }
+        }
+        return this;
     }
 
     private static long createId(int opcode, int typeIdx) {
@@ -251,7 +279,7 @@ public final class ValType {
 
     @Override
     public int hashCode() {
-        if (this.resolvedFunctionType != null) {
+        if (this.resolvedFunctionTypeId >= 0) {
             return resolvedFunctionType.hashCode();
         }
         return Long.hashCode(id);
@@ -408,22 +436,30 @@ public final class ValType {
             return ValType.isReference(opcode);
         }
 
-        public ValType build() {
-            return build(
-                    (i) -> {
-                        throw new ChicoryException("build with empty context tried resolving " + i);
-                    });
-        }
-
+        @Deprecated(since = "use .build.resolve(typeSection) instead")
         public ValType build(Function<Integer, FunctionType> context) {
             if (!isValidOpcode(opcode)) {
                 throw new ChicoryException("Invalid type opcode: " + opcode);
             }
 
             var resolvedFunctionType = substitute(opcode, typeIdx, context);
-            return new ValType(opcode, typeIdx, resolvedFunctionType);
+            return new ValType(
+                    opcode,
+                    typeIdx,
+                    (ValType.isReference(opcode) && typeIdx >= 0) ? typeIdx : -1,
+                    resolvedFunctionType);
         }
 
+        public ValType build() {
+            if (!isValidOpcode(opcode)) {
+                throw new ChicoryException("Invalid type opcode: " + opcode);
+            }
+
+            return new ValType(
+                    opcode, typeIdx, (ValType.isReference(opcode) && typeIdx >= 0) ? typeIdx : -1);
+        }
+
+        @Deprecated(since = "use .build.resolve(typeSection) instead")
         public FunctionType substitute(
                 int opcode, int typeIdx, Function<Integer, FunctionType> context) {
             if (ValType.isReference(opcode) && typeIdx >= 0) {
