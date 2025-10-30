@@ -149,6 +149,8 @@
             <wast>proposals/function-references/type-equivalence.wast</wast>
             <wast>proposals/function-references/unreached-invalid.wast</wast>
             <wast>proposals/function-references/unreached-valid.wast</wast>
+            <wast>proposals/gc/binary-gc.wast</wast>
+            <wast>proposals/gc/binary.wast</wast>
             <wast>proposals/tail-call/return_call.wast</wast>
             <wast>proposals/tail-call/return_call_indirect.wast</wast>
             <wast>proposals/threads/atomic.wast</wast>
@@ -407,6 +409,8 @@
                 <wast>proposals/function-references/type-equivalence.wast</wast>
                 <wast>proposals/function-references/unreached-invalid.wast</wast>
                 <wast>proposals/function-references/unreached-valid.wast</wast>
+                <wast>proposals/gc/binary-gc.wast</wast>
+                <wast>proposals/gc/binary.wast</wast>
                 <wast>proposals/tail-call/return_call.wast</wast>
                 <wast>proposals/tail-call/return_call_indirect.wast</wast>
                 <wast>proposals/threads/atomic.wast</wast>

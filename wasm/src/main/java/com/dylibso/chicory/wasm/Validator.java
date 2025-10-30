@@ -457,9 +457,8 @@ final class Validator {
     }
 
     void validateTypes() {
-        var types = module.typeSection().types();
-        for (var i = 0; i < types.length; i++) {
-            var t = types[i];
+        for (var i = 0; i < module.typeSection().typeCount(); i++) {
+            var t = module.typeSection().getType(i);
             t.params().forEach(this::validateValueType);
             t.returns().forEach(this::validateValueType);
         }
