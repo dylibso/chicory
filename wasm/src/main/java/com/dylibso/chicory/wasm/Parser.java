@@ -16,8 +16,10 @@ import com.dylibso.chicory.wasm.io.InputStreams;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
+import com.dylibso.chicory.wasm.types.ArrayType;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.CodeSection;
+import com.dylibso.chicory.wasm.types.CompType;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.DataCountSection;
 import com.dylibso.chicory.wasm.types.DataSection;
@@ -27,6 +29,7 @@ import com.dylibso.chicory.wasm.types.ElementSection;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
+import com.dylibso.chicory.wasm.types.FieldType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionSection;
@@ -43,12 +46,17 @@ import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.PackedType;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.RawSection;
+import com.dylibso.chicory.wasm.types.RecType;
 import com.dylibso.chicory.wasm.types.Section;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
+import com.dylibso.chicory.wasm.types.StorageType;
+import com.dylibso.chicory.wasm.types.StructType;
+import com.dylibso.chicory.wasm.types.SubType;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TableLimits;
@@ -490,50 +498,159 @@ public final class Parser {
         return new RawSection(sectionId, bytes);
     }
 
-    private static TypeSection parseTypeSection(ByteBuffer buffer) {
+    private static FieldType parseFieldType(ByteBuffer buffer) {
+        var id = (int) readVarUInt32(buffer);
 
-        var typeCount = readVarUInt32(buffer);
+        if (id == PackedType.I8.ID() || id == PackedType.I16.ID()) {
+            var packedType = PackedType.fromId(id);
+            var mut = MutabilityType.forId(readByte(buffer));
+            return FieldType.builder()
+                    .withStorageType(StorageType.builder().withPackedType(packedType).build())
+                    .withMutability(mut)
+                    .build();
+        } else {
+            var valType = readValueTypeBuilderFromOpCode(buffer, id).build();
+            var mut = MutabilityType.forId(readByte(buffer));
+
+            return FieldType.builder()
+                    .withStorageType(StorageType.builder().withValType(valType).build())
+                    .withMutability(mut)
+                    .build();
+        }
+    }
+
+    private static ArrayType parseArrayType(ByteBuffer buffer) {
+        return ArrayType.builder().withFieldType(parseFieldType(buffer)).build();
+    }
+
+    private static StructType parseStructType(ByteBuffer buffer) {
+        var count = (int) readVarUInt32(buffer);
+        var builder = StructType.builder();
+        for (int i = 0; i < count; i++) {
+            builder.addFieldType(parseFieldType(buffer));
+        }
+        return builder.build();
+    }
+
+    private static FunctionType parseFunctionType(ByteBuffer buffer) {
+        var paramCount = (int) readVarUInt32(buffer);
+        List<ValType> paramsBuilder = new ArrayList<>(paramCount);
+
+        // Parse parameter types
+        for (int j = 0; j < paramCount; j++) {
+            paramsBuilder.add(readValueTypeBuilder(buffer).build());
+        }
+
+        var returnCount = (int) readVarUInt32(buffer);
+        List<ValType> returnsBuilder = new ArrayList<>(returnCount);
+
+        // Parse return types
+        for (int j = 0; j < returnCount; j++) {
+            returnsBuilder.add(readValueTypeBuilder(buffer).build());
+        }
+
+        return FunctionType.of(paramsBuilder, returnsBuilder);
+    }
+
+    private static CompType parseCompType(int id, ByteBuffer buffer) {
+        if (id > Byte.MAX_VALUE) {
+            throw new MalformedException("integer representation too long");
+        }
+
+        switch (id) {
+            case 0x5E:
+                return CompType.builder().withArrayType(parseArrayType(buffer)).build();
+            case 0x5F:
+                return CompType.builder().withStructType(parseStructType(buffer)).build();
+            case 0x60:
+                return CompType.builder().withFuncType(parseFunctionType(buffer)).build();
+            default:
+                throw new MalformedException(
+                        "Invalid composite type. Form "
+                                + String.format("0x%02X", id)
+                                + " was not 0x5E, 0x5f or 0x60");
+        }
+    }
+
+    private static SubType parseSubType(int id, ByteBuffer buffer) {
+        if (id == 0x50
+                || // non final typeIdx
+                id == 0x4F) { // final typeIdx
+            var count = (int) readVarUInt32(buffer);
+            var typeIdxs = new int[count];
+
+            for (int i = 0; i < count; i++) {
+                typeIdxs[i] = (int) readVarUInt32(buffer);
+            }
+            return SubType.builder()
+                    .withTypeIdx(typeIdxs)
+                    .withFinal(id == 0x4F)
+                    .withCompType(parseCompType((int) readVarUInt32(buffer), buffer))
+                    .build();
+        } else {
+            // fallback to the compressed form
+            return SubType.builder()
+                    .withTypeIdx(new int[0])
+                    .withFinal(true)
+                    .withCompType(parseCompType(id, buffer))
+                    .build();
+        }
+    }
+
+    private static RecType parseRecType(ByteBuffer buffer) {
+        var discriminator = (int) readVarUInt32(buffer);
+        if (discriminator == 0x4E) {
+            var count = (int) readVarUInt32(buffer);
+            var subTypes = new SubType[count];
+
+            for (int i = 0; i < count; i++) {
+                subTypes[i] = parseSubType((int) readVarUInt32(buffer), buffer);
+            }
+            return RecType.builder().withSubTypes(subTypes).build();
+        } else {
+            // fallback to the compressed form
+            return RecType.builder()
+                    .withSubTypes(new SubType[] {parseSubType(discriminator, buffer)})
+                    .build();
+        }
+    }
+
+    private static TypeSection parseTypeSection(ByteBuffer buffer) {
+        var typeCount = (int) readVarUInt32(buffer);
         TypeSection.Builder typeSectionBuilder = TypeSection.builder();
 
         for (int i = 0; i < typeCount; i++) {
-            var form = readVarUInt32(buffer);
-            if (form > Byte.MAX_VALUE) {
-                throw new MalformedException("integer representation too long");
-            }
-
-            if (form != 0x60) {
-                throw new MalformedException(
-                        "We don't support non func types. Form "
-                                + String.format("0x%02X", form)
-                                + " was given but we expected 0x60");
-            }
-
-            var paramCount = (int) readVarUInt32(buffer);
-            var params = new ValType[paramCount];
-
-            for (int j = 0; j < paramCount; j++) {
-                params[j] = readValueTypeBuilder(buffer).build();
-            }
-
-            var returnCount = (int) readVarUInt32(buffer);
-            var returns = new ValType[returnCount];
-
-            for (int j = 0; j < returnCount; j++) {
-                returns[j] = readValueTypeBuilder(buffer).build();
-            }
-
-            typeSectionBuilder.addFunctionType(FunctionType.of(params, returns));
+            typeSectionBuilder.addRecType(parseRecType(buffer));
         }
 
         var typeSection = typeSectionBuilder.build();
 
+        // Resolution phase, keeping it explicit to be able to more easily catch and throw relevant
+        // errors
         for (int i = 0; i < typeSection.typeCount(); i++) {
-            var t = typeSection.getType(i);
-            for (var p : t.params()) {
-                p.resolve(typeSection, i);
-            }
-            for (var r : t.returns()) {
-                r.resolve(typeSection, i);
+            var rt = typeSection.getRecType(i);
+            for (var st : rt.subTypes()) {
+                var ct = st.compType();
+                if (ct.funcType() != null) {
+                    var ft = ct.funcType();
+                    for (var p : ft.params()) {
+                        p.resolve(typeSection, i);
+                    }
+                    for (var r : ft.returns()) {
+                        r.resolve(typeSection, i);
+                    }
+                }
+                if (ct.arrayType() != null
+                        && ct.arrayType().fieldType().storageType().valType() != null) {
+                    ct.arrayType().fieldType().storageType().valType().resolve(typeSection);
+                }
+                if (ct.structType() != null) {
+                    for (var t : ct.structType().fieldTypes()) {
+                        if (t.storageType().valType() != null) {
+                            t.storageType().valType().resolve(typeSection);
+                        }
+                    }
+                }
             }
         }
 
