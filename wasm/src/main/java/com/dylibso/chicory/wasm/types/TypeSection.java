@@ -1,5 +1,6 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.InvalidException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -30,6 +31,21 @@ public final class TypeSection extends Section {
 
     public RecType getRecType(int idx) {
         return types.get(idx);
+    }
+
+    public SubType getSubType(int idx) {
+        // TODO: improve performance
+        int i = 0;
+        for (var t : types) {
+            for (var st : t.subTypes()) {
+                if (i == idx) {
+                    return st;
+                }
+                i++;
+            }
+        }
+
+        throw new InvalidException("unknown type " + idx);
     }
 
     public static Builder builder() {

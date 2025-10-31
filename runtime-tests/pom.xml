@@ -151,6 +151,9 @@
             <wast>proposals/function-references/unreached-valid.wast</wast>
             <wast>proposals/gc/binary-gc.wast</wast>
             <wast>proposals/gc/binary.wast</wast>
+            <wast>proposals/gc/type-canon.wast</wast>
+            <wast>proposals/gc/type-equivalence.wast</wast>
+            <wast>proposals/gc/type-rec.wast</wast>
             <wast>proposals/tail-call/return_call.wast</wast>
             <wast>proposals/tail-call/return_call_indirect.wast</wast>
             <wast>proposals/threads/atomic.wast</wast>
@@ -411,6 +414,9 @@
                 <wast>proposals/function-references/unreached-valid.wast</wast>
                 <wast>proposals/gc/binary-gc.wast</wast>
                 <wast>proposals/gc/binary.wast</wast>
+                <wast>proposals/gc/type-canon.wast</wast>
+                <wast>proposals/gc/type-equivalence.wast</wast>
+                <wast>proposals/gc/type-rec.wast</wast>
                 <wast>proposals/tail-call/return_call.wast</wast>
                 <wast>proposals/tail-call/return_call_indirect.wast</wast>
                 <wast>proposals/threads/atomic.wast</wast>

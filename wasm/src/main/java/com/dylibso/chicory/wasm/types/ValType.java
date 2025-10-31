@@ -33,7 +33,7 @@ public final class ValType {
     // defined function type. This is not representable in the binary or textual representation
     // of WASM. This is instead used after substitution to represent closed ValType.
     // This is useful when validating import function values.
-    private FunctionType resolvedFunctionType;
+    private SubType resolvedFunctionType;
     private final int resolvedFunctionTypeId;
 
     private ValType(int opcode) {
@@ -49,10 +49,7 @@ public final class ValType {
     }
 
     private ValType(
-            int opcode,
-            int typeIdx,
-            int resolvedFunctionTypeId,
-            FunctionType resolvedFunctionType) {
+            int opcode, int typeIdx, int resolvedFunctionTypeId, SubType resolvedFunctionType) {
         // Conveniently, all value types we want to represent can fit inside a Java long.
         // We store the typeIdx (of reference types) in the upper 4 bytes and the opcode in the
         // lower 4 bytes.
@@ -85,7 +82,7 @@ public final class ValType {
                         "type mismatch, unknown type: " + resolvedFunctionTypeId);
             }
             try {
-                resolvedFunctionType = typeSection.getType(resolvedFunctionTypeId);
+                resolvedFunctionType = typeSection.getSubType(resolvedFunctionTypeId);
             } catch (IndexOutOfBoundsException e) {
                 throw new InvalidException("unknown type: " + resolvedFunctionTypeId);
             }
@@ -196,6 +193,22 @@ public final class ValType {
 
     public boolean isReference() {
         return isReference(this.opcode());
+    }
+
+    // https://webassembly.github.io/gc/core/binary/types.html#heap-types
+    public static boolean isAbsHeapType(int opcode) {
+        return (opcode == ID.NoFuncRef
+                || opcode == ID.NoExternRef
+                || opcode == ID.NoneRef
+                || opcode == ID.FuncRef
+                || opcode == ID.ExternRef
+                // TODO: verify?
+                || opcode == ID.ExnRef
+                || opcode == ID.AnyRef
+                || opcode == ID.EqRef
+                || opcode == ID.i31
+                || opcode == ID.StructRef
+                || opcode == ID.ArrayRef);
     }
 
     /**
@@ -349,10 +362,17 @@ public final class ValType {
         public static final int BOT = -1;
         public static final int RefNull = 0x63;
         public static final int Ref = 0x64;
-        public static final int ExternRef = 0x6f;
-        // From the Exception Handling proposal
         public static final int ExnRef = 0x69; // -0x17
+        public static final int ArrayRef = 0x6A;
+        public static final int StructRef = 0x6B;
+        public static final int i31 = 0x6C;
+        public static final int EqRef = 0x6D;
+        public static final int AnyRef = 0x6E;
+        public static final int ExternRef = 0x6f;
         public static final int FuncRef = 0x70;
+        public static final int NoneRef = 0x71;
+        public static final int NoExternRef = 0x72;
+        public static final int NoFuncRef = 0x73;
         public static final int V128 = 0x7b;
         public static final int F64 = 0x7c;
         public static final int F32 = 0x7d;
@@ -446,8 +466,13 @@ public final class ValType {
             return new ValType(
                     opcode,
                     typeIdx,
-                    (ValType.isReference(opcode) && typeIdx >= 0) ? typeIdx : -1,
-                    resolvedFunctionType);
+                    (ValType.isReference(opcode) && !ValType.isAbsHeapType(opcode) && typeIdx >= 0)
+                            ? typeIdx
+                            : -1,
+                    SubType.builder()
+                            .withCompType(
+                                    CompType.builder().withFuncType(resolvedFunctionType).build())
+                            .build());
         }
 
         public ValType build() {
@@ -456,7 +481,11 @@ public final class ValType {
             }
 
             return new ValType(
-                    opcode, typeIdx, (ValType.isReference(opcode) && typeIdx >= 0) ? typeIdx : -1);
+                    opcode,
+                    typeIdx,
+                    (ValType.isReference(opcode) && !ValType.isAbsHeapType(opcode) && typeIdx >= 0)
+                            ? typeIdx
+                            : -1);
         }
 
         @Deprecated(since = "use .build.resolve(typeSection) instead")

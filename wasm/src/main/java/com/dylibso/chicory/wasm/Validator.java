@@ -458,9 +458,12 @@ final class Validator {
 
     void validateTypes() {
         for (var i = 0; i < module.typeSection().typeCount(); i++) {
-            var t = module.typeSection().getType(i);
-            t.params().forEach(this::validateValueType);
-            t.returns().forEach(this::validateValueType);
+            var t = module.typeSection().getRecType(i);
+            // TODO: fix me!
+            if (t.isLegacy()) {
+                t.legacy().params().forEach(this::validateValueType);
+                t.legacy().returns().forEach(this::validateValueType);
+            }
         }
     }
 
