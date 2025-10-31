@@ -321,14 +321,15 @@ final class Validator {
     }
 
     private ValType valType(long id) {
-        return ValType.builder().fromId(id).build(module.typeSection()::getType);
+        return ValType.builder().fromId(id).build().resolve(module.typeSection());
     }
 
     private ValType valType(int opcode, int typeIdx) {
         return ValType.builder()
                 .withOpcode(opcode)
                 .withTypeIdx(typeIdx)
-                .build(module.typeSection()::getType);
+                .build()
+                .resolve(module.typeSection());
     }
 
     private List<ValType> getReturns(AnnotatedInstruction op) {
