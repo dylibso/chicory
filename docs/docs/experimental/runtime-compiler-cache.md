@@ -64,7 +64,7 @@ Create the cache:
 -->
 ```java
 import java.nio.file.Path;
-import com.dylibso.chicory.dircache.DirectoryCache;
+import com.dylibso.chicory.experimental.dircache.DirectoryCache;
 
 var cache = new DirectoryCache(Path.of("cache"));
 ```
