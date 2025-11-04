@@ -33,7 +33,7 @@ public final class ValType {
     // defined function type. This is not representable in the binary or textual representation
     // of WASM. This is instead used after substitution to represent closed ValType.
     // This is useful when validating import function values.
-    private SubType resolvedFunctionType;
+    private int resolvedFunctionTypeHash;
     private final int resolvedFunctionTypeId;
 
     private ValType(int opcode) {
@@ -45,11 +45,11 @@ public final class ValType {
     }
 
     private ValType(int opcode, int typeIdx, int resolvedFunctionTypeId) {
-        this(opcode, typeIdx, resolvedFunctionTypeId, null);
+        this(opcode, typeIdx, resolvedFunctionTypeId, -1);
     }
 
     private ValType(
-            int opcode, int typeIdx, int resolvedFunctionTypeId, SubType resolvedFunctionType) {
+            int opcode, int typeIdx, int resolvedFunctionTypeId, int resolvedFunctionTypeHash) {
         // Conveniently, all value types we want to represent can fit inside a Java long.
         // We store the typeIdx (of reference types) in the upper 4 bytes and the opcode in the
         // lower 4 bytes.
@@ -66,7 +66,7 @@ public final class ValType {
             assert resolvedFunctionTypeId >= 0;
         }
         this.resolvedFunctionTypeId = resolvedFunctionTypeId;
-        this.resolvedFunctionType = resolvedFunctionType;
+        this.resolvedFunctionTypeHash = resolvedFunctionTypeHash;
 
         this.id = createId(opcode, typeIdx);
     }
@@ -83,7 +83,7 @@ public final class ValType {
             //                        "type mismatch, unknown type: " + resolvedFunctionTypeId);
             //            }
             try {
-                resolvedFunctionType = typeSection.getSubType(resolvedFunctionTypeId);
+                resolvedFunctionTypeHash = typeSection.getSubType(resolvedFunctionTypeId).hashCode();
             } catch (IndexOutOfBoundsException e) {
                 throw new InvalidException("unknown type: " + resolvedFunctionTypeId);
             }
@@ -262,7 +262,7 @@ public final class ValType {
         if (t1.typeIdx() >= 0 && t2.typeIdx() == TypeIdxCode.FUNC.code()) {
             return true;
         } else if (t1.typeIdx() >= 0 && t2.typeIdx() >= 0) {
-            return t1.resolvedFunctionType.equals(t2.resolvedFunctionType);
+            return t1.resolvedFunctionTypeHash == t2.resolvedFunctionTypeHash;
         } else if (t1.typeIdx() == TypeIdxCode.BOT.code()) {
             return true;
         }
@@ -293,6 +293,9 @@ public final class ValType {
 
     @Override
     public int hashCode() {
+        if (resolvedFunctionTypeHash != -1) {
+            return resolvedFunctionTypeHash;
+        }
         return Long.hashCode(id);
     }
 
@@ -309,12 +312,12 @@ public final class ValType {
         }
 
         // For types without resolvedFunctionType, compare by id
-        if (this.resolvedFunctionType == null && that.resolvedFunctionType == null) {
+        if (this.resolvedFunctionTypeHash == -1 && that.resolvedFunctionTypeHash == -1) {
             return this.id == that.id;
         }
 
         // If only one has resolvedFunctionType, they're not equal
-        if (this.resolvedFunctionType == null || that.resolvedFunctionType == null) {
+        if (this.resolvedFunctionTypeHash == -1 || that.resolvedFunctionTypeHash == -1) {
             return false;
         }
 
@@ -334,7 +337,7 @@ public final class ValType {
         // Do structural comparison by comparing resolvedFunctionType
         // Cycles are handled by the typeIdx check above - when we recursively compare
         // nested ValTypes with the same typeIdx, we'll return true at the check above
-        return this.resolvedFunctionType.equals(that.resolvedFunctionType);
+        return this.resolvedFunctionTypeHash == that.resolvedFunctionTypeHash;
     }
 
     @Override
@@ -494,7 +497,7 @@ public final class ValType {
                     SubType.builder()
                             .withCompType(
                                     CompType.builder().withFuncType(resolvedFunctionType).build())
-                            .build());
+                            .build().hashCode());
         }
 
         public ValType build() {
