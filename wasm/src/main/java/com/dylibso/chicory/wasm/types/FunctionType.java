@@ -34,7 +34,10 @@ public final class FunctionType {
     }
 
     public boolean equals(FunctionType other) {
-        return hashCode() == other.hashCode() && paramsMatch(other) && returnsMatch(other);
+        // For type equivalence, we need structural comparison even when hashCodes differ
+        // (e.g., when ValTypes have different typeIdx but same structure)
+        // So we do structural comparison first, not relying on hashCode
+        return paramsMatch(other) && returnsMatch(other);
     }
 
     @Override
