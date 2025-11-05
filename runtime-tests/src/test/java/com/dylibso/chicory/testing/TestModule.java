@@ -4,7 +4,7 @@ import com.dylibso.chicory.runtime.ByteArrayMemory;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
-import com.dylibso.chicory.wabt.Wat2Wasm;
+import com.dylibso.chicory.tools.wasm.Wat2Wasm;
 import com.dylibso.chicory.wasm.MalformedException;
 import com.dylibso.chicory.wasm.Parser;
 import com.dylibso.chicory.wasm.WasmModule;
@@ -55,7 +55,14 @@ public class TestModule {
                 }
                 return of(Parser.parse(parsed));
             }
-            return of(Parser.parse(is));
+            return of(
+                    Parser.builder()
+                            // TODO: temporary to move forward with WasmGC
+                            // .withValidation(false)
+                            .build()
+                            // TODO: this API is a little surprising the static methods
+                            // are not intuitive as they create a new instance of the Parser
+                            .parse(() -> is));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

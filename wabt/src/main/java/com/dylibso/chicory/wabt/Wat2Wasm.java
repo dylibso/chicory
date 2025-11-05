@@ -45,7 +45,7 @@ public final class Wat2Wasm {
 
     public static byte[] parse(String wat) {
         try (InputStream is = new ByteArrayInputStream(wat.getBytes(StandardCharsets.UTF_8))) {
-            return parse(is, "temp.wast");
+            return parse(is);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

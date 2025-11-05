@@ -14,7 +14,7 @@
   <description>wasm tools compiled to pure Java with Chicory</description>
 
   <properties>
-    <wasm-tools.version>1.227.1</wasm-tools.version>
+    <wasm-tools.version>1.240.0</wasm-tools.version>
   </properties>
 
   <dependencies>
@@ -59,12 +59,13 @@
             <configuration>
               <name>com.dylibso.chicory.tools.wasm.WasmToolsModule</name>
               <wasmFile>${project.basedir}/target/wasm-tools.wasm</wasmFile>
+              <!-- <interpreterFallback>WARN</interpreterFallback> -->
               <interpretedFunctions>
-                <function>3938</function>
-                <function>4116</function>
-                <function>4614</function>
-                <function>6771</function>
-                <function>13564</function>
+                <function>4725</function>
+                <function>5095</function>
+                <function>5422</function>
+                <function>7668</function>
+                <function>10543</function>
               </interpretedFunctions>
             </configuration>
           </execution>

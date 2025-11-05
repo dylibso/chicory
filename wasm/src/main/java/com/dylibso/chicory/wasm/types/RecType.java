@@ -17,7 +17,7 @@ public final class RecType {
     public boolean isLegacy() {
         return subTypes.length == 1
                 && subTypes[0].compType() != null
-                && subTypes[0].compType() != null;
+                && subTypes[0].compType().funcType() != null;
     }
 
     public FunctionType legacy() {
