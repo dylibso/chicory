@@ -97,6 +97,9 @@
       <activation>
         <jdk>21</jdk>
       </activation>
+      <properties>
+        <maven.compiler.release>21</maven.compiler.release>
+      </properties>
       <build>
         <plugins>
           <plugin>
