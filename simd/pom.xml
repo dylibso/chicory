@@ -14,7 +14,7 @@
   <description>SIMD instructions support for Chicory</description>
 
   <properties>
-    <maven.compiler.release>21</maven.compiler.release>
+    <maven.compiler.release>25</maven.compiler.release>
 
     <!-- TODO: fixme working around "[WARNING] using incubating module(s): jdk.incubator.vector" -->
     <maven.compiler.failOnWarning>false</maven.compiler.failOnWarning>
