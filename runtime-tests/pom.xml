@@ -20,17 +20,17 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wabt</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm-corpus</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm-tools</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -151,9 +151,29 @@
             <wast>proposals/function-references/unreached-valid.wast</wast>
             <wast>proposals/gc/binary-gc.wast</wast>
             <wast>proposals/gc/binary.wast</wast>
+            <wast>proposals/gc/br_if.wast</wast>
+            <wast>proposals/gc/br_on_non_null.wast</wast>
+            <wast>proposals/gc/br_on_null.wast</wast>
+            <wast>proposals/gc/br_table.wast</wast>
+            <wast>proposals/gc/call_ref.wast</wast>
+            <wast>proposals/gc/func.wast</wast>
+            <wast>proposals/gc/if.wast</wast>
+            <wast>proposals/gc/linking.wast</wast>
+            <wast>proposals/gc/local_get.wast</wast>
+            <wast>proposals/gc/local_init.wast</wast>
+            <wast>proposals/gc/local_tee.wast</wast>
+            <wast>proposals/gc/ref.wast</wast>
+            <wast>proposals/gc/ref_as_non_null.wast</wast>
+            <wast>proposals/gc/ref_is_null.wast</wast>
+            <wast>proposals/gc/return_call.wast</wast>
+            <wast>proposals/gc/return_call_indirect.wast</wast>
+            <wast>proposals/gc/return_call_ref.wast</wast>
+            <wast>proposals/gc/select.wast</wast>
+            <wast>proposals/gc/table-sub.wast</wast>
+            <wast>proposals/gc/table.wast</wast>
             <wast>proposals/gc/type-canon.wast</wast>
-            <wast>proposals/gc/type-equivalence.wast</wast>
-            <wast>proposals/gc/type-rec.wast</wast>
+            <wast>proposals/gc/unreached-invalid.wast</wast>
+            <wast>proposals/gc/unreached-valid.wast</wast>
             <wast>proposals/tail-call/return_call.wast</wast>
             <wast>proposals/tail-call/return_call_indirect.wast</wast>
             <wast>proposals/threads/atomic.wast</wast>
@@ -414,9 +434,29 @@
                 <wast>proposals/function-references/unreached-valid.wast</wast>
                 <wast>proposals/gc/binary-gc.wast</wast>
                 <wast>proposals/gc/binary.wast</wast>
+                <wast>proposals/gc/br_if.wast</wast>
+                <wast>proposals/gc/br_on_non_null.wast</wast>
+                <wast>proposals/gc/br_on_null.wast</wast>
+                <wast>proposals/gc/br_table.wast</wast>
+                <wast>proposals/gc/call_ref.wast</wast>
+                <wast>proposals/gc/func.wast</wast>
+                <wast>proposals/gc/if.wast</wast>
+                <wast>proposals/gc/linking.wast</wast>
+                <wast>proposals/gc/local_get.wast</wast>
+                <wast>proposals/gc/local_init.wast</wast>
+                <wast>proposals/gc/local_tee.wast</wast>
+                <wast>proposals/gc/ref.wast</wast>
+                <wast>proposals/gc/ref_as_non_null.wast</wast>
+                <wast>proposals/gc/ref_is_null.wast</wast>
+                <wast>proposals/gc/return_call.wast</wast>
+                <wast>proposals/gc/return_call_indirect.wast</wast>
+                <wast>proposals/gc/return_call_ref.wast</wast>
+                <wast>proposals/gc/select.wast</wast>
+                <wast>proposals/gc/table-sub.wast</wast>
+                <wast>proposals/gc/table.wast</wast>
                 <wast>proposals/gc/type-canon.wast</wast>
-                <wast>proposals/gc/type-equivalence.wast</wast>
-                <wast>proposals/gc/type-rec.wast</wast>
+                <wast>proposals/gc/unreached-invalid.wast</wast>
+                <wast>proposals/gc/unreached-valid.wast</wast>
                 <wast>proposals/tail-call/return_call.wast</wast>
                 <wast>proposals/tail-call/return_call_indirect.wast</wast>
                 <wast>proposals/threads/atomic.wast</wast>
