@@ -72,18 +72,10 @@ public final class ValType {
     }
 
     public ValType resolve(TypeSection typeSection) {
-        return resolve(typeSection, -1);
-    }
-
-    public ValType resolve(TypeSection typeSection, int currentIdx) {
         if (resolvedFunctionTypeId >= 0) {
-            // commenting for now
-            //            if (currentIdx >= 0 && currentIdx <= resolvedFunctionTypeId) {
-            //                throw new InvalidException(
-            //                        "type mismatch, unknown type: " + resolvedFunctionTypeId);
-            //            }
             try {
-                resolvedFunctionTypeHash = typeSection.getSubType(resolvedFunctionTypeId).hashCode();
+                resolvedFunctionTypeHash =
+                        typeSection.getSubType(resolvedFunctionTypeId).hashCode();
             } catch (IndexOutOfBoundsException e) {
                 throw new InvalidException("unknown type: " + resolvedFunctionTypeId);
             }
@@ -116,6 +108,10 @@ public final class ValType {
 
     public int typeIdx() {
         return typeIdx(id);
+    }
+
+    public int resolvedFunctionTypeId() {
+        return resolvedFunctionTypeId;
     }
 
     /**
@@ -220,6 +216,11 @@ public final class ValType {
             case ID.RefNull:
             case ID.Ref:
             case ID.ExnRef:
+            case ID.AnyRef:
+            case ID.EqRef:
+            case ID.i31:
+            case ID.StructRef:
+            case ID.ArrayRef:
             case ID.V128:
             case ID.I32:
             case ID.I64:
@@ -497,7 +498,8 @@ public final class ValType {
                     SubType.builder()
                             .withCompType(
                                     CompType.builder().withFuncType(resolvedFunctionType).build())
-                            .build().hashCode());
+                            .build()
+                            .hashCode());
         }
 
         public ValType build() {

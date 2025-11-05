@@ -105,6 +105,7 @@ public final class Parser {
 
     private final Map<String, Function<byte[], CustomSection>> customParsers;
     private final BitSet includeSections;
+    private final boolean validate;
 
     private TypeSection typeSection;
 
@@ -112,14 +113,17 @@ public final class Parser {
             Map.of("name", NameCustomSection::parse);
 
     private Parser() {
-        this(null, DEFAULT_CUSTOM_PARSERS);
+        this(null, DEFAULT_CUSTOM_PARSERS, true);
     }
 
     private Parser(
-            BitSet includeSections, Map<String, Function<byte[], CustomSection>> customParsers) {
+            BitSet includeSections,
+            Map<String, Function<byte[], CustomSection>> customParsers,
+            boolean validate) {
         this.includeSections = includeSections;
         this.customParsers = Map.copyOf(customParsers);
         this.typeSection = TypeSection.builder().build();
+        this.validate = validate;
     }
 
     private static ByteBuffer readByteBuffer(InputStream is) {
@@ -190,6 +194,7 @@ public final class Parser {
     public static final class Builder {
         private Map<String, Function<byte[], CustomSection>> customParsers;
         private BitSet includeSections;
+        private boolean validate = true;
 
         private Builder() {}
 
@@ -210,11 +215,16 @@ public final class Parser {
             return this;
         }
 
+        public Builder withValidation(boolean validate) {
+            this.validate = validate;
+            return this;
+        }
+
         public Parser build() {
             if (customParsers == null) {
                 customParsers = DEFAULT_CUSTOM_PARSERS;
             }
-            return new Parser(includeSections, customParsers);
+            return new Parser(includeSections, customParsers, validate);
         }
     }
 
@@ -245,6 +255,7 @@ public final class Parser {
 
     public WasmModule parse(Supplier<InputStream> inputStreamSupplier) {
         WasmModule.Builder moduleBuilder = WasmModule.builder();
+        moduleBuilder.withValidation(validate);
         MessageDigest messageDigest = null;
         try (InputStream is = inputStreamSupplier.get()) {
             InputStream maybeDigestedInputStream = is;
@@ -634,10 +645,10 @@ public final class Parser {
                 if (ct.funcType() != null) {
                     var ft = ct.funcType();
                     for (var p : ft.params()) {
-                        p.resolve(typeSection, i);
+                        p.resolve(typeSection);
                     }
                     for (var r : ft.returns()) {
-                        r.resolve(typeSection, i);
+                        r.resolve(typeSection);
                     }
                 }
                 if (ct.arrayType() != null
@@ -1243,7 +1254,7 @@ public final class Parser {
 
         var address = buffer.position();
         int b = (int) readByte(buffer) & 0xff;
-        if (b >= 0xfc && b < 0xff) { // is multi-byte
+        if (b >= 0xfb && b < 0xff) { // is multi-byte
             b = (int) ((b << 8) + readVarUInt32(buffer));
         }
         var op = OpCode.byOpCode(b);
