@@ -208,13 +208,6 @@
         <version>${javaparser.version}</version>
       </dependency>
 
-      <!-- Error Prone -->
-      <dependency>
-        <groupId>com.google.errorprone</groupId>
-        <artifactId>error_prone_annotations</artifactId>
-        <version>${error-prone.version}</version>
-      </dependency>
-
       <!-- Commons-io -->
       <dependency>
         <groupId>commons-io</groupId>
@@ -781,6 +774,16 @@
       <id>java11</id>
       <activation>
         <jdk>11</jdk>
+      </activation>
+      <properties>
+        <checkstyle.skip>true</checkstyle.skip>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>disable-error-prone</id>
+      <activation>
+        <jdk>[11,21)</jdk>
       </activation>
       <build>
         <plugins>
