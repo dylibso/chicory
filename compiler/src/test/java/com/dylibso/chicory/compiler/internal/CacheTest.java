@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.dylibso.chicory.compiler.Cache;
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
+import com.dylibso.chicory.corpus.CorpusResources;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import java.io.IOException;
@@ -69,8 +70,7 @@ public class CacheTest {
     public void shouldCacheCompiledResultInMem() {
 
         var cache = new CacheWithHitCounter(new MockCache());
-        var module =
-                Parser.parse(CacheTest.class.getResourceAsStream("/compiled/count_vowels.rs.wasm"));
+        var module = Parser.parse(CorpusResources.getResource("compiled/count_vowels.rs.wasm"));
 
         var instance1 =
                 Instance.builder(module)

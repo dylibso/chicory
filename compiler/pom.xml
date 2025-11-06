@@ -71,9 +71,12 @@
           <execution>
             <id>default-testCompile</id>
             <configuration>
+              <!-- Those openings are required by approval tests -->
               <compilerArgs>
                 <arg>--add-modules</arg>
                 <arg>java.sql</arg>
+                <arg>--add-modules</arg>
+                <arg>java.desktop</arg>
               </compilerArgs>
             </configuration>
           </execution>
