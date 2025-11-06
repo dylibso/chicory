@@ -26,7 +26,10 @@ android {
     }
     kotlinOptions { jvmTarget = "11" }
 
-    packagingOptions { pickFirst("logging.properties") }
+    packagingOptions {
+        pickFirst("logging.properties")
+        exclude("META-INF/jpms.args")
+    }
 }
 
 dependencies {

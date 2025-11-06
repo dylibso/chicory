@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import com.dylibso.chicory.corpus.CorpusResources;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
@@ -30,7 +31,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseFile() throws IOException {
-        try (InputStream is = getClass().getResourceAsStream("/compiled/start.wat.wasm")) {
+        try (InputStream is = CorpusResources.getResource("compiled/start.wat.wasm")) {
             var module = Parser.parse(is);
 
             // check types section
@@ -93,7 +94,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseIterfact() throws IOException {
-        try (InputStream is = getClass().getResourceAsStream("/compiled/iterfact.wat.wasm")) {
+        try (InputStream is = CorpusResources.getResource("compiled/iterfact.wat.wasm")) {
             var module = Parser.parse(is);
 
             // check types section
@@ -133,7 +134,7 @@ public class ParserTest {
     public void shouldSupportCustomListener() throws IOException {
         var parser = Parser.builder().includeSectionId(SectionId.CUSTOM).build();
 
-        try (InputStream is = getClass().getResourceAsStream("/compiled/count_vowels.rs.wasm")) {
+        try (InputStream is = CorpusResources.getResource("compiled/count_vowels.rs.wasm")) {
             parser.parse(
                     is,
                     s -> {
@@ -150,7 +151,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseFloats() throws IOException {
-        try (InputStream is = getClass().getResourceAsStream("/compiled/float.wat.wasm")) {
+        try (InputStream is = CorpusResources.getResource("compiled/float.wat.wasm")) {
             var module = Parser.parse(is);
             var codeSection = module.codeSection();
             var fbody = codeSection.getFunctionBody(0);
@@ -163,7 +164,7 @@ public class ParserTest {
 
     @Test
     public void shouldProperlyParseSignedValue() throws IOException {
-        try (InputStream is = getClass().getResourceAsStream("/compiled/i32.wat.wasm")) {
+        try (InputStream is = CorpusResources.getResource("compiled/i32.wat.wasm")) {
             var module = Parser.parse(is);
             var codeSection = module.codeSection();
             var fbody = codeSection.getFunctionBody(0);
@@ -186,7 +187,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseLocalDefinitions() throws Exception {
-        try (InputStream is = getClass().getResourceAsStream("/compiled/define-locals.wat.wasm")) {
+        try (InputStream is = CorpusResources.getResource("compiled/define-locals.wat.wasm")) {
             var module = Parser.parse(is);
             var codeSection = module.codeSection();
             var fbody = codeSection.getFunctionBody(0);
@@ -197,7 +198,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseNamesSection() throws IOException {
-        try (InputStream is = getClass().getResourceAsStream("/compiled/count_vowels.rs.wasm")) {
+        try (InputStream is = CorpusResources.getResource("compiled/count_vowels.rs.wasm")) {
             var module = Parser.parse(is);
             var nameSec = module.nameSection();
             assertEquals(module.codeSection().functionBodyCount(), nameSec.functionNameCount());
@@ -208,7 +209,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseSIMD() throws IOException {
-        try (InputStream is = ParserTest.class.getResourceAsStream("/wasm/simd_load.0.wasm")) {
+        try (InputStream is = CorpusResources.getResource("wasm/simd_load.0.wasm")) {
             Parser.parse(is);
         }
     }
@@ -229,8 +230,7 @@ public class ParserTest {
 
     @Test
     public void shouldParseOnlyImportedTags() throws IOException {
-        try (InputStream is =
-                ParserTest.class.getResourceAsStream("/compiled/issue_906.wat.wasm")) {
+        try (InputStream is = CorpusResources.getResource("compiled/issue_906.wat.wasm")) {
             Parser.parse(is);
         }
     }

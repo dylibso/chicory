@@ -371,6 +371,11 @@
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${maven-checkstyle-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-clean-plugin</artifactId>
           <version>${maven-clean-plugin.version}</version>
         </plugin>
@@ -482,6 +487,10 @@
           <excludeGeneratedSources>true</excludeGeneratedSources>
           <checkstyleRules>
             <module name="Checker">
+              <module name="BeforeExecutionExclusionFileFilter">
+                <!-- checkstyle does not support module-info files (checkstyle issue 8240) -->
+                <property name="fileNamePattern" value="module\-info\.java$"/>
+              </module>
               <module name="FileTabCharacter">
                 <property name="fileExtensions" value="java,xml"/>
               </module>
@@ -541,6 +550,13 @@
             </module>
           </checkstyleRules>
         </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>${checkstyle.version}</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <id>checkstyle</id>
@@ -681,6 +697,23 @@
             <java.util.logging.config.file>src/test/resources/logging.properties</java.util.logging.config.file>
           </systemPropertyVariables>
         </configuration>
+        <executions>
+          <execution>
+            <id>default-test</id>
+            <configuration>
+              <useModulePath>false</useModulePath>
+            </configuration>
+          </execution>
+          <execution>
+            <id>test-module-path</id>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <useModulePath>true</useModulePath>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
@@ -749,11 +782,23 @@
       <activation>
         <jdk>11</jdk>
       </activation>
-      <properties>
-        <checkstyle.skip>true</checkstyle.skip>
-      </properties>
       <build>
         <plugins>
+          <!-- disable checkstyle -->
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+            <dependencies/>
+            <executions>
+              <execution>
+                <id>checkstyle</id>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
           <!-- disable Error Prone -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>

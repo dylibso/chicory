@@ -1,6 +1,7 @@
 package com.dylibso.chicory.testing;
 
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
+import com.dylibso.chicory.corpus.CorpusResources;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Store;
@@ -40,7 +41,7 @@ public class TestModule {
                     + "multiple start sections";
 
     public static TestModule of(String classpath) {
-        try (var is = TestModule.class.getResourceAsStream(classpath)) {
+        try (var is = CorpusResources.getResource(classpath.substring(1))) {
             if (classpath.endsWith(".wat")) {
                 byte[] parsed;
                 try {

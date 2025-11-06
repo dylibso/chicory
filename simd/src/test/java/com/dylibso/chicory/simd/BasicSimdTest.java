@@ -2,6 +2,7 @@ package com.dylibso.chicory.simd;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.dylibso.chicory.corpus.CorpusResources;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.Parser;
 import org.junit.jupiter.api.Test;
@@ -14,8 +15,8 @@ public class BasicSimdTest {
         var instance =
                 Instance.builder(
                                 Parser.parse(
-                                        BasicSimdTest.class.getResourceAsStream(
-                                                "/compiled/simd-example.wat.wasm")))
+                                        CorpusResources.getResource(
+                                                "compiled/simd-example.wat.wasm")))
                         .withMachineFactory(SimdInterpreterMachine::new)
                         .build();
         var main = instance.export("main");

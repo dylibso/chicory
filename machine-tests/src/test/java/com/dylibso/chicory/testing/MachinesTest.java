@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dylibso.chicory.compiler.MachineFactoryCompiler;
+import com.dylibso.chicory.corpus.CorpusResources;
 import com.dylibso.chicory.runtime.ImportTable;
 import com.dylibso.chicory.runtime.ImportValues;
 import com.dylibso.chicory.runtime.Instance;
@@ -42,7 +43,7 @@ import org.junit.jupiter.api.Test;
 public final class MachinesTest {
 
     private WasmModule loadModule(String fileName) {
-        return Parser.parse(getClass().getResourceAsStream("/" + fileName));
+        return Parser.parse(CorpusResources.getResource(fileName));
     }
 
     private Instance.Builder quickJsInstanceBuilder() {
