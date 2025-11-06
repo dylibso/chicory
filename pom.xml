@@ -208,6 +208,13 @@
         <version>${javaparser.version}</version>
       </dependency>
 
+      <!-- Error Prone annotations (needed even when Error Prone is disabled) -->
+      <dependency>
+        <groupId>com.google.errorprone</groupId>
+        <artifactId>error_prone_annotations</artifactId>
+        <version>${error-prone.version}</version>
+      </dependency>
+
       <!-- Commons-io -->
       <dependency>
         <groupId>commons-io</groupId>
@@ -771,20 +778,13 @@
     </profile>
 
     <profile>
-      <id>java11</id>
-      <activation>
-        <jdk>11</jdk>
-      </activation>
-      <properties>
-        <checkstyle.skip>true</checkstyle.skip>
-      </properties>
-    </profile>
-
-    <profile>
       <id>disable-error-prone</id>
       <activation>
         <jdk>[11,21)</jdk>
       </activation>
+      <properties>
+        <checkstyle.skip>true</checkstyle.skip>
+      </properties>
       <build>
         <plugins>
           <!-- disable checkstyle -->
@@ -807,7 +807,11 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
-              <compilerArgs combine.self="override"/>
+              <compilerArgs combine.self="override">
+                <arg>-XDcompilePolicy=simple</arg>
+                <arg>--should-stop=ifError=FLOW</arg>
+              </compilerArgs>
+              <annotationProcessorPaths combine.self="override"/>
             </configuration>
           </plugin>
         </plugins>
