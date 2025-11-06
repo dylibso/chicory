@@ -14,7 +14,7 @@ import picocli.CommandLine;
         versionProvider = Cli.VersionProvider.class,
         mixinStandardHelpOptions = true,
         helpCommand = true,
-        header = "A CLI to generate resources using the Chicory AOT compiler")
+        header = "A CLI to generate resources using the Chicory build-time compiler")
 public class Cli implements Runnable {
     static final class VersionProvider implements CommandLine.IVersionProvider {
         @Override

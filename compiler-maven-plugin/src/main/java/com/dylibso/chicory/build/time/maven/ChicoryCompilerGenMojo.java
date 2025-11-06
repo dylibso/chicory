@@ -76,7 +76,7 @@ public class ChicoryCompilerGenMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
-        getLog().info("Generating AOT classes for " + name + " from " + wasmFile);
+        getLog().info("Compiling classes for " + name + " from " + wasmFile);
 
         var config =
                 Config.builder()

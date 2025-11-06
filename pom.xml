@@ -103,7 +103,7 @@
   <dependencyManagement>
     <dependencies>
 
-      <!-- Used by AOT compiler -->
+      <!-- Used by build-time compiler -->
       <dependency>
         <groupId>org.ow2.asm</groupId>
         <artifactId>asm-bom</artifactId>

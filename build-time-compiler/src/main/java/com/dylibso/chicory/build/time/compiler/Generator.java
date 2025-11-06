@@ -214,7 +214,7 @@ public class Generator {
         // Wast2JsonModule.class.getResourceAsStream("Wast2JsonModule.meta")) {
         //                INSTANCE = Parser.parse(in);
         //            } catch (IOException e) {
-        //                throw new UncheckedIOException("Failed to load AOT WASM module", e);
+        //                throw new UncheckedIOException("Failed to load .meta WASM module", e);
         //            }
         //        }
         //    }
@@ -256,7 +256,7 @@ public class Generator {
         var newException =
                 new ObjectCreationExpr()
                         .setType(parseClassOrInterfaceType("UncheckedIOException"))
-                        .addArgument(new StringLiteralExpr("Failed to load AOT WASM module"))
+                        .addArgument(new StringLiteralExpr("Failed to load .meta WASM module"))
                         .addArgument(new NameExpr("e"));
         var catchIoException =
                 new CatchClause()
