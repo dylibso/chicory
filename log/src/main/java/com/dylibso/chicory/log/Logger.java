@@ -1,5 +1,6 @@
 package com.dylibso.chicory.log;
 
+import com.google.errorprone.annotations.FormatMethod;
 import java.util.Objects;
 import java.util.function.Supplier;
 
