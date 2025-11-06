@@ -308,7 +308,7 @@ enum CompilerOpCode {
     public static CompilerOpCode of(OpCode opcode) {
         CompilerOpCode value = OPCODES.get(opcode);
         if (value == null) {
-            throw new IllegalArgumentException("No AOT opcode for " + opcode);
+            throw new IllegalArgumentException("No compiler opcode for " + opcode);
         }
         return value;
     }

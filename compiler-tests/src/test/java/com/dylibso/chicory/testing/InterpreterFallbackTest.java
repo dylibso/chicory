@@ -132,7 +132,7 @@ public class InterpreterFallbackTest {
         try (InputStream in = machineClass.getResourceAsStream("Test3.meta")) {
             module = Parser.parse(in);
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load AOT WASM module", e);
+            throw new UncheckedIOException("Failed to load .meta WASM module", e);
         }
         var instance =
                 Instance.builder(module)
