@@ -40,8 +40,13 @@ public class DirectoryCache implements Cache {
      */
     @Override
     public byte[] get(String key) throws IOException {
-        Path target = toFilePath(key);
-        return Files.isRegularFile(target) ? Files.readAllBytes(target) : null;
+        try {
+            Path target = toFilePath(key);
+            return Files.isRegularFile(target) ? Files.readAllBytes(target) : null;
+        } catch (IOException e) {
+            // if we can't read it, then treat it like it not being in the cache.
+            return null;
+        }
     }
 
     /**
