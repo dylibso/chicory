@@ -811,7 +811,10 @@
                 <arg>-XDcompilePolicy=simple</arg>
                 <arg>--should-stop=ifError=FLOW</arg>
               </compilerArgs>
-              <annotationProcessorPaths combine.self="override"/>
+              <annotationProcessorPaths combine.self="override">
+                <!-- Empty annotation processor paths to prevent Error Prone from loading -->
+                <!-- Custom annotation processors are added by child modules via combine.children="append" -->
+              </annotationProcessorPaths>
             </configuration>
           </plugin>
         </plugins>
