@@ -10,6 +10,7 @@ import static com.dylibso.chicory.wasm.types.ExternalType.TAG;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Objects.requireNonNullElseGet;
 
+import com.dylibso.chicory.runtime.internal.IntWeakValueMap;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.UninstantiableException;
@@ -68,6 +69,7 @@ public class Instance {
     private final Exports fluentExports;
 
     private final Map<Integer, WasmException> exnRefs;
+    private final IntWeakValueMap<long[]> arrayRefs;
 
     Instance(
             WasmModule module,
@@ -108,6 +110,7 @@ public class Instance {
         this.fluentExports = new Exports(this);
 
         this.exnRefs = new HashMap<>();
+        this.arrayRefs = new IntWeakValueMap<>();
 
         for (int i = 0; i < tables.length; i++) {
             var initValue = (int) computeConstantValue(this, tables[i].initialize())[0];
@@ -337,6 +340,14 @@ public class Instance {
 
     public WasmException exn(int idx) {
         return exnRefs.get(idx);
+    }
+
+    public int registerArray(long[] arr) {
+        return arrayRefs.put(arr);
+    }
+
+    public long[] array(int idx) {
+        return arrayRefs.get(idx);
     }
 
     public Machine getMachine() {
