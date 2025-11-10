@@ -54,7 +54,7 @@
 
     <approvaltests.version>25.7.0</approvaltests.version>
     <asm.version>9.9</asm.version>
-    <commons-io.version>2.20.0</commons-io.version>
+    <commons-io.version>2.21.0</commons-io.version>
     <commons-lang.version>3.19.0</commons-lang.version>
     <jackson-annotations.version>2.20</jackson-annotations.version>
     <jackson-databind.version>2.20.1</jackson-databind.version>
