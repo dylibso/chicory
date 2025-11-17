@@ -20,6 +20,8 @@ public class DirectoryCache implements Cache {
 
     private static final String ALLOWED_DIGEST_CHARS = "^[A-Za-z0-9+_\\-/]+=$";
     private static final Pattern ALLOWED_DIGEST_CHARS_REGEX = Pattern.compile(ALLOWED_DIGEST_CHARS);
+    private static final boolean ON_WINDOWS =
+            System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("win");
 
     private final Path baseDir;
     private final Path tmpRoot;
@@ -75,14 +77,33 @@ public class DirectoryCache implements Cache {
             // Ensure parent exists before atomic move.
             Files.createDirectories(parent);
 
-            // Move it
-            Files.move(tmpFile, finalPath, ATOMIC_MOVE);
-        } catch (FileSystemException e) {
-            // did another process beat us to creating the cache entry?
-            if (Files.isRegularFile(finalPath)) {
-                return;
+            // Setup a move retry loop
+            for (int i = 1; true; i++) {
+                try {
+                    Files.move(tmpFile, finalPath, ATOMIC_MOVE);
+                } catch (FileSystemException e) {
+                    if (Files.isRegularFile(finalPath)) {
+                        // Another process won the race -> treat as putIfAbsent no-op
+                        return;
+                    }
+
+                    // We only need to retry on windows, since it's file locks can cause
+                    // AccessDeniedExceptions
+                    if (!ON_WINDOWS) {
+                        throw e;
+                    }
+
+                    // Bail if we have retried too many times.
+                    if (i > 5) {
+                        throw e;
+                    }
+                    Thread.sleep(10L * i);
+                }
             }
-            throw e;
+
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted while waiting after AccessDenied", ie);
         } catch (UncheckedIOException e) {
             throw e.getCause();
         } finally {
