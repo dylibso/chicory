@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 // Heavily inspired by wazero
@@ -321,14 +322,15 @@ final class Validator {
     }
 
     private ValType valType(long id) {
-        return ValType.builder().fromId(id).build(module.typeSection()::getType);
+        return ValType.builder().fromId(id).build().resolve(module.typeSection());
     }
 
     private ValType valType(int opcode, int typeIdx) {
         return ValType.builder()
                 .withOpcode(opcode)
                 .withTypeIdx(typeIdx)
-                .build(module.typeSection()::getType);
+                .build()
+                .resolve(module.typeSection());
     }
 
     private List<ValType> getReturns(AnnotatedInstruction op) {
@@ -456,11 +458,27 @@ final class Validator {
     }
 
     void validateTypes() {
-        var types = module.typeSection().types();
-        for (var i = 0; i < types.length; i++) {
-            var t = types[i];
-            t.params().forEach(this::validateValueType);
-            t.returns().forEach(this::validateValueType);
+        for (var i = 0; i < module.typeSection().typeCount(); i++) {
+            var t = module.typeSection().getRecType(i);
+            // TODO: fix me!
+            if (t.isLegacy()) {
+                // The following code fixes the 2 tests, but breaks many things in GC:
+                // FunctionReferencesType-equivalence.test2
+                // FunctionReferencesType-equivalence.test3
+                // TODO: seems "wrong" when using WasmGC
+                final int idx = i;
+                Consumer<ValType> noForwardRef =
+                        v -> {
+                            if (v.resolvedFunctionTypeId() >= idx) {
+                                throw new InvalidException("unknown type " + v.typeIdx());
+                            }
+                        };
+                t.legacy().params().forEach(noForwardRef);
+                t.legacy().returns().forEach(noForwardRef);
+
+                t.legacy().params().forEach(this::validateValueType);
+                t.legacy().returns().forEach(this::validateValueType);
+            }
         }
     }
 
@@ -2152,6 +2170,7 @@ final class Validator {
         }
 
         if (!errors.isEmpty()) {
+            errors.stream().forEach(e -> e.printStackTrace());
             throw new InvalidException(
                     errors.stream().map(Throwable::getMessage).collect(joining(" - ")));
         }
