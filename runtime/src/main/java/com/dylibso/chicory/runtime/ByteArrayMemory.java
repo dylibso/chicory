@@ -19,7 +19,7 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 
 /**
@@ -62,17 +62,19 @@ public final class ByteArrayMemory implements Memory {
         this.buffer = new byte[allocStrategy.initial(PAGE_SIZE * limits.initialPages())];
         this.nPages = limits.initialPages();
         if (limits.shared()) {
-            monitors = new ConcurrentHashMap<>();
-            notifyInProgress = new ConcurrentHashMap<>();
+            waitStates = new ConcurrentHashMap<>();
         } else {
-            monitors = null;
-            notifyInProgress = null;
+            waitStates = null;
         }
     }
 
-    // atomic wait handling
-    private final Map<Integer, AtomicInteger> monitors;
-    private final Map<Integer, AtomicInteger> notifyInProgress;
+    // Tracks wait state per address: waiter count and pending wakeups
+    private static final class WaitState {
+        int waiterCount;
+        int pendingWakeups;
+    }
+
+    private final Map<Integer, WaitState> waitStates;
 
     @Override
     public Object lock(int address) {
@@ -80,127 +82,97 @@ public final class ByteArrayMemory implements Memory {
             // disable locking
             return new Object();
         }
-        return monitors.computeIfAbsent(address, k -> new AtomicInteger(0));
+        return waitStates.computeIfAbsent(address, k -> new WaitState());
     }
 
-    private AtomicInteger nextMonitor(int address) {
-        return monitors.compute(
-                address,
-                (k, v) -> {
-                    if (v == null) {
-                        return new AtomicInteger(1);
-                    } else {
-                        v.incrementAndGet();
-                        return v;
-                    }
-                });
-    }
-
-    // this method should only be invoked guarded in a "synchronized (monitor)" section
-    private int waitOnMonitor(int address, long timeout, AtomicInteger monitor) {
-        long endTime = System.nanoTime() + timeout;
-        try {
-            while (!notifyInProgress.containsKey(address) // prevents spurious wakeup
-                    && System.nanoTime() < endTime) {
-                var waitTime = endTime - System.nanoTime();
-                long millis = Math.max(waitTime / 1_000_000L, 0);
-                int nanos = Math.max((int) (waitTime % 1_000_000L), 0);
-                monitor.wait(millis, nanos);
-            }
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt(); // Restore interrupt status
-            throw new ChicoryInterruptedException("Thread interrupted");
-        }
-        if (System.nanoTime() >= endTime) {
-            return 2; // timeout
-        } else {
-            return 0; // wake
-        }
-    }
-
-    private void endWaitOn(int address) {
-        AtomicInteger notifyCount = notifyInProgress.get(address);
-        if (notifyCount != null && notifyCount.decrementAndGet() == 0) {
-            notifyInProgress.remove(address);
-        }
-        AtomicInteger monitor = monitors.get(address);
-        if (monitor != null && monitor.decrementAndGet() == 0) {
-            monitors.remove(address);
-        }
-    }
-
-    // Wait until value at address != expected
-    @Override
-    public int waitOn(int address, int expected, long timeout) {
+    // Wait IF condition is true
+    private int waitOn(int address, BooleanSupplier condition, long timeout) {
         if (!shared()) {
             throw new ChicoryException("Attempt to wait on a non-shared memory, not supported.");
         }
-        AtomicInteger monitor = nextMonitor(address);
 
-        synchronized (monitor) {
+        long deadline = (timeout < 0) ? Long.MAX_VALUE : System.nanoTime() + timeout;
+
+        WaitState state = waitStates.computeIfAbsent(address, k -> new WaitState());
+
+        synchronized (state) {
+            // Check the condition while holding the lock
+            // This must be atomic with the decision to wait
+            if (!condition.getAsBoolean()) {
+                return 1; // not-equal
+            }
+
+            state.waiterCount++;
             try {
-                if (readInt(address) == expected) {
-                    return waitOnMonitor(
-                            address, (timeout < 0) ? Long.MAX_VALUE : timeout, monitor);
-                } else {
-                    return 1; // not-equal
+
+                while (state.pendingWakeups == 0) {
+                    long remaining = deadline - System.nanoTime();
+                    if (remaining <= 0) {
+                        return 2; // timeout
+                    }
+                    long millis = Math.max(remaining / 1_000_000L, 0);
+                    int nanos = Math.max((int) (remaining % 1_000_000L), 0);
+                    try {
+                        state.wait(millis, nanos);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new ChicoryInterruptedException("Thread interrupted");
+                    }
                 }
+                // Consume one pending wakeup
+                state.pendingWakeups--;
+                return 0; // woken
             } finally {
-                endWaitOn(address);
+                state.waiterCount--;
             }
         }
+    }
+
+    @Override
+    public int waitOn(int address, int expected, long timeout) {
+        return waitOn(address, () -> readInt(address) == expected, timeout);
     }
 
     @Override
     public int waitOn(int address, long expected, long timeout) {
-        if (!shared()) {
-            throw new ChicoryException("Attempt to wait on a non-shared memory, not supported.");
-        }
-        AtomicInteger monitor = nextMonitor(address);
-
-        synchronized (monitor) {
-            try {
-                if (readLong(address) == expected) {
-                    return waitOnMonitor(
-                            address, (timeout < 0) ? Long.MAX_VALUE : timeout, monitor);
-                } else {
-                    return 1; // not-equal
-                }
-            } finally {
-                endWaitOn(address);
-            }
-        }
+        return waitOn(address, () -> readLong(address) == expected, timeout);
     }
 
-    // Notify all waiters at this address
+    // Notify waiters at this address
     @Override
     public int notify(int address, int maxThreads) {
         if (!shared()) {
             return 0;
         }
 
-        AtomicInteger monitor = monitors.get(address);
-        if (monitor == null) {
+        WaitState state = waitStates.get(address);
+        if (state == null) {
             return 0;
         }
 
-        synchronized (monitor) {
-            if (maxThreads < 0 || monitor.get() < maxThreads) {
-                notifyInProgress.put(address, new AtomicInteger(monitor.get()));
-                monitor.notifyAll();
-            } else {
-                var count = maxThreads;
-                notifyInProgress.put(address, new AtomicInteger(monitor.get() - maxThreads));
-                while (monitor.get() > 0 && count > 0) {
-                    monitor.notify();
-                    count--;
-                }
+        synchronized (state) {
+            int actualWaiters = state.waiterCount;
+            if (actualWaiters == 0) {
+                return 0;
             }
+
+            // Calculate how many to wake: min(waiters, maxThreads)
+            int toWake;
+            if (maxThreads < 0) {
+                toWake = actualWaiters; // wake all
+            } else {
+                toWake = Math.min(actualWaiters, maxThreads);
+            }
+
+            // Add pending wakeups - waiters will consume these
+            state.pendingWakeups += toWake;
+
+            for (int i = 0; i < toWake; i++) {
+                state.notify();
+            }
+
+            return toWake;
         }
-        if (monitor.get() <= 0) {
-            monitors.remove(address);
-        }
-        return monitor.get();
     }
 
     private byte[] allocateByteBuffer(int capacity) {
