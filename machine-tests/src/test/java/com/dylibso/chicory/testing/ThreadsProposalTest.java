@@ -320,4 +320,62 @@ public class ThreadsProposalTest {
         // also verify we made some iterations
         assertTrue(memory.readI32(0) > 10000);
     }
+
+    @ParameterizedTest
+    @MethodSource("memoryAndMachinesImplementations")
+    public void concurrentMutexStressTest(
+            Memory memory, Function<Instance.Builder, Instance.Builder> machineInject)
+            throws Exception {
+        final int numThreads = 4;
+        final int iterationsPerThread = 1000;
+        final int mutexAddr = 0;
+        final int counterAddr = 4;
+
+        // Initialize mutex (0 = unlocked) and counter
+        memory.writeI32(mutexAddr, 0);
+        memory.writeI32(counterAddr, 0);
+
+        // Create worker threads that each increment the counter
+        List<Thread> threads = new ArrayList<>();
+
+        for (int i = 0; i < numThreads; i++) {
+            var instance = newInstance(memory, machineInject);
+            Thread t =
+                    new Thread(
+                            () -> {
+                                for (int j = 0; j < iterationsPerThread; j++) {
+                                    // Lock mutex
+                                    lockMutex(instance, mutexAddr);
+
+                                    // Read, increment, write counter (critical section)
+                                    long value = memory.readI32(counterAddr);
+                                    memory.writeI32(counterAddr, (int) (value + 1));
+
+                                    // Unlock mutex
+                                    unlockMutex(instance, mutexAddr);
+                                }
+                            });
+            threads.add(t);
+        }
+
+        // Start all threads
+        for (Thread t : threads) {
+            t.start();
+        }
+
+        // Wait for all threads to complete (with timeout to avoid hanging on deadlock)
+        for (Thread t : threads) {
+            t.join(5_000); // 5 second timeout
+            if (t.isAlive()) {
+                // Thread is still running - likely deadlocked
+                t.interrupt();
+                throw new AssertionError("Thread deadlocked - wait/notify bug suspected");
+            }
+        }
+
+        // Verify final counter value
+        long finalCount = memory.readI32(counterAddr);
+        long expectedCount = (long) numThreads * iterationsPerThread;
+        assertEquals(expectedCount, finalCount);
+    }
 }
