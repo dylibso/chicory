@@ -69,8 +69,11 @@ public final class ByteArrayMemory implements Memory {
     }
 
     // Tracks wait state per address: waiter count and pending wakeups
+    // all field access should be guarded by synchronizing on the instance.
     private static final class WaitState {
+        // The number of threads currently waiting
         int waiterCount;
+        // The number of waiting threads that have been scheduled to wake up
         int pendingWakeups;
     }
 
@@ -151,12 +154,13 @@ public final class ByteArrayMemory implements Memory {
         }
 
         synchronized (state) {
-            int actualWaiters = state.waiterCount;
+            int actualWaiters = state.waiterCount - state.pendingWakeups;
+            assert (actualWaiters >= 0);
             if (actualWaiters == 0) {
                 return 0;
             }
 
-            // Calculate how many to wake: min(waiters, maxThreads)
+            // Calculate how many to wake: min(actualWaiters, maxThreads)
             int toWake;
             if (maxThreads < 0) {
                 toWake = actualWaiters; // wake all
@@ -167,9 +171,13 @@ public final class ByteArrayMemory implements Memory {
             // Add pending wakeups - waiters will consume these
             state.pendingWakeups += toWake;
 
-            for (int i = 0; i < toWake; i++) {
-                state.notify();
-            }
+            // It's always safe to notify all. In the wait routine we consume pendingWakeups
+            // and go back to waiting if there are none. We could also choose to notify waiters
+            // one by one in a loop. The optimal choice of whether to notify all should be
+            // toWake > C * state.waiterCount, where C is an unknown constant weighing the cost
+            // of looping through notify vs. having threads wake and go back to waiting. Since
+            // the constant is unknown we opt for the simplest choice of just notifying all.
+            state.notifyAll();
 
             return toWake;
         }
