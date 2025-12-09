@@ -70,6 +70,7 @@ public final class ByteArrayMemory implements Memory {
 
     // Tracks wait state per address: waiter count and pending wakeups
     // all field access should be guarded by synchronizing on the instance.
+    // Invariants: 0 <= pendingWakeups <= waiterCount
     private static final class WaitState {
         // The number of threads currently waiting
         int waiterCount;
@@ -99,6 +100,9 @@ public final class ByteArrayMemory implements Memory {
         WaitState state = waitStates.computeIfAbsent(address, k -> new WaitState());
 
         synchronized (state) {
+            assert (0 <= state.pendingWakeups);
+            assert (state.pendingWakeups <= state.waiterCount);
+
             // Check the condition while holding the lock
             // This must be atomic with the decision to wait
             if (!condition.getAsBoolean()) {
@@ -122,11 +126,20 @@ public final class ByteArrayMemory implements Memory {
                         throw new ChicoryInterruptedException("Thread interrupted");
                     }
                 }
-                // Consume one pending wakeup
-                state.pendingWakeups--;
                 return 0; // woken
             } finally {
+
+                if (state.pendingWakeups > 0) {
+                    // any thread leaving the try block is correct to consume
+                    // a pending wakeup IF available:
+                    // ret 0 - woken thread correctly consumes a wakeup
+                    // ret 2 - timeout can only occur with pendingWakeups == 0 so will not consume
+                    // throw - isn't part of the wasm runtime but is semantically correct to consume
+                    state.pendingWakeups--;
+                }
                 state.waiterCount--;
+                assert (0 <= state.pendingWakeups);
+                assert (state.pendingWakeups <= state.waiterCount);
             }
         }
     }
@@ -154,8 +167,11 @@ public final class ByteArrayMemory implements Memory {
         }
 
         synchronized (state) {
+            assert (0 <= state.pendingWakeups);
+            assert (state.pendingWakeups <= state.waiterCount);
+
             int actualWaiters = state.waiterCount - state.pendingWakeups;
-            assert (actualWaiters >= 0);
+
             if (actualWaiters == 0) {
                 return 0;
             }
@@ -170,6 +186,7 @@ public final class ByteArrayMemory implements Memory {
 
             // Add pending wakeups - waiters will consume these
             state.pendingWakeups += toWake;
+            assert (state.pendingWakeups <= state.waiterCount);
 
             // It's always safe to notify all. In the wait routine we consume pendingWakeups
             // and go back to waiting if there are none. We could also choose to notify waiters
