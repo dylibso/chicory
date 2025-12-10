@@ -16,12 +16,20 @@ import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
-import java.util.function.BiFunction;
 
 /**
  * This is responsible for holding and interpreting the Wasm code.
  */
 public class InterpreterMachine implements Machine {
+
+    private enum AtomicOp {
+        ADD,
+        SUB,
+        AND,
+        OR,
+        XOR,
+        XCHG
+    }
 
     private final MStack stack;
 
@@ -870,70 +878,70 @@ public class InterpreterMachine implements Machine {
                     I64_ATOMIC_STORE32(stack, instance, operands);
                     break;
                 case I32_ATOMIC_RMW_ADD:
-                    I32_ATOMIC_RMW(stack, instance, operands, (x, y) -> x + y);
+                    I32_ATOMIC_RMW(stack, instance, operands, AtomicOp.ADD);
                     break;
                 case I32_ATOMIC_RMW_SUB:
-                    I32_ATOMIC_RMW(stack, instance, operands, (x, y) -> x - y);
+                    I32_ATOMIC_RMW(stack, instance, operands, AtomicOp.SUB);
                     break;
                 case I32_ATOMIC_RMW_AND:
-                    I32_ATOMIC_RMW(stack, instance, operands, (x, y) -> x & y);
+                    I32_ATOMIC_RMW(stack, instance, operands, AtomicOp.AND);
                     break;
                 case I32_ATOMIC_RMW_OR:
-                    I32_ATOMIC_RMW(stack, instance, operands, (x, y) -> x | y);
+                    I32_ATOMIC_RMW(stack, instance, operands, AtomicOp.OR);
                     break;
                 case I32_ATOMIC_RMW_XOR:
-                    I32_ATOMIC_RMW(stack, instance, operands, (x, y) -> x ^ y);
+                    I32_ATOMIC_RMW(stack, instance, operands, AtomicOp.XOR);
                     break;
                 case I32_ATOMIC_RMW_XCHG:
-                    I32_ATOMIC_RMW(stack, instance, operands, (x, y) -> y);
+                    I32_ATOMIC_RMW(stack, instance, operands, AtomicOp.XCHG);
                     break;
                 case I32_ATOMIC_RMW_CMPXCHG:
                     I32_ATOMIC_RMW_CMPXCHG(stack, instance, operands);
                     break;
                 case I64_ATOMIC_RMW_ADD:
-                    I64_ATOMIC_RMW(stack, instance, operands, (x, y) -> x + y);
+                    I64_ATOMIC_RMW(stack, instance, operands, AtomicOp.ADD);
                     break;
                 case I64_ATOMIC_RMW_SUB:
-                    I64_ATOMIC_RMW(stack, instance, operands, (x, y) -> x - y);
+                    I64_ATOMIC_RMW(stack, instance, operands, AtomicOp.SUB);
                     break;
                 case I64_ATOMIC_RMW_AND:
-                    I64_ATOMIC_RMW(stack, instance, operands, (x, y) -> x & y);
+                    I64_ATOMIC_RMW(stack, instance, operands, AtomicOp.AND);
                     break;
                 case I64_ATOMIC_RMW_OR:
-                    I64_ATOMIC_RMW(stack, instance, operands, (x, y) -> x | y);
+                    I64_ATOMIC_RMW(stack, instance, operands, AtomicOp.OR);
                     break;
                 case I64_ATOMIC_RMW_XOR:
-                    I64_ATOMIC_RMW(stack, instance, operands, (x, y) -> x ^ y);
+                    I64_ATOMIC_RMW(stack, instance, operands, AtomicOp.XOR);
                     break;
                 case I64_ATOMIC_RMW_XCHG:
-                    I64_ATOMIC_RMW(stack, instance, operands, (x, y) -> y);
+                    I64_ATOMIC_RMW(stack, instance, operands, AtomicOp.XCHG);
                     break;
                 case I64_ATOMIC_RMW_CMPXCHG:
                     I64_ATOMIC_RMW_CMPXCHG(stack, instance, operands);
                     break;
                 case I32_ATOMIC_RMW8_ADD_U:
                 case I64_ATOMIC_RMW8_ADD_U:
-                    I64_ATOMIC_RMW8_U(stack, instance, operands, (x, y) -> (byte) (x + y));
+                    I64_ATOMIC_RMW8_U(stack, instance, operands, AtomicOp.ADD);
                     break;
                 case I32_ATOMIC_RMW8_SUB_U:
                 case I64_ATOMIC_RMW8_SUB_U:
-                    I64_ATOMIC_RMW8_U(stack, instance, operands, (x, y) -> (byte) (x - y));
+                    I64_ATOMIC_RMW8_U(stack, instance, operands, AtomicOp.SUB);
                     break;
                 case I32_ATOMIC_RMW8_AND_U:
                 case I64_ATOMIC_RMW8_AND_U:
-                    I64_ATOMIC_RMW8_U(stack, instance, operands, (x, y) -> (byte) (x & y));
+                    I64_ATOMIC_RMW8_U(stack, instance, operands, AtomicOp.AND);
                     break;
                 case I32_ATOMIC_RMW8_OR_U:
                 case I64_ATOMIC_RMW8_OR_U:
-                    I64_ATOMIC_RMW8_U(stack, instance, operands, (x, y) -> (byte) (x | y));
+                    I64_ATOMIC_RMW8_U(stack, instance, operands, AtomicOp.OR);
                     break;
                 case I32_ATOMIC_RMW8_XOR_U:
                 case I64_ATOMIC_RMW8_XOR_U:
-                    I64_ATOMIC_RMW8_U(stack, instance, operands, (x, y) -> (byte) (x ^ y));
+                    I64_ATOMIC_RMW8_U(stack, instance, operands, AtomicOp.XOR);
                     break;
                 case I32_ATOMIC_RMW8_XCHG_U:
                 case I64_ATOMIC_RMW8_XCHG_U:
-                    I64_ATOMIC_RMW8_U(stack, instance, operands, (x, y) -> y);
+                    I64_ATOMIC_RMW8_U(stack, instance, operands, AtomicOp.XCHG);
                     break;
                 case I32_ATOMIC_RMW8_CMPXCHG_U:
                 case I64_ATOMIC_RMW8_CMPXCHG_U:
@@ -941,49 +949,49 @@ public class InterpreterMachine implements Machine {
                     break;
                 case I32_ATOMIC_RMW16_ADD_U:
                 case I64_ATOMIC_RMW16_ADD_U:
-                    I64_ATOMIC_RMW16_U(stack, instance, operands, (x, y) -> (short) (x + y));
+                    I64_ATOMIC_RMW16_U(stack, instance, operands, AtomicOp.ADD);
                     break;
                 case I32_ATOMIC_RMW16_SUB_U:
                 case I64_ATOMIC_RMW16_SUB_U:
-                    I64_ATOMIC_RMW16_U(stack, instance, operands, (x, y) -> (short) (x - y));
+                    I64_ATOMIC_RMW16_U(stack, instance, operands, AtomicOp.SUB);
                     break;
                 case I32_ATOMIC_RMW16_AND_U:
                 case I64_ATOMIC_RMW16_AND_U:
-                    I64_ATOMIC_RMW16_U(stack, instance, operands, (x, y) -> (short) (x & y));
+                    I64_ATOMIC_RMW16_U(stack, instance, operands, AtomicOp.AND);
                     break;
                 case I32_ATOMIC_RMW16_OR_U:
                 case I64_ATOMIC_RMW16_OR_U:
-                    I64_ATOMIC_RMW16_U(stack, instance, operands, (x, y) -> (short) (x | y));
+                    I64_ATOMIC_RMW16_U(stack, instance, operands, AtomicOp.OR);
                     break;
                 case I32_ATOMIC_RMW16_XOR_U:
                 case I64_ATOMIC_RMW16_XOR_U:
-                    I64_ATOMIC_RMW16_U(stack, instance, operands, (x, y) -> (short) (x ^ y));
+                    I64_ATOMIC_RMW16_U(stack, instance, operands, AtomicOp.XOR);
                     break;
                 case I32_ATOMIC_RMW16_XCHG_U:
                 case I64_ATOMIC_RMW16_XCHG_U:
-                    I64_ATOMIC_RMW16_U(stack, instance, operands, (x, y) -> y);
+                    I64_ATOMIC_RMW16_U(stack, instance, operands, AtomicOp.XCHG);
                     break;
                 case I32_ATOMIC_RMW16_CMPXCHG_U:
                 case I64_ATOMIC_RMW16_CMPXCHG_U:
                     I64_ATOMIC_RMW16_CMPXCHG_U(stack, instance, operands);
                     break;
                 case I64_ATOMIC_RMW32_ADD_U:
-                    I64_ATOMIC_RMW32_U(stack, instance, operands, (x, y) -> x + y);
+                    I64_ATOMIC_RMW32_U(stack, instance, operands, AtomicOp.ADD);
                     break;
                 case I64_ATOMIC_RMW32_SUB_U:
-                    I64_ATOMIC_RMW32_U(stack, instance, operands, (x, y) -> x - y);
+                    I64_ATOMIC_RMW32_U(stack, instance, operands, AtomicOp.SUB);
                     break;
                 case I64_ATOMIC_RMW32_AND_U:
-                    I64_ATOMIC_RMW32_U(stack, instance, operands, (x, y) -> x & y);
+                    I64_ATOMIC_RMW32_U(stack, instance, operands, AtomicOp.AND);
                     break;
                 case I64_ATOMIC_RMW32_OR_U:
-                    I64_ATOMIC_RMW32_U(stack, instance, operands, (x, y) -> x | y);
+                    I64_ATOMIC_RMW32_U(stack, instance, operands, AtomicOp.OR);
                     break;
                 case I64_ATOMIC_RMW32_XOR_U:
-                    I64_ATOMIC_RMW32_U(stack, instance, operands, (x, y) -> x ^ y);
+                    I64_ATOMIC_RMW32_U(stack, instance, operands, AtomicOp.XOR);
                     break;
                 case I64_ATOMIC_RMW32_XCHG_U:
-                    I64_ATOMIC_RMW32_U(stack, instance, operands, (x, y) -> y);
+                    I64_ATOMIC_RMW32_U(stack, instance, operands, AtomicOp.XCHG);
                     break;
                 case I64_ATOMIC_RMW32_CMPXCHG_U:
                     I64_ATOMIC_RMW32_CMPXCHG_U(stack, instance, operands);
@@ -2173,10 +2181,8 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var val = instance.memory().readI32(ptr);
-            stack.push(val);
-        }
+        var val = instance.memory().atomicReadInt(ptr);
+        stack.push(val);
     }
 
     private static void I64_ATOMIC_LOAD(MStack stack, Instance instance, Operands operands) {
@@ -2184,26 +2190,20 @@ public class InterpreterMachine implements Machine {
         if (ptr % 8 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var val = instance.memory().readI64(ptr);
-            stack.push(val);
-        }
+        var val = instance.memory().atomicReadLong(ptr);
+        stack.push(val);
     }
 
     private static void I64_ATOMIC_LOAD8_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().lock(ptr)) {
-            var val = instance.memory().readU8(ptr);
-            stack.push(val);
-        }
+        var val = instance.memory().atomicReadByte(ptr);
+        stack.push(Byte.toUnsignedLong(val));
     }
 
     private static void I32_ATOMIC_LOAD8_U(MStack stack, Instance instance, Operands operands) {
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().lock(ptr)) {
-            var val = instance.memory().readU8(ptr);
-            stack.push(val);
-        }
+        var val = instance.memory().atomicReadByte(ptr);
+        stack.push(Byte.toUnsignedLong(val));
     }
 
     private static void I32_ATOMIC_LOAD16_U(MStack stack, Instance instance, Operands operands) {
@@ -2211,10 +2211,8 @@ public class InterpreterMachine implements Machine {
         if (ptr % 2 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var val = instance.memory().readU16(ptr);
-            stack.push(val);
-        }
+        var val = instance.memory().atomicReadShort(ptr);
+        stack.push(Short.toUnsignedLong(val));
     }
 
     private static void I64_ATOMIC_LOAD16_U(MStack stack, Instance instance, Operands operands) {
@@ -2222,10 +2220,8 @@ public class InterpreterMachine implements Machine {
         if (ptr % 2 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var val = instance.memory().readU16(ptr);
-            stack.push(val);
-        }
+        var val = instance.memory().atomicReadShort(ptr);
+        stack.push(Short.toUnsignedLong(val));
     }
 
     private static void I64_ATOMIC_LOAD32_U(MStack stack, Instance instance, Operands operands) {
@@ -2233,10 +2229,8 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var val = instance.memory().readU32(ptr);
-            stack.push(val);
-        }
+        var val = instance.memory().atomicReadInt(ptr);
+        stack.push(Integer.toUnsignedLong(val));
     }
 
     private static void I32_ATOMIC_STORE(MStack stack, Instance instance, Operands operands) {
@@ -2245,17 +2239,13 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            instance.memory().writeI32(ptr, value);
-        }
+        instance.memory().atomicWriteInt(ptr, value);
     }
 
     private static void I64_ATOMIC_STORE8(MStack stack, Instance instance, Operands operands) {
         var value = (byte) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().lock(ptr)) {
-            instance.memory().writeByte(ptr, value);
-        }
+        instance.memory().atomicWriteByte(ptr, value);
     }
 
     private static void I64_ATOMIC_STORE16(MStack stack, Instance instance, Operands operands) {
@@ -2264,9 +2254,7 @@ public class InterpreterMachine implements Machine {
         if (ptr % 2 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            instance.memory().writeShort(ptr, value);
-        }
+        instance.memory().atomicWriteShort(ptr, value);
     }
 
     private static void I64_ATOMIC_STORE32(MStack stack, Instance instance, Operands operands) {
@@ -2275,9 +2263,7 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            instance.memory().writeI32(ptr, (int) value);
-        }
+        instance.memory().atomicWriteInt(ptr, (int) value);
     }
 
     private static void I64_ATOMIC_STORE(MStack stack, Instance instance, Operands operands) {
@@ -2286,26 +2272,40 @@ public class InterpreterMachine implements Machine {
         if (ptr % 8 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            instance.memory().writeLong(ptr, value);
-        }
+        instance.memory().atomicWriteLong(ptr, value);
     }
 
     private static void I32_ATOMIC_RMW(
-            MStack stack,
-            Instance instance,
-            Operands operands,
-            BiFunction<Integer, Integer, Integer> op) {
-        var toOp = (int) stack.pop();
+            MStack stack, Instance instance, Operands operands, AtomicOp op) {
+        var operand = (int) stack.pop();
         var ptr = readMemPtr(stack, operands);
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var val = (int) instance.memory().readI32(ptr);
-            instance.memory().writeI32(ptr, op.apply(val, toOp));
-            stack.push(val);
+        int oldVal;
+        switch (op) {
+            case ADD:
+                oldVal = instance.memory().atomicAddInt(ptr, operand);
+                break;
+            case SUB:
+                oldVal = instance.memory().atomicAddInt(ptr, -operand);
+                break;
+            case AND:
+                oldVal = instance.memory().atomicAndInt(ptr, operand);
+                break;
+            case OR:
+                oldVal = instance.memory().atomicOrInt(ptr, operand);
+                break;
+            case XOR:
+                oldVal = instance.memory().atomicXorInt(ptr, operand);
+                break;
+            case XCHG:
+                oldVal = instance.memory().atomicXchgInt(ptr, operand);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected atomic op: " + op);
         }
+        stack.push(oldVal);
     }
 
     private static void I32_ATOMIC_RMW_CMPXCHG(MStack stack, Instance instance, Operands operands) {
@@ -2315,27 +2315,41 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var loaded = (int) instance.memory().readI32(ptr);
-            if (loaded == expected) {
-                instance.memory().writeI32(ptr, replacement);
-            }
-            stack.push(loaded);
-        }
+        var oldVal = instance.memory().atomicCmpxchgInt(ptr, expected, replacement);
+        stack.push(oldVal);
     }
 
     private static void I64_ATOMIC_RMW(
-            MStack stack, Instance instance, Operands operands, BiFunction<Long, Long, Long> op) {
-        var toOp = stack.pop();
+            MStack stack, Instance instance, Operands operands, AtomicOp op) {
+        var operand = stack.pop();
         var ptr = readMemPtr(stack, operands);
         if (ptr % 8 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var val = instance.memory().readI64(ptr);
-            instance.memory().writeLong(ptr, op.apply(val, toOp));
-            stack.push(val);
+        long oldVal;
+        switch (op) {
+            case ADD:
+                oldVal = instance.memory().atomicAddLong(ptr, operand);
+                break;
+            case SUB:
+                oldVal = instance.memory().atomicAddLong(ptr, -operand);
+                break;
+            case AND:
+                oldVal = instance.memory().atomicAndLong(ptr, operand);
+                break;
+            case OR:
+                oldVal = instance.memory().atomicOrLong(ptr, operand);
+                break;
+            case XOR:
+                oldVal = instance.memory().atomicXorLong(ptr, operand);
+                break;
+            case XCHG:
+                oldVal = instance.memory().atomicXchgLong(ptr, operand);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected atomic op: " + op);
         }
+        stack.push(oldVal);
     }
 
     private static void I64_ATOMIC_RMW_CMPXCHG(MStack stack, Instance instance, Operands operands) {
@@ -2345,24 +2359,38 @@ public class InterpreterMachine implements Machine {
         if (ptr % 8 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var val = instance.memory().readI64(ptr);
-            if (val == expected) {
-                instance.memory().writeLong(ptr, replacement);
-            }
-            stack.push(val);
-        }
+        var oldVal = instance.memory().atomicCmpxchgLong(ptr, expected, replacement);
+        stack.push(oldVal);
     }
 
     private static void I64_ATOMIC_RMW8_U(
-            MStack stack, Instance instance, Operands operands, BiFunction<Byte, Byte, Byte> op) {
-        var toOp = (byte) stack.pop();
+            MStack stack, Instance instance, Operands operands, AtomicOp op) {
+        var operand = (byte) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().lock(ptr)) {
-            var val = (byte) instance.memory().readU8(ptr);
-            instance.memory().writeByte(ptr, op.apply(val, toOp));
-            stack.push(val);
+        byte oldVal;
+        switch (op) {
+            case ADD:
+                oldVal = instance.memory().atomicAddByte(ptr, operand);
+                break;
+            case SUB:
+                oldVal = instance.memory().atomicAddByte(ptr, (byte) -operand);
+                break;
+            case AND:
+                oldVal = instance.memory().atomicAndByte(ptr, operand);
+                break;
+            case OR:
+                oldVal = instance.memory().atomicOrByte(ptr, operand);
+                break;
+            case XOR:
+                oldVal = instance.memory().atomicXorByte(ptr, operand);
+                break;
+            case XCHG:
+                oldVal = instance.memory().atomicXchgByte(ptr, operand);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected atomic op: " + op);
         }
+        stack.push(Byte.toUnsignedLong(oldVal));
     }
 
     private static void I64_ATOMIC_RMW8_CMPXCHG_U(
@@ -2370,30 +2398,41 @@ public class InterpreterMachine implements Machine {
         var replacement = (byte) stack.pop();
         var expected = (byte) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        synchronized (instance.memory().lock(ptr)) {
-            var val = (byte) instance.memory().readU8(ptr);
-            if (val == expected) {
-                instance.memory().writeByte(ptr, replacement);
-            }
-            stack.push(val);
-        }
+        var oldVal = instance.memory().atomicCmpxchgByte(ptr, expected, replacement);
+        stack.push(Byte.toUnsignedLong(oldVal));
     }
 
     private static void I64_ATOMIC_RMW16_U(
-            MStack stack,
-            Instance instance,
-            Operands operands,
-            BiFunction<Short, Short, Short> op) {
-        var toOp = (short) stack.pop();
+            MStack stack, Instance instance, Operands operands, AtomicOp op) {
+        var operand = (short) stack.pop();
         var ptr = readMemPtr(stack, operands);
         if (ptr % 2 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var val = (short) instance.memory().readU16(ptr);
-            instance.memory().writeShort(ptr, op.apply(val, toOp));
-            stack.push(val);
+        short oldVal;
+        switch (op) {
+            case ADD:
+                oldVal = instance.memory().atomicAddShort(ptr, operand);
+                break;
+            case SUB:
+                oldVal = instance.memory().atomicAddShort(ptr, (short) -operand);
+                break;
+            case AND:
+                oldVal = instance.memory().atomicAndShort(ptr, operand);
+                break;
+            case OR:
+                oldVal = instance.memory().atomicOrShort(ptr, operand);
+                break;
+            case XOR:
+                oldVal = instance.memory().atomicXorShort(ptr, operand);
+                break;
+            case XCHG:
+                oldVal = instance.memory().atomicXchgShort(ptr, operand);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected atomic op: " + op);
         }
+        stack.push(Short.toUnsignedLong(oldVal));
     }
 
     private static void I64_ATOMIC_RMW16_CMPXCHG_U(
@@ -2404,30 +2443,41 @@ public class InterpreterMachine implements Machine {
         if (ptr % 2 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var val = (short) instance.memory().readU16(ptr);
-            if (val == expected) {
-                instance.memory().writeShort(ptr, replacement);
-            }
-            stack.push(val);
-        }
+        var oldVal = instance.memory().atomicCmpxchgShort(ptr, expected, replacement);
+        stack.push(Short.toUnsignedLong(oldVal));
     }
 
     private static void I64_ATOMIC_RMW32_U(
-            MStack stack,
-            Instance instance,
-            Operands operands,
-            BiFunction<Integer, Integer, Integer> op) {
-        var toOp = (int) stack.pop();
+            MStack stack, Instance instance, Operands operands, AtomicOp op) {
+        var operand = (int) stack.pop();
         var ptr = readMemPtr(stack, operands);
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var val = (int) instance.memory().readU32(ptr);
-            instance.memory().writeI32(ptr, op.apply(val, toOp));
-            stack.push(val);
+        int oldVal;
+        switch (op) {
+            case ADD:
+                oldVal = instance.memory().atomicAddInt(ptr, operand);
+                break;
+            case SUB:
+                oldVal = instance.memory().atomicAddInt(ptr, -operand);
+                break;
+            case AND:
+                oldVal = instance.memory().atomicAndInt(ptr, operand);
+                break;
+            case OR:
+                oldVal = instance.memory().atomicOrInt(ptr, operand);
+                break;
+            case XOR:
+                oldVal = instance.memory().atomicXorInt(ptr, operand);
+                break;
+            case XCHG:
+                oldVal = instance.memory().atomicXchgInt(ptr, operand);
+                break;
+            default:
+                throw new IllegalStateException("Unexpected atomic op: " + op);
         }
+        stack.push(Integer.toUnsignedLong(oldVal));
     }
 
     private static void I64_ATOMIC_RMW32_CMPXCHG_U(
@@ -2438,26 +2488,19 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var val = (int) instance.memory().readU32(ptr);
-            if (val == expected) {
-                instance.memory().writeI32(ptr, replacement);
-            }
-            stack.push(val);
-        }
+        var oldVal = instance.memory().atomicCmpxchgInt(ptr, expected, replacement);
+        stack.push(Integer.toUnsignedLong(oldVal));
     }
 
     private static void MEM_ATOMIC_WAIT32(MStack stack, Instance instance, Operands operands) {
-        long timeout = stack.pop(); // k
-        int expected = (int) stack.pop(); // c
-        var ptr = readMemPtr(stack, operands); // i
+        long timeout = stack.pop();
+        int expected = (int) stack.pop();
+        var ptr = readMemPtr(stack, operands);
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var result = instance.memory().waitOn(ptr, expected, timeout);
-            stack.push(result);
-        }
+        var result = instance.memory().waitOn(ptr, expected, timeout);
+        stack.push(result);
     }
 
     private static void MEM_ATOMIC_WAIT64(MStack stack, Instance instance, Operands operands) {
@@ -2467,20 +2510,15 @@ public class InterpreterMachine implements Machine {
         if (ptr % 8 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        synchronized (instance.memory().lock(ptr)) {
-            var result = instance.memory().waitOn(ptr, expected, timeout);
-            stack.push(result);
-        }
+        var result = instance.memory().waitOn(ptr, expected, timeout);
+        stack.push(result);
     }
 
     private static void MEM_ATOMIC_NOTIFY(MStack stack, Instance instance, Operands operands) {
         int maxThreads = (int) stack.pop();
         var ptr = readMemPtr(stack, operands);
-
-        synchronized (instance.memory().lock(ptr)) {
-            var result = instance.memory().notify(ptr, maxThreads);
-            stack.push(result);
-        }
+        var result = instance.memory().notify(ptr, maxThreads);
+        stack.push(result);
     }
 
     private static void ATOMIC_FENCE() {
