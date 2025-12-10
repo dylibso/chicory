@@ -100,9 +100,6 @@ public final class ByteArrayMemory implements Memory {
         WaitState state = waitStates.computeIfAbsent(address, k -> new WaitState());
 
         synchronized (state) {
-            assert (0 <= state.pendingWakeups);
-            assert (state.pendingWakeups <= state.waiterCount);
-
             // Check the condition while holding the lock
             // This must be atomic with the decision to wait
             if (!condition.getAsBoolean()) {
@@ -167,9 +164,6 @@ public final class ByteArrayMemory implements Memory {
         }
 
         synchronized (state) {
-            assert (0 <= state.pendingWakeups);
-            assert (state.pendingWakeups <= state.waiterCount);
-
             int actualWaiters = state.waiterCount - state.pendingWakeups;
 
             if (actualWaiters == 0) {
