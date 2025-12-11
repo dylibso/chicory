@@ -2309,9 +2309,9 @@ public class InterpreterMachine implements Machine {
     }
 
     private static void I32_ATOMIC_RMW_CMPXCHG(MStack stack, Instance instance, Operands operands) {
-        var replacement = (int) stack.pop();
-        var expected = (int) stack.pop();
-        var ptr = readMemPtr(stack, operands);
+        var replacement = (int) stack.pop(); // c3
+        var expected = (int) stack.pop(); // c2
+        var ptr = readMemPtr(stack, operands); // i
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
