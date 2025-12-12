@@ -17,6 +17,15 @@ compileRust() {
   (set -x; cd $1 && cargo build --target=$target &&  cp ./target/${target}/debug/*.wasm "../../compiled/$filename.rs.wasm")
 }
 
+compileRustAtomics() {
+  filename=$(basename "$1")
+  target="wasm32-unknown-unknown"
+  (set -x; cd $1 && \
+    RUSTFLAGS='-C target-feature=+atomics,+bulk-memory -C panic=abort -C link-arg=--export=__stack_pointer' \
+    cargo +nightly-2025-09-01 build --target=$target -Z build-std=core,alloc,std,compiler_builtins,panic_abort --release && \
+    cp ./target/${target}/release/*.wasm "../../compiled/$filename.rs.wasm")
+}
+
 ENV_WASI_SDK_PATH="${WASK_SDK_PATH:-/opt/wasi-sdk}"
 compileC() {
   filename=$(basename "$1")
@@ -66,6 +75,9 @@ compile() {
       ;;
     rust)
       compileRust $2
+      ;;
+    rust-atomics)
+      compileRustAtomics $2
       ;;
     c)
       compileC $2
