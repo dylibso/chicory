@@ -164,7 +164,7 @@ jobs:
           color: ${{ env.BADGE_COLOR }}
           path: badge-${{ env.BADGE_NAME }}.svg
       - name: Upload badge to GH Action
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: badge-${{ env.BADGE_NAME }}
           path: badge-${{ env.BADGE_NAME }}.svg
