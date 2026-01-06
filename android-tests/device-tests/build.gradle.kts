@@ -26,7 +26,7 @@ android {
     }
     kotlin {
         compilerOptions {
-            jvmTarget.set("11")
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
         }
     }
 
