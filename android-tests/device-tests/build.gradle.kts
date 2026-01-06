@@ -24,11 +24,17 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions { jvmTarget = "11" }
+    kotlin {
+        compilerOptions {
+            jvmTarget.set("11")
+        }
+    }
 
-    packagingOptions {
-        pickFirst("logging.properties")
-        exclude("META-INF/jpms.args")
+    packaging {
+        resources {
+            pickFirsts.add("logging.properties")
+            excludes.add("META-INF/jpms.args")
+        }
     }
 }
 
