@@ -394,16 +394,16 @@ public final class ValType {
         public static final int i31 = 0x6C;
         public static final int EqRef = 0x6D;
         public static final int AnyRef = 0x6E;
-        public static final int ExternRef = 0x6f;
+        public static final int ExternRef = 0x6F;
         public static final int FuncRef = 0x70;
         public static final int NoneRef = 0x71;
         public static final int NoExternRef = 0x72;
         public static final int NoFuncRef = 0x73;
-        public static final int V128 = 0x7b;
-        public static final int F64 = 0x7c;
-        public static final int F32 = 0x7d;
-        public static final int I64 = 0x7e;
-        public static final int I32 = 0x7f;
+        public static final int V128 = 0x7B;
+        public static final int F64 = 0x7C;
+        public static final int F32 = 0x7D;
+        public static final int I64 = 0x7E;
+        public static final int I32 = 0x7F;
 
         public static String toName(int opcode) {
             switch (opcode) {

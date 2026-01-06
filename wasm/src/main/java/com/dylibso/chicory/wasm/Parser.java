@@ -584,9 +584,9 @@ public final class Parser {
     }
 
     private static SubType parseSubType(int id, ByteBuffer buffer) {
-        if (id == 0x50
-                || // non final typeIdx
-                id == 0x4F) { // final typeIdx
+        if (id == 0x50 // non final typeIdx
+                || id == 0x4F // final typeIdx
+        ) {
             var count = (int) readVarUInt32(buffer);
             var typeIdxs = new int[count];
 

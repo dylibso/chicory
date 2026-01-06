@@ -2170,7 +2170,6 @@ final class Validator {
         }
 
         if (!errors.isEmpty()) {
-            errors.stream().forEach(e -> e.printStackTrace());
             throw new InvalidException(
                     errors.stream().map(Throwable::getMessage).collect(joining(" - ")));
         }

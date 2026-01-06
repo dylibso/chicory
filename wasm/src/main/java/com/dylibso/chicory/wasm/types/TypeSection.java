@@ -14,6 +14,10 @@ public final class TypeSection extends Section {
         this.types = List.copyOf(types);
     }
 
+    // https://github.com/WebAssembly/gc/blob/main/proposals/gc/MVP.md#type-definitions
+    // > the number of type section entries is now the number of recursion groups rather than the
+    // number of individual types.
+    // types() returns the flattened list of individual types
     public FunctionType[] types() {
         return types.stream()
                 .filter(RecType::isLegacy)

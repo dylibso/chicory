@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
+import java.util.Objects;
+
 public final class ArrayType {
     private final FieldType fieldType;
 
@@ -9,6 +11,20 @@ public final class ArrayType {
 
     public FieldType fieldType() {
         return fieldType;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ArrayType arrayType = (ArrayType) o;
+        return Objects.equals(fieldType, arrayType.fieldType);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(fieldType);
     }
 
     public static Builder builder() {
