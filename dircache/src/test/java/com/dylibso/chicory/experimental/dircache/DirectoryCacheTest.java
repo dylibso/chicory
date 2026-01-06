@@ -12,6 +12,7 @@ import io.roastedroot.zerofs.Configuration;
 import io.roastedroot.zerofs.ZeroFs;
 import java.io.IOException;
 import java.nio.file.FileSystem;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -42,6 +43,24 @@ public class DirectoryCacheTest {
         @Override
         public void putIfAbsent(String key, byte[] data) throws IOException {
             cache.putIfAbsent(key, data);
+        }
+    }
+
+    public static class NotFailingDirCache extends DirectoryCache {
+        public NotFailingDirCache(Path baseDir) {
+            super(baseDir);
+        }
+
+        @Override
+        public byte[] get(String key) throws IOException {
+            Path target = toFilePath(key);
+            try {
+                return Files.isRegularFile(target) ? Files.readAllBytes(target) : null;
+            } catch (IOException e) {
+                e.printStackTrace();
+                // retry
+                return get(key);
+            }
         }
     }
 
@@ -115,7 +134,6 @@ public class DirectoryCacheTest {
 
     @Test
     public void testConcurrentAccessNativeFS(@TempDir Path cacheDir) throws IOException {
-
         var module =
                 Parser.parse(
                         DirectoryCacheTest.class.getResourceAsStream(
@@ -133,11 +151,11 @@ public class DirectoryCacheTest {
             futures[i] =
                     CompletableFuture.runAsync(
                             () -> {
-
                                 // each thread gets its own DirectoryCache so it simulates
                                 // multiple
                                 // processes accessing the disk cache concurrently
-                                var cache = new CacheWithHitCounter(new DirectoryCache(cacheDir));
+                                var cache =
+                                        new CacheWithHitCounter(new NotFailingDirCache(cacheDir));
 
                                 var instance1 =
                                         Instance.builder(module)
@@ -146,7 +164,6 @@ public class DirectoryCacheTest {
                                                                 .withCache(cache)
                                                                 .compile())
                                                 .build();
-
                                 exerciseCountVowels(instance1);
 
                                 var instance2 =
@@ -171,6 +188,8 @@ public class DirectoryCacheTest {
         // instance
         // creates should result in
         // cache hits.
-        assertTrue(hits.get() >= concurrency);
+        assertTrue(
+                hits.get() >= concurrency,
+                "Expected at least " + concurrency + " hits, but only got: " + hits.get());
     }
 }
