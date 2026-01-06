@@ -7,7 +7,15 @@ public final class CompType {
     private final StructType structType;
     private final FunctionType funcType;
 
+    private static void requireExactlyOneNonNull(Object a, Object b, Object c) {
+        if ((a == null ? 0 : 1) + (b == null ? 0 : 1) + (c == null ? 0 : 1) != 1) {
+            throw new IllegalArgumentException("Exactly one field must be filled");
+        }
+    }
+
     private CompType(ArrayType arrayType, StructType structType, FunctionType functionType) {
+        requireExactlyOneNonNull(arrayType, structType, functionType);
+
         this.arrayType = arrayType;
         this.structType = structType;
         this.funcType = functionType;

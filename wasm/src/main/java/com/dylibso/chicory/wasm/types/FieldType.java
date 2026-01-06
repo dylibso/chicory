@@ -1,5 +1,7 @@
 package com.dylibso.chicory.wasm.types;
 
+import java.util.Objects;
+
 public final class FieldType {
     private final StorageType storageType;
     private final MutabilityType mut;
@@ -15,6 +17,20 @@ public final class FieldType {
 
     public MutabilityType mut() {
         return mut;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        FieldType fieldType = (FieldType) o;
+        return Objects.equals(storageType, fieldType.storageType) && mut == fieldType.mut;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(storageType, mut);
     }
 
     public static Builder builder() {
