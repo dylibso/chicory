@@ -1,5 +1,5 @@
 #! /bin/bash
-set -x
+set -eoux pipefail
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
@@ -18,19 +18,31 @@ ZIG_MIRROR=$(${SCRIPT_DIR}/pick-zig-mirror.sh)
 # Install Zig 
 if [ ! -d "$ZIG_INSTALL" ]; then
     mkdir -p ${ZIG_INSTALL}
-    curl -sSL ${ZIG_MIRROR}/zig-linux-x86_64-${ZIG_VERSION}.tar.xz | tar -xJ --strip-components=1 -C ${ZIG_INSTALL}
+
+    ARCHIVE=zig-linux-x86_64-${ZIG_VERSION}.tar.xz
+    curl -sSL "${ZIG_MIRROR}/${ARCHIVE}?source=github-chicory-nightly" -o "${ARCHIVE}"
+    echo "473ec26806133cf4d1918caf1a410f8403a13d979726a9045b421b685031a982 ${ARCHIVE}" | sha256sum -c -
+    tar -xJ --strip-components=1 -C "${ZIG_INSTALL}" -f "${ARCHIVE}"
 fi
 
 # Install Zig source
 if [ ! -d "$ZIG_SOURCE" ]; then
     mkdir -p ${ZIG_SOURCE}
-    curl -sSL ${ZIG_MIRROR}/zig-${ZIG_VERSION}.tar.xz | tar -xJ --strip-components=1 -C ${ZIG_SOURCE}
+
+    ARCHIVE=zig-${ZIG_VERSION}.tar.xz
+    curl -sSL "${ZIG_MIRROR}/${ARCHIVE}?source=github-chicory-nightly" -o "${ARCHIVE}"
+    echo "c76638c03eb204c4432ae092f6fa07c208567e110fbd4d862d131a7332584046 ${ARCHIVE}" | sha256sum -c -
+    tar -xJ --strip-components=1 -C "${ZIG_SOURCE}" -f "${ARCHIVE}"
 fi
 
 #Install Binaryen
 if [ ! -d "$BINARYEN_INSTALL" ]; then
     mkdir -p ${BINARYEN_INSTALL}
-    curl -sSL https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz | tar -xz --strip-components=1 -C ${BINARYEN_INSTALL}
+
+    ARCHIVE=binaryen-version_${BINARYEN_VERSION}-x86_64-linux.tar.gz
+    curl -sSL "https://github.com/WebAssembly/binaryen/releases/download/version_${BINARYEN_VERSION}/${ARCHIVE}" -o "${ARCHIVE}"
+    echo "e959f2170af4c20c552e9de3a0253704d6a9d2766e8fdb88e4d6ac4bae9388fe ${ARCHIVE}" | sha256sum -c -
+    tar -xz --strip-components=1 -C "${BINARYEN_INSTALL}" -f "${ARCHIVE}"
 fi
 
 PATH=${PWD}/${ZIG_INSTALL}:${PWD}/${BINARYEN_INSTALL}/bin:$PATH
