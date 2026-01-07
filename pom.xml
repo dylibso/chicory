@@ -69,7 +69,7 @@
 
     <build-helper-maven-plugin.version>3.5.0</build-helper-maven-plugin.version>
     <checkstyle.version>12.3.0</checkstyle.version>
-    <error-prone.version>2.42.0</error-prone.version>
+    <error-prone.version>2.45.0</error-prone.version>
     <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
     <maven-antrun-plugin.version>3.2.0</maven-antrun-plugin.version>
     <maven-checkstyle-plugin.version>3.6.0</maven-checkstyle-plugin.version>
@@ -208,7 +208,7 @@
         <version>${javaparser.version}</version>
       </dependency>
 
-      <!-- Error Prone -->
+      <!-- Error Prone annotations (needed even when Error Prone is disabled) -->
       <dependency>
         <groupId>com.google.errorprone</groupId>
         <artifactId>error_prone_annotations</artifactId>
@@ -778,10 +778,13 @@
     </profile>
 
     <profile>
-      <id>java11</id>
+      <id>disable-error-prone</id>
       <activation>
-        <jdk>11</jdk>
+        <jdk>[11,21)</jdk>
       </activation>
+      <properties>
+        <checkstyle.skip>true</checkstyle.skip>
+      </properties>
       <build>
         <plugins>
           <!-- disable checkstyle -->
@@ -804,7 +807,14 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <configuration>
-              <compilerArgs combine.self="override"/>
+              <compilerArgs combine.self="override">
+                <arg>-XDcompilePolicy=simple</arg>
+                <arg>--should-stop=ifError=FLOW</arg>
+              </compilerArgs>
+              <annotationProcessorPaths combine.self="override">
+                <!-- Empty annotation processor paths to prevent Error Prone from loading -->
+                <!-- Custom annotation processors are added by child modules via combine.children="append" -->
+              </annotationProcessorPaths>
             </configuration>
           </plugin>
         </plugins>
