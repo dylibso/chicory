@@ -61,6 +61,12 @@ public class DirectoryCache implements Cache {
         Objects.requireNonNull(data, "data");
 
         Path finalPath = toFilePath(key);
+
+        // Early return if file already exists (the "if absent" check)
+        if (Files.isRegularFile(finalPath)) {
+            return;
+        }
+
         Path parent = finalPath.getParent(); // .../<algo>/<shard>
         if (parent == null) {
             throw new IOException("Cannot determine parent for " + finalPath);
@@ -75,8 +81,12 @@ public class DirectoryCache implements Cache {
             // Ensure parent exists before atomic move.
             Files.createDirectories(parent);
 
-            // Move it
-            Files.move(tmpFile, finalPath, ATOMIC_MOVE);
+            // Move it - but check again before moving (double-check pattern)
+            // Another thread might have created it between our check and now
+            if (!Files.isRegularFile(finalPath)) {
+                Files.move(tmpFile, finalPath, ATOMIC_MOVE);
+            }
+            // If file exists now, we'll just delete the temp file in finally
         } catch (FileSystemException e) {
             // did another process beat us to creating the cache entry?
             if (Files.isRegularFile(finalPath)) {
@@ -96,7 +106,7 @@ public class DirectoryCache implements Cache {
      * baseDir / algo / first 2 chars of digest / remainder of digest.jar
      * Validates the digest.
      */
-    private Path toFilePath(String key) {
+    protected Path toFilePath(String key) {
         Objects.requireNonNull(key, "key");
         int colon = key.indexOf(':');
         if (colon <= 0 || colon == key.length() - 1) {
