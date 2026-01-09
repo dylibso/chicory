@@ -578,6 +578,7 @@
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
           <compilerArgs>
+            <arg>-XDaddTypeAnnotationsToSymbol=true</arg>
             <arg>-XDcompilePolicy=simple</arg>
             <arg>--should-stop=ifError=FLOW</arg>
             <arg>-Xplugin:ErrorProne \
