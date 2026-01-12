@@ -58,7 +58,7 @@
     <commons-lang.version>3.20.0</commons-lang.version>
     <jackson-annotations.version>2.20</jackson-annotations.version>
     <jackson-databind.version>2.20.1</jackson-databind.version>
-    <javaparser.version>3.27.1</javaparser.version>
+    <javaparser.version>3.28.0</javaparser.version>
     <zip4j.version>2.11.5</zip4j.version>
     <jmh.version>1.37</jmh.version>
     <junit.version>5.14.2</junit.version>
