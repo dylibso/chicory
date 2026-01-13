@@ -74,6 +74,7 @@ public class JavaTestGen {
         cu.addImport("org.junit.jupiter.api.Assertions.assertArrayEquals", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertEquals", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertNotEquals", true, false);
+        cu.addImport("org.junit.jupiter.api.Assertions.assertNotNull", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertThrows", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertTrue", true, false);
         cu.addImport("org.junit.jupiter.api.Assertions.assertDoesNotThrow", true, false);
@@ -219,7 +220,8 @@ public class JavaTestGen {
                                 method.getBody().get().addStatement(expr);
                             }
                         } else {
-                            for (var expr : generateAssert(varName, cmd)) {
+                            for (var expr :
+                                    generateAssert(varName, cmd, lastModuleVarName + "Instance")) {
                                 method.getBody().get().addStatement(expr);
                             }
                         }
@@ -369,7 +371,7 @@ public class JavaTestGen {
         }
     }
 
-    private List<Expression> generateAssert(String varName, Command cmd) {
+    private List<Expression> generateAssert(String varName, Command cmd, String moduleName) {
         assert (cmd.type() == CommandType.ASSERT_RETURN
                 || cmd.type() == CommandType.ASSERT_TRAP
                 || cmd.type() == CommandType.ASSERT_EXCEPTION
@@ -449,7 +451,7 @@ public class JavaTestGen {
                     }
 
                 } else {
-                    exprs.add(expected.toAssertion(resultVar));
+                    exprs.add(expected.toAssertion(resultVar, moduleName));
                 }
             }
 
