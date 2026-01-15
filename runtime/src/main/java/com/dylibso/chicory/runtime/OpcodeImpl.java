@@ -9,26 +9,17 @@ import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.ValType;
 
 /**
- * Note: Some opcodes are easy or trivial to implement as compiler intrinsics
- * (local.get, i32.add, etc).
- * Others would be very difficult to implement and maintain (floating point
- * truncations, for example).
- * The idea of this class is to share the core logic of both the interpreter and
- * AOT implementations for
- * shareable opcodes (that is, opcodes that are not completely different in
- * operation depending on
- * whether they're run in the interpreter or in the AOT, such as local.get,
- * local.set, etc) in a
- * single place that is statically accessible. If the AOT does not have an
- * intrinsic for an opcode (and
- * the opcode is not a flow control opcode), then a static call will be
- * generated to the method in this
+ * Note: Some opcodes are easy or trivial to implement as compiler intrinsics (local.get, i32.add, etc).
+ * Others would be very difficult to implement and maintain (floating point truncations, for example).
+ * The idea of this class is to share the core logic of both the interpreter and AOT implementations for
+ * shareable opcodes (that is, opcodes that are not completely different in operation depending on
+ * whether they're run in the interpreter or in the AOT, such as local.get, local.set, etc) in a
+ * single place that is statically accessible. If the AOT does not have an intrinsic for an opcode (and
+ * the opcode is not a flow control opcode), then a static call will be generated to the method in this
  * class that implements the opcode.
  * <p>
- * Note about parameter ordering: because of the JVM's calling convention, the
- * parameters to a method
- * are ordered such that the last value pushed is the last argument to the
- * method, i.e.,
+ * Note about parameter ordering: because of the JVM's calling convention, the parameters to a method
+ * are ordered such that the last value pushed is the last argument to the method, i.e.,
  * method(tos - 2, tos - 1, tos).
  */
 public final class OpcodeImpl {
