@@ -1006,7 +1006,7 @@ public class InterpreterMachine implements Machine {
                     MEM_ATOMIC_NOTIFY(stack, instance, operands);
                     break;
                 case ATOMIC_FENCE:
-                    ATOMIC_FENCE();
+                    ATOMIC_FENCE(instance);
                     break;
                 default:
                     {
@@ -2499,7 +2499,7 @@ public class InterpreterMachine implements Machine {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        var result = instance.memory().waitOn(ptr, expected, timeout);
+        var result = instance.memory().atomicWait(ptr, expected, timeout);
         stack.push(result);
     }
 
@@ -2510,19 +2510,19 @@ public class InterpreterMachine implements Machine {
         if (ptr % 8 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        var result = instance.memory().waitOn(ptr, expected, timeout);
+        var result = instance.memory().atomicWait(ptr, expected, timeout);
         stack.push(result);
     }
 
     private static void MEM_ATOMIC_NOTIFY(MStack stack, Instance instance, Operands operands) {
         int maxThreads = (int) stack.pop();
         var ptr = readMemPtr(stack, operands);
-        var result = instance.memory().notify(ptr, maxThreads);
+        var result = instance.memory().atomicNotify(ptr, maxThreads);
         stack.push(result);
     }
 
-    private static void ATOMIC_FENCE() {
-        OpcodeImpl.ATOMIC_FENCE();
+    private static void ATOMIC_FENCE(Instance instance) {
+        instance.memory().atomicFence();
     }
 
     private static StackFrame RETURN_CALL(

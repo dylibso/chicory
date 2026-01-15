@@ -707,7 +707,7 @@ public final class Shaded {
         if (ptr % 4 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        return memory.waitOn(ptr, expected, timeout);
+        return memory.atomicWait(ptr, expected, timeout);
     }
 
     public static int memoryAtomicWait64(
@@ -716,11 +716,15 @@ public final class Shaded {
         if (ptr % 8 != 0) {
             throw new InvalidException("unaligned atomic");
         }
-        return memory.waitOn(ptr, expected, timeout);
+        return memory.atomicWait(ptr, expected, timeout);
     }
 
     public static int memoryAtomicNotify(int base, int count, int offset, Memory memory) {
         var ptr = getAddr(base, offset);
-        return memory.notify(ptr, count);
+        return memory.atomicNotify(ptr, count);
+    }
+
+    public static void memoryAtomicFence(Memory memory) {
+        memory.atomicFence();
     }
 }
