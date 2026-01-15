@@ -32,14 +32,38 @@ public interface Memory {
 
     boolean shared();
 
-    @Deprecated
+    @Deprecated(forRemoval = true)
     Object lock(int address);
 
+    @Deprecated(forRemoval = true)
     int waitOn(int address, int expected, long timeout);
 
+    @Deprecated(forRemoval = true)
     int waitOn(int address, long expected, long timeout);
 
+    @Deprecated(forRemoval = true)
     int notify(int address, int maxThreads);
+
+    // Atomic operations
+    // All these default implementations will be converted to abstract methods in the next major
+    // release.
+    ///////////////////////////
+
+    default void atomicFence() {
+        ByteBufferMemory.ATOMIC_FENCE_IMPL.run();
+    }
+
+    default int atomicWait(int addr, int expected, long timeout) {
+        return waitOn(addr, expected, timeout);
+    }
+
+    default int atomicWait(int addr, long expected, long timeout) {
+        return waitOn(addr, expected, timeout);
+    }
+
+    default int atomicNotify(int addr, int maxThreads) {
+        return notify(addr, maxThreads);
+    }
 
     default int atomicReadInt(int addr) {
         synchronized (lock(addr)) {

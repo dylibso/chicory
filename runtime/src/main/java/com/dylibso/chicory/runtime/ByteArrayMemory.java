@@ -116,7 +116,7 @@ public final class ByteArrayMemory implements Memory {
     private final Map<Integer, WaitState> waitStates;
 
     @Override
-    @Deprecated
+    @SuppressWarnings("removal")
     public Object lock(int address) {
         throw new UnsupportedOperationException();
     }
@@ -178,17 +178,20 @@ public final class ByteArrayMemory implements Memory {
     }
 
     @Override
+    @SuppressWarnings("removal")
     public int waitOn(int address, int expected, long timeout) {
         return waitOn(address, () -> atomicReadInt(address) == expected, timeout);
     }
 
     @Override
+    @SuppressWarnings("removal")
     public int waitOn(int address, long expected, long timeout) {
         return waitOn(address, () -> atomicReadLong(address) == expected, timeout);
     }
 
     // Notify waiters at this address
     @Override
+    @SuppressWarnings("removal")
     public int notify(int address, int maxThreads) {
         if (!shared()) {
             return 0;
@@ -642,6 +645,11 @@ public final class ByteArrayMemory implements Memory {
     // ===========================================
     // Atomic operations
     // ===========================================
+
+    @Override
+    public void atomicFence() {
+        VarHandle.fullFence();
+    }
 
     @Override
     public byte atomicAddByte(int addr, byte delta) {

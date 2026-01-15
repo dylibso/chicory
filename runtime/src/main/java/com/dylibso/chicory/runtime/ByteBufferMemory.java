@@ -11,6 +11,7 @@ import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.DataSegment;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
@@ -28,7 +29,9 @@ import java.util.function.Function;
  * This is the preferred memory implementation on Android systems.
  */
 public final class ByteBufferMemory implements Memory {
-
+    // Package private for usage as default impl. in Memory. Can become private in next major
+    // release.
+    static final Runnable ATOMIC_FENCE_IMPL = getAtomicFenceImpl();
     private final MemoryLimits limits;
     private DataSegment[] dataSegments;
     private ByteBuffer buffer;
@@ -67,7 +70,7 @@ public final class ByteBufferMemory implements Memory {
     private final Map<Integer, WaitState> waitStates;
 
     @Override
-    @Deprecated
+    @SuppressWarnings("removal")
     public Object lock(int address) {
         if (!shared()) {
             // disable locking
@@ -129,17 +132,20 @@ public final class ByteBufferMemory implements Memory {
     }
 
     @Override
+    @SuppressWarnings("removal")
     public int waitOn(int address, int expected, long timeout) {
         return waitOn(address, () -> readInt(address) == expected, timeout);
     }
 
     @Override
+    @SuppressWarnings("removal")
     public int waitOn(int address, long expected, long timeout) {
         return waitOn(address, () -> readLong(address) == expected, timeout);
     }
 
     // Notify waiters at this address
     @Override
+    @SuppressWarnings("removal")
     public int notify(int address, int maxThreads) {
         if (!shared()) {
             return 0;
@@ -485,5 +491,36 @@ public final class ByteBufferMemory implements Memory {
     @Override
     public void drop(int segment) {
         dataSegments[segment] = PassiveDataSegment.EMPTY;
+    }
+
+    private static Runnable getAtomicFenceImpl() {
+        try {
+            // to take into account older Android API level:
+            // https://developer.android.com/reference/java/lang/invoke/VarHandle#fullFence()
+            java.lang.invoke.VarHandle.fullFence();
+            return java.lang.invoke.VarHandle::fullFence;
+        } catch (NoSuchMethodError e) {
+            try {
+                Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
+                var theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
+                theUnsafeField.setAccessible(true);
+                var theUnsafe = theUnsafeField.get(null);
+                var fullFence = unsafeClass.getMethod("fullFence");
+
+                return () -> {
+                    try {
+                        fullFence.invoke(theUnsafe);
+                    } catch (IllegalAccessException | InvocationTargetException ex) {
+                        throw new RuntimeException(
+                                "ATOMIC_FENCE implementation: Failed to invoke"
+                                        + " sun.misc.Unsafe",
+                                ex);
+                    }
+                };
+            } catch (Throwable ex) {
+                throw new RuntimeException(
+                        "ATOMIC_FENCE implementation: Failed to lookup sun.misc.Unsafe", ex);
+            }
+        }
     }
 }
