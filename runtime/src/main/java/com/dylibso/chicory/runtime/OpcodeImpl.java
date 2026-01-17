@@ -7,7 +7,6 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValu
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.ValType;
-import java.lang.reflect.InvocationTargetException;
 
 /**
  * Note: Some opcodes are easy or trivial to implement as compiler intrinsics (local.get, i32.add, etc).
@@ -867,46 +866,5 @@ public final class OpcodeImpl {
                 table.setRef(i, val, instance);
             }
         }
-    }
-
-    private static final Runnable ATOMIC_FENCE_IMPL;
-
-    static {
-        Runnable impl;
-        try {
-            // to take into account older Android API level:
-            // https://developer.android.com/reference/java/lang/invoke/VarHandle#fullFence()
-            java.lang.invoke.VarHandle.fullFence();
-            impl = java.lang.invoke.VarHandle::fullFence;
-        } catch (NoSuchMethodError e) {
-            try {
-                Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
-                var theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
-                theUnsafeField.setAccessible(true);
-                var theUnsafe = theUnsafeField.get(null);
-                var fullFence = unsafeClass.getMethod("fullFence");
-
-                impl =
-                        () -> {
-                            try {
-                                fullFence.invoke(theUnsafe);
-                            } catch (IllegalAccessException | InvocationTargetException ex) {
-                                throw new RuntimeException(
-                                        "ATOMIC_FENCE implementation: Failed to invoke"
-                                                + " sun.misc.Unsafe",
-                                        ex);
-                            }
-                        };
-            } catch (Throwable ex) {
-                throw new RuntimeException(
-                        "ATOMIC_FENCE implementation: Failed to lookup sun.misc.Unsafe", ex);
-            }
-        }
-        ATOMIC_FENCE_IMPL = impl;
-    }
-
-    @OpCodeIdentifier(OpCode.ATOMIC_FENCE)
-    public static void ATOMIC_FENCE() {
-        ATOMIC_FENCE_IMPL.run();
     }
 }

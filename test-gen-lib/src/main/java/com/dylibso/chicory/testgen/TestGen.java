@@ -59,11 +59,11 @@ public final class TestGen {
                         excludedUnlinkableWasts);
 
         // Create destination folders
-        if (!compiledWastTargetFolder.mkdirs()) {
+        if (!compiledWastTargetFolder.isDirectory() && !compiledWastTargetFolder.mkdirs()) {
             throw new RuntimeException("Failed to create folder: " + compiledWastTargetFolder);
         }
 
-        if (!sourceDestinationFolder.mkdirs()) {
+        if (!sourceDestinationFolder.isDirectory() && !sourceDestinationFolder.mkdirs()) {
             throw new RuntimeException("Failed to create folder: " + sourceDestinationFolder);
         }
 
@@ -154,7 +154,7 @@ public final class TestGen {
             }
             File wasmFilesFolder = compiledWastTargetFolder.toPath().resolve(plainName).toFile();
             File specFile = wasmFilesFolder.toPath().resolve(SPEC_JSON).toFile();
-            if (!wasmFilesFolder.mkdirs()) {
+            if (!wasmFilesFolder.isDirectory() && !wasmFilesFolder.mkdirs()) {
                 throw new RuntimeException("Could not create folder: " + wasmFilesFolder);
             }
 
