@@ -12,7 +12,6 @@ chicory-wasm = { module = "com.dylibso.chicory:wasm", version.ref = "chicory"}
 chicory-wasmCorpus = { module = "com.dylibso.chicory:wasm-corpus", version.ref = "chicory"}
 android-gradle-plugin-api = { module = "com.android.tools.build:gradle-api", version.ref = "agp"}
 [plugins]
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 android-junit5 = { id = "de.mannodermaus.android-junit5", version = "2.0.1"}
