@@ -88,4 +88,13 @@ public class GlobalInstance {
     public MutabilityType getMutabilityType() {
         return mutabilityType;
     }
+
+    public GlobalInstance copy() {
+        GlobalInstance copy =
+                new GlobalInstance(
+                        this.valueLow, this.valueHigh, this.valType, this.mutabilityType);
+        // The instance field will be set by the calling code
+        copy.instance = null;
+        return copy;
+    }
 }

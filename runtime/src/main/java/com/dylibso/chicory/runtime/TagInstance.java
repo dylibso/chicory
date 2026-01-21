@@ -28,4 +28,8 @@ public class TagInstance {
     public FunctionType type() {
         return type;
     }
+
+    public TagInstance copy() {
+        return new TagInstance(this.tag, this.type);
+    }
 }

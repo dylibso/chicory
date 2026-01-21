@@ -191,4 +191,11 @@ public final class ImportValues {
             return importValues;
         }
     }
+
+    public ImportValues copy() {
+        // Create a new instance using the existing constructor
+        // which already clones the arrays properly
+        return new ImportValues(
+                this.functions, this.globals, this.memories, this.tables, this.tags);
+    }
 }
