@@ -3,7 +3,6 @@ package com.dylibso.chicory.runtime;
 import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValue;
 import static java.lang.Math.min;
 
-import com.dylibso.chicory.runtime.alloc.DefaultMemAllocStrategy;
 import com.dylibso.chicory.runtime.alloc.MemAllocStrategy;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.UninstantiableException;
@@ -32,29 +31,47 @@ public final class ByteBufferMemory implements Memory {
     // Package private for usage as default impl. in Memory. Can become private in next major
     // release.
     static final Runnable ATOMIC_FENCE_IMPL = getAtomicFenceImpl();
+
+    // Page addressing constants
+    private static final int PAGE_SHIFT = 16; // PAGE_SIZE = 65536 = 2^16
+    private static final int PAGE_MASK = PAGE_SIZE - 1;
+
     private final MemoryLimits limits;
     private DataSegment[] dataSegments;
-    private ByteBuffer buffer;
-    private int nPages;
 
-    private final MemAllocStrategy allocStrategy;
+    // Page-based storage: fixed-size array of pages, slots filled lazily during grow
+    // Individual pages are never reallocated once created, enabling lock-free reads
+    private final ByteBuffer[] pages;
+
+    // Number of currently allocated pages
+    private volatile int nPages;
 
     public ByteBufferMemory(MemoryLimits limits) {
-        this(limits, new DefaultMemAllocStrategy(Memory.bytes(limits.maximumPages())));
-    }
-
-    public ByteBufferMemory(MemoryLimits limits, MemAllocStrategy allocStrategy) {
-        this.allocStrategy = allocStrategy;
         this.limits = limits;
-        this.buffer =
-                ByteBuffer.allocate(allocStrategy.initial(PAGE_SIZE * limits.initialPages()))
-                        .order(ByteOrder.LITTLE_ENDIAN);
+        int maxPages = min(limits.maximumPages(), RUNTIME_MAX_PAGES);
+        this.pages = new ByteBuffer[maxPages];
+
+        // Allocate initial pages
+        for (int i = 0; i < limits.initialPages(); i++) {
+            pages[i] = ByteBuffer.allocate(PAGE_SIZE).order(ByteOrder.LITTLE_ENDIAN);
+        }
         this.nPages = limits.initialPages();
+
         if (limits.shared()) {
             waitStates = new ConcurrentHashMap<>();
         } else {
             waitStates = null;
         }
+    }
+
+    /**
+     * @deprecated The MemAllocStrategy is no longer used since memory is allocated by page.
+     *             Use {@link #ByteBufferMemory(MemoryLimits)} instead.
+     */
+    @Deprecated
+    @SuppressWarnings("InlineMeSuggester")
+    public ByteBufferMemory(MemoryLimits limits, MemAllocStrategy allocStrategy) {
+        this(limits);
     }
 
     // Tracks wait state per address: waiter count and pending wakeups
@@ -187,15 +204,6 @@ public final class ByteBufferMemory implements Memory {
         }
     }
 
-    private ByteBuffer allocateByteBuffer(int capacity) {
-        if (capacity > buffer.capacity()) {
-            int nextCapacity = allocStrategy.next(buffer.capacity(), capacity);
-            return ByteBuffer.allocate(nextCapacity).order(ByteOrder.LITTLE_ENDIAN);
-        } else {
-            return buffer;
-        }
-    }
-
     /**
      * Gets the size of the memory in number of pages
      */
@@ -205,24 +213,20 @@ public final class ByteBufferMemory implements Memory {
     }
 
     @Override
-    public int grow(int size) {
-        var prevPages = nPages;
-        var numPages = prevPages + size;
+    public synchronized int grow(int size) {
+        int prevPages = nPages;
+        int numPages = prevPages + size;
 
         if (numPages > maximumPages() || numPages < prevPages) {
             return -1;
         }
 
-        var newBuffer = allocateByteBuffer(PAGE_SIZE * numPages);
-        if (newBuffer != buffer) {
-            var oldBuffer = buffer;
-            var position = oldBuffer.position();
-            oldBuffer.rewind();
-            newBuffer.put(oldBuffer);
-            newBuffer.position(position);
-            buffer = newBuffer;
+        // Allocate new pages
+        for (int i = prevPages; i < numPages; i++) {
+            pages[i] = ByteBuffer.allocate(PAGE_SIZE).order(ByteOrder.LITTLE_ENDIAN);
         }
 
+        // Publish new page count (volatile write ensures visibility of new pages)
         nPages = numPages;
         return prevPages;
     }
@@ -255,13 +259,8 @@ public final class ByteBufferMemory implements Memory {
                 var offsetExpr = segment.offsetInstructions();
                 var data = segment.data();
                 var offset = (int) computeConstantValue(instance, offsetExpr)[0];
-                checkBounds(
-                        offset,
-                        data.length,
-                        (PAGE_SIZE * nPages),
-                        (msg) -> new UninstantiableException(msg));
-                buffer.position(offset);
-                buffer.put(data, 0, data.length);
+                checkBounds(offset, data.length, sizeInBytes(), UninstantiableException::new);
+                write(offset, data, 0, data.length);
             } else if (s instanceof PassiveDataSegment) {
                 // Passive segment should be skipped
             } else {
@@ -284,13 +283,14 @@ public final class ByteBufferMemory implements Memory {
         }
     }
 
-    private static RuntimeException outOfBoundsException(
-            RuntimeException e, int addr, int size, int limit) {
+    private RuntimeException outOfBoundsException(RuntimeException e, int addr, int size) {
         if (e instanceof IndexOutOfBoundsException
                 || e instanceof BufferOverflowException
                 || e instanceof BufferUnderflowException
                 || e instanceof IllegalArgumentException
+                || e instanceof NullPointerException
                 || e instanceof NegativeArraySizeException) {
+            var limit = sizeInBytes();
             var errorMsg =
                     "out of bounds memory access: attempted to access address: "
                             + addr
@@ -316,159 +316,259 @@ public final class ByteBufferMemory implements Memory {
 
     @Override
     public void write(int addr, byte[] data, int offset, int size) {
-        try {
-            buffer.position(addr);
-            buffer.put(data, offset, size);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, size, sizeInBytes());
+        checkBounds(offset, size, data.length, WasmRuntimeException::new);
+        checkBounds(addr, size, sizeInBytes(), WasmRuntimeException::new);
+        while (size > 0) {
+            int pageIdx = addr >>> PAGE_SHIFT;
+            int pageOffset = addr & PAGE_MASK;
+            int chunk = Math.min(size, PAGE_SIZE - pageOffset);
+            pages[pageIdx].position(pageOffset);
+            pages[pageIdx].put(data, offset, chunk);
+            addr += chunk;
+            offset += chunk;
+            size -= chunk;
         }
     }
 
     @Override
     public byte read(int addr) {
         try {
-            return buffer.get(addr);
+            return pages[addr >>> PAGE_SHIFT].get(addr & PAGE_MASK);
         } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 1, sizeInBytes());
+            throw outOfBoundsException(e, addr, 1);
         }
     }
 
     @Override
     public byte[] readBytes(int addr, int len) {
-        try {
-            var bytes = new byte[len];
-            buffer.position(addr);
-            buffer.get(bytes);
-            return bytes;
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, len, sizeInBytes());
+        checkBounds(addr, len, sizeInBytes(), WasmRuntimeException::new);
+        byte[] result = new byte[len];
+        int destOffset = 0;
+        int remaining = len;
+        int a = addr;
+        while (remaining > 0) {
+            int pageIdx = a >>> PAGE_SHIFT;
+            int pageOffset = a & PAGE_MASK;
+            int chunk = Math.min(remaining, PAGE_SIZE - pageOffset);
+            pages[pageIdx].position(pageOffset);
+            pages[pageIdx].get(result, destOffset, chunk);
+            a += chunk;
+            destOffset += chunk;
+            remaining -= chunk;
         }
+        return result;
     }
 
     @Override
     public void writeI32(int addr, int data) {
-        try {
-            buffer.putInt(addr, data);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 4, sizeInBytes());
+        int off = addr & PAGE_MASK;
+        if (off + 4 <= PAGE_SIZE) {
+            try {
+                pages[addr >>> PAGE_SHIFT].putInt(off, data);
+            } catch (RuntimeException e) {
+                throw outOfBoundsException(e, addr, 4);
+            }
+        } else {
+            writeI32Slow(addr, data);
         }
+    }
+
+    private void writeI32Slow(int addr, int data) {
+        checkBounds(addr, 4, sizeInBytes(), WasmRuntimeException::new);
+        writeByte(addr, (byte) data);
+        writeByte(addr + 1, (byte) (data >>> 8));
+        writeByte(addr + 2, (byte) (data >>> 16));
+        writeByte(addr + 3, (byte) (data >>> 24));
     }
 
     @Override
     public int readInt(int addr) {
-        try {
-            return buffer.getInt(addr);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 4, sizeInBytes());
+        int off = addr & PAGE_MASK;
+        if (off + 4 <= PAGE_SIZE) {
+            try {
+                return pages[addr >>> PAGE_SHIFT].getInt(off);
+            } catch (RuntimeException e) {
+                throw outOfBoundsException(e, addr, 4);
+            }
+        } else {
+            return readIntSlow(addr);
         }
+    }
+
+    private int readIntSlow(int addr) {
+        return (read(addr) & 0xFF)
+                | ((read(addr + 1) & 0xFF) << 8)
+                | ((read(addr + 2) & 0xFF) << 16)
+                | ((read(addr + 3) & 0xFF) << 24);
     }
 
     @Override
     public void writeLong(int addr, long data) {
-        try {
-            buffer.putLong(addr, data);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 8, sizeInBytes());
+        int off = addr & PAGE_MASK;
+        if (off + 8 <= PAGE_SIZE) {
+            try {
+                pages[addr >>> PAGE_SHIFT].putLong(off, data);
+            } catch (RuntimeException e) {
+                throw outOfBoundsException(e, addr, 8);
+            }
+        } else {
+            writeLongSlow(addr, data);
         }
+    }
+
+    private void writeLongSlow(int addr, long data) {
+        checkBounds(addr, 8, sizeInBytes(), WasmRuntimeException::new);
+        writeByte(addr, (byte) data);
+        writeByte(addr + 1, (byte) (data >>> 8));
+        writeByte(addr + 2, (byte) (data >>> 16));
+        writeByte(addr + 3, (byte) (data >>> 24));
+        writeByte(addr + 4, (byte) (data >>> 32));
+        writeByte(addr + 5, (byte) (data >>> 40));
+        writeByte(addr + 6, (byte) (data >>> 48));
+        writeByte(addr + 7, (byte) (data >>> 56));
     }
 
     @Override
     public long readLong(int addr) {
-        try {
-            return buffer.getLong(addr);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 8, sizeInBytes());
+        int off = addr & PAGE_MASK;
+        if (off + 8 <= PAGE_SIZE) {
+            try {
+                return pages[addr >>> PAGE_SHIFT].getLong(off);
+            } catch (RuntimeException e) {
+                throw outOfBoundsException(e, addr, 8);
+            }
+        } else {
+            return readLongSlow(addr);
         }
+    }
+
+    private long readLongSlow(int addr) {
+        return (read(addr) & 0xFFL)
+                | ((read(addr + 1) & 0xFFL) << 8)
+                | ((read(addr + 2) & 0xFFL) << 16)
+                | ((read(addr + 3) & 0xFFL) << 24)
+                | ((read(addr + 4) & 0xFFL) << 32)
+                | ((read(addr + 5) & 0xFFL) << 40)
+                | ((read(addr + 6) & 0xFFL) << 48)
+                | ((read(addr + 7) & 0xFFL) << 56);
     }
 
     @Override
     public void writeShort(int addr, short data) {
-        try {
-            buffer.putShort(addr, data);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 2, sizeInBytes());
+        int off = addr & PAGE_MASK;
+        if (off + 2 <= PAGE_SIZE) {
+            try {
+                pages[addr >>> PAGE_SHIFT].putShort(off, data);
+            } catch (RuntimeException e) {
+                throw outOfBoundsException(e, addr, 2);
+            }
+        } else {
+            writeShortSlow(addr, data);
         }
+    }
+
+    private void writeShortSlow(int addr, short data) {
+        checkBounds(addr, 2, sizeInBytes(), WasmRuntimeException::new);
+        writeByte(addr, (byte) data);
+        writeByte(addr + 1, (byte) (data >>> 8));
     }
 
     @Override
     public short readShort(int addr) {
-        try {
-            return buffer.getShort(addr);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 2, sizeInBytes());
+        int off = addr & PAGE_MASK;
+        if (off + 2 <= PAGE_SIZE) {
+            try {
+                return pages[addr >>> PAGE_SHIFT].getShort(off);
+            } catch (RuntimeException e) {
+                throw outOfBoundsException(e, addr, 2);
+            }
+        } else {
+            return readShortSlow(addr);
         }
+    }
+
+    private short readShortSlow(int addr) {
+        return (short) ((read(addr) & 0xFF) | ((read(addr + 1) & 0xFF) << 8));
     }
 
     @Override
     public long readU16(int addr) {
-        try {
-            return buffer.getShort(addr) & 0xffff;
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 2, sizeInBytes());
-        }
+        return readShort(addr) & 0xFFFFL;
     }
 
     @Override
     public void writeByte(int addr, byte data) {
         try {
-            buffer.put(addr, data);
+            pages[addr >>> PAGE_SHIFT].put(addr & PAGE_MASK, data);
         } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 1, sizeInBytes());
+            throw outOfBoundsException(e, addr, 1);
         }
     }
 
     @Override
     public void writeF32(int addr, float data) {
-        try {
-            buffer.putFloat(addr, data);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 4, sizeInBytes());
+        int off = addr & PAGE_MASK;
+        if (off + 4 <= PAGE_SIZE) {
+            try {
+                pages[addr >>> PAGE_SHIFT].putFloat(off, data);
+            } catch (RuntimeException e) {
+                throw outOfBoundsException(e, addr, 4);
+            }
+        } else {
+            writeI32Slow(addr, Float.floatToRawIntBits(data));
         }
     }
 
     @Override
     public long readF32(int addr) {
-        try {
-            return buffer.getInt(addr);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 4, sizeInBytes());
-        }
+        return readInt(addr);
     }
 
     @Override
     public float readFloat(int addr) {
-        try {
-            return buffer.getFloat(addr);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 4, sizeInBytes());
+        int off = addr & PAGE_MASK;
+        if (off + 4 <= PAGE_SIZE) {
+            try {
+                return pages[addr >>> PAGE_SHIFT].getFloat(off);
+            } catch (RuntimeException e) {
+                throw outOfBoundsException(e, addr, 4);
+            }
+        } else {
+            return Float.intBitsToFloat(readIntSlow(addr));
         }
     }
 
     @Override
     public void writeF64(int addr, double data) {
-        try {
-            buffer.putDouble(addr, data);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 8, sizeInBytes());
+        int off = addr & PAGE_MASK;
+        if (off + 8 <= PAGE_SIZE) {
+            try {
+                pages[addr >>> PAGE_SHIFT].putDouble(off, data);
+            } catch (RuntimeException e) {
+                throw outOfBoundsException(e, addr, 8);
+            }
+        } else {
+            writeLongSlow(addr, Double.doubleToRawLongBits(data));
         }
     }
 
     @Override
     public double readDouble(int addr) {
-        try {
-            return buffer.getDouble(addr);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 8, sizeInBytes());
+        int off = addr & PAGE_MASK;
+        if (off + 8 <= PAGE_SIZE) {
+            try {
+                return pages[addr >>> PAGE_SHIFT].getDouble(off);
+            } catch (RuntimeException e) {
+                throw outOfBoundsException(e, addr, 8);
+            }
+        } else {
+            return Double.longBitsToDouble(readLongSlow(addr));
         }
     }
 
     @Override
     public long readF64(int addr) {
-        try {
-            return buffer.getLong(addr);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, addr, 8, sizeInBytes());
-        }
+        return readLong(addr);
     }
 
     @Override
@@ -479,12 +579,16 @@ public final class ByteBufferMemory implements Memory {
     @Override
     @SuppressWarnings("ByteBufferBackingArray")
     public void fill(byte value, int fromIndex, int toIndex) {
-        // see https://appsintheopen.com/posts/53-resetting-bytebuffers-to-zero-in-java
-        try {
-            Arrays.fill(buffer.array(), fromIndex, toIndex, value);
-            buffer.position(0);
-        } catch (RuntimeException e) {
-            throw outOfBoundsException(e, fromIndex, toIndex - fromIndex, sizeInBytes());
+        int addr = fromIndex;
+        int remaining = toIndex - fromIndex;
+        checkBounds(addr, remaining, sizeInBytes(), WasmRuntimeException::new);
+        while (remaining > 0) {
+            int pageIdx = addr >>> PAGE_SHIFT;
+            int pageOffset = addr & PAGE_MASK;
+            int chunk = Math.min(remaining, PAGE_SIZE - pageOffset);
+            Arrays.fill(pages[pageIdx].array(), pageOffset, pageOffset + chunk, value);
+            addr += chunk;
+            remaining -= chunk;
         }
     }
 
