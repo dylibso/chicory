@@ -349,6 +349,10 @@ final class Emitters {
         emitInvokeStatic(asm, ShadedRefs.MEMORY_DROP);
     }
 
+    public static void I32_GE_U(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        emitInvokeStatic(asm, ShadedRefs.I32_GE_U);
+    }
+
     public static void I32_ADD(Context ctx, CompilerInstruction ins, MethodVisitor asm) {
         asm.visitInsn(Opcodes.IADD);
     }

@@ -229,7 +229,7 @@ final class EmitterMap {
                     .shared(CompilerOpCode.I32_EXTEND_8_S, OpcodeImpl.class)
                     .shared(CompilerOpCode.I32_EXTEND_16_S, OpcodeImpl.class)
                     .shared(CompilerOpCode.I32_GE_S, OpcodeImpl.class)
-                    .shared(CompilerOpCode.I32_GE_U, OpcodeImpl.class)
+                    .intrinsic(CompilerOpCode.I32_GE_U, Emitters::I32_GE_U)
                     .shared(CompilerOpCode.I32_GT_S, OpcodeImpl.class)
                     .shared(CompilerOpCode.I32_GT_U, OpcodeImpl.class)
                     .shared(CompilerOpCode.I32_LE_S, OpcodeImpl.class)

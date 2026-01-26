@@ -75,6 +75,16 @@ public final class Shaded {
         OpcodeImpl.TABLE_INIT(instance, tableidx, elementidx, size, elemidx, offset);
     }
 
+    public static int i32_ge_u(int a, int b) {
+        if (memCopyWorkaround) {
+            // Use this workaround to avoid a bug in some JVMs (Temurin 17)
+            return MemCopyWorkaround.i32_ge_u(a, b);
+        } else {
+            // Go back to the original implementation, once that bug is no longer an issue:
+            return OpcodeImpl.I32_GE_U(a, b);
+        }
+    }
+
     private static final boolean memCopyWorkaround;
 
     static {
