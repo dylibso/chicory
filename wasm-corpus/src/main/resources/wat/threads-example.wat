@@ -117,8 +117,8 @@
 
   ;; let a be i32 at addr 0
   ;; let b be i32 at addr 4
-  ;; perform: read b; atomic_fence; read a; if a < b trap;
-  (func (export "fenced_read_and_verify")
+  ;; perform: read b; atomic_fence; read a; if a < b trap; return a
+  (func (export "fenced_read_and_verify") (result i32)
     (local $local_a i32)
     (local $local_b i32)
     
@@ -134,6 +134,9 @@
         (unreachable)
       )
     )
+
+    ;; Return the current value of 'a'
+    (local.get $local_a)
   )
 
 )
