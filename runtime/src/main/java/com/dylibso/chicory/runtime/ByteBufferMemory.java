@@ -46,6 +46,9 @@ public final class ByteBufferMemory implements Memory {
     // Number of currently allocated pages
     private volatile int nPages;
 
+    // Lock for grow operation (only used when memory is shared)
+    private final Object growLock = new Object();
+
     public ByteBufferMemory(MemoryLimits limits) {
         this.limits = limits;
         int maxPages = min(limits.maximumPages(), RUNTIME_MAX_PAGES);
@@ -213,7 +216,16 @@ public final class ByteBufferMemory implements Memory {
     }
 
     @Override
-    public synchronized int grow(int size) {
+    public int grow(int size) {
+        if (!shared()) {
+            return growImpl(size);
+        }
+        synchronized (growLock) {
+            return growImpl(size);
+        }
+    }
+
+    private int growImpl(int size) {
         int prevPages = nPages;
         int numPages = prevPages + size;
 
