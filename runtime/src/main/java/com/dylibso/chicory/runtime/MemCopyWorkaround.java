@@ -12,6 +12,10 @@ public final class MemCopyWorkaround {
         void apply(int destination, int offset, int size, Memory memory);
     }
 
+    private interface I32GEUFunc {
+        int apply(int a, int b);
+    }
+
     public static boolean shouldUseMemWorkaround() {
         return shouldUseMemWorkaround(System.getProperty("java.version"));
     }
@@ -41,22 +45,37 @@ public final class MemCopyWorkaround {
         if (shouldUseMemWorkaround()) {
             MemoryCopyFunc noop1 = (destination, offset, size, memory) -> {};
             MemoryCopyFunc noop2 = (destination, offset, size, memory) -> {};
+
+            I32GEUFunc noop3 = (a, b) -> a;
+            I32GEUFunc noop4 = (a, b) -> b;
+
             // Warm up the JIT... to make it see memoryCopyFunc.apply is megamorphic
             for (int i = 0; i < 1000; i++) {
                 memoryCopyFunc = noop1;
                 MemCopyWorkaround.memoryCopy(0, 0, 0, null);
                 memoryCopyFunc = noop2;
                 MemCopyWorkaround.memoryCopy(0, 0, 0, null);
+
+                i32geuFunc = noop3;
+                MemCopyWorkaround.i32_ge_u(0, 0);
+                i32geuFunc = noop4;
+                MemCopyWorkaround.i32_ge_u(0, 0);
             }
 
             memoryCopyFunc =
                     (destination, offset, size, memory) -> memory.copy(destination, offset, size);
+            i32geuFunc = (a, b) -> OpcodeImpl.I32_GE_U(a, b);
         }
     }
 
     static MemoryCopyFunc memoryCopyFunc;
+    static I32GEUFunc i32geuFunc;
 
     public static void memoryCopy(int destination, int offset, int size, Memory memory) {
         memoryCopyFunc.apply(destination, offset, size, memory);
+    }
+
+    public static int i32_ge_u(int a, int b) {
+        return i32geuFunc.apply(a, b);
     }
 }
