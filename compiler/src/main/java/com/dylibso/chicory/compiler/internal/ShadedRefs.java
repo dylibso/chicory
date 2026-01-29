@@ -127,6 +127,7 @@ public final class ShadedRefs {
     static final Method MEMORY_ATOMIC_WAIT32;
     static final Method MEMORY_ATOMIC_WAIT64;
     static final Method MEMORY_ATOMIC_NOTIFY;
+    static final Method MEMORY_ATOMIC_FENCE;
 
     static {
         try {
@@ -662,6 +663,7 @@ public final class ShadedRefs {
             MEMORY_ATOMIC_NOTIFY =
                     Shaded.class.getMethod(
                             "memoryAtomicNotify", int.class, int.class, int.class, Memory.class);
+            MEMORY_ATOMIC_FENCE = Shaded.class.getMethod("memoryAtomicFence", Memory.class);
 
         } catch (NoSuchMethodException e) {
             throw new AssertionError(e);

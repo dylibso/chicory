@@ -944,6 +944,12 @@ final class Emitters {
         emitLoadOrStore(ctx, ins, asm, ShadedRefs.MEMORY_ATOMIC_NOTIFY);
     }
 
+    public static void MEM_ATOMIC_FENCE(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.MEMORY_ATOMIC_FENCE);
+    }
+
     private static void emitLoadOrStore(
             Context ctx, CompilerInstruction ins, InstructionAdapter asm, Method method) {
         long offset = ins.operand(1);

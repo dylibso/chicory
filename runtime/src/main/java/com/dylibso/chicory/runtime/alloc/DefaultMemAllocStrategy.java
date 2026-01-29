@@ -1,5 +1,12 @@
 package com.dylibso.chicory.runtime.alloc;
 
+/**
+ * Default memory allocation strategy that doubles the buffer size on growth.
+ *
+ * @deprecated Memory is now allocated by page (64KB each), so custom allocation
+ *             strategies are no longer used.
+ */
+@Deprecated
 public final class DefaultMemAllocStrategy implements MemAllocStrategy {
     private final int max;
 
