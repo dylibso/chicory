@@ -18,13 +18,12 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -279,6 +278,7 @@ public class ThreadsProposalTest {
         assertEquals(2, workerAcquireLock.get());
     }
 
+    @Timeout(30)
     @ParameterizedTest
     @MethodSource("memoryAndMachinesImplementations")
     public void atomicFenceOrder(
@@ -294,8 +294,9 @@ public class ThreadsProposalTest {
         memory.writeI32(4, 0);
 
         AtomicBoolean done = new AtomicBoolean(false);
+        final int minIterations = 10000;
 
-        Thread workerT =
+        Thread writerT =
                 new Thread(
                         () -> {
                             while (!done.get()) {
@@ -303,22 +304,16 @@ public class ThreadsProposalTest {
                             }
                         });
 
-        // set done after 200ms
-        CompletableFuture.delayedExecutor(200, TimeUnit.MILLISECONDS)
-                .execute(
-                        () -> {
-                            done.set(true);
-                        });
-        workerT.start();
+        writerT.start();
         assertDoesNotThrow(
                 () -> {
-                    while (!done.get()) {
-                        fencedReadAndVerify.apply();
-                    }
+                    long a;
+                    do {
+                        a = (long) fencedReadAndVerify.apply()[0];
+                    } while (a < minIterations);
                 });
-        workerT.join();
-        // also verify we made some iterations
-        assertTrue(memory.readI32(0) > 10000);
+        done.set(true);
+        writerT.join();
     }
 
     @ParameterizedTest
