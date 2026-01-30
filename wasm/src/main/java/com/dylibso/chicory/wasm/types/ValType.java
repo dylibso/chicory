@@ -3,7 +3,6 @@ package com.dylibso.chicory.wasm.types;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -34,17 +33,23 @@ public final class ValType {
     // defined function type. This is not representable in the binary or textual representation
     // of WASM. This is instead used after substitution to represent closed ValType.
     // This is useful when validating import function values.
-    private final FunctionType resolvedFunctionType;
+    private int resolvedFunctionTypeHash;
+    private final int resolvedFunctionTypeId;
 
     private ValType(int opcode) {
-        this(opcode, NULL_TYPEIDX, null);
+        this(opcode, NULL_TYPEIDX, -1);
     }
 
     private ValType(int opcode, int typeIdx) {
-        this(opcode, typeIdx, null);
+        this(opcode, typeIdx, -1);
     }
 
-    private ValType(int opcode, int typeIdx, FunctionType resolvedFunctionType) {
+    private ValType(int opcode, int typeIdx, int resolvedFunctionTypeId) {
+        this(opcode, typeIdx, resolvedFunctionTypeId, -1);
+    }
+
+    private ValType(
+            int opcode, int typeIdx, int resolvedFunctionTypeId, int resolvedFunctionTypeHash) {
         // Conveniently, all value types we want to represent can fit inside a Java long.
         // We store the typeIdx (of reference types) in the upper 4 bytes and the opcode in the
         // lower 4 bytes.
@@ -58,11 +63,24 @@ public final class ValType {
             typeIdx = TypeIdxCode.EXN.code();
             opcode = ID.RefNull;
         } else if ((opcode == ID.RefNull || opcode == ID.Ref) && typeIdx >= 0) {
-            Objects.requireNonNull(resolvedFunctionType);
+            assert resolvedFunctionTypeId >= 0;
         }
-        this.resolvedFunctionType = resolvedFunctionType;
+        this.resolvedFunctionTypeId = resolvedFunctionTypeId;
+        this.resolvedFunctionTypeHash = resolvedFunctionTypeHash;
 
         this.id = createId(opcode, typeIdx);
+    }
+
+    public ValType resolve(TypeSection typeSection) {
+        if (resolvedFunctionTypeId >= 0) {
+            try {
+                resolvedFunctionTypeHash =
+                        typeSection.getSubType(resolvedFunctionTypeId).hashCode();
+            } catch (IndexOutOfBoundsException e) {
+                throw new InvalidException("unknown type: " + resolvedFunctionTypeId);
+            }
+        }
+        return this;
     }
 
     private static long createId(int opcode, int typeIdx) {
@@ -90,6 +108,10 @@ public final class ValType {
 
     public int typeIdx() {
         return typeIdx(id);
+    }
+
+    public int resolvedFunctionTypeId() {
+        return resolvedFunctionTypeId;
     }
 
     /**
@@ -170,6 +192,22 @@ public final class ValType {
         return isReference(this.opcode());
     }
 
+    // https://webassembly.github.io/gc/core/binary/types.html#heap-types
+    public static boolean isAbsHeapType(int opcode) {
+        return (opcode == ID.NoFuncRef
+                || opcode == ID.NoExternRef
+                || opcode == ID.NoneRef
+                || opcode == ID.FuncRef
+                || opcode == ID.ExternRef
+                // TODO: verify?
+                || opcode == ID.ExnRef
+                || opcode == ID.AnyRef
+                || opcode == ID.EqRef
+                || opcode == ID.i31
+                || opcode == ID.StructRef
+                || opcode == ID.ArrayRef);
+    }
+
     /**
      * @return {@code true} if the given type ID is a valid value type ID, or {@code false} if it is not
      */
@@ -178,6 +216,11 @@ public final class ValType {
             case ID.RefNull:
             case ID.Ref:
             case ID.ExnRef:
+            case ID.AnyRef:
+            case ID.EqRef:
+            case ID.i31:
+            case ID.StructRef:
+            case ID.ArrayRef:
             case ID.V128:
             case ID.I32:
             case ID.I64:
@@ -220,7 +263,7 @@ public final class ValType {
         if (t1.typeIdx() >= 0 && t2.typeIdx() == TypeIdxCode.FUNC.code()) {
             return true;
         } else if (t1.typeIdx() >= 0 && t2.typeIdx() >= 0) {
-            return t1.resolvedFunctionType.equals(t2.resolvedFunctionType);
+            return t1.resolvedFunctionTypeHash == t2.resolvedFunctionTypeHash;
         } else if (t1.typeIdx() == TypeIdxCode.BOT.code()) {
             return true;
         }
@@ -251,8 +294,8 @@ public final class ValType {
 
     @Override
     public int hashCode() {
-        if (this.resolvedFunctionType != null) {
-            return resolvedFunctionType.hashCode();
+        if (resolvedFunctionTypeHash != -1) {
+            return resolvedFunctionTypeHash;
         }
         return Long.hashCode(id);
     }
@@ -264,14 +307,38 @@ public final class ValType {
         }
         ValType that = (ValType) other;
 
-        if (this.resolvedFunctionType != null && that.resolvedFunctionType != null) {
-            return opcode(this.id) == opcode(that.id)
-                    && this.resolvedFunctionType.equals(that.resolvedFunctionType);
-        } else if (this.resolvedFunctionType == null && that.resolvedFunctionType == null) {
+        // verify reference identity
+        if (this == that) {
+            return true;
+        }
+
+        // For types without resolvedFunctionType, compare by id
+        if (this.resolvedFunctionTypeHash == -1 && that.resolvedFunctionTypeHash == -1) {
             return this.id == that.id;
-        } else {
+        }
+
+        // If only one has resolvedFunctionType, they're not equal
+        if (this.resolvedFunctionTypeHash == -1 || that.resolvedFunctionTypeHash == -1) {
             return false;
         }
+
+        // Both have resolvedFunctionType - need structural comparison
+        // Check if opcodes match first
+        if (opcode(this.id) != opcode(that.id)) {
+            return false;
+        }
+
+        // For recursive types: if both have the same typeIdx, they reference the same type
+        // definition, so they're equal. This also breaks cycles naturally.
+        if (this.typeIdx() >= 0 && this.typeIdx() == that.typeIdx()) {
+            return true;
+        }
+
+        // For type equivalence: different typeIdx but same structure should be equal
+        // Do structural comparison by comparing resolvedFunctionType
+        // Cycles are handled by the typeIdx check above - when we recursively compare
+        // nested ValTypes with the same typeIdx, we'll return true at the check above
+        return this.resolvedFunctionTypeHash == that.resolvedFunctionTypeHash;
     }
 
     @Override
@@ -321,15 +388,22 @@ public final class ValType {
         public static final int BOT = -1;
         public static final int RefNull = 0x63;
         public static final int Ref = 0x64;
-        public static final int ExternRef = 0x6f;
-        // From the Exception Handling proposal
         public static final int ExnRef = 0x69; // -0x17
+        public static final int ArrayRef = 0x6A;
+        public static final int StructRef = 0x6B;
+        public static final int i31 = 0x6C;
+        public static final int EqRef = 0x6D;
+        public static final int AnyRef = 0x6E;
+        public static final int ExternRef = 0x6F;
         public static final int FuncRef = 0x70;
-        public static final int V128 = 0x7b;
-        public static final int F64 = 0x7c;
-        public static final int F32 = 0x7d;
-        public static final int I64 = 0x7e;
-        public static final int I32 = 0x7f;
+        public static final int NoneRef = 0x71;
+        public static final int NoExternRef = 0x72;
+        public static final int NoFuncRef = 0x73;
+        public static final int V128 = 0x7B;
+        public static final int F64 = 0x7C;
+        public static final int F32 = 0x7D;
+        public static final int I64 = 0x7E;
+        public static final int I32 = 0x7F;
 
         public static String toName(int opcode) {
             switch (opcode) {
@@ -408,22 +482,40 @@ public final class ValType {
             return ValType.isReference(opcode);
         }
 
-        public ValType build() {
-            return build(
-                    (i) -> {
-                        throw new ChicoryException("build with empty context tried resolving " + i);
-                    });
-        }
-
+        @Deprecated(since = "use .build.resolve(typeSection) instead")
         public ValType build(Function<Integer, FunctionType> context) {
             if (!isValidOpcode(opcode)) {
                 throw new ChicoryException("Invalid type opcode: " + opcode);
             }
 
             var resolvedFunctionType = substitute(opcode, typeIdx, context);
-            return new ValType(opcode, typeIdx, resolvedFunctionType);
+            return new ValType(
+                    opcode,
+                    typeIdx,
+                    (ValType.isReference(opcode) && !ValType.isAbsHeapType(opcode) && typeIdx >= 0)
+                            ? typeIdx
+                            : -1,
+                    SubType.builder()
+                            .withCompType(
+                                    CompType.builder().withFuncType(resolvedFunctionType).build())
+                            .build()
+                            .hashCode());
         }
 
+        public ValType build() {
+            if (!isValidOpcode(opcode)) {
+                throw new ChicoryException("Invalid type opcode: " + opcode);
+            }
+
+            return new ValType(
+                    opcode,
+                    typeIdx,
+                    (ValType.isReference(opcode) && !ValType.isAbsHeapType(opcode) && typeIdx >= 0)
+                            ? typeIdx
+                            : -1);
+        }
+
+        @Deprecated(since = "use .build.resolve(typeSection) instead")
         public FunctionType substitute(
                 int opcode, int typeIdx, Function<Integer, FunctionType> context) {
             if (ValType.isReference(opcode) && typeIdx >= 0) {

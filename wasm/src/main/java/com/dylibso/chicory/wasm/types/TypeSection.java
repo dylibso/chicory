@@ -1,19 +1,28 @@
 package com.dylibso.chicory.wasm.types;
 
+import com.dylibso.chicory.wasm.InvalidException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public final class TypeSection extends Section {
-    private final List<FunctionType> types;
+    private final List<RecType> types;
 
-    private TypeSection(List<FunctionType> types) {
+    private TypeSection(List<RecType> types) {
         super(SectionId.TYPE);
         this.types = List.copyOf(types);
     }
 
+    // https://github.com/WebAssembly/gc/blob/main/proposals/gc/MVP.md#type-definitions
+    // > the number of type section entries is now the number of recursion groups rather than the
+    // number of individual types.
+    // types() returns the flattened list of individual types
     public FunctionType[] types() {
-        return types.toArray(new FunctionType[0]);
+        return types.stream()
+                .filter(RecType::isLegacy)
+                .map(RecType::legacy)
+                .toArray(FunctionType[]::new);
     }
 
     public int typeCount() {
@@ -21,7 +30,26 @@ public final class TypeSection extends Section {
     }
 
     public FunctionType getType(int idx) {
+        return types.get(idx).legacy();
+    }
+
+    public RecType getRecType(int idx) {
         return types.get(idx);
+    }
+
+    public SubType getSubType(int idx) {
+        // TODO: improve performance
+        int i = 0;
+        for (var t : types) {
+            for (var st : t.subTypes()) {
+                if (i == idx) {
+                    return st;
+                }
+                i++;
+            }
+        }
+
+        throw new InvalidException("unknown type " + idx);
     }
 
     public static Builder builder() {
@@ -29,12 +57,16 @@ public final class TypeSection extends Section {
     }
 
     public static final class Builder {
-        private final List<FunctionType> types = new ArrayList<>();
+        private final List<RecType> types = new ArrayList<>();
 
         private Builder() {}
 
+        @Deprecated
         public List<FunctionType> getTypes() {
-            return types;
+            return types.stream()
+                    .filter(RecType::isLegacy)
+                    .map(RecType::legacy)
+                    .collect(Collectors.toList());
         }
 
         /**
@@ -45,7 +77,27 @@ public final class TypeSection extends Section {
          */
         public Builder addFunctionType(FunctionType functionType) {
             Objects.requireNonNull(functionType, "functionType");
-            types.add(functionType);
+            var type =
+                    RecType.builder()
+                            .withSubTypes(
+                                    new SubType[] {
+                                        SubType.builder()
+                                                .withTypeIdx(new int[] {})
+                                                .withFinal(true)
+                                                .withCompType(
+                                                        CompType.builder()
+                                                                .withFuncType(functionType)
+                                                                .build())
+                                                .build()
+                                    })
+                            .build();
+            types.add(type);
+            return this;
+        }
+
+        public Builder addRecType(RecType recType) {
+            Objects.requireNonNull(recType, "recType");
+            types.add(recType);
             return this;
         }
 
