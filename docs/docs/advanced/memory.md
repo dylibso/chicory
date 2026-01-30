@@ -37,17 +37,6 @@ var instance = Instance.builder(module).withMemoryFactory(limits -> {
 
 > **NOTE:** Since Chicory 1.1.0, an optimized memory implementation called `ByteArrayMemory` is also available. We recommend plugging this  implementation on all recent OpenJDK systems for enhanced performance. On different Java runtimes (in particular, on Android VMs) you should stick to `ByteBufferMemory`.
 
-It's also possible to customize just the Memory allocation algorithm, for example, is easy to swap out from the default allocator and get the legacy behavior of mapping one to one the backing `ByteBuffer` to the actual request of the Wasm module:
-
-```java
-import com.dylibso.chicory.runtime.alloc.ExactMemAllocStrategy;
-
-var instance = Instance.builder(module).withMemoryFactory(limits -> {
-        var allocator = new ExactMemAllocStrategy();
-        return new ByteBufferMemory(limits, allocator);
-    }).build();
-```
-
 <!--
 ```java
 docs.FileOps.writeResult("docs/advanced", "memory.md.result", "empty");
