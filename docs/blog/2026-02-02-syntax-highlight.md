@@ -2,7 +2,7 @@
 slug: syntax-highlight
 title: 'Syntax highlighting in Java, without the pain'
 authors: [andreaTP]
-tags: [wasm, chicory, highlight]
+tags: [wasm, chicory, highlight, tree-sitter, highlight.js]
 ---
 
 <!-- truncate -->
