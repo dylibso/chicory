@@ -2,7 +2,7 @@
 slug: syntax-highlight
 title: 'Syntax highlighting in Java, without the pain'
 authors: [andreaTP]
-tags: [wasm, chicory, highlight, tree-sitter, highlight.js]
+tags: [wasm, chicory, highlight, treesitter]
 ---
 
 <!-- truncate -->
@@ -128,8 +128,8 @@ try (Lumis lumis = Lumis.builder()
 ```
 
 Result:
-<pre class="athl" style="color: #c6d0f5; background-color: #303446;"><code class="language-java" translate="no" tabindex="0"><div class="line" data-line="1"><span style="color: #ca9ee6;">public</span> <span style="color: #ca9ee6;">class</span> <span style="color: #e5c890;">Hello</span> <span style="color: #949cbb;">&lbrace;</span> <span style="color: #949cbb;">&rbrace;</span>
-</div></code></pre>
+
+<pre className="athl" style={{color: '#c6d0f5', backgroundColor: '#303446'}}><code className="language-java" translate="no" tabIndex={0}><div className="line" data-line="1"><span style={{color: '#ca9ee6'}}>public</span> <span style={{color: '#ca9ee6'}}>class</span> <span style={{color: '#e5c890'}}>Hello</span> <span style={{color: '#949cbb'}}>{'{'}</span> <span style={{color: '#949cbb'}}>{'}'}</span></div></code></pre>
 
 You can easily run a minimal JBang [demo](https://gist.github.com/andreaTP/6945e9ff3223686b600fda184ae94e2f):
 
