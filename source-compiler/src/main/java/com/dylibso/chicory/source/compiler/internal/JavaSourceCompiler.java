@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import javax.tools.Diagnostic;
+import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
@@ -93,16 +95,31 @@ public final class JavaSourceCompiler {
                 Iterable<? extends JavaFileObject> compilationUnits =
                         fileManager.getJavaFileObjectsFromFiles(sourceFileList);
 
-                // Compile
+                // Compile with diagnostics
+                DiagnosticCollector<JavaFileObject> diagnostics = new DiagnosticCollector<>();
                 JavaCompiler.CompilationTask task =
-                        compiler.getTask(null, fileManager, null, null, null, compilationUnits);
+                        compiler.getTask(
+                                null, fileManager, diagnostics, null, null, compilationUnits);
 
                 boolean success = task.call();
                 fileManager.close();
 
                 if (!success) {
-                    throw new ChicoryException(
-                            "Compilation failed. Check source files for errors.");
+                    StringBuilder errorMsg = new StringBuilder("Compilation failed:\n");
+                    for (Diagnostic<? extends JavaFileObject> diagnostic :
+                            diagnostics.getDiagnostics()) {
+                        if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
+                            errorMsg.append(diagnostic.getKind())
+                                    .append(": ")
+                                    .append(diagnostic.getMessage(null))
+                                    .append(" at ")
+                                    .append(diagnostic.getLineNumber())
+                                    .append(":")
+                                    .append(diagnostic.getColumnNumber())
+                                    .append("\n");
+                        }
+                    }
+                    throw new ChicoryException(errorMsg.toString());
                 }
             } finally {
                 // Clean up temp directory

@@ -191,9 +191,9 @@ final class SourceCompilerUtil {
             case ValType.ID.I64:
                 return longExpr;
             case ValType.ID.F32:
-                return "com.dylibso.chicory.runtime.Value.longToFloat(" + longExpr + ")";
+                return "com.dylibso.chicory.wasm.types.Value.longToFloat(" + longExpr + ")";
             case ValType.ID.F64:
-                return "com.dylibso.chicory.runtime.Value.longToDouble(" + longExpr + ")";
+                return "com.dylibso.chicory.wasm.types.Value.longToDouble(" + longExpr + ")";
             default:
                 throw new IllegalArgumentException("Unsupported ValType: " + type);
         }
@@ -212,9 +212,9 @@ final class SourceCompilerUtil {
             case ValType.ID.I64:
                 return jvmExpr;
             case ValType.ID.F32:
-                return "com.dylibso.chicory.runtime.Value.floatToLong(" + jvmExpr + ")";
+                return "com.dylibso.chicory.wasm.types.Value.floatToLong(" + jvmExpr + ")";
             case ValType.ID.F64:
-                return "com.dylibso.chicory.runtime.Value.doubleToLong(" + jvmExpr + ")";
+                return "com.dylibso.chicory.wasm.types.Value.doubleToLong(" + jvmExpr + ")";
             default:
                 throw new IllegalArgumentException("Unsupported ValType: " + type);
         }
