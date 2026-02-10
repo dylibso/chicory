@@ -1,23 +1,19 @@
 package com.dylibso.chicory.source.compiler.internal;
 
-import java.util.Set;
-
 /**
- * Minimal compiler result for the source compiler.
+ * Compiler result for the source compiler.
  *
- * <p>The original bytecode compiler returned collected class bytes; for the Java source compiler we
- * currently only track the set of interpreted functions. Class bytes and collectors can be added
- * back later if needed.
+ * <p>Contains the source code collector with generated Java files.
  */
 public final class CompilerResult {
 
-    private final Set<Integer> interpretedFunctions;
+    private final SourceCodeCollector collector;
 
-    public CompilerResult(Set<Integer> interpretedFunctions) {
-        this.interpretedFunctions = interpretedFunctions;
+    public CompilerResult(SourceCodeCollector collector) {
+        this.collector = collector;
     }
 
-    public Set<Integer> interpretedFunctions() {
-        return interpretedFunctions;
+    public SourceCodeCollector collector() {
+        return collector;
     }
 }

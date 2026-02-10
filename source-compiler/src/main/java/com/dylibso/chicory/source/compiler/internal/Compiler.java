@@ -5,9 +5,7 @@ import static java.util.Objects.requireNonNull;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Minimal Java-source compiler that mirrors the high-level structure of the ASM-based compiler.
@@ -24,27 +22,21 @@ import java.util.Set;
  */
 public final class Compiler {
 
-    public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.$gen.CompiledMachine";
+    public static final String DEFAULT_CLASS_NAME = "com.dylibso.chicory.gen.CompiledMachine";
 
     private final String className;
     private final WasmModule module;
     private final WasmAnalyzer analyzer;
     private final int functionImports;
     private final List<FunctionType> functionTypes;
-    private final HashSet<Integer> interpretedFunctions;
+    private final SourceCodeCollector collector;
 
-    private Compiler(WasmModule module, String className, Set<Integer> interpretedFunctions) {
+    private Compiler(WasmModule module, String className, SourceCodeCollector collector) {
         this.className = requireNonNull(className, "className");
         this.module = requireNonNull(module, "module");
         this.analyzer = new WasmAnalyzer(module);
         this.functionImports = module.importSection().count(ExternalType.FUNCTION);
-
-        if (interpretedFunctions == null || interpretedFunctions.isEmpty()) {
-            this.interpretedFunctions = new HashSet<>();
-        } else {
-            this.interpretedFunctions = new HashSet<>(interpretedFunctions);
-        }
-
+        this.collector = collector != null ? collector : new SimpleSourceCodeCollector();
         this.functionTypes = analyzer.functionTypes();
     }
 
@@ -55,7 +47,7 @@ public final class Compiler {
     public static final class Builder {
         private final WasmModule module;
         private String className;
-        private Set<Integer> interpretedFunctions;
+        private SourceCodeCollector collector;
 
         private Builder(WasmModule module) {
             this.module = module;
@@ -66,8 +58,8 @@ public final class Compiler {
             return this;
         }
 
-        public Builder withInterpretedFunctions(Set<Integer> interpretedFunctions) {
-            this.interpretedFunctions = interpretedFunctions;
+        public Builder withSourceCodeCollector(SourceCodeCollector collector) {
+            this.collector = collector;
             return this;
         }
 
@@ -77,17 +69,17 @@ public final class Compiler {
                 className = DEFAULT_CLASS_NAME;
             }
 
-            return new Compiler(module, className, interpretedFunctions);
+            return new Compiler(module, className, collector);
         }
     }
 
     /**
-     * Entry point used by the test: generate Java source and print it.
+     * Compile the module to Java source files.
      */
     public CompilerResult compile() {
         String source = compileToSource();
-        System.out.println(source);
-        return new CompilerResult(Set.copyOf(interpretedFunctions));
+        collector.putMainClass(className, source);
+        return new CompilerResult(collector);
     }
 
     /**
