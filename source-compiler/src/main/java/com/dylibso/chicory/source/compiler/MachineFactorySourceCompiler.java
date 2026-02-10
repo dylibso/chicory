@@ -74,6 +74,12 @@ public final class MachineFactorySourceCompiler {
         private String className;
         private Path compileTargetDir;
 
+        /** Optional logical module name (e.g. "i32") used only for test-time source dumping. */
+        private String moduleName;
+
+        /** Whether to dump generated Java sources to disk (test-only, defaults to false). */
+        private boolean dumpSources;
+
         private Builder(WasmModule module) {
             this.module = module;
         }
@@ -88,6 +94,16 @@ public final class MachineFactorySourceCompiler {
             return this;
         }
 
+        public Builder withModuleName(String moduleName) {
+            this.moduleName = moduleName;
+            return this;
+        }
+
+        public Builder withDumpSources(boolean dumpSources) {
+            this.dumpSources = dumpSources;
+            return this;
+        }
+
         public Function<Instance, Machine> compile() {
             try {
                 // Generate Java source
@@ -98,8 +114,10 @@ public final class MachineFactorySourceCompiler {
                 }
                 compilerBuilder.build().compile();
 
-                // TESDump sources to target/tmp if in test mode
-                dumpSourcesToTarget(collector);
+                // TESTING PURPOSES: optionally dump sources to disk when enabled from tests.
+                if (dumpSources && moduleName != null) {
+                    dumpSourcesToTarget(collector, moduleName);
+                }
 
                 // Compile Java sources to bytecode
                 Path targetDir = compileTargetDir;
@@ -165,16 +183,17 @@ public final class MachineFactorySourceCompiler {
             }
         }
 
-        private void dumpSourcesToTarget(SourceCodeCollector collector) {
+        private void dumpSourcesToTarget(SourceCodeCollector collector, String moduleName) {
             try {
-                // Simple test-only code: dump sources to target/tmp
+                // Simple test-only code: dump sources to
+                // target/source-dump/{moduleName}
                 Path targetDir = Path.of("target");
                 if (!Files.exists(targetDir)) {
                     return;
                 }
 
-                Path tmpDir = targetDir.resolve("tmp");
-                Files.createDirectories(tmpDir);
+                Path dumpDir = targetDir.resolve("source-dump").resolve(moduleName);
+                Files.createDirectories(dumpDir);
 
                 // Write all source files
                 for (Map.Entry<String, String> entry : collector.sourceFiles().entrySet()) {
@@ -183,7 +202,7 @@ public final class MachineFactorySourceCompiler {
 
                     // Convert package to directory structure
                     String packagePath = className.substring(0, className.lastIndexOf('.'));
-                    Path packageDir = tmpDir.resolve(packagePath.replace('.', File.separatorChar));
+                    Path packageDir = dumpDir.resolve(packagePath.replace('.', File.separatorChar));
                     Files.createDirectories(packageDir);
 
                     String simpleName = className.substring(className.lastIndexOf('.') + 1);

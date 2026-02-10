@@ -92,11 +92,51 @@ final class SourceCodeEmitter {
         // For now, only handle funcId == functionImports with simple I32_ADD
         int functionImports = module.importSection().count(ExternalType.FUNCTION);
         if (funcId == functionImports) {
-            // return func_0(args);
+            // Unbox long[] args to individual parameters and get Memory/Instance
+            // Get Memory from instance
             callBody.addStatement(
-                    new ReturnStmt(
-                            new MethodCallExpr(new ThisExpr(), "func_" + funcId)
-                                    .addArgument(new NameExpr("args"))));
+                    StaticJavaParser.parseStatement(
+                            "com.dylibso.chicory.runtime.Memory memory = this.instance.memory();"));
+
+            // Build method call with unboxed parameters
+            MethodCallExpr funcCall = new MethodCallExpr(new ThisExpr(), "func_" + funcId);
+
+            // Add individual typed parameters (unbox from long[])
+            for (int i = 0; i < functionType.params().size(); i++) {
+                ValType paramType = functionType.params().get(i);
+                String unboxExpr = SourceCompilerUtil.unboxLongToJvm("args[" + i + "]", paramType);
+                funcCall.addArgument(StaticJavaParser.parseExpression(unboxExpr));
+            }
+
+            // Add Memory and Instance parameters
+            funcCall.addArgument(new NameExpr("memory"));
+            funcCall.addArgument(new FieldAccessExpr(new ThisExpr(), "instance"));
+
+            // Box result back to long[] if needed
+            Class<?> returnType = SourceCompilerUtil.jvmReturnType(functionType);
+            if (returnType == void.class) {
+                callBody.addStatement(new ExpressionStmt(funcCall));
+                callBody.addStatement(StaticJavaParser.parseStatement("return null;"));
+            } else if (returnType == long[].class) {
+                callBody.addStatement(new ReturnStmt(funcCall));
+            } else {
+                // Box single return value to long[]
+                String varName = "result";
+                // Create variable declaration with method call using parseStatement
+                String varDecl =
+                        SourceCompilerUtil.javaTypeName(returnType)
+                                + " "
+                                + varName
+                                + " = "
+                                + funcCall.toString()
+                                + ";";
+                callBody.addStatement(StaticJavaParser.parseStatement(varDecl));
+                callBody.addStatement(StaticJavaParser.parseStatement("long[] out = new long[1];"));
+                String boxExpr =
+                        SourceCompilerUtil.boxJvmToLong(varName, functionType.returns().get(0));
+                callBody.addStatement(StaticJavaParser.parseStatement("out[0] = " + boxExpr + ";"));
+                callBody.addStatement(StaticJavaParser.parseStatement("return out;"));
+            }
         } else {
             // throw new IllegalArgumentException("Unknown function " + funcId);
             callBody.addStatement(
@@ -118,26 +158,42 @@ final class SourceCodeEmitter {
             List<CompilerInstruction> instructions,
             FunctionBody body) {
 
-        // Method signature: private long[] func_0(long[] args)
-        MethodDeclaration method =
-                clazz.addMethod("func_" + funcId, Modifier.Keyword.PRIVATE)
-                        .setType(new ArrayType(PrimitiveType.longType()));
-        method.addParameter(new ArrayType(PrimitiveType.longType()), "args");
+        // Method signature: private <ReturnType> func_0(<TypeN> argN..., Memory memory, Instance
+        // instance)
+        // Mirrors ASM compiler: func_xxx takes individual typed parameters + Memory + Instance
+        MethodDeclaration method = clazz.addMethod("func_" + funcId, Modifier.Keyword.PRIVATE);
+
+        // Set return type based on function type
+        Class<?> returnType = SourceCompilerUtil.jvmReturnType(functionType);
+        if (returnType == void.class) {
+            method.setType(StaticJavaParser.parseType("void"));
+        } else if (returnType == long[].class) {
+            method.setType(new ArrayType(PrimitiveType.longType()));
+        } else {
+            method.setType(SourceCompilerUtil.javaParserType(returnType));
+        }
+
+        // Add individual typed parameters
+        List<String> localVarNames = new ArrayList<>();
+        for (int i = 0; i < functionType.params().size(); i++) {
+            ValType paramType = functionType.params().get(i);
+            String paramName = "arg" + i;
+            localVarNames.add(paramName);
+            method.addParameter(
+                    SourceCompilerUtil.javaParserType(SourceCompilerUtil.jvmType(paramType)),
+                    paramName);
+        }
+
+        // Add Memory and Instance parameters
+        method.addParameter(
+                StaticJavaParser.parseClassOrInterfaceType("com.dylibso.chicory.runtime.Memory"),
+                "memory");
+        method.addParameter(
+                StaticJavaParser.parseClassOrInterfaceType("com.dylibso.chicory.runtime.Instance"),
+                "instance");
 
         BlockStmt block = new BlockStmt();
         method.setBody(block);
-
-        // Declare local variables for parameters and WASM locals (mirrors ASM compiler)
-        // For simple case: unbox args[0], args[1], etc. as local variables
-        List<String> localVarNames = new ArrayList<>();
-        for (int i = 0; i < functionType.params().size(); i++) {
-            String varName = "local" + i;
-            localVarNames.add(varName);
-            // int local0 = (int) args[0];
-            block.addStatement(
-                    StaticJavaParser.parseStatement(
-                            "int " + varName + " = (int) args[" + i + "];"));
-        }
 
         // Initialize WASM local variables to default values (mirrors ASM compiler)
         for (int i = functionType.params().size();
@@ -146,10 +202,15 @@ final class SourceCodeEmitter {
             ValType localType = body.localTypes().get(i - functionType.params().size());
             String varName = "local" + i;
             localVarNames.add(varName);
-            String defaultValue = getDefaultValue(localType);
+            String defaultValue = SourceCompilerUtil.defaultValue(localType);
             block.addStatement(
                     StaticJavaParser.parseStatement(
-                            getJavaType(localType) + " " + varName + " = " + defaultValue + ";"));
+                            SourceCompilerUtil.javaTypeName(localType)
+                                    + " "
+                                    + varName
+                                    + " = "
+                                    + defaultValue
+                                    + ";"));
         }
 
         // Stack of expressions - represents the Java operand stack
@@ -160,21 +221,38 @@ final class SourceCodeEmitter {
             emitInstruction(ins, block, stack, localVarNames);
         }
 
-        // Return result - pop from stack and box into long[]
+        // Return result - handle based on return type
         // Mirrors ASM compiler's return handling
-        if (!stack.isEmpty()) {
-            com.github.javaparser.ast.expr.Expression resultExpr = stack.pop();
-            block.addStatement(StaticJavaParser.parseStatement("long[] out = new long[1];"));
+        if (returnType == void.class) {
+            if (!stack.isEmpty()) {
+                stack.pop(); // pop and discard
+            }
+            block.addStatement(StaticJavaParser.parseStatement("return;"));
+        } else if (returnType == long[].class) {
+            // Multiple return values - box into long[]
             block.addStatement(
-                    new ExpressionStmt(
-                            new AssignExpr(
-                                    new com.github.javaparser.ast.expr.ArrayAccessExpr(
-                                            new NameExpr("out"), new IntegerLiteralExpr("0")),
-                                    resultExpr,
-                                    AssignExpr.Operator.ASSIGN)));
+                    StaticJavaParser.parseStatement(
+                            "long[] out = new long[" + functionType.returns().size() + "];"));
+            for (int i = 0; i < functionType.returns().size(); i++) {
+                com.github.javaparser.ast.expr.Expression resultExpr = stack.pop();
+                String boxExpr =
+                        SourceCompilerUtil.boxJvmToLong(
+                                resultExpr.toString(), functionType.returns().get(i));
+                block.addStatement(
+                        StaticJavaParser.parseStatement("out[" + i + "] = " + boxExpr + ";"));
+            }
             block.addStatement(new ReturnStmt(new NameExpr("out")));
         } else {
-            block.addStatement(StaticJavaParser.parseStatement("return new long[0];"));
+            // Single return value - return directly (not boxed)
+            if (!stack.isEmpty()) {
+                com.github.javaparser.ast.expr.Expression resultExpr = stack.pop();
+                block.addStatement(new ReturnStmt(resultExpr));
+            } else {
+                // Default return value
+                String defaultValue =
+                        SourceCompilerUtil.defaultValue(functionType.returns().get(0));
+                block.addStatement(StaticJavaParser.parseStatement("return " + defaultValue + ";"));
+            }
         }
     }
 
@@ -272,32 +350,5 @@ final class SourceCodeEmitter {
             BlockStmt block,
             Deque<com.github.javaparser.ast.expr.Expression> stack) {
         // Return is handled at the end of the function
-    }
-
-    private static String getJavaType(ValType type) {
-        if (type == ValType.I32) {
-            return "int";
-        } else if (type == ValType.I64) {
-            return "long";
-        } else if (type == ValType.F32) {
-            return "float";
-        } else if (type == ValType.F64) {
-            return "double";
-        }
-        // default to long for anything else (e.g., refs) in this minimal prototype
-        return "long";
-    }
-
-    private static String getDefaultValue(ValType type) {
-        if (type == ValType.I32) {
-            return "0";
-        } else if (type == ValType.I64) {
-            return "0L";
-        } else if (type == ValType.F32) {
-            return "0.0f";
-        } else if (type == ValType.F64) {
-            return "0.0";
-        }
-        return "0L";
     }
 }

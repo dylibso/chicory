@@ -19,6 +19,9 @@ public class TestModule {
 
     private final WasmModule module;
 
+    /** Logical module name (e.g. "i32") derived from the classpath, used for source dumps. */
+    private final String moduleName;
+
     private static final String HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT =
             "Matching keywords to get the WebAssembly testsuite to pass: "
                     + "malformed UTF-8 encoding "
@@ -46,6 +49,10 @@ public class TestModule {
 
     public static TestModule of(String classpath) {
         try (var is = CorpusResources.getResource(classpath.substring(1))) {
+            // Extract module name from classpath (e.g., "/i32/spec.0.wasm" -> "i32")
+            String moduleName = extractModuleName(classpath);
+
+            WasmModule module;
             if (classpath.endsWith(".wat")) {
                 byte[] parsed;
                 try {
@@ -54,27 +61,59 @@ public class TestModule {
                     throw new MalformedException(
                             e.getMessage() + HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT);
                 }
-                return of(Parser.parse(parsed));
+                module = Parser.parse(parsed);
+            } else {
+                module = Parser.parse(is);
             }
-            return of(Parser.parse(is));
+            return new TestModule(module, moduleName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static TestModule of(WasmModule module) {
-        return new TestModule(module);
+        return new TestModule(module, null);
     }
 
-    public TestModule(WasmModule module) {
+    private static String extractModuleName(String classpath) {
+        // Extract module name from classpath like "/i32/spec.0.wasm" -> "i32"
+        if (classpath.startsWith("/") && classpath.length() > 1) {
+            String withoutLeadingSlash = classpath.substring(1);
+            int firstSlash = withoutLeadingSlash.indexOf('/');
+            if (firstSlash > 0) {
+                return withoutLeadingSlash.substring(0, firstSlash);
+            }
+            // If no slash, use filename without extension
+            int lastSlash = withoutLeadingSlash.lastIndexOf('/');
+            int lastDot = withoutLeadingSlash.lastIndexOf('.');
+            if (lastDot > lastSlash) {
+                return withoutLeadingSlash.substring(lastSlash + 1, lastDot);
+            }
+        }
+        return "unknown";
+    }
+
+    public TestModule(WasmModule module, String moduleName) {
         this.module = module;
+        this.moduleName = moduleName;
     }
 
     public Instance instantiate(Store s) {
         ImportValues importValues = s.toImportValues();
+
+        // Enable source dumping by default in tests (can be disabled via system property)
+        //   -Dchicory.source.dumpSources=false
+        boolean dumpSources = !Boolean.getBoolean("chicory.source.dumpSources.disable");
+
         return Instance.builder(module)
                 .withImportValues(importValues)
-                .withMachineFactory(MachineFactorySourceCompiler::compile)
+                .withMachineFactory(
+                        instance ->
+                                MachineFactorySourceCompiler.builder(instance.module())
+                                        .withModuleName(moduleName)
+                                        .withDumpSources(dumpSources)
+                                        .compile()
+                                        .apply(instance))
                 .build();
     }
 }
