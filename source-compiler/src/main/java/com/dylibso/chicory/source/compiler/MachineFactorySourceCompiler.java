@@ -24,9 +24,7 @@ import java.util.function.Function;
  */
 public final class MachineFactorySourceCompiler {
 
-    private MachineFactorySourceCompiler() {
-        // no instances
-    }
+    private MachineFactorySourceCompiler() {}
 
     /**
      * The compile method reference can be used as machine factory in instance builders.
@@ -74,10 +72,7 @@ public final class MachineFactorySourceCompiler {
         private String className;
         private Path compileTargetDir;
 
-        /** Optional logical module name (e.g. "i32") used only for test-time source dumping. */
         private String moduleName;
-
-        /** Whether to dump generated Java sources to disk (test-only, defaults to false). */
         private boolean dumpSources;
 
         private Builder(WasmModule module) {
@@ -105,36 +100,31 @@ public final class MachineFactorySourceCompiler {
         }
 
         public Function<Instance, Machine> compile() {
+            SourceCodeCollector collector = new SimpleSourceCodeCollector();
             try {
-                // Generate Java source
-                SourceCodeCollector collector = new SimpleSourceCodeCollector();
                 var compilerBuilder = Compiler.builder(module).withSourceCodeCollector(collector);
                 if (className != null) {
                     compilerBuilder.withClassName(className);
                 }
                 compilerBuilder.build().compile();
-
-                // TESTING PURPOSES: optionally dump sources to disk when enabled from tests.
+            } finally {
                 if (dumpSources && moduleName != null) {
                     dumpSourcesToTarget(collector, moduleName);
                 }
+            }
 
-                // Compile Java sources to bytecode
+            try {
                 Path targetDir = compileTargetDir;
                 if (targetDir == null) {
                     targetDir = Files.createTempDirectory("chicory-compiled-");
                 }
 
-                // Build classpath with runtime dependency
                 String classpath = buildClasspath();
-
                 JavaSourceCompiler.compile(collector.sourceFiles(), targetDir, classpath);
 
-                // Load the compiled class
                 String mainClassName = collector.mainClassName();
                 Class<?> machineClass = loadClass(mainClassName, targetDir);
 
-                // Create factory using reflection
                 try {
                     Constructor<?> constructor = machineClass.getConstructor(Instance.class);
                     return instance -> {
@@ -154,22 +144,25 @@ public final class MachineFactorySourceCompiler {
         }
 
         private String buildClasspath() {
-            // Find runtime.jar on classpath
+            String fullClasspath = System.getProperty("java.class.path");
+
+            // Prepend runtime.jar if found (for library distribution compatibility)
             Class<?> instanceClass = Instance.class;
             String resourcePath = instanceClass.getName().replace('.', '/') + ".class";
             URL resource = instanceClass.getClassLoader().getResource(resourcePath);
             if (resource != null) {
                 String path = resource.getPath();
-                // Extract jar path from jar:file:/path/to/runtime.jar!/...
                 if (path.contains("!")) {
                     String jarPath = path.substring(0, path.indexOf("!"));
                     if (jarPath.startsWith("file:")) {
                         jarPath = jarPath.substring(5);
                     }
-                    return jarPath;
+                    if (!fullClasspath.contains(jarPath)) {
+                        return jarPath + File.pathSeparator + fullClasspath;
+                    }
                 }
             }
-            return System.getProperty("java.class.path");
+            return fullClasspath;
         }
 
         private Class<?> loadClass(String className, Path classDir) throws IOException {
@@ -185,22 +178,17 @@ public final class MachineFactorySourceCompiler {
 
         private void dumpSourcesToTarget(SourceCodeCollector collector, String moduleName) {
             try {
-                // Simple test-only code: dump sources to
-                // target/source-dump/{moduleName}
-                Path targetDir = Path.of("target");
-                if (!Files.exists(targetDir)) {
-                    return;
-                }
+                String classPath =
+                        getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
+                Path targetDir = Path.of(classPath).getParent();
 
                 Path dumpDir = targetDir.resolve("source-dump").resolve(moduleName);
                 Files.createDirectories(dumpDir);
 
-                // Write all source files
                 for (Map.Entry<String, String> entry : collector.sourceFiles().entrySet()) {
                     String className = entry.getKey();
                     String source = entry.getValue();
 
-                    // Convert package to directory structure
                     String packagePath = className.substring(0, className.lastIndexOf('.'));
                     Path packageDir = dumpDir.resolve(packagePath.replace('.', File.separatorChar));
                     Files.createDirectories(packageDir);
@@ -210,7 +198,7 @@ public final class MachineFactorySourceCompiler {
                     Files.writeString(sourceFile, source);
                 }
             } catch (IOException | RuntimeException e) {
-                // Silently ignore - this is just for debugging, shouldn't break compilation
+                // Ignore - test-only debugging feature
             }
         }
     }

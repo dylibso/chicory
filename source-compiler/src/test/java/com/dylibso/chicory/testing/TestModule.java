@@ -22,6 +22,9 @@ public class TestModule {
     /** Logical module name (e.g. "i32") derived from the classpath, used for source dumps. */
     private final String moduleName;
 
+    /** Discriminator (e.g. "spec_0") derived from the classpath, used for unique class names. */
+    private final String discriminator;
+
     private static final String HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT =
             "Matching keywords to get the WebAssembly testsuite to pass: "
                     + "malformed UTF-8 encoding "
@@ -51,6 +54,8 @@ public class TestModule {
         try (var is = CorpusResources.getResource(classpath.substring(1))) {
             // Extract module name from classpath (e.g., "/i32/spec.0.wasm" -> "i32")
             String moduleName = extractModuleName(classpath);
+            // Extract discriminator from classpath (e.g., "/i32/spec.0.wasm" -> "spec_0")
+            String discriminator = extractDiscriminator(classpath);
 
             WasmModule module;
             if (classpath.endsWith(".wat")) {
@@ -65,14 +70,14 @@ public class TestModule {
             } else {
                 module = Parser.parse(is);
             }
-            return new TestModule(module, moduleName);
+            return new TestModule(module, moduleName, discriminator);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static TestModule of(WasmModule module) {
-        return new TestModule(module, null);
+        return new TestModule(module, null, null);
     }
 
     private static String extractModuleName(String classpath) {
@@ -93,9 +98,28 @@ public class TestModule {
         return "unknown";
     }
 
-    public TestModule(WasmModule module, String moduleName) {
+    /**
+     * Extract a discriminator from the classpath for use in class names.
+     * Example: "/i32/spec.0.wasm" -> "spec_0"
+     */
+    private static String extractDiscriminator(String classpath) {
+        if (classpath.startsWith("/") && classpath.length() > 1) {
+            String withoutLeadingSlash = classpath.substring(1);
+            int lastSlash = withoutLeadingSlash.lastIndexOf('/');
+            int lastDot = withoutLeadingSlash.lastIndexOf('.');
+            if (lastDot > lastSlash && lastDot > 0) {
+                String filename = withoutLeadingSlash.substring(lastSlash + 1, lastDot);
+                // Replace dots and other invalid characters with underscores
+                return filename.replace('.', '_').replace('-', '_');
+            }
+        }
+        return "unknown";
+    }
+
+    public TestModule(WasmModule module, String moduleName, String discriminator) {
         this.module = module;
         this.moduleName = moduleName;
+        this.discriminator = discriminator;
     }
 
     public Instance instantiate(Store s) {
@@ -108,12 +132,20 @@ public class TestModule {
         return Instance.builder(module)
                 .withImportValues(importValues)
                 .withMachineFactory(
-                        instance ->
-                                MachineFactorySourceCompiler.builder(instance.module())
-                                        .withModuleName(moduleName)
-                                        .withDumpSources(dumpSources)
-                                        .compile()
-                                        .apply(instance))
+                        instance -> {
+                            // Mangle class name with discriminator in test scope only
+                            String mangledClassName = null;
+                            if (discriminator != null) {
+                                mangledClassName =
+                                        "com.dylibso.chicory.gen.CompiledMachine_" + discriminator;
+                            }
+                            return MachineFactorySourceCompiler.builder(instance.module())
+                                    .withModuleName(moduleName)
+                                    .withClassName(mangledClassName)
+                                    .withDumpSources(dumpSources)
+                                    .compile()
+                                    .apply(instance);
+                        })
                 .build();
     }
 }

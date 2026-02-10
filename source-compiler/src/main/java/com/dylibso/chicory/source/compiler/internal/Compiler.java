@@ -85,26 +85,18 @@ public final class Compiler {
     /**
      * Generate Java source code for the module and return as string.
      *
-     * <p>For now:
-     * <ul>
-     *   <li>only the first non-imported function (funcId = functionImports) is handled,</li>
-     *   <li>only simple opcodes like I32_CONST / LOCAL_GET / I32_ADD / RETURN are supported.</li>
-     * </ul>
+     * <p>Generates code for ALL functions in the module, not just the first one.
      */
     private String compileToSource() {
         int lastDot = className.lastIndexOf('.');
         String packageName = lastDot > 0 ? className.substring(0, lastDot) : "";
         String simpleClassName = lastDot > 0 ? className.substring(lastDot + 1) : className;
 
-        int funcId = functionImports;
-        if (funcId >= functionTypes.size()) {
+        if (functionTypes.isEmpty()) {
             return "// No functions to compile";
         }
 
-        var instructions = analyzer.analyze(funcId);
-        var functionType = functionTypes.get(funcId);
-
         return SourceCodeEmitter.generateSource(
-                packageName, simpleClassName, funcId, functionType, instructions, module, analyzer);
+                packageName, simpleClassName, module, analyzer, functionTypes, functionImports);
     }
 }
