@@ -967,6 +967,7 @@
         <module>machine-tests</module>
         <module>runtime</module>
         <module>runtime-tests</module>
+        <module>source-compiler</module>
         <module>test-gen-lib</module>
         <module>test-gen-plugin</module>
         <module>wabt</module>
