@@ -108,4 +108,3 @@ Keep using the ASM compiler (`Emitters` + `EmitterMap`) as the **ground truth**.
 
 - **Ask**: is it `.intrinsic(...)` (inline logic) or `.shared(..., OpcodeImpl.class)`?
 - **Replicate** that choice in `SourceCodeEmitter`, maintaining stack order and side effects exactly 1:1.
-

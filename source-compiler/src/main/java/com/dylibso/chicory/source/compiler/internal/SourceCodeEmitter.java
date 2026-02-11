@@ -1887,6 +1887,11 @@ final class SourceCodeEmitter {
             BlockStmt block,
             Deque<com.github.javaparser.ast.expr.Expression> stack,
             FunctionType functionType) {
+        var statements = block.getStatements();
+        if (!statements.isEmpty() && statements.get(statements.size() - 1) instanceof ThrowStmt) {
+            return;
+        }
+
         Class<?> returnType = SourceCompilerUtil.jvmReturnType(functionType);
 
         if (returnType == void.class) {
@@ -1896,6 +1901,9 @@ final class SourceCodeEmitter {
             }
             block.addStatement(StaticJavaParser.parseStatement("return;"));
         } else if (returnType == long[].class) {
+            if (stack.isEmpty()) {
+                return;
+            }
             // Multiple return values - box into long[]
             block.addStatement(
                     StaticJavaParser.parseStatement(
@@ -1910,6 +1918,9 @@ final class SourceCodeEmitter {
             }
             block.addStatement(new ReturnStmt(new NameExpr("out")));
         } else {
+            if (stack.isEmpty()) {
+                return;
+            }
             // Single return value - return directly
             com.github.javaparser.ast.expr.Expression resultExpr = stack.pop();
             block.addStatement(new ReturnStmt(resultExpr));

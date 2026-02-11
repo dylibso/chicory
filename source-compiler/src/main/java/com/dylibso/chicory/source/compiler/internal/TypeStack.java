@@ -39,6 +39,9 @@ final class TypeStack {
     }
 
     public void pop(ValType expected) {
+        if (types().isEmpty()) {
+            return;
+        }
         var actual = types().pop();
         if (!ValType.matches(actual, expected)) {
             throw new IllegalArgumentException("Expected type " + expected + " <> " + actual);
@@ -46,6 +49,9 @@ final class TypeStack {
     }
 
     public void popRef() {
+        if (types().isEmpty()) {
+            return;
+        }
         var actual = types().pop();
         if (!actual.equals(ValType.FuncRef) && !actual.equals(ValType.ExternRef)) {
             throw new IllegalArgumentException("Expected reference type <> " + actual);
