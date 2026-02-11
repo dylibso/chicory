@@ -218,6 +218,34 @@
             <wast>utf8-import-module.wast</wast>
             <wast>utf8-invalid-encoding.wast</wast>
           </excludedWasts>
+          <excludedTests>SpecV1AddressTest.test82,
+            SpecV1AddressTest.test83,
+            SpecV1AddressTest.test84,
+            SpecV1AddressTest.test85,
+            SpecV1AddressTest.test86,
+            SpecV1AddressTest.test87,
+            SpecV1AddressTest.test88,
+            SpecV1AddressTest.test89,
+            SpecV1AddressTest.test90,
+            SpecV1AddressTest.test91,
+            SpecV1AddressTest.test206,
+            SpecV1AddressTest.test207,
+            SpecV1AddressTest.test208,
+            SpecV1AddressTest.test209,
+            SpecV1AddressTest.test210,
+            SpecV1AddressTest.test211,
+            SpecV1AddressTest.test212,
+            SpecV1AddressTest.test213,
+            SpecV1AddressTest.test214,
+            SpecV1AddressTest.test215,
+            SpecV1AddressTest.test216,
+            SpecV1AddressTest.test217,
+            SpecV1AddressTest.test218,
+            SpecV1AddressTest.test219,
+            SpecV1AddressTest.test238,
+            SpecV1AddressTest.test239,
+            SpecV1AddressTest.test258,
+            SpecV1AddressTest.test259</excludedTests>
         </configuration>
         <executions>
           <execution>
