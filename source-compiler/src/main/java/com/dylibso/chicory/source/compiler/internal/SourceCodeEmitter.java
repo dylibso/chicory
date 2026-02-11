@@ -824,8 +824,23 @@ final class SourceCodeEmitter {
             case F64_CONST:
                 F64_CONST(ins, stack);
                 break;
+            case F64_ABS:
+                F64_ABS(ins, stack);
+                break;
+            case F64_CEIL:
+                F64_CEIL(ins, stack);
+                break;
+            case F64_FLOOR:
+                F64_FLOOR(ins, stack);
+                break;
+            case F64_NEAREST:
+                F64_NEAREST(ins, stack);
+                break;
             case F64_CONVERT_I64_U:
                 F64_CONVERT_I64_U(ins, stack);
+                break;
+            case F64_CONVERT_I64_S:
+                F64_CONVERT_I64_S(ins, stack);
                 break;
             case F64_CONVERT_I32_S:
                 F64_CONVERT_I32_S(ins, stack);
@@ -835,6 +850,39 @@ final class SourceCodeEmitter {
                 break;
             case F64_PROMOTE_F32:
                 F64_PROMOTE_F32(ins, stack);
+                break;
+            case F64_TRUNC:
+                F64_TRUNC(ins, stack);
+                break;
+            case F64_EQ:
+                F64_EQ(ins, stack);
+                break;
+            case F64_NE:
+                F64_NE(ins, stack);
+                break;
+            case F64_LT:
+                F64_LT(ins, stack);
+                break;
+            case F64_LE:
+                F64_LE(ins, stack);
+                break;
+            case F64_GT:
+                F64_GT(ins, stack);
+                break;
+            case F64_GE:
+                F64_GE(ins, stack);
+                break;
+            case F64_MAX:
+                F64_MAX(ins, stack);
+                break;
+            case F64_MIN:
+                F64_MIN(ins, stack);
+                break;
+            case F64_COPYSIGN:
+                F64_COPYSIGN(ins, stack);
+                break;
+            case F64_REINTERPRET_I64:
+                F64_REINTERPRET_I64(ins, stack);
                 break;
             case F64_ADD:
                 F64_ADD(ins, stack);
@@ -2153,34 +2201,40 @@ final class SourceCodeEmitter {
         stack.push(StaticJavaParser.parseExpression(literal));
     }
 
+    public static void F64_ABS(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_ABS", a));
+    }
+
+    public static void F64_CEIL(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_CEIL", a));
+    }
+
     public static void F64_CONVERT_I64_U(
             CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
-        com.github.javaparser.ast.expr.Expression a = stack.pop();
-        MethodCallExpr call = new MethodCallExpr();
-        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
-        call.setName("F64_CONVERT_I64_U");
-        call.addArgument(a);
-        stack.push(call);
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_CONVERT_I64_U", a));
+    }
+
+    public static void F64_CONVERT_I64_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_CONVERT_I64_S", a));
     }
 
     public static void F64_CONVERT_I32_S(
             CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
-        com.github.javaparser.ast.expr.Expression a = stack.pop();
-        MethodCallExpr call = new MethodCallExpr();
-        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
-        call.setName("F64_CONVERT_I32_S");
-        call.addArgument(a);
-        stack.push(call);
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_CONVERT_I32_S", a));
     }
 
     public static void F64_CONVERT_I32_U(
             CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
-        com.github.javaparser.ast.expr.Expression a = stack.pop();
-        MethodCallExpr call = new MethodCallExpr();
-        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
-        call.setName("F64_CONVERT_I32_U");
-        call.addArgument(a);
-        stack.push(call);
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_CONVERT_I32_U", a));
     }
 
     public static void F64_PROMOTE_F32(
@@ -2219,12 +2273,95 @@ final class SourceCodeEmitter {
 
     public static void F64_SQRT(
             CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
-        com.github.javaparser.ast.expr.Expression a = stack.pop();
-        MethodCallExpr call = new MethodCallExpr();
-        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
-        call.setName("F64_SQRT");
-        call.addArgument(a);
-        stack.push(call);
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_SQRT", a));
+    }
+
+    public static void F64_FLOOR(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_FLOOR", a));
+    }
+
+    public static void F64_NEAREST(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_NEAREST", a));
+    }
+
+    public static void F64_TRUNC(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_TRUNC", a));
+    }
+
+    public static void F64_COPYSIGN(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_COPYSIGN", a, b));
+    }
+
+    public static void F64_REINTERPRET_I64(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_REINTERPRET_I64", a));
+    }
+
+    public static void F64_EQ(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_EQ", a, b));
+    }
+
+    public static void F64_NE(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_NE", a, b));
+    }
+
+    public static void F64_LT(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_LT", a, b));
+    }
+
+    public static void F64_LE(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_LE", a, b));
+    }
+
+    public static void F64_GT(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_GT", a, b));
+    }
+
+    public static void F64_GE(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_GE", a, b));
+    }
+
+    public static void F64_MAX(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_MAX", a, b));
+    }
+
+    public static void F64_MIN(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F64_MIN", a, b));
     }
 
     public static void GLOBAL_GET(
