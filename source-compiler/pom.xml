@@ -60,7 +60,12 @@
           <includedWasts>
             <wast>address.wast</wast>
             <wast>const.wast</wast>
+            <wast>f32.wast</wast>
+            <wast>f64.wast</wast>
             <wast>i32.wast</wast>
+            <wast>i64.wast</wast>
+            <wast>int_exprs.wast</wast>
+            <wast>int_literals.wast</wast>
             <wast>local_get.wast</wast>
             <wast>local_set.wast</wast>
             <wast>local_tee.wast</wast>

@@ -19,6 +19,7 @@ import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.SimpleName;
 import com.github.javaparser.ast.expr.ThisExpr;
+import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.BreakStmt;
 import com.github.javaparser.ast.stmt.EmptyStmt;
@@ -634,6 +635,39 @@ final class SourceCodeEmitter {
             case I32_GE_U:
                 I32_GE_U(ins, stack);
                 break;
+            case I64_EQZ:
+                I64_EQZ(ins, stack);
+                break;
+            case I64_EQ:
+                I64_EQ(ins, stack);
+                break;
+            case I64_NE:
+                I64_NE(ins, stack);
+                break;
+            case I64_LT_S:
+                I64_LT_S(ins, stack);
+                break;
+            case I64_LT_U:
+                I64_LT_U(ins, stack);
+                break;
+            case I64_GT_S:
+                I64_GT_S(ins, stack);
+                break;
+            case I64_GT_U:
+                I64_GT_U(ins, stack);
+                break;
+            case I64_LE_S:
+                I64_LE_S(ins, stack);
+                break;
+            case I64_LE_U:
+                I64_LE_U(ins, stack);
+                break;
+            case I64_GE_S:
+                I64_GE_S(ins, stack);
+                break;
+            case I64_GE_U:
+                I64_GE_U(ins, stack);
+                break;
             case LOCAL_GET:
                 LOCAL_GET(ins, stack, localVarNames);
                 break;
@@ -709,11 +743,59 @@ final class SourceCodeEmitter {
             case I64_STORE32:
                 I64_STORE32(ins, block, stack);
                 break;
+            case F32_NEG:
+                F32_NEG(ins, stack);
+                break;
+            case F32_CONST:
+                F32_CONST(ins, stack);
+                break;
+            case F32_ADD:
+                F32_ADD(ins, stack);
+                break;
+            case F32_SUB:
+                F32_SUB(ins, stack);
+                break;
+            case F32_MUL:
+                F32_MUL(ins, stack);
+                break;
+            case F32_DIV:
+                F32_DIV(ins, stack);
+                break;
             case F32_LOAD:
                 F32_LOAD(ins, block, stack);
                 break;
             case F32_STORE:
                 F32_STORE(ins, block, stack);
+                break;
+            case F64_NEG:
+                F64_NEG(ins, stack);
+                break;
+            case F64_CONST:
+                F64_CONST(ins, stack);
+                break;
+            case F64_CONVERT_I64_U:
+                F64_CONVERT_I64_U(ins, stack);
+                break;
+            case F64_CONVERT_I32_S:
+                F64_CONVERT_I32_S(ins, stack);
+                break;
+            case F64_CONVERT_I32_U:
+                F64_CONVERT_I32_U(ins, stack);
+                break;
+            case F64_PROMOTE_F32:
+                F64_PROMOTE_F32(ins, stack);
+                break;
+            case F64_ADD:
+                F64_ADD(ins, stack);
+                break;
+            case F64_SUB:
+                F64_SUB(ins, stack);
+                break;
+            case F64_MUL:
+                F64_MUL(ins, stack);
+                break;
+            case F64_DIV:
+                F64_DIV(ins, stack);
                 break;
             case F64_LOAD:
                 F64_LOAD(ins, block, stack);
@@ -1130,6 +1212,136 @@ final class SourceCodeEmitter {
         MethodCallExpr call = new MethodCallExpr();
         call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
         call.setName("I32_GE_U");
+        call.addArgument(a);
+        call.addArgument(b);
+        stack.push(call);
+    }
+
+    public static void I64_EQZ(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("I64_EQZ");
+        call.addArgument(a);
+        stack.push(call);
+    }
+
+    public static void I64_EQ(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("I64_EQ");
+        call.addArgument(b);
+        call.addArgument(a);
+        stack.push(call);
+    }
+
+    public static void I64_NE(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("I64_NE");
+        call.addArgument(b);
+        call.addArgument(a);
+        stack.push(call);
+    }
+
+    public static void I64_LT_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("I64_LT_S");
+        call.addArgument(a);
+        call.addArgument(b);
+        stack.push(call);
+    }
+
+    public static void I64_LT_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("I64_LT_U");
+        call.addArgument(a);
+        call.addArgument(b);
+        stack.push(call);
+    }
+
+    public static void I64_GT_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("I64_GT_S");
+        call.addArgument(a);
+        call.addArgument(b);
+        stack.push(call);
+    }
+
+    public static void I64_GT_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("I64_GT_U");
+        call.addArgument(a);
+        call.addArgument(b);
+        stack.push(call);
+    }
+
+    public static void I64_LE_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("I64_LE_S");
+        call.addArgument(a);
+        call.addArgument(b);
+        stack.push(call);
+    }
+
+    public static void I64_LE_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("I64_LE_U");
+        call.addArgument(a);
+        call.addArgument(b);
+        stack.push(call);
+    }
+
+    public static void I64_GE_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("I64_GE_S");
+        call.addArgument(a);
+        call.addArgument(b);
+        stack.push(call);
+    }
+
+    public static void I64_GE_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("I64_GE_U");
         call.addArgument(a);
         call.addArgument(b);
         stack.push(call);
@@ -1626,6 +1838,48 @@ final class SourceCodeEmitter {
         block.addStatement(new ExpressionStmt(call));
     }
 
+    public static void F32_NEG(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new UnaryExpr(a, UnaryExpr.Operator.MINUS));
+    }
+
+    public static void F32_CONST(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        int bits = (int) ins.operand(0);
+        float value = Float.intBitsToFloat(bits);
+        String literal = Float.toString(value) + "f";
+        stack.push(StaticJavaParser.parseExpression(literal));
+    }
+
+    public static void F32_ADD(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.PLUS));
+    }
+
+    public static void F32_SUB(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.MINUS));
+    }
+
+    public static void F32_MUL(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.MULTIPLY));
+    }
+
+    public static void F32_DIV(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.DIVIDE));
+    }
+
     public static void F64_LOAD(
             CompilerInstruction ins,
             BlockStmt block,
@@ -1654,6 +1908,84 @@ final class SourceCodeEmitter {
         call.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
         call.addArgument(new CastExpr(PrimitiveType.doubleType(), value));
         block.addStatement(new ExpressionStmt(call));
+    }
+
+    public static void F64_NEG(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new UnaryExpr(a, UnaryExpr.Operator.MINUS));
+    }
+
+    public static void F64_CONST(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        long bits = ins.operand(0);
+        double value = Double.longBitsToDouble(bits);
+        String literal = Double.toString(value);
+        stack.push(StaticJavaParser.parseExpression(literal));
+    }
+
+    public static void F64_CONVERT_I64_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("F64_CONVERT_I64_U");
+        call.addArgument(a);
+        stack.push(call);
+    }
+
+    public static void F64_CONVERT_I32_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("F64_CONVERT_I32_S");
+        call.addArgument(a);
+        stack.push(call);
+    }
+
+    public static void F64_CONVERT_I32_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("F64_CONVERT_I32_U");
+        call.addArgument(a);
+        stack.push(call);
+    }
+
+    public static void F64_PROMOTE_F32(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new CastExpr(PrimitiveType.doubleType(), a));
+    }
+
+    public static void F64_ADD(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.PLUS));
+    }
+
+    public static void F64_SUB(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.MINUS));
+    }
+
+    public static void F64_MUL(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.MULTIPLY));
+    }
+
+    public static void F64_DIV(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.DIVIDE));
     }
 
     public static void GLOBAL_GET(
