@@ -1325,6 +1325,15 @@ final class SourceCodeEmitter {
             case F32_SQRT:
                 F32_SQRT(ins, stack);
                 break;
+            case F32_COPYSIGN:
+                F32_COPYSIGN(ins, stack);
+                break;
+            case F32_REINTERPRET_I32:
+                F32_REINTERPRET_I32(ins, stack);
+                break;
+            case I32_REINTERPRET_F32:
+                I32_REINTERPRET_F32(ins, stack);
+                break;
             case F32_LOAD:
                 F32_LOAD(ins, block, stack);
                 break;
@@ -2787,6 +2796,12 @@ final class SourceCodeEmitter {
             CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
         var a = stack.pop();
         stack.push(opcodeImplCall("F32_REINTERPRET_I32", a));
+    }
+
+    public static void I32_REINTERPRET_F32(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I32_REINTERPRET_F32", a));
     }
 
     public static void F32_CONVERT_I32_S(

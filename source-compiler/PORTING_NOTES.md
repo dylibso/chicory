@@ -89,7 +89,7 @@ The source compiler uses **structured Java control flow** that mirrors WASM's st
 
 ### Current status
 
-**Test results** (7504/7511 pass, 7 errors, 28 skipped):
+**Test results** (13791/13798 pass, 7 errors, 28 skipped):
 
 | Test Suite | Pass | Fail | Notes |
 |---|---|---|---|
@@ -97,7 +97,15 @@ The source compiler uses **structured Java control flow** that mirrors WASM's st
 | SpecV1BlockTest | 220/223 | 3 | br_table not implemented |
 | SpecV1ConstTest | 778/778 | 0 | |
 | SpecV1F32Test | 2514/2514 | 0 | |
+| SpecV1F32BitwiseTest | 364/364 | 0 | |
+| SpecV1F32CmpTest | 2407/2407 | 0 | |
 | SpecV1F64Test | 2514/2514 | 0 | |
+| SpecV1F64BitwiseTest | 364/364 | 0 | |
+| SpecV1F64CmpTest | 2407/2407 | 0 | |
+| SpecV1FloatLiteralsTest | 179/179 | 0 | |
+| SpecV1FloatMemoryTest | 90/90 | 0 | |
+| SpecV1FloatMiscTest | 471/471 | 0 | |
+| SpecV1ForwardTest | 5/5 | 0 | |
 | SpecV1I32Test | 460/460 | 0 | |
 | SpecV1I64Test | 416/416 | 0 | |
 | SpecV1IntExprsTest | 108/108 | 0 | |
@@ -114,26 +122,42 @@ The source compiler uses **structured Java control flow** that mirrors WASM's st
 - **Multi-entry `br_table`**: the analyzer emits a `SWITCH` opcode for multi-entry br_table, but the emitter throws. Single-entry br_table (just a default label) works via BREAK/CONTINUE.
 - **More spec tests**: only a subset of spec tests are currently targeted. Adding more will likely surface missing opcodes or edge cases.
 
+### Known issues in excluded wast files
+
+- **`fac.wast`**: source generation fails with `NoSuchElementException` (stack underflow) in `emitCallWithArgs`. Likely related to multi-return function types `(result i64 i64)` / `(result i64 i64 i64)`. The CALL helper pops more arguments than are on the expression stack. Needs investigation of how multi-return functions interact with the expression stack, possibly the recursive `fac-rec` function with `if (result i64)`.
+- **`float_exprs.wast`**: source generation succeeds but causes an **infinite loop** at runtime. The generated `while(true)` loop likely has a missing `break` or `continue` path. Needs investigation of the specific function that loops.
+
 ### Workflow for future porting sessions
 
-- **1. Run focused tests to discover missing opcodes**
+- **1. Add wast files from `excludedWasts` to `includedWasts`**
+  - Move a batch from excluded to included in `source-compiler/pom.xml`.
+  - Keep the lists alphabetically sorted (the plugin enforces this).
+  - Run: `mvn test-compile -f source-compiler/pom.xml -Dcheckstyle.skip=true`
+
+- **2. Run focused tests to discover missing opcodes**
   - Example:
-    - `mvn clean test -f source-compiler/pom.xml -Dtest=SpecV1IntExprsTest`
+    - `mvn test -f source-compiler/pom.xml -Dcheckstyle.skip=true -Dtest=SpecV1FloatMiscTest`
+  - Use a timeout to catch infinite loops:
+    - `timeout 60 mvn test -f source-compiler/pom.xml -Dcheckstyle.skip=true -Dtest=SpecV1FloatExprsTest`
   - Look at errors like:
     - `IllegalArgumentException: Unsupported opcode: XYZ` in generated `CompiledMachine_spec_*.java` under `source-compiler/target/source-dump/...`.
+    - `NoSuchElementException` = stack underflow (expression stack has fewer values than expected).
+    - `ClassNotFoundException` = source generation failed entirely (check the source-dump file for the error comment).
 
-- **2. Port the opcode 1:1**
+- **3. Port the opcode 1:1**
   - Find entry in `EmitterMap` for `CompilerOpCode.X`.
   - If intrinsic:
     - Open `Emitters.X` and copy behavior into a new `public static void X(...)` helper in `SourceCodeEmitter`, using JavaParser AST.
   - If shared:
     - Add a helper that calls `opcodeImplCall("X", args...)`.
   - Wire a new `case X:` in `emitInstruction` to that helper.
+  - **Check for duplicates** — some opcodes may already have method implementations but are missing the switch case (or vice versa).
 
-- **3. Re-run the focused tests**
+- **4. Re-run the focused tests**
   - Ensure:
     - Generated source exists under `target/source-dump/...`.
     - The specific spec test passes (at least on the **happy path**, even if trap/error messages differ slightly).
+  - If a test causes infinite loop, move it back to `excludedWasts` and note it in "Known issues" above.
 
 ### Long-term objective
 
