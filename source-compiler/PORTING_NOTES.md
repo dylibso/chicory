@@ -62,6 +62,17 @@
 - **Reserved words**:
   - If a module directory name is a Java keyword (e.g. `const`), we suffix it with `_` (e.g. `const_`) when building the package path.
 
+### Control flow design
+
+- **Structured WASM, structured Java**:
+  - WASM control flow is structured: `br` / `br_if` / `br_table` target enclosing blocks/loops by depth, not raw instruction addresses.
+  - In the source compiler we therefore prefer **plain Java constructs**:
+    - `if` / `else`, `switch`, simple `{}` blocks,
+    - `while` / `for` loops,
+    - `break` / `continue` / `return`.
+  - Java labels are **scopes, not instruction positions**, so we avoid using `label_X:` + `break label_X;` for arbitrary forward “gotos”.
+  - Existing label-based lowering (`CompilerOpCode.LABEL`, `GOTO`, `IFEQ`, `IFNE`, `SWITCH`) is only kept where needed; as we discover cleaner structured encodings, we should **remove any dangling label helpers and keep control-flow code as small and simple as possible**.
+
 ### Current status (high level)
 
 - **Numeric operations**:

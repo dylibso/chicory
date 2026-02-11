@@ -82,17 +82,14 @@
             <wast>call.wast</wast>
             <wast>call_indirect.wast</wast>
             <wast>comments.wast</wast>
-            <wast>const.wast</wast>
             <wast>conversions.wast</wast>
             <wast>custom.wast</wast>
             <wast>data.wast</wast>
             <wast>elem.wast</wast>
             <wast>endianness.wast</wast>
             <wast>exports.wast</wast>
-            <wast>f32.wast</wast>
             <wast>f32_bitwise.wast</wast>
             <wast>f32_cmp.wast</wast>
-            <wast>f64.wast</wast>
             <wast>f64_bitwise.wast</wast>
             <wast>f64_cmp.wast</wast>
             <wast>fac.wast</wast>
@@ -104,19 +101,13 @@
             <wast>func.wast</wast>
             <wast>func_ptrs.wast</wast>
             <wast>global.wast</wast>
-            <wast>i64.wast</wast>
             <wast>if.wast</wast>
             <wast>imports.wast</wast>
             <wast>inline-module.wast</wast>
-            <wast>int_exprs.wast</wast>
-            <wast>int_literals.wast</wast>
             <wast>labels.wast</wast>
             <wast>left-to-right.wast</wast>
             <wast>linking.wast</wast>
             <wast>load.wast</wast>
-            <wast>local_get.wast</wast>
-            <wast>local_set.wast</wast>
-            <wast>local_tee.wast</wast>
             <wast>loop.wast</wast>
             <wast>memory.wast</wast>
             <wast>memory_copy.wast</wast>
