@@ -1004,6 +1004,9 @@ final class SourceCodeEmitter {
             case DROP:
                 DROP(ins, stack);
                 break;
+            case DROP_KEEP:
+                DROP_KEEP(ins, stack);
+                break;
             case SELECT:
                 SELECT(ins, block, stack);
                 break;
@@ -2694,6 +2697,22 @@ final class SourceCodeEmitter {
     public static void DROP(
             CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
         if (!stack.isEmpty()) {
+            stack.pop();
+        }
+    }
+
+    public static void DROP_KEEP(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        int drop = (int) ins.operand(0);
+        int keep = ins.operandCount() - 1 - drop;
+
+        if (drop <= 0) {
+            return;
+        }
+
+        int available = stack.size();
+        int toDropOnStack = Math.min(drop, Math.max(0, available - keep));
+        for (int i = 0; i < toDropOnStack; i++) {
             stack.pop();
         }
     }
