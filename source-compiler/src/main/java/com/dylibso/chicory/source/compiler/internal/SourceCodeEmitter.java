@@ -635,6 +635,15 @@ final class SourceCodeEmitter {
             case I32_GE_U:
                 I32_GE_U(ins, stack);
                 break;
+            case I64_ADD:
+                I64_ADD(ins, stack);
+                break;
+            case I64_SUB:
+                I64_SUB(ins, stack);
+                break;
+            case I64_MUL:
+                I64_MUL(ins, stack);
+                break;
             case I64_EQZ:
                 I64_EQZ(ins, stack);
                 break;
@@ -749,6 +758,39 @@ final class SourceCodeEmitter {
             case F32_CONST:
                 F32_CONST(ins, stack);
                 break;
+            case F32_ABS:
+                F32_ABS(ins, stack);
+                break;
+            case F32_CEIL:
+                F32_CEIL(ins, stack);
+                break;
+            case F32_FLOOR:
+                F32_FLOOR(ins, stack);
+                break;
+            case F32_NEAREST:
+                F32_NEAREST(ins, stack);
+                break;
+            case F32_TRUNC:
+                F32_TRUNC(ins, stack);
+                break;
+            case F32_EQ:
+                F32_EQ(ins, stack);
+                break;
+            case F32_NE:
+                F32_NE(ins, stack);
+                break;
+            case F32_LT:
+                F32_LT(ins, stack);
+                break;
+            case F32_LE:
+                F32_LE(ins, stack);
+                break;
+            case F32_GT:
+                F32_GT(ins, stack);
+                break;
+            case F32_GE:
+                F32_GE(ins, stack);
+                break;
             case F32_ADD:
                 F32_ADD(ins, stack);
                 break;
@@ -760,6 +802,15 @@ final class SourceCodeEmitter {
                 break;
             case F32_DIV:
                 F32_DIV(ins, stack);
+                break;
+            case F32_MIN:
+                F32_MIN(ins, stack);
+                break;
+            case F32_MAX:
+                F32_MAX(ins, stack);
+                break;
+            case F32_SQRT:
+                F32_SQRT(ins, stack);
                 break;
             case F32_LOAD:
                 F32_LOAD(ins, block, stack);
@@ -796,6 +847,9 @@ final class SourceCodeEmitter {
                 break;
             case F64_DIV:
                 F64_DIV(ins, stack);
+                break;
+            case F64_SQRT:
+                F64_SQRT(ins, stack);
                 break;
             case F64_LOAD:
                 F64_LOAD(ins, block, stack);
@@ -857,6 +911,27 @@ final class SourceCodeEmitter {
      * Emit I32_MUL: pop two values, multiply them, push result
      */
     public static void I32_MUL(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.MULTIPLY));
+    }
+
+    public static void I64_ADD(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.PLUS));
+    }
+
+    public static void I64_SUB(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.MINUS));
+    }
+
+    public static void I64_MUL(
             CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
         com.github.javaparser.ast.expr.Expression b = stack.pop();
         com.github.javaparser.ast.expr.Expression a = stack.pop();
@@ -1527,6 +1602,17 @@ final class SourceCodeEmitter {
         return new ConditionalExpr(baseLessThanZero, base, basePlusOffset);
     }
 
+    private static MethodCallExpr opcodeImplCall(
+            String name, com.github.javaparser.ast.expr.Expression... args) {
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName(name);
+        for (var arg : args) {
+            call.addArgument(arg);
+        }
+        return call;
+    }
+
     public static void I32_LOAD(
             CompilerInstruction ins,
             BlockStmt block,
@@ -1852,6 +1938,115 @@ final class SourceCodeEmitter {
         stack.push(StaticJavaParser.parseExpression(literal));
     }
 
+    public static void F32_ABS(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_ABS", a));
+    }
+
+    public static void F32_CEIL(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_CEIL", a));
+    }
+
+    public static void F32_FLOOR(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_FLOOR", a));
+    }
+
+    public static void F32_NEAREST(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_NEAREST", a));
+    }
+
+    public static void F32_TRUNC(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_TRUNC", a));
+    }
+
+    public static void F32_COPYSIGN(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_COPYSIGN", a, b));
+    }
+
+    public static void F32_REINTERPRET_I32(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_REINTERPRET_I32", a));
+    }
+
+    public static void F32_CONVERT_I32_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_CONVERT_I32_S", a));
+    }
+
+    public static void F32_CONVERT_I32_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_CONVERT_I32_U", a));
+    }
+
+    public static void F32_CONVERT_I64_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_CONVERT_I64_S", a));
+    }
+
+    public static void F32_CONVERT_I64_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_CONVERT_I64_U", a));
+    }
+
+    public static void F32_EQ(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_EQ", a, b));
+    }
+
+    public static void F32_NE(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_NE", a, b));
+    }
+
+    public static void F32_LT(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_LT", a, b));
+    }
+
+    public static void F32_LE(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_LE", a, b));
+    }
+
+    public static void F32_GT(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_GT", a, b));
+    }
+
+    public static void F32_GE(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("F32_GE", a, b));
+    }
+
     public static void F32_ADD(
             CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
         com.github.javaparser.ast.expr.Expression b = stack.pop();
@@ -1878,6 +2073,40 @@ final class SourceCodeEmitter {
         com.github.javaparser.ast.expr.Expression b = stack.pop();
         com.github.javaparser.ast.expr.Expression a = stack.pop();
         stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.DIVIDE));
+    }
+
+    public static void F32_MIN(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("F32_MIN");
+        call.addArgument(a);
+        call.addArgument(b);
+        stack.push(call);
+    }
+
+    public static void F32_MAX(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression b = stack.pop();
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("F32_MAX");
+        call.addArgument(a);
+        call.addArgument(b);
+        stack.push(call);
+    }
+
+    public static void F32_SQRT(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("F32_SQRT");
+        call.addArgument(a);
+        stack.push(call);
     }
 
     public static void F64_LOAD(
@@ -1986,6 +2215,16 @@ final class SourceCodeEmitter {
         com.github.javaparser.ast.expr.Expression b = stack.pop();
         com.github.javaparser.ast.expr.Expression a = stack.pop();
         stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.DIVIDE));
+    }
+
+    public static void F64_SQRT(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression a = stack.pop();
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(StaticJavaParser.parseExpression("com.dylibso.chicory.runtime.OpcodeImpl"));
+        call.setName("F64_SQRT");
+        call.addArgument(a);
+        stack.push(call);
     }
 
     public static void GLOBAL_GET(
