@@ -602,6 +602,9 @@ final class SourceCodeEmitter {
             case I32_EXTEND_16_S:
                 I32_EXTEND_16_S(ins, stack);
                 break;
+            case I32_WRAP_I64:
+                I32_WRAP_I64(ins, stack);
+                break;
             case I32_EQZ:
                 I32_EQZ(ins, stack);
                 break;
@@ -730,6 +733,9 @@ final class SourceCodeEmitter {
                 break;
             case I64_EXTEND_32_S:
                 I64_EXTEND_32_S(ins, stack);
+                break;
+            case I64_EXTEND_I32_S:
+                I64_EXTEND_I32_S(ins, stack);
                 break;
             case I64_EXTEND_I32_U:
                 I64_EXTEND_I32_U(ins, stack);
@@ -1068,6 +1074,12 @@ final class SourceCodeEmitter {
         com.github.javaparser.ast.expr.Expression b = stack.pop();
         com.github.javaparser.ast.expr.Expression a = stack.pop();
         stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.MULTIPLY));
+    }
+
+    public static void I32_WRAP_I64(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression value = stack.pop();
+        stack.push(new CastExpr(PrimitiveType.intType(), value));
     }
 
     public static void I64_DIV_S(
@@ -1672,6 +1684,12 @@ final class SourceCodeEmitter {
             CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
         var a = stack.pop();
         stack.push(opcodeImplCall("I64_EXTEND_32_S", a));
+    }
+
+    public static void I64_EXTEND_I32_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(new CastExpr(PrimitiveType.longType(), a));
     }
 
     public static void I64_EXTEND_I32_U(
