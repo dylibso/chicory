@@ -9,7 +9,6 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
-import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
@@ -21,14 +20,11 @@ import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.ValType;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.Deque;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
@@ -40,6 +36,21 @@ final class WasmAnalyzer {
     private final List<FunctionType> functionTypes;
     private final List<ValType> tableTypes;
     private final int functionImports;
+
+    /** Tracks scope nesting for structured control flow emission. */
+    static final class ScopeInfo {
+        final int label;
+        final OpCode opcode; // BLOCK, LOOP, IF, or NOP (function scope)
+        final FunctionType blockType;
+        final Instruction scopeInstruction;
+
+        ScopeInfo(int label, OpCode opcode, FunctionType blockType, Instruction scopeInstruction) {
+            this.label = label;
+            this.opcode = opcode;
+            this.blockType = blockType;
+            this.scopeInstruction = scopeInstruction;
+        }
+    }
 
     public WasmAnalyzer(WasmModule module) {
         this.module = module;
@@ -57,122 +68,247 @@ final class WasmAnalyzer {
         return functionTypes;
     }
 
-    public static class TryCatchBlock {
-        final AnnotatedInstruction ins;
-        final long start;
-        final long end;
-        final long handler;
-        final long after;
-        final long[] afterCatch;
-
-        public TryCatchBlock(
-                AnnotatedInstruction ins,
-                long start,
-                long end,
-                long handler,
-                long after,
-                long[] afterCatch) {
-            this.ins = ins;
-            this.start = start;
-            this.end = end;
-            this.handler = handler;
-            this.after = after;
-            this.afterCatch = afterCatch;
-        }
-    }
-
     @SuppressWarnings("checkstyle:modifiedcontrolvariable")
     public List<CompilerInstruction> analyze(int funcId) {
         var functionType = functionTypes.get(funcId);
         var body = module.codeSection().getFunctionBody(funcId - functionImports);
         var stack = new TypeStack();
-        int nextLabel = body.instructions().size();
+        int nextLabel = 0;
         List<CompilerInstruction> result = new ArrayList<>();
 
-        // find label targets
-        Set<Integer> labels = new HashSet<>();
+        // Scope stack for structured control flow
+        Deque<ScopeInfo> scopeStack = new ArrayDeque<>();
 
-        HashMap<Integer, TryCatchBlock> tryCatchBlocks = new HashMap<>();
-
-        for (int idx = body.instructions().size() - 1; idx >= 0; idx--) {
-            AnnotatedInstruction ins = body.instructions().get(idx);
-
-            if (ins.labelTrue() != AnnotatedInstruction.UNDEFINED_LABEL) {
-                labels.add(ins.labelTrue());
-            }
-            if (ins.labelFalse() != AnnotatedInstruction.UNDEFINED_LABEL) {
-                labels.add(ins.labelFalse());
-            }
-            labels.addAll(ins.labelTable());
-            labels.addAll(
-                    Optional.ofNullable(ins.catches())
-                            .map(
-                                    catches ->
-                                            catches.stream()
-                                                    .map(CatchOpCode.Catch::resolvedLabel)
-                                                    .collect(Collectors.toList()))
-                            .orElse(List.of()));
-
-            if (ins.opcode() == OpCode.TRY_TABLE
-                    && body.instructions().get(idx + 1).opcode() != OpCode.END) {
-                var start = nextLabel++;
-                var end = nextLabel++;
-                var handle = nextLabel++;
-                var after = nextLabel++;
-
-                var afterCatchLabels = new long[ins.catches().size()];
-                for (int i = 0; i < ins.catches().size(); i++) {
-                    afterCatchLabels[i] = nextLabel++;
-                }
-
-                var block = new TryCatchBlock(ins, start, end, handle, after, afterCatchLabels);
-                tryCatchBlocks.put(ins.address(), block);
-                result.add(
-                        new CompilerInstruction(
-                                CompilerOpCode.TRY_CATCH_BLOCK,
-                                block.start,
-                                block.end,
-                                block.handler));
-            }
-        }
-
-        // implicit block for the function
+        // Function scope (outermost)
+        int funcLabel = nextLabel++;
         stack.enterScope(FUNCTION_SCOPE, FunctionType.of(List.of(), functionType.returns()));
+        scopeStack.push(new ScopeInfo(funcLabel, OpCode.NOP, functionType, FUNCTION_SCOPE));
 
         int exitBlockDepth = -1;
+        int exitTargetLabel = -1;
         for (int idx = 0; idx < body.instructions().size(); idx++) {
             AnnotatedInstruction ins = body.instructions().get(idx);
 
-            if (labels.contains(idx)) {
-                result.add(new CompilerInstruction(CompilerOpCode.LABEL, idx));
-            }
-
-            // skip instructions after unconditional control transfer
+            // Skip instructions after unconditional control transfer
             if (exitBlockDepth >= 0) {
                 if (ins.depth() > exitBlockDepth
                         || (ins.opcode() != OpCode.ELSE && ins.opcode() != OpCode.END)) {
                     continue;
                 }
 
-                exitBlockDepth = -1;
                 if (ins.opcode() == OpCode.END) {
                     stack.scopeRestore();
+                    // Check if we've reached the target scope
+                    if (!scopeStack.isEmpty() && scopeStack.peek().label == exitTargetLabel) {
+                        // Function scope: don't process END, let implicit return handle it
+                        if (scopeStack.peek().opcode == OpCode.NOP) {
+                            continue;
+                        }
+                        exitBlockDepth = -1;
+                        exitTargetLabel = -1;
+                        // Fall through to normal END processing
+                    } else {
+                        // Intermediate scope: pop and emit SCOPE_EXIT, stay in dead code
+                        ScopeInfo scope = scopeStack.pop();
+                        if (scope.opcode != OpCode.NOP) {
+                            result.add(
+                                    new CompilerInstruction(
+                                            CompilerOpCode.SCOPE_EXIT,
+                                            prependLabel(scope.label, scope.blockType.returns())));
+                        }
+                        continue;
+                    }
+                } else {
+                    // ELSE: clear dead code mode, fall through
+                    exitBlockDepth = -1;
+                    exitTargetLabel = -1;
                 }
             }
 
             switch (ins.opcode()) {
                 case NOP:
                     break;
+
                 case UNREACHABLE:
                     exitBlockDepth = ins.depth();
+                    exitTargetLabel = scopeStack.peek().label;
                     result.add(new CompilerInstruction(CompilerOpCode.TRAP));
                     break;
+
                 case BLOCK:
+                    {
+                        int label = nextLabel++;
+                        var bt = blockType(ins);
+                        stack.enterScope(ins.scope(), bt);
+                        scopeStack.push(new ScopeInfo(label, OpCode.BLOCK, bt, ins.scope()));
+                        // operands: [label, ...result_type_ids]
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.BLOCK_ENTER,
+                                        prependLabel(label, bt.returns())));
+                        break;
+                    }
+
                 case LOOP:
-                    stack.enterScope(ins.scope(), blockType(ins));
+                    {
+                        int label = nextLabel++;
+                        var bt = blockType(ins);
+                        stack.enterScope(ins.scope(), bt);
+                        scopeStack.push(new ScopeInfo(label, OpCode.LOOP, bt, ins.scope()));
+                        // operands: [label, ...param_type_ids]
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.LOOP_ENTER,
+                                        prependLabel(label, bt.params())));
+                        break;
+                    }
+
+                case IF:
+                    {
+                        stack.pop(ValType.I32);
+                        int label = nextLabel++;
+                        var bt = blockType(ins);
+                        stack.enterScope(ins.scope(), bt);
+                        // Save stack for else branch if ELSE exists
+                        boolean hasElse =
+                                body.instructions().get(ins.labelFalse() - 1).opcode()
+                                        == OpCode.ELSE;
+                        if (hasElse) {
+                            stack.pushTypes();
+                        }
+                        scopeStack.push(new ScopeInfo(label, OpCode.IF, bt, ins.scope()));
+                        // operands: [label, ...result_type_ids]
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.IF_ENTER,
+                                        prependLabel(label, bt.returns())));
+                        break;
+                    }
+
+                case ELSE:
+                    stack.popTypes();
+                    result.add(new CompilerInstruction(CompilerOpCode.ELSE_ENTER));
                     break;
+
+                case END:
+                    {
+                        if (scopeStack.isEmpty() || scopeStack.peek().opcode == OpCode.NOP) {
+                            break;
+                        }
+                        ScopeInfo scope = scopeStack.pop();
+                        stack.exitScope(scope.scopeInstruction);
+                        // Don't emit SCOPE_EXIT for function scope (handled by RETURN)
+                        if (scope.opcode != OpCode.NOP) {
+                            result.add(
+                                    new CompilerInstruction(
+                                            CompilerOpCode.SCOPE_EXIT,
+                                            prependLabel(scope.label, scope.blockType.returns())));
+                        }
+                        break;
+                    }
+
+                case BR:
+                    {
+                        exitBlockDepth = ins.depth();
+                        int depth = (int) ins.operand(0);
+                        ScopeInfo target = getScopeAtDepth(scopeStack, depth);
+                        exitTargetLabel = target.label;
+
+                        if (target.opcode == OpCode.NOP) {
+                            // BR targeting function scope = RETURN
+                            for (var type : reversed(functionType.returns())) {
+                                stack.pop(type);
+                            }
+                            result.add(
+                                    new CompilerInstruction(
+                                            CompilerOpCode.RETURN, ids(functionType.returns())));
+                        } else {
+                            emitUnwind(result, stack, target);
+                            if (target.opcode == OpCode.LOOP) {
+                                result.add(
+                                        new CompilerInstruction(
+                                                CompilerOpCode.CONTINUE, target.label));
+                            } else {
+                                result.add(
+                                        new CompilerInstruction(
+                                                CompilerOpCode.BREAK, target.label));
+                            }
+                        }
+                        break;
+                    }
+
+                case BR_IF:
+                    {
+                        stack.pop(ValType.I32);
+                        int depth = (int) ins.operand(0);
+                        ScopeInfo target = getScopeAtDepth(scopeStack, depth);
+
+                        // Embed unwind data into BREAK_IF/CONTINUE_IF operands
+                        // Simple: [label]
+                        // With unwind: [label, drop, type1, type2, ...]
+                        var unwindOpt = computeUnwind(stack, target);
+                        long[] breakOperands;
+                        if (unwindOpt.isPresent()) {
+                            long[] unwindOps = unwindOpt.get().operands().toArray();
+                            breakOperands = new long[1 + unwindOps.length];
+                            breakOperands[0] = target.label;
+                            System.arraycopy(unwindOps, 0, breakOperands, 1, unwindOps.length);
+                        } else {
+                            breakOperands = new long[] {target.label};
+                        }
+
+                        if (target.opcode == OpCode.LOOP) {
+                            result.add(
+                                    new CompilerInstruction(
+                                            CompilerOpCode.CONTINUE_IF, breakOperands));
+                        } else {
+                            result.add(
+                                    new CompilerInstruction(
+                                            CompilerOpCode.BREAK_IF, breakOperands));
+                        }
+                        break;
+                    }
+
+                case BR_TABLE:
+                    {
+                        exitBlockDepth = ins.depth();
+                        exitTargetLabel = scopeStack.peek().label;
+                        stack.pop(ValType.I32);
+
+                        // Use operands (WASM depths), not labelTable (instruction indices)
+                        int entryCount = ins.operandCount();
+
+                        // Single-entry table: just unconditional branch
+                        if (entryCount == 1) {
+                            int depth0 = (int) ins.operand(0);
+                            ScopeInfo target0 = getScopeAtDepth(scopeStack, depth0);
+                            result.add(
+                                    new CompilerInstruction(CompilerOpCode.DROP, ValType.I32.id()));
+                            emitUnwind(result, stack, target0);
+                            if (target0.opcode == OpCode.LOOP) {
+                                result.add(
+                                        new CompilerInstruction(
+                                                CompilerOpCode.CONTINUE, target0.label));
+                            } else {
+                                result.add(
+                                        new CompilerInstruction(
+                                                CompilerOpCode.BREAK, target0.label));
+                            }
+                            break;
+                        }
+
+                        // Multi-entry: emit SWITCH for now (not yet fully supported)
+                        long[] depths = new long[entryCount];
+                        for (int i = 0; i < entryCount; i++) {
+                            depths[i] = ins.operand(i);
+                        }
+                        result.add(new CompilerInstruction(CompilerOpCode.SWITCH, depths));
+                        break;
+                    }
+
                 case RETURN:
                     exitBlockDepth = ins.depth();
+                    exitTargetLabel = funcLabel;
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
@@ -180,17 +316,15 @@ final class WasmAnalyzer {
                             new CompilerInstruction(
                                     CompilerOpCode.RETURN, ids(functionType.returns())));
                     break;
-                case RETURN_CALL:
-                    // The JVM does not support proper tail calls, so we desugar RETURN_CALL
-                    // into a CALL + RETURN.
 
-                    // [p*] -> [r*]
+                case RETURN_CALL:
                     result.add(
                             new CompilerInstruction(
                                     CompilerOpCode.of(OpCode.CALL), ins.operands()));
                     updateStack(stack, functionTypes.get((int) ins.operand(0)));
 
                     exitBlockDepth = ins.depth();
+                    exitTargetLabel = funcLabel;
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
@@ -200,10 +334,6 @@ final class WasmAnalyzer {
                     break;
 
                 case RETURN_CALL_INDIRECT:
-                    // The JVM does not support proper tail calls, so we desugar
-                    // RETURN_CALL_INDIRECT into a CALL_INDIRECT + RETURN.
-
-                    // [p* I32] -> [r*]
                     stack.pop(ValType.I32);
                     updateStack(stack, module.typeSection().getType((int) ins.operand(0)));
                     result.add(
@@ -211,137 +341,30 @@ final class WasmAnalyzer {
                                     CompilerOpCode.of(OpCode.CALL_INDIRECT), ins.operands()));
 
                     exitBlockDepth = ins.depth();
+                    exitTargetLabel = funcLabel;
                     for (var type : reversed(functionType.returns())) {
                         stack.pop(type);
                     }
-
                     result.add(
                             new CompilerInstruction(
                                     CompilerOpCode.RETURN, ids(functionType.returns())));
                     break;
 
-                case IF:
-                    stack.pop(ValType.I32);
-                    stack.enterScope(ins.scope(), blockType(ins));
-                    // use the same starting stack sizes for both sides of the branch
-                    if (body.instructions().get(ins.labelFalse() - 1).opcode() == OpCode.ELSE) {
-                        stack.pushTypes();
-                    }
-                    result.add(new CompilerInstruction(CompilerOpCode.IFEQ, ins.labelFalse()));
-                    break;
-                case ELSE:
-                    stack.popTypes();
-                    result.add(new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
-                    break;
-                case BR:
-                    exitBlockDepth = ins.depth();
-                    unwindStack(functionType, body, ins, ins.labelTrue(), stack)
-                            .ifPresent(result::add);
-                    result.add(new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
-                    break;
-                case BR_IF:
-                    stack.pop(ValType.I32);
-                    var ifUnwind = unwindStack(functionType, body, ins, ins.labelTrue(), stack);
-                    if (ifUnwind.isPresent()) {
-                        result.add(new CompilerInstruction(CompilerOpCode.IFEQ, ins.labelFalse()));
-                        result.add(ifUnwind.get());
-                        result.add(new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
-                    } else {
-                        result.add(new CompilerInstruction(CompilerOpCode.IFNE, ins.labelTrue()));
-                    }
-                    break;
-                case BR_TABLE:
-                    exitBlockDepth = ins.depth();
-                    stack.pop(ValType.I32);
-                    // convert to jump if it only has a default
-                    if (ins.labelTable().size() == 1) {
-                        result.add(new CompilerInstruction(CompilerOpCode.DROP, ValType.I32.id()));
-                        unwindStack(functionType, body, ins, ins.labelTable().get(0), stack)
-                                .ifPresent(result::add);
-                        result.add(
-                                new CompilerInstruction(
-                                        CompilerOpCode.GOTO, ins.labelTable().get(0)));
-                        break;
-                    }
-                    // extract unique targets and generate unwind for each
-                    List<CompilerInstruction> unwinds = new ArrayList<>();
-                    Map<Integer, Integer> targets = new HashMap<>();
-                    for (var target : ins.labelTable()) {
-                        if (!targets.containsKey(target)) {
-                            int label = target;
-                            var unwind = unwindStack(functionType, body, ins, target, stack);
-                            if (unwind.isPresent()) {
-                                label = nextLabel;
-                                nextLabel++;
-                                unwinds.add(new CompilerInstruction(CompilerOpCode.LABEL, label));
-                                unwinds.add(unwind.get());
-                                unwinds.add(new CompilerInstruction(CompilerOpCode.GOTO, target));
-                            }
-                            targets.put(target, label);
-                        }
-                    }
-                    // Note: some stricter compilers (e.g., Android ART) do not perform
-                    // unboxing+widening
-                    // int->long with a method reference, so instead of mapToLong(targets::get),
-                    // we prefer an explicit lambda+cast.
-                    long[] operands =
-                            ins.labelTable().stream()
-                                    .mapToLong(x -> (long) targets.get(x))
-                                    .toArray();
-                    result.add(new CompilerInstruction(CompilerOpCode.SWITCH, operands));
-                    result.addAll(unwinds);
-                    break;
-
-                case TRY_TABLE:
-                    {
-                        // Is this an empty TRY_TABLE?
-                        if (body.instructions().get(idx + 1).opcode() == OpCode.END) {
-                            idx++; // skip the END instruction too
-                            break;
-                        }
-
-                        stack.enterScope(ins.scope(), blockType(ins));
-                        var tryCatchBlock = tryCatchBlocks.get(ins.address());
-                        result.add(
-                                new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.start));
-                        break;
-                    }
-
-                case END:
-                    // Check if this is the end of a TRY_TABLE block
-                    if (ins.scope().opcode() == OpCode.TRY_TABLE) {
-                        var tryCatchBlock = tryCatchBlocks.remove(ins.scope().address());
-
-                        // Weird: sometimes we see END occur multiple times for
-                        if (tryCatchBlock != null) {
-                            analyzeTryCatchEnd(result, tryCatchBlock);
-                        }
-                    }
-                    stack.exitScope(ins.scope());
-                    break;
-
                 case THROW:
-                    {
-                        // Add the THROW instruction
-                        result.add(
-                                new CompilerInstruction(
-                                        CompilerOpCode.of(OpCode.THROW), ins.operands()));
+                    result.add(
+                            new CompilerInstruction(
+                                    CompilerOpCode.of(OpCode.THROW), ins.operands()));
+                    exitBlockDepth = ins.depth();
+                    exitTargetLabel = scopeStack.peek().label;
+                    break;
 
-                        // Mark as "unreachable" by emptying the stack for this block
-                        exitBlockDepth = ins.depth();
-                        break;
-                    }
                 case THROW_REF:
-                    {
-                        // Add instruction for THROW_REF
-                        result.add(
-                                new CompilerInstruction(
-                                        CompilerOpCode.of(OpCode.THROW_REF), ins.operands()));
-
-                        // Mark as "unreachable" by emptying the stack for this block
-                        exitBlockDepth = ins.depth();
-                        break;
-                    }
+                    result.add(
+                            new CompilerInstruction(
+                                    CompilerOpCode.of(OpCode.THROW_REF), ins.operands()));
+                    exitBlockDepth = ins.depth();
+                    exitTargetLabel = scopeStack.peek().label;
+                    break;
 
                 case SELECT:
                 case SELECT_T:
@@ -353,12 +376,14 @@ final class WasmAnalyzer {
                     stack.push(selectType);
                     result.add(new CompilerInstruction(CompilerOpCode.SELECT, selectType.id()));
                     break;
+
                 case DROP:
                     // [t] -> []
                     var dropType = stack.peek();
                     stack.pop(dropType);
                     result.add(new CompilerInstruction(CompilerOpCode.DROP, dropType.id()));
                     break;
+
                 case LOCAL_TEE:
                     // [t] -> [t]
                     var teeType = stack.peek();
@@ -367,80 +392,74 @@ final class WasmAnalyzer {
                     long[] teeOperands = {ins.operand(0), teeType.id()};
                     result.add(new CompilerInstruction(CompilerOpCode.LOCAL_TEE, teeOperands));
                     break;
+
                 default:
                     analyzeSimple(result, stack, ins, functionType, body);
             }
         }
 
-        // implicit return at end of function
-        for (var type : reversed(functionType.returns())) {
-            stack.pop(type);
+        // implicit return at end of function (skip if already terminated)
+        if (exitBlockDepth < 0) {
+            for (var type : reversed(functionType.returns())) {
+                stack.pop(type);
+            }
+            result.add(new CompilerInstruction(CompilerOpCode.RETURN, ids(functionType.returns())));
         }
-        result.add(new CompilerInstruction(CompilerOpCode.RETURN, ids(functionType.returns())));
 
-        // In the minimal source compiler we don't enforce full stack emptiness here.
-        // This keeps the analysis tolerant while we only support a subset of opcodes.
         return result;
     }
 
-    private static void analyzeTryCatchEnd(
-            List<CompilerInstruction> result, TryCatchBlock tryCatchBlock) {
-
-        // Mark the end of the try block
-        result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.end));
-
-        // Jump over the exception handler if since no exception was thrown
-        result.add(new CompilerInstruction(CompilerOpCode.GOTO, tryCatchBlock.after));
-
-        // Mark the start of the exception handler
-        result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.handler));
-
-        // store the exception in a temporary slot
-        result.add(new CompilerInstruction(CompilerOpCode.CATCH_START));
-
-        for (int i = 0; i < tryCatchBlock.ins.catches().size(); i++) {
-            var catchCondition = tryCatchBlock.ins.catches().get(i);
-            long afterCatchLabel = tryCatchBlock.afterCatch[i];
-
-            switch (catchCondition.opcode()) {
-                case CATCH:
-                    result.add(
-                            new CompilerInstruction(
-                                    CompilerOpCode.CATCH_COMPARE_TAG, catchCondition.tag()));
-                    result.add(new CompilerInstruction(CompilerOpCode.IFEQ, afterCatchLabel));
-                    result.add(
-                            new CompilerInstruction(
-                                    CompilerOpCode.CATCH_UNBOX_PARAMS, catchCondition.tag()));
-                    break;
-                case CATCH_REF:
-                    result.add(
-                            new CompilerInstruction(
-                                    CompilerOpCode.CATCH_COMPARE_TAG, catchCondition.tag()));
-                    result.add(new CompilerInstruction(CompilerOpCode.IFEQ, afterCatchLabel));
-                    result.add(
-                            new CompilerInstruction(
-                                    CompilerOpCode.CATCH_UNBOX_PARAMS, catchCondition.tag()));
-                    result.add(new CompilerInstruction(CompilerOpCode.CATCH_REGISTER_EXCEPTION));
-                    break;
-                case CATCH_ALL:
-                    // Always matches, no tag comparison needed
-                    break;
-                case CATCH_ALL_REF:
-                    // Always matches, register exception
-                    // and push its index
-                    result.add(new CompilerInstruction(CompilerOpCode.CATCH_REGISTER_EXCEPTION));
-                    break;
+    /** Get the scope at the given depth from the top of the scope stack. */
+    private static ScopeInfo getScopeAtDepth(Deque<ScopeInfo> scopeStack, int depth) {
+        int i = 0;
+        for (ScopeInfo scope : scopeStack) {
+            if (i == depth) {
+                return scope;
             }
-            result.add(
-                    new CompilerInstruction(CompilerOpCode.GOTO, catchCondition.resolvedLabel()));
-            result.add(new CompilerInstruction(CompilerOpCode.LABEL, afterCatchLabel));
+            i++;
+        }
+        throw new ChicoryException("BR depth " + depth + " exceeds scope stack size");
+    }
+
+    /** Emit DROP_KEEP if needed for a branch to the given target scope. */
+    private void emitUnwind(List<CompilerInstruction> result, TypeStack stack, ScopeInfo target) {
+        computeUnwind(stack, target).ifPresent(result::add);
+    }
+
+    /** Compute DROP_KEEP for a branch to the given target scope. */
+    private Optional<CompilerInstruction> computeUnwind(TypeStack stack, ScopeInfo target) {
+        boolean forward = (target.opcode != OpCode.LOOP);
+        var types = forward ? target.blockType.returns() : target.blockType.params();
+        int keep = types.size();
+
+        int drop = stack.types().size() - stack.scopeStackSize(target.scopeInstruction);
+        if (forward) {
+            drop -= types.size();
         }
 
-        // Default case: re-throw the exception
-        result.add(new CompilerInstruction(CompilerOpCode.CATCH_END));
+        if (drop <= 0) {
+            return Optional.empty();
+        }
 
-        // Mark the end of exception handler
-        result.add(new CompilerInstruction(CompilerOpCode.LABEL, tryCatchBlock.after));
+        var operands = LongStream.builder();
+        operands.add(drop);
+
+        List<ValType> dropKeepTypes =
+                stack.types().stream().limit(drop + keep).collect(toCollection(ArrayList::new));
+        reverse(dropKeepTypes);
+        dropKeepTypes.stream().mapToLong(ValType::id).forEach(operands::add);
+
+        return Optional.of(
+                new CompilerInstruction(CompilerOpCode.DROP_KEEP, operands.build().toArray()));
+    }
+
+    private static long[] prependLabel(int label, List<ValType> types) {
+        long[] operands = new long[1 + types.size()];
+        operands[0] = label;
+        for (int i = 0; i < types.size(); i++) {
+            operands[i + 1] = types.get(i).id();
+        }
+        return operands;
     }
 
     private void analyzeSimple(
@@ -927,59 +946,6 @@ final class WasmAnalyzer {
         for (ValType type : functionType.returns()) {
             stack.push(type);
         }
-    }
-
-    private Optional<CompilerInstruction> unwindStack(
-            FunctionType functionType,
-            FunctionBody body,
-            AnnotatedInstruction ins,
-            int label,
-            TypeStack stack) {
-
-        boolean forward = true;
-
-        var target = body.instructions().get(label);
-        if (target.address() <= ins.address()) {
-            target = body.instructions().get(label - 1);
-            forward = false;
-        }
-        var scope = target.scope();
-
-        FunctionType blockType;
-        if (scope.opcode() == OpCode.END) {
-            // special scope for the function's implicit block
-            scope = FUNCTION_SCOPE;
-            blockType = functionType;
-        } else {
-            blockType = blockType(scope);
-        }
-
-        var types = forward ? blockType.returns() : blockType.params();
-        int keep = types.size();
-
-        // for a backward jump, the initial loop parameters are dropped
-        int drop = stack.types().size() - stack.scopeStackSize(scope);
-
-        // do not drop the return values for a forward jump
-        if (forward) {
-            drop -= types.size();
-        }
-
-        if (drop <= 0) {
-            return Optional.empty();
-        }
-
-        // operands: [drop, drop_types..., keep_types...]
-        var operands = LongStream.builder();
-        operands.add(drop);
-
-        List<ValType> dropKeepTypes =
-                stack.types().stream().limit(drop + keep).collect(toCollection(ArrayList::new));
-        reverse(dropKeepTypes);
-        dropKeepTypes.stream().mapToLong(ValType::id).forEach(operands::add);
-
-        return Optional.of(
-                new CompilerInstruction(CompilerOpCode.DROP_KEEP, operands.build().toArray()));
     }
 
     private FunctionType blockType(Instruction ins) {

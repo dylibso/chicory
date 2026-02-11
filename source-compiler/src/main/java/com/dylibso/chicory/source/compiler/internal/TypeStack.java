@@ -12,10 +12,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Minimal copy of the type stack from the ASM compiler.
+ * Type stack tracking for WasmAnalyzer. Aligned with the ASM compiler's TypeStack behavior.
  *
- * <p>This tracks the WASM operand stack types while {@link WasmAnalyzer} walks instructions. It is
- * independent of ASM and only uses WASM types.
+ * <p>Key design: enterScope/exitScope do NOT modify the current type stack. enterScope pre-computes
+ * a "restore" stack (for use after unreachable code), and exitScope just cleans up bookkeeping.
  */
 final class TypeStack {
 
@@ -39,9 +39,6 @@ final class TypeStack {
     }
 
     public void pop(ValType expected) {
-        if (types().isEmpty()) {
-            return;
-        }
         var actual = types().pop();
         if (!ValType.matches(actual, expected)) {
             throw new IllegalArgumentException("Expected type " + expected + " <> " + actual);
@@ -49,9 +46,6 @@ final class TypeStack {
     }
 
     public void popRef() {
-        if (types().isEmpty()) {
-            return;
-        }
         var actual = types().pop();
         if (!actual.equals(ValType.FuncRef) && !actual.equals(ValType.ExternRef)) {
             throw new IllegalArgumentException("Expected reference type <> " + actual);
@@ -66,30 +60,40 @@ final class TypeStack {
         types.pop();
     }
 
+    /**
+     * Enter a new scope. Does NOT modify the current type stack. Pre-computes the "restore" stack
+     * which represents what the type stack should look like after the scope exits (with params
+     * replaced by returns). This restore stack is used by scopeRestore() after unreachable code.
+     */
     public void enterScope(Instruction scope, FunctionType scopeType) {
         scopes.put(scope, types().size());
-        restore.push(new ArrayDeque<>(types()));
-        if (scopeType == null) {
-            return;
-        }
-        for (ValType type : scopeType.params()) {
-            pop(type);
+
+        // Pre-compute the restored stack: copy current, remove params, add returns
+        Deque<ValType> stack = new ArrayDeque<>(types());
+        for (int i = 0; i < scopeType.params().size(); i++) {
+            stack.pop();
         }
         for (ValType type : scopeType.returns()) {
-            push(type);
+            stack.push(type);
         }
+        restore.push(stack);
     }
 
+    /**
+     * Exit a scope. Does NOT modify the current type stack. Just cleans up scope bookkeeping.
+     */
     public void exitScope(Instruction scope) {
-        var expected = scopes.remove(scope);
-        if (expected == null) {
-            // For the minimal source compiler we are tolerant of scopes we did not explicitly
-            // register (e.g., implicit END scopes). In that case, there is nothing to unwind.
-            return;
-        }
-        while (types().size() > expected) {
-            types().pop();
-        }
+        scopes.remove(scope);
+        restore.pop();
+    }
+
+    /**
+     * Restore the type stack after unreachable code (e.g., after BR/UNREACHABLE followed by END).
+     * Replaces the current type stack with the pre-computed restore stack.
+     */
+    public void scopeRestore() {
+        types.pop();
+        types.push(restore.getFirst());
     }
 
     public int scopeStackSize(Instruction scope) {
@@ -101,19 +105,11 @@ final class TypeStack {
     }
 
     public Deque<ValType> types() {
-        return types.peek();
+        return types.getFirst();
     }
 
     public Deque<ValType> typesSnapshot() {
         return new ArrayDeque<>(types());
-    }
-
-    public void scopeRestore() {
-        if (restore.isEmpty()) {
-            throw new IllegalStateException("No scope to restore");
-        }
-        types.pop();
-        types.push(new ArrayDeque<>(restore.pop()));
     }
 
     public void verifyEmpty() {

@@ -17,6 +17,8 @@
 - **New source compiler**:
   - Main entry: `source-compiler/src/main/java/com/dylibso/chicory/source/compiler/MachineFactorySourceCompiler.java`
   - Java AST emission: `source-compiler/src/main/java/com/dylibso/chicory/source/compiler/internal/SourceCodeEmitter.java`
+  - WasmAnalyzer (structured control flow): `source-compiler/src/main/java/com/dylibso/chicory/source/compiler/internal/WasmAnalyzer.java`
+  - Compiler opcodes: `source-compiler/src/main/java/com/dylibso/chicory/source/compiler/internal/CompilerOpCode.java`
   - Test module & source dumping: `source-compiler/src/test/java/com/dylibso/chicory/testing/TestModule.java`
   - Generated sources: `source-compiler/target/source-dump/com/dylibso/chicory/gen/...`
   - Test generation config: `source-compiler/pom.xml` (`test-gen-plugin` section).
@@ -34,12 +36,36 @@
   - Add a `case` for the opcode in `SourceCodeEmitter.emitInstruction` that dispatches to the helper.
 - **Stack discipline**:
   - Mirror ASM evaluation order: **pop right operand first**, left second, then build expressions in `(a op b)` order.
-  - Keep the Java expression stack (`Deque<Expression>`) consistent with `WasmAnalyzer`’s type stack.
-- **Control flow / returns**:
-  - `RETURN` is emitted via `SourceCodeEmitter.RETURN(...)` and also tracked by `hasExplicitReturn`.
-  - After emitting all instructions, `generateFunctionMethod`:
-    - Adds an **implicit return** only if there was no explicit return and the last statement is **not** a `ThrowStmt`.
-    - Avoids `return;` after `throw` to prevent unreachable-statement errors.
+  - Keep the Java expression stack (`Deque<Expression>`) consistent with `WasmAnalyzer`'s type stack.
+
+### Control flow design
+
+The source compiler uses **structured Java control flow** that mirrors WASM's structured control flow directly:
+
+- **WasmAnalyzer** walks WASM instructions and emits structured `CompilerOpCode`s:
+  - `BLOCK_ENTER` / `LOOP_ENTER` / `IF_ENTER` / `ELSE_ENTER` / `SCOPE_EXIT` — scope boundaries
+  - `BREAK` / `BREAK_IF` — forward branches (`br` targeting `block`/`if`)
+  - `CONTINUE` / `CONTINUE_IF` — backward branches (`br` targeting `loop`)
+  - `DROP_KEEP` — stack unwinding for branches that cross scope boundaries
+- **SourceCodeEmitter** maps these to Java:
+  - `BLOCK_ENTER` → `label_N: { ... }`
+  - `LOOP_ENTER` → `label_N: while(true) { ... }`
+  - `IF_ENTER` → `if (cond != 0) { ... }`
+  - `ELSE_ENTER` → `} else { ... }`
+  - `SCOPE_EXIT` → close block, assign results, push result vars to expression stack
+  - `BREAK` → assign results + `break label_N;`
+  - `CONTINUE` → interrupt check + `continue label_N;`
+- **Block results**: blocks with return types declare result variables at the method body level (so they're accessible regardless of nesting depth). Result values are assigned on break/exit and pushed onto the expression stack after SCOPE_EXIT.
+- **Dead code tracking**: the analyzer uses `exitBlockDepth` + `exitTargetLabel` to skip instructions after unconditional branches. `exitTargetLabel` tracks which scope the dead code should stop at, handling `br N` where N > 0.
+- **Function calls**: `instance.getMachine().call(funcId, args)` with boxing/unboxing via `SourceCompilerUtil.boxJvmToLong`/`unboxLongToJvm`. CALL and CALL_INDIRECT share a common `emitCallWithArgs` helper.
+
+### Key implementation details
+
+- **`isBlockTerminated`**: checks if the current block's last statement is a direct terminal (throw/return/break/continue) or a labeled block that is terminal for the parent scope. A labeled block is terminal only if it ends with abrupt completion (throw/return/break/continue) AND no break targets its own label (which would mean flow continues after it).
+- **SCOPE_EXIT result push**: only pushes result variables when the scope isn't terminal for the parent, preventing phantom stack values from dead inner blocks.
+- **Operator precedence**: all `BinaryExpr` results are wrapped in `EnclosedExpr` (parentheses) to prevent precedence errors in compound expressions.
+- **Float/double constants**: `NaN` and `Infinity` values are emitted as `Float.intBitsToFloat(bits)` / `Double.longBitsToDouble(bits)` / `Float.POSITIVE_INFINITY` etc., not via `toString()` which produces invalid Java literals.
+- **Globals**: `GLOBAL_GET`/`GLOBAL_SET` use `instance.global(idx).getValue()`/`.setValue()` with proper type boxing/unboxing via `globalTypes`.
 
 ### Memory and traps
 
@@ -50,9 +76,8 @@
     - If compile-time offset is `< 0` or `>= Integer.MAX_VALUE`, emits:
       - `throw new WasmRuntimeException("out of bounds memory access");`
       - and returns early from the emitter method.
-    - This matches the ASM compiler’s static offset trap behavior.
-- **Generated code must not emit `return` after a `throw`**:
-  - Handled centrally in `generateFunctionMethod` by inspecting the last statement.
+    - This matches the ASM compiler's static offset trap behavior.
+- **MEMORY_GROW** → `memory.grow(size)`, **MEMORY_SIZE** → `memory.pages()`.
 
 ### Naming and packages
 
@@ -62,37 +87,38 @@
 - **Reserved words**:
   - If a module directory name is a Java keyword (e.g. `const`), we suffix it with `_` (e.g. `const_`) when building the package path.
 
-### Control flow design
+### Current status
 
-- **Structured WASM, structured Java**:
-  - WASM control flow is structured: `br` / `br_if` / `br_table` target enclosing blocks/loops by depth, not raw instruction addresses.
-  - In the source compiler we therefore prefer **plain Java constructs**:
-    - `if` / `else`, `switch`, simple `{}` blocks,
-    - `while` / `for` loops,
-    - `break` / `continue` / `return`.
-  - Java labels are **scopes, not instruction positions**, so we avoid using `label_X:` + `break label_X;` for arbitrary forward “gotos”.
-  - Existing label-based lowering (`CompilerOpCode.LABEL`, `GOTO`, `IFEQ`, `IFNE`, `SWITCH`) is only kept where needed; as we discover cleaner structured encodings, we should **remove any dangling label helpers and keep control-flow code as small and simple as possible**.
+**Test results** (7504/7511 pass, 7 errors, 28 skipped):
 
-### Current status (high level)
+| Test Suite | Pass | Fail | Notes |
+|---|---|---|---|
+| SpecV1AddressTest | 232/260 | 0 | 28 skipped (trap behavior) |
+| SpecV1BlockTest | 220/223 | 3 | br_table not implemented |
+| SpecV1ConstTest | 778/778 | 0 | |
+| SpecV1F32Test | 2514/2514 | 0 | |
+| SpecV1F64Test | 2514/2514 | 0 | |
+| SpecV1I32Test | 460/460 | 0 | |
+| SpecV1I64Test | 416/416 | 0 | |
+| SpecV1IntExprsTest | 108/108 | 0 | |
+| SpecV1IntLiteralsTest | 51/51 | 0 | |
+| SpecV1LocalGetTest | 35/36 | 1 | br_table not implemented |
+| SpecV1LocalSetTest | 53/53 | 0 | |
+| SpecV1LocalTeeTest | 94/97 | 3 | br_table not implemented |
+| SourceCompilerTest | 1/1 | 0 | |
 
-- **Numeric operations**:
-  - **I32/I64**:
-    - Basic arithmetic (`ADD/SUB/MUL`), bitwise ops, shifts, rotates, comparisons, `EQZ`, sign/zero extensions, truncation ops, and `I32_WRAP_I64`, `I64_EXTEND_I32_S`, `I64_EXTEND_I32_U` are implemented.
-    - Intrinsic vs shared behavior matches `EmitterMap` (intrinsics inline ASM ops; shared ops call `OpcodeImpl`).
-  - **F32/F64**:
-    - Core arithmetic, comparison, min/max, sqrt, rounding (`ABS`, `CEIL`, `FLOOR`, `NEAREST`, `TRUNC`), reinterprets, and conversions (to/from I32/I64) are implemented, again respecting `.intrinsic` vs `.shared`.
-- **Specs currently targeted by source-compiler** (`source-compiler/pom.xml`):
-  - `address.wast`, `const.wast`, `f32.wast`, `f64.wast`, `i32.wast`, `i64.wast`,
-    `int_exprs.wast`, `int_literals.wast`, `local_get.wast`, `local_set.wast`, `local_tee.wast`.
-- **Known adjustments**:
-  - Some **`address.wast`** tests that assert very specific trap behavior are temporarily excluded via `<excludedTests>` in the `test-gen-plugin` configuration in `source-compiler/pom.xml` to focus on the “happy path” arithmetic behavior.
-  - `SpecV1IntExprsTest` now passes fully with the added integer conversion ops.
+**All 7 remaining failures are from multi-entry `br_table` (SWITCH opcode), which throws "br_table not yet supported".**
+
+### What's not yet implemented
+
+- **Multi-entry `br_table`**: the analyzer emits a `SWITCH` opcode for multi-entry br_table, but the emitter throws. Single-entry br_table (just a default label) works via BREAK/CONTINUE.
+- **More spec tests**: only a subset of spec tests are currently targeted. Adding more will likely surface missing opcodes or edge cases.
 
 ### Workflow for future porting sessions
 
 - **1. Run focused tests to discover missing opcodes**
   - Example:
-    - `./mvnw -q test -pl source-compiler -Dtest=SpecV1IntExprsTest -Dmaven.dependency.analyze.skip=true -Dchicory.source.dumpSources=true`
+    - `mvn clean test -f source-compiler/pom.xml -Dtest=SpecV1IntExprsTest`
   - Look at errors like:
     - `IllegalArgumentException: Unsupported opcode: XYZ` in generated `CompiledMachine_spec_*.java` under `source-compiler/target/source-dump/...`.
 
