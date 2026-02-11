@@ -72,7 +72,6 @@ public final class MachineFactorySourceCompiler {
         private String className;
         private Path compileTargetDir;
 
-        private String moduleName;
         private boolean dumpSources;
 
         private Builder(WasmModule module) {
@@ -86,11 +85,6 @@ public final class MachineFactorySourceCompiler {
 
         public Builder withCompileTargetDir(Path compileTargetDir) {
             this.compileTargetDir = compileTargetDir;
-            return this;
-        }
-
-        public Builder withModuleName(String moduleName) {
-            this.moduleName = moduleName;
             return this;
         }
 
@@ -137,8 +131,8 @@ public final class MachineFactorySourceCompiler {
                     }
                 }
             } finally {
-                if (dumpSources && moduleName != null) {
-                    dumpSourcesToTarget(collector, moduleName);
+                if (dumpSources) {
+                    dumpSourcesToTarget(collector);
                 }
             }
         }
@@ -152,8 +146,8 @@ public final class MachineFactorySourceCompiler {
                 }
                 compilerBuilder.build().compile();
             } finally {
-                if (dumpSources && moduleName != null) {
-                    dumpSourcesToTarget(collector, moduleName);
+                if (dumpSources) {
+                    dumpSourcesToTarget(collector);
                 }
             }
 
@@ -220,12 +214,12 @@ public final class MachineFactorySourceCompiler {
             }
         }
 
-        private void dumpSourcesToTarget(SourceCodeCollector collector, String moduleName) {
+        private void dumpSourcesToTarget(SourceCodeCollector collector) {
             try {
                 String classPath =
                         getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
                 Path targetDir = Path.of(classPath).getParent();
-                Path dumpDir = targetDir.resolve("source-dump").resolve(moduleName);
+                Path dumpDir = targetDir.resolve("source-dump");
                 Files.createDirectories(dumpDir);
 
                 for (Map.Entry<String, String> entry : collector.sourceFiles().entrySet()) {

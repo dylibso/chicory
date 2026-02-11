@@ -19,11 +19,8 @@ public class TestModule {
 
     private final WasmModule module;
 
-    /** Logical module name (e.g. "i32") derived from the classpath, used for source dumps. */
-    private final String moduleName;
-
-    /** Discriminator (e.g. "spec_0") derived from the classpath, used for unique class names. */
-    private final String discriminator;
+    /** Fully-qualified mangled class name (package encodes spec, e.g. "com.dylibso.chicory.gen.i32.CompiledMachine_spec_0"). */
+    private final String mangledClassName;
 
     private static final String HACK_MATCH_ALL_MALFORMED_EXCEPTION_TEXT =
             "Matching keywords to get the WebAssembly testsuite to pass: "
@@ -52,10 +49,7 @@ public class TestModule {
 
     public static TestModule of(String classpath) {
         try (var is = CorpusResources.getResource(classpath.substring(1))) {
-            // Extract module name from classpath (e.g., "/i32/spec.0.wasm" -> "i32")
-            String moduleName = extractModuleName(classpath);
-            // Extract discriminator from classpath (e.g., "/i32/spec.0.wasm" -> "spec_0")
-            String discriminator = extractDiscriminator(classpath);
+            String mangledClassName = extractMangledClassName(classpath);
 
             WasmModule module;
             if (classpath.endsWith(".wat")) {
@@ -70,56 +64,41 @@ public class TestModule {
             } else {
                 module = Parser.parse(is);
             }
-            return new TestModule(module, moduleName, discriminator);
+            return new TestModule(module, mangledClassName);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static TestModule of(WasmModule module) {
-        return new TestModule(module, null, null);
-    }
-
-    private static String extractModuleName(String classpath) {
-        // Extract module name from classpath like "/i32/spec.0.wasm" -> "i32"
-        if (classpath.startsWith("/") && classpath.length() > 1) {
-            String withoutLeadingSlash = classpath.substring(1);
-            int firstSlash = withoutLeadingSlash.indexOf('/');
-            if (firstSlash > 0) {
-                return withoutLeadingSlash.substring(0, firstSlash);
-            }
-            // If no slash, use filename without extension
-            int lastSlash = withoutLeadingSlash.lastIndexOf('/');
-            int lastDot = withoutLeadingSlash.lastIndexOf('.');
-            if (lastDot > lastSlash) {
-                return withoutLeadingSlash.substring(lastSlash + 1, lastDot);
-            }
-        }
-        return "unknown";
+        return new TestModule(module, null);
     }
 
     /**
-     * Extract a discriminator from the classpath for use in class names.
-     * Example: "/i32/spec.0.wasm" -> "spec_0"
+     * Extract fully-qualified mangled class name from classpath.
+     *
+     * <p>Example: "/i32/spec.0.wasm" -> "com.dylibso.chicory.gen.i32.CompiledMachine_spec_0"
      */
-    private static String extractDiscriminator(String classpath) {
+    private static String extractMangledClassName(String classpath) {
         if (classpath.startsWith("/") && classpath.length() > 1) {
             String withoutLeadingSlash = classpath.substring(1);
+            int firstSlash = withoutLeadingSlash.indexOf('/');
             int lastSlash = withoutLeadingSlash.lastIndexOf('/');
             int lastDot = withoutLeadingSlash.lastIndexOf('.');
-            if (lastDot > lastSlash && lastDot > 0) {
+            if (firstSlash > 0 && lastDot > lastSlash && lastDot > 0) {
+                // "/i32/spec.0.wasm" -> moduleDir "i32", filename "spec.0"
+                String moduleDir = withoutLeadingSlash.substring(0, firstSlash);
                 String filename = withoutLeadingSlash.substring(lastSlash + 1, lastDot);
-                // Replace dots and other invalid characters with underscores
-                return filename.replace('.', '_').replace('-', '_');
+                String suffix = filename.replace('.', '_').replace('-', '_');
+                return "com.dylibso.chicory.gen." + moduleDir + ".CompiledMachine_" + suffix;
             }
         }
-        return "unknown";
+        return null;
     }
 
-    public TestModule(WasmModule module, String moduleName, String discriminator) {
+    public TestModule(WasmModule module, String mangledClassName) {
         this.module = module;
-        this.moduleName = moduleName;
-        this.discriminator = discriminator;
+        this.mangledClassName = mangledClassName;
     }
 
     public Instance instantiate(Store s) {
@@ -130,14 +109,9 @@ public class TestModule {
         boolean dumpSources = !Boolean.getBoolean("chicory.source.dumpSources.disable");
 
         // Generate sources BEFORE building instance, so we can dump even if validation fails
-        final String mangledClassName =
-                discriminator != null
-                        ? "com.dylibso.chicory.gen.CompiledMachine_" + discriminator
-                        : null;
-        if (dumpSources && moduleName != null) {
+        if (dumpSources && mangledClassName != null) {
             try {
                 MachineFactorySourceCompiler.builder(module)
-                        .withModuleName(moduleName)
                         .withClassName(mangledClassName)
                         .withDumpSources(true)
                         .generateAndDumpSources();
@@ -151,7 +125,6 @@ public class TestModule {
                 .withMachineFactory(
                         instance -> {
                             return MachineFactorySourceCompiler.builder(instance.module())
-                                    .withModuleName(moduleName)
                                     .withClassName(mangledClassName)
                                     .withDumpSources(false)
                                     .compile()
