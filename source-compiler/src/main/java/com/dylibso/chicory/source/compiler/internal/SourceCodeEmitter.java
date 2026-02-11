@@ -644,6 +644,51 @@ final class SourceCodeEmitter {
             case I64_MUL:
                 I64_MUL(ins, stack);
                 break;
+            case I64_DIV_S:
+                I64_DIV_S(ins, stack);
+                break;
+            case I64_DIV_U:
+                I64_DIV_U(ins, stack);
+                break;
+            case I64_REM_S:
+                I64_REM_S(ins, stack);
+                break;
+            case I64_REM_U:
+                I64_REM_U(ins, stack);
+                break;
+            case I64_AND:
+                I64_AND(ins, stack);
+                break;
+            case I64_OR:
+                I64_OR(ins, stack);
+                break;
+            case I64_XOR:
+                I64_XOR(ins, stack);
+                break;
+            case I64_SHL:
+                I64_SHL(ins, stack);
+                break;
+            case I64_SHR_S:
+                I64_SHR_S(ins, stack);
+                break;
+            case I64_SHR_U:
+                I64_SHR_U(ins, stack);
+                break;
+            case I64_ROTL:
+                I64_ROTL(ins, stack);
+                break;
+            case I64_ROTR:
+                I64_ROTR(ins, stack);
+                break;
+            case I64_CLZ:
+                I64_CLZ(ins, stack);
+                break;
+            case I64_CTZ:
+                I64_CTZ(ins, stack);
+                break;
+            case I64_POPCNT:
+                I64_POPCNT(ins, stack);
+                break;
             case I64_EQZ:
                 I64_EQZ(ins, stack);
                 break;
@@ -676,6 +721,45 @@ final class SourceCodeEmitter {
                 break;
             case I64_GE_U:
                 I64_GE_U(ins, stack);
+                break;
+            case I64_EXTEND_8_S:
+                I64_EXTEND_8_S(ins, stack);
+                break;
+            case I64_EXTEND_16_S:
+                I64_EXTEND_16_S(ins, stack);
+                break;
+            case I64_EXTEND_32_S:
+                I64_EXTEND_32_S(ins, stack);
+                break;
+            case I64_EXTEND_I32_U:
+                I64_EXTEND_I32_U(ins, stack);
+                break;
+            case I64_TRUNC_F32_S:
+                I64_TRUNC_F32_S(ins, stack);
+                break;
+            case I64_TRUNC_F32_U:
+                I64_TRUNC_F32_U(ins, stack);
+                break;
+            case I64_TRUNC_F64_S:
+                I64_TRUNC_F64_S(ins, stack);
+                break;
+            case I64_TRUNC_F64_U:
+                I64_TRUNC_F64_U(ins, stack);
+                break;
+            case I64_TRUNC_SAT_F32_S:
+                I64_TRUNC_SAT_F32_S(ins, stack);
+                break;
+            case I64_TRUNC_SAT_F32_U:
+                I64_TRUNC_SAT_F32_U(ins, stack);
+                break;
+            case I64_TRUNC_SAT_F64_S:
+                I64_TRUNC_SAT_F64_S(ins, stack);
+                break;
+            case I64_TRUNC_SAT_F64_U:
+                I64_TRUNC_SAT_F64_U(ins, stack);
+                break;
+            case I64_REINTERPRET_F64:
+                I64_REINTERPRET_F64(ins, stack);
                 break;
             case LOCAL_GET:
                 LOCAL_GET(ins, stack, localVarNames);
@@ -984,6 +1068,90 @@ final class SourceCodeEmitter {
         com.github.javaparser.ast.expr.Expression b = stack.pop();
         com.github.javaparser.ast.expr.Expression a = stack.pop();
         stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.MULTIPLY));
+    }
+
+    public static void I64_DIV_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_DIV_S", a, b));
+    }
+
+    public static void I64_DIV_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_DIV_U", a, b));
+    }
+
+    public static void I64_REM_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_REM_S", a, b));
+    }
+
+    public static void I64_REM_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_REM_U", a, b));
+    }
+
+    public static void I64_AND(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.BINARY_AND));
+    }
+
+    public static void I64_OR(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.BINARY_OR));
+    }
+
+    public static void I64_XOR(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.XOR));
+    }
+
+    public static void I64_SHL(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.LEFT_SHIFT));
+    }
+
+    public static void I64_SHR_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.SIGNED_RIGHT_SHIFT));
+    }
+
+    public static void I64_SHR_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(new BinaryExpr(a, b, BinaryExpr.Operator.UNSIGNED_RIGHT_SHIFT));
+    }
+
+    public static void I64_ROTL(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_ROTL", a, b));
+    }
+
+    public static void I64_ROTR(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_ROTR", a, b));
     }
 
     /**
@@ -1468,6 +1636,102 @@ final class SourceCodeEmitter {
         call.addArgument(a);
         call.addArgument(b);
         stack.push(call);
+    }
+
+    public static void I64_CLZ(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_CLZ", a));
+    }
+
+    public static void I64_CTZ(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_CTZ", a));
+    }
+
+    public static void I64_POPCNT(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_POPCNT", a));
+    }
+
+    public static void I64_EXTEND_8_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_EXTEND_8_S", a));
+    }
+
+    public static void I64_EXTEND_16_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_EXTEND_16_S", a));
+    }
+
+    public static void I64_EXTEND_32_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_EXTEND_32_S", a));
+    }
+
+    public static void I64_EXTEND_I32_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_EXTEND_I32_U", a));
+    }
+
+    public static void I64_TRUNC_F32_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_TRUNC_F32_S", a));
+    }
+
+    public static void I64_TRUNC_F32_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_TRUNC_F32_U", a));
+    }
+
+    public static void I64_TRUNC_F64_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_TRUNC_F64_S", a));
+    }
+
+    public static void I64_TRUNC_F64_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_TRUNC_F64_U", a));
+    }
+
+    public static void I64_TRUNC_SAT_F32_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_TRUNC_SAT_F32_S", a));
+    }
+
+    public static void I64_TRUNC_SAT_F32_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_TRUNC_SAT_F32_U", a));
+    }
+
+    public static void I64_TRUNC_SAT_F64_S(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_TRUNC_SAT_F64_S", a));
+    }
+
+    public static void I64_TRUNC_SAT_F64_U(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_TRUNC_SAT_F64_U", a));
+    }
+
+    public static void I64_REINTERPRET_F64(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var a = stack.pop();
+        stack.push(opcodeImplCall("I64_REINTERPRET_F64", a));
     }
 
     /**
