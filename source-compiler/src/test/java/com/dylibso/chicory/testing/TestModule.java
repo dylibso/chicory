@@ -129,20 +129,31 @@ public class TestModule {
         //   -Dchicory.source.dumpSources=false
         boolean dumpSources = !Boolean.getBoolean("chicory.source.dumpSources.disable");
 
+        // Generate sources BEFORE building instance, so we can dump even if validation fails
+        final String mangledClassName =
+                discriminator != null
+                        ? "com.dylibso.chicory.gen.CompiledMachine_" + discriminator
+                        : null;
+        if (dumpSources && moduleName != null) {
+            try {
+                MachineFactorySourceCompiler.builder(module)
+                        .withModuleName(moduleName)
+                        .withClassName(mangledClassName)
+                        .withDumpSources(true)
+                        .generateAndDumpSources();
+            } catch (Throwable e) {
+                // Ignore - generateAndDumpSources has its own error handling and finally block
+            }
+        }
+
         return Instance.builder(module)
                 .withImportValues(importValues)
                 .withMachineFactory(
                         instance -> {
-                            // Mangle class name with discriminator in test scope only
-                            String mangledClassName = null;
-                            if (discriminator != null) {
-                                mangledClassName =
-                                        "com.dylibso.chicory.gen.CompiledMachine_" + discriminator;
-                            }
                             return MachineFactorySourceCompiler.builder(instance.module())
                                     .withModuleName(moduleName)
                                     .withClassName(mangledClassName)
-                                    .withDumpSources(dumpSources)
+                                    .withDumpSources(false)
                                     .compile()
                                     .apply(instance);
                         })

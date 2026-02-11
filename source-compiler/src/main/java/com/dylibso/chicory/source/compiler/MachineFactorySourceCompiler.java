@@ -99,6 +99,50 @@ public final class MachineFactorySourceCompiler {
             return this;
         }
 
+        /**
+         * Generate and dump sources without compiling to bytecode.
+         * Useful for dumping sources even when modules are invalid.
+         */
+        public void generateAndDumpSources() {
+            SourceCodeCollector collector = new SimpleSourceCodeCollector();
+            String finalClassName = className != null ? className : Compiler.DEFAULT_CLASS_NAME;
+            try {
+                var compilerBuilder = Compiler.builder(module).withSourceCodeCollector(collector);
+                if (className != null) {
+                    compilerBuilder.withClassName(className);
+                }
+                compilerBuilder.build().compile();
+            } catch (Throwable e) {
+                try {
+                    String errorSource =
+                            "// Source generation failed: "
+                                    + e.getClass().getSimpleName()
+                                    + ": "
+                                    + e.getMessage()
+                                    + "\n"
+                                    + "// Stack trace:\n"
+                                    + java.util.Arrays.stream(e.getStackTrace())
+                                            .limit(10)
+                                            .map(st -> "//   " + st.toString())
+                                            .collect(java.util.stream.Collectors.joining("\n"));
+                    collector.putMainClass(finalClassName, errorSource);
+                } catch (Throwable e2) {
+                    String fallbackSource =
+                            "// Source generation failed and error reporting also failed: "
+                                    + e2.getMessage();
+                    try {
+                        collector.putMainClass(finalClassName, fallbackSource);
+                    } catch (Throwable e3) {
+                        // Last resort - at least try to dump something
+                    }
+                }
+            } finally {
+                if (dumpSources && moduleName != null) {
+                    dumpSourcesToTarget(collector, moduleName);
+                }
+            }
+        }
+
         public Function<Instance, Machine> compile() {
             SourceCodeCollector collector = new SimpleSourceCodeCollector();
             try {
@@ -181,19 +225,27 @@ public final class MachineFactorySourceCompiler {
                 String classPath =
                         getClass().getProtectionDomain().getCodeSource().getLocation().getPath();
                 Path targetDir = Path.of(classPath).getParent();
-
                 Path dumpDir = targetDir.resolve("source-dump").resolve(moduleName);
                 Files.createDirectories(dumpDir);
 
                 for (Map.Entry<String, String> entry : collector.sourceFiles().entrySet()) {
-                    String className = entry.getKey();
+                    String collectedClassName = entry.getKey();
                     String source = entry.getValue();
 
-                    String packagePath = className.substring(0, className.lastIndexOf('.'));
-                    Path packageDir = dumpDir.resolve(packagePath.replace('.', File.separatorChar));
+                    int lastDot = collectedClassName.lastIndexOf('.');
+                    String packagePath =
+                            lastDot > 0 ? collectedClassName.substring(0, lastDot) : "";
+                    String simpleName =
+                            lastDot > 0
+                                    ? collectedClassName.substring(lastDot + 1)
+                                    : collectedClassName;
+
+                    Path packageDir =
+                            packagePath.isEmpty()
+                                    ? dumpDir
+                                    : dumpDir.resolve(packagePath.replace('.', File.separatorChar));
                     Files.createDirectories(packageDir);
 
-                    String simpleName = className.substring(className.lastIndexOf('.') + 1);
                     Path sourceFile = packageDir.resolve(simpleName + ".java");
                     Files.writeString(sourceFile, source);
                 }

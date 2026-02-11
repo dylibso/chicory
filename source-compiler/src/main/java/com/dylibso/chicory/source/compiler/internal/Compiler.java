@@ -77,7 +77,22 @@ public final class Compiler {
      * Compile the module to Java source files.
      */
     public CompilerResult compile() {
-        String source = compileToSource();
+        String source;
+        try {
+            source = compileToSource();
+        } catch (RuntimeException e) {
+            source =
+                    "// Source generation failed: "
+                            + e.getClass().getSimpleName()
+                            + ": "
+                            + e.getMessage()
+                            + "\n"
+                            + "// Stack trace:\n"
+                            + java.util.Arrays.stream(e.getStackTrace())
+                                    .limit(5)
+                                    .map(st -> "//   " + st.toString())
+                                    .collect(java.util.stream.Collectors.joining("\n"));
+        }
         collector.putMainClass(className, source);
         return new CompilerResult(collector);
     }

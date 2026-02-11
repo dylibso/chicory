@@ -12,6 +12,7 @@ import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.AssignExpr;
 import com.github.javaparser.ast.expr.BinaryExpr;
 import com.github.javaparser.ast.expr.CastExpr;
+import com.github.javaparser.ast.expr.ConditionalExpr;
 import com.github.javaparser.ast.expr.FieldAccessExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -675,6 +676,51 @@ final class SourceCodeEmitter {
             case I64_CONST:
                 I64_CONST(ins, stack);
                 break;
+            case I64_LOAD:
+                I64_LOAD(ins, block, stack);
+                break;
+            case I64_LOAD8_S:
+                I64_LOAD8_S(ins, block, stack);
+                break;
+            case I64_LOAD8_U:
+                I64_LOAD8_U(ins, block, stack);
+                break;
+            case I64_LOAD16_S:
+                I64_LOAD16_S(ins, block, stack);
+                break;
+            case I64_LOAD16_U:
+                I64_LOAD16_U(ins, block, stack);
+                break;
+            case I64_LOAD32_S:
+                I64_LOAD32_S(ins, block, stack);
+                break;
+            case I64_LOAD32_U:
+                I64_LOAD32_U(ins, block, stack);
+                break;
+            case I64_STORE:
+                I64_STORE(ins, block, stack);
+                break;
+            case I64_STORE8:
+                I64_STORE8(ins, block, stack);
+                break;
+            case I64_STORE16:
+                I64_STORE16(ins, block, stack);
+                break;
+            case I64_STORE32:
+                I64_STORE32(ins, block, stack);
+                break;
+            case F32_LOAD:
+                F32_LOAD(ins, block, stack);
+                break;
+            case F32_STORE:
+                F32_STORE(ins, block, stack);
+                break;
+            case F64_LOAD:
+                F64_LOAD(ins, block, stack);
+                break;
+            case F64_STORE:
+                F64_STORE(ins, block, stack);
+                break;
             case GLOBAL_GET:
                 GLOBAL_GET(ins, block, stack);
                 break;
@@ -1253,18 +1299,29 @@ final class SourceCodeEmitter {
         }
     }
 
+    /**
+     * Generate getAddr expression: (base < 0) ? base : base + offset
+     * Matching ASM compiler's Shaded.getAddr logic
+     */
+    private static com.github.javaparser.ast.expr.Expression getAddrExpr(
+            com.github.javaparser.ast.expr.Expression base, int offset) {
+        BinaryExpr basePlusOffset =
+                new BinaryExpr(
+                        base,
+                        new IntegerLiteralExpr(String.valueOf(offset)),
+                        BinaryExpr.Operator.PLUS);
+        BinaryExpr baseLessThanZero =
+                new BinaryExpr(base, new IntegerLiteralExpr("0"), BinaryExpr.Operator.LESS);
+        return new ConditionalExpr(baseLessThanZero, base, basePlusOffset);
+    }
+
     public static void I32_LOAD(
             CompilerInstruction ins,
             BlockStmt block,
             Deque<com.github.javaparser.ast.expr.Expression> stack) {
         com.github.javaparser.ast.expr.Expression base = stack.pop();
         long offset = ins.operand(1);
-        // Inline memoryReadInt: memory.readInt((int) (base + offset))
-        BinaryExpr addrExpr =
-                new BinaryExpr(
-                        base,
-                        new IntegerLiteralExpr(String.valueOf((int) offset)),
-                        BinaryExpr.Operator.PLUS);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
         MethodCallExpr call = new MethodCallExpr();
         call.setScope(new NameExpr("memory"));
         call.setName("readInt");
@@ -1279,12 +1336,7 @@ final class SourceCodeEmitter {
         com.github.javaparser.ast.expr.Expression value = stack.pop();
         com.github.javaparser.ast.expr.Expression base = stack.pop();
         long offset = ins.operand(1);
-        // Inline memoryWriteInt: memory.writeI32((int) (base + offset), (int) value)
-        BinaryExpr addrExpr =
-                new BinaryExpr(
-                        base,
-                        new IntegerLiteralExpr(String.valueOf((int) offset)),
-                        BinaryExpr.Operator.PLUS);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
         MethodCallExpr call = new MethodCallExpr();
         call.setScope(new NameExpr("memory"));
         call.setName("writeI32");
@@ -1299,21 +1351,14 @@ final class SourceCodeEmitter {
             Deque<com.github.javaparser.ast.expr.Expression> stack) {
         com.github.javaparser.ast.expr.Expression base = stack.pop();
         long offset = ins.operand(1);
-        // Inline memoryReadByte: (int) memory.read((int) (base + offset))
-        BinaryExpr addrExpr =
-                new BinaryExpr(
-                        base,
-                        new IntegerLiteralExpr(String.valueOf((int) offset)),
-                        BinaryExpr.Operator.PLUS);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
         MethodCallExpr readCall = new MethodCallExpr();
         readCall.setScope(new NameExpr("memory"));
         readCall.setName("read");
         readCall.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
-        // Sign extend byte to int
-        CastExpr cast =
+        stack.push(
                 new CastExpr(
-                        PrimitiveType.intType(), new CastExpr(PrimitiveType.byteType(), readCall));
-        stack.push(new CastExpr(PrimitiveType.intType(), cast));
+                        PrimitiveType.intType(), new CastExpr(PrimitiveType.byteType(), readCall)));
     }
 
     public static void I32_LOAD8_U(
@@ -1322,23 +1367,16 @@ final class SourceCodeEmitter {
             Deque<com.github.javaparser.ast.expr.Expression> stack) {
         com.github.javaparser.ast.expr.Expression base = stack.pop();
         long offset = ins.operand(1);
-        // Inline memoryReadByte: memory.read((int) (base + offset)) & 0xFF
-        BinaryExpr addrExpr =
-                new BinaryExpr(
-                        base,
-                        new IntegerLiteralExpr(String.valueOf((int) offset)),
-                        BinaryExpr.Operator.PLUS);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
         MethodCallExpr readCall = new MethodCallExpr();
         readCall.setScope(new NameExpr("memory"));
         readCall.setName("read");
         readCall.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
-        // Unsigned: mask with 0xFF
-        BinaryExpr masked =
+        stack.push(
                 new BinaryExpr(
                         new CastExpr(PrimitiveType.intType(), readCall),
                         new IntegerLiteralExpr("0xFF"),
-                        BinaryExpr.Operator.BINARY_AND);
-        stack.push(masked);
+                        BinaryExpr.Operator.BINARY_AND));
     }
 
     public static void I32_LOAD16_S(
@@ -1347,19 +1385,15 @@ final class SourceCodeEmitter {
             Deque<com.github.javaparser.ast.expr.Expression> stack) {
         com.github.javaparser.ast.expr.Expression base = stack.pop();
         long offset = ins.operand(1);
-        // Inline memoryReadShort: (int) memory.readShort((int) (base + offset))
-        BinaryExpr addrExpr =
-                new BinaryExpr(
-                        base,
-                        new IntegerLiteralExpr(String.valueOf((int) offset)),
-                        BinaryExpr.Operator.PLUS);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
         MethodCallExpr readCall = new MethodCallExpr();
         readCall.setScope(new NameExpr("memory"));
         readCall.setName("readShort");
         readCall.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
-        // Sign extend short to int
-        CastExpr cast = new CastExpr(PrimitiveType.intType(), readCall);
-        stack.push(new CastExpr(PrimitiveType.intType(), cast));
+        stack.push(
+                new CastExpr(
+                        PrimitiveType.intType(),
+                        new CastExpr(PrimitiveType.shortType(), readCall)));
     }
 
     public static void I32_LOAD16_U(
@@ -1368,23 +1402,16 @@ final class SourceCodeEmitter {
             Deque<com.github.javaparser.ast.expr.Expression> stack) {
         com.github.javaparser.ast.expr.Expression base = stack.pop();
         long offset = ins.operand(1);
-        // Inline memoryReadShort: memory.readShort((int) (base + offset)) & 0xFFFF
-        BinaryExpr addrExpr =
-                new BinaryExpr(
-                        base,
-                        new IntegerLiteralExpr(String.valueOf((int) offset)),
-                        BinaryExpr.Operator.PLUS);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
         MethodCallExpr readCall = new MethodCallExpr();
         readCall.setScope(new NameExpr("memory"));
         readCall.setName("readShort");
         readCall.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
-        // Unsigned: mask with 0xFFFF
-        BinaryExpr masked =
+        stack.push(
                 new BinaryExpr(
                         new CastExpr(PrimitiveType.intType(), readCall),
                         new IntegerLiteralExpr("0xFFFF"),
-                        BinaryExpr.Operator.BINARY_AND);
-        stack.push(masked);
+                        BinaryExpr.Operator.BINARY_AND));
     }
 
     public static void I32_STORE8(
@@ -1394,12 +1421,7 @@ final class SourceCodeEmitter {
         com.github.javaparser.ast.expr.Expression value = stack.pop();
         com.github.javaparser.ast.expr.Expression base = stack.pop();
         long offset = ins.operand(1);
-        // Inline memoryWriteByte: memory.writeByte((int) (base + offset), (byte) value)
-        BinaryExpr addrExpr =
-                new BinaryExpr(
-                        base,
-                        new IntegerLiteralExpr(String.valueOf((int) offset)),
-                        BinaryExpr.Operator.PLUS);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
         CastExpr byteValue = new CastExpr(PrimitiveType.byteType(), value);
         MethodCallExpr call = new MethodCallExpr();
         call.setScope(new NameExpr("memory"));
@@ -1416,12 +1438,7 @@ final class SourceCodeEmitter {
         com.github.javaparser.ast.expr.Expression value = stack.pop();
         com.github.javaparser.ast.expr.Expression base = stack.pop();
         long offset = ins.operand(1);
-        // Inline memoryWriteShort: memory.writeShort((int) (base + offset), (short) value)
-        BinaryExpr addrExpr =
-                new BinaryExpr(
-                        base,
-                        new IntegerLiteralExpr(String.valueOf((int) offset)),
-                        BinaryExpr.Operator.PLUS);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
         CastExpr shortValue = new CastExpr(PrimitiveType.shortType(), value);
         MethodCallExpr call = new MethodCallExpr();
         call.setScope(new NameExpr("memory"));
@@ -1435,6 +1452,208 @@ final class SourceCodeEmitter {
             CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
         long value = ins.operand(0);
         stack.push(new com.github.javaparser.ast.expr.LongLiteralExpr(String.valueOf(value) + "L"));
+    }
+
+    public static void I64_LOAD(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression base = stack.pop();
+        long offset = ins.operand(1);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(new NameExpr("memory"));
+        call.setName("readLong");
+        call.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
+        stack.push(call);
+    }
+
+    public static void I64_LOAD8_S(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        I32_LOAD8_S(ins, block, stack);
+        com.github.javaparser.ast.expr.Expression value = stack.pop();
+        stack.push(new CastExpr(PrimitiveType.longType(), value));
+    }
+
+    public static void I64_LOAD8_U(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        I32_LOAD8_U(ins, block, stack);
+        com.github.javaparser.ast.expr.Expression value = stack.pop();
+        stack.push(new CastExpr(PrimitiveType.longType(), value));
+    }
+
+    public static void I64_LOAD16_S(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        I32_LOAD16_S(ins, block, stack);
+        com.github.javaparser.ast.expr.Expression value = stack.pop();
+        stack.push(new CastExpr(PrimitiveType.longType(), value));
+    }
+
+    public static void I64_LOAD16_U(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        I32_LOAD16_U(ins, block, stack);
+        com.github.javaparser.ast.expr.Expression value = stack.pop();
+        stack.push(new CastExpr(PrimitiveType.longType(), value));
+    }
+
+    public static void I64_LOAD32_S(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        I32_LOAD(ins, block, stack);
+        com.github.javaparser.ast.expr.Expression value = stack.pop();
+        stack.push(new CastExpr(PrimitiveType.longType(), value));
+    }
+
+    public static void I64_LOAD32_U(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        I32_LOAD(ins, block, stack);
+        com.github.javaparser.ast.expr.Expression value = stack.pop();
+        BinaryExpr masked =
+                new BinaryExpr(
+                        new CastExpr(PrimitiveType.longType(), value),
+                        new com.github.javaparser.ast.expr.LongLiteralExpr("0xFFFFFFFFL"),
+                        BinaryExpr.Operator.BINARY_AND);
+        stack.push(masked);
+    }
+
+    public static void I64_STORE(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression value = stack.pop();
+        com.github.javaparser.ast.expr.Expression base = stack.pop();
+        long offset = ins.operand(1);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(new NameExpr("memory"));
+        call.setName("writeLong");
+        call.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
+        call.addArgument(new CastExpr(PrimitiveType.longType(), value));
+        block.addStatement(new ExpressionStmt(call));
+    }
+
+    public static void I64_STORE8(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression value = stack.pop();
+        com.github.javaparser.ast.expr.Expression base = stack.pop();
+        long offset = ins.operand(1);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
+        CastExpr intValue = new CastExpr(PrimitiveType.intType(), value);
+        CastExpr byteValue = new CastExpr(PrimitiveType.byteType(), intValue);
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(new NameExpr("memory"));
+        call.setName("writeByte");
+        call.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
+        call.addArgument(byteValue);
+        block.addStatement(new ExpressionStmt(call));
+    }
+
+    public static void I64_STORE16(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression value = stack.pop();
+        com.github.javaparser.ast.expr.Expression base = stack.pop();
+        long offset = ins.operand(1);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
+        CastExpr intValue = new CastExpr(PrimitiveType.intType(), value);
+        CastExpr shortValue = new CastExpr(PrimitiveType.shortType(), intValue);
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(new NameExpr("memory"));
+        call.setName("writeShort");
+        call.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
+        call.addArgument(shortValue);
+        block.addStatement(new ExpressionStmt(call));
+    }
+
+    public static void I64_STORE32(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression value = stack.pop();
+        com.github.javaparser.ast.expr.Expression base = stack.pop();
+        long offset = ins.operand(1);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
+        CastExpr intValue = new CastExpr(PrimitiveType.intType(), value);
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(new NameExpr("memory"));
+        call.setName("writeI32");
+        call.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
+        call.addArgument(intValue);
+        block.addStatement(new ExpressionStmt(call));
+    }
+
+    public static void F32_LOAD(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression base = stack.pop();
+        long offset = ins.operand(1);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(new NameExpr("memory"));
+        call.setName("readFloat");
+        call.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
+        stack.push(call);
+    }
+
+    public static void F32_STORE(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression value = stack.pop();
+        com.github.javaparser.ast.expr.Expression base = stack.pop();
+        long offset = ins.operand(1);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(new NameExpr("memory"));
+        call.setName("writeF32");
+        call.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
+        call.addArgument(new CastExpr(PrimitiveType.floatType(), value));
+        block.addStatement(new ExpressionStmt(call));
+    }
+
+    public static void F64_LOAD(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression base = stack.pop();
+        long offset = ins.operand(1);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(new NameExpr("memory"));
+        call.setName("readDouble");
+        call.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
+        stack.push(call);
+    }
+
+    public static void F64_STORE(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression value = stack.pop();
+        com.github.javaparser.ast.expr.Expression base = stack.pop();
+        long offset = ins.operand(1);
+        com.github.javaparser.ast.expr.Expression addrExpr = getAddrExpr(base, (int) offset);
+        MethodCallExpr call = new MethodCallExpr();
+        call.setScope(new NameExpr("memory"));
+        call.setName("writeF64");
+        call.addArgument(new CastExpr(PrimitiveType.intType(), addrExpr));
+        call.addArgument(new CastExpr(PrimitiveType.doubleType(), value));
+        block.addStatement(new ExpressionStmt(call));
     }
 
     public static void GLOBAL_GET(
