@@ -80,20 +80,25 @@ public class TestModule {
      * <p>Example: "/i32/spec.0.wasm" -> "com.dylibso.chicory.gen.i32.CompiledMachine_spec_0"
      */
     private static String extractMangledClassName(String classpath) {
-        if (classpath.startsWith("/") && classpath.length() > 1) {
-            String withoutLeadingSlash = classpath.substring(1);
-            int firstSlash = withoutLeadingSlash.indexOf('/');
-            int lastSlash = withoutLeadingSlash.lastIndexOf('/');
-            int lastDot = withoutLeadingSlash.lastIndexOf('.');
-            if (firstSlash > 0 && lastDot > lastSlash && lastDot > 0) {
-                // "/i32/spec.0.wasm" -> moduleDir "i32", filename "spec.0"
-                String moduleDir = withoutLeadingSlash.substring(0, firstSlash);
-                String filename = withoutLeadingSlash.substring(lastSlash + 1, lastDot);
-                String suffix = filename.replace('.', '_').replace('-', '_');
-                return "com.dylibso.chicory.gen." + moduleDir + ".CompiledMachine_" + suffix;
-            }
+        if (!classpath.startsWith("/") || classpath.length() <= 1) {
+            return null;
         }
-        return null;
+
+        String withoutLeadingSlash = classpath.substring(1);
+        int firstSlash = withoutLeadingSlash.indexOf('/');
+        int lastSlash = withoutLeadingSlash.lastIndexOf('/');
+        int lastDot = withoutLeadingSlash.lastIndexOf('.');
+        if (firstSlash <= 0 || lastDot <= lastSlash || lastDot <= 0) {
+            return null;
+        }
+
+        String moduleDir = withoutLeadingSlash.substring(0, firstSlash);
+        String filename = withoutLeadingSlash.substring(lastSlash + 1, lastDot);
+
+        String safeModuleDir = moduleDir + "_";
+
+        String suffix = filename.replace('.', '_').replace('-', '_');
+        return "com.dylibso.chicory.gen." + safeModuleDir + ".CompiledMachine_" + suffix;
     }
 
     public TestModule(WasmModule module, String mangledClassName) {
