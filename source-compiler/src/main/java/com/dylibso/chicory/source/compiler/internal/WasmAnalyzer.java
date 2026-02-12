@@ -117,6 +117,14 @@ final class WasmAnalyzer {
                         exitBlockDepth = -1;
                         exitTargetLabel = -1;
                         // Fall through to normal END processing
+                    } else if (!scopeStack.isEmpty()
+                            && (scopeStack.peek().opcode == OpCode.BLOCK
+                                    || scopeStack.peek().opcode == OpCode.LOOP)) {
+                        // Block/loop scope: dead code inside doesn't make code
+                        // after the scope dead (there may be alternate paths via br_if)
+                        exitBlockDepth = -1;
+                        exitTargetLabel = -1;
+                        // Fall through to normal END processing
                     } else {
                         // Intermediate scope: pop and emit SCOPE_EXIT, stay in dead code
                         ScopeInfo scope = scopeStack.pop();
@@ -325,12 +333,17 @@ final class WasmAnalyzer {
                             break;
                         }
 
-                        // Multi-entry: emit SWITCH for now (not yet fully supported)
-                        long[] depths = new long[entryCount];
+                        // Multi-entry: resolve depths to labels
+                        // Operands: [label0, isLoop0, label1, isLoop1, ...]
+                        // Last pair is the default target
+                        long[] switchOperands = new long[entryCount * 2];
                         for (int i = 0; i < entryCount; i++) {
-                            depths[i] = ins.operand(i);
+                            int depth = (int) ins.operand(i);
+                            ScopeInfo target = getScopeAtDepth(scopeStack, depth);
+                            switchOperands[i * 2] = target.label;
+                            switchOperands[i * 2 + 1] = (target.opcode == OpCode.LOOP) ? 1 : 0;
                         }
-                        result.add(new CompilerInstruction(CompilerOpCode.SWITCH, depths));
+                        result.add(new CompilerInstruction(CompilerOpCode.SWITCH, switchOperands));
                         break;
                     }
 

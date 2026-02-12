@@ -50,13 +50,20 @@ The source compiler uses **structured Java control flow** that mirrors WASM's st
 - **SourceCodeEmitter** maps these to Java:
   - `BLOCK_ENTER` → `label_N: { ... }`
   - `LOOP_ENTER` → `label_N: while(true) { ... }`
-  - `IF_ENTER` → `if (cond != 0) { ... }`
+  - `IF_ENTER` → `label_N: { if (cond != 0) { ... } }` (wrapped in labeled block)
   - `ELSE_ENTER` → `} else { ... }`
   - `SCOPE_EXIT` → close block, assign results, push result vars to expression stack
   - `BREAK` → assign results + `break label_N;`
-  - `CONTINUE` → interrupt check + `continue label_N;`
+  - `BREAK_IF` → peek at stack values (no modification), emit `if (cond != 0) { assign results; break label_N; }`. Fall-through path keeps stack unchanged.
+  - `CONTINUE` → assign loop params + interrupt check + `continue label_N;`
+  - `CONTINUE_IF` → peek at stack values (reversed order), emit `if (cond != 0) { assign params with temps; continue label_N; }`. Fall-through path keeps stack unchanged.
 - **Block results**: blocks with return types declare result variables at the method body level (so they're accessible regardless of nesting depth). Result values are assigned on break/exit and pushed onto the expression stack after SCOPE_EXIT.
-- **Dead code tracking**: the analyzer uses `exitBlockDepth` + `exitTargetLabel` to skip instructions after unconditional branches. `exitTargetLabel` tracks which scope the dead code should stop at, handling `br N` where N > 0.
+- **If blocks**: wrapped in `LabeledStmt` + `BlockStmt` (like BLOCK_ENTER) so `break label_N` works. If-param variables declared with default values at function level, assigned inline. For if-without-else with params, an else branch is synthesized to pass params through to results.
+- **Loop param assignment**: uses `assignParamsWithTemps` — single param: direct assign; multiple params: uses temp variables to avoid the "swap problem" where sequential assignments read already-modified values.
+- **Conditional branches (BREAK_IF / CONTINUE_IF)**: use a **peek-based approach** — read values from the expression stack via `stack.iterator()` without popping. The iterator returns top-to-bottom, so for loop params the order is reversed (`paramVals[paramCount - 1 - i]`). The stack is left unchanged for the fall-through path.
+- **Dead code tracking**: the analyzer uses `exitBlockDepth` + `exitTargetLabel` to skip instructions after unconditional branches. `exitTargetLabel` tracks which scope the dead code should stop at, handling `br N` where N > 0. For BLOCK/LOOP scopes, dead code mode is cleared on END (alternate paths via br_if make code after the block reachable).
+- **Terminal detection for if/else**: an if/else is terminal for its parent only if BOTH branches terminate AND no break targets the if's own label. An if-without-else is never terminal.
+- **Implicit return**: added at end of `generateFunctionMethod` for functions whose body doesn't end with return/throw but has stack values on the expression stack.
 - **Function calls**: `instance.getMachine().call(funcId, args)` with boxing/unboxing via `SourceCompilerUtil.boxJvmToLong`/`unboxLongToJvm`. CALL and CALL_INDIRECT share a common `emitCallWithArgs` helper.
 
 ### Key implementation details
@@ -89,12 +96,14 @@ The source compiler uses **structured Java control flow** that mirrors WASM's st
 
 ### Current status
 
-**Test results** (13791/13798 pass, 7 errors, 28 skipped):
+**Test results (14,382 tests, 0 failures, 14 errors, 28 skipped):**
 
-| Test Suite | Pass | Fail | Notes |
+| Test Suite | Pass | Errors | Notes |
 |---|---|---|---|
 | SpecV1AddressTest | 232/260 | 0 | 28 skipped (trap behavior) |
 | SpecV1BlockTest | 220/223 | 3 | br_table not implemented |
+| SpecV1BrTest | 97/97 | 0 | |
+| SpecV1BrIfTest | 118/118 | 0 | |
 | SpecV1ConstTest | 778/778 | 0 | |
 | SpecV1F32Test | 2514/2514 | 0 | |
 | SpecV1F32BitwiseTest | 364/364 | 0 | |
@@ -102,30 +111,48 @@ The source compiler uses **structured Java control flow** that mirrors WASM's st
 | SpecV1F64Test | 2514/2514 | 0 | |
 | SpecV1F64BitwiseTest | 364/364 | 0 | |
 | SpecV1F64CmpTest | 2407/2407 | 0 | |
+| SpecV1FacTest | 8/8 | 0 | |
 | SpecV1FloatLiteralsTest | 179/179 | 0 | |
 | SpecV1FloatMemoryTest | 90/90 | 0 | |
 | SpecV1FloatMiscTest | 471/471 | 0 | |
 | SpecV1ForwardTest | 5/5 | 0 | |
 | SpecV1I32Test | 460/460 | 0 | |
 | SpecV1I64Test | 416/416 | 0 | |
+| SpecV1IfTest | 237/241 | 4 | br_table not implemented |
 | SpecV1IntExprsTest | 108/108 | 0 | |
 | SpecV1IntLiteralsTest | 51/51 | 0 | |
 | SpecV1LocalGetTest | 35/36 | 1 | br_table not implemented |
 | SpecV1LocalSetTest | 53/53 | 0 | |
 | SpecV1LocalTeeTest | 94/97 | 3 | br_table not implemented |
+| SpecV1LoopTest | 117/120 | 3 | br_table not implemented |
 | SourceCompilerTest | 1/1 | 0 | |
 
-**All 7 remaining failures are from multi-entry `br_table` (SWITCH opcode), which throws "br_table not yet supported".**
+**All 14 remaining errors are from multi-entry `br_table` (SWITCH opcode), which throws "br_table not yet supported".**
 
 ### What's not yet implemented
 
 - **Multi-entry `br_table`**: the analyzer emits a `SWITCH` opcode for multi-entry br_table, but the emitter throws. Single-entry br_table (just a default label) works via BREAK/CONTINUE.
 - **More spec tests**: only a subset of spec tests are currently targeted. Adding more will likely surface missing opcodes or edge cases.
 
-### Known issues in excluded wast files
+### Remaining spec tests to add
 
-- **`fac.wast`**: source generation fails with `NoSuchElementException` (stack underflow) in `emitCallWithArgs`. Likely related to multi-return function types `(result i64 i64)` / `(result i64 i64 i64)`. The CALL helper pops more arguments than are on the expression stack. Needs investigation of how multi-return functions interact with the expression stack, possibly the recursive `fac-rec` function with `if (result i64)`.
-- **`float_exprs.wast`**: source generation succeeds but causes an **infinite loop** at runtime. The generated `while(true)` loop likely has a missing `break` or `continue` path. Needs investigation of the specific function that loops.
+These are still in `excludedWasts` and should be added one by one:
+- `br_table.wast` — requires implementing br_table (SWITCH opcode)
+- `call.wast` — function calls
+- `call_indirect.wast` — indirect calls
+- `labels.wast` — label tests
+- `nop.wast` — nop instruction
+- `return.wast` — return tests
+- `select.wast` — select instruction
+- `unwind.wast` — stack unwinding
+- `func.wast` — function definitions
+- `global.wast` — global variables
+- `memory.wast` / `memory_grow.wast` — memory operations
+- `load.wast` / `store.wast` — load/store operations
+- `conversions.wast` — type conversions
+- `endianness.wast`
+- `left-to-right.wast`
+- `float_exprs.wast`
 
 ### Workflow for future porting sessions
 
@@ -158,6 +185,11 @@ The source compiler uses **structured Java control flow** that mirrors WASM's st
     - Generated source exists under `target/source-dump/...`.
     - The specific spec test passes (at least on the **happy path**, even if trap/error messages differ slightly).
   - If a test causes infinite loop, move it back to `excludedWasts` and note it in "Known issues" above.
+
+- **5. Compare with ASM compiler output**
+  - Compile the wasm with the ASM compiler: `/home/andreatp/workspace/chicory7/build-time-compiler-cli/target/chicory-compiler <wasm-file>`
+  - Decompile with javap: `javap -c -p <class-file>`
+  - Compare the JVM bytecode behavior with the generated Java source to debug discrepancies.
 
 ### Long-term objective
 

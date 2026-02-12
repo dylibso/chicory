@@ -95,7 +95,7 @@ public class TestModule {
         String moduleDir = withoutLeadingSlash.substring(0, firstSlash);
         String filename = withoutLeadingSlash.substring(lastSlash + 1, lastDot);
 
-        String safeModuleDir = moduleDir + "_";
+        String safeModuleDir = moduleDir.replace('-', '_') + "_";
 
         String suffix = filename.replace('.', '_').replace('-', '_');
         return "com.dylibso.chicory.gen." + safeModuleDir + ".CompiledMachine_" + suffix;
