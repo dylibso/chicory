@@ -43,6 +43,7 @@ final class WasmAnalyzer {
         final OpCode opcode; // BLOCK, LOOP, IF, or NOP (function scope)
         final FunctionType blockType;
         final Instruction scopeInstruction;
+        boolean elseEncountered; // tracks whether ELSE was seen for IF scopes
 
         ScopeInfo(int label, OpCode opcode, FunctionType blockType, Instruction scopeInstruction) {
             this.label = label;
@@ -107,6 +108,15 @@ final class WasmAnalyzer {
                         exitBlockDepth = -1;
                         exitTargetLabel = -1;
                         // Fall through to normal END processing
+                    } else if (!scopeStack.isEmpty()
+                            && scopeStack.peek().opcode == OpCode.IF
+                            && !scopeStack.peek().elseEncountered) {
+                        // IF without ELSE: implicit else path makes code after
+                        // the if reachable, so clear dead code and fall through
+                        // to normal END processing
+                        exitBlockDepth = -1;
+                        exitTargetLabel = -1;
+                        // Fall through to normal END processing
                     } else {
                         // Intermediate scope: pop and emit SCOPE_EXIT, stay in dead code
                         ScopeInfo scope = scopeStack.pop();
@@ -120,6 +130,9 @@ final class WasmAnalyzer {
                     }
                 } else {
                     // ELSE: clear dead code mode, fall through
+                    if (!scopeStack.isEmpty() && scopeStack.peek().opcode == OpCode.IF) {
+                        scopeStack.peek().elseEncountered = true;
+                    }
                     exitBlockDepth = -1;
                     exitTargetLabel = -1;
                 }
@@ -186,6 +199,9 @@ final class WasmAnalyzer {
                     }
 
                 case ELSE:
+                    if (!scopeStack.isEmpty() && scopeStack.peek().opcode == OpCode.IF) {
+                        scopeStack.peek().elseEncountered = true;
+                    }
                     stack.popTypes();
                     result.add(new CompilerInstruction(CompilerOpCode.ELSE_ENTER));
                     break;

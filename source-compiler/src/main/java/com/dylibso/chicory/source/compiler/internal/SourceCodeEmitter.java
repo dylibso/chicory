@@ -55,14 +55,26 @@ final class SourceCodeEmitter {
         final BlockStmt block;
         final String[] resultVarNames;
         final IfStmt ifStmt; // only for "if" scopes
+        final String[] paramVarNames; // only for "loop" scopes with params
 
         EmitterScope(
                 int label, String type, BlockStmt block, String[] resultVarNames, IfStmt ifStmt) {
+            this(label, type, block, resultVarNames, ifStmt, null);
+        }
+
+        EmitterScope(
+                int label,
+                String type,
+                BlockStmt block,
+                String[] resultVarNames,
+                IfStmt ifStmt,
+                String[] paramVarNames) {
             this.label = label;
             this.type = type;
             this.block = block;
             this.resultVarNames = resultVarNames;
             this.ifStmt = ifStmt;
+            this.paramVarNames = paramVarNames;
         }
     }
 
@@ -289,7 +301,27 @@ final class SourceCodeEmitter {
         defaultEntry.getStatements().add(new ThrowStmt(exception));
         switchStmt.getEntries().add(defaultEntry);
 
-        callBody.addStatement(switchStmt);
+        // Wrap in try-catch for StackOverflowError (matching ASM compiler's WasmMachine.call)
+        com.github.javaparser.ast.stmt.TryStmt tryStmt =
+                new com.github.javaparser.ast.stmt.TryStmt();
+        BlockStmt tryBlock = new BlockStmt();
+        tryBlock.addStatement(switchStmt);
+        tryStmt.setTryBlock(tryBlock);
+
+        com.github.javaparser.ast.stmt.CatchClause catchClause =
+                new com.github.javaparser.ast.stmt.CatchClause();
+        catchClause.setParameter(
+                new com.github.javaparser.ast.body.Parameter(
+                        StaticJavaParser.parseClassOrInterfaceType("StackOverflowError"), "e"));
+        BlockStmt catchBlock = new BlockStmt();
+        catchBlock.addStatement(
+                StaticJavaParser.parseStatement(
+                        "throw new com.dylibso.chicory.wasm.ChicoryException("
+                                + "\"call stack exhausted\", e);"));
+        catchClause.setBody(catchBlock);
+        tryStmt.getCatchClauses().add(catchClause);
+
+        callBody.addStatement(tryStmt);
     }
 
     /**
@@ -418,6 +450,9 @@ final class SourceCodeEmitter {
         // Stack of expressions - represents the Java operand stack
         Deque<com.github.javaparser.ast.expr.Expression> stack = new ArrayDeque<>();
 
+        // Counter for generating unique call variable names (callArgs_0, callResult_0, ...)
+        int[] callIdx = {0};
+
         // Emit instructions using structured control flow
         for (CompilerInstruction ins : instructions) {
             BlockStmt currentBlock = scopeStack.isEmpty() ? block : scopeStack.peek().block;
@@ -461,13 +496,47 @@ final class SourceCodeEmitter {
                 case LOOP_ENTER:
                     {
                         int label = (int) ins.operand(0);
+                        int paramCount = ins.operandCount() - 1;
+
+                        // Declare loop param variables and assign initial values
+                        String[] loopParamVars = null;
+                        if (paramCount > 0) {
+                            loopParamVars = new String[paramCount];
+                            // Pop initial values (right-to-left)
+                            com.github.javaparser.ast.expr.Expression[] initVals =
+                                    new com.github.javaparser.ast.expr.Expression[paramCount];
+                            for (int p = paramCount - 1; p >= 0; p--) {
+                                initVals[p] = stack.pop();
+                            }
+                            // Declare and assign
+                            for (int p = 0; p < paramCount; p++) {
+                                long typeId = ins.operand(p + 1);
+                                String varName = "loop_" + label + "_param_" + p;
+                                loopParamVars[p] = varName;
+                                currentBlock.addStatement(
+                                        StaticJavaParser.parseStatement(
+                                                javaTypeNameForId(typeId)
+                                                        + " "
+                                                        + varName
+                                                        + " = "
+                                                        + initVals[p]
+                                                        + ";"));
+                            }
+                            // Push param variable references onto expression stack
+                            for (String pv : loopParamVars) {
+                                stack.push(new NameExpr(pv));
+                            }
+                        }
+
                         BlockStmt loopBody = new BlockStmt();
                         WhileStmt whileStmt = new WhileStmt(new BooleanLiteralExpr(true), loopBody);
                         LabeledStmt labeledStmt = new LabeledStmt();
                         labeledStmt.setLabel(new SimpleName("label_" + label));
                         labeledStmt.setStatement(whileStmt);
                         currentBlock.addStatement(labeledStmt);
-                        scopeStack.push(new EmitterScope(label, "loop", loopBody, null, null));
+                        scopeStack.push(
+                                new EmitterScope(
+                                        label, "loop", loopBody, null, null, loopParamVars));
                         break;
                     }
 
@@ -588,6 +657,8 @@ final class SourceCodeEmitter {
                 case CONTINUE:
                     {
                         int label = (int) ins.operand(0);
+                        EmitterScope loopScope = findScope(scopeStack, label);
+                        assignLoopParams(loopScope, currentBlock, stack);
                         emitInterruptCheck(currentBlock);
                         ContinueStmt continueStmt = new ContinueStmt();
                         continueStmt.setLabel(new SimpleName("label_" + label));
@@ -606,6 +677,8 @@ final class SourceCodeEmitter {
                             applyDropKeep(ins, 1, stack);
                         }
 
+                        EmitterScope loopScope = findScope(scopeStack, label);
+                        emitConditionalLoopParamAssign(loopScope, thenBlock, currentBlock, stack);
                         emitInterruptCheck(thenBlock);
                         ContinueStmt continueStmt = new ContinueStmt();
                         continueStmt.setLabel(new SimpleName("label_" + label));
@@ -632,7 +705,7 @@ final class SourceCodeEmitter {
                     break;
 
                 case DROP:
-                    DROP(ins, stack);
+                    DROP(ins, currentBlock, stack);
                     break;
 
                 case DROP_KEEP:
@@ -659,7 +732,8 @@ final class SourceCodeEmitter {
                             functionType,
                             allFunctionTypes,
                             typeSectionTypes,
-                            globalTypes);
+                            globalTypes,
+                            callIdx);
                     break;
             }
         }
@@ -752,6 +826,80 @@ final class SourceCodeEmitter {
                                 new AssignExpr(
                                         new NameExpr(targetScope.resultVarNames[r]),
                                         new NameExpr(temps[r].toString()),
+                                        AssignExpr.Operator.ASSIGN)));
+            }
+        }
+    }
+
+    /** Assign loop param values from the expression stack (for unconditional CONTINUE). */
+    private static void assignLoopParams(
+            EmitterScope loopScope,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        if (loopScope == null || loopScope.paramVarNames == null) {
+            return;
+        }
+        int paramCount = loopScope.paramVarNames.length;
+        // Pop values right-to-left, then assign left-to-right
+        com.github.javaparser.ast.expr.Expression[] vals =
+                new com.github.javaparser.ast.expr.Expression[paramCount];
+        for (int p = paramCount - 1; p >= 0; p--) {
+            if (!stack.isEmpty()) {
+                vals[p] = stack.pop();
+            }
+        }
+        for (int p = 0; p < paramCount; p++) {
+            if (vals[p] != null) {
+                block.addStatement(
+                        new ExpressionStmt(
+                                new AssignExpr(
+                                        new NameExpr(loopScope.paramVarNames[p]),
+                                        vals[p],
+                                        AssignExpr.Operator.ASSIGN)));
+            }
+        }
+    }
+
+    /**
+     * Assign loop param values for conditional CONTINUE_IF.
+     * Materializes values to temps so both taken/not-taken paths work correctly.
+     */
+    private static void emitConditionalLoopParamAssign(
+            EmitterScope loopScope,
+            BlockStmt thenBlock,
+            BlockStmt currentBlock,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        if (loopScope == null || loopScope.paramVarNames == null) {
+            return;
+        }
+        int paramCount = loopScope.paramVarNames.length;
+        // Materialize to temp vars for both paths
+        com.github.javaparser.ast.expr.Expression[] temps =
+                new com.github.javaparser.ast.expr.Expression[paramCount];
+        for (int p = paramCount - 1; p >= 0; p--) {
+            if (!stack.isEmpty()) {
+                com.github.javaparser.ast.expr.Expression val = stack.pop();
+                String tempName = "contIfTemp_" + loopScope.label + "_" + p;
+                currentBlock.addStatement(
+                        StaticJavaParser.parseStatement(
+                                "var " + tempName + " = " + val.toString() + ";"));
+                temps[p] = new NameExpr(tempName);
+            }
+        }
+        // Push temps back for fall-through path
+        for (int p = 0; p < paramCount; p++) {
+            if (temps[p] != null) {
+                stack.push(temps[p]);
+            }
+        }
+        // Assign temps to param vars inside the if block
+        for (int p = 0; p < paramCount; p++) {
+            if (temps[p] != null) {
+                thenBlock.addStatement(
+                        new ExpressionStmt(
+                                new AssignExpr(
+                                        new NameExpr(loopScope.paramVarNames[p]),
+                                        new NameExpr(temps[p].toString()),
                                         AssignExpr.Operator.ASSIGN)));
             }
         }
@@ -851,10 +999,19 @@ final class SourceCodeEmitter {
         int totalTypes = ins.operandCount() - offset - 1;
         int keep = totalTypes - drop;
         if (drop > 0) {
-            int available = stack.size();
-            int toDropOnStack = Math.min(drop, Math.max(0, available - keep));
-            for (int d = 0; d < toDropOnStack; d++) {
+            // Save the top 'keep' values
+            com.github.javaparser.ast.expr.Expression[] saved =
+                    new com.github.javaparser.ast.expr.Expression[keep];
+            for (int i = 0; i < keep; i++) {
+                saved[i] = stack.pop();
+            }
+            // Drop the next 'drop' values
+            for (int i = 0; i < drop && !stack.isEmpty(); i++) {
                 stack.pop();
+            }
+            // Restore the saved values (in reverse order so top stays on top)
+            for (int i = keep - 1; i >= 0; i--) {
+                stack.push(saved[i]);
             }
         }
     }
@@ -956,7 +1113,8 @@ final class SourceCodeEmitter {
             FunctionType functionType,
             List<FunctionType> allFunctionTypes,
             FunctionType[] typeSectionTypes,
-            List<ValType> globalTypes) {
+            List<ValType> globalTypes,
+            int[] callIdx) {
         CompilerOpCode op = ins.opcode();
         switch (op) {
             case I32_CONST:
@@ -1197,10 +1355,10 @@ final class SourceCodeEmitter {
                 LOCAL_TEE(ins, block, stack, localVarNames);
                 break;
             case CALL:
-                CALL(ins, block, stack, allFunctionTypes);
+                CALL(ins, block, stack, allFunctionTypes, callIdx);
                 break;
             case CALL_INDIRECT:
-                CALL_INDIRECT(ins, block, stack, typeSectionTypes);
+                CALL_INDIRECT(ins, block, stack, typeSectionTypes, callIdx);
                 break;
             case RETURN:
                 RETURN(ins, block, stack, functionType);
@@ -1434,7 +1592,7 @@ final class SourceCodeEmitter {
                 GLOBAL_SET(ins, block, stack, globalTypes);
                 break;
             case DROP:
-                DROP(ins, stack);
+                DROP(ins, block, stack);
                 break;
             case DROP_KEEP:
                 DROP_KEEP(ins, stack);
@@ -1447,6 +1605,18 @@ final class SourceCodeEmitter {
                 break;
             case MEMORY_SIZE:
                 MEMORY_SIZE(ins, stack);
+                break;
+            case MEMORY_COPY:
+                MEMORY_COPY(ins, block, stack);
+                break;
+            case MEMORY_FILL:
+                MEMORY_FILL(ins, block, stack);
+                break;
+            case MEMORY_INIT:
+                MEMORY_INIT(ins, block, stack);
+                break;
+            case DATA_DROP:
+                DATA_DROP(ins, block);
                 break;
             default:
                 throw new IllegalArgumentException("Unsupported opcode: " + op);
@@ -2254,10 +2424,11 @@ final class SourceCodeEmitter {
             CompilerInstruction ins,
             BlockStmt block,
             Deque<com.github.javaparser.ast.expr.Expression> stack,
-            List<FunctionType> allFunctionTypes) {
+            List<FunctionType> allFunctionTypes,
+            int[] callIdx) {
         int funcId = (int) ins.operand(0);
         FunctionType calledFunctionType = allFunctionTypes.get(funcId);
-        emitCallWithArgs(block, stack, calledFunctionType, String.valueOf(funcId));
+        emitCallWithArgs(block, stack, calledFunctionType, String.valueOf(funcId), callIdx);
     }
 
     /**
@@ -2268,7 +2439,8 @@ final class SourceCodeEmitter {
             CompilerInstruction ins,
             BlockStmt block,
             Deque<com.github.javaparser.ast.expr.Expression> stack,
-            FunctionType[] typeSectionTypes) {
+            FunctionType[] typeSectionTypes,
+            int[] callIdx) {
         int typeId = (int) ins.operand(0);
         int tableIdx = (int) ins.operand(1);
         FunctionType calledFunctionType = typeSectionTypes[typeId];
@@ -2276,10 +2448,13 @@ final class SourceCodeEmitter {
         // Pop the table entry index (topmost on the expression stack)
         com.github.javaparser.ast.expr.Expression entryIdx = stack.pop();
 
+        int idx = callIdx[0];
         // Resolve function ID from table
         block.addStatement(
                 StaticJavaParser.parseStatement(
-                        "int ciFuncId = instance.table("
+                        "int ciFuncId_"
+                                + idx
+                                + " = instance.table("
                                 + tableIdx
                                 + ").requiredRef((int)("
                                 + entryIdx
@@ -2288,14 +2463,16 @@ final class SourceCodeEmitter {
         // Type check (mirrors Shaded.callIndirect)
         block.addStatement(
                 StaticJavaParser.parseStatement(
-                        "if (!instance.type(instance.functionType(ciFuncId))"
+                        "if (!instance.type(instance.functionType(ciFuncId_"
+                                + idx
+                                + "))"
                                 + ".typesMatch(instance.type("
                                 + typeId
                                 + "))) { throw new"
                                 + " com.dylibso.chicory.wasm.ChicoryException("
                                 + "\"indirect call type mismatch\"); }"));
 
-        emitCallWithArgs(block, stack, calledFunctionType, "ciFuncId");
+        emitCallWithArgs(block, stack, calledFunctionType, "ciFuncId_" + idx, callIdx);
     }
 
     /**
@@ -2306,26 +2483,30 @@ final class SourceCodeEmitter {
             BlockStmt block,
             Deque<com.github.javaparser.ast.expr.Expression> stack,
             FunctionType calledFunctionType,
-            String funcIdExpr) {
+            String funcIdExpr,
+            int[] callIdx) {
         int paramCount = calledFunctionType.params().size();
+        int idx = callIdx[0]++;
 
         // Box args from the expression stack
         String argsExpr;
         if (paramCount == 0) {
             argsExpr = "new long[0]";
         } else {
+            String argsVar = "callArgs_" + idx;
             block.addStatement(
                     StaticJavaParser.parseStatement(
-                            "long[] callArgs = new long[" + paramCount + "];"));
+                            "long[] " + argsVar + " = new long[" + paramCount + "];"));
             for (int i = paramCount - 1; i >= 0; i--) {
                 com.github.javaparser.ast.expr.Expression arg = stack.pop();
                 String boxExpr =
                         SourceCompilerUtil.boxJvmToLong(
                                 arg.toString(), calledFunctionType.params().get(i));
                 block.addStatement(
-                        StaticJavaParser.parseStatement("callArgs[" + i + "] = " + boxExpr + ";"));
+                        StaticJavaParser.parseStatement(
+                                argsVar + "[" + i + "] = " + boxExpr + ";"));
             }
-            argsExpr = "callArgs";
+            argsExpr = argsVar;
         }
 
         // Dispatch via Machine interface (works in static methods)
@@ -2335,14 +2516,26 @@ final class SourceCodeEmitter {
         if (calledFunctionType.returns().isEmpty()) {
             block.addStatement(StaticJavaParser.parseStatement(callExpr + ";"));
         } else if (calledFunctionType.returns().size() == 1) {
+            String resultVar = "callResult_" + idx;
             block.addStatement(
-                    StaticJavaParser.parseStatement("long[] callResult = " + callExpr + ";"));
+                    StaticJavaParser.parseStatement(
+                            "long[] " + resultVar + " = " + callExpr + ";"));
             String unboxExpr =
                     SourceCompilerUtil.unboxLongToJvm(
-                            "callResult[0]", calledFunctionType.returns().get(0));
+                            resultVar + "[0]", calledFunctionType.returns().get(0));
             stack.push(StaticJavaParser.parseExpression(unboxExpr));
         } else {
-            stack.push(StaticJavaParser.parseExpression(callExpr));
+            // Multi-return: declare result array, push one expression per return value
+            String resultVar = "callResult_" + idx;
+            block.addStatement(
+                    StaticJavaParser.parseStatement(
+                            "long[] " + resultVar + " = " + callExpr + ";"));
+            for (int i = 0; i < calledFunctionType.returns().size(); i++) {
+                String unboxExpr =
+                        SourceCompilerUtil.unboxLongToJvm(
+                                resultVar + "[" + i + "]", calledFunctionType.returns().get(i));
+                stack.push(StaticJavaParser.parseExpression(unboxExpr));
+            }
         }
     }
 
@@ -3187,9 +3380,16 @@ final class SourceCodeEmitter {
     }
 
     public static void DROP(
-            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
         if (!stack.isEmpty()) {
-            stack.pop();
+            com.github.javaparser.ast.expr.Expression expr = stack.pop();
+            // Emit method calls as statements to preserve side effects
+            // (e.g. memory.grow() has a side effect even if the result is dropped)
+            if (expr instanceof MethodCallExpr) {
+                block.addStatement(new ExpressionStmt(expr));
+            }
         }
     }
 
@@ -3202,10 +3402,19 @@ final class SourceCodeEmitter {
             return;
         }
 
-        int available = stack.size();
-        int toDropOnStack = Math.min(drop, Math.max(0, available - keep));
-        for (int i = 0; i < toDropOnStack; i++) {
+        // Save the top 'keep' values
+        com.github.javaparser.ast.expr.Expression[] saved =
+                new com.github.javaparser.ast.expr.Expression[keep];
+        for (int i = 0; i < keep; i++) {
+            saved[i] = stack.pop();
+        }
+        // Drop the next 'drop' values
+        for (int i = 0; i < drop && !stack.isEmpty(); i++) {
             stack.pop();
+        }
+        // Restore the saved values (in reverse order so top stays on top)
+        for (int i = keep - 1; i >= 0; i--) {
+            stack.push(saved[i]);
         }
     }
 
@@ -3244,5 +3453,85 @@ final class SourceCodeEmitter {
     public static void MEMORY_SIZE(
             CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
         stack.push(StaticJavaParser.parseExpression("memory.pages()"));
+    }
+
+    /**
+     * Emit MEMORY_COPY: copy region of memory.
+     * Stack: [dst, src, size] -> []
+     * Mirrors ASM compiler: calls memory.copy(dst, src, size).
+     */
+    public static void MEMORY_COPY(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression size = stack.pop();
+        com.github.javaparser.ast.expr.Expression src = stack.pop();
+        com.github.javaparser.ast.expr.Expression dst = stack.pop();
+        block.addStatement(
+                StaticJavaParser.parseExpression(
+                        "memory.copy(" + dst + ", " + src + ", " + size + ")"));
+    }
+
+    /**
+     * Emit MEMORY_FILL: fill memory region with a byte value.
+     * Stack: [offset, val, size] -> []
+     * Mirrors ASM/interpreter: calls memory.fill((byte)val, offset, size + offset).
+     */
+    public static void MEMORY_FILL(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        com.github.javaparser.ast.expr.Expression size = stack.pop();
+        com.github.javaparser.ast.expr.Expression val = stack.pop();
+        com.github.javaparser.ast.expr.Expression offset = stack.pop();
+        block.addStatement(
+                StaticJavaParser.parseExpression(
+                        "memory.fill((byte) "
+                                + val
+                                + ", "
+                                + offset
+                                + ", "
+                                + size
+                                + " + "
+                                + offset
+                                + ")"));
+    }
+
+    /**
+     * Emit MEMORY_INIT: initialize memory from a data segment.
+     * Stack: [dst, src_offset, size] -> []
+     * operand(0) = segment index
+     * Mirrors ASM/interpreter: calls memory.initPassiveSegment(segmentId, dst, offset, size).
+     */
+    public static void MEMORY_INIT(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        int segmentId = (int) ins.operand(0);
+        com.github.javaparser.ast.expr.Expression size = stack.pop();
+        com.github.javaparser.ast.expr.Expression srcOffset = stack.pop();
+        com.github.javaparser.ast.expr.Expression dst = stack.pop();
+        block.addStatement(
+                StaticJavaParser.parseExpression(
+                        "memory.initPassiveSegment("
+                                + segmentId
+                                + ", "
+                                + dst
+                                + ", "
+                                + srcOffset
+                                + ", "
+                                + size
+                                + ")"));
+    }
+
+    /**
+     * Emit DATA_DROP: drop a data segment.
+     * Stack: [] -> []
+     * operand(0) = segment index
+     * Mirrors ASM/interpreter: calls memory.drop(segment).
+     */
+    public static void DATA_DROP(CompilerInstruction ins, BlockStmt block) {
+        int segment = (int) ins.operand(0);
+        block.addStatement(StaticJavaParser.parseExpression("memory.drop(" + segment + ")"));
     }
 }

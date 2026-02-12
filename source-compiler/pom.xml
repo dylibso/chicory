@@ -67,6 +67,7 @@
             <wast>f64.wast</wast>
             <wast>f64_bitwise.wast</wast>
             <wast>f64_cmp.wast</wast>
+            <wast>fac.wast</wast>
             <wast>float_literals.wast</wast>
             <wast>float_memory.wast</wast>
             <wast>float_misc.wast</wast>
@@ -96,7 +97,6 @@
             <wast>elem.wast</wast>
             <wast>endianness.wast</wast>
             <wast>exports.wast</wast>
-            <wast>fac.wast</wast>
             <wast>float_exprs.wast</wast>
             <wast>func.wast</wast>
             <wast>func_ptrs.wast</wast>
