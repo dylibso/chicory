@@ -188,13 +188,13 @@ final class SourceCodeEmitter {
         // Generate func_xxx methods for all functions (public static, matching ASM compiler)
         for (int funcId = 0; funcId < functionTypes.size(); funcId++) {
             FunctionType functionType = functionTypes.get(funcId);
-            List<CompilerInstruction> instructions = analyzer.analyze(funcId);
 
             if (funcId < functionImports) {
                 // Host function - delegate to instance
                 generateHostFunctionMethod(clazz, funcId, functionType);
             } else {
                 // Regular function - generate full implementation
+                List<CompilerInstruction> instructions = analyzer.analyze(funcId);
                 FunctionBody body = module.codeSection().getFunctionBody(funcId - functionImports);
                 generateFunctionMethod(
                         clazz,
@@ -1934,11 +1934,44 @@ final class SourceCodeEmitter {
             case SELECT:
                 SELECT(ins, block, stack);
                 break;
+            case REF_NULL:
+                REF_NULL(ins, stack);
+                break;
+            case REF_FUNC:
+                REF_FUNC(ins, stack);
+                break;
+            case REF_IS_NULL:
+                REF_IS_NULL(ins, stack);
+                break;
             case MEMORY_GROW:
                 MEMORY_GROW(ins, block, stack);
                 break;
             case MEMORY_SIZE:
                 MEMORY_SIZE(ins, stack);
+                break;
+            case TABLE_GET:
+                TABLE_GET(ins, stack);
+                break;
+            case TABLE_SET:
+                TABLE_SET(ins, block, stack);
+                break;
+            case TABLE_SIZE:
+                TABLE_SIZE(ins, stack);
+                break;
+            case TABLE_GROW:
+                TABLE_GROW(ins, stack);
+                break;
+            case TABLE_FILL:
+                TABLE_FILL(ins, block, stack);
+                break;
+            case TABLE_COPY:
+                TABLE_COPY(ins, block, stack);
+                break;
+            case TABLE_INIT:
+                TABLE_INIT(ins, block, stack);
+                break;
+            case ELEM_DROP:
+                ELEM_DROP(ins, block);
                 break;
             case MEMORY_COPY:
                 MEMORY_COPY(ins, block, stack);
@@ -3864,6 +3897,162 @@ final class SourceCodeEmitter {
      * Stack: [dst, src, size] -> []
      * Mirrors ASM compiler: calls memory.copy(dst, src, size).
      */
+    public static void REF_NULL(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        stack.push(
+                StaticJavaParser.parseExpression(
+                        "com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE"));
+    }
+
+    public static void REF_FUNC(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        int funcIdx = (int) ins.operand(0);
+        stack.push(new IntegerLiteralExpr(String.valueOf(funcIdx)));
+    }
+
+    public static void REF_IS_NULL(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        var ref = stack.pop();
+        stack.push(
+                new com.github.javaparser.ast.expr.EnclosedExpr(
+                        new ConditionalExpr(
+                                new BinaryExpr(
+                                        ref,
+                                        StaticJavaParser.parseExpression(
+                                                "com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE"),
+                                        BinaryExpr.Operator.EQUALS),
+                                new IntegerLiteralExpr("1"),
+                                new IntegerLiteralExpr("0"))));
+    }
+
+    public static void TABLE_GET(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        int tableIndex = (int) ins.operand(0);
+        var index = stack.pop();
+        stack.push(
+                StaticJavaParser.parseExpression(
+                        "com.dylibso.chicory.runtime.OpcodeImpl.TABLE_GET(instance, "
+                                + tableIndex
+                                + ", "
+                                + index
+                                + ")"));
+    }
+
+    public static void TABLE_SET(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        int tableIndex = (int) ins.operand(0);
+        var value = stack.pop();
+        var index = stack.pop();
+        block.addStatement(
+                StaticJavaParser.parseExpression(
+                        "instance.table("
+                                + tableIndex
+                                + ").setRef("
+                                + index
+                                + ", "
+                                + value
+                                + ", instance)"));
+    }
+
+    public static void TABLE_SIZE(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        int tableIndex = (int) ins.operand(0);
+        stack.push(StaticJavaParser.parseExpression("instance.table(" + tableIndex + ").size()"));
+    }
+
+    public static void TABLE_GROW(
+            CompilerInstruction ins, Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        int tableIndex = (int) ins.operand(0);
+        var size = stack.pop();
+        var value = stack.pop();
+        stack.push(
+                StaticJavaParser.parseExpression(
+                        "instance.table("
+                                + tableIndex
+                                + ").grow("
+                                + size
+                                + ", "
+                                + value
+                                + ", instance)"));
+    }
+
+    public static void TABLE_FILL(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        int tableIndex = (int) ins.operand(0);
+        var size = stack.pop();
+        var value = stack.pop();
+        var offset = stack.pop();
+        block.addStatement(
+                StaticJavaParser.parseExpression(
+                        "com.dylibso.chicory.runtime.OpcodeImpl.TABLE_FILL(instance, "
+                                + tableIndex
+                                + ", "
+                                + size
+                                + ", "
+                                + value
+                                + ", "
+                                + offset
+                                + ")"));
+    }
+
+    public static void TABLE_COPY(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        int dstTableIndex = (int) ins.operand(0);
+        int srcTableIndex = (int) ins.operand(1);
+        var size = stack.pop();
+        var s = stack.pop();
+        var d = stack.pop();
+        block.addStatement(
+                StaticJavaParser.parseExpression(
+                        "com.dylibso.chicory.runtime.OpcodeImpl.TABLE_COPY(instance, "
+                                + srcTableIndex
+                                + ", "
+                                + dstTableIndex
+                                + ", "
+                                + size
+                                + ", "
+                                + s
+                                + ", "
+                                + d
+                                + ")"));
+    }
+
+    public static void TABLE_INIT(
+            CompilerInstruction ins,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack) {
+        int elementidx = (int) ins.operand(0);
+        int tableidx = (int) ins.operand(1);
+        var size = stack.pop();
+        var elemidx = stack.pop();
+        var offset = stack.pop();
+        block.addStatement(
+                StaticJavaParser.parseExpression(
+                        "com.dylibso.chicory.runtime.OpcodeImpl.TABLE_INIT(instance, "
+                                + tableidx
+                                + ", "
+                                + elementidx
+                                + ", "
+                                + size
+                                + ", "
+                                + elemidx
+                                + ", "
+                                + offset
+                                + ")"));
+    }
+
+    public static void ELEM_DROP(CompilerInstruction ins, BlockStmt block) {
+        int index = (int) ins.operand(0);
+        block.addStatement(
+                StaticJavaParser.parseExpression("instance.setElement(" + index + ", null)"));
+    }
+
     public static void MEMORY_COPY(
             CompilerInstruction ins,
             BlockStmt block,

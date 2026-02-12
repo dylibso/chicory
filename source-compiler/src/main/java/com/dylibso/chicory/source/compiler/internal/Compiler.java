@@ -107,10 +107,6 @@ public final class Compiler {
         String packageName = lastDot > 0 ? className.substring(0, lastDot) : "";
         String simpleClassName = lastDot > 0 ? className.substring(lastDot + 1) : className;
 
-        if (functionTypes.isEmpty()) {
-            return "// No functions to compile";
-        }
-
         return SourceCodeEmitter.generateSource(
                 packageName, simpleClassName, module, analyzer, functionTypes, functionImports);
     }
