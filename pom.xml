@@ -59,7 +59,7 @@
     <jackson-annotations.version>2.21</jackson-annotations.version>
     <jackson-databind.version>2.21.0</jackson-databind.version>
     <javaparser.version>3.28.0</javaparser.version>
-    <zip4j.version>2.11.5</zip4j.version>
+    <zip4j.version>2.11.6</zip4j.version>
     <jmh.version>1.37</jmh.version>
     <junit.version>5.14.2</junit.version>
     <maven-plugin-annotations.version>3.15.2</maven-plugin-annotations.version>
