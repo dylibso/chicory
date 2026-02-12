@@ -496,7 +496,31 @@ final class SourceCodeEmitter {
                 case LOOP_ENTER:
                     {
                         int label = (int) ins.operand(0);
-                        int paramCount = ins.operandCount() - 1;
+                        int paramCount = (int) ins.operand(1);
+                        int returnCount = ins.operandCount() - 2 - paramCount;
+
+                        // Declare loop result variables (before the while loop)
+                        String[] resultVars = null;
+                        if (returnCount > 0) {
+                            resultVars = new String[returnCount];
+                            for (int r = 0; r < returnCount; r++) {
+                                long typeId = ins.operand(2 + paramCount + r);
+                                String varName = "block_" + label + "_result_" + r;
+                                resultVars[r] = varName;
+                                String defaultValue = defaultValueForId(typeId);
+                                int insertIdx = resultVarInsertPos[0]++;
+                                block.getStatements()
+                                        .add(
+                                                insertIdx,
+                                                StaticJavaParser.parseStatement(
+                                                        javaTypeNameForId(typeId)
+                                                                + " "
+                                                                + varName
+                                                                + " = "
+                                                                + defaultValue
+                                                                + ";"));
+                            }
+                        }
 
                         // Declare loop param variables and assign initial values
                         String[] loopParamVars = null;
@@ -510,7 +534,7 @@ final class SourceCodeEmitter {
                             }
                             // Declare and assign
                             for (int p = 0; p < paramCount; p++) {
-                                long typeId = ins.operand(p + 1);
+                                long typeId = ins.operand(2 + p);
                                 String varName = "loop_" + label + "_param_" + p;
                                 loopParamVars[p] = varName;
                                 currentBlock.addStatement(
@@ -536,18 +560,75 @@ final class SourceCodeEmitter {
                         currentBlock.addStatement(labeledStmt);
                         scopeStack.push(
                                 new EmitterScope(
-                                        label, "loop", loopBody, null, null, loopParamVars));
+                                        label, "loop", loopBody, resultVars, null, loopParamVars));
                         break;
                     }
 
                 case IF_ENTER:
                     {
                         int label = (int) ins.operand(0);
-                        int resultCount = ins.operandCount() - 1;
+                        int paramCount = (int) ins.operand(1);
+                        int returnCount = ins.operandCount() - 2 - paramCount;
                         com.github.javaparser.ast.expr.Expression condition = stack.pop();
-                        String[] resultVars =
-                                declareResultVars(
-                                        resultCount, label, ins, block, resultVarInsertPos);
+
+                        // Declare result variables
+                        String[] resultVars = null;
+                        if (returnCount > 0) {
+                            resultVars = new String[returnCount];
+                            for (int r = 0; r < returnCount; r++) {
+                                long typeId = ins.operand(2 + paramCount + r);
+                                String varName = "block_" + label + "_result_" + r;
+                                resultVars[r] = varName;
+                                int insertIdx = resultVarInsertPos[0]++;
+                                block.getStatements()
+                                        .add(
+                                                insertIdx,
+                                                StaticJavaParser.parseStatement(
+                                                        javaTypeNameForId(typeId)
+                                                                + " "
+                                                                + varName
+                                                                + " = "
+                                                                + defaultValueForId(typeId)
+                                                                + ";"));
+                            }
+                        }
+
+                        // Materialize if-params to variables so both branches
+                        // can access them (matching ASM compiler's stack frame save/restore)
+                        String[] ifParamVars = null;
+                        if (paramCount > 0) {
+                            ifParamVars = new String[paramCount];
+                            com.github.javaparser.ast.expr.Expression[] initVals =
+                                    new com.github.javaparser.ast.expr.Expression[paramCount];
+                            for (int p = paramCount - 1; p >= 0; p--) {
+                                initVals[p] = stack.pop();
+                            }
+                            for (int p = 0; p < paramCount; p++) {
+                                long typeId = ins.operand(2 + p);
+                                String varName = "if_" + label + "_param_" + p;
+                                ifParamVars[p] = varName;
+                                // Declare with default value at function level
+                                int insertIdx = resultVarInsertPos[0]++;
+                                block.getStatements()
+                                        .add(
+                                                insertIdx,
+                                                StaticJavaParser.parseStatement(
+                                                        javaTypeNameForId(typeId)
+                                                                + " "
+                                                                + varName
+                                                                + " = "
+                                                                + defaultValueForId(typeId)
+                                                                + ";"));
+                                // Assign actual value inline (before the if statement)
+                                currentBlock.addStatement(
+                                        StaticJavaParser.parseStatement(
+                                                varName + " = " + initVals[p] + ";"));
+                            }
+                            // Push param variable references for the then branch
+                            for (String pv : ifParamVars) {
+                                stack.push(new NameExpr(pv));
+                            }
+                        }
 
                         BlockStmt thenBlock = new BlockStmt();
                         BinaryExpr condExpr =
@@ -556,9 +637,16 @@ final class SourceCodeEmitter {
                                         new IntegerLiteralExpr("0"),
                                         BinaryExpr.Operator.NOT_EQUALS);
                         IfStmt ifStmt = new IfStmt(condExpr, thenBlock, null);
-                        currentBlock.addStatement(ifStmt);
+                        // Wrap in a labeled block so br can target the if label
+                        BlockStmt ifWrapper = new BlockStmt();
+                        ifWrapper.addStatement(ifStmt);
+                        LabeledStmt labeledStmt = new LabeledStmt();
+                        labeledStmt.setLabel(new SimpleName("label_" + label));
+                        labeledStmt.setStatement(ifWrapper);
+                        currentBlock.addStatement(labeledStmt);
                         scopeStack.push(
-                                new EmitterScope(label, "if", thenBlock, resultVars, ifStmt));
+                                new EmitterScope(
+                                        label, "if", thenBlock, resultVars, ifStmt, ifParamVars));
                         break;
                     }
 
@@ -570,6 +658,12 @@ final class SourceCodeEmitter {
                         // Create else block
                         BlockStmt elseBlock = new BlockStmt();
                         ifScope.ifStmt.setElseStmt(elseBlock);
+                        // Restore param variable references for the else branch
+                        if (ifScope.paramVarNames != null) {
+                            for (String pv : ifScope.paramVarNames) {
+                                stack.push(new NameExpr(pv));
+                            }
+                        }
                         scopeStack.push(
                                 new EmitterScope(
                                         ifScope.label,
@@ -585,25 +679,66 @@ final class SourceCodeEmitter {
                         EmitterScope scope = scopeStack.pop();
                         boolean terminated = isBlockTerminated(scope.block);
 
-                        // For loops, add break to exit the while(true) at end of body
-                        if (scope.type.equals("loop") && !terminated) {
-                            scope.block.addStatement(new BreakStmt());
-                        }
-
                         // Assign results if present (skip if block already terminated)
                         if (!terminated) {
                             assignResults(scope.resultVarNames, scope.block, stack);
                         }
 
+                        // For "if" without else with params: synthesize else branch
+                        // that passes params through to results (WASM semantics)
+                        if (scope.type.equals("if")
+                                && scope.paramVarNames != null
+                                && scope.resultVarNames != null
+                                && scope.ifStmt != null
+                                && !scope.ifStmt.hasElseBranch()) {
+                            BlockStmt elseBlock = new BlockStmt();
+                            int count =
+                                    Math.min(
+                                            scope.paramVarNames.length,
+                                            scope.resultVarNames.length);
+                            for (int i = 0; i < count; i++) {
+                                elseBlock.addStatement(
+                                        new ExpressionStmt(
+                                                new AssignExpr(
+                                                        new NameExpr(scope.resultVarNames[i]),
+                                                        new NameExpr(scope.paramVarNames[i]),
+                                                        AssignExpr.Operator.ASSIGN)));
+                            }
+                            scope.ifStmt.setElseStmt(elseBlock);
+                        }
+
+                        // For loops, add break to exit the while(true) at end of body
+                        if (scope.type.equals("loop") && !terminated) {
+                            scope.block.addStatement(new BreakStmt());
+                        }
+
                         // Only push result vars if the scope isn't terminal for the parent.
                         // If terminated by break-to-own-label: not terminal, push results.
                         // If terminated by break-to-outer/throw/return: terminal, skip.
-                        boolean terminalForParent =
-                                terminated
-                                        && !containsBreakTo(
-                                                scope.block,
-                                                "label_" + scope.label,
-                                                scope.type.equals("loop"));
+                        // For if/else: both branches must be terminal for the whole
+                        // if-else to be terminal.
+                        boolean terminalForParent;
+                        if (scope.type.equals("else") && scope.ifStmt != null) {
+                            // Both then and else branches must terminate
+                            boolean thenTerminated =
+                                    isBlockTerminated((BlockStmt) scope.ifStmt.getThenStmt());
+                            boolean elseTerminated = terminated;
+                            terminalForParent =
+                                    thenTerminated
+                                            && elseTerminated
+                                            && !containsBreakTo(
+                                                    scope.ifStmt, "label_" + scope.label, false);
+                        } else if (scope.type.equals("if")) {
+                            // if-without-else: never terminal (fall-through on false)
+                            terminalForParent = false;
+                        } else {
+                            terminalForParent =
+                                    terminated
+                                            && !containsBreakTo(
+                                                    scope.block,
+                                                    "label_" + scope.label,
+                                                    scope.type.equals("loop"));
+                        }
                         if (scope.resultVarNames != null && !terminalForParent) {
                             for (String resultVar : scope.resultVarNames) {
                                 stack.push(new NameExpr(resultVar));
@@ -736,6 +871,17 @@ final class SourceCodeEmitter {
                             callIdx);
                     break;
             }
+        }
+
+        // Emit implicit return if function body doesn't end with a return/throw
+        // This handles cases where the outermost block exits via break and
+        // the result values are on the expression stack
+        if (!isBlockTerminated(block) && !stack.isEmpty()) {
+            RETURN(
+                    new CompilerInstruction(CompilerOpCode.RETURN, new long[0]),
+                    block,
+                    stack,
+                    functionType);
         }
     }
 
@@ -981,8 +1127,10 @@ final class SourceCodeEmitter {
                 return true;
             }
         }
-        boolean childInLoop = inLoop || (node instanceof WhileStmt);
         for (var child : node.getChildNodes()) {
+            // Bare breaks inside nested WhileStmts are captured by those loops,
+            // so reset inLoop when entering a nested while
+            boolean childInLoop = inLoop && !(child instanceof WhileStmt);
             if (containsBreakTo(child, label, childInLoop)) {
                 return true;
             }

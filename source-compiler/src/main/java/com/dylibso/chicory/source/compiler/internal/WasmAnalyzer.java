@@ -168,11 +168,17 @@ final class WasmAnalyzer {
                         var bt = blockType(ins);
                         stack.enterScope(ins.scope(), bt);
                         scopeStack.push(new ScopeInfo(label, OpCode.LOOP, bt, ins.scope()));
-                        // operands: [label, ...param_type_ids]
-                        result.add(
-                                new CompilerInstruction(
-                                        CompilerOpCode.LOOP_ENTER,
-                                        prependLabel(label, bt.params())));
+                        // operands: [label, paramCount, param_type_ids..., return_type_ids...]
+                        long[] operands = new long[2 + bt.params().size() + bt.returns().size()];
+                        operands[0] = label;
+                        operands[1] = bt.params().size();
+                        for (int i = 0; i < bt.params().size(); i++) {
+                            operands[2 + i] = bt.params().get(i).id();
+                        }
+                        for (int i = 0; i < bt.returns().size(); i++) {
+                            operands[2 + bt.params().size() + i] = bt.returns().get(i).id();
+                        }
+                        result.add(new CompilerInstruction(CompilerOpCode.LOOP_ENTER, operands));
                         break;
                     }
 
@@ -190,11 +196,17 @@ final class WasmAnalyzer {
                             stack.pushTypes();
                         }
                         scopeStack.push(new ScopeInfo(label, OpCode.IF, bt, ins.scope()));
-                        // operands: [label, ...result_type_ids]
-                        result.add(
-                                new CompilerInstruction(
-                                        CompilerOpCode.IF_ENTER,
-                                        prependLabel(label, bt.returns())));
+                        // operands: [label, paramCount, param_type_ids..., return_type_ids...]
+                        long[] operands = new long[2 + bt.params().size() + bt.returns().size()];
+                        operands[0] = label;
+                        operands[1] = bt.params().size();
+                        for (int i = 0; i < bt.params().size(); i++) {
+                            operands[2 + i] = bt.params().get(i).id();
+                        }
+                        for (int i = 0; i < bt.returns().size(); i++) {
+                            operands[2 + bt.params().size() + i] = bt.returns().get(i).id();
+                        }
+                        result.add(new CompilerInstruction(CompilerOpCode.IF_ENTER, operands));
                         break;
                     }
 
