@@ -54,43 +54,32 @@ public final class Wat2Wasm {
     private static byte[] parse(InputStream is, String fileName) {
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
                 ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
-
-            try (FileSystem fs =
-                    ZeroFs.newFileSystem(
-                            Configuration.unix().toBuilder().setAttributeViews("unix").build())) {
-
-                Path target = fs.getPath("tmp");
-                java.nio.file.Files.createDirectory(target);
-                Path path = target.resolve(fileName);
-                copy(is, path, StandardCopyOption.REPLACE_EXISTING);
-
-                WasiOptions wasiOpts =
-                        WasiOptions.builder()
-                                .withStdout(stdoutStream)
-                                .withStderr(stderrStream)
-                                .withDirectory(target.toString(), target)
-                                .withArguments(List.of("wat2wasm", path.toString(), "--output=-"))
-                                .build();
-
-                try (var wasi =
-                        WasiPreview1.builder().withLogger(logger).withOptions(wasiOpts).build()) {
-                    ImportValues imports =
-                            ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
-                    Instance.builder(MODULE)
-                            .withMachineFactory(Wat2WasmModule::create)
-                            .withImportValues(imports)
+            WasiOptions wasiOpts =
+                    WasiOptions.builder()
+                            .withStdin(is)
+                            .withStdout(stdoutStream)
+                            .withStderr(stderrStream)
+                            .withArguments(List.of("wat2wasm", "-", "--output=-"))
                             .build();
-                } catch (WasiExitException e) {
-                    if (e.exitCode() != 0) {
-                        throw new WatParseException(
-                                stdoutStream.toString(StandardCharsets.UTF_8)
-                                        + stderrStream.toString(StandardCharsets.UTF_8),
-                                e);
-                    }
-                }
 
-                return stdoutStream.toByteArray();
+            try (var wasi =
+                    WasiPreview1.builder().withLogger(logger).withOptions(wasiOpts).build()) {
+                ImportValues imports =
+                        ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
+                Instance.builder(MODULE)
+                        .withMachineFactory(Wat2WasmModule::create)
+                        .withImportValues(imports)
+                        .build();
+            } catch (WasiExitException e) {
+                if (e.exitCode() != 0) {
+                    throw new WatParseException(
+                            stdoutStream.toString(StandardCharsets.UTF_8)
+                                    + stderrStream.toString(StandardCharsets.UTF_8),
+                            e);
+                }
             }
+
+            return stdoutStream.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

@@ -96,9 +96,9 @@ The source compiler uses **structured Java control flow** that mirrors WASM's st
 
 ### Current status
 
-**Test results (26,882 tests, 0 failures, 0 errors, 51 skipped):**
+**Test results (26,907 tests, 0 failures, 0 errors, 38 skipped):**
 
-All spec tests now pass. The full WASM v1 spec test suite is included and passing:
+All spec tests pass plus 25 ported WasmModuleTest tests. The full WASM v1 spec test suite is included and passing:
 
 | Test Suite | Pass/Total | Skipped | Notes |
 |---|---|---|---|
@@ -114,7 +114,7 @@ All spec tests now pass. The full WASM v1 spec test suite is included and passin
 | SpecV1ConstTest | 778/778 | 0 | |
 | SpecV1ConversionsTest | 619/619 | 0 | |
 | SpecV1DataTest | 61/61 | 0 | |
-| SpecV1ElemTest | 98/98 | 0 | |
+| SpecV1ElemTest | 98/98 | 0 | cross-module CALL_INDIRECT fixed |
 | SpecV1EndiannessTest | 69/69 | 0 | |
 | SpecV1ExportsTest | 96/96 | 0 | |
 | SpecV1F32Test | 2514/2514 | 0 | |
@@ -140,7 +140,7 @@ All spec tests now pass. The full WASM v1 spec test suite is included and passin
 | SpecV1IntLiteralsTest | 51/51 | 0 | |
 | SpecV1LabelsTest | 29/29 | 0 | |
 | SpecV1LeftToRightTest | 96/96 | 0 | |
-| SpecV1LinkingTest | 120/132 | 12 | |
+| SpecV1LinkingTest | 132/132 | 0 | all passing (TrapException + cross-module fix) |
 | SpecV1LoadTest | 97/97 | 0 | |
 | SpecV1LocalGetTest | 36/36 | 0 | |
 | SpecV1LocalSetTest | 53/53 | 0 | |
@@ -163,7 +163,7 @@ All spec tests now pass. The full WASM v1 spec test suite is included and passin
 | SpecV1SelectTest | 148/148 | 0 | |
 | SpecV1SkipStackGuardPageTest | 11/11 | 0 | |
 | SpecV1StackTest | 7/7 | 0 | |
-| SpecV1StartTest | 19/20 | 1 | |
+| SpecV1StartTest | 20/20 | 0 | TrapException fix |
 | SpecV1StoreTest | 68/68 | 0 | |
 | SpecV1SwitchTest | 28/28 | 0 | |
 | SpecV1TableCopyTest | 1728/1728 | 0 | |
@@ -181,6 +181,7 @@ All spec tests now pass. The full WASM v1 spec test suite is included and passin
 | SpecV1UnreachedValidTest | 7/7 | 0 | |
 | SpecV1UnwindTest | 50/50 | 0 | |
 | SourceCompilerTest | 3/3 | 0 | includes wat2wasm end-to-end |
+| WasmModuleSourceCompilerTest | 25/25 | 0 | ported from runtime WasmModuleTest |
 
 **End-to-end wat2wasm compilation**: the source compiler successfully generates Java source from the wat2wasm binary (1,885 functions, ~12.7MB of source), javac compiles it to bytecode, and the compiled class loads and creates a machine factory.
 
