@@ -62,8 +62,7 @@ public class SourceCompilerTest {
     @Test
     public void dumpWasiTestSource() throws Exception {
         Path wasmPath =
-                Path.of(
-                        "../wasi-testsuite/tests/assemblyscript/testsuite/wasm32-wasip1/environ_get-multiple-variables.wasm");
+                Path.of("../wasi-testsuite/tests/rust/testsuite/wasm32-wasip1/close_preopen.wasm");
         if (!Files.exists(wasmPath)) {
             System.out.println("WASI test wasm not found at " + wasmPath + ", skipping");
             return;

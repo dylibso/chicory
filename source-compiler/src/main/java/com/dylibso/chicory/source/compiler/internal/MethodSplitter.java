@@ -51,6 +51,13 @@ final class MethodSplitter {
     private static final String HELPER_BREAK_LABEL = "_hb";
 
     /**
+     * When extracting a block from a helper that already has _hb: wrapper (nested extraction),
+     * parent status codes (_hs[0] = CODE; break _hb;) are offset by this value to avoid
+     * collision with the new helper's own return codes.
+     */
+    private static final int PARENT_STATUS_OFFSET = 10000;
+
+    /**
      * Maximum number of splitting iterations. Safety cap to prevent infinite loops if the
      * heuristics fail to make progress.
      */
@@ -433,6 +440,9 @@ final class MethodSplitter {
 
         Map<String, String> outerLabels = new LinkedHashMap<>(); // label -> "break" or "continue"
         collectOuterReferences(blockBody, definedLabels, blockLabel, outerLabels);
+        // _hb is always handled by the do-while wrapper in nested helpers,
+        // don't treat as outer — the new helper also wraps in _hb: do {} while(false)
+        outerLabels.remove(HELPER_BREAK_LABEL);
 
         // Assign return codes
         Map<String, Integer> returnCodes = new LinkedHashMap<>();
@@ -448,10 +458,19 @@ final class MethodSplitter {
         // Clone the block content for the helper
         BlockStmt innerBody = blockBody.clone();
 
+        // For nested extractions (extracting from a helper that already has _hb: wrapper),
+        // offset parent status codes to avoid collision with the new helper's own codes.
+        boolean isNestedExtraction = methodBody.toString().contains("_hb:");
+        if (isNestedExtraction) {
+            offsetParentStatusCodes(innerBody);
+        }
+
         // Replace outer break/continue and method returns with:
         //   _hs[0] = CODE; break _hb;
         // Self-label breaks become: break _hb; (with _hs[0] staying 0 = normal)
-        replaceWithBreaks(innerBody, blockLabel, returnCodes, returnCode);
+        String returnType = method.getType().toString();
+        String returnArray = returnArrayForType(returnType);
+        replaceWithBreaks(innerBody, blockLabel, returnCodes, returnCode, returnArray);
 
         // Find variables used in the block but not declared in it (e.g. callArgs_N,
         // callResult_N). These are long[] temporaries from the caller scope that need
@@ -559,7 +578,6 @@ final class MethodSplitter {
 
         // Add dispatch for method return
         if (hasReturns) {
-            String returnType = method.getType().toString();
             if (returnType.equals("void")) {
                 newBlockBody.addStatement(
                         StaticJavaParser.parseStatement(
@@ -576,6 +594,23 @@ final class MethodSplitter {
                                         + arrayForReturn
                                         + "[0];"));
             }
+        }
+
+        // Propagate offset parent status codes back to the parent's do-while.
+        // Parent codes were offset by PARENT_STATUS_OFFSET to avoid collision with
+        // the new helper's own return codes. Subtract the offset and propagate.
+        if (isNestedExtraction) {
+            newBlockBody.addStatement(
+                    StaticJavaParser.parseStatement(
+                            "if ("
+                                    + dispatchVar
+                                    + " >= "
+                                    + PARENT_STATUS_OFFSET
+                                    + ") { _hs[0] = ("
+                                    + dispatchVar
+                                    + " - "
+                                    + PARENT_STATUS_OFFSET
+                                    + "); break _hb; }"));
         }
 
         // Replace the labeled block's body
@@ -1090,6 +1125,122 @@ final class MethodSplitter {
     }
 
     // -----------------------------------------------------------------------
+    // Parent status code offsetting for nested extractions
+    // -----------------------------------------------------------------------
+
+    /**
+     * When extracting a block from a method that is already a helper (has _hb: wrapper),
+     * the extracted block may contain {@code _hs[0] = CODE; break _hb;} patterns from the
+     * parent's status system. These codes must be offset to avoid collision with the new
+     * helper's own return codes.
+     *
+     * <p>Also handles bare {@code break _hb;} (parent self-label break = status 0) by
+     * inserting {@code _hs[0] = PARENT_STATUS_OFFSET;} before the break.
+     */
+    private static void offsetParentStatusCodes(BlockStmt body) {
+        // Step 1: Offset _hs[0] = CODE in { ...; _hs[0] = CODE; break _hb; } patterns
+        body.accept(
+                new VoidVisitorAdapter<Void>() {
+                    @Override
+                    public void visit(BlockStmt n, Void arg) {
+                        // Visit children first
+                        super.visit(n, null);
+
+                        List<Statement> stmts = n.getStatements();
+                        for (int i = stmts.size() - 1; i >= 0; i--) {
+                            if (isBreakHb(stmts.get(i))
+                                    && i > 0
+                                    && isHsAssignment(stmts.get(i - 1))) {
+                                String valueStr = getHsValueString(stmts.get(i - 1));
+                                String offsetExpr;
+                                try {
+                                    int code = Integer.parseInt(valueStr);
+                                    offsetExpr = String.valueOf(code + PARENT_STATUS_OFFSET);
+                                } catch (NumberFormatException e) {
+                                    // Non-integer expression (e.g., "(_d2 - 10000)" from a
+                                    // previous nested extraction dispatch) — wrap with offset
+                                    offsetExpr = "(" + valueStr + ") + " + PARENT_STATUS_OFFSET;
+                                }
+                                stmts.set(
+                                        i - 1,
+                                        StaticJavaParser.parseStatement(
+                                                "_hs[0] = " + offsetExpr + ";"));
+                            }
+                        }
+                    }
+                },
+                null);
+
+        // Step 2: Handle bare break _hb; (not preceded by _hs[0] = CODE;)
+        // by wrapping them with _hs[0] = PARENT_STATUS_OFFSET; break _hb;
+        body.accept(
+                new ModifierVisitor<Void>() {
+                    @Override
+                    public Visitable visit(BreakStmt n, Void arg) {
+                        if (!isBreakHb(n)) {
+                            return super.visit(n, null);
+                        }
+
+                        // Check if preceded by _hs[0] assignment (already offset)
+                        com.github.javaparser.ast.Node parent = n.getParentNode().orElse(null);
+                        if (parent instanceof BlockStmt) {
+                            BlockStmt parentBlock = (BlockStmt) parent;
+                            int idx = parentBlock.getStatements().indexOf(n);
+                            if (idx > 0
+                                    && isHsAssignment(parentBlock.getStatements().get(idx - 1))) {
+                                // Already handled in step 1
+                                return super.visit(n, null);
+                            }
+                        }
+
+                        // Bare break _hb; → wrap with offset status
+                        BlockStmt wrapper = new BlockStmt();
+                        wrapper.addStatement(
+                                StaticJavaParser.parseStatement(
+                                        "_hs[0] = " + PARENT_STATUS_OFFSET + ";"));
+                        wrapper.addStatement(new BreakStmt(HELPER_BREAK_LABEL));
+                        return wrapper;
+                    }
+                },
+                null);
+    }
+
+    private static boolean isBreakHb(Statement stmt) {
+        if (stmt instanceof BreakStmt) {
+            return ((BreakStmt) stmt)
+                    .getLabel()
+                    .map(l -> l.getIdentifier().equals(HELPER_BREAK_LABEL))
+                    .orElse(false);
+        }
+        return false;
+    }
+
+    private static boolean isHsAssignment(Statement stmt) {
+        if (!(stmt instanceof ExpressionStmt)) {
+            return false;
+        }
+        ExpressionStmt exprStmt = (ExpressionStmt) stmt;
+        if (!(exprStmt.getExpression() instanceof com.github.javaparser.ast.expr.AssignExpr)) {
+            return false;
+        }
+        com.github.javaparser.ast.expr.AssignExpr assign =
+                (com.github.javaparser.ast.expr.AssignExpr) exprStmt.getExpression();
+        if (!(assign.getTarget() instanceof ArrayAccessExpr)) {
+            return false;
+        }
+        ArrayAccessExpr target = (ArrayAccessExpr) assign.getTarget();
+        return target.getName().toString().equals("_hs")
+                && target.getIndex().toString().equals("0");
+    }
+
+    private static String getHsValueString(Statement stmt) {
+        ExpressionStmt exprStmt = (ExpressionStmt) stmt;
+        com.github.javaparser.ast.expr.AssignExpr assign =
+                (com.github.javaparser.ast.expr.AssignExpr) exprStmt.getExpression();
+        return assign.getValue().toString();
+    }
+
+    // -----------------------------------------------------------------------
     // Branch replacement: convert return/break/continue to break _hb with status
     // -----------------------------------------------------------------------
 
@@ -1097,7 +1248,8 @@ final class MethodSplitter {
             BlockStmt body,
             String selfLabel,
             Map<String, Integer> returnCodes,
-            int methodReturnCode) {
+            int methodReturnCode,
+            String returnArray) {
 
         // Collect labels defined within the helper body
         Set<String> definedLabels = new HashSet<>();
@@ -1148,7 +1300,8 @@ final class MethodSplitter {
                             if (n.getExpression().isPresent()) {
                                 String expr = n.getExpression().get().toString();
                                 block.addStatement(
-                                        StaticJavaParser.parseStatement("iL[0] = " + expr + ";"));
+                                        StaticJavaParser.parseStatement(
+                                                returnArray + "[0] = " + expr + ";"));
                             }
                             block.addStatement(
                                     StaticJavaParser.parseStatement(

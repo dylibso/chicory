@@ -1,7 +1,5 @@
 package com.dylibso.chicory.wabt;
 
-import static java.nio.file.Files.copy;
-
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ImportValues;
@@ -18,9 +16,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystem;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 public final class Wat2Wasm {
@@ -51,7 +46,7 @@ public final class Wat2Wasm {
 
     private static byte[] parse(InputStream is, String fileName) {
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
-             ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
+                ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
             WasiOptions wasiOpts =
                     WasiOptions.builder()
                             .withStdin(is)
@@ -61,7 +56,7 @@ public final class Wat2Wasm {
                             .build();
 
             try (var wasi =
-                         WasiPreview1.builder().withLogger(logger).withOptions(wasiOpts).build()) {
+                    WasiPreview1.builder().withLogger(logger).withOptions(wasiOpts).build()) {
                 ImportValues imports =
                         ImportValues.builder().addFunction(wasi.toHostFunctions()).build();
                 Instance.builder(MODULE)

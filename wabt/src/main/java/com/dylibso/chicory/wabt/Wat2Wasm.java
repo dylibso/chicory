@@ -1,7 +1,5 @@
 package com.dylibso.chicory.wabt;
 
-import static java.nio.file.Files.copy;
-
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ImportValues;
@@ -10,8 +8,6 @@ import com.dylibso.chicory.wasi.WasiExitException;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.WasmModule;
-import io.roastedroot.zerofs.Configuration;
-import io.roastedroot.zerofs.ZeroFs;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -20,9 +16,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystem;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 public final class Wat2Wasm {
@@ -51,6 +44,7 @@ public final class Wat2Wasm {
         }
     }
 
+    @SuppressWarnings("UnusedVariable")
     private static byte[] parse(InputStream is, String fileName) {
         try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
                 ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {

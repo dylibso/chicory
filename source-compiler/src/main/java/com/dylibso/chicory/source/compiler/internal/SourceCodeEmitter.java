@@ -7,6 +7,7 @@ import com.dylibso.chicory.wasm.types.ValType;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.AssignExpr;
@@ -29,6 +30,7 @@ import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.IfStmt;
 import com.github.javaparser.ast.stmt.LabeledStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
+import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.stmt.ThrowStmt;
 import com.github.javaparser.ast.stmt.WhileStmt;
 import com.github.javaparser.ast.type.ArrayType;
@@ -1066,6 +1068,7 @@ final class SourceCodeEmitter {
                     emitInstruction(
                             ins,
                             currentBlock,
+                            block,
                             stack,
                             localVarNames,
                             localVarTypes,
@@ -1414,6 +1417,7 @@ final class SourceCodeEmitter {
     private static void emitInstruction(
             CompilerInstruction ins,
             BlockStmt block,
+            BlockStmt funcBlock,
             Deque<com.github.javaparser.ast.expr.Expression> stack,
             List<String> localVarNames,
             List<ValType> localVarTypes,
@@ -1681,10 +1685,10 @@ final class SourceCodeEmitter {
                 LOCAL_GET(ins, stack, localVarNames);
                 break;
             case LOCAL_SET:
-                LOCAL_SET(ins, block, stack, localVarNames, localVarTypes, snapIdx);
+                LOCAL_SET(ins, block, funcBlock, stack, localVarNames, localVarTypes, snapIdx);
                 break;
             case LOCAL_TEE:
-                LOCAL_TEE(ins, block, stack, localVarNames, localVarTypes, snapIdx);
+                LOCAL_TEE(ins, block, funcBlock, stack, localVarNames, localVarTypes, snapIdx);
                 break;
             case CALL:
                 CALL(ins, block, stack, allFunctionTypes, callIdx);
@@ -2816,6 +2820,7 @@ final class SourceCodeEmitter {
     public static void LOCAL_SET(
             CompilerInstruction ins,
             BlockStmt block,
+            BlockStmt funcBlock,
             Deque<com.github.javaparser.ast.expr.Expression> stack,
             List<String> localVarNames,
             List<ValType> localVarTypes,
@@ -2823,7 +2828,7 @@ final class SourceCodeEmitter {
         int index = (int) ins.operand(0);
         String varName = localVarNames.get(index);
         com.github.javaparser.ast.expr.Expression value = stack.pop();
-        snapshotIfAliased(varName, index, block, stack, localVarTypes, snapIdx);
+        snapshotIfAliased(varName, index, block, funcBlock, stack, localVarTypes, snapIdx);
         block.addStatement(
                 new ExpressionStmt(
                         new AssignExpr(new NameExpr(varName), value, AssignExpr.Operator.ASSIGN)));
@@ -2836,6 +2841,7 @@ final class SourceCodeEmitter {
     public static void LOCAL_TEE(
             CompilerInstruction ins,
             BlockStmt block,
+            BlockStmt funcBlock,
             Deque<com.github.javaparser.ast.expr.Expression> stack,
             List<String> localVarNames,
             List<ValType> localVarTypes,
@@ -2843,7 +2849,7 @@ final class SourceCodeEmitter {
         int index = (int) ins.operand(0);
         String varName = localVarNames.get(index);
         com.github.javaparser.ast.expr.Expression value = stack.pop();
-        snapshotIfAliased(varName, index, block, stack, localVarTypes, snapIdx);
+        snapshotIfAliased(varName, index, block, funcBlock, stack, localVarTypes, snapIdx);
         block.addStatement(
                 new ExpressionStmt(
                         new AssignExpr(new NameExpr(varName), value, AssignExpr.Operator.ASSIGN)));
@@ -2857,11 +2863,29 @@ final class SourceCodeEmitter {
      * If so, emit a snapshot variable and replace all matching NameExprs on the stack.
      * This prevents aliasing bugs where local.set overwrites a variable that was
      * previously pushed by local.get and is still pending on the expression stack.
+     *
+     * <p>The snapshot is always split into two parts:
+     * <ol>
+     *   <li>A zero-initialized declaration at funcBlock position 0, for scope visibility
+     *       and compatibility with MethodSplitter's local-to-array conversion (which strips
+     *       initializers from declarations).
+     *   <li>A separate assignment at the correct execution point:
+     *       <ul>
+     *         <li>Same scope (block == funcBlock): appended to block (current position).
+     *         <li>Inside conditional (if-then/else): inserted in funcBlock before the
+     *             enclosing control-flow statement, so it always executes.
+     *         <li>Non-conditional nested scope (block/loop): appended to block.
+     *       </ul>
+     * </ol>
+     *
+     * @param block the current scope block (where local.set is being emitted)
+     * @param funcBlock the function body block (top-level scope)
      */
     private static void snapshotIfAliased(
             String varName,
             int localIndex,
             BlockStmt block,
+            BlockStmt funcBlock,
             Deque<com.github.javaparser.ast.expr.Expression> stack,
             List<ValType> localVarTypes,
             int[] snapIdx) {
@@ -2876,11 +2900,69 @@ final class SourceCodeEmitter {
             return;
         }
 
-        // Generate a snapshot variable to capture the current value
         String snapName = "_snap_" + (snapIdx[0]++);
         String typeName = SourceCompilerUtil.javaTypeName(localVarTypes.get(localIndex));
-        block.addStatement(
-                StaticJavaParser.parseStatement(typeName + " " + snapName + " = " + varName + ";"));
+
+        // Always declare at function body level with zero init.
+        // MethodSplitter's convertLocalsToArrays removes declarations but preserves
+        // assignment statements, so we must never put the real value in the initializer.
+        funcBlock.addStatement(
+                0, StaticJavaParser.parseStatement(typeName + " " + snapName + " = 0;"));
+
+        if (block == funcBlock) {
+            // Same scope: assign at the current position
+            block.addStatement(StaticJavaParser.parseStatement(snapName + " = " + varName + ";"));
+        } else {
+            // Check if block is inside a conditional (if-then/else) by walking up
+            boolean inConditional = false;
+            Node check = block;
+            while (check != null && check != funcBlock) {
+                Node p = check.getParentNode().orElse(null);
+                if (p instanceof IfStmt) {
+                    inConditional = true;
+                    break;
+                }
+                check = p;
+            }
+
+            if (inConditional) {
+                // Walk up to funcBlock to find the direct child statement that
+                // contains this block, and insert the assignment before it.
+                // This ensures the snapshot always executes regardless of which
+                // branch of the if-else is taken.
+                Node cursor = block;
+                Statement funcChild = null;
+                while (cursor != null) {
+                    Node p = cursor.getParentNode().orElse(null);
+                    if (p == funcBlock && cursor instanceof Statement) {
+                        funcChild = (Statement) cursor;
+                        break;
+                    }
+                    cursor = p;
+                }
+                if (funcChild != null) {
+                    int idx = funcBlock.getStatements().indexOf(funcChild);
+                    if (idx >= 0) {
+                        funcBlock
+                                .getStatements()
+                                .add(
+                                        idx,
+                                        StaticJavaParser.parseStatement(
+                                                snapName + " = " + varName + ";"));
+                    } else {
+                        block.addStatement(
+                                StaticJavaParser.parseStatement(snapName + " = " + varName + ";"));
+                    }
+                } else {
+                    block.addStatement(
+                            StaticJavaParser.parseStatement(snapName + " = " + varName + ";"));
+                }
+            } else {
+                // Non-conditional nested scope: assign at current block
+                block.addStatement(
+                        StaticJavaParser.parseStatement(snapName + " = " + varName + ";"));
+            }
+        }
 
         // Replace all NameExpr references to varName with snapName in the stack
         ArrayDeque<com.github.javaparser.ast.expr.Expression> replacement = new ArrayDeque<>();
