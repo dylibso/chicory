@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.dylibso.chicory</groupId>
+    <artifactId>chicory</artifactId>
+    <version>999-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
+  </parent>
+  <artifactId>source-compiler-wasi-tests</artifactId>
+  <packaging>jar</packaging>
+
+  <name>Chicory - Source Compiler WASI Tests</name>
+  <description>WASI Preview 1 tests using the source compiler machine factory</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>log</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>runtime</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>source-compiler</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasi</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm-corpus</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.roastedroot</groupId>
+      <artifactId>zerofs</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.dylibso.chicory</groupId>
+        <artifactId>wasi-test-gen-plugin</artifactId>
+        <version>${project.version}</version>
+        <configuration>
+          <testSuiteFolder>${project.basedir}/../wasi-testsuite</testSuiteFolder>
+          <testSuiteFiles>
+            <includes>
+              <include>tests/assemblyscript/testsuite/wasm32-wasip1/*.wasm</include>
+              <include>tests/c/testsuite/wasm32-wasip1/*.wasm</include>
+              <include>tests/rust/testsuite/wasm32-wasip1/*.wasm</include>
+            </includes>
+            <excludes>
+              <!-- Java does not support READ+APPEND -->
+              <exclude>tests/rust/testsuite/wasm32-wasip1/fd_flags_set.wasm</exclude>
+              <!-- Linux and Jimfs always append with APPEND -->
+              <exclude>tests/c/testsuite/wasm32-wasip1/pwrite-with-append.wasm</exclude>
+              <!-- dangling symlinks are not supported -->
+              <exclude>tests/rust/testsuite/wasm32-wasip1/dangling_symlink.wasm</exclude>
+              <!-- symlinks filestat is not supported -->
+              <exclude>tests/rust/testsuite/wasm32-wasip1/symlink_filestat.wasm</exclude>
+              <!-- fd_fdstat_set_rights is not implemented -->
+              <exclude>tests/rust/testsuite/wasm32-wasip1/fd_fdstat_set_rights.wasm</exclude>
+              <exclude>tests/rust/testsuite/wasm32-wasip1/truncation_rights.wasm</exclude>
+            </excludes>
+          </testSuiteFiles>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>wasi-test-gen</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-testCompile</id>
+            <configuration>
+              <compilerArgs>
+                <arg>--add-modules</arg>
+                <arg>java.sql</arg>
+                <arg>--add-modules</arg>
+                <arg>java.desktop</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

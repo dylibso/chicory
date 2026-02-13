@@ -160,6 +160,11 @@
       </dependency>
       <dependency>
         <groupId>com.dylibso.chicory</groupId>
+        <artifactId>source-compiler</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dylibso.chicory</groupId>
         <artifactId>test-gen-lib</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -968,6 +973,7 @@
         <module>runtime</module>
         <module>runtime-tests</module>
         <module>source-compiler</module>
+        <module>source-compiler-wasi-tests</module>
         <module>test-gen-lib</module>
         <module>test-gen-plugin</module>
         <module>wabt</module>

@@ -59,6 +59,36 @@ public class SourceCompilerTest {
         }
     }
 
+    @Test
+    public void dumpWasiTestSource() throws Exception {
+        Path wasmPath =
+                Path.of(
+                        "../wasi-testsuite/tests/assemblyscript/testsuite/wasm32-wasip1/environ_get-multiple-variables.wasm");
+        if (!Files.exists(wasmPath)) {
+            System.out.println("WASI test wasm not found at " + wasmPath + ", skipping");
+            return;
+        }
+        byte[] wasmBytes = Files.readAllBytes(wasmPath);
+        WasmModule module = Parser.parse(wasmBytes);
+
+        Compiler compiler =
+                Compiler.builder(module)
+                        .withClassName("com.dylibso.chicory.gen.WasiTestMachine")
+                        .build();
+
+        CompilerResult result = compiler.compile();
+
+        Path dumpDir = Path.of("target/source-dump/wasi-diag");
+        Files.createDirectories(dumpDir);
+        for (var entry : result.collector().sourceFiles().entrySet()) {
+            String fileName = entry.getKey().replace('.', '/') + ".java";
+            Path outFile = dumpDir.resolve(fileName);
+            Files.createDirectories(outFile.getParent());
+            Files.writeString(outFile, entry.getValue());
+            System.out.println("Dumped " + outFile + " (" + entry.getValue().length() + " chars)");
+        }
+    }
+
     private static WasmModule loadWat(String classpath) throws IOException {
         try (var is = CorpusResources.getResource(classpath.substring(1))) {
             byte[] wasm = Wat2Wasm.parse(is);

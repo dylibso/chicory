@@ -420,10 +420,12 @@ final class SourceCodeEmitter {
 
         // Add individual typed parameters
         List<String> localVarNames = new ArrayList<>();
+        List<ValType> localVarTypes = new ArrayList<>();
         for (int i = 0; i < functionType.params().size(); i++) {
             ValType paramType = functionType.params().get(i);
             String paramName = "arg" + i;
             localVarNames.add(paramName);
+            localVarTypes.add(paramType);
             method.addParameter(
                     SourceCompilerUtil.javaParserType(SourceCompilerUtil.jvmType(paramType)),
                     paramName);
@@ -447,6 +449,7 @@ final class SourceCodeEmitter {
             ValType localType = body.localTypes().get(i - functionType.params().size());
             String varName = "local" + i;
             localVarNames.add(varName);
+            localVarTypes.add(localType);
             String defaultValue = SourceCompilerUtil.defaultValue(localType);
             block.addStatement(
                     StaticJavaParser.parseStatement(
@@ -469,6 +472,9 @@ final class SourceCodeEmitter {
 
         // Counter for generating unique call variable names (callArgs_0, callResult_0, ...)
         int[] callIdx = {0};
+
+        // Counter for generating unique snapshot variable names (_snap_0, _snap_1, ...)
+        int[] snapIdx = {0};
 
         // Emit instructions using structured control flow
         for (CompilerInstruction ins : instructions) {
@@ -1062,11 +1068,13 @@ final class SourceCodeEmitter {
                             currentBlock,
                             stack,
                             localVarNames,
+                            localVarTypes,
                             functionType,
                             allFunctionTypes,
                             typeSectionTypes,
                             globalTypes,
-                            callIdx);
+                            callIdx,
+                            snapIdx);
                     break;
             }
         }
@@ -1408,11 +1416,13 @@ final class SourceCodeEmitter {
             BlockStmt block,
             Deque<com.github.javaparser.ast.expr.Expression> stack,
             List<String> localVarNames,
+            List<ValType> localVarTypes,
             FunctionType functionType,
             List<FunctionType> allFunctionTypes,
             FunctionType[] typeSectionTypes,
             List<ValType> globalTypes,
-            int[] callIdx) {
+            int[] callIdx,
+            int[] snapIdx) {
         CompilerOpCode op = ins.opcode();
         switch (op) {
             case I32_CONST:
@@ -1671,10 +1681,10 @@ final class SourceCodeEmitter {
                 LOCAL_GET(ins, stack, localVarNames);
                 break;
             case LOCAL_SET:
-                LOCAL_SET(ins, block, stack, localVarNames);
+                LOCAL_SET(ins, block, stack, localVarNames, localVarTypes, snapIdx);
                 break;
             case LOCAL_TEE:
-                LOCAL_TEE(ins, block, stack, localVarNames);
+                LOCAL_TEE(ins, block, stack, localVarNames, localVarTypes, snapIdx);
                 break;
             case CALL:
                 CALL(ins, block, stack, allFunctionTypes, callIdx);
@@ -2798,42 +2808,141 @@ final class SourceCodeEmitter {
     }
 
     /**
-     * Emit LOCAL_SET: pop value from stack, store to local
-     * ASM: asm.store(ctx.localSlotIndex(index), asmType(localType))
-     * Java: pop expression, assign to local variable
+     * Emit LOCAL_SET: pop value from stack, store to local.
+     * Before overwriting, snapshots the variable if it's referenced on the stack
+     * to avoid aliasing bugs where deferred NameExpr references evaluate to the
+     * new value instead of the value at the time of local.get.
      */
     public static void LOCAL_SET(
             CompilerInstruction ins,
             BlockStmt block,
             Deque<com.github.javaparser.ast.expr.Expression> stack,
-            List<String> localVarNames) {
+            List<String> localVarNames,
+            List<ValType> localVarTypes,
+            int[] snapIdx) {
         int index = (int) ins.operand(0);
         String varName = localVarNames.get(index);
         com.github.javaparser.ast.expr.Expression value = stack.pop();
+        snapshotIfAliased(varName, index, block, stack, localVarTypes, snapIdx);
         block.addStatement(
                 new ExpressionStmt(
                         new AssignExpr(new NameExpr(varName), value, AssignExpr.Operator.ASSIGN)));
     }
 
     /**
-     * Emit LOCAL_TEE: store value to local but keep it on stack
-     * ASM: dup/dup2 then store
-     * Java: assign to local, keep value on stack
+     * Emit LOCAL_TEE: store value to local but keep it on stack.
+     * Before overwriting, snapshots the variable if it's referenced on the stack.
      */
     public static void LOCAL_TEE(
             CompilerInstruction ins,
             BlockStmt block,
             Deque<com.github.javaparser.ast.expr.Expression> stack,
-            List<String> localVarNames) {
+            List<String> localVarNames,
+            List<ValType> localVarTypes,
+            int[] snapIdx) {
         int index = (int) ins.operand(0);
         String varName = localVarNames.get(index);
         com.github.javaparser.ast.expr.Expression value = stack.pop();
+        snapshotIfAliased(varName, index, block, stack, localVarTypes, snapIdx);
         block.addStatement(
                 new ExpressionStmt(
                         new AssignExpr(new NameExpr(varName), value, AssignExpr.Operator.ASSIGN)));
         // Push the variable reference (not the original expression) since the
         // expression may reference the tee'd variable which was just modified
         stack.push(new NameExpr(varName));
+    }
+
+    /**
+     * Check if any expression remaining on the stack references the given local variable.
+     * If so, emit a snapshot variable and replace all matching NameExprs on the stack.
+     * This prevents aliasing bugs where local.set overwrites a variable that was
+     * previously pushed by local.get and is still pending on the expression stack.
+     */
+    private static void snapshotIfAliased(
+            String varName,
+            int localIndex,
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack,
+            List<ValType> localVarTypes,
+            int[] snapIdx) {
+        boolean hasAlias = false;
+        for (com.github.javaparser.ast.expr.Expression expr : stack) {
+            if (referencesVariable(expr, varName)) {
+                hasAlias = true;
+                break;
+            }
+        }
+        if (!hasAlias) {
+            return;
+        }
+
+        // Generate a snapshot variable to capture the current value
+        String snapName = "_snap_" + (snapIdx[0]++);
+        String typeName = SourceCompilerUtil.javaTypeName(localVarTypes.get(localIndex));
+        block.addStatement(
+                StaticJavaParser.parseStatement(typeName + " " + snapName + " = " + varName + ";"));
+
+        // Replace all NameExpr references to varName with snapName in the stack
+        ArrayDeque<com.github.javaparser.ast.expr.Expression> replacement = new ArrayDeque<>();
+        for (com.github.javaparser.ast.expr.Expression expr : stack) {
+            replacement.addLast(replaceVariable(expr, varName, snapName));
+        }
+        stack.clear();
+        for (com.github.javaparser.ast.expr.Expression expr : replacement) {
+            stack.addLast(expr);
+        }
+    }
+
+    /**
+     * Check if an expression tree contains a NameExpr referencing the given variable.
+     */
+    private static boolean referencesVariable(
+            com.github.javaparser.ast.expr.Expression expr, String varName) {
+        if (expr instanceof NameExpr) {
+            return ((NameExpr) expr).getNameAsString().equals(varName);
+        }
+        // Check child expressions recursively
+        for (var child : expr.getChildNodes()) {
+            if (child instanceof com.github.javaparser.ast.expr.Expression) {
+                if (referencesVariable(
+                        (com.github.javaparser.ast.expr.Expression) child, varName)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Replace all NameExpr references to oldName with newName in an expression tree.
+     * Returns a new expression (or the same one if no replacement was needed).
+     */
+    private static com.github.javaparser.ast.expr.Expression replaceVariable(
+            com.github.javaparser.ast.expr.Expression expr, String oldName, String newName) {
+        if (expr instanceof NameExpr && ((NameExpr) expr).getNameAsString().equals(oldName)) {
+            return new NameExpr(newName);
+        }
+        // For compound expressions, clone and replace children
+        if (referencesVariable(expr, oldName)) {
+            com.github.javaparser.ast.expr.Expression cloned = expr.clone();
+            replaceVariableInPlace(cloned, oldName, newName);
+            return cloned;
+        }
+        return expr;
+    }
+
+    /**
+     * In-place replacement of NameExpr references within a cloned expression tree.
+     */
+    private static void replaceVariableInPlace(
+            com.github.javaparser.ast.Node node, String oldName, String newName) {
+        if (node instanceof NameExpr && ((NameExpr) node).getNameAsString().equals(oldName)) {
+            ((NameExpr) node).setName(new SimpleName(newName));
+            return;
+        }
+        for (var child : node.getChildNodes()) {
+            replaceVariableInPlace(child, oldName, newName);
+        }
     }
 
     /**
