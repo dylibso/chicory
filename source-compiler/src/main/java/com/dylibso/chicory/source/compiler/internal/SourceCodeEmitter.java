@@ -941,7 +941,7 @@ final class SourceCodeEmitter {
                     currentBlock.addStatement(
                             StaticJavaParser.parseStatement(
                                     "throw new"
-                                            + " com.dylibso.chicory.wasm.ChicoryException("
+                                            + " com.dylibso.chicory.runtime.TrapException("
                                             + "\"Trapped on unreachable instruction\");"));
                     break;
 
