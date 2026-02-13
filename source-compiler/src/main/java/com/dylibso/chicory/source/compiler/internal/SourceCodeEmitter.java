@@ -2854,6 +2854,10 @@ final class SourceCodeEmitter {
     /**
      * Emit CALL_INDIRECT: resolve function from table, type-check, and call.
      * Mirrors ASM compiler's CALL_INDIRECT + compileCallIndirect.
+     *
+     * Cross-module dispatch: table entries store both a funcId and the Instance
+     * that owns the function. We must dispatch through that Instance's machine,
+     * not the current module's machine.
      */
     public static void CALL_INDIRECT(
             CompilerInstruction ins,
@@ -2869,6 +2873,12 @@ final class SourceCodeEmitter {
         com.github.javaparser.ast.expr.Expression entryIdx = stack.pop();
 
         int idx = callIdx[0];
+
+        // Store entry index in a local (may be a complex expression, used twice)
+        block.addStatement(
+                StaticJavaParser.parseStatement(
+                        "int ciTableIdx_" + idx + " = (int)(" + entryIdx + ");"));
+
         // Resolve function ID from table
         block.addStatement(
                 StaticJavaParser.parseStatement(
@@ -2876,14 +2886,30 @@ final class SourceCodeEmitter {
                                 + idx
                                 + " = instance.table("
                                 + tableIdx
-                                + ").requiredRef((int)("
-                                + entryIdx
-                                + "));"));
+                                + ").requiredRef(ciTableIdx_"
+                                + idx
+                                + ");"));
 
-        // Type check (mirrors Shaded.callIndirect)
+        // Get the owning instance for this table entry (for cross-module dispatch)
         block.addStatement(
                 StaticJavaParser.parseStatement(
-                        "if (!instance.type(instance.functionType(ciFuncId_"
+                        "com.dylibso.chicory.runtime.Instance ciRefInstance_"
+                                + idx
+                                + " = java.util.Objects.requireNonNullElse("
+                                + "instance.table("
+                                + tableIdx
+                                + ").instance(ciTableIdx_"
+                                + idx
+                                + "), instance);"));
+
+        // Type check using refInstance for the actual function type
+        block.addStatement(
+                StaticJavaParser.parseStatement(
+                        "if (!ciRefInstance_"
+                                + idx
+                                + ".type(ciRefInstance_"
+                                + idx
+                                + ".functionType(ciFuncId_"
                                 + idx
                                 + "))"
                                 + ".typesMatch(instance.type("
@@ -2892,12 +2918,18 @@ final class SourceCodeEmitter {
                                 + " com.dylibso.chicory.wasm.ChicoryException("
                                 + "\"indirect call type mismatch\"); }"));
 
-        emitCallWithArgs(block, stack, calledFunctionType, "ciFuncId_" + idx, callIdx);
+        emitCallWithArgs(
+                block,
+                stack,
+                calledFunctionType,
+                "ciFuncId_" + idx,
+                callIdx,
+                "ciRefInstance_" + idx);
     }
 
     /**
      * Shared helper: box args from expression stack, call via Machine, unbox result.
-     * Used by both CALL and CALL_INDIRECT.
+     * Used by CALL (always dispatches through current instance).
      */
     private static void emitCallWithArgs(
             BlockStmt block,
@@ -2905,6 +2937,22 @@ final class SourceCodeEmitter {
             FunctionType calledFunctionType,
             String funcIdExpr,
             int[] callIdx) {
+        emitCallWithArgs(block, stack, calledFunctionType, funcIdExpr, callIdx, "instance");
+    }
+
+    /**
+     * Shared helper: box args from expression stack, call via Machine, unbox result.
+     * The instanceExpr parameter controls which instance's machine is used for dispatch.
+     * For CALL this is always "instance"; for CALL_INDIRECT it may be the refInstance
+     * from the table entry (for cross-module calls).
+     */
+    private static void emitCallWithArgs(
+            BlockStmt block,
+            Deque<com.github.javaparser.ast.expr.Expression> stack,
+            FunctionType calledFunctionType,
+            String funcIdExpr,
+            int[] callIdx,
+            String instanceExpr) {
         int paramCount = calledFunctionType.params().size();
         int idx = callIdx[0]++;
 
@@ -2929,8 +2977,8 @@ final class SourceCodeEmitter {
             argsExpr = argsVar;
         }
 
-        // Dispatch via Machine interface (works in static methods)
-        String callExpr = "instance.getMachine().call(" + funcIdExpr + ", " + argsExpr + ")";
+        // Dispatch via Machine interface through the specified instance
+        String callExpr = instanceExpr + ".getMachine().call(" + funcIdExpr + ", " + argsExpr + ")";
 
         // Handle return value
         if (calledFunctionType.returns().isEmpty()) {

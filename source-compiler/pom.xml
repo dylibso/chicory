@@ -63,6 +63,7 @@
             <wast>block.wast</wast>
             <wast>br.wast</wast>
             <wast>br_if.wast</wast>
+            <wast>br_table.wast</wast>
             <wast>bulk.wast</wast>
             <wast>call.wast</wast>
             <wast>call_indirect.wast</wast>
@@ -139,7 +140,6 @@
           <excludedWasts>
             <wast>binary-leb128.wast</wast>
             <wast>binary.wast</wast>
-            <wast>br_table.wast</wast>
             <wast>comments.wast</wast>
             <wast>custom.wast</wast>
             <wast>inline-module.wast</wast>

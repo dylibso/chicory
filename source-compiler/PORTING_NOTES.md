@@ -64,7 +64,7 @@ The source compiler uses **structured Java control flow** that mirrors WASM's st
 - **Dead code tracking**: the analyzer uses `exitBlockDepth` + `exitTargetLabel` to skip instructions after unconditional branches. `exitTargetLabel` tracks which scope the dead code should stop at, handling `br N` where N > 0. For BLOCK/LOOP scopes, dead code mode is cleared on END (alternate paths via br_if make code after the block reachable).
 - **Terminal detection for if/else**: an if/else is terminal for its parent only if BOTH branches terminate AND no break targets the if's own label. An if-without-else is never terminal.
 - **Implicit return**: added at end of `generateFunctionMethod` for functions whose body doesn't end with return/throw but has stack values on the expression stack.
-- **Function calls**: `instance.getMachine().call(funcId, args)` with boxing/unboxing via `SourceCompilerUtil.boxJvmToLong`/`unboxLongToJvm`. CALL and CALL_INDIRECT share a common `emitCallWithArgs` helper.
+- **Function calls**: `instance.getMachine().call(funcId, args)` with boxing/unboxing via `SourceCompilerUtil.boxJvmToLong`/`unboxLongToJvm`. CALL and CALL_INDIRECT share a common `emitCallWithArgs` helper. CALL_INDIRECT resolves the `refInstance` from the table entry (`table.instance(idx)`) for cross-module dispatch — the function is called through `refInstance.getMachine().call()`, not the current module's machine.
 
 ### Key implementation details
 
@@ -96,7 +96,7 @@ The source compiler uses **structured Java control flow** that mirrors WASM's st
 
 ### Current status
 
-**Test results (26,709 tests, 0 failures, 0 errors, 57 skipped):**
+**Test results (26,882 tests, 0 failures, 0 errors, 51 skipped):**
 
 All spec tests now pass. The full WASM v1 spec test suite is included and passing:
 
@@ -107,13 +107,14 @@ All spec tests now pass. The full WASM v1 spec test suite is included and passin
 | SpecV1BlockTest | 223/223 | 0 | |
 | SpecV1BrTest | 97/97 | 0 | |
 | SpecV1BrIfTest | 118/118 | 0 | |
+| SpecV1BrTableTest | 174/174 | 0 | |
 | SpecV1BulkTest | 117/117 | 0 | |
 | SpecV1CallTest | 91/91 | 0 | |
 | SpecV1CallIndirectTest | 172/172 | 0 | |
 | SpecV1ConstTest | 778/778 | 0 | |
 | SpecV1ConversionsTest | 619/619 | 0 | |
 | SpecV1DataTest | 61/61 | 0 | |
-| SpecV1ElemTest | 92/98 | 6 | |
+| SpecV1ElemTest | 98/98 | 0 | |
 | SpecV1EndiannessTest | 69/69 | 0 | |
 | SpecV1ExportsTest | 96/96 | 0 | |
 | SpecV1F32Test | 2514/2514 | 0 | |
@@ -228,8 +229,7 @@ The Java compiler enforces a 64KB bytecode limit per method. The `MethodSplitter
 ### Known limitations and remaining work
 
 - **Sequential code splitting**: the `MethodSplitter` can only extract labeled blocks and split switch statements. Methods with large amounts of sequential code (no labeled blocks or switches) remain unsplit. These methods still compile via javac but may approach the 64KB limit for very large WASM functions. A future improvement would be to split sequential statement runs into helper methods.
-- **Module-path test execution**: the second surefire execution (`test-module-path`) fails with `NoClassDefFound com/dylibso/chicory/testing/Spectest`. This is a JPMS module descriptor issue, not a source compiler bug. The classpath execution passes 100%.
-- **Runtime correctness of wat2wasm**: the source compiler generates compilable code for wat2wasm, but runtime correctness (actually running the compiled wat2wasm to parse WAT files) has not been validated yet.
+- **Runtime correctness of wat2wasm**: the source compiler generates compilable code for wat2wasm, but running it produces "out of bounds memory access: attempted to access address: 67108872 but limit is: 786432" during instance initialization. The same error occurs with the hand-decompiled version, suggesting a pre-existing issue in the decompiled-wabt module (possibly stale runtime classes or a missing memory growth path).
 
 ### Workflow for future porting sessions
 
