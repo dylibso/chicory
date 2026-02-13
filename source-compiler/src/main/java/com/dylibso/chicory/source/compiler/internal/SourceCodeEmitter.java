@@ -213,6 +213,9 @@ final class SourceCodeEmitter {
         // Generate call() method that dispatches to the appropriate func_xxx
         generateCallMethod(clazz, className, functionTypes, functionImports);
 
+        // Split any too-large methods to stay within Java's 64KB bytecode limit
+        MethodSplitter.splitLargeMethods(clazz);
+
         return cu.toString();
     }
 
