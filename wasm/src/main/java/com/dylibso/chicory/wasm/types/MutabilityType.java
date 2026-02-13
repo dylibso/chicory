@@ -3,7 +3,7 @@ package com.dylibso.chicory.wasm.types;
 import com.dylibso.chicory.wasm.MalformedException;
 
 /**
- * The kind of mutability for a global variable.
+ * The kind of mutability
  */
 public enum MutabilityType {
     Const(ID.Const),
@@ -34,7 +34,7 @@ public enum MutabilityType {
             case ID.Var:
                 return Var;
             default:
-                throw new MalformedException("Global malformed mutability");
+                throw new MalformedException("malformed mutability " + id);
         }
     }
 
