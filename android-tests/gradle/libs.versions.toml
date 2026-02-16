@@ -1,5 +1,5 @@
 [versions]
-agp = "9.0.0"
+agp = "9.0.1"
 junitJupiterApi = "5.14.2"
 kotlin = "2.3.10"
 chicory = "999-SNAPSHOT"
