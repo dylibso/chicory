@@ -8,10 +8,19 @@ import java.util.stream.Collectors;
 
 public final class TypeSection extends Section {
     private final List<RecType> types;
+    private final SubType[] flattenedSubTypes;
 
     private TypeSection(List<RecType> types) {
         super(SectionId.TYPE);
         this.types = List.copyOf(types);
+
+        var flatList = new ArrayList<SubType>();
+        for (var t : this.types) {
+            for (var st : t.subTypes()) {
+                flatList.add(st);
+            }
+        }
+        this.flattenedSubTypes = flatList.toArray(new SubType[0]);
     }
 
     // https://github.com/WebAssembly/gc/blob/main/proposals/gc/MVP.md#type-definitions
@@ -29,6 +38,10 @@ public final class TypeSection extends Section {
         return types.size();
     }
 
+    public int subTypeCount() {
+        return flattenedSubTypes.length;
+    }
+
     public FunctionType getType(int idx) {
         return types.get(idx).legacy();
     }
@@ -38,18 +51,10 @@ public final class TypeSection extends Section {
     }
 
     public SubType getSubType(int idx) {
-        // TODO: improve performance
-        int i = 0;
-        for (var t : types) {
-            for (var st : t.subTypes()) {
-                if (i == idx) {
-                    return st;
-                }
-                i++;
-            }
+        if (idx < 0 || idx >= flattenedSubTypes.length) {
+            throw new InvalidException("unknown type " + idx);
         }
-
-        throw new InvalidException("unknown type " + idx);
+        return flattenedSubTypes[idx];
     }
 
     public static Builder builder() {

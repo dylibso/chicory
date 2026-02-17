@@ -214,11 +214,14 @@
           <!-- This test is supposed to fail because there is a THROW_REF in a Global initializer -->
           <!-- it's a different error with EH -->
           <!-- No need to check the assertion of multiple tables(the spec will be rebased eventually): https://github.com/WebAssembly/spec/blob/main/interpreter/valid/valid.ml#L729 -->
+          <!-- GC semantics allow self-referencing types in implicit singleton rec groups,
+               superseding function-references-only semantics that forbid them -->
           <excludedTests>SpecV1BinaryTest.test40,
             SpecV1EhBinaryTest.test40,
             SpecV1ThreadsImportsTest.test64,
             SpecV1ThreadsImportsTest.test65,
-            SpecV1ThreadsImportsTest.test66</excludedTests>
+            SpecV1ThreadsImportsTest.test66,
+            SpecV1FunctionReferencesTypeEquivalenceTest.test2</excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts/>
           <excludedUnlinkableWasts/>
@@ -555,11 +558,14 @@
               <!-- This test is supposed to fail because there is a THROW_REF in a Global initializer -->
               <!-- it's a different error with EH -->
               <!-- No need to check the assertion of multiple tables(the spec will be rebased eventually): https://github.com/WebAssembly/spec/blob/main/interpreter/valid/valid.ml#L729 -->
+              <!-- GC semantics allow self-referencing types in implicit singleton rec groups,
+                   superseding function-references-only semantics that forbid them -->
               <excludedTests>SpecV1BinaryTest.test40,
                 SpecV1EhBinaryTest.test40,
                 SpecV1ThreadsImportsTest.test64,
                 SpecV1ThreadsImportsTest.test65,
-                SpecV1ThreadsImportsTest.test66</excludedTests>
+                SpecV1ThreadsImportsTest.test66,
+                SpecV1FunctionReferencesTypeEquivalenceTest.test2</excludedTests>
               <excludedMalformedWasts/>
               <excludedInvalidWasts/>
               <excludedUnlinkableWasts/>
