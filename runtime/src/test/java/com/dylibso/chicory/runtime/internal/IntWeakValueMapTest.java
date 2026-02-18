@@ -115,12 +115,11 @@ public class IntWeakValueMapTest {
             }
         }
 
-        // After GC, the value should be collected and size should reflect cleanup
-        // Note: GC is non-deterministic, so we verify the contract holds
-        // when the value IS collected
-        if (map.get(key) == null) {
-            assertEquals(0, map.size());
-        }
+        // After GC, the value should be collected and get() returns null.
+        // Note: GC is non-deterministic, so we only assert when the value
+        // IS collected. We don't assert on size() because the ReferenceQueue
+        // may not be drained yet on all GC implementations (e.g. Android).
+        assertNull(map.get(key));
     }
 
     @Test
