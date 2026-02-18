@@ -32,13 +32,14 @@ public final class SubType {
             return false;
         }
         SubType subType = (SubType) o;
-        return Objects.deepEquals(typeIdx, subType.typeIdx)
+        return isFinal == subType.isFinal
+                && Objects.deepEquals(typeIdx, subType.typeIdx)
                 && Objects.equals(compType, subType.compType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(Arrays.hashCode(typeIdx), compType);
+        return Objects.hash(isFinal, Arrays.hashCode(typeIdx), compType);
     }
 
     public static Builder builder() {

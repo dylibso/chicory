@@ -910,7 +910,6 @@ final class Validator {
     private static int[] typesWithDefaultValue =
             new int[] {
                 ValType.ID.F64,
-                ValType.ID.F64,
                 ValType.ID.F32,
                 ValType.ID.I64,
                 ValType.ID.I32,
@@ -2550,8 +2549,12 @@ final class Validator {
                     {
                         int typeIdx = (int) op.operand(0);
                         int elemIdx = (int) op.operand(1);
-                        getArrayType(typeIdx);
-                        getElement(elemIdx);
+                        var at = getArrayType(typeIdx);
+                        var elem = getElement(elemIdx);
+                        var arrElem = unpackFieldType(at.fieldType());
+                        if (!typeMatches(elem.type(), arrElem)) {
+                            throw new InvalidException("type mismatch");
+                        }
                         popVal(ValType.I32);
                         popVal(ValType.I32);
                         pushVal(valType(ValType.ID.Ref, typeIdx));
