@@ -24,6 +24,13 @@ public class IntWeakValueMap<V> {
     private final ReferenceQueue<V> queue = new ReferenceQueue<>();
     private int nextId;
 
+    public IntWeakValueMap() {}
+
+    /** Creates a map with auto-assigned keys starting at the given ID. */
+    public IntWeakValueMap(int initialId) {
+        this.nextId = initialId;
+    }
+
     /** Inserts a value with an automatically assigned key. */
     public int put(V value) {
         cleanup();

@@ -1117,6 +1117,23 @@ public final class Parser {
                             reference.addCallback(instruction::withLabelTrue);
                             break;
                         }
+                    case BR_ON_CAST:
+                    case BR_ON_CAST_FAIL:
+                        {
+                            instruction.withLabelFalse(instructions.size() + 1);
+                            // Label depth is in operand 1 (after flags)
+                            var offset = (int) baseInstruction.operand(1);
+                            ControlTree reference = currentControlFlow;
+                            while (offset > 0) {
+                                if (reference == null) {
+                                    throw new InvalidException("unknown label");
+                                }
+                                reference = reference.parent();
+                                offset--;
+                            }
+                            reference.addCallback(instruction::withLabelTrue);
+                            break;
+                        }
                     case BR_TABLE:
                         {
                             var length = baseInstruction.operandCount();

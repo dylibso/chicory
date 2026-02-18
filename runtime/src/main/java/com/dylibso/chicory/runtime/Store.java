@@ -4,6 +4,7 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.TypeSection;
 import java.util.LinkedHashMap;
 import java.util.Objects;
 import java.util.function.Function;
@@ -112,9 +113,16 @@ public class Store {
                 case FUNCTION:
                     ExportFunction f = instance.export(exportName);
                     FunctionType ftype = instance.exportType(exportName);
+                    int typeIdx = instance.functionType(export.index());
+                    TypeSection ts = instance.module().typeSection();
                     this.addFunction(
                             new ImportFunction(
-                                    name, exportName, ftype, (inst, args) -> f.apply(args)));
+                                    name,
+                                    exportName,
+                                    ftype,
+                                    (inst, args) -> f.apply(args),
+                                    typeIdx,
+                                    ts));
                     break;
 
                 case TABLE:

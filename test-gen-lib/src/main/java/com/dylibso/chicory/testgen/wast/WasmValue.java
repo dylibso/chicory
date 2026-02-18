@@ -153,13 +153,16 @@ public class WasmValue {
                     // we are verifying the reference exists
                     return new NameExpr(
                             "assertNotNull(" + moduleName + ".array((int) results[0]))");
-                case STRUCT_REF:
-                case ANY_REF:
                 case NULL_REF:
                 case NULL_FUNC_REF:
                 case NULL_EXTERN_REF:
+                    return new NameExpr(
+                            "assertEquals(" + resultVar + ", " + "REF_NULL_VALUE" + ")");
+                case STRUCT_REF:
+                case ANY_REF:
                 case I31_REF:
-                    return new NameExpr("assertEquals(\"TODO\", \"implement me\")");
+                    return new NameExpr(
+                            "assertNotEquals(" + resultVar + ", " + "REF_NULL_VALUE" + ")");
                 default:
                     throw new IllegalArgumentException(
                             "cannot generate assertion for WasmValue: " + this);

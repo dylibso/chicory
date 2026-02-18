@@ -34,11 +34,13 @@ import com.dylibso.chicory.wasm.types.MemoryImport;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.MutabilityType;
+import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TagImport;
 import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
+import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -50,6 +52,10 @@ import java.util.stream.Collectors;
 
 public class Instance {
     public static final String START_FUNCTION_NAME = "_start";
+
+    // GC ref IDs start at this offset to avoid collisions with function indices
+    // and externref values, which share the same integer representation space.
+    static final int GC_REF_ID_OFFSET = 0x10000;
 
     private final WasmModule module;
     private final Machine machine;
@@ -70,6 +76,7 @@ public class Instance {
 
     private final Map<Integer, WasmException> exnRefs;
     private final IntWeakValueMap<long[]> arrayRefs;
+    private final IntWeakValueMap<WasmGcRef> gcRefs;
 
     Instance(
             WasmModule module,
@@ -111,6 +118,9 @@ public class Instance {
 
         this.exnRefs = new HashMap<>();
         this.arrayRefs = new IntWeakValueMap<>();
+        // Start GC ref IDs at a high offset to avoid collisions with
+        // function indices and extern ref values which share the int space.
+        this.gcRefs = new IntWeakValueMap<>(GC_REF_ID_OFFSET);
 
         for (int i = 0; i < tables.length; i++) {
             var initValue = (int) computeConstantValue(this, tables[i].initialize())[0];
@@ -123,6 +133,20 @@ public class Instance {
     }
 
     public Instance initialize(boolean start) {
+        // Globals must be initialized before element/data segments,
+        // because segment offsets can reference local globals via global.get.
+        for (var i = 0; i < globalInitializers.length; i++) {
+            var g = globalInitializers[i];
+            var values = computeConstantValue(this, g.initInstructions());
+            globals[i] =
+                    new GlobalInstance(
+                            values[0],
+                            (values.length > 1) ? values[1] : 0,
+                            g.valueType(),
+                            g.mutabilityType());
+            globals[i].setInstance(this);
+        }
+
         for (var el : elements) {
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
@@ -141,21 +165,9 @@ public class Instance {
                     var inst = computeConstantInstance(this, init);
 
                     assert ae.type().isReference();
-                    table.setRef(index, (int) value[0], inst);
+                    table.setRef(index, OpcodeImpl.boxForTable(value[0], this), inst);
                 }
             }
-        }
-
-        for (var i = 0; i < globalInitializers.length; i++) {
-            var g = globalInitializers[i];
-            var values = computeConstantValue(this, g.initInstructions());
-            globals[i] =
-                    new GlobalInstance(
-                            values[0],
-                            (values.length > 1) ? values[1] : 0,
-                            g.valueType(),
-                            g.mutabilityType());
-            globals[i].setInstance(this);
         }
 
         if (memory != null && imports.memories().length == 0) {
@@ -264,6 +276,14 @@ public class Instance {
         return memory;
     }
 
+    public byte[] dataSegmentData(int idx) {
+        return dataSegments[idx].data();
+    }
+
+    public void dropDataSegment(int idx) {
+        dataSegments[idx] = PassiveDataSegment.EMPTY;
+    }
+
     public GlobalInstance global(int idx) {
         if (idx < imports.globalCount()) {
             return imports.global(idx).instance();
@@ -347,7 +367,23 @@ public class Instance {
     }
 
     public long[] array(int idx) {
-        return arrayRefs.get(idx);
+        var legacy = arrayRefs.get(idx);
+        if (legacy != null) {
+            return legacy;
+        }
+        var gcRef = gcRefs.get(idx);
+        if (gcRef instanceof WasmArray) {
+            return ((WasmArray) gcRef).elements();
+        }
+        return null;
+    }
+
+    public int registerGcRef(WasmGcRef ref) {
+        return gcRefs.put(ref);
+    }
+
+    public WasmGcRef gcRef(int idx) {
+        return gcRefs.get(idx);
     }
 
     public Machine getMachine() {
@@ -427,6 +463,24 @@ public class Instance {
         }
 
         private void validateExternalFunctionSignature(FunctionImport imprt, ImportFunction f) {
+            // Use cross-module canonical type matching when source type info is available
+            if (f.sourceTypeSection() != null && f.sourceTypeIdx() >= 0) {
+                // Check if the export type is a subtype of the import type
+                // Walk up the export's supertype chain and check canonical equivalence
+                if (!crossModuleTypeSubtype(
+                        f.sourceTypeSection(),
+                        f.sourceTypeIdx(),
+                        module.typeSection(),
+                        imprt.typeIndex())) {
+                    throw new UnlinkableException(
+                            "incompatible import type for host function "
+                                    + f.module()
+                                    + "."
+                                    + f.name());
+                }
+                return;
+            }
+            // Fallback: structural comparison for host-provided functions
             var expectedType = module.typeSection().getType(imprt.typeIndex());
 
             if (!f.functionType().equals(expectedType)) {
@@ -436,6 +490,30 @@ public class Instance {
                                 + "."
                                 + f.name());
             }
+        }
+
+        /**
+         * Check if exportTypeIdx from exportTs is a subtype of importTypeIdx from importTs.
+         * Walks up the export type's declared supertype chain checking canonical equivalence.
+         */
+        private static boolean crossModuleTypeSubtype(
+                TypeSection exportTs, int exportTypeIdx, TypeSection importTs, int importTypeIdx) {
+            // Walk up the supertype chain of the export type
+            int currentIdx = exportTypeIdx;
+            while (currentIdx >= 0) {
+                if (TypeSection.crossModuleCanonicallyEquivalent(
+                        exportTs, currentIdx, importTs, importTypeIdx)) {
+                    return true;
+                }
+                // Move to parent type
+                var subType = exportTs.getSubType(currentIdx);
+                int[] supers = subType.typeIdx();
+                if (supers.length == 0) {
+                    break;
+                }
+                currentIdx = supers[0];
+            }
+            return false;
         }
 
         private boolean checkHostGlobalType(GlobalImport i, ImportGlobal g) {
@@ -784,7 +862,7 @@ public class Instance {
                 Import imprt = module.importSection().getImport(i);
                 if (imprt.importType() == FUNCTION) {
                     var type = ((FunctionImport) imprt).typeIndex();
-                    if (type >= this.module.typeSection().typeCount()) {
+                    if (type >= this.module.typeSection().subTypeCount()) {
                         throw new InvalidException("unknown type");
                     }
                     functionTypes[funcIdx] = type;

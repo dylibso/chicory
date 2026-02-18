@@ -8,10 +8,13 @@ import static java.util.stream.Collectors.toSet;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
+import com.dylibso.chicory.wasm.types.ArrayType;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
+import com.dylibso.chicory.wasm.types.CompType;
 import com.dylibso.chicory.wasm.types.DeclarativeElement;
 import com.dylibso.chicory.wasm.types.Element;
 import com.dylibso.chicory.wasm.types.ExternalType;
+import com.dylibso.chicory.wasm.types.FieldType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -20,11 +23,15 @@ import com.dylibso.chicory.wasm.types.GlobalImport;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.StorageType;
+import com.dylibso.chicory.wasm.types.StructType;
+import com.dylibso.chicory.wasm.types.SubType;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TagImport;
 import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
+import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayDeque;
@@ -155,6 +162,14 @@ final class Validator {
         return Stream.empty();
     }
 
+    private TypeSection typeSection() {
+        return module.typeSection();
+    }
+
+    private boolean typeMatches(ValType t1, ValType t2) {
+        return ValType.matches(t1, t2, typeSection());
+    }
+
     private void pushVal(ValType valType) {
         valTypeStack.add(valType);
     }
@@ -175,7 +190,7 @@ final class Validator {
 
     private ValType popVal(ValType expected) {
         var actual = popVal();
-        if (!ValType.matches(actual, expected)
+        if (!typeMatches(actual, expected)
                 && !actual.equals(ValType.BOT)
                 && !expected.equals(ValType.BOT)) {
             errors.add(
@@ -351,7 +366,7 @@ final class Validator {
         if (ValType.isValid(typeId)) {
             return List.of();
         }
-        if (typeId >= module.typeSection().typeCount()) {
+        if (typeId >= module.typeSection().subTypeCount()) {
             throw new MalformedException("unexpected end");
         }
         return getType((int) typeId).params();
@@ -365,7 +380,7 @@ final class Validator {
     }
 
     private FunctionType getType(int idx) {
-        if (idx < 0 || idx >= module.typeSection().typeCount()) {
+        if (idx < 0 || idx >= module.typeSection().subTypeCount()) {
             throw new InvalidException("unknown type " + idx);
         }
         return module.typeSection().getType(idx);
@@ -419,6 +434,75 @@ final class Validator {
         return module.elementSection().getElement(idx);
     }
 
+    // GC helpers
+
+    private SubType getSubType(int idx) {
+        if (idx < 0 || idx >= module.typeSection().subTypeCount()) {
+            throw new InvalidException("unknown type " + idx);
+        }
+        return module.typeSection().getSubType(idx);
+    }
+
+    private StructType getStructType(int idx) {
+        var st = getSubType(idx);
+        if (st.compType().structType() == null) {
+            throw new InvalidException("expected struct type at index " + idx);
+        }
+        return st.compType().structType();
+    }
+
+    private ArrayType getArrayType(int idx) {
+        var st = getSubType(idx);
+        if (st.compType().arrayType() == null) {
+            throw new InvalidException("expected array type at index " + idx);
+        }
+        return st.compType().arrayType();
+    }
+
+    private ValType unpackStorageType(StorageType st) {
+        if (st.packedType() != null) {
+            return ValType.I32;
+        }
+        return st.valType();
+    }
+
+    private ValType unpackFieldType(FieldType ft) {
+        return unpackStorageType(ft.storageType());
+    }
+
+    /**
+     * Returns the "top" abstract heap type for a given heap type index.
+     * Concrete struct/array → any; concrete func → func; abstract types → their top.
+     */
+    private int topOfHeapType(int heapTypeIdx) {
+        if (heapTypeIdx >= 0) {
+            var st = getSubType(heapTypeIdx);
+            if (st.compType().funcType() != null) {
+                return ValType.TypeIdxCode.FUNC.code();
+            }
+            return ValType.TypeIdxCode.ANY.code();
+        }
+        switch (heapTypeIdx) {
+            case -18: // ANY
+            case -15: // NONE
+            case -19: // EQ
+            case -21: // STRUCT
+            case -22: // ARRAY
+            case -20: // I31
+                return ValType.TypeIdxCode.ANY.code();
+            case -16: // FUNC
+            case -13: // NOFUNC
+                return ValType.TypeIdxCode.FUNC.code();
+            case -17: // EXTERN
+            case -14: // NOEXTERN
+                return ValType.TypeIdxCode.EXTERN.code();
+            case -23: // EXN
+                return ValType.TypeIdxCode.EXN.code();
+            default:
+                return heapTypeIdx;
+        }
+    }
+
     void validateModule() {
         if (module.functionSection().functionCount() != module.codeSection().functionBodyCount()) {
             throw new MalformedException("function and code section have inconsistent lengths");
@@ -445,13 +529,14 @@ final class Validator {
 
     void validateData() {
         // Validate offsets.
+        int allGlobals = globalImports.size() + module.globalSection().globalCount();
         for (var ds : module.dataSection().dataSegments()) {
             if (ds instanceof ActiveDataSegment) {
                 var ads = (ActiveDataSegment) ds;
                 if (ads.index() != 0) {
                     throw new InvalidException("unknown memory " + ads.index());
                 }
-                validateConstantExpression(ads.offsetInstructions(), ValType.I32);
+                validateConstantExpression(ads.offsetInstructions(), ValType.I32, allGlobals);
             }
         }
     }
@@ -464,21 +549,111 @@ final class Validator {
             // The valid range is [0, subTypeBase + groupSize) - within the current
             // recursion group forward refs are allowed, outside they are not
             int validUpperBound = subTypeBase + groupSize;
+            int flatIdx = subTypeBase;
             for (var st : t.subTypes()) {
                 var comp = st.compType();
                 if (comp.funcType() != null) {
                     validateTypeRefs(comp.funcType().params(), validUpperBound);
                     validateTypeRefs(comp.funcType().returns(), validUpperBound);
                 }
-                // Validate supertype references
+                if (comp.structType() != null) {
+                    for (var ft : comp.structType().fieldTypes()) {
+                        validateStorageTypeRefs(ft.storageType(), validUpperBound);
+                    }
+                }
+                if (comp.arrayType() != null) {
+                    validateStorageTypeRefs(
+                            comp.arrayType().fieldType().storageType(), validUpperBound);
+                }
+                // Validate supertype references and subtype validity
                 for (int sup : st.typeIdx()) {
                     if (sup < 0 || sup >= validUpperBound) {
                         throw new InvalidException("unknown type " + sup);
                     }
+                    var superSt = module.typeSection().getSubType(sup);
+                    if (superSt.isFinal()) {
+                        throw new InvalidException(
+                                "sub type " + flatIdx + " does not match super type");
+                    }
+                    validateSubtypeMatch(flatIdx, st.compType(), superSt.compType());
                 }
+                flatIdx++;
             }
             subTypeBase += groupSize;
         }
+    }
+
+    private void validateStorageTypeRefs(StorageType st, int validUpperBound) {
+        if (st.valType() != null) {
+            validateTypeRefs(java.util.List.of(st.valType()), validUpperBound);
+        }
+    }
+
+    private void validateSubtypeMatch(int flatIdx, CompType sub, CompType sup) {
+        // Both must be the same kind (func/struct/array)
+        if (sub.funcType() != null && sup.funcType() != null) {
+            validateFuncSubtype(flatIdx, sub.funcType(), sup.funcType());
+        } else if (sub.structType() != null && sup.structType() != null) {
+            validateStructSubtype(flatIdx, sub.structType(), sup.structType());
+        } else if (sub.arrayType() != null && sup.arrayType() != null) {
+            validateFieldSubtype(flatIdx, sub.arrayType().fieldType(), sup.arrayType().fieldType());
+        } else {
+            throw new InvalidException("sub type " + flatIdx + " does not match super type");
+        }
+    }
+
+    private void validateFuncSubtype(int flatIdx, FunctionType sub, FunctionType sup) {
+        // Contravariant params, covariant returns
+        if (sub.params().size() != sup.params().size()
+                || sub.returns().size() != sup.returns().size()) {
+            throw new InvalidException("sub type " + flatIdx + " does not match super type");
+        }
+        for (int i = 0; i < sub.params().size(); i++) {
+            if (!typeMatches(sup.params().get(i), sub.params().get(i))) {
+                throw new InvalidException("sub type " + flatIdx + " does not match super type");
+            }
+        }
+        for (int i = 0; i < sub.returns().size(); i++) {
+            if (!typeMatches(sub.returns().get(i), sup.returns().get(i))) {
+                throw new InvalidException("sub type " + flatIdx + " does not match super type");
+            }
+        }
+    }
+
+    private void validateStructSubtype(int flatIdx, StructType sub, StructType sup) {
+        // Subtype must have at least as many fields
+        if (sub.fieldTypes().length < sup.fieldTypes().length) {
+            throw new InvalidException("sub type " + flatIdx + " does not match super type");
+        }
+        // First N fields must match
+        for (int i = 0; i < sup.fieldTypes().length; i++) {
+            validateFieldSubtype(flatIdx, sub.fieldTypes()[i], sup.fieldTypes()[i]);
+        }
+    }
+
+    private void validateFieldSubtype(int flatIdx, FieldType sub, FieldType sup) {
+        if (sub.mut() != sup.mut()) {
+            throw new InvalidException("sub type " + flatIdx + " does not match super type");
+        }
+        if (sub.mut() == MutabilityType.Var) {
+            // Mutable fields must be invariant (both directions)
+            if (!storageTypeMatches(sub.storageType(), sup.storageType())
+                    || !storageTypeMatches(sup.storageType(), sub.storageType())) {
+                throw new InvalidException("sub type " + flatIdx + " does not match super type");
+            }
+        } else {
+            // Immutable fields are covariant
+            if (!storageTypeMatches(sub.storageType(), sup.storageType())) {
+                throw new InvalidException("sub type " + flatIdx + " does not match super type");
+            }
+        }
+    }
+
+    private boolean storageTypeMatches(StorageType sub, StorageType sup) {
+        if (sub.packedType() != null || sup.packedType() != null) {
+            return java.util.Objects.equals(sub.packedType(), sup.packedType());
+        }
+        return typeMatches(sub.valType(), sup.valType());
     }
 
     private void validateTypeRefs(java.util.List<ValType> types, int validUpperBound) {
@@ -501,9 +676,10 @@ final class Validator {
     }
 
     void validateTables() {
+        int allGlobals = globalImports.size() + module.globalSection().globalCount();
         for (int i = 0; i < module.tableSection().tableCount(); i++) {
             Table t = module.tableSection().getTable(i);
-            validateConstantExpression(t.initialize(), t.elementType());
+            validateConstantExpression(t.initialize(), t.elementType(), allGlobals);
         }
     }
 
@@ -514,22 +690,18 @@ final class Validator {
                         + module.importSection().stream()
                                 .filter(i -> i.importType() == ExternalType.FUNCTION)
                                 .count();
+        int allGlobals = globalImports.size() + module.globalSection().globalCount();
         for (Element el : module.elementSection().elements()) {
             validateValueType(el.type());
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
-                if (!ValType.matches(ae.type(), getTableType(ae.tableIndex()))) {
+                if (!typeMatches(ae.type(), getTableType(ae.tableIndex()))) {
                     throw new InvalidException(
                             "type mismatch, active element doesn't match table type");
                 }
-                validateConstantExpression(ae.offset(), ValType.I32);
+                validateConstantExpression(ae.offset(), ValType.I32, allGlobals);
                 for (int i = 0; i < ae.initializers().size(); i++) {
                     var initializers = ae.initializers().get(i);
-                    if (initializers.stream().filter(x -> x.opcode() != OpCode.END).count() != 1) {
-                        // TODO: this indicates that error messages should be concatenated
-                        // space for further refactoring
-                        throw new InvalidException("type mismatch, constant expression required");
-                    }
                     for (var init : initializers) {
                         if (init.opcode() == OpCode.REF_FUNC) {
                             var idx = init.operands()[0];
@@ -539,26 +711,24 @@ final class Validator {
                         }
                     }
                     validateConstantExpression(
-                            ae.initializers().get(i), getTableType(ae.tableIndex()));
-                }
-            } else if (el instanceof DeclarativeElement) {
-                for (var init : el.initializers()) {
-                    if (init.stream().filter(x -> x.opcode() != OpCode.END).count() != 1) {
-                        throw new InvalidException("type mismatch, constant expression required");
-                    }
+                            ae.initializers().get(i), getTableType(ae.tableIndex()), allGlobals);
                 }
             }
         }
     }
 
     void validateGlobals() {
-        for (Global g : module.globalSection().globals()) {
-            validateConstantExpression(g.initInstructions(), g.valueType());
+        var globalSection = module.globalSection();
+        for (int i = 0; i < globalSection.globalCount(); i++) {
+            Global g = globalSection.getGlobal(i);
+            // Pass the absolute index (imports + current) as the limit for global.get
+            validateConstantExpression(
+                    g.initInstructions(), g.valueType(), globalImports.size() + i);
         }
     }
 
     private void validateConstantExpression(
-            List<? extends Instruction> expr, ValType expectedType) {
+            List<? extends Instruction> expr, ValType expectedType, int maxGlobalIdx) {
         validateValueType(expectedType);
         int allFuncCount = this.functionImports.size() + module.functionSection().functionCount();
         var valTypeStack = new ArrayDeque<ValType>();
@@ -611,6 +781,13 @@ final class Validator {
                 case GLOBAL_GET:
                     {
                         var idx = (int) instruction.operand(0);
+                        if (idx < 0 || idx >= maxGlobalIdx) {
+                            throw new InvalidException(
+                                    "unknown global "
+                                            + idx
+                                            + ", initializer expression can only reference"
+                                            + " an imported or preceding global");
+                        }
                         if (idx < globalImports.size()) {
                             var global = globalImports.get(idx);
                             if (global.mutabilityType() != MutabilityType.Const) {
@@ -620,12 +797,81 @@ final class Validator {
                             }
                             valTypeStack.push(global.valueType());
                         } else {
-                            throw new InvalidException(
-                                    "unknown global "
-                                            + idx
-                                            + ", initializer expression can only reference"
-                                            + " an imported global");
+                            // Reference to a preceding module global
+                            int moduleGlobalIdx = idx - globalImports.size();
+                            var global = module.globalSection().getGlobal(moduleGlobalIdx);
+                            if (global.mutabilityType() != MutabilityType.Const) {
+                                throw new InvalidException(
+                                        "constant expression required, initializer expression"
+                                                + " cannot reference a mutable global");
+                            }
+                            valTypeStack.push(global.valueType());
                         }
+                        break;
+                    }
+                case REF_I31:
+                    valTypeStack.pop(); // I32
+                    valTypeStack.push(
+                            ValType.builder()
+                                    .withOpcode(ValType.ID.Ref)
+                                    .withTypeIdx(ValType.TypeIdxCode.I31.code())
+                                    .build());
+                    break;
+                case STRUCT_NEW:
+                    {
+                        int typeIdx = (int) instruction.operand(0);
+                        var st = getStructType(typeIdx);
+                        for (int f = 0; f < st.fieldTypes().length; f++) {
+                            valTypeStack.pop();
+                        }
+                        valTypeStack.push(valType(ValType.ID.Ref, typeIdx));
+                        break;
+                    }
+                case STRUCT_NEW_DEFAULT:
+                    {
+                        int typeIdx = (int) instruction.operand(0);
+                        getStructType(typeIdx);
+                        valTypeStack.push(valType(ValType.ID.Ref, typeIdx));
+                        break;
+                    }
+                case ARRAY_NEW:
+                    {
+                        int typeIdx = (int) instruction.operand(0);
+                        getArrayType(typeIdx);
+                        valTypeStack.pop(); // length
+                        valTypeStack.pop(); // fill value
+                        valTypeStack.push(valType(ValType.ID.Ref, typeIdx));
+                        break;
+                    }
+                case ARRAY_NEW_DEFAULT:
+                    {
+                        int typeIdx = (int) instruction.operand(0);
+                        getArrayType(typeIdx);
+                        valTypeStack.pop(); // length
+                        valTypeStack.push(valType(ValType.ID.Ref, typeIdx));
+                        break;
+                    }
+                case ARRAY_NEW_FIXED:
+                    {
+                        int typeIdx = (int) instruction.operand(0);
+                        int count = (int) instruction.operand(1);
+                        getArrayType(typeIdx);
+                        for (int e = 0; e < count; e++) {
+                            valTypeStack.pop();
+                        }
+                        valTypeStack.push(valType(ValType.ID.Ref, typeIdx));
+                        break;
+                    }
+                case ANY_CONVERT_EXTERN:
+                    {
+                        valTypeStack.pop();
+                        valTypeStack.push(ValType.AnyRef);
+                        break;
+                    }
+                case EXTERN_CONVERT_ANY:
+                    {
+                        valTypeStack.pop();
+                        valTypeStack.push(ValType.ExternRef);
                         break;
                     }
                 case END:
@@ -646,7 +892,7 @@ final class Validator {
                     "type mismatch, values remaining on the stack after evaluation");
         } else {
             var exprType = valTypeStack.pop();
-            if (exprType != null && !ValType.matches(exprType, expectedType)) {
+            if (exprType != null && !typeMatches(exprType, expectedType)) {
                 throw new InvalidException("type mismatch");
             }
         }
@@ -1645,7 +1891,7 @@ final class Validator {
                         ValType actualType = popVal();
                         setLocal(index);
                         ValType localType = getLocalType(index);
-                        if (!ValType.matches(actualType, localType)) {
+                        if (!typeMatches(actualType, localType)) {
                             throw new InvalidException(
                                     "type mismatch: local_tee: " + actualType + " " + localType);
                         }
@@ -1761,7 +2007,7 @@ final class Validator {
                         var table1 = getTableType((int) op.operand(1));
                         var table2 = getTableType((int) op.operand(0));
 
-                        if (!ValType.matches(table1, table2)) {
+                        if (!typeMatches(table1, table2)) {
                             throw new InvalidException(
                                     "type mismatch, table 1 type: "
                                             + table1
@@ -1780,7 +2026,7 @@ final class Validator {
                         var elemIdx = (int) op.operand(0);
                         var elem = getElement(elemIdx);
 
-                        if (!ValType.matches(elem.type(), table)) {
+                        if (!typeMatches(elem.type(), table)) {
                             throw new InvalidException(
                                     "type mismatch, table type: "
                                             + table
@@ -2172,6 +2418,367 @@ final class Validator {
                         pushVal(ValType.V128);
                         break;
                     }
+                // GC opcodes
+                case REF_EQ:
+                    {
+                        popVal(ValType.EqRef);
+                        popVal(ValType.EqRef);
+                        pushVal(ValType.I32);
+                        break;
+                    }
+                case STRUCT_NEW:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        var st = getStructType(typeIdx);
+                        for (int fi = st.fieldTypes().length - 1; fi >= 0; fi--) {
+                            popVal(unpackFieldType(st.fieldTypes()[fi]));
+                        }
+                        pushVal(valType(ValType.ID.Ref, typeIdx));
+                        break;
+                    }
+                case STRUCT_NEW_DEFAULT:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        var st = getStructType(typeIdx);
+                        for (var ft : st.fieldTypes()) {
+                            var t = unpackFieldType(ft);
+                            if (!hasDefaultValue(t)) {
+                                throw new InvalidException("field type is not defaultable");
+                            }
+                        }
+                        pushVal(valType(ValType.ID.Ref, typeIdx));
+                        break;
+                    }
+                case STRUCT_GET:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        int fieldIdx = (int) op.operand(1);
+                        var st = getStructType(typeIdx);
+                        if (fieldIdx >= st.fieldTypes().length) {
+                            throw new InvalidException("unknown field " + fieldIdx);
+                        }
+                        var ft = st.fieldTypes()[fieldIdx];
+                        if (ft.storageType().packedType() != null) {
+                            throw new InvalidException("field is packed");
+                        }
+                        popVal(valType(ValType.ID.RefNull, typeIdx));
+                        pushVal(unpackFieldType(ft));
+                        break;
+                    }
+                case STRUCT_GET_S:
+                case STRUCT_GET_U:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        int fieldIdx = (int) op.operand(1);
+                        var st = getStructType(typeIdx);
+                        if (fieldIdx >= st.fieldTypes().length) {
+                            throw new InvalidException("unknown field " + fieldIdx);
+                        }
+                        var ft = st.fieldTypes()[fieldIdx];
+                        if (ft.storageType().packedType() == null) {
+                            throw new InvalidException("field is unpacked");
+                        }
+                        popVal(valType(ValType.ID.RefNull, typeIdx));
+                        pushVal(ValType.I32);
+                        break;
+                    }
+                case STRUCT_SET:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        int fieldIdx = (int) op.operand(1);
+                        var st = getStructType(typeIdx);
+                        if (fieldIdx >= st.fieldTypes().length) {
+                            throw new InvalidException("unknown field " + fieldIdx);
+                        }
+                        var ft = st.fieldTypes()[fieldIdx];
+                        if (ft.mut() != MutabilityType.Var) {
+                            throw new InvalidException("field is immutable");
+                        }
+                        popVal(unpackFieldType(ft));
+                        popVal(valType(ValType.ID.RefNull, typeIdx));
+                        break;
+                    }
+                case ARRAY_NEW:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        var at = getArrayType(typeIdx);
+                        popVal(ValType.I32);
+                        popVal(unpackFieldType(at.fieldType()));
+                        pushVal(valType(ValType.ID.Ref, typeIdx));
+                        break;
+                    }
+                case ARRAY_NEW_DEFAULT:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        var at = getArrayType(typeIdx);
+                        var t = unpackFieldType(at.fieldType());
+                        if (!hasDefaultValue(t)) {
+                            throw new InvalidException("array type is not defaultable");
+                        }
+                        popVal(ValType.I32);
+                        pushVal(valType(ValType.ID.Ref, typeIdx));
+                        break;
+                    }
+                case ARRAY_NEW_FIXED:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        int n = (int) op.operand(1);
+                        var at = getArrayType(typeIdx);
+                        var elemType = unpackFieldType(at.fieldType());
+                        for (int fi = 0; fi < n; fi++) {
+                            popVal(elemType);
+                        }
+                        pushVal(valType(ValType.ID.Ref, typeIdx));
+                        break;
+                    }
+                case ARRAY_NEW_DATA:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        int dataIdx = (int) op.operand(1);
+                        var at = getArrayType(typeIdx);
+                        validateDataSegment(dataIdx);
+                        var t = unpackFieldType(at.fieldType());
+                        if (!t.isNumeric() && t.opcode() != ValType.ID.V128) {
+                            throw new InvalidException("array type is not numeric or vector");
+                        }
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        pushVal(valType(ValType.ID.Ref, typeIdx));
+                        break;
+                    }
+                case ARRAY_NEW_ELEM:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        int elemIdx = (int) op.operand(1);
+                        getArrayType(typeIdx);
+                        getElement(elemIdx);
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        pushVal(valType(ValType.ID.Ref, typeIdx));
+                        break;
+                    }
+                case ARRAY_GET:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        var at = getArrayType(typeIdx);
+                        if (at.fieldType().storageType().packedType() != null) {
+                            throw new InvalidException("array is packed");
+                        }
+                        popVal(ValType.I32);
+                        popVal(valType(ValType.ID.RefNull, typeIdx));
+                        pushVal(unpackFieldType(at.fieldType()));
+                        break;
+                    }
+                case ARRAY_GET_S:
+                case ARRAY_GET_U:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        var at = getArrayType(typeIdx);
+                        if (at.fieldType().storageType().packedType() == null) {
+                            throw new InvalidException("array is unpacked");
+                        }
+                        popVal(ValType.I32);
+                        popVal(valType(ValType.ID.RefNull, typeIdx));
+                        pushVal(ValType.I32);
+                        break;
+                    }
+                case ARRAY_SET:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        var at = getArrayType(typeIdx);
+                        if (at.fieldType().mut() != MutabilityType.Var) {
+                            throw new InvalidException("array is immutable");
+                        }
+                        popVal(unpackFieldType(at.fieldType()));
+                        popVal(ValType.I32);
+                        popVal(valType(ValType.ID.RefNull, typeIdx));
+                        break;
+                    }
+                case ARRAY_LEN:
+                    {
+                        popVal(ValType.ArrayRef);
+                        pushVal(ValType.I32);
+                        break;
+                    }
+                case ARRAY_FILL:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        var at = getArrayType(typeIdx);
+                        if (at.fieldType().mut() != MutabilityType.Var) {
+                            throw new InvalidException("array is immutable");
+                        }
+                        popVal(ValType.I32);
+                        popVal(unpackFieldType(at.fieldType()));
+                        popVal(ValType.I32);
+                        popVal(valType(ValType.ID.RefNull, typeIdx));
+                        break;
+                    }
+                case ARRAY_COPY:
+                    {
+                        int dstIdx = (int) op.operand(0);
+                        int srcIdx = (int) op.operand(1);
+                        var dstAt = getArrayType(dstIdx);
+                        var srcAt = getArrayType(srcIdx);
+                        if (dstAt.fieldType().mut() != MutabilityType.Var) {
+                            throw new InvalidException("array is immutable");
+                        }
+                        // Compare storage types directly (not unpacked)
+                        // to distinguish packed types like i8 vs i16
+                        if (!srcAt.fieldType()
+                                .storageType()
+                                .equals(dstAt.fieldType().storageType())) {
+                            throw new InvalidException("array types do not match");
+                        }
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        popVal(valType(ValType.ID.RefNull, srcIdx));
+                        popVal(ValType.I32);
+                        popVal(valType(ValType.ID.RefNull, dstIdx));
+                        break;
+                    }
+                case ARRAY_INIT_DATA:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        int dataIdx = (int) op.operand(1);
+                        var at = getArrayType(typeIdx);
+                        if (at.fieldType().mut() != MutabilityType.Var) {
+                            throw new InvalidException("array is immutable");
+                        }
+                        validateDataSegment(dataIdx);
+                        var t = unpackFieldType(at.fieldType());
+                        if (!t.isNumeric() && t.opcode() != ValType.ID.V128) {
+                            throw new InvalidException("array type is not numeric or vector");
+                        }
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        popVal(valType(ValType.ID.RefNull, typeIdx));
+                        break;
+                    }
+                case ARRAY_INIT_ELEM:
+                    {
+                        int typeIdx = (int) op.operand(0);
+                        int elemIdx = (int) op.operand(1);
+                        var at = getArrayType(typeIdx);
+                        if (at.fieldType().mut() != MutabilityType.Var) {
+                            throw new InvalidException("array is immutable");
+                        }
+                        var elem = getElement(elemIdx);
+                        var arrElem = unpackFieldType(at.fieldType());
+                        if (!typeMatches(elem.type(), arrElem)) {
+                            throw new InvalidException("type mismatch");
+                        }
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        popVal(valType(ValType.ID.RefNull, typeIdx));
+                        break;
+                    }
+                case REF_I31:
+                    {
+                        popVal(ValType.I32);
+                        pushVal(
+                                ValType.builder()
+                                        .withOpcode(ValType.ID.Ref)
+                                        .withTypeIdx(ValType.TypeIdxCode.I31.code())
+                                        .build());
+                        break;
+                    }
+                case I31_GET_S:
+                case I31_GET_U:
+                    {
+                        popVal(ValType.I31Ref);
+                        pushVal(ValType.I32);
+                        break;
+                    }
+                case REF_TEST:
+                case REF_TEST_NULL:
+                    {
+                        int heapType = (int) op.operand(0);
+                        int topHt = topOfHeapType(heapType);
+                        popVal(valType(ValType.ID.RefNull, topHt));
+                        pushVal(ValType.I32);
+                        break;
+                    }
+                case CAST_TEST:
+                case CAST_TEST_NULL:
+                    {
+                        int heapType = (int) op.operand(0);
+                        boolean nullable = op.opcode() == OpCode.CAST_TEST_NULL;
+                        int topHt = topOfHeapType(heapType);
+                        popVal(valType(ValType.ID.RefNull, topHt));
+                        pushVal(valType(nullable ? ValType.ID.RefNull : ValType.ID.Ref, heapType));
+                        break;
+                    }
+                case BR_ON_CAST:
+                case BR_ON_CAST_FAIL:
+                    {
+                        int flags = (int) op.operand(0);
+                        int n = (int) op.operand(1);
+                        int ht1 = (int) op.operand(2);
+                        int ht2 = (int) op.operand(3);
+                        boolean null1 = (flags & 1) != 0;
+                        boolean null2 = (flags & 2) != 0;
+                        var rt1 = valType(null1 ? ValType.ID.RefNull : ValType.ID.Ref, ht1);
+                        var rt2 = valType(null2 ? ValType.ID.RefNull : ValType.ID.Ref, ht2);
+                        // rt2 <: rt1 is required by the spec
+                        if (!typeMatches(rt2, rt1)) {
+                            throw new InvalidException("type mismatch");
+                        }
+                        // diff_reftype: if rt2 is nullable, fallthrough is non-null rt1
+                        var diffType =
+                                valType(
+                                        null2
+                                                ? ValType.ID.Ref
+                                                : (null1 ? ValType.ID.RefNull : ValType.ID.Ref),
+                                        ht1);
+                        var labelTypes = labelTypes(getCtrl(n));
+                        if (labelTypes.isEmpty()) {
+                            throw new InvalidException("type mismatch");
+                        }
+                        // The label's last type must match the branch type
+                        var brType = op.opcode() == OpCode.BR_ON_CAST ? rt2 : diffType;
+                        var lastLabel = labelTypes.get(labelTypes.size() - 1);
+                        if (!typeMatches(brType, lastLabel)) {
+                            throw new InvalidException("type mismatch");
+                        }
+                        var ts0 = labelTypes.subList(0, labelTypes.size() - 1);
+                        popVal(rt1);
+                        popVals(ts0);
+                        pushVals(ts0);
+                        if (op.opcode() == OpCode.BR_ON_CAST) {
+                            pushVal(diffType);
+                        } else {
+                            pushVal(rt2);
+                        }
+                        break;
+                    }
+                case ANY_CONVERT_EXTERN:
+                    {
+                        var rt = popRef();
+                        boolean nullable =
+                                rt.equals(ValType.BOT)
+                                        || rt.equals(ValType.RefBot)
+                                        || rt.isNullable();
+                        pushVal(
+                                valType(
+                                        nullable ? ValType.ID.RefNull : ValType.ID.Ref,
+                                        ValType.TypeIdxCode.ANY.code()));
+                        break;
+                    }
+                case EXTERN_CONVERT_ANY:
+                    {
+                        var rt = popRef();
+                        boolean nullable =
+                                rt.equals(ValType.BOT)
+                                        || rt.equals(ValType.RefBot)
+                                        || rt.isNullable();
+                        pushVal(
+                                valType(
+                                        nullable ? ValType.ID.RefNull : ValType.ID.Ref,
+                                        ValType.TypeIdxCode.EXTERN.code()));
+                        break;
+                    }
                 default:
                     throw new IllegalArgumentException(
                             "Missing type validation opcode handling for " + op.opcode());
@@ -2198,7 +2805,7 @@ final class Validator {
         }
 
         for (int i = 0; i < funcReturnType.size(); i++) {
-            if (!ValType.matches(funcReturnType.get(i), expected.get(i))) {
+            if (!typeMatches(funcReturnType.get(i), expected.get(i))) {
                 throw new InvalidException(
                         "type mismatch: tail call doesn't match frame type at index " + i);
             }
@@ -2220,7 +2827,7 @@ final class Validator {
     private void VALIDATE_CALL_INDIRECT(long typeId, int tableId, boolean isReturn) {
         popVal(ValType.I32);
         var tableType = getTableType(tableId);
-        if (!tableType.equals(ValType.FuncRef)) {
+        if (!typeMatches(tableType, ValType.FuncRef)) {
             throw new InvalidException(
                     "type mismatch expected a table of FuncRefs buf found " + tableType);
         }

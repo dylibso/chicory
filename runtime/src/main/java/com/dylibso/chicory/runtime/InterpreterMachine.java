@@ -11,6 +11,7 @@ import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayDeque;
@@ -79,7 +80,7 @@ public class InterpreterMachine implements Machine {
         var type = instance.type(typeId);
 
         if (callType != null) {
-            verifyIndirectCall(type, callType);
+            verifyIndirectCall(type, callType, instance.module().typeSection());
         }
 
         var func = instance.function(funcId);
@@ -1008,6 +1009,91 @@ public class InterpreterMachine implements Machine {
                 case ATOMIC_FENCE:
                     ATOMIC_FENCE(instance);
                     break;
+                // GC opcodes
+                case REF_EQ:
+                    REF_EQ(stack);
+                    break;
+                case REF_I31:
+                    REF_I31(stack);
+                    break;
+                case I31_GET_S:
+                    I31_GET_S(stack);
+                    break;
+                case I31_GET_U:
+                    I31_GET_U(stack);
+                    break;
+                case STRUCT_NEW:
+                    STRUCT_NEW(stack, instance, operands);
+                    break;
+                case STRUCT_NEW_DEFAULT:
+                    STRUCT_NEW_DEFAULT(stack, instance, operands);
+                    break;
+                case STRUCT_GET:
+                case STRUCT_GET_S:
+                case STRUCT_GET_U:
+                    STRUCT_GET(stack, instance, operands, opcode);
+                    break;
+                case STRUCT_SET:
+                    STRUCT_SET(stack, instance, operands);
+                    break;
+                case ARRAY_NEW:
+                    ARRAY_NEW(stack, instance, operands);
+                    break;
+                case ARRAY_NEW_DEFAULT:
+                    ARRAY_NEW_DEFAULT(stack, instance, operands);
+                    break;
+                case ARRAY_NEW_FIXED:
+                    ARRAY_NEW_FIXED(stack, instance, operands);
+                    break;
+                case ARRAY_NEW_DATA:
+                    ARRAY_NEW_DATA(stack, instance, operands);
+                    break;
+                case ARRAY_NEW_ELEM:
+                    ARRAY_NEW_ELEM(stack, instance, operands);
+                    break;
+                case ARRAY_GET:
+                case ARRAY_GET_S:
+                case ARRAY_GET_U:
+                    ARRAY_GET(stack, instance, operands, opcode);
+                    break;
+                case ARRAY_SET:
+                    ARRAY_SET(stack, instance, operands);
+                    break;
+                case ARRAY_LEN:
+                    ARRAY_LEN(stack, instance);
+                    break;
+                case ARRAY_FILL:
+                    ARRAY_FILL(stack, instance, operands);
+                    break;
+                case ARRAY_COPY:
+                    ARRAY_COPY(stack, instance, operands);
+                    break;
+                case ARRAY_INIT_DATA:
+                    ARRAY_INIT_DATA(stack, instance, operands);
+                    break;
+                case ARRAY_INIT_ELEM:
+                    ARRAY_INIT_ELEM(stack, instance, operands);
+                    break;
+                case REF_TEST:
+                case REF_TEST_NULL:
+                    REF_TEST(stack, instance, operands, opcode);
+                    break;
+                case CAST_TEST:
+                case CAST_TEST_NULL:
+                    CAST_TEST(stack, instance, operands, opcode);
+                    break;
+                case BR_ON_CAST:
+                    BR_ON_CAST(stack, instance, frame, instruction, operands);
+                    break;
+                case BR_ON_CAST_FAIL:
+                    BR_ON_CAST_FAIL(stack, instance, frame, instruction, operands);
+                    break;
+                case ANY_CONVERT_EXTERN:
+                    ANY_CONVERT_EXTERN(stack, instance);
+                    break;
+                case EXTERN_CONVERT_ANY:
+                    EXTERN_CONVERT_ANY(stack, instance);
+                    break;
                 default:
                     {
                         evalDefault(stack, instance, callStack, instruction, operands);
@@ -1709,7 +1795,11 @@ public class InterpreterMachine implements Machine {
 
     private static void DATA_DROP(Instance instance, Operands operands) {
         var segment = (int) operands.get(0);
-        instance.memory().drop(segment);
+        if (instance.memory() != null) {
+            instance.memory().drop(segment);
+        } else {
+            instance.dropDataSegment(segment);
+        }
     }
 
     private static void F64_CONVERT_I64_S(MStack stack) {
@@ -1722,7 +1812,7 @@ public class InterpreterMachine implements Machine {
         var table = instance.table(tableidx);
 
         var size = (int) stack.pop();
-        var val = (int) stack.pop();
+        var val = OpcodeImpl.boxForTable(stack.pop(), instance);
 
         var res = table.grow(size, val, instance);
         stack.push(res);
@@ -1739,7 +1829,7 @@ public class InterpreterMachine implements Machine {
         var tableidx = (int) operands.get(0);
 
         var size = (int) stack.pop();
-        var val = (int) stack.pop();
+        var val = OpcodeImpl.boxForTable(stack.pop(), instance);
         var offset = (int) stack.pop();
 
         OpcodeImpl.TABLE_FILL(instance, tableidx, size, val, offset);
@@ -2048,15 +2138,17 @@ public class InterpreterMachine implements Machine {
         var idx = (int) operands.get(0);
         var table = instance.table(idx);
 
-        var value = (int) stack.pop();
+        var value = OpcodeImpl.boxForTable(stack.pop(), instance);
         var i = (int) stack.pop();
         table.setRef(i, value, instance);
     }
 
     private static void TABLE_GET(MStack stack, Instance instance, Operands operands) {
         var idx = (int) operands.get(0);
+        var table = instance.table(idx);
         var i = (int) stack.pop();
-        stack.push(OpcodeImpl.TABLE_GET(instance, idx, i));
+        var ref = OpcodeImpl.TABLE_GET(instance, idx, i);
+        stack.push(OpcodeImpl.unboxFromTable(ref, instance, table.elementType()));
     }
 
     private static void GLOBAL_SET(MStack stack, Instance instance, Operands operands) {
@@ -2609,8 +2701,9 @@ public class InterpreterMachine implements Machine {
         var refInstance = requireNonNullElse(table.instance(funcTableIdx), instance);
         var type = refInstance.type(typeId);
 
-        var callType = refInstance.type(refInstance.functionType(funcId));
-        verifyIndirectCall(callType, type);
+        // Verify type match using nominal type indices
+        var actualTypeIdx = refInstance.functionType(funcId);
+        verifyIndirectCallByTypeIdx(actualTypeIdx, typeId, refInstance.module().typeSection());
 
         var refMachine = refInstance.getMachine().getClass();
         if (!refInstance.equals(instance) && !refMachine.equals(instance.getMachine().getClass())) {
@@ -2730,15 +2823,17 @@ public class InterpreterMachine implements Machine {
         var refInstance = requireNonNullElse(table.instance(funcTableIdx), instance);
         var type = refInstance.type(typeId);
 
+        // Verify type match using nominal type indices
+        var actualTypeIdx = refInstance.functionType(funcId);
+        verifyIndirectCallByTypeIdx(actualTypeIdx, typeId, refInstance.module().typeSection());
+
         // given a list of param types, let's pop those params off the stack
         // and pass as args to the function call
         var args = extractArgsForParams(stack, type.params());
         if (useCurrentInstanceInterpreter(instance, refInstance, funcId)) {
-            call(stack, instance, callStack, funcId, args, type, false);
+            call(stack, instance, callStack, funcId, args, null, false);
         } else {
             checkInterruption();
-            var callType = refInstance.type(refInstance.functionType(funcId));
-            verifyIndirectCall(callType, type);
             var results = refInstance.getMachine().call(funcId, args);
             if (results != null) {
                 for (var result : results) {
@@ -2969,7 +3064,8 @@ public class InterpreterMachine implements Machine {
         return args;
     }
 
-    private static boolean functionTypeMatch(FunctionType actual, FunctionType expected) {
+    private static boolean functionTypeMatch(
+            FunctionType actual, FunctionType expected, TypeSection ts) {
         if (actual.params().size() != expected.params().size()
                 || actual.returns().size() != expected.returns().size()) {
             return false;
@@ -2979,7 +3075,8 @@ public class InterpreterMachine implements Machine {
             var actualParam = actual.params().get(i);
             var expectedParam = expected.params().get(i);
 
-            if (!ValType.matches(actualParam, expectedParam)) {
+            // Contravariant: expected.param <: actual.param
+            if (!ValType.matches(expectedParam, actualParam, ts)) {
                 return false;
             }
         }
@@ -2988,7 +3085,8 @@ public class InterpreterMachine implements Machine {
             var actualReturn = actual.returns().get(i);
             var expectedReturn = expected.returns().get(i);
 
-            if (!ValType.matches(expectedReturn, actualReturn)) {
+            // Covariant: actual.return <: expected.return
+            if (!ValType.matches(actualReturn, expectedReturn, ts)) {
                 return false;
             }
         }
@@ -2996,9 +3094,17 @@ public class InterpreterMachine implements Machine {
         return true;
     }
 
-    protected static void verifyIndirectCall(FunctionType actual, FunctionType expected)
-            throws ChicoryException {
-        if (!functionTypeMatch(actual, expected)) {
+    protected static void verifyIndirectCall(
+            FunctionType actual, FunctionType expected, TypeSection ts) throws ChicoryException {
+        if (!functionTypeMatch(actual, expected, ts)) {
+            throw new ChicoryException("indirect call type mismatch");
+        }
+    }
+
+    protected static void verifyIndirectCallByTypeIdx(
+            int actualTypeIdx, int expectedTypeIdx, TypeSection ts) throws ChicoryException {
+        if (actualTypeIdx != expectedTypeIdx
+                && !ValType.heapTypeSubtype(actualTypeIdx, expectedTypeIdx, ts)) {
             throw new ChicoryException("indirect call type mismatch");
         }
     }
@@ -3013,5 +3119,501 @@ public class InterpreterMachine implements Machine {
         if (Thread.currentThread().isInterrupted()) {
             throw new ChicoryInterruptedException("Thread interrupted");
         }
+    }
+
+    // ===== GC opcode implementations =====
+
+    private static void REF_EQ(MStack stack) {
+        var b = stack.pop();
+        var a = stack.pop();
+        stack.push(a == b ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void REF_I31(MStack stack) {
+        var val = (int) stack.pop();
+        stack.push(Value.encodeI31(val));
+    }
+
+    private static void I31_GET_S(MStack stack) {
+        var ref = stack.pop();
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null i31 reference");
+        }
+        stack.push(Value.decodeI31S(ref));
+    }
+
+    private static void I31_GET_U(MStack stack) {
+        var ref = stack.pop();
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null i31 reference");
+        }
+        stack.push(Value.decodeI31U(ref));
+    }
+
+    private static void STRUCT_NEW(MStack stack, Instance instance, Operands operands) {
+        var typeIdx = (int) operands.get(0);
+        var st = instance.module().typeSection().getSubType(typeIdx).compType().structType();
+        var fields = new long[st.fieldTypes().length];
+        // Pop fields in reverse order (last field on top)
+        for (int i = fields.length - 1; i >= 0; i--) {
+            fields[i] = stack.pop();
+        }
+        var struct = new WasmStruct(typeIdx, fields);
+        stack.push(instance.registerGcRef(struct));
+    }
+
+    private static void STRUCT_NEW_DEFAULT(MStack stack, Instance instance, Operands operands) {
+        var typeIdx = (int) operands.get(0);
+        var st = instance.module().typeSection().getSubType(typeIdx).compType().structType();
+        var fields = new long[st.fieldTypes().length];
+        // Default values: 0 for numeric, REF_NULL_VALUE for references
+        for (int i = 0; i < fields.length; i++) {
+            var ft = st.fieldTypes()[i];
+            if (ft.storageType().valType() != null && ft.storageType().valType().isReference()) {
+                fields[i] = REF_NULL_VALUE;
+            }
+            // numeric types default to 0 (already zero-initialized)
+        }
+        var struct = new WasmStruct(typeIdx, fields);
+        stack.push(instance.registerGcRef(struct));
+    }
+
+    private static void STRUCT_GET(
+            MStack stack, Instance instance, Operands operands, OpCode opcode) {
+        var typeIdx = (int) operands.get(0);
+        var fieldIdx = (int) operands.get(1);
+        var ref = (int) stack.pop();
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null structure reference");
+        }
+        var struct = (WasmStruct) instance.gcRef(ref);
+        var val = struct.field(fieldIdx);
+        var st = instance.module().typeSection().getSubType(typeIdx).compType().structType();
+        var ft = st.fieldTypes()[fieldIdx];
+        if (ft.storageType().packedType() != null) {
+            if (opcode == OpCode.STRUCT_GET_S) {
+                val = signExtendPacked(val, ft.storageType().packedType());
+            } else {
+                val = val & packedMask(ft.storageType().packedType());
+            }
+        }
+        stack.push(val);
+    }
+
+    private static void STRUCT_SET(MStack stack, Instance instance, Operands operands) {
+        var typeIdx = (int) operands.get(0);
+        var fieldIdx = (int) operands.get(1);
+        var val = stack.pop();
+        var ref = (int) stack.pop();
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null structure reference");
+        }
+        var struct = (WasmStruct) instance.gcRef(ref);
+        var st = instance.module().typeSection().getSubType(typeIdx).compType().structType();
+        var ft = st.fieldTypes()[fieldIdx];
+        if (ft.storageType().packedType() != null) {
+            val = val & packedMask(ft.storageType().packedType());
+        }
+        struct.setField(fieldIdx, val);
+    }
+
+    private static void ARRAY_NEW(MStack stack, Instance instance, Operands operands) {
+        var typeIdx = (int) operands.get(0);
+        var len = (int) stack.pop();
+        var initVal = stack.pop();
+        var elems = new long[len];
+        java.util.Arrays.fill(elems, initVal);
+        var arr = new WasmArray(typeIdx, elems);
+        stack.push(instance.registerGcRef(arr));
+    }
+
+    private static void ARRAY_NEW_DEFAULT(MStack stack, Instance instance, Operands operands) {
+        var typeIdx = (int) operands.get(0);
+        var len = (int) stack.pop();
+        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
+        var elems = new long[len];
+        if (at.fieldType().storageType().valType() != null
+                && at.fieldType().storageType().valType().isReference()) {
+            java.util.Arrays.fill(elems, REF_NULL_VALUE);
+        }
+        var arr = new WasmArray(typeIdx, elems);
+        stack.push(instance.registerGcRef(arr));
+    }
+
+    private static void ARRAY_NEW_FIXED(MStack stack, Instance instance, Operands operands) {
+        var typeIdx = (int) operands.get(0);
+        var len = (int) operands.get(1);
+        var elems = new long[len];
+        for (int i = len - 1; i >= 0; i--) {
+            elems[i] = stack.pop();
+        }
+        var arr = new WasmArray(typeIdx, elems);
+        stack.push(instance.registerGcRef(arr));
+    }
+
+    private static void ARRAY_NEW_DATA(MStack stack, Instance instance, Operands operands) {
+        var typeIdx = (int) operands.get(0);
+        var dataIdx = (int) operands.get(1);
+        var len = (int) stack.pop();
+        var offset = (int) stack.pop();
+        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
+        var elemSize = storageTypeByteSize(at.fieldType().storageType());
+        var data = instance.dataSegmentData(dataIdx);
+        if ((long) offset + (long) len * elemSize > data.length) {
+            throw new TrapException("out of bounds memory access");
+        }
+        var elems = new long[len];
+        for (int i = 0; i < len; i++) {
+            var byteOff = offset + i * elemSize;
+            elems[i] = readFromData(data, byteOff, elemSize);
+        }
+        var arr = new WasmArray(typeIdx, elems);
+        stack.push(instance.registerGcRef(arr));
+    }
+
+    private static void ARRAY_NEW_ELEM(MStack stack, Instance instance, Operands operands) {
+        var typeIdx = (int) operands.get(0);
+        var elemIdx = (int) operands.get(1);
+        var len = (int) stack.pop();
+        var offset = (int) stack.pop();
+        var element = instance.element(elemIdx);
+        if (element == null || offset + len > element.elementCount()) {
+            throw new TrapException("out of bounds table access");
+        }
+        var elems = new long[len];
+        for (int i = 0; i < len; i++) {
+            var init = element.initializers().get(offset + i);
+            elems[i] = ConstantEvaluators.computeConstantValue(instance, init)[0];
+        }
+        var arr = new WasmArray(typeIdx, elems);
+        stack.push(instance.registerGcRef(arr));
+    }
+
+    private static void ARRAY_GET(
+            MStack stack, Instance instance, Operands operands, OpCode opcode) {
+        var typeIdx = (int) operands.get(0);
+        var idx = (int) stack.pop();
+        var ref = (int) stack.pop();
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        if (idx < 0 || idx >= arr.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        var val = arr.get(idx);
+        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
+        if (at.fieldType().storageType().packedType() != null) {
+            if (opcode == OpCode.ARRAY_GET_S) {
+                val = signExtendPacked(val, at.fieldType().storageType().packedType());
+            } else {
+                val = val & packedMask(at.fieldType().storageType().packedType());
+            }
+        }
+        stack.push(val);
+    }
+
+    private static void ARRAY_SET(MStack stack, Instance instance, Operands operands) {
+        var typeIdx = (int) operands.get(0);
+        var val = stack.pop();
+        var idx = (int) stack.pop();
+        var ref = (int) stack.pop();
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        if (idx < 0 || idx >= arr.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
+        if (at.fieldType().storageType().packedType() != null) {
+            val = val & packedMask(at.fieldType().storageType().packedType());
+        }
+        arr.set(idx, val);
+    }
+
+    private static void ARRAY_LEN(MStack stack, Instance instance) {
+        var ref = (int) stack.pop();
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        stack.push(arr.length());
+    }
+
+    private static void ARRAY_FILL(MStack stack, Instance instance, Operands operands) {
+        var typeIdx = (int) operands.get(0);
+        var len = (int) stack.pop();
+        var val = stack.pop();
+        var offset = (int) stack.pop();
+        var ref = (int) stack.pop();
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        if (offset + len > arr.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
+        if (at.fieldType().storageType().packedType() != null) {
+            val = val & packedMask(at.fieldType().storageType().packedType());
+        }
+        for (int i = 0; i < len; i++) {
+            arr.set(offset + i, val);
+        }
+    }
+
+    @SuppressWarnings("UnusedVariable")
+    private static void ARRAY_COPY(MStack stack, Instance instance, Operands operands) {
+        // operands 0 and 1 are dst/src type indices (used for validation, not needed at runtime)
+        var len = (int) stack.pop();
+        var srcOffset = (int) stack.pop();
+        var srcRef = (int) stack.pop();
+        var dstOffset = (int) stack.pop();
+        var dstRef = (int) stack.pop();
+        if (dstRef == REF_NULL_VALUE || srcRef == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var dst = (WasmArray) instance.gcRef(dstRef);
+        var src = (WasmArray) instance.gcRef(srcRef);
+        if (dstOffset + len > dst.length() || srcOffset + len > src.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        // Handle overlapping copies
+        if (dstOffset <= srcOffset) {
+            for (int i = 0; i < len; i++) {
+                dst.set(dstOffset + i, src.get(srcOffset + i));
+            }
+        } else {
+            for (int i = len - 1; i >= 0; i--) {
+                dst.set(dstOffset + i, src.get(srcOffset + i));
+            }
+        }
+    }
+
+    private static void ARRAY_INIT_DATA(MStack stack, Instance instance, Operands operands) {
+        var typeIdx = (int) operands.get(0);
+        var dataIdx = (int) operands.get(1);
+        var len = (int) stack.pop();
+        var srcOffset = (int) stack.pop();
+        var dstOffset = (int) stack.pop();
+        var ref = (int) stack.pop();
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
+        var elemSize = storageTypeByteSize(at.fieldType().storageType());
+        var data = instance.dataSegmentData(dataIdx);
+        if (dstOffset + len > arr.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        if ((long) srcOffset + (long) len * elemSize > data.length) {
+            throw new TrapException("out of bounds memory access");
+        }
+        for (int i = 0; i < len; i++) {
+            var byteOff = srcOffset + i * elemSize;
+            arr.set(dstOffset + i, readFromData(data, byteOff, elemSize));
+        }
+    }
+
+    private static void ARRAY_INIT_ELEM(MStack stack, Instance instance, Operands operands) {
+        // operand 0 is the type index (used for validation, not needed at runtime)
+        var elemIdx = (int) operands.get(1);
+        var len = (int) stack.pop();
+        var srcOffset = (int) stack.pop();
+        var dstOffset = (int) stack.pop();
+        var ref = (int) stack.pop();
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        var element = instance.element(elemIdx);
+        if (dstOffset + len > arr.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        // Dropped segments have element count 0
+        var elementCount = (element == null) ? 0 : element.elementCount();
+        if (srcOffset + len > elementCount) {
+            throw new TrapException("out of bounds table access");
+        }
+        if (len == 0) {
+            return;
+        }
+        for (int i = 0; i < len; i++) {
+            var init = element.initializers().get(srcOffset + i);
+            arr.set(dstOffset + i, ConstantEvaluators.computeConstantValue(instance, init)[0]);
+        }
+    }
+
+    @SuppressWarnings("UnusedVariable")
+    private static void ANY_CONVERT_EXTERN(MStack stack, Instance instance) {
+        // Identity operation at runtime: the value representation is the same
+        // for externref and anyref. No wrapping needed.
+    }
+
+    @SuppressWarnings("UnusedVariable")
+    private static void EXTERN_CONVERT_ANY(MStack stack, Instance instance) {
+        // Identity operation at runtime: the value representation is the same
+        // for externref and anyref. No wrapping needed.
+    }
+
+    private static void REF_TEST(
+            MStack stack, Instance instance, Operands operands, OpCode opcode) {
+        var heapType = (int) operands.get(0);
+        var ref = stack.pop();
+        boolean nullable = (opcode == OpCode.REF_TEST_NULL);
+        stack.push(rttMatch(instance, ref, nullable, heapType) ? Value.TRUE : Value.FALSE);
+    }
+
+    private static void CAST_TEST(
+            MStack stack, Instance instance, Operands operands, OpCode opcode) {
+        var heapType = (int) operands.get(0);
+        var ref = stack.pop();
+        boolean nullable = (opcode == OpCode.CAST_TEST_NULL);
+        if (!rttMatch(instance, ref, nullable, heapType)) {
+            throw new TrapException("cast failure");
+        }
+        stack.push(ref);
+    }
+
+    private static void BR_ON_CAST(
+            MStack stack,
+            Instance instance,
+            StackFrame frame,
+            AnnotatedInstruction instruction,
+            Operands operands) {
+        var flags = (int) operands.get(0);
+        var ht2 = (int) operands.get(3);
+        boolean null2 = (flags & 2) != 0;
+        var ref = stack.pop();
+        if (rttMatch(instance, ref, null2, ht2)) {
+            stack.push(ref);
+            ctrlJump(frame, stack, (int) operands.get(1));
+            frame.jumpTo(instruction.labelTrue());
+        } else {
+            stack.push(ref);
+        }
+    }
+
+    private static void BR_ON_CAST_FAIL(
+            MStack stack,
+            Instance instance,
+            StackFrame frame,
+            AnnotatedInstruction instruction,
+            Operands operands) {
+        var flags = (int) operands.get(0);
+        var ht2 = (int) operands.get(3);
+        boolean null2 = (flags & 2) != 0;
+        var ref = stack.pop();
+        if (!rttMatch(instance, ref, null2, ht2)) {
+            stack.push(ref);
+            ctrlJump(frame, stack, (int) operands.get(1));
+            frame.jumpTo(instruction.labelTrue());
+        } else {
+            stack.push(ref);
+        }
+    }
+
+    private static boolean rttMatch(
+            Instance instance, long ref, boolean nullable, int targetHeapType) {
+        if (ref == REF_NULL_VALUE) {
+            return nullable;
+        }
+        // Bottom types never match non-null values
+        if (targetHeapType == ValType.TypeIdxCode.NONE.code()
+                || targetHeapType == ValType.TypeIdxCode.NOFUNC.code()
+                || targetHeapType == ValType.TypeIdxCode.NOEXTERN.code()) {
+            return false;
+        }
+        // For abstract func/extern targets: the validator guarantees the operand
+        // is in the correct hierarchy, so any non-null value matches.
+        if (targetHeapType == ValType.TypeIdxCode.FUNC.code()
+                || targetHeapType == ValType.TypeIdxCode.EXTERN.code()) {
+            return true;
+        }
+        if (Value.isI31(ref)) {
+            return isHeapTypeSubOf(ValType.TypeIdxCode.I31.code(), targetHeapType, instance);
+        }
+        if (ref >= 0) {
+            var gcRef = instance.gcRef((int) ref);
+            if (gcRef != null) {
+                return isHeapTypeSubOf(gcRef.typeIdx(), targetHeapType, instance);
+            }
+            // Check function reference hypothesis
+            try {
+                var funcTypeIdx = instance.functionType((int) ref);
+                if (isHeapTypeSubOf(funcTypeIdx, targetHeapType, instance)) {
+                    return true;
+                }
+            } catch (InvalidException e) {
+                // Not a valid function index
+            }
+        }
+        // Unidentified non-null value (e.g., internalized externref via
+        // any.convert_extern which is a no-op): it lives in the "any"
+        // hierarchy but is not eq/i31/struct/array.
+        return targetHeapType == ValType.TypeIdxCode.ANY.code();
+    }
+
+    private static boolean isHeapTypeSubOf(int actual, int target, Instance instance) {
+        if (actual == target) {
+            return true;
+        }
+        var ts = instance.module().typeSection();
+        return ValType.heapTypeSubtype(actual, target, ts);
+    }
+
+    // Packed type helpers
+    private static long signExtendPacked(long val, com.dylibso.chicory.wasm.types.PackedType pt) {
+        switch (pt) {
+            case I8:
+                return (byte) val;
+            case I16:
+                return (short) val;
+            default:
+                return val;
+        }
+    }
+
+    private static long packedMask(com.dylibso.chicory.wasm.types.PackedType pt) {
+        switch (pt) {
+            case I8:
+                return 0xFFL;
+            case I16:
+                return 0xFFFFL;
+            default:
+                return -1L;
+        }
+    }
+
+    private static int storageTypeByteSize(com.dylibso.chicory.wasm.types.StorageType storageType) {
+        if (storageType.packedType() != null) {
+            switch (storageType.packedType()) {
+                case I8:
+                    return 1;
+                case I16:
+                    return 2;
+            }
+        }
+        var vt = storageType.valType();
+        switch (vt.opcode()) {
+            case 0x7F: // i32
+            case 0x7D: // f32
+                return 4;
+            case 0x7E: // i64
+            case 0x7C: // f64
+                return 8;
+            default:
+                return 4; // references stored as 4 bytes in data segments
+        }
+    }
+
+    private static long readFromData(byte[] data, int offset, int size) {
+        long val = 0;
+        for (int i = 0; i < size; i++) {
+            val |= (long) (data[offset + i] & 0xFF) << (i * 8);
+        }
+        return val;
     }
 }

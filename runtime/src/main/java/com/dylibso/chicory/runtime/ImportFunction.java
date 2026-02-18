@@ -1,6 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayList;
@@ -12,6 +13,9 @@ public class ImportFunction implements ImportValue {
     private final List<ValType> paramTypes;
     private final List<ValType> returnTypes;
     private final WasmFunctionHandle handle;
+    // Optional: source type index and TypeSection for cross-module canonical type matching
+    private final int sourceTypeIdx;
+    private final TypeSection sourceTypeSection;
 
     @Deprecated(since = "1.3.0")
     protected static List<ValType> convert(List objs) {
@@ -32,11 +36,23 @@ public class ImportFunction implements ImportValue {
 
     public ImportFunction(
             String module, String name, FunctionType type, WasmFunctionHandle handle) {
+        this(module, name, type, handle, -1, null);
+    }
+
+    public ImportFunction(
+            String module,
+            String name,
+            FunctionType type,
+            WasmFunctionHandle handle,
+            int sourceTypeIdx,
+            TypeSection sourceTypeSection) {
         this.module = module;
         this.name = name;
         this.paramTypes = type.params();
         this.returnTypes = type.returns();
         this.handle = handle;
+        this.sourceTypeIdx = sourceTypeIdx;
+        this.sourceTypeSection = sourceTypeSection;
     }
 
     @Deprecated(since = "1.3.0")
@@ -51,6 +67,8 @@ public class ImportFunction implements ImportValue {
         this.paramTypes = convert(paramTypes);
         this.returnTypes = convert(returnTypes);
         this.handle = handle;
+        this.sourceTypeIdx = -1;
+        this.sourceTypeSection = null;
     }
 
     public WasmFunctionHandle handle() {
@@ -82,5 +100,13 @@ public class ImportFunction implements ImportValue {
 
     public FunctionType functionType() {
         return FunctionType.of(paramTypes, returnTypes);
+    }
+
+    public int sourceTypeIdx() {
+        return sourceTypeIdx;
+    }
+
+    public TypeSection sourceTypeSection() {
+        return sourceTypeSection;
     }
 }

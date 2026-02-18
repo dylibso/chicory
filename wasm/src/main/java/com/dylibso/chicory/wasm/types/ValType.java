@@ -373,14 +373,18 @@ public final class ValType {
                     }
                 }
 
-                // Check declared supertypes
-                if (ht2 >= 0) {
-                    int[] supers = st1.typeIdx();
-                    for (int sup : supers) {
-                        if (heapTypeSubtype(sup, ht2, ts)) {
-                            return true;
-                        }
+                // Check declared supertypes (transitively)
+                int[] supers = st1.typeIdx();
+                for (int sup : supers) {
+                    if (heapTypeSubtype(sup, ht2, ts)) {
+                        return true;
                     }
+                }
+
+                // Structural equivalence: types in different rec groups
+                // with identical canonical structure are considered equal
+                if (ht2 >= 0 && ts.canonicallyEquivalent(ht1, ht2)) {
+                    return true;
                 }
             } else {
                 // Without TypeSection, assume concrete types are subtypes of FUNC
@@ -418,20 +422,6 @@ public final class ValType {
         int ht2 = t2.typeIdx();
 
         if (ht1 == ht2) {
-            if (ht1 >= 0) {
-                return t1.resolvedFunctionTypeHash == t2.resolvedFunctionTypeHash
-                        || t1.resolvedFunctionTypeHash == -1
-                        || t2.resolvedFunctionTypeHash == -1;
-            }
-            return true;
-        }
-
-        // Check structural type equivalence via hash for concrete types
-        if (ht1 >= 0
-                && ht2 >= 0
-                && t1.resolvedFunctionTypeHash != -1
-                && t2.resolvedFunctionTypeHash != -1
-                && t1.resolvedFunctionTypeHash == t2.resolvedFunctionTypeHash) {
             return true;
         }
 

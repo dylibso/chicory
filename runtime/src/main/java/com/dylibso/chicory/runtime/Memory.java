@@ -317,6 +317,8 @@ public interface Memory {
 
     void initPassiveSegment(int segmentId, int dest, int offset, int size);
 
+    byte[] dataSegment(int segmentId);
+
     default void writeString(int offset, String data, Charset charSet) {
         write(offset, data.getBytes(charSet));
     }
