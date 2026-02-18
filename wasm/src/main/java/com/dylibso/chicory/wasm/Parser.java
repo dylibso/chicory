@@ -1388,6 +1388,18 @@ public final class Parser {
         for (var i = 0; i < operands.size(); i++) {
             operandsArray[i] = operands.get(i);
         }
+        // Reserve an extra operand slot for the source heap type hint,
+        // to be filled in by the validator.
+        switch (op) {
+            case REF_TEST:
+            case REF_TEST_NULL:
+            case CAST_TEST:
+            case CAST_TEST_NULL:
+            case BR_ON_CAST:
+            case BR_ON_CAST_FAIL:
+                operandsArray = Arrays.copyOf(operandsArray, operandsArray.length + 1);
+                break;
+        }
         verifyAlignment(op, operandsArray);
         return new Instruction(address, op, operandsArray);
     }

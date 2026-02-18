@@ -1,7 +1,5 @@
 package com.dylibso.chicory.tools.wasm;
 
-import static java.nio.file.Files.copy;
-
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
 import com.dylibso.chicory.runtime.ByteArrayMemory;
@@ -11,8 +9,6 @@ import com.dylibso.chicory.wasi.WasiExitException;
 import com.dylibso.chicory.wasi.WasiOptions;
 import com.dylibso.chicory.wasi.WasiPreview1;
 import com.dylibso.chicory.wasm.WasmModule;
-import io.roastedroot.zerofs.Configuration;
-import io.roastedroot.zerofs.ZeroFs;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -21,9 +17,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystem;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,7 +34,7 @@ public final class Wat2Wasm {
 
     public static byte[] parse(File file) {
         try (InputStream is = new FileInputStream(file)) {
-            return parse(is, file.getName());
+            return parse(is);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -56,46 +49,32 @@ public final class Wat2Wasm {
     }
 
     public static byte[] parse(InputStream is) {
-        return parse(is, "temp.wat");
-    }
-
-    private static byte[] parse(InputStream is, String fileName) {
-        try (ByteArrayOutputStream stdoutStream = new ByteArrayOutputStream();
-                ByteArrayOutputStream stderrStream = new ByteArrayOutputStream();
-                FileSystem fs =
-                        ZeroFs.newFileSystem(
-                                Configuration.unix().toBuilder()
-                                        .setAttributeViews("unix")
-                                        .build())) {
-
-            Path target = fs.getPath("tmp");
-            java.nio.file.Files.createDirectory(target);
-            Path path = target.resolve(fileName);
-            copy(is, path, StandardCopyOption.REPLACE_EXISTING);
-
-            String resultFileName = fileName + ".wasm";
-            Path result = target.resolve(resultFileName);
+        byte[] input = null;
+        try {
+            input = is.readAllBytes();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        try (ByteArrayInputStream stdinStream1 = new ByteArrayInputStream(input);
+                ByteArrayInputStream stdinStream2 = new ByteArrayInputStream(input);
+                ByteArrayOutputStream stdoutStream1 = new ByteArrayOutputStream();
+                ByteArrayOutputStream stdoutStream2 = new ByteArrayOutputStream();
+                ByteArrayOutputStream stderrStream = new ByteArrayOutputStream()) {
 
             WasiOptions validateWasiOpts =
                     WasiOptions.builder()
-                            .withStdout(stdoutStream)
-                            .withStderr(stderrStream)
-                            .withDirectory(target.toString(), target)
-                            .withArguments(List.of("wasm-tools", "validate", path.toString()))
+                            .withStdin(stdinStream1, false)
+                            .withStdout(stdoutStream1, false)
+                            .withStderr(stderrStream, false)
+                            .withArguments(List.of("wasm-tools", "validate", "-"))
                             .build();
 
             WasiOptions parseWasiOpts =
                     WasiOptions.builder()
-                            .withStdout(stdoutStream)
-                            .withStderr(stderrStream)
-                            .withDirectory(target.toString(), target)
-                            .withArguments(
-                                    List.of(
-                                            "wasm-tools",
-                                            "parse",
-                                            path.toString(),
-                                            "-o",
-                                            result.toString()))
+                            .withStdin(stdinStream2, false)
+                            .withStdout(stdoutStream2, false)
+                            .withStderr(stderrStream, false)
+                            .withArguments(List.of("wasm-tools", "parse", "-"))
                             .build();
 
             logger.info(
@@ -124,7 +103,7 @@ public final class Wat2Wasm {
                 } catch (WasiExitException e) {
                     if (e.exitCode() != 0) {
                         throw new WatParseException(
-                                stdoutStream.toString(StandardCharsets.UTF_8)
+                                stdoutStream1.toString(StandardCharsets.UTF_8)
                                         + stderrStream.toString(StandardCharsets.UTF_8),
                                 e);
                     }
@@ -139,15 +118,14 @@ public final class Wat2Wasm {
                         .withImportValues(parseImports)
                         .build();
             } catch (WasiExitException e) {
-                if (e.exitCode() != 0 || !java.nio.file.Files.exists(result)) {
+                if (e.exitCode() != 0 || stdoutStream2.size() <= 0) {
                     throw new WatParseException(
-                            stdoutStream.toString(StandardCharsets.UTF_8)
+                            stdoutStream2.toString(StandardCharsets.UTF_8)
                                     + stderrStream.toString(StandardCharsets.UTF_8),
                             e);
                 }
             }
-
-            return java.nio.file.Files.readAllBytes(result);
+            return stdoutStream2.toByteArray();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

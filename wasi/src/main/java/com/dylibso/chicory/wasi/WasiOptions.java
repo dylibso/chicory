@@ -19,6 +19,9 @@ public final class WasiOptions {
     private final OutputStream stdout;
     private final OutputStream stderr;
     private final InputStream stdin;
+    private final boolean stdinIsTty;
+    private final boolean stdoutIsTty;
+    private final boolean stderrIsTty;
     private final List<String> arguments;
     private final Map<String, String> environment;
     private final Map<String, Path> directories;
@@ -33,6 +36,9 @@ public final class WasiOptions {
             OutputStream stdout,
             OutputStream stderr,
             InputStream stdin,
+            boolean stdinIsTty,
+            boolean stdoutIsTty,
+            boolean stderrIsTty,
             List<String> arguments,
             Map<String, String> environment,
             Map<String, Path> directories) {
@@ -41,6 +47,9 @@ public final class WasiOptions {
         this.stdout = requireNonNull(stdout);
         this.stderr = requireNonNull(stderr);
         this.stdin = requireNonNull(stdin);
+        this.stdinIsTty = stdinIsTty;
+        this.stdoutIsTty = stdoutIsTty;
+        this.stderrIsTty = stderrIsTty;
         this.arguments = List.copyOf(arguments);
         this.environment = unmodifiableMap(new LinkedHashMap<>(environment));
         this.directories = unmodifiableMap(new LinkedHashMap<>(directories));
@@ -66,6 +75,18 @@ public final class WasiOptions {
         return stdin;
     }
 
+    public boolean stdinIsTty() {
+        return stdinIsTty;
+    }
+
+    public boolean stdoutIsTty() {
+        return stdoutIsTty;
+    }
+
+    public boolean stderrIsTty() {
+        return stderrIsTty;
+    }
+
     public List<String> arguments() {
         return arguments;
     }
@@ -86,6 +107,9 @@ public final class WasiOptions {
         private OutputStream stdout = IO.nullOutputStream();
         private OutputStream stderr = IO.nullOutputStream();
         private InputStream stdin = IO.nullInputStream();
+        private boolean stdinIsTty = true;
+        private boolean stdoutIsTty = true;
+        private boolean stderrIsTty = true;
         private List<String> arguments = List.of();
         private final Map<String, String> environment = new LinkedHashMap<>();
         private final Map<String, Path> directories = new LinkedHashMap<>();
@@ -107,13 +131,31 @@ public final class WasiOptions {
             return this;
         }
 
+        public Builder withStdout(OutputStream stdout, boolean isTty) {
+            this.stdout = stdout;
+            this.stdoutIsTty = isTty;
+            return this;
+        }
+
         public Builder withStderr(OutputStream stderr) {
             this.stderr = stderr;
             return this;
         }
 
+        public Builder withStderr(OutputStream stderr, boolean isTty) {
+            this.stderr = stderr;
+            this.stderrIsTty = isTty;
+            return this;
+        }
+
         public Builder withStdin(InputStream stdin) {
             this.stdin = stdin;
+            return this;
+        }
+
+        public Builder withStdin(InputStream stdin, boolean isTty) {
+            this.stdin = stdin;
+            this.stdinIsTty = isTty;
             return this;
         }
 
@@ -141,7 +183,17 @@ public final class WasiOptions {
 
         public WasiOptions build() {
             return new WasiOptions(
-                    random, clock, stdout, stderr, stdin, arguments, environment, directories);
+                    random,
+                    clock,
+                    stdout,
+                    stderr,
+                    stdin,
+                    stdinIsTty,
+                    stdoutIsTty,
+                    stderrIsTty,
+                    arguments,
+                    environment,
+                    directories);
         }
     }
 }

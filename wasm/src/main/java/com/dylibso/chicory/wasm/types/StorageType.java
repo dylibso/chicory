@@ -27,6 +27,27 @@ public final class StorageType {
         return packedType;
     }
 
+    public int byteSize() {
+        if (packedType != null) {
+            switch (packedType) {
+                case I8:
+                    return 1;
+                case I16:
+                    return 2;
+            }
+        }
+        switch (valType.opcode()) {
+            case 0x7F: // i32
+            case 0x7D: // f32
+                return 4;
+            case 0x7E: // i64
+            case 0x7C: // f64
+                return 8;
+            default:
+                return 4; // references stored as 4 bytes in data segments
+        }
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {

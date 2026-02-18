@@ -1,7 +1,6 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayList;
@@ -13,9 +12,8 @@ public class ImportFunction implements ImportValue {
     private final List<ValType> paramTypes;
     private final List<ValType> returnTypes;
     private final WasmFunctionHandle handle;
-    // Optional: source type index and TypeSection for cross-module canonical type matching
-    private final int sourceTypeIdx;
-    private final TypeSection sourceTypeSection;
+    // Optional: source instance for cross-module canonical type matching
+    private final Instance sourceInstance;
 
     @Deprecated(since = "1.3.0")
     protected static List<ValType> convert(List objs) {
@@ -36,7 +34,7 @@ public class ImportFunction implements ImportValue {
 
     public ImportFunction(
             String module, String name, FunctionType type, WasmFunctionHandle handle) {
-        this(module, name, type, handle, -1, null);
+        this(module, name, type, handle, null);
     }
 
     public ImportFunction(
@@ -44,15 +42,13 @@ public class ImportFunction implements ImportValue {
             String name,
             FunctionType type,
             WasmFunctionHandle handle,
-            int sourceTypeIdx,
-            TypeSection sourceTypeSection) {
+            Instance sourceInstance) {
         this.module = module;
         this.name = name;
         this.paramTypes = type.params();
         this.returnTypes = type.returns();
         this.handle = handle;
-        this.sourceTypeIdx = sourceTypeIdx;
-        this.sourceTypeSection = sourceTypeSection;
+        this.sourceInstance = sourceInstance;
     }
 
     @Deprecated(since = "1.3.0")
@@ -67,8 +63,7 @@ public class ImportFunction implements ImportValue {
         this.paramTypes = convert(paramTypes);
         this.returnTypes = convert(returnTypes);
         this.handle = handle;
-        this.sourceTypeIdx = -1;
-        this.sourceTypeSection = null;
+        this.sourceInstance = null;
     }
 
     public WasmFunctionHandle handle() {
@@ -102,11 +97,24 @@ public class ImportFunction implements ImportValue {
         return FunctionType.of(paramTypes, returnTypes);
     }
 
-    public int sourceTypeIdx() {
-        return sourceTypeIdx;
+    public Instance sourceInstance() {
+        return sourceInstance;
     }
 
-    public TypeSection sourceTypeSection() {
-        return sourceTypeSection;
+    /**
+     * Creates an {@link ImportFunction} that wraps an exported function from an instance,
+     * suitable for linking into another module's imports via the store.
+     *
+     * @param moduleName the import module name to register under
+     * @param fieldName the import field name to register under
+     * @param instance the source instance that exports the function
+     * @param exportName the name of the export in the source instance
+     */
+    public static ImportFunction exportAsImport(
+            String moduleName, String fieldName, Instance instance, String exportName) {
+        ExportFunction f = instance.export(exportName);
+        FunctionType ftype = instance.exportType(exportName);
+        return new ImportFunction(
+                moduleName, fieldName, ftype, (inst, args) -> f.apply(args), instance);
     }
 }

@@ -26,4 +26,26 @@ public enum PackedType {
     public int ID() {
         return id;
     }
+
+    public long signExtend(long val) {
+        switch (this) {
+            case I8:
+                return (byte) val;
+            case I16:
+                return (short) val;
+            default:
+                return val;
+        }
+    }
+
+    public long mask() {
+        switch (this) {
+            case I8:
+                return 0xFFL;
+            case I16:
+                return 0xFFFFL;
+            default:
+                return -1L;
+        }
+    }
 }

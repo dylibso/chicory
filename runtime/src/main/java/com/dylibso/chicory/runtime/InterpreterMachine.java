@@ -1066,7 +1066,7 @@ public class InterpreterMachine implements Machine {
                     ARRAY_FILL(stack, instance, operands);
                     break;
                 case ARRAY_COPY:
-                    ARRAY_COPY(stack, instance, operands);
+                    ARRAY_COPY(stack, instance);
                     break;
                 case ARRAY_INIT_DATA:
                     ARRAY_INIT_DATA(stack, instance, operands);
@@ -1089,10 +1089,9 @@ public class InterpreterMachine implements Machine {
                     BR_ON_CAST_FAIL(stack, instance, frame, instruction, operands);
                     break;
                 case ANY_CONVERT_EXTERN:
-                    ANY_CONVERT_EXTERN(stack, instance);
-                    break;
                 case EXTERN_CONVERT_ANY:
-                    EXTERN_CONVERT_ANY(stack, instance);
+                    // Identity operation at runtime: the value representation is the same
+                    // for externref and anyref. No wrapping needed.
                     break;
                 default:
                     {
@@ -3192,9 +3191,9 @@ public class InterpreterMachine implements Machine {
         var ft = st.fieldTypes()[fieldIdx];
         if (ft.storageType().packedType() != null) {
             if (opcode == OpCode.STRUCT_GET_S) {
-                val = signExtendPacked(val, ft.storageType().packedType());
+                val = ft.storageType().packedType().signExtend(val);
             } else {
-                val = val & packedMask(ft.storageType().packedType());
+                val = val & ft.storageType().packedType().mask();
             }
         }
         stack.push(val);
@@ -3212,7 +3211,7 @@ public class InterpreterMachine implements Machine {
         var st = instance.module().typeSection().getSubType(typeIdx).compType().structType();
         var ft = st.fieldTypes()[fieldIdx];
         if (ft.storageType().packedType() != null) {
-            val = val & packedMask(ft.storageType().packedType());
+            val = val & ft.storageType().packedType().mask();
         }
         struct.setField(fieldIdx, val);
     }
@@ -3257,7 +3256,7 @@ public class InterpreterMachine implements Machine {
         var len = (int) stack.pop();
         var offset = (int) stack.pop();
         var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
-        var elemSize = storageTypeByteSize(at.fieldType().storageType());
+        var elemSize = at.fieldType().storageType().byteSize();
         var data = instance.dataSegmentData(dataIdx);
         if ((long) offset + (long) len * elemSize > data.length) {
             throw new TrapException("out of bounds memory access");
@@ -3305,9 +3304,9 @@ public class InterpreterMachine implements Machine {
         var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
         if (at.fieldType().storageType().packedType() != null) {
             if (opcode == OpCode.ARRAY_GET_S) {
-                val = signExtendPacked(val, at.fieldType().storageType().packedType());
+                val = at.fieldType().storageType().packedType().signExtend(val);
             } else {
-                val = val & packedMask(at.fieldType().storageType().packedType());
+                val = val & at.fieldType().storageType().packedType().mask();
             }
         }
         stack.push(val);
@@ -3327,7 +3326,7 @@ public class InterpreterMachine implements Machine {
         }
         var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
         if (at.fieldType().storageType().packedType() != null) {
-            val = val & packedMask(at.fieldType().storageType().packedType());
+            val = val & at.fieldType().storageType().packedType().mask();
         }
         arr.set(idx, val);
     }
@@ -3356,15 +3355,14 @@ public class InterpreterMachine implements Machine {
         }
         var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
         if (at.fieldType().storageType().packedType() != null) {
-            val = val & packedMask(at.fieldType().storageType().packedType());
+            val = val & at.fieldType().storageType().packedType().mask();
         }
         for (int i = 0; i < len; i++) {
             arr.set(offset + i, val);
         }
     }
 
-    @SuppressWarnings("UnusedVariable")
-    private static void ARRAY_COPY(MStack stack, Instance instance, Operands operands) {
+    private static void ARRAY_COPY(MStack stack, Instance instance) {
         // operands 0 and 1 are dst/src type indices (used for validation, not needed at runtime)
         var len = (int) stack.pop();
         var srcOffset = (int) stack.pop();
@@ -3403,7 +3401,7 @@ public class InterpreterMachine implements Machine {
         }
         var arr = (WasmArray) instance.gcRef(ref);
         var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
-        var elemSize = storageTypeByteSize(at.fieldType().storageType());
+        var elemSize = at.fieldType().storageType().byteSize();
         var data = instance.dataSegmentData(dataIdx);
         if (dstOffset + len > arr.length()) {
             throw new TrapException("out of bounds array access");
@@ -3446,32 +3444,25 @@ public class InterpreterMachine implements Machine {
         }
     }
 
-    @SuppressWarnings("UnusedVariable")
-    private static void ANY_CONVERT_EXTERN(MStack stack, Instance instance) {
-        // Identity operation at runtime: the value representation is the same
-        // for externref and anyref. No wrapping needed.
-    }
-
-    @SuppressWarnings("UnusedVariable")
-    private static void EXTERN_CONVERT_ANY(MStack stack, Instance instance) {
-        // Identity operation at runtime: the value representation is the same
-        // for externref and anyref. No wrapping needed.
-    }
-
     private static void REF_TEST(
             MStack stack, Instance instance, Operands operands, OpCode opcode) {
         var heapType = (int) operands.get(0);
+        var sourceHeapType = (int) operands.get(1);
         var ref = stack.pop();
         boolean nullable = (opcode == OpCode.REF_TEST_NULL);
-        stack.push(rttMatch(instance, ref, nullable, heapType) ? Value.TRUE : Value.FALSE);
+        stack.push(
+                instance.heapTypeMatch(ref, nullable, heapType, sourceHeapType)
+                        ? Value.TRUE
+                        : Value.FALSE);
     }
 
     private static void CAST_TEST(
             MStack stack, Instance instance, Operands operands, OpCode opcode) {
         var heapType = (int) operands.get(0);
+        var sourceHeapType = (int) operands.get(1);
         var ref = stack.pop();
         boolean nullable = (opcode == OpCode.CAST_TEST_NULL);
-        if (!rttMatch(instance, ref, nullable, heapType)) {
+        if (!instance.heapTypeMatch(ref, nullable, heapType, sourceHeapType)) {
             throw new TrapException("cast failure");
         }
         stack.push(ref);
@@ -3485,9 +3476,10 @@ public class InterpreterMachine implements Machine {
             Operands operands) {
         var flags = (int) operands.get(0);
         var ht2 = (int) operands.get(3);
+        var sourceHeapType = (int) operands.get(4);
         boolean null2 = (flags & 2) != 0;
         var ref = stack.pop();
-        if (rttMatch(instance, ref, null2, ht2)) {
+        if (instance.heapTypeMatch(ref, null2, ht2, sourceHeapType)) {
             stack.push(ref);
             ctrlJump(frame, stack, (int) operands.get(1));
             frame.jumpTo(instruction.labelTrue());
@@ -3504,108 +3496,15 @@ public class InterpreterMachine implements Machine {
             Operands operands) {
         var flags = (int) operands.get(0);
         var ht2 = (int) operands.get(3);
+        var sourceHeapType = (int) operands.get(4);
         boolean null2 = (flags & 2) != 0;
         var ref = stack.pop();
-        if (!rttMatch(instance, ref, null2, ht2)) {
+        if (!instance.heapTypeMatch(ref, null2, ht2, sourceHeapType)) {
             stack.push(ref);
             ctrlJump(frame, stack, (int) operands.get(1));
             frame.jumpTo(instruction.labelTrue());
         } else {
             stack.push(ref);
-        }
-    }
-
-    private static boolean rttMatch(
-            Instance instance, long ref, boolean nullable, int targetHeapType) {
-        if (ref == REF_NULL_VALUE) {
-            return nullable;
-        }
-        // Bottom types never match non-null values
-        if (targetHeapType == ValType.TypeIdxCode.NONE.code()
-                || targetHeapType == ValType.TypeIdxCode.NOFUNC.code()
-                || targetHeapType == ValType.TypeIdxCode.NOEXTERN.code()) {
-            return false;
-        }
-        // For abstract func/extern targets: the validator guarantees the operand
-        // is in the correct hierarchy, so any non-null value matches.
-        if (targetHeapType == ValType.TypeIdxCode.FUNC.code()
-                || targetHeapType == ValType.TypeIdxCode.EXTERN.code()) {
-            return true;
-        }
-        if (Value.isI31(ref)) {
-            return isHeapTypeSubOf(ValType.TypeIdxCode.I31.code(), targetHeapType, instance);
-        }
-        if (ref >= 0) {
-            var gcRef = instance.gcRef((int) ref);
-            if (gcRef != null) {
-                return isHeapTypeSubOf(gcRef.typeIdx(), targetHeapType, instance);
-            }
-            // Check function reference hypothesis
-            try {
-                var funcTypeIdx = instance.functionType((int) ref);
-                if (isHeapTypeSubOf(funcTypeIdx, targetHeapType, instance)) {
-                    return true;
-                }
-            } catch (InvalidException e) {
-                // Not a valid function index
-            }
-        }
-        // Unidentified non-null value (e.g., internalized externref via
-        // any.convert_extern which is a no-op): it lives in the "any"
-        // hierarchy but is not eq/i31/struct/array.
-        return targetHeapType == ValType.TypeIdxCode.ANY.code();
-    }
-
-    private static boolean isHeapTypeSubOf(int actual, int target, Instance instance) {
-        if (actual == target) {
-            return true;
-        }
-        var ts = instance.module().typeSection();
-        return ValType.heapTypeSubtype(actual, target, ts);
-    }
-
-    // Packed type helpers
-    private static long signExtendPacked(long val, com.dylibso.chicory.wasm.types.PackedType pt) {
-        switch (pt) {
-            case I8:
-                return (byte) val;
-            case I16:
-                return (short) val;
-            default:
-                return val;
-        }
-    }
-
-    private static long packedMask(com.dylibso.chicory.wasm.types.PackedType pt) {
-        switch (pt) {
-            case I8:
-                return 0xFFL;
-            case I16:
-                return 0xFFFFL;
-            default:
-                return -1L;
-        }
-    }
-
-    private static int storageTypeByteSize(com.dylibso.chicory.wasm.types.StorageType storageType) {
-        if (storageType.packedType() != null) {
-            switch (storageType.packedType()) {
-                case I8:
-                    return 1;
-                case I16:
-                    return 2;
-            }
-        }
-        var vt = storageType.valType();
-        switch (vt.opcode()) {
-            case 0x7F: // i32
-            case 0x7D: // f32
-                return 4;
-            case 0x7E: // i64
-            case 0x7C: // f64
-                return 8;
-            default:
-                return 4; // references stored as 4 bytes in data segments
         }
     }
 

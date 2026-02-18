@@ -149,8 +149,7 @@ public class WasmValue {
                     return new NameExpr(
                             "assertNotNull(" + moduleName + ".array((int) results[0]))");
                 case EQ_REF:
-                    // TODO: does this need to be expanded?
-                    // we are verifying the reference exists
+                    // just verifying the reference exists
                     return new NameExpr(
                             "assertNotNull(" + moduleName + ".array((int) results[0]))");
                 case NULL_REF:

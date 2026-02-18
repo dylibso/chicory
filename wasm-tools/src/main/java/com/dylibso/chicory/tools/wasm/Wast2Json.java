@@ -63,7 +63,6 @@ public final class Wast2Json {
             java.nio.file.Files.createDirectory(inputFolder);
             Path inputPath = inputFolder.resolve("spec.wast");
             java.nio.file.Files.copy(fis, inputPath, StandardCopyOption.REPLACE_EXISTING);
-            //                copy(fis, inputPath, StandardCopyOption.REPLACE_EXISTING);
             wasiOpts.withDirectory(inputFolder.toString(), inputFolder);
 
             Path outputFolder = fs.getPath("output");

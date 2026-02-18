@@ -42,6 +42,7 @@ import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.ValType;
+import com.dylibso.chicory.wasm.types.Value;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -53,8 +54,10 @@ import java.util.stream.Collectors;
 public class Instance {
     public static final String START_FUNCTION_NAME = "_start";
 
-    // GC ref IDs start at this offset to avoid collisions with function indices
-    // and externref values, which share the same integer representation space.
+    // GC ref IDs start at this offset to avoid collisions with externref
+    // values that get internalized via any.convert_extern. Since internalized
+    // externrefs and GC refs both live in the ANY hierarchy, they share the
+    // same integer representation space.
     static final int GC_REF_ID_OFFSET = 0x10000;
 
     private final WasmModule module;
@@ -118,8 +121,6 @@ public class Instance {
 
         this.exnRefs = new HashMap<>();
         this.arrayRefs = new IntWeakValueMap<>();
-        // Start GC ref IDs at a high offset to avoid collisions with
-        // function indices and extern ref values which share the int space.
         this.gcRefs = new IntWeakValueMap<>(GC_REF_ID_OFFSET);
 
         for (int i = 0; i < tables.length; i++) {
@@ -386,6 +387,47 @@ public class Instance {
         return gcRefs.get(idx);
     }
 
+    public boolean heapTypeMatch(
+            long ref, boolean nullable, int targetHeapType, int sourceHeapType) {
+        if (ref == Value.REF_NULL_VALUE) {
+            return nullable;
+        }
+        // Bottom types never match non-null values
+        if (targetHeapType == ValType.TypeIdxCode.NONE.code()
+                || targetHeapType == ValType.TypeIdxCode.NOFUNC.code()
+                || targetHeapType == ValType.TypeIdxCode.NOEXTERN.code()) {
+            return false;
+        }
+        // For abstract func/extern targets: the validator guarantees the operand
+        // is in the correct hierarchy, so any non-null value matches.
+        if (targetHeapType == ValType.TypeIdxCode.FUNC.code()
+                || targetHeapType == ValType.TypeIdxCode.EXTERN.code()) {
+            return true;
+        }
+        // Dispatch based on source hierarchy
+        if (sourceHeapType == ValType.TypeIdxCode.FUNC.code()) {
+            var funcTypeIdx = functionType((int) ref);
+            return heapTypeSubOf(funcTypeIdx, targetHeapType);
+        }
+        // ANY hierarchy: i31, struct, array, or internalized externref
+        if (Value.isI31(ref)) {
+            return heapTypeSubOf(ValType.TypeIdxCode.I31.code(), targetHeapType);
+        }
+        var gc = gcRef((int) ref);
+        if (gc != null) {
+            return heapTypeSubOf(gc.typeIdx(), targetHeapType);
+        }
+        // Internalized externref (via any.convert_extern)
+        return targetHeapType == ValType.TypeIdxCode.ANY.code();
+    }
+
+    private boolean heapTypeSubOf(int actual, int target) {
+        if (actual == target) {
+            return true;
+        }
+        return ValType.heapTypeSubtype(actual, target, module.typeSection());
+    }
+
     public Machine getMachine() {
         return machine;
     }
@@ -463,22 +505,28 @@ public class Instance {
         }
 
         private void validateExternalFunctionSignature(FunctionImport imprt, ImportFunction f) {
-            // Use cross-module canonical type matching when source type info is available
-            if (f.sourceTypeSection() != null && f.sourceTypeIdx() >= 0) {
-                // Check if the export type is a subtype of the import type
-                // Walk up the export's supertype chain and check canonical equivalence
-                if (!crossModuleTypeSubtype(
-                        f.sourceTypeSection(),
-                        f.sourceTypeIdx(),
-                        module.typeSection(),
-                        imprt.typeIndex())) {
-                    throw new UnlinkableException(
-                            "incompatible import type for host function "
-                                    + f.module()
-                                    + "."
-                                    + f.name());
+            // Use cross-module canonical type matching when source instance is available
+            if (f.sourceInstance() != null) {
+                Instance src = f.sourceInstance();
+                ExportSection srcExports = src.module().exportSection();
+                for (int i = 0; i < srcExports.exportCount(); i++) {
+                    Export e = srcExports.getExport(i);
+                    if (e.name().equals(f.name()) && e.exportType() == ExternalType.FUNCTION) {
+                        int typeIdx = src.functionType(e.index());
+                        if (!crossModuleTypeSubtype(
+                                src.module().typeSection(),
+                                typeIdx,
+                                module.typeSection(),
+                                imprt.typeIndex())) {
+                            throw new UnlinkableException(
+                                    "incompatible import type for host function "
+                                            + f.module()
+                                            + "."
+                                            + f.name());
+                        }
+                        return;
+                    }
                 }
-                return;
             }
             // Fallback: structural comparison for host-provided functions
             var expectedType = module.typeSection().getType(imprt.typeIndex());

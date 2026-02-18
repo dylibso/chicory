@@ -95,9 +95,9 @@ public final class WasiPreview1 implements Closeable {
                                                 x.getValue().getBytes(UTF_8)))
                         .collect(toList());
 
-        descriptors.allocate(new InStream(opts.stdin()));
-        descriptors.allocate(new OutStream(opts.stdout()));
-        descriptors.allocate(new OutStream(opts.stderr()));
+        descriptors.allocate(new InStream(opts.stdin(), opts.stdinIsTty()));
+        descriptors.allocate(new OutStream(opts.stdout(), opts.stdoutIsTty()));
+        descriptors.allocate(new OutStream(opts.stderr(), opts.stderrIsTty()));
 
         for (var entry : opts.directories().entrySet()) {
             byte[] name = entry.getKey().getBytes(UTF_8);
@@ -361,10 +361,12 @@ public final class WasiPreview1 implements Closeable {
 
         WasiFileType fileType;
         if (descriptor instanceof InStream) {
-            fileType = WasiFileType.CHARACTER_DEVICE;
+            var inStream = (InStream) descriptor;
+            fileType = inStream.isTty() ? WasiFileType.CHARACTER_DEVICE : WasiFileType.UNKNOWN;
             rightsBase = WasiRights.FD_READ;
         } else if (descriptor instanceof OutStream) {
-            fileType = WasiFileType.CHARACTER_DEVICE;
+            var outStream = (OutStream) descriptor;
+            fileType = outStream.isTty() ? WasiFileType.CHARACTER_DEVICE : WasiFileType.UNKNOWN;
             rightsBase = WasiRights.FD_WRITE;
         } else if (descriptor instanceof Directory) {
             fileType = WasiFileType.DIRECTORY;

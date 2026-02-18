@@ -2697,6 +2697,7 @@ final class Validator {
                         int heapType = (int) op.operand(0);
                         int topHt = topOfHeapType(heapType);
                         popVal(valType(ValType.ID.RefNull, topHt));
+                        op.setOperand(1, topHt);
                         pushVal(ValType.I32);
                         break;
                     }
@@ -2707,6 +2708,7 @@ final class Validator {
                         boolean nullable = op.opcode() == OpCode.CAST_TEST_NULL;
                         int topHt = topOfHeapType(heapType);
                         popVal(valType(ValType.ID.RefNull, topHt));
+                        op.setOperand(1, topHt);
                         pushVal(valType(nullable ? ValType.ID.RefNull : ValType.ID.Ref, heapType));
                         break;
                     }
@@ -2746,6 +2748,7 @@ final class Validator {
                         popVal(rt1);
                         popVals(ts0);
                         pushVals(ts0);
+                        op.setOperand(4, topOfHeapType(ht1));
                         if (op.opcode() == OpCode.BR_ON_CAST) {
                             pushVal(diffType);
                         } else {
