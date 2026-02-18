@@ -349,11 +349,6 @@ public final class ByteArrayMemory implements Memory {
         write(dest, segment.data(), offset, size);
     }
 
-    @Override
-    public byte[] dataSegment(int segmentId) {
-        return dataSegments[segmentId].data();
-    }
-
     private int sizeInBytes() {
         return PAGE_SIZE * nPages;
     }

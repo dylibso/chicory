@@ -55,14 +55,7 @@ public class TestModule {
                 }
                 return of(Parser.parse(parsed));
             }
-            return of(
-                    Parser.builder()
-                            // TODO: temporary to move forward with WasmGC
-                            // .withValidation(false)
-                            .build()
-                            // TODO: this API is a little surprising the static methods
-                            // are not intuitive as they create a new instance of the Parser
-                            .parse(() -> is));
+            return of(Parser.parse(is));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

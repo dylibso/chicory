@@ -87,17 +87,14 @@ final class ConstantEvaluators {
                 case GLOBAL_GET:
                     {
                         var idx = (int) instruction.operand(0);
-                        if (instance.global(idx) == null) {
+                        var global = instance.global(idx);
+                        if (global == null) {
                             throw new InvalidException("unknown global");
                         }
-                        if (instance.global(idx).getType().equals(ValType.V128)) {
-                            stack.push(
-                                    new long[] {
-                                        instance.global(idx).getValueLow(),
-                                        instance.global(idx).getValueHigh()
-                                    });
+                        if (global.getType().equals(ValType.V128)) {
+                            stack.push(new long[] {global.getValueLow(), global.getValueHigh()});
                         } else {
-                            stack.push(new long[] {instance.global(idx).getValueLow()});
+                            stack.push(new long[] {global.getValueLow()});
                         }
                         break;
                     }

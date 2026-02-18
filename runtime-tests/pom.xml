@@ -234,17 +234,6 @@
             <wast>utf8-import-module.wast</wast>
             <wast>utf8-invalid-encoding.wast</wast>
           </includedWasts>
-          <!-- This test is supposed to fail because there is a THROW_REF in a Global initializer -->
-          <!-- it's a different error with EH -->
-          <!-- No need to check the assertion of multiple tables(the spec will be rebased eventually): https://github.com/WebAssembly/spec/blob/main/interpreter/valid/valid.ml#L729 -->
-          <!-- GC semantics allow self-referencing types in implicit singleton rec groups,
-               superseding function-references-only semantics that forbid them -->
-          <!-- GC constant expression rules allow global.get for preceding module globals,
-               superseding base-spec restriction to imported globals only -->
-          <!-- GC constant expression rules allow global.get for preceding module globals,
-               superseding base-spec restriction to imported globals only.
-               i32.add in elem items: module is correctly rejected but error message
-               is "type mismatch" instead of "constant expression required" -->
           <excludedTests>SpecV1BinaryTest.test40,
             SpecV1EhBinaryTest.test40,
             SpecV1ThreadsImportsTest.test64,
@@ -626,13 +615,6 @@
                 <wast>utf8-import-module.wast</wast>
                 <wast>utf8-invalid-encoding.wast</wast>
               </includedWasts>
-              <!-- This test is supposed to fail because there is a THROW_REF in a Global initializer -->
-              <!-- it's a different error with EH -->
-              <!-- No need to check the assertion of multiple tables(the spec will be rebased eventually): https://github.com/WebAssembly/spec/blob/main/interpreter/valid/valid.ml#L729 -->
-              <!-- GC semantics allow self-referencing types in implicit singleton rec groups,
-                   superseding function-references-only semantics that forbid them -->
-              <!-- GC constant expression rules allow global.get for preceding module globals,
-                   superseding base-spec restriction to imported globals only -->
               <excludedTests>SpecV1BinaryTest.test40,
                 SpecV1EhBinaryTest.test40,
                 SpecV1ThreadsImportsTest.test64,
