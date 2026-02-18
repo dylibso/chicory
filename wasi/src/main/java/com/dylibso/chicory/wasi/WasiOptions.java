@@ -25,6 +25,7 @@ public final class WasiOptions {
     private final List<String> arguments;
     private final Map<String, String> environment;
     private final Map<String, Path> directories;
+    private final boolean throwOnExit0;
 
     public static Builder builder() {
         return new Builder();
@@ -41,7 +42,8 @@ public final class WasiOptions {
             boolean stderrIsTty,
             List<String> arguments,
             Map<String, String> environment,
-            Map<String, Path> directories) {
+            Map<String, Path> directories,
+            boolean throwOnExit0) {
         this.random = requireNonNull(random);
         this.clock = requireNonNull(clock);
         this.stdout = requireNonNull(stdout);
@@ -53,6 +55,7 @@ public final class WasiOptions {
         this.arguments = List.copyOf(arguments);
         this.environment = unmodifiableMap(new LinkedHashMap<>(environment));
         this.directories = unmodifiableMap(new LinkedHashMap<>(directories));
+        this.throwOnExit0 = throwOnExit0;
     }
 
     public Random random() {
@@ -99,6 +102,10 @@ public final class WasiOptions {
         return directories;
     }
 
+    public boolean throwOnExit0() {
+        return throwOnExit0;
+    }
+
     public static final class Builder {
         // ThreadLocalRandom is correctly substituted in graal native-image:
         // https://github.com/oracle/graal/blob/f63ba1767a34d9a4e9d747d077d684f20f4d934d/substratevm/src/com.oracle.svm.core/src/com/oracle/svm/core/jdk/ThreadLocalRandomAccessors.java#L38
@@ -113,6 +120,7 @@ public final class WasiOptions {
         private List<String> arguments = List.of();
         private final Map<String, String> environment = new LinkedHashMap<>();
         private final Map<String, Path> directories = new LinkedHashMap<>();
+        private boolean throwOnExit0 = true;
 
         private Builder() {}
 
@@ -181,6 +189,11 @@ public final class WasiOptions {
             return this;
         }
 
+        public Builder withThrowOnExit0(boolean throwOnExit0) {
+            this.throwOnExit0 = throwOnExit0;
+            return this;
+        }
+
         public WasiOptions build() {
             return new WasiOptions(
                     random,
@@ -193,7 +206,8 @@ public final class WasiOptions {
                     stderrIsTty,
                     arguments,
                     environment,
-                    directories);
+                    directories,
+                    throwOnExit0);
         }
     }
 }

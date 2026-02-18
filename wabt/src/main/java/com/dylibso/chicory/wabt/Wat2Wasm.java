@@ -70,6 +70,7 @@ public final class Wat2Wasm {
                                 .withStderr(stderrStream)
                                 .withDirectory(target.toString(), target)
                                 .withArguments(List.of("wat2wasm", path.toString(), "--output=-"))
+                                .withThrowOnExit0(false)
                                 .build();
 
                 try (var wasi =
@@ -81,12 +82,10 @@ public final class Wat2Wasm {
                             .withImportValues(imports)
                             .build();
                 } catch (WasiExitException e) {
-                    if (e.exitCode() != 0) {
-                        throw new WatParseException(
-                                stdoutStream.toString(StandardCharsets.UTF_8)
-                                        + stderrStream.toString(StandardCharsets.UTF_8),
-                                e);
-                    }
+                    throw new WatParseException(
+                            stdoutStream.toString(StandardCharsets.UTF_8)
+                                    + stderrStream.toString(StandardCharsets.UTF_8),
+                            e);
                 }
 
                 return stdoutStream.toByteArray();
