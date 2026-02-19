@@ -16,8 +16,10 @@ import com.dylibso.chicory.wasm.io.InputStreams;
 import com.dylibso.chicory.wasm.types.ActiveDataSegment;
 import com.dylibso.chicory.wasm.types.ActiveElement;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
+import com.dylibso.chicory.wasm.types.ArrayType;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.CodeSection;
+import com.dylibso.chicory.wasm.types.CompType;
 import com.dylibso.chicory.wasm.types.CustomSection;
 import com.dylibso.chicory.wasm.types.DataCountSection;
 import com.dylibso.chicory.wasm.types.DataSection;
@@ -27,6 +29,7 @@ import com.dylibso.chicory.wasm.types.ElementSection;
 import com.dylibso.chicory.wasm.types.Export;
 import com.dylibso.chicory.wasm.types.ExportSection;
 import com.dylibso.chicory.wasm.types.ExternalType;
+import com.dylibso.chicory.wasm.types.FieldType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionSection;
@@ -43,12 +46,17 @@ import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.PackedType;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.RawSection;
+import com.dylibso.chicory.wasm.types.RecType;
 import com.dylibso.chicory.wasm.types.Section;
 import com.dylibso.chicory.wasm.types.SectionId;
 import com.dylibso.chicory.wasm.types.StartSection;
+import com.dylibso.chicory.wasm.types.StorageType;
+import com.dylibso.chicory.wasm.types.StructType;
+import com.dylibso.chicory.wasm.types.SubType;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TableLimits;
@@ -83,7 +91,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Parser for Web Assembly binaries.
@@ -98,6 +105,7 @@ public final class Parser {
 
     private final Map<String, Function<byte[], CustomSection>> customParsers;
     private final BitSet includeSections;
+    private final boolean validate;
 
     private TypeSection typeSection;
 
@@ -105,14 +113,17 @@ public final class Parser {
             Map.of("name", NameCustomSection::parse);
 
     private Parser() {
-        this(null, DEFAULT_CUSTOM_PARSERS);
+        this(null, DEFAULT_CUSTOM_PARSERS, true);
     }
 
     private Parser(
-            BitSet includeSections, Map<String, Function<byte[], CustomSection>> customParsers) {
+            BitSet includeSections,
+            Map<String, Function<byte[], CustomSection>> customParsers,
+            boolean validate) {
         this.includeSections = includeSections;
         this.customParsers = Map.copyOf(customParsers);
         this.typeSection = TypeSection.builder().build();
+        this.validate = validate;
     }
 
     private static ByteBuffer readByteBuffer(InputStream is) {
@@ -183,6 +194,7 @@ public final class Parser {
     public static final class Builder {
         private Map<String, Function<byte[], CustomSection>> customParsers;
         private BitSet includeSections;
+        private boolean validate = true;
 
         private Builder() {}
 
@@ -203,11 +215,16 @@ public final class Parser {
             return this;
         }
 
+        public Builder withValidation(boolean validate) {
+            this.validate = validate;
+            return this;
+        }
+
         public Parser build() {
             if (customParsers == null) {
                 customParsers = DEFAULT_CUSTOM_PARSERS;
             }
-            return new Parser(includeSections, customParsers);
+            return new Parser(includeSections, customParsers, validate);
         }
     }
 
@@ -238,6 +255,7 @@ public final class Parser {
 
     public WasmModule parse(Supplier<InputStream> inputStreamSupplier) {
         WasmModule.Builder moduleBuilder = WasmModule.builder();
+        moduleBuilder.withValidation(validate);
         MessageDigest messageDigest = null;
         try (InputStream is = inputStreamSupplier.get()) {
             InputStream maybeDigestedInputStream = is;
@@ -491,66 +509,163 @@ public final class Parser {
         return new RawSection(sectionId, bytes);
     }
 
-    private static TypeSection parseTypeSection(ByteBuffer buffer) {
+    private static FieldType parseFieldType(ByteBuffer buffer) {
+        var id = (int) readVarUInt32(buffer);
 
-        var typeCount = readVarUInt32(buffer);
-        TypeSection.Builder typeSection = TypeSection.builder();
+        if (id == PackedType.I8.ID() || id == PackedType.I16.ID()) {
+            var packedType = PackedType.fromId(id);
+            var mut = MutabilityType.forId(readByte(buffer));
+            return FieldType.builder()
+                    .withStorageType(StorageType.builder().withPackedType(packedType).build())
+                    .withMutability(mut)
+                    .build();
+        } else {
+            var valType = readValueTypeBuilderFromOpCode(buffer, id).build();
+            var mut = MutabilityType.forId(readByte(buffer));
 
-        // Parse individual types in the type section
-        for (int i = 0; i < typeCount; i++) {
-            var form = readVarUInt32(buffer);
-            if (form > Byte.MAX_VALUE) {
-                throw new MalformedException("integer representation too long");
-            }
+            return FieldType.builder()
+                    .withStorageType(StorageType.builder().withValType(valType).build())
+                    .withMutability(mut)
+                    .build();
+        }
+    }
 
-            if (form != 0x60) {
-                throw new MalformedException(
-                        "We don't support non func types. Form "
-                                + String.format("0x%02X", form)
-                                + " was given but we expected 0x60");
-            }
+    private static ArrayType parseArrayType(ByteBuffer buffer) {
+        return ArrayType.builder().withFieldType(parseFieldType(buffer)).build();
+    }
 
-            // Parse function types (form = 0x60)
-            var paramCount = (int) readVarUInt32(buffer);
-            var paramsBuilder = new ValType.Builder[paramCount];
+    private static StructType parseStructType(ByteBuffer buffer) {
+        var count = (int) readVarUInt32(buffer);
+        var builder = StructType.builder();
+        for (int i = 0; i < count; i++) {
+            builder.addFieldType(parseFieldType(buffer));
+        }
+        return builder.build();
+    }
 
-            // Parse parameter types
-            for (int j = 0; j < paramCount; j++) {
-                paramsBuilder[j] = readValueTypeBuilder(buffer);
-            }
+    private static FunctionType parseFunctionType(ByteBuffer buffer) {
+        var paramCount = (int) readVarUInt32(buffer);
+        List<ValType> paramsBuilder = new ArrayList<>(paramCount);
 
-            var returnCount = (int) readVarUInt32(buffer);
-            var returnsBuilder = new ValType.Builder[returnCount];
-
-            // Parse return types
-            for (int j = 0; j < returnCount; j++) {
-                returnsBuilder[j] = readValueTypeBuilder(buffer);
-            }
-
-            // a type can only refer to types with idx less than it
-            var maxTypeIdx = i - 1;
-            Stream.concat(Arrays.stream(paramsBuilder), Arrays.stream(returnsBuilder))
-                    .forEach(
-                            v -> {
-                                if (v.isReference()) {
-                                    var typeIdx = v.typeIdx();
-                                    if (typeIdx > maxTypeIdx) {
-                                        throw new InvalidException(
-                                                "unknown type: recursive type, type mismatch");
-                                    }
-                                }
-                            });
-
-            Function<ValType.Builder, ValType> build =
-                    (ValType.Builder builder) -> builder.build(typeSection.getTypes()::get);
-
-            var params = Arrays.stream(paramsBuilder).map(build).toArray(ValType[]::new);
-            var returns = Arrays.stream(returnsBuilder).map(build).toArray(ValType[]::new);
-
-            typeSection.addFunctionType(FunctionType.of(params, returns));
+        // Parse parameter types
+        for (int j = 0; j < paramCount; j++) {
+            paramsBuilder.add(readValueTypeBuilder(buffer).build());
         }
 
-        return typeSection.build();
+        var returnCount = (int) readVarUInt32(buffer);
+        List<ValType> returnsBuilder = new ArrayList<>(returnCount);
+
+        // Parse return types
+        for (int j = 0; j < returnCount; j++) {
+            returnsBuilder.add(readValueTypeBuilder(buffer).build());
+        }
+
+        return FunctionType.of(paramsBuilder, returnsBuilder);
+    }
+
+    private static CompType parseCompType(int id, ByteBuffer buffer) {
+        if (id > Byte.MAX_VALUE) {
+            throw new MalformedException("integer representation too long");
+        }
+
+        switch (id) {
+            case 0x5E:
+                return CompType.builder().withArrayType(parseArrayType(buffer)).build();
+            case 0x5F:
+                return CompType.builder().withStructType(parseStructType(buffer)).build();
+            case 0x60:
+                return CompType.builder().withFuncType(parseFunctionType(buffer)).build();
+            default:
+                throw new MalformedException(
+                        "Invalid composite type. Form "
+                                + String.format("0x%02X", id)
+                                + " was not 0x5E, 0x5f or 0x60");
+        }
+    }
+
+    private static SubType parseSubType(int id, ByteBuffer buffer) {
+        if (id == 0x50 // non final typeIdx
+                || id == 0x4F // final typeIdx
+        ) {
+            var count = (int) readVarUInt32(buffer);
+            var typeIdxs = new int[count];
+
+            for (int i = 0; i < count; i++) {
+                typeIdxs[i] = (int) readVarUInt32(buffer);
+            }
+            return SubType.builder()
+                    .withTypeIdx(typeIdxs)
+                    .withFinal(id == 0x4F)
+                    .withCompType(parseCompType((int) readVarUInt32(buffer), buffer))
+                    .build();
+        } else {
+            // fallback to the compressed form
+            return SubType.builder()
+                    .withTypeIdx(new int[0])
+                    .withFinal(true)
+                    .withCompType(parseCompType(id, buffer))
+                    .build();
+        }
+    }
+
+    private static RecType parseRecType(ByteBuffer buffer) {
+        var discriminator = (int) readVarUInt32(buffer);
+        if (discriminator == 0x4E) {
+            var count = (int) readVarUInt32(buffer);
+            var subTypes = new SubType[count];
+
+            for (int i = 0; i < count; i++) {
+                subTypes[i] = parseSubType((int) readVarUInt32(buffer), buffer);
+            }
+            return RecType.builder().withSubTypes(subTypes).build();
+        } else {
+            // fallback to the compressed form
+            return RecType.builder()
+                    .withSubTypes(new SubType[] {parseSubType(discriminator, buffer)})
+                    .build();
+        }
+    }
+
+    private static TypeSection parseTypeSection(ByteBuffer buffer) {
+        var typeCount = (int) readVarUInt32(buffer);
+        TypeSection.Builder typeSectionBuilder = TypeSection.builder();
+
+        for (int i = 0; i < typeCount; i++) {
+            typeSectionBuilder.addRecType(parseRecType(buffer));
+        }
+
+        var typeSection = typeSectionBuilder.build();
+
+        // Resolution phase, keeping it explicit to be able to more easily catch and throw relevant
+        // errors
+        for (int i = 0; i < typeSection.typeCount(); i++) {
+            var rt = typeSection.getRecType(i);
+            for (var st : rt.subTypes()) {
+                var ct = st.compType();
+                if (ct.funcType() != null) {
+                    var ft = ct.funcType();
+                    for (var p : ft.params()) {
+                        p.resolve(typeSection);
+                    }
+                    for (var r : ft.returns()) {
+                        r.resolve(typeSection);
+                    }
+                }
+                if (ct.arrayType() != null
+                        && ct.arrayType().fieldType().storageType().valType() != null) {
+                    ct.arrayType().fieldType().storageType().valType().resolve(typeSection);
+                }
+                if (ct.structType() != null) {
+                    for (var t : ct.structType().fieldTypes()) {
+                        if (t.storageType().valType() != null) {
+                            t.storageType().valType().resolve(typeSection);
+                        }
+                    }
+                }
+            }
+        }
+
+        return typeSection;
     }
 
     private static ImportSection parseImportSection(ByteBuffer buffer, TypeSection typeSection) {
@@ -1002,6 +1117,23 @@ public final class Parser {
                             reference.addCallback(instruction::withLabelTrue);
                             break;
                         }
+                    case BR_ON_CAST:
+                    case BR_ON_CAST_FAIL:
+                        {
+                            instruction.withLabelFalse(instructions.size() + 1);
+                            // Label depth is in operand 1 (after flags)
+                            var offset = (int) baseInstruction.operand(1);
+                            ControlTree reference = currentControlFlow;
+                            while (offset > 0) {
+                                if (reference == null) {
+                                    throw new InvalidException("unknown label");
+                                }
+                                reference = reference.parent();
+                                offset--;
+                            }
+                            reference.addCallback(instruction::withLabelTrue);
+                            break;
+                        }
                     case BR_TABLE:
                         {
                             var length = baseInstruction.operandCount();
@@ -1139,7 +1271,7 @@ public final class Parser {
 
         var address = buffer.position();
         int b = (int) readByte(buffer) & 0xff;
-        if (b >= 0xfc && b < 0xff) { // is multi-byte
+        if (b >= 0xfb && b < 0xff) { // is multi-byte
             b = (int) ((b << 8) + readVarUInt32(buffer));
         }
         var op = OpCode.byOpCode(b);
@@ -1256,6 +1388,18 @@ public final class Parser {
         for (var i = 0; i < operands.size(); i++) {
             operandsArray[i] = operands.get(i);
         }
+        // Reserve an extra operand slot for the source heap type hint,
+        // to be filled in by the validator.
+        switch (op) {
+            case REF_TEST:
+            case REF_TEST_NULL:
+            case CAST_TEST:
+            case CAST_TEST_NULL:
+            case BR_ON_CAST:
+            case BR_ON_CAST_FAIL:
+                operandsArray = Arrays.copyOf(operandsArray, operandsArray.length + 1);
+                break;
+        }
         verifyAlignment(op, operandsArray);
         return new Instruction(address, op, operandsArray);
     }
@@ -1349,11 +1493,11 @@ public final class Parser {
 
     private static ValType readValueTypeFromOpCode(
             ByteBuffer buffer, int valueTypeOpCode, TypeSection typeSection) {
-        return readValueTypeBuilderFromOpCode(buffer, valueTypeOpCode).build(typeSection::getType);
+        return readValueTypeBuilderFromOpCode(buffer, valueTypeOpCode).build().resolve(typeSection);
     }
 
     private static ValType readValueType(ByteBuffer buffer, TypeSection typeSection) {
-        return readValueTypeBuilder(buffer).build(typeSection::getType);
+        return readValueTypeBuilder(buffer).build().resolve(typeSection);
     }
 
     private static Instruction[] parseExpression(ByteBuffer buffer) {

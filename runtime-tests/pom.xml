@@ -20,17 +20,17 @@
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
-      <artifactId>wabt</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.dylibso.chicory</groupId>
       <artifactId>wasm-corpus</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.dylibso.chicory</groupId>
+      <artifactId>wasm-tools</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -149,6 +149,54 @@
             <wast>proposals/function-references/type-equivalence.wast</wast>
             <wast>proposals/function-references/unreached-invalid.wast</wast>
             <wast>proposals/function-references/unreached-valid.wast</wast>
+            <wast>proposals/gc/array.wast</wast>
+            <wast>proposals/gc/array_copy.wast</wast>
+            <wast>proposals/gc/array_fill.wast</wast>
+            <wast>proposals/gc/array_init_data.wast</wast>
+            <wast>proposals/gc/array_init_elem.wast</wast>
+            <wast>proposals/gc/array_new_data.wast</wast>
+            <wast>proposals/gc/array_new_elem.wast</wast>
+            <wast>proposals/gc/binary-gc.wast</wast>
+            <wast>proposals/gc/binary.wast</wast>
+            <wast>proposals/gc/br_if.wast</wast>
+            <wast>proposals/gc/br_on_cast.wast</wast>
+            <wast>proposals/gc/br_on_cast_fail.wast</wast>
+            <wast>proposals/gc/br_on_non_null.wast</wast>
+            <wast>proposals/gc/br_on_null.wast</wast>
+            <wast>proposals/gc/br_table.wast</wast>
+            <wast>proposals/gc/call_ref.wast</wast>
+            <wast>proposals/gc/data.wast</wast>
+            <wast>proposals/gc/elem.wast</wast>
+            <wast>proposals/gc/extern.wast</wast>
+            <wast>proposals/gc/func.wast</wast>
+            <wast>proposals/gc/global.wast</wast>
+            <wast>proposals/gc/i31.wast</wast>
+            <wast>proposals/gc/if.wast</wast>
+            <wast>proposals/gc/linking.wast</wast>
+            <wast>proposals/gc/local_get.wast</wast>
+            <wast>proposals/gc/local_init.wast</wast>
+            <wast>proposals/gc/local_tee.wast</wast>
+            <wast>proposals/gc/ref.wast</wast>
+            <wast>proposals/gc/ref_as_non_null.wast</wast>
+            <wast>proposals/gc/ref_cast.wast</wast>
+            <wast>proposals/gc/ref_eq.wast</wast>
+            <wast>proposals/gc/ref_is_null.wast</wast>
+            <wast>proposals/gc/ref_null.wast</wast>
+            <wast>proposals/gc/ref_test.wast</wast>
+            <wast>proposals/gc/return_call.wast</wast>
+            <wast>proposals/gc/return_call_indirect.wast</wast>
+            <wast>proposals/gc/return_call_ref.wast</wast>
+            <wast>proposals/gc/select.wast</wast>
+            <wast>proposals/gc/struct.wast</wast>
+            <wast>proposals/gc/table-sub.wast</wast>
+            <wast>proposals/gc/table.wast</wast>
+            <wast>proposals/gc/type-canon.wast</wast>
+            <wast>proposals/gc/type-equivalence.wast</wast>
+            <wast>proposals/gc/type-rec.wast</wast>
+            <wast>proposals/gc/type-subtyping-invalid.wast</wast>
+            <wast>proposals/gc/type-subtyping.wast</wast>
+            <wast>proposals/gc/unreached-invalid.wast</wast>
+            <wast>proposals/gc/unreached-valid.wast</wast>
             <wast>proposals/tail-call/return_call.wast</wast>
             <wast>proposals/tail-call/return_call_indirect.wast</wast>
             <wast>proposals/threads/atomic.wast</wast>
@@ -186,14 +234,31 @@
             <wast>utf8-import-module.wast</wast>
             <wast>utf8-invalid-encoding.wast</wast>
           </includedWasts>
-          <!-- This test is supposed to fail because there is a THROW_REF in a Global initializer -->
-          <!-- it's a different error with EH -->
-          <!-- No need to check the assertion of multiple tables(the spec will be rebased eventually): https://github.com/WebAssembly/spec/blob/main/interpreter/valid/valid.ml#L729 -->
           <excludedTests>SpecV1BinaryTest.test40,
             SpecV1EhBinaryTest.test40,
             SpecV1ThreadsImportsTest.test64,
             SpecV1ThreadsImportsTest.test65,
-            SpecV1ThreadsImportsTest.test66</excludedTests>
+            SpecV1ThreadsImportsTest.test66,
+            SpecV1FunctionReferencesTypeEquivalenceTest.test2,
+            SpecV1DataTest.test9,
+            SpecV1DataTest.test10,
+            SpecV1GlobalTest.test76,
+            SpecV1GlobalTest.test77,
+            SpecV1ExtendedConstDataTest.test9,
+            SpecV1ExtendedConstDataTest.test10,
+            SpecV1ExtendedConstGlobalTest.test80,
+            SpecV1ExtendedConstGlobalTest.test81,
+            SpecV1ElemTest.test14,
+            SpecV1ElemTest.test15,
+            SpecV1ElemTest.test67,
+            SpecV1ElemTest.test68,
+            SpecV1ExtendedConstElemTest.test14,
+            SpecV1ExtendedConstElemTest.test15,
+            SpecV1ExtendedConstElemTest.test76,
+            SpecV1ExtendedConstElemTest.test77,
+            SpecV1FunctionReferencesElemTest.test93,
+            SpecV1FunctionReferencesElemTest.test101,
+            SpecV1GcElemTest.test103</excludedTests>
           <excludedMalformedWasts/>
           <excludedInvalidWasts/>
           <excludedUnlinkableWasts/>
@@ -407,6 +472,54 @@
                 <wast>proposals/function-references/type-equivalence.wast</wast>
                 <wast>proposals/function-references/unreached-invalid.wast</wast>
                 <wast>proposals/function-references/unreached-valid.wast</wast>
+                <wast>proposals/gc/array.wast</wast>
+                <wast>proposals/gc/array_copy.wast</wast>
+                <wast>proposals/gc/array_fill.wast</wast>
+                <wast>proposals/gc/array_init_data.wast</wast>
+                <wast>proposals/gc/array_init_elem.wast</wast>
+                <wast>proposals/gc/array_new_data.wast</wast>
+                <wast>proposals/gc/array_new_elem.wast</wast>
+                <wast>proposals/gc/binary-gc.wast</wast>
+                <wast>proposals/gc/binary.wast</wast>
+                <wast>proposals/gc/br_if.wast</wast>
+                <wast>proposals/gc/br_on_cast.wast</wast>
+                <wast>proposals/gc/br_on_cast_fail.wast</wast>
+                <wast>proposals/gc/br_on_non_null.wast</wast>
+                <wast>proposals/gc/br_on_null.wast</wast>
+                <wast>proposals/gc/br_table.wast</wast>
+                <wast>proposals/gc/call_ref.wast</wast>
+                <wast>proposals/gc/data.wast</wast>
+                <wast>proposals/gc/elem.wast</wast>
+                <wast>proposals/gc/extern.wast</wast>
+                <wast>proposals/gc/func.wast</wast>
+                <wast>proposals/gc/global.wast</wast>
+                <wast>proposals/gc/i31.wast</wast>
+                <wast>proposals/gc/if.wast</wast>
+                <wast>proposals/gc/linking.wast</wast>
+                <wast>proposals/gc/local_get.wast</wast>
+                <wast>proposals/gc/local_init.wast</wast>
+                <wast>proposals/gc/local_tee.wast</wast>
+                <wast>proposals/gc/ref.wast</wast>
+                <wast>proposals/gc/ref_as_non_null.wast</wast>
+                <wast>proposals/gc/ref_cast.wast</wast>
+                <wast>proposals/gc/ref_eq.wast</wast>
+                <wast>proposals/gc/ref_is_null.wast</wast>
+                <wast>proposals/gc/ref_null.wast</wast>
+                <wast>proposals/gc/ref_test.wast</wast>
+                <wast>proposals/gc/return_call.wast</wast>
+                <wast>proposals/gc/return_call_indirect.wast</wast>
+                <wast>proposals/gc/return_call_ref.wast</wast>
+                <wast>proposals/gc/select.wast</wast>
+                <wast>proposals/gc/struct.wast</wast>
+                <wast>proposals/gc/table-sub.wast</wast>
+                <wast>proposals/gc/table.wast</wast>
+                <wast>proposals/gc/type-canon.wast</wast>
+                <wast>proposals/gc/type-equivalence.wast</wast>
+                <wast>proposals/gc/type-rec.wast</wast>
+                <wast>proposals/gc/type-subtyping-invalid.wast</wast>
+                <wast>proposals/gc/type-subtyping.wast</wast>
+                <wast>proposals/gc/unreached-invalid.wast</wast>
+                <wast>proposals/gc/unreached-valid.wast</wast>
                 <wast>proposals/tail-call/return_call.wast</wast>
                 <wast>proposals/tail-call/return_call_indirect.wast</wast>
                 <wast>proposals/threads/atomic.wast</wast>
@@ -502,14 +615,31 @@
                 <wast>utf8-import-module.wast</wast>
                 <wast>utf8-invalid-encoding.wast</wast>
               </includedWasts>
-              <!-- This test is supposed to fail because there is a THROW_REF in a Global initializer -->
-              <!-- it's a different error with EH -->
-              <!-- No need to check the assertion of multiple tables(the spec will be rebased eventually): https://github.com/WebAssembly/spec/blob/main/interpreter/valid/valid.ml#L729 -->
               <excludedTests>SpecV1BinaryTest.test40,
                 SpecV1EhBinaryTest.test40,
                 SpecV1ThreadsImportsTest.test64,
                 SpecV1ThreadsImportsTest.test65,
-                SpecV1ThreadsImportsTest.test66</excludedTests>
+                SpecV1ThreadsImportsTest.test66,
+                SpecV1FunctionReferencesTypeEquivalenceTest.test2,
+                SpecV1DataTest.test9,
+                SpecV1DataTest.test10,
+                SpecV1GlobalTest.test76,
+                SpecV1GlobalTest.test77,
+                SpecV1ExtendedConstDataTest.test9,
+                SpecV1ExtendedConstDataTest.test10,
+                SpecV1ExtendedConstGlobalTest.test80,
+                SpecV1ExtendedConstGlobalTest.test81,
+                SpecV1ElemTest.test14,
+                SpecV1ElemTest.test15,
+                SpecV1ElemTest.test67,
+                SpecV1ElemTest.test68,
+                SpecV1ExtendedConstElemTest.test14,
+                SpecV1ExtendedConstElemTest.test15,
+                SpecV1ExtendedConstElemTest.test76,
+                SpecV1ExtendedConstElemTest.test77,
+                SpecV1FunctionReferencesElemTest.test93,
+                SpecV1FunctionReferencesElemTest.test101,
+                SpecV1GcElemTest.test103</excludedTests>
               <excludedMalformedWasts/>
               <excludedInvalidWasts/>
               <excludedUnlinkableWasts/>

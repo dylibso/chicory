@@ -164,6 +164,8 @@ public final class AnnotatedInstruction extends Instruction {
                 case BR_IF:
                 case BR_ON_NULL:
                 case BR_ON_NON_NULL:
+                case BR_ON_CAST:
+                case BR_ON_CAST_FAIL:
                 case IF:
                     if (labelFalse.isEmpty()) {
                         throw new InvalidException("unknown label " + base);

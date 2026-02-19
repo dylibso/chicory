@@ -11,6 +11,28 @@ public class Value {
     public static final int REF_NULL_VALUE = -1;
     public static final long[] EMPTY_VALUES = new long[0];
 
+    // i31 encoding: upper 32 bits contain a tag to distinguish from GC refs
+    private static final long I31_TAG = 0x7FFFFFFF_00000000L;
+    private static final long I31_MASK = 0x7FFFFFFFL;
+
+    public static long encodeI31(int value) {
+        return I31_TAG | (value & I31_MASK);
+    }
+
+    public static int decodeI31S(long encoded) {
+        // Sign-extend from 31 bits
+        int raw = (int) (encoded & I31_MASK);
+        return (raw << 1) >> 1;
+    }
+
+    public static int decodeI31U(long encoded) {
+        return (int) (encoded & I31_MASK);
+    }
+
+    public static boolean isI31(long value) {
+        return (value & 0xFFFFFFFF_00000000L) == I31_TAG;
+    }
+
     private final ValType type;
 
     private final long data;

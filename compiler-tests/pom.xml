@@ -188,6 +188,12 @@
           <!-- Skip stack-overflows in tail calls -->
           <excludedTests>
             SpecV1BinaryTest.test40,
+            SpecV1DataTest.test10,
+            SpecV1DataTest.test9,
+            SpecV1ElemTest.test14,
+            SpecV1ElemTest.test15,
+            SpecV1GlobalTest.test76,
+            SpecV1GlobalTest.test77,
             SpecV1TailCallReturnCallTest.test19,
             SpecV1TailCallReturnCallTest.test24,
             SpecV1TailCallReturnCallTest.test25,

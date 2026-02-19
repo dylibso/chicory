@@ -7,6 +7,8 @@ import static com.dylibso.chicory.runtime.ConstantEvaluators.computeConstantValu
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveElement;
 import com.dylibso.chicory.wasm.types.ValType;
+import com.dylibso.chicory.wasm.types.Value;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Note: Some opcodes are easy or trivial to implement as compiler intrinsics (local.get, i32.add, etc).
@@ -855,16 +857,90 @@ public final class OpcodeImpl {
 
         for (int i = offset; i < end; i++) {
             var elem = instance.element(elementidx);
-            var val = (int) computeConstantValue(instance, elem.initializers().get(elemidx++))[0];
+            var val =
+                    boxForTable(
+                            computeConstantValue(instance, elem.initializers().get(elemidx++))[0],
+                            instance);
             if (table.elementType().equals(ValType.FuncRef)) {
                 if (val > instance.functionCount()) {
                     throw new WasmRuntimeException("out of bounds table access");
                 }
                 table.setRef(i, val, instance);
             } else {
-                assert table.elementType().equals(ValType.ExternRef);
                 table.setRef(i, val, instance);
             }
         }
+    }
+
+    /**
+     * Converts a stack long value to an int suitable for table storage.
+     * i31 values (tagged longs) are boxed as WasmI31Ref GC refs so the tag is preserved.
+     * For non-GC values (funcref, externref), this is a no-op cast to int.
+     */
+    public static int boxForTable(long stackValue, Instance instance) {
+        if (Value.isI31(stackValue)) {
+            var i31Ref = new WasmI31Ref(Value.decodeI31U(stackValue));
+            return instance.registerGcRef(i31Ref);
+        }
+        return (int) stackValue;
+    }
+
+    /**
+     * Converts an int from table storage to a stack long value, unboxing i31 refs.
+     * Only performs GC ref lookup for GC-typed tables (anyref, eqref, etc.) to avoid
+     * overhead for funcref tables in non-GC modules.
+     */
+    public static long unboxFromTable(int tableValue, Instance instance, ValType elementType) {
+        if (tableValue != Value.REF_NULL_VALUE
+                && tableValue >= 0
+                && !elementType.equals(ValType.FuncRef)
+                && !elementType.equals(ValType.ExternRef)) {
+            var gcRef = instance.gcRef(tableValue);
+            if (gcRef instanceof WasmI31Ref) {
+                return Value.encodeI31(((WasmI31Ref) gcRef).value());
+            }
+        }
+        return tableValue;
+    }
+
+    private static final Runnable ATOMIC_FENCE_IMPL;
+
+    static {
+        Runnable impl;
+        try {
+            // to take into account older Android API level:
+            // https://developer.android.com/reference/java/lang/invoke/VarHandle#fullFence()
+            java.lang.invoke.VarHandle.fullFence();
+            impl = java.lang.invoke.VarHandle::fullFence;
+        } catch (NoSuchMethodError e) {
+            try {
+                Class<?> unsafeClass = Class.forName("sun.misc.Unsafe");
+                var theUnsafeField = unsafeClass.getDeclaredField("theUnsafe");
+                theUnsafeField.setAccessible(true);
+                var theUnsafe = theUnsafeField.get(null);
+                var fullFence = unsafeClass.getMethod("fullFence");
+
+                impl =
+                        () -> {
+                            try {
+                                fullFence.invoke(theUnsafe);
+                            } catch (IllegalAccessException | InvocationTargetException ex) {
+                                throw new RuntimeException(
+                                        "ATOMIC_FENCE implementation: Failed to invoke"
+                                                + " sun.misc.Unsafe",
+                                        ex);
+                            }
+                        };
+            } catch (Throwable ex) {
+                throw new RuntimeException(
+                        "ATOMIC_FENCE implementation: Failed to lookup sun.misc.Unsafe", ex);
+            }
+        }
+        ATOMIC_FENCE_IMPL = impl;
+    }
+
+    @OpCodeIdentifier(OpCode.ATOMIC_FENCE)
+    public static void ATOMIC_FENCE() {
+        ATOMIC_FENCE_IMPL.run();
     }
 }

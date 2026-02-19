@@ -79,9 +79,19 @@ final class Descriptors {
 
     static final class InStream implements Descriptor, DataReader {
         private final InputStream in;
+        private final boolean tty;
 
         public InStream(InputStream in) {
+            this(in, true);
+        }
+
+        public InStream(InputStream in, boolean tty) {
             this.in = requireNonNull(in);
+            this.tty = tty;
+        }
+
+        public boolean isTty() {
+            return tty;
         }
 
         @Override
@@ -96,9 +106,19 @@ final class Descriptors {
 
     static final class OutStream implements Descriptor, DataWriter {
         private final OutputStream out;
+        private final boolean tty;
 
         public OutStream(OutputStream out) {
+            this(out, true);
+        }
+
+        public OutStream(OutputStream out, boolean tty) {
             this.out = requireNonNull(out);
+            this.tty = tty;
+        }
+
+        public boolean isTty() {
+            return tty;
         }
 
         @Override
