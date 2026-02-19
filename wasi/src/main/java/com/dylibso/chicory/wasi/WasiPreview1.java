@@ -20,6 +20,7 @@ import com.dylibso.chicory.annotations.WasmExport;
 import com.dylibso.chicory.log.BasicLogger;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
+import com.dylibso.chicory.runtime.ExecutionCompletedException;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.WasmRuntimeException;
@@ -76,6 +77,7 @@ public final class WasiPreview1 implements Closeable {
     private final List<byte[]> arguments;
     private final List<Entry<byte[], byte[]>> environment;
     private final Descriptors descriptors = new Descriptors();
+    private final boolean throwOnExit0;
 
     private WasiPreview1(Logger logger, WasiOptions opts) {
         // TODO by default everything should by blocked
@@ -94,6 +96,7 @@ public final class WasiPreview1 implements Closeable {
                                                 x.getKey().getBytes(UTF_8),
                                                 x.getValue().getBytes(UTF_8)))
                         .collect(toList());
+        this.throwOnExit0 = opts.throwOnExit0();
 
         descriptors.allocate(new InStream(opts.stdin(), opts.stdinIsTty()));
         descriptors.allocate(new OutStream(opts.stdout(), opts.stdoutIsTty()));
@@ -1659,6 +1662,9 @@ public final class WasiPreview1 implements Closeable {
     @WasmExport
     public void procExit(int code) {
         logger.tracef("proc_exit: [%s]", code);
+        if (code == 0 && !throwOnExit0) {
+            throw new ExecutionCompletedException("proc_exit: 0");
+        }
         throw new WasiExitException(code);
     }
 
