@@ -451,6 +451,9 @@ public final class Compiler {
         for (int i = 0; i < allTypes.length; i++) {
             var typeId = i;
             var type = allTypes[i];
+            if (type == null) {
+                continue; // skip non-function types (struct/array)
+            }
             emitFunction(
                     classWriter,
                     callIndirectMethodName(typeId),
@@ -484,6 +487,19 @@ public final class Compiler {
         } catch (MethodTooLargeException e) {
             throw handleMethodTooLarge(e, module);
         }
+    }
+
+    /**
+     * Check if function funcIdx has a type that is canonically equivalent to typeId.
+     * Used for GC type equivalence in call_indirect dispatch.
+     */
+    private boolean isCanonicallyEquivalentFunc(int typeId, int funcIdx) {
+        var ts = module.typeSection();
+        if (ts == null) {
+            return false;
+        }
+        int funcTypeIdx = analyzer.functionTypeIndex(funcIdx);
+        return typeId != funcTypeIdx && ts.canonicallyEquivalent(typeId, funcTypeIdx);
     }
 
     private static RuntimeException handleMethodTooLarge(
@@ -851,7 +867,7 @@ public final class Compiler {
 
         List<Integer> validIds = new ArrayList<>();
         for (int i = 0; i < functionTypes.size(); i++) {
-            if (type.equals(functionTypes.get(i))) {
+            if (type.equals(functionTypes.get(i)) || isCanonicallyEquivalentFunc(typeId, i)) {
                 validIds.add(i);
             }
         }
@@ -870,6 +886,23 @@ public final class Compiler {
 
         emitInvokeStatic(asm, CHECK_INTERRUPTION);
 
+        Label local = new Label();
+        Label other = new Label();
+
+        // For call_ref (tableIdx == -1), funcTableIdx IS the funcId directly
+        asm.load(tableIdx, INT_TYPE);
+        asm.iconst(-1);
+        Label notCallRef = new Label();
+        asm.ificmpne(notCallRef);
+
+        // call_ref path: funcTableIdx is the funcId, instance is local
+        asm.load(funcTableIdx, INT_TYPE);
+        asm.store(funcId, INT_TYPE);
+        asm.goTo(local);
+
+        // call_indirect path: look up through table
+        asm.mark(notCallRef);
+
         // TableInstance table = instance.table(tableIdx);
         asm.load(instance, OBJECT_TYPE);
         asm.load(tableIdx, INT_TYPE);
@@ -887,9 +920,6 @@ public final class Compiler {
         asm.load(funcTableIdx, INT_TYPE);
         emitInvokeVirtual(asm, TABLE_INSTANCE);
         asm.store(refInstance, OBJECT_TYPE);
-
-        Label local = new Label();
-        Label other = new Label();
 
         // if (refInstance == null || refInstance == instance)
         asm.load(refInstance, OBJECT_TYPE);
@@ -957,6 +987,7 @@ public final class Compiler {
                                                 a ->
                                                         compileCallIndirectApply(
                                                                 internalClassName,
+                                                                typeId,
                                                                 type,
                                                                 a,
                                                                 start,
@@ -1009,6 +1040,7 @@ public final class Compiler {
 
     private void compileCallIndirectApply(
             String internalClassName,
+            int typeId,
             FunctionType type,
             InstructionAdapter asm,
             int startFunc,
@@ -1026,7 +1058,9 @@ public final class Compiler {
 
         List<Integer> validIds = new ArrayList<>();
         for (int i = 0; i < functionTypes.size(); i++) {
-            if (type.equals(functionTypes.get(i)) && startFunc <= i && i < endFunc) {
+            if ((type.equals(functionTypes.get(i)) || isCanonicallyEquivalentFunc(typeId, i))
+                    && startFunc <= i
+                    && i < endFunc) {
                 validIds.add(i);
             }
         }

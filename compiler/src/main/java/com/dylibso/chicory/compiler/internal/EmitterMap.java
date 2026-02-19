@@ -34,6 +34,8 @@ final class EmitterMap {
                     .intrinsic(CompilerOpCode.REF_FUNC, Emitters::REF_FUNC)
                     .intrinsic(CompilerOpCode.REF_NULL, Emitters::REF_NULL)
                     .intrinsic(CompilerOpCode.REF_IS_NULL, Emitters::REF_IS_NULL)
+                    .intrinsic(CompilerOpCode.REF_EQ, Emitters::REF_EQ)
+                    .shared(CompilerOpCode.REF_AS_NON_NULL, OpcodeImpl.class)
 
                     // ====== Locals & Globals ======
                     .intrinsic(CompilerOpCode.LOCAL_GET, Emitters::LOCAL_GET)
@@ -363,6 +365,43 @@ final class EmitterMap {
                     .shared(CompilerOpCode.F64_SQRT, OpcodeImpl.class)
                     .intrinsic(CompilerOpCode.F64_SUB, Emitters::F64_SUB)
                     .shared(CompilerOpCode.F64_TRUNC, OpcodeImpl.class)
+
+                    // ====== GC ======
+                    .intrinsic(CompilerOpCode.CALL_REF, Emitters::CALL_REF)
+                    .intrinsic(CompilerOpCode.STRUCT_NEW, Emitters::STRUCT_NEW)
+                    .intrinsic(CompilerOpCode.STRUCT_NEW_DEFAULT, Emitters::STRUCT_NEW_DEFAULT)
+                    .intrinsic(CompilerOpCode.STRUCT_GET, Emitters::STRUCT_GET)
+                    .intrinsic(CompilerOpCode.STRUCT_GET_S, Emitters::STRUCT_GET_S)
+                    .intrinsic(CompilerOpCode.STRUCT_GET_U, Emitters::STRUCT_GET_U)
+                    .intrinsic(CompilerOpCode.STRUCT_SET, Emitters::STRUCT_SET)
+                    .intrinsic(CompilerOpCode.ARRAY_NEW, Emitters::ARRAY_NEW)
+                    .intrinsic(CompilerOpCode.ARRAY_NEW_DEFAULT, Emitters::ARRAY_NEW_DEFAULT)
+                    .intrinsic(CompilerOpCode.ARRAY_NEW_FIXED, Emitters::ARRAY_NEW_FIXED)
+                    .intrinsic(CompilerOpCode.ARRAY_NEW_DATA, Emitters::ARRAY_NEW_DATA)
+                    .intrinsic(CompilerOpCode.ARRAY_NEW_ELEM, Emitters::ARRAY_NEW_ELEM)
+                    .intrinsic(CompilerOpCode.ARRAY_GET, Emitters::ARRAY_GET)
+                    .intrinsic(CompilerOpCode.ARRAY_GET_S, Emitters::ARRAY_GET_S)
+                    .intrinsic(CompilerOpCode.ARRAY_GET_U, Emitters::ARRAY_GET_U)
+                    .intrinsic(CompilerOpCode.ARRAY_SET, Emitters::ARRAY_SET)
+                    .intrinsic(CompilerOpCode.ARRAY_LEN, Emitters::ARRAY_LEN)
+                    .intrinsic(CompilerOpCode.ARRAY_FILL, Emitters::ARRAY_FILL)
+                    .intrinsic(CompilerOpCode.ARRAY_COPY, Emitters::ARRAY_COPY)
+                    .intrinsic(CompilerOpCode.ARRAY_INIT_DATA, Emitters::ARRAY_INIT_DATA)
+                    .intrinsic(CompilerOpCode.ARRAY_INIT_ELEM, Emitters::ARRAY_INIT_ELEM)
+                    .intrinsic(CompilerOpCode.REF_TEST, Emitters::REF_TEST)
+                    .intrinsic(CompilerOpCode.REF_TEST_NULL, Emitters::REF_TEST_NULL)
+                    .intrinsic(CompilerOpCode.CAST_TEST, Emitters::CAST_TEST)
+                    .intrinsic(CompilerOpCode.CAST_TEST_NULL, Emitters::CAST_TEST_NULL)
+                    .intrinsic(CompilerOpCode.REF_I31, Emitters::REF_I31)
+                    .intrinsic(CompilerOpCode.I31_GET_S, Emitters::I31_GET_S)
+                    .intrinsic(CompilerOpCode.I31_GET_U, Emitters::I31_GET_U)
+                    .intrinsic(CompilerOpCode.ANY_CONVERT_EXTERN, Emitters::ANY_CONVERT_EXTERN)
+                    .intrinsic(CompilerOpCode.EXTERN_CONVERT_ANY, Emitters::EXTERN_CONVERT_ANY)
+                    .intrinsic(CompilerOpCode.BR_ON_NULL_CHECK, Emitters::BR_ON_NULL_CHECK)
+                    .intrinsic(CompilerOpCode.BR_ON_NON_NULL_CHECK, Emitters::BR_ON_NON_NULL_CHECK)
+                    .intrinsic(CompilerOpCode.BR_ON_CAST_CHECK, Emitters::BR_ON_CAST_CHECK)
+                    .intrinsic(
+                            CompilerOpCode.BR_ON_CAST_FAIL_CHECK, Emitters::BR_ON_CAST_FAIL_CHECK)
                     .build();
 
     private EmitterMap() {}

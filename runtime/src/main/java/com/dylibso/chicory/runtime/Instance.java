@@ -43,6 +43,7 @@ import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -80,6 +81,9 @@ public class Instance {
     private final Map<Integer, WasmException> exnRefs;
     private final IntWeakValueMap<long[]> arrayRefs;
     private final IntWeakValueMap<WasmGcRef> gcRefs;
+    // Strong references to prevent WasmI31Ref objects from being garbage collected
+    // while stored in the weak-reference gcRefs map.
+    private final List<WasmI31Ref> i31StrongRefs = new ArrayList<>();
 
     Instance(
             WasmModule module,
@@ -124,7 +128,8 @@ public class Instance {
         this.gcRefs = new IntWeakValueMap<>(GC_REF_ID_OFFSET);
 
         for (int i = 0; i < tables.length; i++) {
-            var initValue = (int) computeConstantValue(this, tables[i].initialize())[0];
+            long rawValue = computeConstantValue(this, tables[i].initialize())[0];
+            var initValue = OpcodeImpl.boxForTable(rawValue, this);
             this.tables[i] = new TableInstance(tables[i], initValue);
         }
 
@@ -339,6 +344,12 @@ public class Instance {
         return elements.length;
     }
 
+    public long computeElementValue(int elemIdx, int offset) {
+        var element = elements[elemIdx];
+        var init = element.initializers().get(offset);
+        return computeConstantValue(this, init)[0];
+    }
+
     public void setElement(int idx, Element val) {
         elements[idx] = val;
     }
@@ -380,6 +391,9 @@ public class Instance {
     }
 
     public int registerGcRef(WasmGcRef ref) {
+        if (ref instanceof WasmI31Ref) {
+            i31StrongRefs.add((WasmI31Ref) ref);
+        }
         return gcRefs.put(ref);
     }
 

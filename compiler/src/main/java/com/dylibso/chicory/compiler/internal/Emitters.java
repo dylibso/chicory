@@ -232,6 +232,11 @@ final class Emitters {
         emitInvokeStatic(asm, ShadedRefs.REF_IS_NULL);
     }
 
+    public static void REF_EQ(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.REF_EQ);
+    }
+
     public static void LOCAL_GET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         var loadIndex = (int) ins.operand(0);
         var localType = localType(ctx.getType(), ctx.getBody(), loadIndex);
@@ -256,12 +261,18 @@ final class Emitters {
 
     public static void GLOBAL_GET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         int globalIndex = (int) ins.operand(0);
+        var globalType = ctx.globalTypes().get(globalIndex);
 
         asm.iconst(globalIndex);
         asm.load(ctx.instanceSlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, ShadedRefs.READ_GLOBAL);
 
-        emitLongToJvm(asm, ctx.globalTypes().get(globalIndex));
+        if (globalType.isReference()) {
+            // Use readGlobalRef to handle i31 tagged-long values from constant initializers
+            emitInvokeStatic(asm, ShadedRefs.READ_GLOBAL_REF);
+        } else {
+            emitInvokeStatic(asm, ShadedRefs.READ_GLOBAL);
+            emitLongToJvm(asm, globalType);
+        }
     }
 
     public static void GLOBAL_SET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
@@ -345,8 +356,8 @@ final class Emitters {
 
     public static void DATA_DROP(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
         asm.iconst((int) ins.operand(0));
-        asm.load(ctx.memorySlot(), OBJECT_TYPE);
-        emitInvokeStatic(asm, ShadedRefs.MEMORY_DROP);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.DATA_DROP);
     }
 
     public static void I32_GE_U(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
@@ -1088,5 +1099,457 @@ final class Emitters {
                 "registerException",
                 getMethodDescriptor(INT_TYPE, getType(WasmException.class)),
                 false);
+    }
+
+    // ========= GC Operations =========
+
+    public static void CALL_REF(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeId = (int) ins.operand(0);
+        FunctionType functionType = ctx.types()[typeId];
+
+        // stack: [args..., funcref]
+        // save funcref to temp
+        asm.store(ctx.tempSlot(), INT_TYPE);
+
+        // null check
+        asm.load(ctx.tempSlot(), INT_TYPE);
+        asm.iconst(REF_NULL_VALUE);
+        var notNull = new Label();
+        asm.ificmpne(notNull);
+        emitInvokeStatic(asm, ShadedRefs.THROW_NULL_FUNCTION_REFERENCE);
+        asm.athrow();
+        asm.mark(notNull);
+
+        if (hasTooManyParameters(functionType)) {
+            emitBoxValuesOnStack(ctx, asm, functionType.params());
+        }
+
+        asm.load(ctx.tempSlot(), INT_TYPE); // funcref as tableIdx arg
+        asm.iconst(-1); // no table index (use -1 as sentinel)
+        asm.load(ctx.memorySlot(), OBJECT_TYPE);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+
+        asm.invokestatic(
+                ctx.internalClassName(),
+                callIndirectMethodName(typeId),
+                callIndirectMethodType(functionType).toMethodDescriptorString(),
+                false);
+
+        if (functionType.returns().size() > 1) {
+            emitUnboxResult(asm, ctx, functionType.returns());
+        }
+    }
+
+    public static void STRUCT_NEW(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        var st = ctx.typeSection().getSubType(typeIdx).compType().structType();
+        var fieldCount = st.fieldTypes().length;
+
+        // Collect all field values into long[]
+        var fieldTypes = new java.util.ArrayList<ValType>(fieldCount);
+        for (int i = 0; i < fieldCount; i++) {
+            var ft = st.fieldTypes()[i];
+            if (ft.storageType().valType() != null) {
+                fieldTypes.add(ft.storageType().valType());
+            } else {
+                // packed types (i8, i16) are treated as I32
+                fieldTypes.add(ValType.I32);
+            }
+        }
+        emitBoxValuesOnStack(ctx, asm, fieldTypes);
+
+        asm.iconst(typeIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.STRUCT_NEW);
+    }
+
+    public static void STRUCT_NEW_DEFAULT(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        asm.iconst(typeIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.STRUCT_NEW_DEFAULT);
+    }
+
+    public static void STRUCT_GET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        int fieldIdx = (int) ins.operand(1);
+        // stack: [ref]
+        asm.iconst(typeIdx);
+        asm.iconst(fieldIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.STRUCT_GET);
+        // returns long, convert to proper JVM type
+        emitStructGetResult(ctx, asm, typeIdx, fieldIdx);
+    }
+
+    public static void STRUCT_GET_S(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        int fieldIdx = (int) ins.operand(1);
+        asm.iconst(typeIdx);
+        asm.iconst(fieldIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.STRUCT_GET_S);
+        // packed types always return as I32
+        asm.visitInsn(Opcodes.L2I);
+    }
+
+    public static void STRUCT_GET_U(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        int fieldIdx = (int) ins.operand(1);
+        asm.iconst(typeIdx);
+        asm.iconst(fieldIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.STRUCT_GET_U);
+        // packed types always return as I32
+        asm.visitInsn(Opcodes.L2I);
+    }
+
+    private static void emitStructGetResult(
+            Context ctx, InstructionAdapter asm, int typeIdx, int fieldIdx) {
+        var st = ctx.typeSection().getSubType(typeIdx).compType().structType();
+        var ft = st.fieldTypes()[fieldIdx];
+        if (ft.storageType().valType() != null) {
+            emitLongToJvm(asm, ft.storageType().valType());
+        } else {
+            // packed types push as I32
+            asm.visitInsn(Opcodes.L2I);
+        }
+    }
+
+    public static void STRUCT_SET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        int fieldIdx = (int) ins.operand(1);
+        // stack: [ref, val]
+        var st = ctx.typeSection().getSubType(typeIdx).compType().structType();
+        var ft = st.fieldTypes()[fieldIdx];
+        if (ft.storageType().valType() != null) {
+            emitJvmToLong(asm, ft.storageType().valType());
+        } else {
+            // packed types come as I32
+            asm.visitInsn(Opcodes.I2L);
+        }
+        asm.iconst(typeIdx);
+        asm.iconst(fieldIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.STRUCT_SET);
+    }
+
+    public static void ARRAY_NEW(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        // stack: [initVal, len]
+        // save len to temp
+        asm.store(ctx.tempSlot(), INT_TYPE);
+        // convert initVal to long
+        var at = ctx.typeSection().getSubType(typeIdx).compType().arrayType();
+        if (at.fieldType().storageType().valType() != null) {
+            emitJvmToLong(asm, at.fieldType().storageType().valType());
+        } else {
+            asm.visitInsn(Opcodes.I2L);
+        }
+        asm.load(ctx.tempSlot(), INT_TYPE);
+        asm.iconst(typeIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_NEW);
+    }
+
+    public static void ARRAY_NEW_DEFAULT(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        // stack: [len]
+        asm.iconst(typeIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_NEW_DEFAULT);
+    }
+
+    public static void ARRAY_NEW_FIXED(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        int len = (int) ins.operand(1);
+        var at = ctx.typeSection().getSubType(typeIdx).compType().arrayType();
+        ValType elemType;
+        if (at.fieldType().storageType().valType() != null) {
+            elemType = at.fieldType().storageType().valType();
+        } else {
+            elemType = ValType.I32;
+        }
+        var types = new java.util.ArrayList<ValType>(len);
+        for (int i = 0; i < len; i++) {
+            types.add(elemType);
+        }
+        emitBoxValuesOnStack(ctx, asm, types);
+        asm.iconst(typeIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_NEW_FIXED);
+    }
+
+    public static void ARRAY_NEW_DATA(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        int dataIdx = (int) ins.operand(1);
+        // stack: [offset, len]
+        // save len to temp, keep offset
+        asm.store(ctx.tempSlot(), INT_TYPE);
+        // stack: [offset]
+        asm.load(ctx.tempSlot(), INT_TYPE);
+        // stack: [offset, len]
+        asm.iconst(typeIdx);
+        asm.iconst(dataIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_NEW_DATA);
+    }
+
+    public static void ARRAY_NEW_ELEM(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        int elemIdx = (int) ins.operand(1);
+        // stack: [offset, len]
+        asm.store(ctx.tempSlot(), INT_TYPE);
+        asm.load(ctx.tempSlot(), INT_TYPE);
+        asm.iconst(typeIdx);
+        asm.iconst(elemIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_NEW_ELEM);
+    }
+
+    public static void ARRAY_GET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        // stack: [ref, idx]
+        asm.iconst(typeIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_GET);
+        emitArrayGetResult(ctx, asm, typeIdx);
+    }
+
+    public static void ARRAY_GET_S(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        asm.iconst(typeIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_GET_S);
+        asm.visitInsn(Opcodes.L2I);
+    }
+
+    public static void ARRAY_GET_U(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        asm.iconst(typeIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_GET_U);
+        asm.visitInsn(Opcodes.L2I);
+    }
+
+    private static void emitArrayGetResult(Context ctx, InstructionAdapter asm, int typeIdx) {
+        var at = ctx.typeSection().getSubType(typeIdx).compType().arrayType();
+        if (at.fieldType().storageType().valType() != null) {
+            emitLongToJvm(asm, at.fieldType().storageType().valType());
+        } else {
+            asm.visitInsn(Opcodes.L2I);
+        }
+    }
+
+    public static void ARRAY_SET(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        // stack: [ref, idx, val]
+        var at = ctx.typeSection().getSubType(typeIdx).compType().arrayType();
+        if (at.fieldType().storageType().valType() != null) {
+            emitJvmToLong(asm, at.fieldType().storageType().valType());
+        } else {
+            asm.visitInsn(Opcodes.I2L);
+        }
+        asm.iconst(typeIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_SET);
+    }
+
+    public static void ARRAY_LEN(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // stack: [ref]
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_LEN);
+    }
+
+    public static void ARRAY_FILL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        // stack: [ref, offset, val, len]
+        // save len to temp
+        asm.store(ctx.tempSlot(), INT_TYPE);
+        // stack: [ref, offset, val]
+        var at = ctx.typeSection().getSubType(typeIdx).compType().arrayType();
+        if (at.fieldType().storageType().valType() != null) {
+            emitJvmToLong(asm, at.fieldType().storageType().valType());
+        } else {
+            asm.visitInsn(Opcodes.I2L);
+        }
+        // stack: [ref, offset, val_as_long]
+        asm.load(ctx.tempSlot(), INT_TYPE);
+        asm.iconst(typeIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_FILL);
+    }
+
+    public static void ARRAY_COPY(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // stack: [dstRef, dstOff, srcRef, srcOff, len]
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_COPY);
+    }
+
+    public static void ARRAY_INIT_DATA(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        int dataIdx = (int) ins.operand(1);
+        // stack: [ref, dstOff, srcOff, len]
+        asm.iconst(typeIdx);
+        asm.iconst(dataIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_INIT_DATA);
+    }
+
+    public static void ARRAY_INIT_ELEM(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int typeIdx = (int) ins.operand(0);
+        int elemIdx = (int) ins.operand(1);
+        // stack: [ref, dstOff, srcOff, len]
+        asm.iconst(typeIdx);
+        asm.iconst(elemIdx);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.ARRAY_INIT_ELEM);
+    }
+
+    public static void REF_TEST(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int heapType = (int) ins.operand(0);
+        int srcHeapType = (int) ins.operand(1);
+        // stack: [ref]
+        asm.iconst(heapType);
+        asm.iconst(srcHeapType);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.REF_TEST);
+    }
+
+    public static void REF_TEST_NULL(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int heapType = (int) ins.operand(0);
+        int srcHeapType = (int) ins.operand(1);
+        asm.iconst(heapType);
+        asm.iconst(srcHeapType);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.REF_TEST_NULL);
+    }
+
+    public static void CAST_TEST(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int heapType = (int) ins.operand(0);
+        int srcHeapType = (int) ins.operand(1);
+        asm.iconst(heapType);
+        asm.iconst(srcHeapType);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.CAST_TEST);
+    }
+
+    public static void CAST_TEST_NULL(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        int heapType = (int) ins.operand(0);
+        int srcHeapType = (int) ins.operand(1);
+        asm.iconst(heapType);
+        asm.iconst(srcHeapType);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.CAST_TEST_NULL);
+    }
+
+    public static void REF_I31(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // stack: [val]
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.REF_I31);
+    }
+
+    public static void I31_GET_S(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // stack: [ref]
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.I31_GET_S);
+    }
+
+    public static void I31_GET_U(Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // stack: [ref]
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.I31_GET_U);
+    }
+
+    public static void ANY_CONVERT_EXTERN(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // identity - no-op at runtime
+    }
+
+    public static void EXTERN_CONVERT_ANY(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // identity - no-op at runtime
+    }
+
+    public static void BR_ON_NULL_CHECK(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // stack: [ref]
+        // DUP the ref, compare against REF_NULL_VALUE
+        asm.dup();
+        asm.iconst(REF_NULL_VALUE);
+        // result is used by following IFEQ/IFNE
+        // if ref == null -> 0 (equal), used with IFEQ to branch
+        // we want: push 1 if null, 0 if not null
+        var isNull = new Label();
+        var end = new Label();
+        asm.ificmpeq(isNull);
+        asm.iconst(0); // not null
+        asm.goTo(end);
+        asm.mark(isNull);
+        asm.iconst(1); // is null
+        asm.mark(end);
+    }
+
+    public static void BR_ON_NON_NULL_CHECK(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // stack: [ref]
+        asm.dup();
+        asm.iconst(REF_NULL_VALUE);
+        var isNull = new Label();
+        var end = new Label();
+        asm.ificmpeq(isNull);
+        asm.iconst(1); // non-null
+        asm.goTo(end);
+        asm.mark(isNull);
+        asm.iconst(0); // is null
+        asm.mark(end);
+    }
+
+    public static void BR_ON_CAST_CHECK(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // operands: [nullable(bool), heapType, srcHeapType]
+        boolean nullable = ins.operand(0) != 0;
+        int heapType = (int) ins.operand(1);
+        int srcHeapType = (int) ins.operand(2);
+        // stack: [ref]
+        asm.dup();
+        asm.iconst(nullable ? 1 : 0);
+        asm.iconst(heapType);
+        asm.iconst(srcHeapType);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.HEAP_TYPE_MATCH);
+        // result: boolean on stack (1 if matches, 0 if not)
+    }
+
+    public static void BR_ON_CAST_FAIL_CHECK(
+            Context ctx, CompilerInstruction ins, InstructionAdapter asm) {
+        // Same as BR_ON_CAST_CHECK but inverted: branch if NOT matching
+        boolean nullable = ins.operand(0) != 0;
+        int heapType = (int) ins.operand(1);
+        int srcHeapType = (int) ins.operand(2);
+        // stack: [ref]
+        asm.dup();
+        asm.iconst(nullable ? 1 : 0);
+        asm.iconst(heapType);
+        asm.iconst(srcHeapType);
+        asm.load(ctx.instanceSlot(), OBJECT_TYPE);
+        emitInvokeStatic(asm, ShadedRefs.HEAP_TYPE_MATCH);
+        // invert: 1 if NOT matching (branch), 0 if matching (don't branch)
+        var wasTrue = new Label();
+        var end = new Label();
+        asm.ifne(wasTrue);
+        asm.iconst(1); // didn't match -> branch
+        asm.goTo(end);
+        asm.mark(wasTrue);
+        asm.iconst(0); // matched -> don't branch
+        asm.mark(end);
     }
 }

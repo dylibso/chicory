@@ -1785,11 +1785,8 @@ public class InterpreterMachine implements Machine {
     }
 
     private static void REF_AS_NON_NULL(MStack stack) {
-        var val = stack.pop();
-        if (val == REF_NULL_VALUE) {
-            throw new TrapException("Trapped on ref_as_non_null on null reference");
-        }
-        stack.push(val);
+        var ref = (int) stack.pop();
+        stack.push(OpcodeImpl.REF_AS_NON_NULL(ref));
     }
 
     private static void DATA_DROP(Instance instance, Operands operands) {
@@ -3123,9 +3120,9 @@ public class InterpreterMachine implements Machine {
     // ===== GC opcode implementations =====
 
     private static void REF_EQ(MStack stack) {
-        var b = stack.pop();
-        var a = stack.pop();
-        stack.push(a == b ? Value.TRUE : Value.FALSE);
+        var b = (int) stack.pop();
+        var a = (int) stack.pop();
+        stack.push(OpcodeImpl.REF_EQ(a, b));
     }
 
     private static void REF_I31(MStack stack) {

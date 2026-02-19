@@ -5,6 +5,7 @@ import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -19,8 +20,10 @@ final class TypeStack {
     private final Deque<Deque<ValType>> types = new ArrayDeque<>();
     private final Deque<Deque<ValType>> restore = new ArrayDeque<>();
     private final Map<Instruction, Integer> scopes = new HashMap<>();
+    private final TypeSection typeSection;
 
-    public TypeStack() {
+    public TypeStack(TypeSection typeSection) {
+        this.typeSection = typeSection;
         this.types.push(new ArrayDeque<>());
     }
 
@@ -34,14 +37,14 @@ final class TypeStack {
 
     public void pop(ValType expected) {
         var actual = types().pop();
-        if (!ValType.matches(actual, expected)) {
+        if (!ValType.matches(actual, expected, typeSection)) {
             throw new IllegalArgumentException("Expected type " + expected + " <> " + actual);
         }
     }
 
     public void popRef() {
         var actual = types().pop();
-        if (!actual.equals(ValType.FuncRef) && !actual.equals(ValType.ExternRef)) {
+        if (!actual.isReference()) {
             throw new IllegalArgumentException("Expected reference type <> " + actual);
         }
     }
