@@ -878,13 +878,13 @@
                 <importOrder/>
                 <jsr223>
                   <name>Wildcard Imports Not Allowed</name>
-                  <dependency>org.apache.groovy:groovy-jsr223:4.0.27</dependency>
-                  <engine>groovy</engine>
-                  <script>def pattern = ~/import\s+(?:static\s+)?[^\*\s]+\*;(\r\n|\r|\n)/
-                def matcher = pattern.matcher(source)
-                if (matcher.find()) {
-                   def importText = matcher.group().trim()
-                   throw new Exception("Wildcard imports not allowed:\n\n    " + importText + "\n\nPlease fully expand the imports.\n")
+                  <dependency>io.roastedroot:quickjs4j-scripting-experimental:0.0.14</dependency>
+                  <engine>quickjs4j</engine>
+                  <script>var pattern = /import\s+(?:static\s+)?[^\*\s]+\*;(\r\n|\r|\n)/;
+                var match = source.match(pattern);
+                if (match) {
+                   var importText = match[0].trim();
+                   throw new Error("Wildcard imports not allowed:\n\n    " + importText + "\n\nPlease fully expand the imports.\n");
                 }
                 source</script>
                 </jsr223>
