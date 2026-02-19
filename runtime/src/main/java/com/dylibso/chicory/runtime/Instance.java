@@ -197,7 +197,11 @@ public class Instance {
 
         Export startFunction = this.exports.get(START_FUNCTION_NAME);
         if (startFunction != null && start) {
-            export(START_FUNCTION_NAME).apply();
+            try {
+                export(START_FUNCTION_NAME).apply();
+            } catch (ExecutionCompletedException e) {
+                // return
+            }
         }
 
         return this;

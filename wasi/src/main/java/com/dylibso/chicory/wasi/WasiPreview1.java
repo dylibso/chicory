@@ -20,6 +20,7 @@ import com.dylibso.chicory.annotations.WasmExport;
 import com.dylibso.chicory.log.BasicLogger;
 import com.dylibso.chicory.log.Logger;
 import com.dylibso.chicory.log.SystemLogger;
+import com.dylibso.chicory.runtime.ExecutionCompletedException;
 import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.WasmRuntimeException;
@@ -1662,7 +1663,7 @@ public final class WasiPreview1 implements Closeable {
     public void procExit(int code) {
         logger.tracef("proc_exit: [%s]", code);
         if (code == 0 && !throwOnExit0) {
-            return;
+            throw new ExecutionCompletedException("proc_exit: 0");
         }
         throw new WasiExitException(code);
     }
