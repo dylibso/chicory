@@ -26,6 +26,9 @@ jobs:
           version: 17
         - os: windows-11-arm
           version: 25
+        # Flaky, re-enable when the bug on the JVM is fixed
+        - os: windows-latest
+          version: 17
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
