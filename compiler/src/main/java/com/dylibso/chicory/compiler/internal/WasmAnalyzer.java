@@ -559,6 +559,30 @@ final class WasmAnalyzer {
                     long[] teeOperands = {ins.operand(0), teeType.id()};
                     result.add(new CompilerInstruction(CompilerOpCode.LOCAL_TEE, teeOperands));
                     break;
+                case CAST_TEST:
+                    {
+                        // ref.cast: [ref] -> [ref(heapType)]
+                        var srcType = stack.peek();
+                        stack.popRef();
+                        var heapType = (int) ins.operand(0);
+                        stack.push(valType(ValType.ID.Ref, heapType));
+                        long[] castOperands = {heapType, srcType.typeIdx()};
+                        result.add(new CompilerInstruction(CompilerOpCode.CAST_TEST, castOperands));
+                        break;
+                    }
+                case CAST_TEST_NULL:
+                    {
+                        // ref.cast null: [ref] -> [refnull(heapType)]
+                        var srcType = stack.peek();
+                        stack.popRef();
+                        var heapType = (int) ins.operand(0);
+                        stack.push(valType(ValType.ID.RefNull, heapType));
+                        long[] castNullOperands = {heapType, srcType.typeIdx()};
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.CAST_TEST_NULL, castNullOperands));
+                        break;
+                    }
                 default:
                     analyzeSimple(result, stack, ins, functionType, body);
             }
@@ -1274,14 +1298,6 @@ final class WasmAnalyzer {
                 {
                     stack.popRef();
                     stack.push(ValType.I32);
-                    break;
-                }
-            case CAST_TEST:
-            case CAST_TEST_NULL:
-                {
-                    var refType = stack.peek();
-                    stack.popRef();
-                    stack.push(refType);
                     break;
                 }
             case REF_I31:

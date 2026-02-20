@@ -225,6 +225,51 @@ public final class MachinesTest {
         }
     }
 
+    private Instance buildKotlinWasm(
+            ByteArrayOutputStream stdout, Instance.Builder instanceBuilder) {
+        var wasi =
+                WasiPreview1.builder()
+                        .withOptions(
+                                WasiOptions.builder()
+                                        .withStdout(stdout)
+                                        .build())
+                        .build();
+
+        var instance =
+                instanceBuilder
+                        .withStart(false)
+                        .withImportValues(
+                                ImportValues.builder().addFunction(wasi.toHostFunctions()).build())
+                        .build();
+
+        instance.export("_initialize").apply();
+        return instance;
+    }
+
+    @Test
+    public void shouldRunKotlinWasmInterpreted() {
+        var stdout = new ByteArrayOutputStream();
+        var module = loadModule("compiled/kotlin-wasm-wasi-example.wasm");
+        buildKotlinWasm(stdout, Instance.builder(module));
+
+        assertTrue(
+                stdout.toString(UTF_8).contains("Hello from Kotlin via WASI"),
+                stdout.toString(UTF_8));
+    }
+
+    @Test
+    public void shouldRunKotlinWasmCompiled() {
+        var stdout = new ByteArrayOutputStream();
+        var module = loadModule("compiled/kotlin-wasm-wasi-example.wasm");
+        buildKotlinWasm(
+                stdout,
+                Instance.builder(module).withMachineFactory(MachineFactoryCompiler::compile));
+
+        assertTrue(
+                stdout.toString(UTF_8).contains("Hello from Kotlin via WASI"),
+                stdout.toString(UTF_8));
+    }
+
     @Test
     public void shouldCallIndirectInterpreterToAot() {
         var store = new Store();
