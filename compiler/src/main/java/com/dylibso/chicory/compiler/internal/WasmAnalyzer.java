@@ -11,6 +11,7 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.ExternalType;
+import com.dylibso.chicory.wasm.types.FieldType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.FunctionType;
@@ -85,7 +86,7 @@ final class WasmAnalyzer {
     public List<CompilerInstruction> analyze(int funcId) {
         var functionType = functionTypes.get(funcId);
         var body = module.codeSection().getFunctionBody(funcId - functionImports);
-        var stack = new TypeStack();
+        var stack = new TypeStack(module.typeSection());
         int nextLabel = body.instructions().size();
         List<CompilerInstruction> result = new ArrayList<>();
 
@@ -343,6 +344,197 @@ final class WasmAnalyzer {
                         break;
                     }
 
+                case CALL_REF:
+                    {
+                        // [p* funcref] -> [r*]
+                        stack.popRef(); // funcref
+                        int typeIdx = (int) ins.operand(0);
+                        var callRefType = module.typeSection().getType(typeIdx);
+                        updateStack(stack, callRefType);
+                        result.add(
+                                new CompilerInstruction(CompilerOpCode.CALL_REF, ins.operands()));
+                        break;
+                    }
+                case RETURN_CALL_REF:
+                    {
+                        // Desugar into CALL_REF + RETURN
+                        stack.popRef(); // funcref
+                        int typeIdx = (int) ins.operand(0);
+                        var callRefType = module.typeSection().getType(typeIdx);
+                        updateStack(stack, callRefType);
+                        result.add(
+                                new CompilerInstruction(CompilerOpCode.CALL_REF, ins.operands()));
+
+                        exitBlockDepth = ins.depth();
+                        for (var type : reversed(functionType.returns())) {
+                            stack.pop(type);
+                        }
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.RETURN, ids(functionType.returns())));
+                        break;
+                    }
+                case BR_ON_NULL:
+                    {
+                        // br_on_null: pop ref, if null -> branch (ref consumed),
+                        //             else fall through with ref on stack
+                        var ref = stack.peek();
+                        stack.pop(ref);
+
+                        // BR_ON_NULL_CHECK: DUPs ref, pushes 1 if null, 0 if not null
+                        // JVM stack after check: [ref, 0_or_1]
+                        result.add(new CompilerInstruction(CompilerOpCode.BR_ON_NULL_CHECK));
+
+                        // IFEQ: pops boolean; if 0 (not null) -> jump to notNullLabel
+                        // JVM stack after IFEQ: [ref]
+                        var notNullLabel = nextLabel++;
+                        result.add(new CompilerInstruction(CompilerOpCode.IFEQ, notNullLabel));
+
+                        // null path: drop the DUP'd ref, then branch
+                        result.add(new CompilerInstruction(CompilerOpCode.DROP, ref.id()));
+                        var brUnwind = unwindStack(functionType, body, ins, ins.labelTrue(), stack);
+                        brUnwind.ifPresent(result::add);
+                        result.add(new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
+
+                        // not-null path: ref stays on JVM stack from DUP
+                        result.add(new CompilerInstruction(CompilerOpCode.LABEL, notNullLabel));
+
+                        // Type stack: ref stays on stack for fall-through (not-null)
+                        stack.push(ref);
+                        break;
+                    }
+                case BR_ON_NON_NULL:
+                    {
+                        // br_on_non_null: pop ref, if non-null -> push ref and branch,
+                        //                 else fall through with ref consumed
+                        var ref = stack.peek();
+                        stack.pop(ref);
+
+                        // BR_ON_NON_NULL_CHECK: DUPs ref, pushes 1 if non-null, 0 if null
+                        // JVM stack after check: [ref, 0_or_1]
+                        result.add(new CompilerInstruction(CompilerOpCode.BR_ON_NON_NULL_CHECK));
+
+                        // IFEQ: if 0 (null) -> jump to nullLabel
+                        var nullLabel = nextLabel++;
+                        result.add(new CompilerInstruction(CompilerOpCode.IFEQ, nullLabel));
+
+                        // non-null path: ref is on JVM stack from DUP, branch with it
+                        stack.push(ref);
+                        var brUnwind = unwindStack(functionType, body, ins, ins.labelTrue(), stack);
+                        stack.pop(ref);
+                        brUnwind.ifPresent(result::add);
+                        result.add(new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
+
+                        // null path: drop the DUP'd ref
+                        result.add(new CompilerInstruction(CompilerOpCode.LABEL, nullLabel));
+                        result.add(new CompilerInstruction(CompilerOpCode.DROP, ref.id()));
+
+                        // Type stack: ref is consumed on fall-through (null path)
+                        break;
+                    }
+                case BR_ON_CAST:
+                    {
+                        // br_on_cast: pop ref, if cast matches -> branch with rt2,
+                        //             else fall through with diffType
+                        var ref = stack.peek();
+                        stack.pop(ref);
+
+                        var flags = (int) ins.operand(0);
+                        var ht1 = (int) ins.operand(2);
+                        var ht2 = (int) ins.operand(3);
+                        boolean null1 = (flags & 1) != 0;
+                        boolean null2 = (flags & 2) != 0;
+
+                        // Types following the Validator pattern:
+                        // rt2: target cast type (branch type for br_on_cast)
+                        var rt2 = valType(null2 ? ValType.ID.RefNull : ValType.ID.Ref, ht2);
+                        // diffType: fall-through type
+                        var diffType =
+                                valType(
+                                        null2
+                                                ? ValType.ID.Ref
+                                                : (null1 ? ValType.ID.RefNull : ValType.ID.Ref),
+                                        ht1);
+
+                        // BR_ON_CAST_CHECK: DUPs ref, tests cast, pushes 1 if matches
+                        // JVM stack after check: [ref, 0_or_1]
+                        var sourceHeapType = ins.operandCount() > 4 ? (int) ins.operand(4) : ht1;
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.BR_ON_CAST_CHECK,
+                                        null2 ? 1L : 0L,
+                                        ht2,
+                                        sourceHeapType));
+
+                        // IFEQ: if 0 (no match) -> jump to noMatchLabel
+                        var noMatchLabel = nextLabel++;
+                        result.add(new CompilerInstruction(CompilerOpCode.IFEQ, noMatchLabel));
+
+                        // match path: ref is on JVM stack from DUP, branch with rt2
+                        stack.push(rt2);
+                        var brUnwind = unwindStack(functionType, body, ins, ins.labelTrue(), stack);
+                        stack.pop(rt2);
+                        brUnwind.ifPresent(result::add);
+                        result.add(new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
+
+                        // no match path: ref stays on JVM stack for fall-through
+                        result.add(new CompilerInstruction(CompilerOpCode.LABEL, noMatchLabel));
+
+                        // Type stack: push diffType for fall-through
+                        stack.push(diffType);
+                        break;
+                    }
+                case BR_ON_CAST_FAIL:
+                    {
+                        // br_on_cast_fail: pop ref, if cast does NOT match -> branch with diffType,
+                        //                  else fall through with rt2
+                        var ref = stack.peek();
+                        stack.pop(ref);
+
+                        var flags = (int) ins.operand(0);
+                        var ht1 = (int) ins.operand(2);
+                        var ht2 = (int) ins.operand(3);
+                        boolean null1 = (flags & 1) != 0;
+                        boolean null2 = (flags & 2) != 0;
+
+                        // Types following the Validator pattern:
+                        var rt2 = valType(null2 ? ValType.ID.RefNull : ValType.ID.Ref, ht2);
+                        var diffType =
+                                valType(
+                                        null2
+                                                ? ValType.ID.Ref
+                                                : (null1 ? ValType.ID.RefNull : ValType.ID.Ref),
+                                        ht1);
+
+                        // BR_ON_CAST_FAIL_CHECK: DUPs ref, tests, pushes 1 if NOT matching
+                        // JVM stack after check: [ref, 0_or_1]
+                        var sourceHeapType = ins.operandCount() > 4 ? (int) ins.operand(4) : ht1;
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.BR_ON_CAST_FAIL_CHECK,
+                                        null2 ? 1L : 0L,
+                                        ht2,
+                                        sourceHeapType));
+
+                        // IFEQ: if 0 (matches) -> jump to matchLabel (fall-through)
+                        var matchLabel = nextLabel++;
+                        result.add(new CompilerInstruction(CompilerOpCode.IFEQ, matchLabel));
+
+                        // no match path: ref is on JVM stack from DUP, branch with diffType
+                        stack.push(diffType);
+                        var brUnwind = unwindStack(functionType, body, ins, ins.labelTrue(), stack);
+                        stack.pop(diffType);
+                        brUnwind.ifPresent(result::add);
+                        result.add(new CompilerInstruction(CompilerOpCode.GOTO, ins.labelTrue()));
+
+                        // match path: ref stays on JVM stack for fall-through
+                        result.add(new CompilerInstruction(CompilerOpCode.LABEL, matchLabel));
+
+                        // Type stack: push rt2 for fall-through (cast succeeded)
+                        stack.push(rt2);
+                        break;
+                    }
+
                 case SELECT:
                 case SELECT_T:
                     // [t t I32] -> [t]
@@ -367,6 +559,30 @@ final class WasmAnalyzer {
                     long[] teeOperands = {ins.operand(0), teeType.id()};
                     result.add(new CompilerInstruction(CompilerOpCode.LOCAL_TEE, teeOperands));
                     break;
+                case CAST_TEST:
+                    {
+                        // ref.cast: [ref] -> [ref(heapType)]
+                        var srcType = stack.peek();
+                        stack.popRef();
+                        var heapType = (int) ins.operand(0);
+                        stack.push(valType(ValType.ID.Ref, heapType));
+                        long[] castOperands = {heapType, srcType.typeIdx()};
+                        result.add(new CompilerInstruction(CompilerOpCode.CAST_TEST, castOperands));
+                        break;
+                    }
+                case CAST_TEST_NULL:
+                    {
+                        // ref.cast null: [ref] -> [refnull(heapType)]
+                        var srcType = stack.peek();
+                        stack.popRef();
+                        var heapType = (int) ins.operand(0);
+                        stack.push(valType(ValType.ID.RefNull, heapType));
+                        long[] castNullOperands = {heapType, srcType.typeIdx()};
+                        result.add(
+                                new CompilerInstruction(
+                                        CompilerOpCode.CAST_TEST_NULL, castNullOperands));
+                        break;
+                    }
                 default:
                     analyzeSimple(result, stack, ins, functionType, body);
             }
@@ -776,9 +992,14 @@ final class WasmAnalyzer {
                 stack.push(ValType.F64);
                 break;
             case REF_FUNC:
-                // [] -> [ref]
-                stack.push(ValType.FuncRef);
-                break;
+                {
+                    // [] -> [ref]
+                    // ref.func produces a non-nullable reference with the function's type
+                    int funcIdx = (int) ins.operand(0);
+                    int typeIdx = functionTypeIndex(funcIdx);
+                    stack.push(valType(ValType.ID.Ref, typeIdx));
+                    break;
+                }
             case REF_NULL:
                 // [] -> [ref]
                 stack.push(
@@ -913,6 +1134,200 @@ final class WasmAnalyzer {
                 stack.pop(ValType.I64);
                 stack.pop(ValType.I32);
                 stack.push(ValType.I32);
+                break;
+            // ====== GC ======
+            case REF_EQ:
+                // [eqref eqref] -> [I32]
+                stack.pop(ValType.EqRef);
+                stack.pop(ValType.EqRef);
+                stack.push(ValType.I32);
+                break;
+            case REF_AS_NON_NULL:
+                {
+                    // [ref] -> [ref]
+                    var rt = stack.peek();
+                    stack.popRef();
+                    stack.push(valType(ValType.ID.Ref, rt.typeIdx()));
+                    break;
+                }
+            case STRUCT_NEW:
+                {
+                    var typeIdx = (int) ins.operand(0);
+                    var st = module.typeSection().getSubType(typeIdx).compType().structType();
+                    for (int i = st.fieldTypes().length - 1; i >= 0; i--) {
+                        stack.pop(unpackFieldType(st.fieldTypes()[i]));
+                    }
+                    stack.push(valType(ValType.ID.Ref, typeIdx));
+                    break;
+                }
+            case STRUCT_NEW_DEFAULT:
+                {
+                    var typeIdx = (int) ins.operand(0);
+                    stack.push(valType(ValType.ID.Ref, typeIdx));
+                    break;
+                }
+            case STRUCT_GET:
+                {
+                    var typeIdx = (int) ins.operand(0);
+                    var fieldIdx = (int) ins.operand(1);
+                    stack.pop(valType(ValType.ID.RefNull, typeIdx));
+                    var st = module.typeSection().getSubType(typeIdx).compType().structType();
+                    stack.push(unpackFieldType(st.fieldTypes()[fieldIdx]));
+                    break;
+                }
+            case STRUCT_GET_S:
+            case STRUCT_GET_U:
+                {
+                    var typeIdx = (int) ins.operand(0);
+                    stack.pop(valType(ValType.ID.RefNull, typeIdx));
+                    stack.push(ValType.I32);
+                    break;
+                }
+            case STRUCT_SET:
+                {
+                    var typeIdx = (int) ins.operand(0);
+                    var fieldIdx = (int) ins.operand(1);
+                    var st = module.typeSection().getSubType(typeIdx).compType().structType();
+                    stack.pop(unpackFieldType(st.fieldTypes()[fieldIdx]));
+                    stack.pop(valType(ValType.ID.RefNull, typeIdx));
+                    break;
+                }
+            case ARRAY_NEW:
+                {
+                    var typeIdx = (int) ins.operand(0);
+                    stack.pop(ValType.I32); // len
+                    var at = module.typeSection().getSubType(typeIdx).compType().arrayType();
+                    stack.pop(unpackFieldType(at.fieldType())); // initVal
+                    stack.push(valType(ValType.ID.Ref, typeIdx));
+                    break;
+                }
+            case ARRAY_NEW_DEFAULT:
+                {
+                    var typeIdx = (int) ins.operand(0);
+                    stack.pop(ValType.I32); // len
+                    stack.push(valType(ValType.ID.Ref, typeIdx));
+                    break;
+                }
+            case ARRAY_NEW_FIXED:
+                {
+                    var typeIdx = (int) ins.operand(0);
+                    var len = (int) ins.operand(1);
+                    var at = module.typeSection().getSubType(typeIdx).compType().arrayType();
+                    var elemType = unpackFieldType(at.fieldType());
+                    for (int i = 0; i < len; i++) {
+                        stack.pop(elemType);
+                    }
+                    stack.push(valType(ValType.ID.Ref, typeIdx));
+                    break;
+                }
+            case ARRAY_NEW_DATA:
+            case ARRAY_NEW_ELEM:
+                {
+                    var typeIdx = (int) ins.operand(0);
+                    stack.pop(ValType.I32); // len
+                    stack.pop(ValType.I32); // offset
+                    stack.push(valType(ValType.ID.Ref, typeIdx));
+                    break;
+                }
+            case ARRAY_GET:
+                {
+                    var typeIdx = (int) ins.operand(0);
+                    stack.pop(ValType.I32); // idx
+                    stack.pop(valType(ValType.ID.RefNull, typeIdx)); // arrayref
+                    var at = module.typeSection().getSubType(typeIdx).compType().arrayType();
+                    stack.push(unpackFieldType(at.fieldType()));
+                    break;
+                }
+            case ARRAY_GET_S:
+            case ARRAY_GET_U:
+                {
+                    var typeIdx = (int) ins.operand(0);
+                    stack.pop(ValType.I32); // idx
+                    stack.pop(valType(ValType.ID.RefNull, typeIdx)); // arrayref
+                    stack.push(ValType.I32);
+                    break;
+                }
+            case ARRAY_SET:
+                {
+                    var typeIdx = (int) ins.operand(0);
+                    var at = module.typeSection().getSubType(typeIdx).compType().arrayType();
+                    stack.pop(unpackFieldType(at.fieldType())); // val
+                    stack.pop(ValType.I32); // idx
+                    stack.pop(valType(ValType.ID.RefNull, typeIdx)); // arrayref
+                    break;
+                }
+            case ARRAY_LEN:
+                stack.pop(ValType.ArrayRef); // arrayref
+                stack.push(ValType.I32);
+                break;
+            case ARRAY_FILL:
+                {
+                    var typeIdx = (int) ins.operand(0);
+                    stack.pop(ValType.I32); // len
+                    var at = module.typeSection().getSubType(typeIdx).compType().arrayType();
+                    stack.pop(unpackFieldType(at.fieldType())); // val
+                    stack.pop(ValType.I32); // offset
+                    stack.pop(valType(ValType.ID.RefNull, typeIdx)); // arrayref
+                    break;
+                }
+            case ARRAY_COPY:
+                {
+                    // [dstRef, dstOff, srcRef, srcOff, len]
+                    var dstTypeIdx = (int) ins.operand(0);
+                    var srcTypeIdx = (int) ins.operand(1);
+                    stack.pop(ValType.I32); // len
+                    stack.pop(ValType.I32); // srcOff
+                    stack.pop(valType(ValType.ID.RefNull, srcTypeIdx)); // srcRef
+                    stack.pop(ValType.I32); // dstOff
+                    stack.pop(valType(ValType.ID.RefNull, dstTypeIdx)); // dstRef
+                    break;
+                }
+            case ARRAY_INIT_DATA:
+            case ARRAY_INIT_ELEM:
+                {
+                    // [ref, dstOff, srcOff, len]
+                    var typeIdx = (int) ins.operand(0);
+                    stack.pop(ValType.I32); // len
+                    stack.pop(ValType.I32); // srcOff
+                    stack.pop(ValType.I32); // dstOff
+                    stack.pop(valType(ValType.ID.RefNull, typeIdx)); // ref
+                    break;
+                }
+            case REF_TEST:
+            case REF_TEST_NULL:
+                {
+                    stack.popRef();
+                    stack.push(ValType.I32);
+                    break;
+                }
+            case REF_I31:
+                stack.pop(ValType.I32);
+                stack.push(
+                        ValType.builder()
+                                .withOpcode(ValType.ID.Ref)
+                                .withTypeIdx(ValType.TypeIdxCode.I31.code())
+                                .build());
+                break;
+            case I31_GET_S:
+            case I31_GET_U:
+                stack.popRef();
+                stack.push(ValType.I32);
+                break;
+            case ANY_CONVERT_EXTERN:
+                stack.popRef();
+                stack.push(
+                        ValType.builder()
+                                .withOpcode(ValType.ID.Ref)
+                                .withTypeIdx(ValType.TypeIdxCode.ANY.code())
+                                .build());
+                break;
+            case EXTERN_CONVERT_ANY:
+                stack.popRef();
+                stack.push(
+                        ValType.builder()
+                                .withOpcode(ValType.ID.Ref)
+                                .withTypeIdx(ValType.TypeIdxCode.EXTERN.code())
+                                .build());
                 break;
             default:
                 throw new ChicoryException("Unhandled opcode: " + ins.opcode());
@@ -1052,5 +1467,32 @@ final class WasmAnalyzer {
 
     private static long[] ids(List<ValType> types) {
         return types.stream().mapToLong(ValType::id).toArray();
+    }
+
+    int functionTypeIndex(int funcIdx) {
+        if (funcIdx < functionImports) {
+            var imports =
+                    module.importSection().stream()
+                            .filter(FunctionImport.class::isInstance)
+                            .map(FunctionImport.class::cast)
+                            .collect(Collectors.toList());
+            return imports.get(funcIdx).typeIndex();
+        }
+        return module.functionSection().getFunctionType(funcIdx - functionImports);
+    }
+
+    private ValType valType(int opcode, int typeIdx) {
+        return ValType.builder()
+                .withOpcode(opcode)
+                .withTypeIdx(typeIdx)
+                .build()
+                .resolve(module.typeSection());
+    }
+
+    private static ValType unpackFieldType(FieldType ft) {
+        if (ft.storageType().packedType() != null) {
+            return ValType.I32;
+        }
+        return ft.storageType().valType();
     }
 }

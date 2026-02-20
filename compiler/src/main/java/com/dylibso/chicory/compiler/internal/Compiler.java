@@ -64,6 +64,7 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
@@ -114,6 +115,7 @@ public final class Compiler {
     private final ClassCollector collector;
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions;
+    private final Set<Integer> callRefTypeIds;
 
     private Compiler(
             WasmModule module,
@@ -145,8 +147,23 @@ public final class Compiler {
         }
 
         this.functionTypes = analyzer.functionTypes();
+        this.callRefTypeIds = collectCallRefTypeIds();
         this.maxFunctionsPerClass = maxFunctionsPerClass;
         compileExtraClasses();
+    }
+
+    private Set<Integer> collectCallRefTypeIds() {
+        var result = new HashSet<Integer>();
+        int funcCount = module.functionSection().functionCount();
+        for (int i = 0; i < funcCount; i++) {
+            var body = module.codeSection().getFunctionBody(i);
+            for (var ins : body.instructions()) {
+                if (ins.opcode() == OpCode.CALL_REF || ins.opcode() == OpCode.RETURN_CALL_REF) {
+                    result.add((int) ins.operand(0));
+                }
+            }
+        }
+        return result;
     }
 
     public static Builder builder(WasmModule module) {
@@ -451,6 +468,9 @@ public final class Compiler {
         for (int i = 0; i < allTypes.length; i++) {
             var typeId = i;
             var type = allTypes[i];
+            if (type == null) {
+                continue; // skip non-function types (struct/array)
+            }
             emitFunction(
                     classWriter,
                     callIndirectMethodName(typeId),
@@ -484,6 +504,22 @@ public final class Compiler {
         } catch (MethodTooLargeException e) {
             throw handleMethodTooLarge(e, module);
         }
+    }
+
+    /**
+     * Check if function funcIdx has a type that matches typeId for call_indirect.
+     * Considers type index equality, subtyping, and canonical equivalence.
+     */
+    private boolean isFuncTypeMatch(int expectedTypeId, int funcIdx, FunctionType expectedType) {
+        int funcTypeIdx = analyzer.functionTypeIndex(funcIdx);
+        if (expectedTypeId == funcTypeIdx) {
+            return true;
+        }
+        var ts = module.typeSection();
+        if (ts != null) {
+            return ValType.heapTypeSubtype(funcTypeIdx, expectedTypeId, ts);
+        }
+        return expectedType.equals(functionTypes.get(funcIdx));
     }
 
     private static RuntimeException handleMethodTooLarge(
@@ -851,7 +887,7 @@ public final class Compiler {
 
         List<Integer> validIds = new ArrayList<>();
         for (int i = 0; i < functionTypes.size(); i++) {
-            if (type.equals(functionTypes.get(i))) {
+            if (isFuncTypeMatch(typeId, i, type)) {
                 validIds.add(i);
             }
         }
@@ -870,6 +906,27 @@ public final class Compiler {
 
         emitInvokeStatic(asm, CHECK_INTERRUPTION);
 
+        Label local = new Label();
+        Label other = new Label();
+
+        boolean hasCallRef = callRefTypeIds.contains(typeId);
+
+        if (hasCallRef) {
+            // For call_ref (tableIdx == -1), funcTableIdx IS the funcId directly
+            asm.load(tableIdx, INT_TYPE);
+            asm.iconst(-1);
+            Label notCallRef = new Label();
+            asm.ificmpne(notCallRef);
+
+            // call_ref path: funcTableIdx is the funcId, instance is local
+            asm.load(funcTableIdx, INT_TYPE);
+            asm.store(funcId, INT_TYPE);
+            asm.goTo(local);
+
+            // call_indirect path: look up through table
+            asm.mark(notCallRef);
+        }
+
         // TableInstance table = instance.table(tableIdx);
         asm.load(instance, OBJECT_TYPE);
         asm.load(tableIdx, INT_TYPE);
@@ -887,9 +944,6 @@ public final class Compiler {
         asm.load(funcTableIdx, INT_TYPE);
         emitInvokeVirtual(asm, TABLE_INSTANCE);
         asm.store(refInstance, OBJECT_TYPE);
-
-        Label local = new Label();
-        Label other = new Label();
 
         // if (refInstance == null || refInstance == instance)
         asm.load(refInstance, OBJECT_TYPE);
@@ -957,6 +1011,7 @@ public final class Compiler {
                                                 a ->
                                                         compileCallIndirectApply(
                                                                 internalClassName,
+                                                                typeId,
                                                                 type,
                                                                 a,
                                                                 start,
@@ -1009,6 +1064,7 @@ public final class Compiler {
 
     private void compileCallIndirectApply(
             String internalClassName,
+            int typeId,
             FunctionType type,
             InstructionAdapter asm,
             int startFunc,
@@ -1026,7 +1082,7 @@ public final class Compiler {
 
         List<Integer> validIds = new ArrayList<>();
         for (int i = 0; i < functionTypes.size(); i++) {
-            if (type.equals(functionTypes.get(i)) && startFunc <= i && i < endFunc) {
+            if (isFuncTypeMatch(typeId, i, type) && startFunc <= i && i < endFunc) {
                 validIds.add(i);
             }
         }

@@ -147,6 +147,54 @@
             <wast>proposals/exception-handling/throw.wast</wast>
             <wast>proposals/exception-handling/throw_ref.wast</wast>
             <wast>proposals/exception-handling/try_table.wast</wast>
+            <wast>proposals/gc/array.wast</wast>
+            <wast>proposals/gc/array_copy.wast</wast>
+            <wast>proposals/gc/array_fill.wast</wast>
+            <wast>proposals/gc/array_init_data.wast</wast>
+            <wast>proposals/gc/array_init_elem.wast</wast>
+            <wast>proposals/gc/array_new_data.wast</wast>
+            <wast>proposals/gc/array_new_elem.wast</wast>
+            <wast>proposals/gc/binary-gc.wast</wast>
+            <wast>proposals/gc/binary.wast</wast>
+            <wast>proposals/gc/br_if.wast</wast>
+            <wast>proposals/gc/br_on_cast.wast</wast>
+            <wast>proposals/gc/br_on_cast_fail.wast</wast>
+            <wast>proposals/gc/br_on_non_null.wast</wast>
+            <wast>proposals/gc/br_on_null.wast</wast>
+            <wast>proposals/gc/br_table.wast</wast>
+            <wast>proposals/gc/call_ref.wast</wast>
+            <wast>proposals/gc/data.wast</wast>
+            <wast>proposals/gc/elem.wast</wast>
+            <wast>proposals/gc/extern.wast</wast>
+            <wast>proposals/gc/func.wast</wast>
+            <wast>proposals/gc/global.wast</wast>
+            <wast>proposals/gc/i31.wast</wast>
+            <wast>proposals/gc/if.wast</wast>
+            <wast>proposals/gc/linking.wast</wast>
+            <wast>proposals/gc/local_get.wast</wast>
+            <wast>proposals/gc/local_init.wast</wast>
+            <wast>proposals/gc/local_tee.wast</wast>
+            <wast>proposals/gc/ref.wast</wast>
+            <wast>proposals/gc/ref_as_non_null.wast</wast>
+            <wast>proposals/gc/ref_cast.wast</wast>
+            <wast>proposals/gc/ref_eq.wast</wast>
+            <wast>proposals/gc/ref_is_null.wast</wast>
+            <wast>proposals/gc/ref_null.wast</wast>
+            <wast>proposals/gc/ref_test.wast</wast>
+            <wast>proposals/gc/return_call.wast</wast>
+            <wast>proposals/gc/return_call_indirect.wast</wast>
+            <wast>proposals/gc/return_call_ref.wast</wast>
+            <wast>proposals/gc/select.wast</wast>
+            <wast>proposals/gc/struct.wast</wast>
+            <wast>proposals/gc/table-sub.wast</wast>
+            <wast>proposals/gc/table.wast</wast>
+            <wast>proposals/gc/type-canon.wast</wast>
+            <wast>proposals/gc/type-equivalence.wast</wast>
+            <wast>proposals/gc/type-rec.wast</wast>
+            <wast>proposals/gc/type-subtyping-invalid.wast</wast>
+            <wast>proposals/gc/type-subtyping.wast</wast>
+            <wast>proposals/gc/unreached-invalid.wast</wast>
+            <wast>proposals/gc/unreached-valid.wast</wast>
             <wast>proposals/tail-call/return_call.wast</wast>
             <wast>proposals/tail-call/return_call_indirect.wast</wast>
             <wast>proposals/threads/atomic.wast</wast>
@@ -194,6 +242,23 @@
             SpecV1ElemTest.test15,
             SpecV1GlobalTest.test76,
             SpecV1GlobalTest.test77,
+            <!-- GC: matches interpreter exclusion -->
+            SpecV1GcElemTest.test103,
+            <!-- GC: tail call not supported in compiler -->
+            SpecV1GcReturnCallIndirectTest.test40,
+            SpecV1GcReturnCallIndirectTest.test41,
+            SpecV1GcReturnCallIndirectTest.test46,
+            SpecV1GcReturnCallIndirectTest.test47,
+            SpecV1GcReturnCallRefTest.test20,
+            SpecV1GcReturnCallRefTest.test25,
+            SpecV1GcReturnCallRefTest.test26,
+            SpecV1GcReturnCallRefTest.test31,
+            SpecV1GcReturnCallRefTest.test32,
+            SpecV1GcReturnCallTest.test19,
+            SpecV1GcReturnCallTest.test24,
+            SpecV1GcReturnCallTest.test25,
+            SpecV1GcReturnCallTest.test30,
+            SpecV1GcReturnCallTest.test31,
             SpecV1TailCallReturnCallTest.test19,
             SpecV1TailCallReturnCallTest.test24,
             SpecV1TailCallReturnCallTest.test25,

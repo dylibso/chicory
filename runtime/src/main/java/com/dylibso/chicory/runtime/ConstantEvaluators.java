@@ -11,7 +11,7 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.List;
 
-final class ConstantEvaluators {
+public final class ConstantEvaluators {
     private ConstantEvaluators() {}
 
     public static long[] computeConstantValue(Instance instance, Instruction[] expr) {

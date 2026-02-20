@@ -4,7 +4,7 @@ FROM ubuntu:jammy
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
-    apt-get install -y curl build-essential gcc make pkg-config libssl-dev dotnet-sdk-8.0 unzip git gnupg2 libcurl4-openssl-dev libedit2 libpython3-dev libxml2-dev libz3-dev python3-lldb-13 tzdata zlib1g-dev && \
+    apt-get install -y curl build-essential gcc make pkg-config libssl-dev dotnet-sdk-8.0 unzip git gnupg2 libcurl4-openssl-dev libedit2 libpython3-dev libxml2-dev libz3-dev python3-lldb-13 tzdata zlib1g-dev openjdk-21-jdk nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

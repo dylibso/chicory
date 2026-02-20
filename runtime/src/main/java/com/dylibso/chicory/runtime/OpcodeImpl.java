@@ -786,6 +786,21 @@ public final class OpcodeImpl {
         return (x < 0) ? Math.ceil(x) : Math.floor(x);
     }
 
+    // ========= GC Refs =========
+
+    @OpCodeIdentifier(OpCode.REF_EQ)
+    public static int REF_EQ(int a, int b) {
+        return a == b ? TRUE : FALSE;
+    }
+
+    @OpCodeIdentifier(OpCode.REF_AS_NON_NULL)
+    public static int REF_AS_NON_NULL(int ref) {
+        if (ref == Value.REF_NULL_VALUE) {
+            throw new TrapException("null reference");
+        }
+        return ref;
+    }
+
     // ========= Tables =========
 
     public static int TABLE_GET(Instance instance, int tableIndex, int index) {

@@ -67,6 +67,13 @@ compileSwift() {
     rm -rf .build)
 }
 
+compileKotlin() {
+  filename=$(basename "$1")
+  (set -x; cd $1 && ./gradlew build && \
+    cp ./build/compileSync/wasmWasi/main/productionExecutable/kotlin/*.wasm \
+    "../../compiled/$filename.kt.wasm")
+}
+
 compile() {
   lang=$1
   case "$lang" in
@@ -100,6 +107,9 @@ compile() {
     swift)
       compileSwift $2
       ;;
+    kotlin)
+      compileKotlin $2
+      ;;
     *)
       echo "Don't know how to compile language [$lang]"
       exit 1
@@ -111,7 +121,7 @@ lang="${1:-all}"
 path="${2:-all}"
 
 if [[ "$lang" == "all" ]]; then
-  langs=("wat" "rust" "c" "javy" "javy-dynamic" "tinygo" "go" "dotnet" "swift")
+  langs=("wat" "rust" "c" "javy" "javy-dynamic" "tinygo" "go" "dotnet" "swift" "kotlin")
 else
   langs=("$lang")
 fi

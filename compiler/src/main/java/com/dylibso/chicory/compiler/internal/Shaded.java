@@ -4,16 +4,22 @@ import static com.dylibso.chicory.runtime.MemCopyWorkaround.shouldUseMemWorkarou
 import static com.dylibso.chicory.wasm.types.Value.REF_NULL_VALUE;
 
 import com.dylibso.chicory.runtime.ChicoryInterruptedException;
+import com.dylibso.chicory.runtime.ConstantEvaluators;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.MemCopyWorkaround;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.TrapException;
+import com.dylibso.chicory.runtime.WasmArray;
 import com.dylibso.chicory.runtime.WasmException;
+import com.dylibso.chicory.runtime.WasmI31Ref;
 import com.dylibso.chicory.runtime.WasmRuntimeException;
+import com.dylibso.chicory.runtime.WasmStruct;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
-import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.ValType;
+import com.dylibso.chicory.wasm.types.Value;
+import java.util.Arrays;
 
 /**
  * This class will get shaded into the compiled code.
@@ -23,9 +29,10 @@ public final class Shaded {
     private Shaded() {}
 
     public static long[] callIndirect(long[] args, int typeId, int funcId, Instance instance) {
-        FunctionType expectedType = instance.type(typeId);
-        FunctionType actualType = instance.type(instance.functionType(funcId));
-        if (!actualType.typesMatch(expectedType)) {
+        int actualTypeIdx = instance.functionType(funcId);
+        if (actualTypeIdx != typeId
+                && !ValType.heapTypeSubtype(
+                        actualTypeIdx, typeId, instance.module().typeSection())) {
             throw throwIndirectCallTypeMismatch();
         }
         return instance.getMachine().call(funcId, args);
@@ -299,6 +306,10 @@ public final class Shaded {
         throw new TrapException("Trapped on unreachable instruction");
     }
 
+    public static RuntimeException throwNullFunctionReference() {
+        throw new TrapException("null function reference");
+    }
+
     public static RuntimeException throwUnknownFunction(int index) {
         throw new InvalidException(String.format("unknown function %d", index));
     }
@@ -315,6 +326,15 @@ public final class Shaded {
 
     public static void writeGlobal(long value, int index, Instance instance) {
         instance.global(index).setValue(value);
+    }
+
+    public static int readGlobalRef(int index, Instance instance) {
+        long val = instance.global(index).getValue();
+        if (Value.isI31(val)) {
+            var i31 = new WasmI31Ref(Value.decodeI31U(val));
+            return instance.registerGcRef(i31);
+        }
+        return (int) val;
     }
 
     /**
@@ -736,5 +756,375 @@ public final class Shaded {
 
     public static void memoryAtomicFence(Memory memory) {
         memory.atomicFence();
+    }
+
+    // ========= GC Operations =========
+
+    public static int structNew(long[] fields, int typeIdx, Instance instance) {
+        var struct = new WasmStruct(typeIdx, fields);
+        return instance.registerGcRef(struct);
+    }
+
+    public static int structNewDefault(int typeIdx, Instance instance) {
+        var st = instance.module().typeSection().getSubType(typeIdx).compType().structType();
+        var fields = new long[st.fieldTypes().length];
+        for (int i = 0; i < fields.length; i++) {
+            var ft = st.fieldTypes()[i];
+            if (ft.storageType().valType() != null && ft.storageType().valType().isReference()) {
+                fields[i] = Value.REF_NULL_VALUE;
+            }
+        }
+        var struct = new WasmStruct(typeIdx, fields);
+        return instance.registerGcRef(struct);
+    }
+
+    public static long structGet(int ref, int typeIdx, int fieldIdx, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null structure reference");
+        }
+        var struct = (WasmStruct) instance.gcRef(ref);
+        return struct.field(fieldIdx);
+    }
+
+    public static long structGetS(int ref, int typeIdx, int fieldIdx, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null structure reference");
+        }
+        var struct = (WasmStruct) instance.gcRef(ref);
+        var val = struct.field(fieldIdx);
+        var st = instance.module().typeSection().getSubType(typeIdx).compType().structType();
+        var ft = st.fieldTypes()[fieldIdx];
+        if (ft.storageType().packedType() != null) {
+            val = ft.storageType().packedType().signExtend(val);
+        }
+        return val;
+    }
+
+    public static long structGetU(int ref, int typeIdx, int fieldIdx, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null structure reference");
+        }
+        var struct = (WasmStruct) instance.gcRef(ref);
+        var val = struct.field(fieldIdx);
+        var st = instance.module().typeSection().getSubType(typeIdx).compType().structType();
+        var ft = st.fieldTypes()[fieldIdx];
+        if (ft.storageType().packedType() != null) {
+            val = val & ft.storageType().packedType().mask();
+        }
+        return val;
+    }
+
+    public static void structSet(int ref, long val, int typeIdx, int fieldIdx, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null structure reference");
+        }
+        var struct = (WasmStruct) instance.gcRef(ref);
+        var st = instance.module().typeSection().getSubType(typeIdx).compType().structType();
+        var ft = st.fieldTypes()[fieldIdx];
+        if (ft.storageType().packedType() != null) {
+            val = val & ft.storageType().packedType().mask();
+        }
+        struct.setField(fieldIdx, val);
+    }
+
+    public static int arrayNew(long initVal, int len, int typeIdx, Instance instance) {
+        var elems = new long[len];
+        Arrays.fill(elems, initVal);
+        var arr = new WasmArray(typeIdx, elems);
+        return instance.registerGcRef(arr);
+    }
+
+    public static int arrayNewDefault(int len, int typeIdx, Instance instance) {
+        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
+        var elems = new long[len];
+        if (at.fieldType().storageType().valType() != null
+                && at.fieldType().storageType().valType().isReference()) {
+            Arrays.fill(elems, Value.REF_NULL_VALUE);
+        }
+        var arr = new WasmArray(typeIdx, elems);
+        return instance.registerGcRef(arr);
+    }
+
+    public static int arrayNewFixed(long[] vals, int typeIdx, Instance instance) {
+        var arr = new WasmArray(typeIdx, vals);
+        return instance.registerGcRef(arr);
+    }
+
+    public static int arrayNewData(
+            int offset, int len, int typeIdx, int dataIdx, Instance instance) {
+        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
+        var elemSize = at.fieldType().storageType().byteSize();
+        var data = instance.dataSegmentData(dataIdx);
+        if ((long) offset + (long) len * elemSize > data.length) {
+            throw new TrapException("out of bounds memory access");
+        }
+        var elems = new long[len];
+        for (int i = 0; i < len; i++) {
+            var byteOff = offset + i * elemSize;
+            elems[i] = readFromData(data, byteOff, elemSize);
+        }
+        var arr = new WasmArray(typeIdx, elems);
+        return instance.registerGcRef(arr);
+    }
+
+    public static int arrayNewElem(
+            int offset, int len, int typeIdx, int elemIdx, Instance instance) {
+        var element = instance.element(elemIdx);
+        if (element == null || offset + len > element.elementCount()) {
+            throw new TrapException("out of bounds table access");
+        }
+        var elems = new long[len];
+        for (int i = 0; i < len; i++) {
+            elems[i] =
+                    elementValueToRef(computeElementValue(instance, elemIdx, offset + i), instance);
+        }
+        var arr = new WasmArray(typeIdx, elems);
+        return instance.registerGcRef(arr);
+    }
+
+    public static long arrayGet(int ref, int idx, int typeIdx, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        if (idx < 0 || idx >= arr.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        return arr.get(idx);
+    }
+
+    public static long arrayGetS(int ref, int idx, int typeIdx, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        if (idx < 0 || idx >= arr.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        var val = arr.get(idx);
+        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
+        if (at.fieldType().storageType().packedType() != null) {
+            val = at.fieldType().storageType().packedType().signExtend(val);
+        }
+        return val;
+    }
+
+    public static long arrayGetU(int ref, int idx, int typeIdx, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        if (idx < 0 || idx >= arr.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        var val = arr.get(idx);
+        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
+        if (at.fieldType().storageType().packedType() != null) {
+            val = val & at.fieldType().storageType().packedType().mask();
+        }
+        return val;
+    }
+
+    public static void arraySet(int ref, int idx, long val, int typeIdx, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        if (idx < 0 || idx >= arr.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
+        if (at.fieldType().storageType().packedType() != null) {
+            val = val & at.fieldType().storageType().packedType().mask();
+        }
+        arr.set(idx, val);
+    }
+
+    public static int arrayLen(int ref, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        return arr.length();
+    }
+
+    public static void arrayFill(
+            int ref, int offset, long val, int len, int typeIdx, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        if (offset + len > arr.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
+        if (at.fieldType().storageType().packedType() != null) {
+            val = val & at.fieldType().storageType().packedType().mask();
+        }
+        for (int i = 0; i < len; i++) {
+            arr.set(offset + i, val);
+        }
+    }
+
+    public static void arrayCopy(
+            int dstRef, int dstOff, int srcRef, int srcOff, int len, Instance instance) {
+        if (dstRef == REF_NULL_VALUE || srcRef == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var dst = (WasmArray) instance.gcRef(dstRef);
+        var src = (WasmArray) instance.gcRef(srcRef);
+        if (dstOff + len > dst.length() || srcOff + len > src.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        if (dstOff <= srcOff) {
+            for (int i = 0; i < len; i++) {
+                dst.set(dstOff + i, src.get(srcOff + i));
+            }
+        } else {
+            for (int i = len - 1; i >= 0; i--) {
+                dst.set(dstOff + i, src.get(srcOff + i));
+            }
+        }
+    }
+
+    public static void arrayInitData(
+            int ref, int dstOff, int srcOff, int len, int typeIdx, int dataIdx, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
+        var elemSize = at.fieldType().storageType().byteSize();
+        var data = instance.dataSegmentData(dataIdx);
+        if (dstOff + len > arr.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        if ((long) srcOff + (long) len * elemSize > data.length) {
+            throw new TrapException("out of bounds memory access");
+        }
+        for (int i = 0; i < len; i++) {
+            var byteOff = srcOff + i * elemSize;
+            arr.set(dstOff + i, readFromData(data, byteOff, elemSize));
+        }
+    }
+
+    public static void arrayInitElem(
+            int ref, int dstOff, int srcOff, int len, int typeIdx, int elemIdx, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null array reference");
+        }
+        var arr = (WasmArray) instance.gcRef(ref);
+        var element = instance.element(elemIdx);
+        if (dstOff + len > arr.length()) {
+            throw new TrapException("out of bounds array access");
+        }
+        var elementCount = (element == null) ? 0 : element.elementCount();
+        if (srcOff + len > elementCount) {
+            throw new TrapException("out of bounds table access");
+        }
+        if (len == 0) {
+            return;
+        }
+        for (int i = 0; i < len; i++) {
+            arr.set(
+                    dstOff + i,
+                    elementValueToRef(
+                            computeElementValue(instance, elemIdx, srcOff + i), instance));
+        }
+    }
+
+    public static int refTest(int ref, int heapType, int srcHeapType, Instance instance) {
+        return instance.heapTypeMatch(ref, false, heapType, srcHeapType) ? 1 : 0;
+    }
+
+    public static int refTestNull(int ref, int heapType, int srcHeapType, Instance instance) {
+        return instance.heapTypeMatch(ref, true, heapType, srcHeapType) ? 1 : 0;
+    }
+
+    public static int castTest(int ref, int heapType, int srcHeapType, Instance instance) {
+        if (!instance.heapTypeMatch(ref, false, heapType, srcHeapType)) {
+            throw new TrapException("cast failure");
+        }
+        return ref;
+    }
+
+    public static int castTestNull(int ref, int heapType, int srcHeapType, Instance instance) {
+        if (!instance.heapTypeMatch(ref, true, heapType, srcHeapType)) {
+            throw new TrapException("cast failure");
+        }
+        return ref;
+    }
+
+    public static boolean heapTypeMatch(
+            int ref, boolean nullable, int heapType, int srcHeapType, Instance instance) {
+        return instance.heapTypeMatch(ref, nullable, heapType, srcHeapType);
+    }
+
+    public static int refI31(int val, Instance instance) {
+        var i31 = new WasmI31Ref(val & 0x7FFFFFFF);
+        return instance.registerGcRef(i31);
+    }
+
+    public static int i31GetS(int ref, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null i31 reference");
+        }
+        var i31 = (WasmI31Ref) instance.gcRef(ref);
+        int val = i31.value();
+        // sign extend from 31 bits
+        return (val << 1) >> 1;
+    }
+
+    public static int i31GetU(int ref, Instance instance) {
+        if (ref == REF_NULL_VALUE) {
+            throw new TrapException("null i31 reference");
+        }
+        var i31 = (WasmI31Ref) instance.gcRef(ref);
+        return i31.value() & 0x7FFFFFFF;
+    }
+
+    public static int refEq(int a, int b, Instance instance) {
+        if (a == b) {
+            return 1;
+        }
+        if (a == REF_NULL_VALUE || b == REF_NULL_VALUE) {
+            return 0;
+        }
+        var gcA = instance.gcRef(a);
+        var gcB = instance.gcRef(b);
+        if (gcA instanceof WasmI31Ref && gcB instanceof WasmI31Ref) {
+            return ((WasmI31Ref) gcA).value() == ((WasmI31Ref) gcB).value() ? 1 : 0;
+        }
+        return 0;
+    }
+
+    private static long elementValueToRef(long val, Instance instance) {
+        if (Value.isI31(val)) {
+            var i31 = new WasmI31Ref(Value.decodeI31U(val));
+            return instance.registerGcRef(i31);
+        }
+        return val;
+    }
+
+    private static long computeElementValue(Instance instance, int elemIdx, int offset) {
+        var element = instance.element(elemIdx);
+        var init = element.initializers().get(offset);
+        return ConstantEvaluators.computeConstantValue(instance, init)[0];
+    }
+
+    private static long readFromData(byte[] data, int offset, int size) {
+        long val = 0;
+        for (int i = 0; i < size; i++) {
+            val |= (long) (data[offset + i] & 0xFF) << (i * 8);
+        }
+        return val;
+    }
+
+    public static void dataDrop(int segment, Instance instance) {
+        if (instance.memory() != null) {
+            instance.memory().drop(segment);
+        } else {
+            instance.dropDataSegment(segment);
+        }
     }
 }
