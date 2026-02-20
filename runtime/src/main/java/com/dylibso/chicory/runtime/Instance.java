@@ -340,12 +340,6 @@ public class Instance {
         return elements.length;
     }
 
-    public long computeElementValue(int elemIdx, int offset) {
-        var element = elements[elemIdx];
-        var init = element.initializers().get(offset);
-        return computeConstantValue(this, init)[0];
-    }
-
     public void setElement(int idx, Element val) {
         elements[idx] = val;
     }
