@@ -9,11 +9,9 @@ import com.dylibso.chicory.runtime.MemCopyWorkaround;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.runtime.OpcodeImpl;
 import com.dylibso.chicory.runtime.TrapException;
-import com.dylibso.chicory.runtime.WasmArray;
 import com.dylibso.chicory.runtime.WasmException;
 import com.dylibso.chicory.runtime.WasmI31Ref;
 import com.dylibso.chicory.runtime.WasmRuntimeException;
-import com.dylibso.chicory.runtime.WasmStruct;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
 import com.dylibso.chicory.wasm.types.ValType;
@@ -759,297 +757,105 @@ public final class Shaded {
     // ========= GC Operations =========
 
     public static int structNew(long[] fields, int typeIdx, Instance instance) {
-        var struct = new WasmStruct(typeIdx, fields);
-        return instance.registerGcRef(struct);
+        return OpcodeImpl.STRUCT_NEW(fields, typeIdx, instance);
     }
 
     public static int structNewDefault(int typeIdx, Instance instance) {
-        var st = instance.module().typeSection().getSubType(typeIdx).compType().structType();
-        var fields = new long[st.fieldTypes().length];
-        for (int i = 0; i < fields.length; i++) {
-            var ft = st.fieldTypes()[i];
-            if (ft.storageType().valType() != null && ft.storageType().valType().isReference()) {
-                fields[i] = REF_NULL_VALUE;
-            }
-        }
-        var struct = new WasmStruct(typeIdx, fields);
-        return instance.registerGcRef(struct);
+        return OpcodeImpl.STRUCT_NEW_DEFAULT(typeIdx, instance);
     }
 
     public static long structGet(int ref, int typeIdx, int fieldIdx, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null structure reference");
-        }
-        var struct = (WasmStruct) instance.gcRef(ref);
-        return struct.field(fieldIdx);
+        return OpcodeImpl.STRUCT_GET(ref, typeIdx, fieldIdx, instance);
     }
 
     public static long structGetS(int ref, int typeIdx, int fieldIdx, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null structure reference");
-        }
-        var struct = (WasmStruct) instance.gcRef(ref);
-        var val = struct.field(fieldIdx);
-        var st = instance.module().typeSection().getSubType(typeIdx).compType().structType();
-        var ft = st.fieldTypes()[fieldIdx];
-        if (ft.storageType().packedType() != null) {
-            val = ft.storageType().packedType().signExtend(val);
-        }
-        return val;
+        return OpcodeImpl.STRUCT_GET_S(ref, typeIdx, fieldIdx, instance);
     }
 
     public static long structGetU(int ref, int typeIdx, int fieldIdx, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null structure reference");
-        }
-        var struct = (WasmStruct) instance.gcRef(ref);
-        var val = struct.field(fieldIdx);
-        var st = instance.module().typeSection().getSubType(typeIdx).compType().structType();
-        var ft = st.fieldTypes()[fieldIdx];
-        if (ft.storageType().packedType() != null) {
-            val = val & ft.storageType().packedType().mask();
-        }
-        return val;
+        return OpcodeImpl.STRUCT_GET_U(ref, typeIdx, fieldIdx, instance);
     }
 
     public static void structSet(int ref, long val, int typeIdx, int fieldIdx, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null structure reference");
-        }
-        var struct = (WasmStruct) instance.gcRef(ref);
-        var st = instance.module().typeSection().getSubType(typeIdx).compType().structType();
-        var ft = st.fieldTypes()[fieldIdx];
-        if (ft.storageType().packedType() != null) {
-            val = val & ft.storageType().packedType().mask();
-        }
-        struct.setField(fieldIdx, val);
+        OpcodeImpl.STRUCT_SET(ref, val, typeIdx, fieldIdx, instance);
     }
 
     public static int arrayNew(long initVal, int len, int typeIdx, Instance instance) {
-        var elems = new long[len];
-        java.util.Arrays.fill(elems, initVal);
-        var arr = new WasmArray(typeIdx, elems);
-        return instance.registerGcRef(arr);
+        return OpcodeImpl.ARRAY_NEW(initVal, len, typeIdx, instance);
     }
 
     public static int arrayNewDefault(int len, int typeIdx, Instance instance) {
-        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
-        var elems = new long[len];
-        if (at.fieldType().storageType().valType() != null
-                && at.fieldType().storageType().valType().isReference()) {
-            java.util.Arrays.fill(elems, REF_NULL_VALUE);
-        }
-        var arr = new WasmArray(typeIdx, elems);
-        return instance.registerGcRef(arr);
+        return OpcodeImpl.ARRAY_NEW_DEFAULT(len, typeIdx, instance);
     }
 
     public static int arrayNewFixed(long[] vals, int typeIdx, Instance instance) {
-        var arr = new WasmArray(typeIdx, vals);
-        return instance.registerGcRef(arr);
+        return OpcodeImpl.ARRAY_NEW_FIXED(vals, typeIdx, instance);
     }
 
     public static int arrayNewData(
             int offset, int len, int typeIdx, int dataIdx, Instance instance) {
-        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
-        var elemSize = at.fieldType().storageType().byteSize();
-        var data = instance.dataSegmentData(dataIdx);
-        if ((long) offset + (long) len * elemSize > data.length) {
-            throw new TrapException("out of bounds memory access");
-        }
-        var elems = new long[len];
-        for (int i = 0; i < len; i++) {
-            var byteOff = offset + i * elemSize;
-            elems[i] = readFromData(data, byteOff, elemSize);
-        }
-        var arr = new WasmArray(typeIdx, elems);
-        return instance.registerGcRef(arr);
+        return OpcodeImpl.ARRAY_NEW_DATA(offset, len, typeIdx, dataIdx, instance);
     }
 
     public static int arrayNewElem(
             int offset, int len, int typeIdx, int elemIdx, Instance instance) {
-        var element = instance.element(elemIdx);
-        if (element == null || offset + len > element.elementCount()) {
-            throw new TrapException("out of bounds table access");
-        }
-        var elems = new long[len];
-        for (int i = 0; i < len; i++) {
-            elems[i] =
-                    elementValueToRef(instance.computeElementValue(elemIdx, offset + i), instance);
-        }
-        var arr = new WasmArray(typeIdx, elems);
-        return instance.registerGcRef(arr);
+        return OpcodeImpl.ARRAY_NEW_ELEM(offset, len, typeIdx, elemIdx, instance);
     }
 
     public static long arrayGet(int ref, int idx, int typeIdx, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null array reference");
-        }
-        var arr = (WasmArray) instance.gcRef(ref);
-        if (idx < 0 || idx >= arr.length()) {
-            throw new TrapException("out of bounds array access");
-        }
-        return arr.get(idx);
+        return OpcodeImpl.ARRAY_GET(ref, idx, typeIdx, instance);
     }
 
     public static long arrayGetS(int ref, int idx, int typeIdx, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null array reference");
-        }
-        var arr = (WasmArray) instance.gcRef(ref);
-        if (idx < 0 || idx >= arr.length()) {
-            throw new TrapException("out of bounds array access");
-        }
-        var val = arr.get(idx);
-        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
-        if (at.fieldType().storageType().packedType() != null) {
-            val = at.fieldType().storageType().packedType().signExtend(val);
-        }
-        return val;
+        return OpcodeImpl.ARRAY_GET_S(ref, idx, typeIdx, instance);
     }
 
     public static long arrayGetU(int ref, int idx, int typeIdx, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null array reference");
-        }
-        var arr = (WasmArray) instance.gcRef(ref);
-        if (idx < 0 || idx >= arr.length()) {
-            throw new TrapException("out of bounds array access");
-        }
-        var val = arr.get(idx);
-        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
-        if (at.fieldType().storageType().packedType() != null) {
-            val = val & at.fieldType().storageType().packedType().mask();
-        }
-        return val;
+        return OpcodeImpl.ARRAY_GET_U(ref, idx, typeIdx, instance);
     }
 
     public static void arraySet(int ref, int idx, long val, int typeIdx, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null array reference");
-        }
-        var arr = (WasmArray) instance.gcRef(ref);
-        if (idx < 0 || idx >= arr.length()) {
-            throw new TrapException("out of bounds array access");
-        }
-        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
-        if (at.fieldType().storageType().packedType() != null) {
-            val = val & at.fieldType().storageType().packedType().mask();
-        }
-        arr.set(idx, val);
+        OpcodeImpl.ARRAY_SET(ref, idx, val, typeIdx, instance);
     }
 
     public static int arrayLen(int ref, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null array reference");
-        }
-        var arr = (WasmArray) instance.gcRef(ref);
-        return arr.length();
+        return OpcodeImpl.ARRAY_LEN(ref, instance);
     }
 
     public static void arrayFill(
             int ref, int offset, long val, int len, int typeIdx, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null array reference");
-        }
-        var arr = (WasmArray) instance.gcRef(ref);
-        if (offset + len > arr.length()) {
-            throw new TrapException("out of bounds array access");
-        }
-        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
-        if (at.fieldType().storageType().packedType() != null) {
-            val = val & at.fieldType().storageType().packedType().mask();
-        }
-        for (int i = 0; i < len; i++) {
-            arr.set(offset + i, val);
-        }
+        OpcodeImpl.ARRAY_FILL(ref, offset, val, len, typeIdx, instance);
     }
 
     public static void arrayCopy(
             int dstRef, int dstOff, int srcRef, int srcOff, int len, Instance instance) {
-        if (dstRef == REF_NULL_VALUE || srcRef == REF_NULL_VALUE) {
-            throw new TrapException("null array reference");
-        }
-        var dst = (WasmArray) instance.gcRef(dstRef);
-        var src = (WasmArray) instance.gcRef(srcRef);
-        if (dstOff + len > dst.length() || srcOff + len > src.length()) {
-            throw new TrapException("out of bounds array access");
-        }
-        if (dstOff <= srcOff) {
-            for (int i = 0; i < len; i++) {
-                dst.set(dstOff + i, src.get(srcOff + i));
-            }
-        } else {
-            for (int i = len - 1; i >= 0; i--) {
-                dst.set(dstOff + i, src.get(srcOff + i));
-            }
-        }
+        OpcodeImpl.ARRAY_COPY(dstRef, dstOff, srcRef, srcOff, len, instance);
     }
 
     public static void arrayInitData(
             int ref, int dstOff, int srcOff, int len, int typeIdx, int dataIdx, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null array reference");
-        }
-        var arr = (WasmArray) instance.gcRef(ref);
-        var at = instance.module().typeSection().getSubType(typeIdx).compType().arrayType();
-        var elemSize = at.fieldType().storageType().byteSize();
-        var data = instance.dataSegmentData(dataIdx);
-        if (dstOff + len > arr.length()) {
-            throw new TrapException("out of bounds array access");
-        }
-        if ((long) srcOff + (long) len * elemSize > data.length) {
-            throw new TrapException("out of bounds memory access");
-        }
-        for (int i = 0; i < len; i++) {
-            var byteOff = srcOff + i * elemSize;
-            arr.set(dstOff + i, readFromData(data, byteOff, elemSize));
-        }
+        OpcodeImpl.ARRAY_INIT_DATA(ref, dstOff, srcOff, len, typeIdx, dataIdx, instance);
     }
 
     public static void arrayInitElem(
             int ref, int dstOff, int srcOff, int len, int typeIdx, int elemIdx, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null array reference");
-        }
-        var arr = (WasmArray) instance.gcRef(ref);
-        var element = instance.element(elemIdx);
-        if (dstOff + len > arr.length()) {
-            throw new TrapException("out of bounds array access");
-        }
-        var elementCount = (element == null) ? 0 : element.elementCount();
-        if (srcOff + len > elementCount) {
-            throw new TrapException("out of bounds table access");
-        }
-        if (len == 0) {
-            return;
-        }
-        for (int i = 0; i < len; i++) {
-            arr.set(
-                    dstOff + i,
-                    elementValueToRef(instance.computeElementValue(elemIdx, srcOff + i), instance));
-        }
+        OpcodeImpl.ARRAY_INIT_ELEM(ref, dstOff, srcOff, len, typeIdx, elemIdx, instance);
     }
 
     public static int refTest(int ref, int heapType, int srcHeapType, Instance instance) {
-        return instance.heapTypeMatch(ref, false, heapType, srcHeapType) ? 1 : 0;
+        return OpcodeImpl.REF_TEST(ref, heapType, srcHeapType, instance);
     }
 
     public static int refTestNull(int ref, int heapType, int srcHeapType, Instance instance) {
-        return instance.heapTypeMatch(ref, true, heapType, srcHeapType) ? 1 : 0;
+        return OpcodeImpl.REF_TEST_NULL(ref, heapType, srcHeapType, instance);
     }
 
     public static int castTest(int ref, int heapType, int srcHeapType, Instance instance) {
-        if (!instance.heapTypeMatch(ref, false, heapType, srcHeapType)) {
-            throw new TrapException("cast failure");
-        }
-        return ref;
+        return OpcodeImpl.REF_CAST(ref, heapType, srcHeapType, instance);
     }
 
     public static int castTestNull(int ref, int heapType, int srcHeapType, Instance instance) {
-        if (!instance.heapTypeMatch(ref, true, heapType, srcHeapType)) {
-            throw new TrapException("cast failure");
-        }
-        return ref;
+        return OpcodeImpl.REF_CAST_NULL(ref, heapType, srcHeapType, instance);
     }
 
     public static boolean heapTypeMatch(
@@ -1058,41 +864,19 @@ public final class Shaded {
     }
 
     public static int refI31(int val, Instance instance) {
-        var i31 = new WasmI31Ref(val & 0x7FFFFFFF);
-        return instance.registerGcRef(i31);
+        return OpcodeImpl.REF_I31(val, instance);
     }
 
     public static int i31GetS(int ref, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null i31 reference");
-        }
-        var i31 = (WasmI31Ref) instance.gcRef(ref);
-        int val = i31.value();
-        // sign extend from 31 bits
-        return (val << 1) >> 1;
+        return OpcodeImpl.I31_GET_S(ref, instance);
     }
 
     public static int i31GetU(int ref, Instance instance) {
-        if (ref == REF_NULL_VALUE) {
-            throw new TrapException("null i31 reference");
-        }
-        var i31 = (WasmI31Ref) instance.gcRef(ref);
-        return i31.value() & 0x7FFFFFFF;
+        return OpcodeImpl.I31_GET_U(ref, instance);
     }
 
     public static int refEq(int a, int b, Instance instance) {
-        if (a == b) {
-            return 1;
-        }
-        if (a == REF_NULL_VALUE || b == REF_NULL_VALUE) {
-            return 0;
-        }
-        var gcA = instance.gcRef(a);
-        var gcB = instance.gcRef(b);
-        if (gcA instanceof WasmI31Ref && gcB instanceof WasmI31Ref) {
-            return ((WasmI31Ref) gcA).value() == ((WasmI31Ref) gcB).value() ? 1 : 0;
-        }
-        return 0;
+        return OpcodeImpl.REF_EQ(a, b, instance);
     }
 
     public static void dataDrop(int segment, Instance instance) {
@@ -1101,21 +885,5 @@ public final class Shaded {
         } else {
             instance.dropDataSegment(segment);
         }
-    }
-
-    private static long elementValueToRef(long val, Instance instance) {
-        if (Value.isI31(val)) {
-            var i31 = new WasmI31Ref(Value.decodeI31U(val));
-            return instance.registerGcRef(i31);
-        }
-        return val;
-    }
-
-    private static long readFromData(byte[] data, int offset, int size) {
-        long val = 0;
-        for (int i = 0; i < size; i++) {
-            val |= (long) (data[offset + i] & 0xFF) << (i * 8);
-        }
-        return val;
     }
 }
