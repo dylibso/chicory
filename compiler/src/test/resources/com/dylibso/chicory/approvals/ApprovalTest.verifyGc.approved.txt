@@ -1,0 +1,107 @@
+final class com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0 {
+
+  public static func_0(IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    ILOAD 0
+    ILOAD 1
+    ISTORE 5
+    ISTORE 4
+    ICONST_2
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    ILOAD 4
+    I2L
+    LASTORE
+    DUP
+    ICONST_1
+    ILOAD 5
+    I2L
+    LASTORE
+    ICONST_0
+    ALOAD 3
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.structNew ([JILcom/dylibso/chicory/runtime/Instance;)I
+    IRETURN
+
+  public static call_0(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ALOAD 2
+    ICONST_0
+    LALOAD
+    L2I
+    ALOAD 2
+    ICONST_1
+    LALOAD
+    L2I
+    ALOAD 1
+    ALOAD 0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_0 (IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    I2L
+    LSTORE 3
+    ICONST_1
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    LLOAD 3
+    LASTORE
+    ARETURN
+
+  public static func_1(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    ILOAD 0
+    ICONST_0
+    ICONST_0
+    ALOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.structGet (IIILcom/dylibso/chicory/runtime/Instance;)J
+    L2I
+    IRETURN
+
+  public static call_1(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ALOAD 2
+    ICONST_0
+    LALOAD
+    L2I
+    ALOAD 1
+    ALOAD 0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_1 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    I2L
+    LSTORE 3
+    ICONST_1
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    LLOAD 3
+    LASTORE
+    ARETURN
+
+  public static func_2(ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    ILOAD 0
+    ICONST_0
+    ICONST_0
+    ALOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.structGet (IIILcom/dylibso/chicory/runtime/Instance;)J
+    L2I
+    ILOAD 0
+    ICONST_0
+    ICONST_1
+    ALOAD 2
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.structGet (IIILcom/dylibso/chicory/runtime/Instance;)J
+    L2I
+    IADD
+    IRETURN
+
+  public static call_2(Lcom/dylibso/chicory/runtime/Instance;Lcom/dylibso/chicory/runtime/Memory;[J)[J
+    ALOAD 2
+    ICONST_0
+    LALOAD
+    L2I
+    ALOAD 1
+    ALOAD 0
+    INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_2 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
+    I2L
+    LSTORE 3
+    ICONST_1
+    NEWARRAY T_LONG
+    DUP
+    ICONST_0
+    LLOAD 3
+    LASTORE
+    ARETURN
+}

@@ -64,6 +64,7 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.ValType;
 import java.lang.invoke.MethodType;
 import java.util.ArrayList;
@@ -114,6 +115,7 @@ public final class Compiler {
     private final ClassCollector collector;
     private int maxFunctionsPerClass;
     private final HashSet<Integer> interpretedFunctions;
+    private final Set<Integer> callRefTypeIds;
 
     private Compiler(
             WasmModule module,
@@ -145,8 +147,23 @@ public final class Compiler {
         }
 
         this.functionTypes = analyzer.functionTypes();
+        this.callRefTypeIds = collectCallRefTypeIds();
         this.maxFunctionsPerClass = maxFunctionsPerClass;
         compileExtraClasses();
+    }
+
+    private Set<Integer> collectCallRefTypeIds() {
+        var result = new HashSet<Integer>();
+        int funcCount = module.functionSection().functionCount();
+        for (int i = 0; i < funcCount; i++) {
+            var body = module.codeSection().getFunctionBody(i);
+            for (var ins : body.instructions()) {
+                if (ins.opcode() == OpCode.CALL_REF || ins.opcode() == OpCode.RETURN_CALL_REF) {
+                    result.add((int) ins.operand(0));
+                }
+            }
+        }
+        return result;
     }
 
     public static Builder builder(WasmModule module) {
@@ -892,19 +909,23 @@ public final class Compiler {
         Label local = new Label();
         Label other = new Label();
 
-        // For call_ref (tableIdx == -1), funcTableIdx IS the funcId directly
-        asm.load(tableIdx, INT_TYPE);
-        asm.iconst(-1);
-        Label notCallRef = new Label();
-        asm.ificmpne(notCallRef);
+        boolean hasCallRef = callRefTypeIds.contains(typeId);
 
-        // call_ref path: funcTableIdx is the funcId, instance is local
-        asm.load(funcTableIdx, INT_TYPE);
-        asm.store(funcId, INT_TYPE);
-        asm.goTo(local);
+        if (hasCallRef) {
+            // For call_ref (tableIdx == -1), funcTableIdx IS the funcId directly
+            asm.load(tableIdx, INT_TYPE);
+            asm.iconst(-1);
+            Label notCallRef = new Label();
+            asm.ificmpne(notCallRef);
 
-        // call_indirect path: look up through table
-        asm.mark(notCallRef);
+            // call_ref path: funcTableIdx is the funcId, instance is local
+            asm.load(funcTableIdx, INT_TYPE);
+            asm.store(funcId, INT_TYPE);
+            asm.goTo(local);
+
+            // call_indirect path: look up through table
+            asm.mark(notCallRef);
+        }
 
         // TableInstance table = instance.table(tableIdx);
         asm.load(instance, OBJECT_TYPE);
