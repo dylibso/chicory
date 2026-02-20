@@ -27,6 +27,13 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
 
   public static call_indirect_0(IILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.checkInterruption ()V
+    ILOAD 1
+    ICONST_M1
+    IF_ICMPNE L0
+    ILOAD 0
+    ISTORE 5
+    GOTO L1
+   L0
     ALOAD 3
     ILOAD 1
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
@@ -40,24 +47,24 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.instance (I)Lcom/dylibso/chicory/runtime/Instance;
     ASTORE 6
     ALOAD 6
-    IFNULL L0
+    IFNULL L1
     ALOAD 6
     ALOAD 3
-    IF_ACMPNE L1
-   L0
+    IF_ACMPNE L2
+   L1
     ALOAD 2
     ALOAD 3
     ILOAD 5
     LOOKUPSWITCH
-      0: L2
-      default: L3
-   L2
+      0: L3
+      default: L4
+   L3
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_0 (Lcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)V
     RETURN
-   L3
+   L4
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
     ATHROW
-   L1
+   L2
     ICONST_0
     NEWARRAY T_LONG
     ICONST_0

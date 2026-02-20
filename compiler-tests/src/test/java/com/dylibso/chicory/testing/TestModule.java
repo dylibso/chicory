@@ -38,7 +38,8 @@ public class TestModule {
                     + "i32 constant out of range "
                     + "unknown label "
                     + "alignment "
-                    + "multiple start sections";
+                    + "multiple start sections "
+                    + "duplicate field";
 
     public static TestModule of(String classpath) {
         try (var is = CorpusResources.getResource(classpath.substring(1))) {

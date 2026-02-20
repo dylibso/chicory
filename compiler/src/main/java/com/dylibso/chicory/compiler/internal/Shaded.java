@@ -16,7 +16,7 @@ import com.dylibso.chicory.runtime.WasmRuntimeException;
 import com.dylibso.chicory.runtime.WasmStruct;
 import com.dylibso.chicory.wasm.ChicoryException;
 import com.dylibso.chicory.wasm.InvalidException;
-import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 
 /**
@@ -27,9 +27,10 @@ public final class Shaded {
     private Shaded() {}
 
     public static long[] callIndirect(long[] args, int typeId, int funcId, Instance instance) {
-        FunctionType expectedType = instance.type(typeId);
-        FunctionType actualType = instance.type(instance.functionType(funcId));
-        if (!actualType.typesMatch(expectedType)) {
+        int actualTypeIdx = instance.functionType(funcId);
+        if (actualTypeIdx != typeId
+                && !ValType.heapTypeSubtype(
+                        actualTypeIdx, typeId, instance.module().typeSection())) {
             throw throwIndirectCallTypeMismatch();
         }
         return instance.getMachine().call(funcId, args);

@@ -27,6 +27,13 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
 
   public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.checkInterruption ()V
+    ILOAD 2
+    ICONST_M1
+    IF_ICMPNE L0
+    ILOAD 1
+    ISTORE 6
+    GOTO L1
+   L0
     ALOAD 4
     ILOAD 2
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
@@ -40,25 +47,25 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.instance (I)Lcom/dylibso/chicory/runtime/Instance;
     ASTORE 7
     ALOAD 7
-    IFNULL L0
+    IFNULL L1
     ALOAD 7
     ALOAD 4
-    IF_ACMPNE L1
-   L0
+    IF_ACMPNE L2
+   L1
     ILOAD 0
     ALOAD 3
     ALOAD 4
     ILOAD 6
     LOOKUPSWITCH
-      0: L2
-      default: L3
-   L2
+      0: L3
+      default: L4
+   L3
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
-   L3
+   L4
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
     ATHROW
-   L1
+   L2
     ICONST_1
     NEWARRAY T_LONG
     DUP
@@ -77,6 +84,13 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
 
   public static call_indirect_1(JIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)J
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.checkInterruption ()V
+    ILOAD 3
+    ICONST_M1
+    IF_ICMPNE L0
+    ILOAD 2
+    ISTORE 7
+    GOTO L1
+   L0
     ALOAD 5
     ILOAD 3
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
@@ -90,25 +104,25 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.instance (I)Lcom/dylibso/chicory/runtime/Instance;
     ASTORE 8
     ALOAD 8
-    IFNULL L0
+    IFNULL L1
     ALOAD 8
     ALOAD 5
-    IF_ACMPNE L1
-   L0
+    IF_ACMPNE L2
+   L1
     LLOAD 0
     ALOAD 4
     ALOAD 5
     ILOAD 7
     LOOKUPSWITCH
-      1: L2
-      default: L3
-   L2
+      1: L3
+      default: L4
+   L3
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_1 (JLcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)J
     LRETURN
-   L3
+   L4
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
     ATHROW
-   L1
+   L2
     ICONST_1
     NEWARRAY T_LONG
     DUP

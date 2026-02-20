@@ -490,16 +490,19 @@ public final class Compiler {
     }
 
     /**
-     * Check if function funcIdx has a type that is canonically equivalent to typeId.
-     * Used for GC type equivalence in call_indirect dispatch.
+     * Check if function funcIdx has a type that matches typeId for call_indirect.
+     * Considers type index equality, subtyping, and canonical equivalence.
      */
-    private boolean isCanonicallyEquivalentFunc(int typeId, int funcIdx) {
-        var ts = module.typeSection();
-        if (ts == null) {
-            return false;
-        }
+    private boolean isFuncTypeMatch(int expectedTypeId, int funcIdx, FunctionType expectedType) {
         int funcTypeIdx = analyzer.functionTypeIndex(funcIdx);
-        return typeId != funcTypeIdx && ts.canonicallyEquivalent(typeId, funcTypeIdx);
+        if (expectedTypeId == funcTypeIdx) {
+            return true;
+        }
+        var ts = module.typeSection();
+        if (ts != null) {
+            return ValType.heapTypeSubtype(funcTypeIdx, expectedTypeId, ts);
+        }
+        return expectedType.equals(functionTypes.get(funcIdx));
     }
 
     private static RuntimeException handleMethodTooLarge(
@@ -867,7 +870,7 @@ public final class Compiler {
 
         List<Integer> validIds = new ArrayList<>();
         for (int i = 0; i < functionTypes.size(); i++) {
-            if (type.equals(functionTypes.get(i)) || isCanonicallyEquivalentFunc(typeId, i)) {
+            if (isFuncTypeMatch(typeId, i, type)) {
                 validIds.add(i);
             }
         }
@@ -1058,9 +1061,7 @@ public final class Compiler {
 
         List<Integer> validIds = new ArrayList<>();
         for (int i = 0; i < functionTypes.size(); i++) {
-            if ((type.equals(functionTypes.get(i)) || isCanonicallyEquivalentFunc(typeId, i))
-                    && startFunc <= i
-                    && i < endFunc) {
+            if (isFuncTypeMatch(typeId, i, type) && startFunc <= i && i < endFunc) {
                 validIds.add(i);
             }
         }

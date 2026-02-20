@@ -27,6 +27,13 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
 
   public static call_indirect_0(IIILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.checkInterruption ()V
+    ILOAD 2
+    ICONST_M1
+    IF_ICMPNE L0
+    ILOAD 1
+    ISTORE 6
+    GOTO L1
+   L0
     ALOAD 4
     ILOAD 2
     INVOKEVIRTUAL com/dylibso/chicory/runtime/Instance.table (I)Lcom/dylibso/chicory/runtime/TableInstance;
@@ -40,61 +47,61 @@ public final class com/dylibso/chicory/$gen/CompiledMachine implements com/dylib
     INVOKEVIRTUAL com/dylibso/chicory/runtime/TableInstance.instance (I)Lcom/dylibso/chicory/runtime/Instance;
     ASTORE 7
     ALOAD 7
-    IFNULL L0
+    IFNULL L1
     ALOAD 7
     ALOAD 4
-    IF_ACMPNE L1
-   L0
+    IF_ACMPNE L2
+   L1
     ILOAD 0
     ALOAD 3
     ALOAD 4
     ILOAD 6
     LOOKUPSWITCH
-      0: L2
-      1: L3
-      2: L4
-      3: L5
-      4: L6
-      5: L7
-      6: L8
-      7: L9
-      8: L10
-      9: L11
-      default: L12
-   L2
+      0: L3
+      1: L4
+      2: L5
+      3: L6
+      4: L7
+      5: L8
+      6: L9
+      7: L10
+      8: L11
+      9: L12
+      default: L13
+   L3
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_0 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
-   L3
+   L4
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_1 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
-   L4
+   L5
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_2 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
-   L5
+   L6
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_3 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
-   L6
+   L7
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_0.func_4 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
-   L7
+   L8
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_5 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
-   L8
+   L9
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_6 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
-   L9
+   L10
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_7 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
-   L10
+   L11
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_8 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
-   L11
+   L12
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineFuncGroup_1.func_9 (ILcom/dylibso/chicory/runtime/Memory;Lcom/dylibso/chicory/runtime/Instance;)I
     IRETURN
-   L12
+   L13
     INVOKESTATIC com/dylibso/chicory/$gen/CompiledMachineShaded.throwIndirectCallTypeMismatch ()Ljava/lang/RuntimeException;
     ATHROW
-   L1
+   L2
     ICONST_1
     NEWARRAY T_LONG
     DUP
