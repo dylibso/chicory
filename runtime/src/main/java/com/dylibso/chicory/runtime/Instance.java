@@ -43,7 +43,6 @@ import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -81,9 +80,6 @@ public class Instance {
     private final Map<Integer, WasmException> exnRefs;
     private final IntWeakValueMap<long[]> arrayRefs;
     private final IntWeakValueMap<WasmGcRef> gcRefs;
-    // Strong references to prevent WasmI31Ref objects from being garbage collected
-    // while stored in the weak-reference gcRefs map.
-    private final List<WasmI31Ref> i31StrongRefs = new ArrayList<>();
 
     Instance(
             WasmModule module,
@@ -391,9 +387,6 @@ public class Instance {
     }
 
     public int registerGcRef(WasmGcRef ref) {
-        if (ref instanceof WasmI31Ref) {
-            i31StrongRefs.add((WasmI31Ref) ref);
-        }
         return gcRefs.put(ref);
     }
 
