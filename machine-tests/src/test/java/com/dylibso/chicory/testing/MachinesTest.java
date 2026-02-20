@@ -229,10 +229,7 @@ public final class MachinesTest {
             ByteArrayOutputStream stdout, Instance.Builder instanceBuilder) {
         var wasi =
                 WasiPreview1.builder()
-                        .withOptions(
-                                WasiOptions.builder()
-                                        .withStdout(stdout)
-                                        .build())
+                        .withOptions(WasiOptions.builder().withStdout(stdout).build())
                         .build();
 
         var instance =
@@ -246,28 +243,42 @@ public final class MachinesTest {
         return instance;
     }
 
+    private void assertKotlinWasiOutput(String output) {
+        assertTrue(output.contains("Hello from Kotlin via WASI"), output);
+        assertTrue(output.contains("Current 'realtime' timestamp is:"), output);
+        assertTrue(output.contains("Current 'monotonic' timestamp is:"), output);
+
+        int realtimeIdx = output.indexOf("Current 'realtime' timestamp is: ");
+        var realtimeLine = output.substring(realtimeIdx).lines().findFirst().orElseThrow();
+        var realtimeValue =
+                Long.parseLong(realtimeLine.substring(realtimeLine.lastIndexOf(' ') + 1).trim());
+        assertTrue(realtimeValue > 0, "Expected positive realtime, got: " + realtimeValue);
+
+        int monotonicIdx = output.indexOf("Current 'monotonic' timestamp is: ");
+        var monotonicLine = output.substring(monotonicIdx).lines().findFirst().orElseThrow();
+        var monotonicValue =
+                Long.parseLong(monotonicLine.substring(monotonicLine.lastIndexOf(' ') + 1).trim());
+        assertTrue(monotonicValue > 0, "Expected positive monotonic, got: " + monotonicValue);
+    }
+
     @Test
     public void shouldRunKotlinWasmInterpreted() {
         var stdout = new ByteArrayOutputStream();
-        var module = loadModule("compiled/kotlin-wasm-wasi-example.wasm");
+        var module = loadModule("compiled/hello-world.kt.wasm");
         buildKotlinWasm(stdout, Instance.builder(module));
 
-        assertTrue(
-                stdout.toString(UTF_8).contains("Hello from Kotlin via WASI"),
-                stdout.toString(UTF_8));
+        assertKotlinWasiOutput(stdout.toString(UTF_8));
     }
 
     @Test
     public void shouldRunKotlinWasmCompiled() {
         var stdout = new ByteArrayOutputStream();
-        var module = loadModule("compiled/kotlin-wasm-wasi-example.wasm");
+        var module = loadModule("compiled/hello-world.kt.wasm");
         buildKotlinWasm(
                 stdout,
                 Instance.builder(module).withMachineFactory(MachineFactoryCompiler::compile));
 
-        assertTrue(
-                stdout.toString(UTF_8).contains("Hello from Kotlin via WASI"),
-                stdout.toString(UTF_8));
+        assertKotlinWasiOutput(stdout.toString(UTF_8));
     }
 
     @Test
