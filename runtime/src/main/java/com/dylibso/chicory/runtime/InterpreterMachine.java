@@ -44,6 +44,32 @@ public class InterpreterMachine implements Machine {
         this.callStack = new ArrayDeque<>();
     }
 
+    @Override
+    public void visitGcRoots(java.util.function.IntConsumer visitor) {
+        // Conservative scan of the operand stack
+        for (int i = 0; i < stack.size(); i++) {
+            long val = stack.array()[i];
+            if (val >= Instance.GC_REF_ID_OFFSET
+                    && val != Value.REF_NULL_VALUE
+                    && !Value.isI31(val)) {
+                visitor.accept((int) val);
+            }
+        }
+        // Scan locals in all stack frames
+        for (var frame : callStack) {
+            for (int i = 0; i < frame.localCount(); i++) {
+                if (frame.localType(i).isReference()) {
+                    long val = frame.local(frame.localIndexOf(i));
+                    if (val >= Instance.GC_REF_ID_OFFSET
+                            && val != Value.REF_NULL_VALUE
+                            && !Value.isI31(val)) {
+                        visitor.accept((int) val);
+                    }
+                }
+            }
+        }
+    }
+
     @FunctionalInterface
     protected interface Operands {
         long get(int index);
