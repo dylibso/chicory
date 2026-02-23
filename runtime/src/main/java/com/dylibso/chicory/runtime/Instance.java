@@ -384,8 +384,16 @@ public class Instance {
         return null;
     }
 
+    private static final int GC_SWEEP_INTERVAL = 1024;
+    private int gcAllocCount;
+
     public int registerGcRef(WasmGcRef ref) {
-        return gcRefs.put(ref);
+        int id = gcRefs.put(ref);
+        if (++gcAllocCount >= GC_SWEEP_INTERVAL) {
+            gcAllocCount = 0;
+            sweepGcRefs();
+        }
+        return id;
     }
 
     public WasmGcRef gcRef(int idx) {
